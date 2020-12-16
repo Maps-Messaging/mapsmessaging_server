@@ -9,8 +9,8 @@ echo "===================================================="
 
 # generate private keys (for root and ca)
 
-keytool -storetype JKS  -genkeypair -alias root -dname "cn=Local Network - Development" -validity 10000 -keyalg RSA -keysize 1024 -ext bc:c -keystore root.jks -keypass password -storepass password
-keytool -storetype JKS  -genkeypair -alias ca -dname "cn=Local Network - Development" -validity 10000 -keyalg RSA -keysize 1024 -ext bc:c -keystore ca.jks -keypass password -storepass password
+keytool -storetype JKS  -genkeypair -alias root -dname "cn=Local Network - mapsmessaging.io Development" -validity 10000 -keyalg RSA -keysize 1024 -ext bc:c -keystore root.jks -keypass password -storepass password
+keytool -storetype JKS  -genkeypair -alias ca -dname "cn=Local Network - mapsmessaging.io Development" -validity 10000 -keyalg RSA -keysize 1024 -ext bc:c -keystore ca.jks -keypass password -storepass password
 
 # generate root certificate
 
