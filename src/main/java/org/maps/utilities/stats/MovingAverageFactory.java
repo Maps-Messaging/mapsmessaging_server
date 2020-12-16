@@ -1,0 +1,125 @@
+/*
+ *  Copyright [2020] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+package org.maps.utilities.stats;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import org.maps.utilities.stats.processors.AdderDataProcessor;
+import org.maps.utilities.stats.processors.AverageDataProcessor;
+import org.maps.utilities.stats.processors.DataProcessor;
+import org.maps.utilities.stats.processors.DifferenceDataProcessor;
+import org.maps.utilities.stats.processors.SummerDataProcessor;
+import org.maps.utilities.threads.SimpleTaskScheduler;
+
+public class MovingAverageFactory {
+
+  private static final MovingAverageFactory instance = new MovingAverageFactory();
+
+  public static MovingAverageFactory getInstance(){
+    return instance;
+  }
+
+  public enum ACCUMULATOR {
+    ADD("Adder", "Adds all incoming data, useful for tick type stats"),
+    DIFF("Difference", "Subtracts the current from the last entry and adds it, useful for dealing with totals"),
+    AVE("Average", "Maintains an average"),
+    SUM("Summer", "Simply puts the value into the moving average");
+
+
+    private final String name;
+    private final String description;
+
+    ACCUMULATOR(String name, String description) {
+      this.name = name;
+      this.description = description;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public String getDescription() {
+      return description;
+    }
+  }
+
+  private final List<LinkedMovingAverages> movingAverages;
+  private Future<Runnable> scheduledTask;
+
+  public MovingAverageFactory(){
+    movingAverages = new ArrayList<>();
+  }
+
+  public void close(LinkedMovingAverages movingAverage){
+    movingAverages.remove(movingAverage);
+    if(movingAverages.isEmpty()){
+      scheduledTask.cancel(true);
+    }
+  }
+
+  public LinkedMovingAverages createLinked(ACCUMULATOR accumulator, String name, int startPeriod, int periodIncrements, int totalPeriods, TimeUnit timeUnit, String unitName) {
+    int[] entries = new int[totalPeriods];
+    for(int x=0;x<totalPeriods;x++){
+      entries[x] = startPeriod +(periodIncrements*x);
+    }
+    return createLinked(accumulator, name, entries, timeUnit, unitName);
+  }
+
+  public LinkedMovingAverages createLinked (ACCUMULATOR accumulator, String name, int[] entries, TimeUnit timeUnit, String unitName){
+    DataProcessor processor;
+    switch (accumulator) {
+      case DIFF:
+        processor = new DifferenceDataProcessor();
+        break;
+
+      case SUM:
+        processor = new SummerDataProcessor();
+        break;
+
+      case AVE:
+        processor = new AverageDataProcessor();
+        break;
+
+      default:
+      case ADD:
+        processor = new AdderDataProcessor();
+        break;
+    }
+    //
+    // The first entry needs to deal with the incoming data, the "linked" moving averages are all SUM based
+    //
+    LinkedMovingAverages movingAverage = new LinkedMovingAverages(processor, name, entries, timeUnit, unitName);
+    if(movingAverages.isEmpty()){
+      scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new ScheduleRunner(), 1, 1, TimeUnit.MINUTES);
+    }
+    movingAverages.add(movingAverage);
+    return movingAverage;
+  }
+
+  private final class ScheduleRunner implements Runnable{
+    @Override
+    public void run() {
+      for(LinkedMovingAverages movingAverage: movingAverages){
+        movingAverage.update();
+      }
+    }
+  }
+
+}

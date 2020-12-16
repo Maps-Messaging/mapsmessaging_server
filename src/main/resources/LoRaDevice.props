@@ -1,0 +1,29 @@
+#
+# Global values
+#
+
+# TX Power to use
+power = 20
+
+# Frequency to use, must be the band authorised for your country
+frequency = 915.0
+
+#
+
+#
+# Device specifc values
+#
+# Generic name for this device, used in the NetworkManager.props to reference this device, any valid
+# UTF8 name can be used
+name_0 = loraDevice0
+# Chip Select pin used by the LoRa Radio Device
+cs_0 = 7
+# Interrupt pin used by the LoRa Radio device indicating available data
+irq_0 = 22
+# Reset Pin to use to reset the Radio Device, used during Startup to reset and clear the device
+rst_0 = 25
+# Radio Model, currently only RFM95 supported
+radio_0 = rfm95
+
+# A value of 0 is off, anything positive is then set
+CADTimeout_0 = 0

@@ -1,0 +1,7 @@
+default=PublicAuthConfig
+public=PublicAuthConfig
+test=TestAuthConfig
+private=PrivateAuthConfig
+admin=MessagingAuthConfig
+anon=PublicAuthConfig
+ssl=SSLAuthConfig

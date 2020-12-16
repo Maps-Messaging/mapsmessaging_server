@@ -1,0 +1,122 @@
+/*
+ *  Copyright [2020] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+package org.maps.network.admin;
+
+import java.util.ArrayList;
+import java.util.List;
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.AttributeNotFoundException;
+import javax.management.DynamicMBean;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanConstructorInfo;
+import javax.management.MBeanInfo;
+import javax.management.MBeanNotificationInfo;
+import javax.management.ObjectInstance;
+import org.maps.network.NetworkConfig;
+import org.maps.utilities.admin.JMXManager;
+
+public class NetworkConfigJMX implements DynamicMBean {
+  protected final ObjectInstance mbean;
+  protected final List<String> typePath;
+  private final NetworkConfig networkConfig;
+  private final MBeanInfo mBeanInfo;
+
+  public NetworkConfigJMX(){
+    mbean = null;
+    typePath = null;
+    networkConfig = null;
+    mBeanInfo = null;
+  }
+  //<editor-fold desc="Life cycle functions">
+  public NetworkConfigJMX(List<String> parent, NetworkConfig networkConfig) {
+    this.networkConfig = networkConfig;
+    typePath = new ArrayList<>(parent);
+    typePath.add("config=Config");
+    MBeanConstructorInfo[] beanConstructorInfos = new MBeanConstructorInfo[1];
+    try {
+      beanConstructorInfos[0] = new MBeanConstructorInfo("Config", this.getClass().getConstructor());
+    } catch (NoSuchMethodException noSuchMethodException) {
+      // We know it will never be thrown so we can ignore this
+    }
+    List<Object> keyList = new ArrayList<>(networkConfig.getProperties().keySet());
+
+    MBeanAttributeInfo[] attributeInfos = new MBeanAttributeInfo[keyList.size()];
+    for(int x=0;x<keyList.size();x++){
+      String key = (String) keyList.get(x);
+      attributeInfos[x] = new MBeanAttributeInfo(key, "java.lang.String", "Configuration Entry", true, false, false);
+    }
+
+    mBeanInfo = new MBeanInfo(
+        NetworkConfigJMX.class.toString(),
+        "End Point configuration",
+        attributeInfos,
+        beanConstructorInfos,
+        null,
+        new MBeanNotificationInfo[0]
+    );
+    mbean = JMXManager.getInstance().register(this, typePath);
+  }
+
+  public void close(){
+    JMXManager.getInstance().unregister(mbean);
+  }
+
+  @Override
+  public Object getAttribute(String attribute)  {
+    if(attribute.toLowerCase().contains("pass")){
+      return "**********";
+    }
+    else {
+      return networkConfig.getProperties().get(attribute);
+    }
+  }
+
+  @Override
+  public void setAttribute(Attribute attribute) throws AttributeNotFoundException {
+    throw new AttributeNotFoundException("Attribute not writable "+attribute.getName());
+  }
+
+  @Override
+  public AttributeList getAttributes(String[] attributes) {
+    AttributeList response = new AttributeList();
+    for (String attr : attributes) {
+      try {
+        response.add(getAttribute(attr));
+      } catch (Exception e) {
+        response.add(e);
+      }
+    }
+    return response;
+  }
+
+  @Override
+  public AttributeList setAttributes(AttributeList attributes) {
+    return new AttributeList();
+  }
+
+  @Override
+  public Object invoke(String actionName, Object[] params, String[] signature)  {
+    return null;
+  }
+
+  @Override
+  public MBeanInfo getMBeanInfo() {
+    return mBeanInfo;
+  }
+}

@@ -1,0 +1,122 @@
+/*
+ *  Copyright [2020] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+package org.maps.network.protocol.impl.mqtt;
+
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.maps.test.BaseTestConfig;
+
+public class MQTTRetainedMessageTest extends BaseTestConfig {
+
+
+  @Test
+  void testRetainedMessagesQoS0() throws MqttException {
+    connectSubscribeDisconnectPublishAndCheck(0);
+  }
+
+  @Test
+  void testRetainedMessagesQoS1() throws MqttException {
+    connectSubscribeDisconnectPublishAndCheck(1);
+  }
+
+  @Test
+  void testRetainedMessagesQoS2() throws MqttException {
+    connectSubscribeDisconnectPublishAndCheck(2);
+  }
+
+  void connectSubscribeDisconnectPublishAndCheck(int QoS) throws MqttException {
+
+    String subId = UUID.randomUUID().toString();
+    MqttClient subscribe = new MqttClient("tcp://localhost:2001", subId, new MemoryPersistence());
+    MessageListener ml = new MessageListener();
+    MqttConnectOptions subOption = new MqttConnectOptions();
+    subOption.setUserName("user1");
+    subOption.setPassword("password1".toCharArray());
+    subOption.setCleanSession(false);
+
+    subscribe.connect(subOption);
+    subscribe.subscribe("/topic/test", QoS, ml);
+    Assertions.assertTrue(subscribe.isConnected());
+    subscribe.disconnect();
+
+    MqttClient publish = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttConnectOptions pubOption = new MqttConnectOptions();
+    pubOption.setUserName("user1");
+    pubOption.setPassword("password1".toCharArray());
+    publish.connect(pubOption);
+    Assertions.assertTrue(publish.isConnected());
+
+    for(int x=0;x<10;x++) {
+      MqttMessage message = new MqttMessage("this is a test msg,1,2,3,4,5,6,7,8,9,10".getBytes());
+      message.setQos(QoS);
+      message.setId(x);
+      message.setRetained(false);
+      publish.publish("/topic/test", message);
+    }
+    publish.disconnect();
+    Assertions.assertFalse(publish.isConnected());
+    publish.close();
+    Assertions.assertEquals(0, ml.getCounter());
+
+    // OK, so now we either have the events ready for us or not, depending on QoS:0 or above
+    subscribe = new MqttClient("tcp://localhost:2001", subId, new MemoryPersistence());
+    subscribe.connect(subOption);
+    subscribe.subscribe("/topic/test", QoS, ml);
+    Assertions.assertTrue(subscribe.isConnected());
+    long endTime = System.currentTimeMillis() + 1000;
+    while(ml.getCounter() < 10 && endTime > System.currentTimeMillis()){
+      LockSupport.parkNanos(100000000);
+    }
+    if(QoS == 0){
+      Assertions.assertEquals(0, ml.getCounter());
+    }
+    else {
+      Assertions.assertEquals(10, ml.getCounter());
+    }
+    subscribe.unsubscribe("/topic/test");
+    subscribe.disconnect();
+    subscribe.close();
+  }
+
+  public static class MessageListener implements IMqttMessageListener{
+
+    private final AtomicLong counter;
+    public MessageListener(){
+      counter = new AtomicLong(0);
+    }
+
+    public long getCounter(){
+      return counter.get();
+    }
+
+    @Override
+    public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+      counter.incrementAndGet();
+    }
+  }
+
+}

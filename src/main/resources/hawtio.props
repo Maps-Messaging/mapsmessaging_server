@@ -1,0 +1,21 @@
+#
+# If false then the server will not start the Hawtio service at startup
+# If true then the server will start the Hawtio service
+#
+enable = true
+
+#
+# Enables or disables the hawtIO Authentication layer
+#
+authenticationEnabled=false
+
+#
+# Specifies the Hawtio war file to use for
+#
+warFileLocation = C:\\Users\\matthew\\Downloads\\hawtio-default-2.9.1.war
+
+# Specify if needed to be bound to a single interface
+#
+#host = 10.140.62.150
+
+port = 8080

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<!-- ====================================================================== -->
+<!-- Sample provider configuration file                                     -->
+<!--                                                                        -->
+<!-- This configures JMS CTS to test OpenJMS                                -->
+<!-- ====================================================================== -->
+
+<configuration>
+
+  <provider>
+      <name>ProtonJ</name>
+      <class>org.maps.network.protocol.impl.amqp.jms.jmscts.JmsProvider</class>
+      <paths>
+        <path>${jmscts.home}/config</path>
+        <path>${home}/target/classes</path>
+        <path>${home}/target/test-classes</path>
+      </paths>
+      <config></config>
+  </provider>
+
+</configuration>

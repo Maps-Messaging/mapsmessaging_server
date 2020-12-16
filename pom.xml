@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ This program is free software: you can redistribute it and/or modify
+  ~  it under the terms of the GNU General Public License as published by
+  ~  the Free Software Foundation, either version 3 of the License, or
+  ~  (at your option) any later version.
+  ~
+  ~  This program is distributed in the hope that it will be useful,
+  ~  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~  GNU General Public License for more details.
+  ~
+  ~  You should have received a copy of the GNU General Public License
+  ~  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  ~
+  -->
+
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <artifactId>message_daemon</artifactId>
+
+  <!-- Code Coverage configuration -->
+  <build>
+    <plugins>
+      <!-- Allow JDKs greater than 1.8 to be used by maven -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+          <compilerArgs>
+            <arg>-h</arg>
+            <arg>src/main/cpp/</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <!-- Setup code coverage by jacoco for our tests -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <!-- attached to Maven test phase -->
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Setup the JUnit tests runner -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.22.2</version>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+            <include>**/*IT.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+
+      <!-- Build JavaCC files -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javacc-maven-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>javacc</id>
+            <goals>
+              <goal>javacc</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>${basedir}/src/main/javacc</sourceDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Now build a single jar with everything in it -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>
+                    org.maps.messaging.MessageDaemon
+                  </mainClass>
+                </manifest>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- JavaDoc -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <reportOutputDirectory>${project.build.directory}/site/docs</reportOutputDirectory>
+          <show>public</show>
+          <encoding>UTF-8</encoding>
+          <charset>UTF-8</charset>
+          <excludePackageNames>org.maps.messaging.engine.selector</excludePackageNames>
+        </configuration>
+      </plugin>
+
+      <!-- Create a directory with all the dependencies in and move it into the lib directory -->
+      <plugin>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <executions>
+              <execution>
+                  <phase>install</phase>
+                  <goals>
+                      <goal>copy-dependencies</goal>
+                  </goals>
+                  <configuration>
+                      <outputDirectory>${project.build.directory}/site/lib</outputDirectory>
+                      <includeScope>compile</includeScope>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <!-- Local Artifactory server -->
+  <repositories>
+    <repository>
+      <id>spring-repository</id>
+      <name>releases</name>
+      <url>https://repo.spring.io/plugins-release/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    <sonar.sources>src/main</sonar.sources>
+    <!-- Below property indicates the pattern of the test suite -->
+    <runSuite>**/*Suite.class</runSuite>
+    <sonar.test.exclusions>
+      **/*Test.*,**/*IT.*
+    </sonar.test.exclusions>
+
+    <!-- Sonar-JaCoCo properties -->
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
+    <sonar.language>java</sonar.language>
+  </properties>
+
+  <dependencies>
+
+    <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
+    <dependency>
+      <groupId>javax.jms</groupId>
+      <artifactId>javax.jms-api</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/tanukisoft/wrapper -->
+    <dependency>
+      <groupId>tanukisoft</groupId>
+      <artifactId>wrapper</artifactId>
+      <version>3.2.3</version>
+    </dependency>
+
+    <!--JMX annotations -->
+    <dependency>
+      <groupId>com.udojava</groupId>
+      <artifactId>JMXWrapper</artifactId>
+      <version>1.4</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.13.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.13.1</version>
+    </dependency>
+
+    <!-- Map based disk store -->
+    <dependency>
+      <groupId>org.mapdb</groupId>
+      <artifactId>mapdb</artifactId>
+      <version>3.0.8</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/net.java.dev.javacc/javacc -->
+    <dependency>
+      <groupId>net.java.dev.javacc</groupId>
+      <artifactId>javacc</artifactId>
+      <version>7.0.5</version>
+    </dependency>
+
+    <!-- Serial Port support -->
+    <dependency>
+      <groupId>com.fazecast</groupId>
+      <artifactId>jSerialComm</artifactId>
+      <version>2.6.2</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.json/json -->
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20200518</version>
+    </dependency>
+
+    <!-- Add annotations for not null -->
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>16.0.2</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.qpid/proton-j -->
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>proton-j</artifactId>
+      <version>0.33.6</version>
+    </dependency>
+
+    <!-- Test Dependency Imports-->
+
+    <!-- Junit5 -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.5.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.eclipse.paho/org.eclipse.paho.client.mqttv3 -->
+    <dependency>
+      <groupId>org.eclipse.paho</groupId>
+      <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+      <version>1.2.4</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.qpid/qpid-jms-client -->
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-jms-client</artifactId>
+      <version>0.53.0</version>
+      <scope>test</scope>
+    </dependency>
+
+
+    <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-client -->
+    <dependency>
+      <groupId>org.projectodd.stilts</groupId>
+      <artifactId>stilts-stomp-client</artifactId>
+      <version>0.1.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-websocket -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-websocket</artifactId>
+      <version>5.2.6.RELEASE</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-messaging</artifactId>
+      <version>4.3.12.RELEASE</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.glassfish.tyrus.bundles</groupId>
+      <artifactId>tyrus-standalone-client</artifactId>
+      <version>1.9</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/net.ser1/gozirra-client -->
+    <dependency>
+      <groupId>net.ser1</groupId>
+      <artifactId>gozirra-client</artifactId>
+      <version>0.4.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipse.paho.mqttsn</groupId>
+      <artifactId>mqttsn</artifactId>
+      <version>1.2.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/src/test/lib/MQTT-SN-UDP-Client-1.2.1-OKSE.jar</systemPath>
+    </dependency>
+
+    <!-- Jolokia Dependencies -->
+
+    <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-jvm -->
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-jvm</artifactId>
+      <version>1.6.2</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-core -->
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-core</artifactId>
+      <version>1.6.2</version>
+    </dependency>
+
+
+    <!-- Web Based administration -->
+    <dependency>
+      <groupId>io.hawt</groupId>
+      <artifactId>hawtio-embedded</artifactId>
+      <version>2.8.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <groupId>org.maps.messaging</groupId>
+  <modelVersion>4.0.0</modelVersion>
+  <version>1.1-SNAPSHOT</version>
+</project>
