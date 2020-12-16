@@ -159,12 +159,12 @@
     </plugins>
   </build>
 
-  <!-- Local Artifactory server -->
+  <!-- Repo for java stomp client used for testing Artifactory server -->
   <repositories>
     <repository>
-      <id>spring-repository</id>
+      <id>paultegelaar</id>
       <name>releases</name>
-      <url>https://repo.spring.io/plugins-release/</url>
+      <url>https://bintray.com/paultegelaar/maven/gozirra-client</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
@@ -270,7 +270,25 @@
       <version>0.33.6</version>
     </dependency>
 
-    <!-- Test Dependency Imports-->
+    <!-- Jolokia Dependencies -->
+
+    <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-jvm -->
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-jvm</artifactId>
+      <version>1.6.2</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-core -->
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-core</artifactId>
+      <version>1.6.2</version>
+    </dependency>
+
+    <!-- ***********************  -->
+    <!-- Test Dependency Imports -->
+    <!-- ***********************  -->
 
     <!-- Junit5 -->
     <dependency>
@@ -332,6 +350,7 @@
       <groupId>net.ser1</groupId>
       <artifactId>gozirra-client</artifactId>
       <version>0.4.1</version>
+      <type>pom</type>
       <scope>test</scope>
     </dependency>
 
@@ -341,22 +360,6 @@
       <version>1.2.1</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/src/test/lib/MQTT-SN-UDP-Client-1.2.1-OKSE.jar</systemPath>
-    </dependency>
-
-    <!-- Jolokia Dependencies -->
-
-    <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-jvm -->
-    <dependency>
-      <groupId>org.jolokia</groupId>
-      <artifactId>jolokia-jvm</artifactId>
-      <version>1.6.2</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-core -->
-    <dependency>
-      <groupId>org.jolokia</groupId>
-      <artifactId>jolokia-core</artifactId>
-      <version>1.6.2</version>
     </dependency>
 
 
