@@ -164,7 +164,7 @@
     <repository>
       <id>paultegelaar</id>
       <name>releases</name>
-      <url>https://bintray.com/paultegelaar/maven/gozirra-client</url>
+      <url>https://dl.bintray.com/paultegelaar/</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
@@ -350,7 +350,6 @@
       <groupId>net.ser1</groupId>
       <artifactId>gozirra-client</artifactId>
       <version>0.4.1</version>
-      <type>pom</type>
       <scope>test</scope>
     </dependency>
 
