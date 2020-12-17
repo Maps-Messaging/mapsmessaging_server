@@ -22,6 +22,7 @@
 
   <!-- Code Coverage configuration -->
   <build>
+
     <plugins>
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
@@ -42,7 +43,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.2</version>
+        <version>0.8.5</version>
         <executions>
           <execution>
             <goals>
@@ -160,14 +161,15 @@
   </build>
 
   <!-- Repo for java stomp client used for testing Artifactory server -->
+
   <repositories>
     <repository>
-      <id>paultegelaar</id>
-      <name>releases</name>
-      <url>https://dl.bintray.com/paultegelaar/</url>
       <snapshots>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
       </snapshots>
+      <id>bintray-paultegelaar-maven</id>
+      <name>bintray</name>
+      <url>https://dl.bintray.com/paultegelaar/maven/</url>
     </repository>
   </repositories>
 
@@ -361,7 +363,6 @@
       <systemPath>${project.basedir}/src/test/lib/MQTT-SN-UDP-Client-1.2.1-OKSE.jar</systemPath>
     </dependency>
 
-
     <!-- Web Based administration -->
     <dependency>
       <groupId>io.hawt</groupId>
@@ -372,7 +373,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.10</version>
+      <version>4.8.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
