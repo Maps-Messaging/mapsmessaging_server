@@ -20,6 +20,31 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>message_daemon</artifactId>
 
+  <profiles>
+    <profile>
+      <id>Windows</id>
+      <activation>
+        <os>
+          <family>Windows</family>
+        </os>
+      </activation>
+      <properties>
+        <script.extension>.bat</script.extension>
+      </properties>
+    </profile>
+    <profile>
+      <id>unix</id>
+      <activation>
+        <os>
+          <family>unix</family>
+        </os>
+      </activation>
+      <properties>
+        <script.extension>.sh</script.extension>
+      </properties>
+    </profile>
+  </profiles>
+
   <!-- Code Coverage configuration -->
   <build>
 
@@ -160,6 +185,25 @@
               </execution>
           </executions>
       </plugin>
+       <!-- Build a self signed cert keystore for use in testing -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <id>self-signed-certs</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>./src/main/scripts/generate${script.extension}</executable>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
