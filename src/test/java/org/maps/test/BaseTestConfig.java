@@ -52,14 +52,14 @@ public class BaseTestConfig extends BaseTest {
       //
       // Setup Certificate
       //
-      System.setProperty("javax.net.ssl.keyStore","my-keystore.jks");
-      System.setProperty("javax.net.ssl.keyStorePassword","password");
-      System.setProperty("javax.net.ssl.trustStore","my-truststore.jks");
-      System.setProperty("javax.net.ssl.trustStorePassword","password");
-      System.setProperty("javax.net.debug", "none");
+      setIfNot("javax.net.ssl.keyStore","my-keystore.jks");
+      setIfNot("javax.net.ssl.keyStorePassword","password");
+      setIfNot("javax.net.ssl.trustStore","my-truststore.jks");
+      setIfNot("javax.net.ssl.trustStorePassword","password");
+      setIfNot("javax.net.debug", "none");
 
-      System.setProperty("java.security.auth.login.config", "=src/test/resources/jaasAuth.config");
-      System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+      setIfNot("java.security.auth.login.config", "=src/test/resources/jaasAuth.config");
+      setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
       md = new MessageDaemon();
       Runnable runnable = () -> {
         md.start(null);
@@ -72,6 +72,12 @@ public class BaseTestConfig extends BaseTest {
         // We don't really care, this is a test
         Thread.currentThread().interrupt();
       }
+    }
+  }
+
+  private static void setIfNot(String key, String value){
+    if(System.getProperty(key) == null){
+      System.setProperty(key, value);
     }
   }
 

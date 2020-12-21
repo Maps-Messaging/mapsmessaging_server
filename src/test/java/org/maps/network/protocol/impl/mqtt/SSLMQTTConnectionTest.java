@@ -24,34 +24,51 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.maps.test.BaseTestConfig;
 
-public class SSLMQTTConnectionTest extends MQTTPublishEventTest {
+public class SSLMQTTConnectionTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test valid user over SSL")
   public void testValidUser() throws MqttException {
-    MqttClient client = new MqttClient("ssl://localhost:8444", UUID.randomUUID().toString(),  new MemoryPersistence());
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setUserName("user1");
-    options.setPassword("password1".toCharArray());
-    options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
-    client.connect(options);
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-    client.close();
+    try {
+      MqttClient client = new MqttClient("ssl://127.0.0.1:8444", UUID.randomUUID().toString(),  new MemoryPersistence());
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setUserName("user1");
+      options.setPassword("password1".toCharArray());
+      options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+      client.connect(options);
+      Assertions.assertTrue(client.isConnected());
+      client.disconnect();
+      Assertions.assertFalse(client.isConnected());
+      client.close();
+    } catch (MqttException e) {
+      e.printStackTrace(System.err);
+      if(e.getCause() != null) {
+        e.getCause().printStackTrace(System.err);
+      }
+      throw e;
+    }
   }
 
   @Test
   @DisplayName("Test valid user over SSL")
   public void testValidSSLUser() throws MqttException {
-    MqttClient client = new MqttClient("ssl://localhost:8445", UUID.randomUUID().toString(), new MemoryPersistence());
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
-    client.connect(options);
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-    client.close();
+    try {
+      MqttClient client = new MqttClient("ssl://127.0.0.1:8445", UUID.randomUUID().toString(), new MemoryPersistence());
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+      client.connect(options);
+      Assertions.assertTrue(client.isConnected());
+      client.disconnect();
+      Assertions.assertFalse(client.isConnected());
+      client.close();
+    } catch (MqttException e) {
+      e.printStackTrace(System.err);
+      if(e.getCause() != null) {
+        e.getCause().printStackTrace(System.err);
+      }
+      throw e;
+    }
   }
 }

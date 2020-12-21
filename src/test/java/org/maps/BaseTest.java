@@ -38,15 +38,15 @@ public class BaseTest {
     Date dt = new Date();
     System.err.println(getHeaderPartition());
     if(testInfo != null) {
-      System.err.println(getHeader("Starting:: " + testInfo.getDisplayName()));
+      System.err.println(pad("Starting:: " + testInfo.getDisplayName(), " "));
     }
-    System.err.println(getHeader("Date    :: "+dt.toString()));
+    System.err.println(pad("Date    :: "+dt.toString(), " "));
     System.err.println(getHeaderPartition());
   }
 
   @AfterEach
   public void logTestFinish(TestInfo testInfo){
-    System.err.println(getHeader("Completed:: "+testInfo.getDisplayName()+", "+(System.currentTimeMillis()-start)+"ms"));
+    System.err.println(pad("Completed:: "+testInfo.getDisplayName()+", "+(System.currentTimeMillis()-start)+"ms", " "));
     System.err.println(getHeaderPartition());
   }
 
@@ -60,17 +60,21 @@ public class BaseTest {
   }
 
   private String getHeader(String header){
+    return pad(header, "-");
+  }
+
+  private String pad(String value, String pad){
     StringBuilder sb = new StringBuilder("|");
-    int len = HEADER_SIZE - header.length();
+    int len = HEADER_SIZE - value.length();
     if(len >= 0){
-      sb.append(header);
+      sb.append(value);
       for(int x=0;x<len;x++){
-        sb.append("-");
+        sb.append(pad);
       }
     }
     else{
-      String h1 = header.substring(0, HEADER_SIZE);
-      String h2 = header.substring(HEADER_SIZE);
+      String h1 = value.substring(0, HEADER_SIZE);
+      String h2 = value.substring(HEADER_SIZE);
 
       String t = getHeader(h1)+"\n";
       t += getHeader(h2);
@@ -80,4 +84,5 @@ public class BaseTest {
     sb.append("|");
     return sb.toString();
   }
+
 }

@@ -55,8 +55,9 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <source>11</source>
-          <target>11</target>
+          <encoding>UTF-8</encoding>
+          <source>13</source>
+          <target>13</target>
           <compilerArgs>
             <arg>-h</arg>
             <arg>src/main/cpp/</arg>
@@ -92,6 +93,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.2</version>
         <configuration>
+          <argLine>
+            -Dfile.encoding=UTF-8 -Djavax.net.ssl.trustStore=${project.basedir}\my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}\my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
+          </argLine>
           <includes>
             <include>**/*Test.java</include>
             <include>**/*IT.java</include>

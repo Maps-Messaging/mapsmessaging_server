@@ -69,6 +69,10 @@ public abstract class PahoConformance extends BaseTestConfig {
 
   private List<String> scanForTests(File pythonSource) throws IOException {
     List<String> tests = new ArrayList<>();
+    if(!pythonSource.exists()){
+      System.err.println("\n\tThe PAHO MQTT conformance tests can not be found at "+pythonSource.toString()+"\n");
+      return tests;
+    }
     try (FileReader reader = new FileReader(pythonSource)) {
       char[] content = new char[(int) pythonSource.length()];
       if (reader.read(content) == content.length) {
