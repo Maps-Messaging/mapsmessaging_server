@@ -251,7 +251,11 @@
           </execution>
         </executions>
         <configuration>
-          <file>src/test/resources/DestinationManager.props</file>
+          <basedir>src/test/resources</basedir>
+          <includes>
+            <include>DestinationManager.props</include>
+            <include>log4j2.xml</include>
+          </includes>
           <regex>false</regex>
           <replacements>
             <replacement>
