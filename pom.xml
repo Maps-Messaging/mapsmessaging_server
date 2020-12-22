@@ -29,6 +29,7 @@
         </os>
       </activation>
       <properties>
+        <chmodCommand>REM </chmodCommand> <!-- is no command for windows -->
         <script.extension>.bat</script.extension>
       </properties>
     </profile>
@@ -41,6 +42,7 @@
       </activation>
       <properties>
         <script.extension>.sh</script.extension>
+        <chmodCommand>chmod +x </chmodCommand>
       </properties>
     </profile>
   </profiles>
@@ -202,6 +204,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
+              <executable>${chmodCommand}./src/main/scripts/generate${script.extension}</executable>
               <executable>./src/main/scripts/generate${script.extension}</executable>
             </configuration>
           </execution>
