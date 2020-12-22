@@ -29,7 +29,6 @@
         </os>
       </activation>
       <properties>
-        <chmodCommand>REM </chmodCommand> <!-- is no command for windows -->
         <script.extension>.bat</script.extension>
       </properties>
     </profile>
@@ -42,8 +41,33 @@
       </activation>
       <properties>
         <script.extension>.sh</script.extension>
-        <chmodCommand>chmod +x </chmodCommand>
+        <chmodCommand>chmod</chmodCommand>
       </properties>
+      <build>
+      <plugins>
+      <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>1.2.1</version>
+        <executions>
+      <execution>
+        <id>config-self-signed-certs</id>
+        <phase>validate</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>/bin/chmod</executable>
+          <arguments>
+            <argument>+x</argument>
+            <argument>./src/main/scripts/generate${script.extension}</argument>
+          </arguments>
+        </configuration>
+      </execution>
+        </executions>
+      </plugin>
+      </plugins>
+      </build>
     </profile>
   </profiles>
 
@@ -204,8 +228,9 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>${chmodCommand}./src/main/scripts/generate${script.extension}</executable>
-              <executable>./src/main/scripts/generate${script.extension}</executable>
+              <executable>
+                ./src/main/scripts/generate${script.extension}
+              </executable>
             </configuration>
           </execution>
         </executions>
