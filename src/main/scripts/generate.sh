@@ -1,4 +1,8 @@
 #!/bin/bash
+echo "===================================================="
+echo "Please note: These are self signed certicates and"
+echo "not intended for production use but only local tests"
+echo "===================================================="
 
 rm *.jks 2> /dev/null
 rm *.pem 2> /dev/null
@@ -9,8 +13,8 @@ echo "===================================================="
 
 # generate private keys (for root and ca)
 
-keytool -storetype JKS  -genkeypair -alias root -dname "cn=Local Network - mapsmessaging.io Development" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore root.jks -keypass password -storepass password
-keytool -storetype JKS  -genkeypair -alias ca -dname "cn=Local Network - mapsmessaging.io Development" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore ca.jks -keypass password -storepass password
+keytool -storetype JKS  -genkeypair -alias root -dname "cn=Local Network - mapsmessaging.io Testing Only" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore root.jks -keypass password -storepass password
+keytool -storetype JKS  -genkeypair -alias ca -dname "cn=Local Network - mapsmessaging.io Testing Only" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore ca.jks -keypass password -storepass password
 
 # generate root certificate
 

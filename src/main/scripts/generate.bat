@@ -1,3 +1,10 @@
+echo off
+echo "===================================================="
+echo "Please note: These are self signed certicates and"
+echo "not intended for production use but only local tests"
+echo "===================================================="
+
+
 del *.jks
 del *.pem
 
@@ -8,8 +15,8 @@ echo "===================================================="
 REM 
 REM  generate private keys (for root and ca)
 REM 
-keytool -storetype JKS  -genkeypair -alias root -dname "cn=Local Network - mapsmessaging.io Development" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore root.jks -keypass password -storepass password
-keytool -storetype JKS  -genkeypair -alias ca -dname "cn=Local Network - mapsmessaging.io Development" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore ca.jks -keypass password -storepass password
+keytool -storetype JKS  -genkeypair -alias root -dname "cn=Local Network - mapsmessaging.io Testing Only" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore root.jks -keypass password -storepass password
+keytool -storetype JKS  -genkeypair -alias ca -dname "cn=Local Network - mapsmessaging.io Testing Only" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore ca.jks -keypass password -storepass password
 
 REM 
 REM  generate root certificate
