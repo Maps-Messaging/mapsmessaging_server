@@ -32,7 +32,7 @@ public class EchoSSLConnectionTest extends BaseTestConfig  {
       EchoClient echoClient = new SSLEchoClient("localhost", 8444);
       echoClient.close();
     } catch (IOException e) {
-      Assertions.fail("Server should be running on the port defined and we should ba ble to connect");
+      Assertions.fail("Server should be running on the port defined and we should be able to connect");
     }
   }
 
