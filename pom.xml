@@ -260,7 +260,7 @@
           <replacements>
             <replacement>
               <token>__TARGET_DIR__</token>
-              <value>${project.build.directory}</value>
+              <value>./target</value>
             </replacement>
           </replacements>
         </configuration>
