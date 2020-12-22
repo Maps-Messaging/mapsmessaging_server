@@ -80,9 +80,9 @@ public class MessageStreamTest {
 
   @Test
   void messageStream() throws IOException {
-    File file = new File("./data/messageStream");
+    File file = new File("./target/data/messageStream");
     Files.createDirectories(file.toPath());
-    DBResource dbResource = new DBResource("./data/messageStream", "messageStream");
+    DBResource dbResource = new DBResource("./target/data/messageStream", "messageStream");
 
     // Remove any before we start
     if(!dbResource.isEmpty()){
