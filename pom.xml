@@ -120,7 +120,7 @@
         <version>2.22.2</version>
         <configuration>
           <argLine>
-            -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}\my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}\my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
+            -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
           </argLine>
           <includes>
             <include>**/*Test.java</include>
