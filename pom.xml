@@ -215,6 +215,7 @@
               </execution>
           </executions>
       </plugin>
+
        <!-- Build a self signed cert keystore for use in testing -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -234,6 +235,31 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <!-- replace the data directory in the test to move it into the target directory -->
+      <plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>replacer</artifactId>
+        <version>1.5.3</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>replace</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <file>src/test/resources/DestinationManager.props</file>
+          <regex>false</regex>
+          <replacements>
+            <replacement>
+              <token>__TARGET_DIR__</token>
+              <value>${project.build.directory}</value>
+            </replacement>
+          </replacements>
+        </configuration>
       </plugin>
 
     </plugins>
