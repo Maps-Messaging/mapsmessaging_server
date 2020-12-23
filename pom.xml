@@ -202,7 +202,7 @@
           <artifactId>maven-dependency-plugin</artifactId>
           <executions>
               <execution>
-                  <phase>install</phase>
+                  <phase>package</phase>
                   <goals>
                       <goal>copy-dependencies</goal>
                   </goals>
@@ -270,7 +270,6 @@
   </build>
 
   <!-- Repo for java stomp client used for testing Artifactory server -->
-
   <repositories>
     <repository>
       <snapshots>
@@ -381,7 +380,32 @@
       <version>0.33.6</version>
     </dependency>
 
-    <!-- Jolokia Dependencies -->
+    <!-- Hawtio Dependencies -->
+    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-embedded -->
+    <dependency>
+      <groupId>io.hawt</groupId>
+      <artifactId>hawtio-embedded</artifactId>
+      <version>2.12.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-war -->
+    <dependency>
+      <groupId>io.hawt</groupId>
+      <artifactId>hawtio-war</artifactId>
+      <version>2.12.1</version>
+      <scope>provided</scope>
+      <type>war</type>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-app -->
+    <dependency>
+      <groupId>io.hawt</groupId>
+      <artifactId>hawtio-app</artifactId>
+      <version>2.12.1</version>
+    </dependency>
+
+
+    <!-- Jolokia Dependencies for JMX -> Rest API -->
 
     <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-jvm -->
     <dependency>
@@ -470,14 +494,6 @@
       <version>1.2.1</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/src/test/lib/MQTT-SN-UDP-Client-1.2.1-OKSE.jar</systemPath>
-    </dependency>
-
-    <!-- Web Based administration -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-embedded</artifactId>
-      <version>2.8.0</version>
-      <scope>test</scope>
     </dependency>
 
     <dependency>

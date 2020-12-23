@@ -40,7 +40,7 @@ public class HawtioManager {
 
   public HawtioManager() {
     properties = PropertyManager.getInstance().getProperties("hawtio");
-    System.setProperty("hawtio.authenticationEnabled", properties.getProperty("authenticationEnabled"));
+    System.setProperty("hawtio.authenticationEnabled", properties.getProperty("authenticationEnabled", "false"));
     String checkFile = properties.getProperty("warFileLocation", "");
     enabled = properties.getProperty("enable", "true").equalsIgnoreCase("true");
     if (enabled) {
