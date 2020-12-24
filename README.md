@@ -11,7 +11,7 @@ Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt
 ## Protocol Support
 With mapsmessaging server, the entire purpose of the server is to support all of the open standards, completely and allow for message flow between different protocols and versions seamlessly and without any additional servers or code. It currently supports, out of the box
 
-| Protocol | Version | Support Status | WebSocket | Secure WebSockets | TCP | SSL | UDP | LoRa | Serial |
+| Protocol | Version | Support Status | WebSocket | Secure WebSockets | TCP | SSL | UDP | LoRa :red_circle: | Serial |
 | -------- | ------- | -------------- | --------- | ----------------- | --- | --- | --- | ---- | ------ |
 | Stomp    | 1.1     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark:| :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | Stomp    | 1.2     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
@@ -24,9 +24,10 @@ With mapsmessaging server, the entire purpose of the server is to support all of
 
 :heavy_check_mark: - Tested, has conformance tests for validity of the protocol\
 :small_red_triangle: - Not tested, but should work\
-:heavy_exclamation_mark: - Transport does not really support a connection based protocol\
 :small_blue_diamond: - Still building conformance tests to ensure correct integration\
 :small_orange_diamond: - Using the QPID [JMS2.0 over AMQP client](https://qpid.apache.org/components/jms/index.html)\
+:red_circle: - Requires appropriate hardware for support\
+:heavy_exclamation_mark: - Transport does not really support a connection based protocol\
 :x: - The protocol and the transport are not compatible\
 \
 These protocols and transports are supported natively by the server, no additional plugins are necessary to enable them. They are all first rate citizens of the server and can interop with each other.
