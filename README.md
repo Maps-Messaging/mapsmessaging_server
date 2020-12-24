@@ -26,6 +26,8 @@ With mapsmessaging server, the entire purpose of the server is to support all of
 :small_red_triangle: - Not tested, but should work\
 :heavy_exclamation_mark: - Transport does not really support a connection based protocol\
 :small_blue_diamond: - Still building conformance tests to ensure correct integration\
-:small_orange_diamond: - Using the QPID [JMS2.0 over AMQP client](https://qpid.apache.org/components/jms/index.html) 
-
+:small_orange_diamond: - Using the QPID [JMS2.0 over AMQP client](https://qpid.apache.org/components/jms/index.html)\
+:x: - The protocol and the transport are not compatible\
+\
+These protocols and transports are supported natively by the server, no additional plugins are necessary to enable them. They are all first rate citizens of the server and can interop with each other.
 
