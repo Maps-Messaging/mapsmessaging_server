@@ -45,7 +45,8 @@ import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.transformation.TransformationManager;
 import org.maps.utilities.admin.SimpleTaskSchedulerJMX;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
+import org.maps.utilities.configuration.ConsulManager;
 import org.maps.utilities.service.Service;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -71,6 +72,8 @@ public class MessageDaemon implements WrapperListener {
   private final HTreeMap<String, String> config;
   private final String homeDirectory;
   private final AtomicBoolean isStarted;
+
+  private final ConsulManager consulManager;
 
   public MessageDaemon() throws IOException {
     instance = this;
@@ -114,8 +117,17 @@ public class MessageDaemon implements WrapperListener {
     mBean = new MessageDaemonJMX(this);
     new SimpleTaskSchedulerJMX(mBean.getTypePath());
 
+    //<editor-fold desc="Now see if we can start the Consul Manager">
+    ConsulManager cmanager = null;
+    try {
+      cmanager = new ConsulManager(uniqueId);
+    } catch (Exception e) {
+    }
+    consulManager = cmanager;
+    //</editor-fold>
 
-    ConfigurationProperties properties = PropertyManager.getInstance().getProperties("MessageDaemon");
+    ConfigurationManager.getInstance().initialise(uniqueId.toString()+"_", consulManager);
+    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
     int delayTimer = properties.getIntProperty("DelayedPublishInterval", 1000);
     int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
     int transactionExpiry = properties.getIntProperty("TransactionExpiry", 3600000);
@@ -218,6 +230,9 @@ public class MessageDaemon implements WrapperListener {
     networkManager.initialise();
     networkManager.startAll();
     hawtioManager.start();
+    if(consulManager != null) {
+      consulManager.register();
+    }
     isStarted.set(true);
     return null;
   }

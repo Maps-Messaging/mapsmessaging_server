@@ -30,7 +30,7 @@ import org.maps.network.EndPointManager.STATE;
 import org.maps.network.admin.NetworkManagerJMX;
 import org.maps.network.io.EndPointServerFactory;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
 import org.maps.utilities.service.Service;
 import org.maps.utilities.service.ServiceManager;
 
@@ -46,7 +46,7 @@ public class NetworkManager implements ServiceManager {
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
 
-    properties = PropertyManager.getInstance().getPropertiesList("NetworkManager");
+    properties = ConfigurationManager.getInstance().getPropertiesList("NetworkManager");
     logger.log(LogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
 
     endPointServers = ServiceLoader.load(EndPointServerFactory.class);

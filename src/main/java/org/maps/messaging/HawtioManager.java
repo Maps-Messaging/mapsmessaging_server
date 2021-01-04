@@ -27,7 +27,7 @@ import java.lang.reflect.Method;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
 
 public class HawtioManager {
 
@@ -39,7 +39,7 @@ public class HawtioManager {
 
 
   public HawtioManager() {
-    properties = PropertyManager.getInstance().getProperties("hawtio");
+    properties = ConfigurationManager.getInstance().getProperties("hawtio");
     System.setProperty("hawtio.authenticationEnabled", properties.getProperty("authenticationEnabled", "false"));
     String checkFile = properties.getProperty("warFileLocation", "");
     enabled = properties.getProperty("enable", "true").equalsIgnoreCase("true");

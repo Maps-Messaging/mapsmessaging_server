@@ -345,6 +345,13 @@
       <version>3.0.8</version>
     </dependency>
 
+    <!-- Consul client API -->
+    <dependency>
+      <groupId>com.orbitz.consul</groupId>
+      <artifactId>consul-client</artifactId>
+      <version>1.4.0</version>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/net.java.dev.javacc/javacc -->
     <dependency>
       <groupId>net.java.dev.javacc</groupId>

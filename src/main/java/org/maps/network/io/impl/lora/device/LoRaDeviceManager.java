@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import org.maps.network.EndPointURL;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
 
 public class LoRaDeviceManager {
 
@@ -44,7 +44,7 @@ public class LoRaDeviceManager {
     synchronized (physicalDevices) {
       try {
         System.loadLibrary("LoRaDevice");
-        Map<Integer, ConfigurationProperties> configMap = PropertyManager.getInstance().getPropertiesList("LoRaDevice");
+        Map<Integer, ConfigurationProperties> configMap = ConfigurationManager.getInstance().getPropertiesList("LoRaDevice");
         if(configMap != null){
           for (ConfigurationProperties properties : configMap.values()) {
             LoRaDeviceConfigBuilder configBuilder = new LoRaDeviceConfigBuilder();

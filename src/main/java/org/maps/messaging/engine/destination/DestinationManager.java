@@ -48,7 +48,7 @@ import org.maps.messaging.engine.resources.ResourceFactory;
 import org.maps.messaging.engine.system.SystemTopic;
 import org.maps.messaging.engine.tasks.Response;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
 public class DestinationManager {
@@ -68,7 +68,7 @@ public class DestinationManager {
   public DestinationManager(int time) {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
-    Map<Integer, ConfigurationProperties> list = PropertyManager.getInstance().getPropertiesList("DestinationManager");
+    Map<Integer, ConfigurationProperties> list = ConfigurationManager.getInstance().getPropertiesList("DestinationManager");
     String root = ".";
     if(list != null) {
       for (ConfigurationProperties configuration : list.values()) {
