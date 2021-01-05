@@ -109,7 +109,13 @@ public class MessageDaemon implements WrapperListener {
     if (serverId != null) {
       uniqueId = UUID.fromString(serverId);
     } else {
-      uniqueId = UUID.randomUUID();
+      String suppliedUUID = System.getProperty("UUID");
+      if(suppliedUUID == null) {
+        uniqueId = UUID.randomUUID();
+      }
+      else{
+        uniqueId = UUID.fromString(suppliedUUID);
+      }
       config.put(SERVER_ID, uniqueId.toString());
       dataStore.atomicString(SERVER_ID, uniqueId.toString());
     }
