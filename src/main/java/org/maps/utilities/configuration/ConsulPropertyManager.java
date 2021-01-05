@@ -9,19 +9,19 @@ import java.util.List;
 import java.util.Optional;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.maps.messaging.consul.ConsulManagerFactory;
 
 public class ConsulPropertyManager extends PropertyManager {
 
   private final String serverPrefix;
-  private final KeyValueClient keyValueClient;
 
-  public ConsulPropertyManager(String prefix, ConsulManager manager){
+  public ConsulPropertyManager(String prefix){
     serverPrefix = prefix+"_";
-    keyValueClient = manager.getKeyValueManager();
   }
 
   protected void load() {
     try {
+      KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
       List<String> keys = keyValueClient.getKeys(serverPrefix);
       for (String key : keys) {
         try {
@@ -44,11 +44,13 @@ public class ConsulPropertyManager extends PropertyManager {
 
   @Override
   protected void store(String name) {
+    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     keyValueClient.putValue(serverPrefix+name, getPropertiesJSON(name).toString(2));
   }
 
   @Override
   public void copy(PropertyManager propertyManager) {
+    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     // Remove what we have
     for(String name:properties.keySet()){
       keyValueClient.deleteKey(serverPrefix+name);
@@ -62,6 +64,7 @@ public class ConsulPropertyManager extends PropertyManager {
   }
 
   public void save(){
+    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     // Now lets Store it in key value pairs in consul
     for(String name:properties.keySet()){
       keyValueClient.putValue(serverPrefix+name, getPropertiesJSON(name).toString(2));

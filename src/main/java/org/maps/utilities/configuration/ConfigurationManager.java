@@ -28,6 +28,8 @@ import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
+import org.maps.messaging.consul.ConsulManager;
+import org.maps.messaging.consul.ConsulManagerFactory;
 
 public class ConfigurationManager {
 
@@ -52,11 +54,11 @@ public class ConfigurationManager {
     return instance;
   }
 
-  public void initialise(@NotNull String serverId, @Nullable ConsulManager consulManager){
-    if(consulManager != null){
-      authoritive = new ConsulPropertyManager(serverId, consulManager);
+  public void initialise(@NotNull String serverId){
+    if(ConsulManagerFactory.getInstance().isStarted()){
+      authoritive = new ConsulPropertyManager(serverId);
       authoritive.load();
-      propertyManagers.add(new ConsulPropertyManager("default_", consulManager));
+      propertyManagers.add(new ConsulPropertyManager("default_"));
     }
     propertyManagers.add(new FilePropertyManager());
     for(PropertyManager manager:propertyManagers){
@@ -93,8 +95,10 @@ public class ConfigurationManager {
     for(PropertyManager manager:propertyManagers) {
       map = manager.getPropertiesList(name);
       if(map != null){
-        authoritive.properties.put(name, map);
-        authoritive.store(name);
+        if(authoritive != null) {
+          authoritive.properties.put(name, map);
+          authoritive.store(name);
+        }
         return map;
       }
     }
@@ -105,7 +109,7 @@ public class ConfigurationManager {
     ConfigurationProperties config;
     if(authoritive != null){
       config = authoritive.getProperties(name);
-      if(config != null && !config.isEmpty()){
+      if(!config.isEmpty()){
         return config;
       }
     }
@@ -114,8 +118,10 @@ public class ConfigurationManager {
       if(!entry.isEmpty()){
         Map<Integer, ConfigurationProperties> map = new LinkedHashMap<>();
         map.put(0, entry);
-        authoritive.properties.put(name, map);
-        authoritive.store(name);
+        if(authoritive != null) {
+          authoritive.properties.put(name, map);
+          authoritive.store(name);
+        }
         return entry;
       }
     }

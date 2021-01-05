@@ -1,4 +1,4 @@
-package org.maps.utilities.configuration;
+package org.maps.messaging.consul;
 
 import com.orbitz.consul.AgentClient;
 import com.orbitz.consul.Consul;
@@ -7,10 +7,10 @@ import com.orbitz.consul.NotRegisteredException;
 import com.orbitz.consul.model.agent.ImmutableRegistration;
 import com.orbitz.consul.model.agent.Registration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
@@ -18,11 +18,11 @@ public class ConsulManager implements Runnable {
 
   private final Consul client;
   private final AgentClient agentClient;
-  private Registration service;
   private final UUID serviceId;
+  private Future<Runnable> scheduledTask;
 
-  public ConsulManager(UUID id) throws NotRegisteredException {
-    client = Consul.builder().build(); // connect on localhost
+  public ConsulManager(UUID id) {
+    client = Consul.builder().build();
     agentClient = client.agentClient();
     serviceId = id;
   }
@@ -31,22 +31,27 @@ public class ConsulManager implements Runnable {
     return client.keyValueClient();
   }
 
-  public void register(){
+  public void register(Map<String,String> meta){
     List<String> propertyNames = new ArrayList<>();
-    Map<String, String> meta = new LinkedHashMap<>();
-    meta.put("version", "1.0");
+    meta.put("version", Constants.VERSION);
 
-    service = ImmutableRegistration.builder()
+    Registration service = ImmutableRegistration.builder()
         .id(serviceId.toString())
-        .name("mapsMessaging")
-        .port(8080)
-        .check(Registration.RegCheck.ttl(3L)) // registers with a TTL of 3 seconds
+        .name(Constants.NAME)
+        .port(Constants.CONSUL_PORT)
+        .check(Registration.RegCheck.ttl(Constants.PING_TIME))
         .tags(propertyNames)
         .meta(meta)
         .build();
 
     agentClient.register(service);
-    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 2,2, TimeUnit.SECONDS);
+    scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, Constants.HEALTH_TIME, Constants.HEALTH_TIME, TimeUnit.SECONDS);
+  }
+
+  public void stop(){
+    if(scheduledTask != null){
+      scheduledTask.cancel(true);
+    }
   }
 
   public void run() {

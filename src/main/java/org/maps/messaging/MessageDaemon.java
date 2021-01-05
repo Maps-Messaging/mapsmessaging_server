@@ -22,7 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,6 +37,7 @@ import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.messaging.admin.MessageDaemonJMX;
+import org.maps.messaging.consul.ConsulManagerFactory;
 import org.maps.messaging.engine.TransactionManager;
 import org.maps.messaging.engine.destination.DestinationManager;
 import org.maps.messaging.engine.selector.operators.parsers.ParserFactory;
@@ -46,7 +49,6 @@ import org.maps.network.protocol.transformation.TransformationManager;
 import org.maps.utilities.admin.SimpleTaskSchedulerJMX;
 import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.configuration.ConfigurationManager;
-import org.maps.utilities.configuration.ConsulManager;
 import org.maps.utilities.service.Service;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -73,8 +75,6 @@ public class MessageDaemon implements WrapperListener {
   private final String homeDirectory;
   private final AtomicBoolean isStarted;
 
-  private final ConsulManager consulManager;
-
   public MessageDaemon() throws IOException {
     instance = this;
     isStarted = new AtomicBoolean(false);
@@ -93,17 +93,18 @@ public class MessageDaemon implements WrapperListener {
       Files.createDirectories(data.toPath());
     }
     // <editor-fold desc="Persistent code, maybe moved to a separate class">
-    dataStore =
-        DBMaker.fileDB(homeDirectory + "/data/messageDaemon.db")
+    dataStore = DBMaker.fileDB(homeDirectory + "/data/messageDaemon.db")
             .fileMmapEnable()
             .closeOnJvmShutdown()
             .allocateStartSize(10L * 1024L * 1024L) // 10MB
             .allocateIncrement(512L * 1024L * 1024L) // 512MB
             .checksumHeaderBypass()
             .make();
+
     config = dataStore
         .hashMap("serverConfiguration", Serializer.STRING, Serializer.STRING)
         .createOrOpen();
+
     String serverId = config.get(SERVER_ID);
     if (serverId != null) {
       uniqueId = UUID.fromString(serverId);
@@ -118,15 +119,11 @@ public class MessageDaemon implements WrapperListener {
     new SimpleTaskSchedulerJMX(mBean.getTypePath());
 
     //<editor-fold desc="Now see if we can start the Consul Manager">
-    ConsulManager cmanager = null;
-    try {
-      cmanager = new ConsulManager(uniqueId);
-    } catch (Exception e) {
-    }
-    consulManager = cmanager;
+    // May block till a consul connection is made, depending on config
+     ConsulManagerFactory.getInstance().start(uniqueId);
     //</editor-fold>
 
-    ConfigurationManager.getInstance().initialise(uniqueId.toString()+"_", consulManager);
+    ConfigurationManager.getInstance().initialise(uniqueId.toString()+"_");
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
     int delayTimer = properties.getIntProperty("DelayedPublishInterval", 1000);
     int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
@@ -224,15 +221,24 @@ public class MessageDaemon implements WrapperListener {
   @Override
   public Integer start(String[] strings) {
     logger.log(LogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
+    if(ConsulManagerFactory.getInstance().isStarted()){
+      Map<Integer, ConfigurationProperties>  map = ConfigurationManager.getInstance().getPropertiesList("NetworkManager");
+      Map<String, String> meta = new LinkedHashMap<>();
+      for(ConfigurationProperties configurationProperties:map.values()){
+        String protocol = configurationProperties.getProperty("protocol");
+        String url = configurationProperties.getProperty("url");
+        protocol = protocol.replaceAll(",", "-");
+        protocol = protocol.replaceAll(" ", "-");
+        meta.put(protocol, url);
+      }
+      ConsulManagerFactory.getInstance().getManager().register(meta);
+    }
     jolokaManager.start();
     destinationManager.start();
     sessionManager.start();
     networkManager.initialise();
     networkManager.startAll();
     hawtioManager.start();
-    if(consulManager != null) {
-      consulManager.register();
-    }
     isStarted.set(true);
     return null;
   }
