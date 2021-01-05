@@ -29,7 +29,6 @@ public class ConsulPropertyManager extends PropertyManager {
           if (entry.isPresent()) {
             String value = entry.get().getValue().get();
             value = new String(Base64.getDecoder().decode(value));
-            System.err.println(value);
             loadPropertiesJSON(key.substring(serverPrefix.length()), new JSONObject(value));
           }
         }
