@@ -496,11 +496,10 @@
     </dependency>
 
     <dependency>
-      <groupId>org.eclipse.paho.mqttsn</groupId>
-      <artifactId>mqttsn</artifactId>
-      <version>1.2.1</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/src/test/lib/MQTT-SN-UDP-Client-1.2.1-OKSE.jar</systemPath>
+      <groupId>com.eclipse.paho</groupId>
+      <artifactId>MQTT-SN-UDP-Client</artifactId>
+      <version>1.2.1-OKSE</version>
+      <scope>tests</scope>
     </dependency>
 
     <dependency>
