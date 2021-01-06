@@ -9,11 +9,15 @@ import java.util.List;
 import java.util.Optional;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.maps.logging.LogMessages;
+import org.maps.logging.Logger;
+import org.maps.logging.LoggerFactory;
 import org.maps.messaging.consul.ConsulManagerFactory;
 
 public class ConsulPropertyManager extends PropertyManager {
 
   private final String serverPrefix;
+  private final Logger logger = LoggerFactory.getLogger(ConsulPropertyManager.class);
 
   public ConsulPropertyManager(String prefix){
     serverPrefix = prefix+"_";
@@ -32,17 +36,21 @@ public class ConsulPropertyManager extends PropertyManager {
             loadPropertiesJSON(key.substring(serverPrefix.length()), new JSONObject(value));
           }
         }
-        catch(ConsulException | JSONException consulException){
-          consulException.printStackTrace();
+        catch(ConsulException consulException){
+          logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
+        }
+        catch(JSONException JSONException){
+          logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, JSONException);
         }
       }
     } catch (ConsulException e) {
-      e.printStackTrace();
+      logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES, serverPrefix);
     }
   }
 
   @Override
   protected void store(String name) {
+    logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_STORE, serverPrefix, name);
     KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     keyValueClient.putValue(serverPrefix+name, getPropertiesJSON(name).toString(2));
   }
@@ -63,6 +71,8 @@ public class ConsulPropertyManager extends PropertyManager {
   }
 
   public void save(){
+    logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_SAVE_ALL, serverPrefix);
+
     KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     // Now lets Store it in key value pairs in consul
     for(String name:properties.keySet()){
