@@ -118,8 +118,8 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     return protocolImpl;
   }
 
-  public void sendMessage(Destination destination, SubscriptionContext context, Message message, Runnable completionTask) {
-    currentState.sendMessage(this, destination, context, message, completionTask);
+  public void sendMessage(Destination destination, String normalisedName, SubscriptionContext context, Message message, Runnable completionTask) {
+    currentState.sendMessage(this, destination, normalisedName, context, message, completionTask);
   }
 
   public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {

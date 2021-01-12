@@ -42,7 +42,6 @@ public class PropertiesEncoder {
     if(properties.getAbsoluteExpiryTime() != null){
       long expiry = properties.getAbsoluteExpiryTime().getTime();
       expiry = (expiry - System.currentTimeMillis());
-      System.err.println("Absolute expiry::"+expiry);
       messageBuilder.setMessageExpiryInterval(expiry, TimeUnit.MILLISECONDS);
     }
 

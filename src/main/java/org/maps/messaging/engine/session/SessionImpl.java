@@ -23,12 +23,13 @@ import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
+import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.SubscribedEventManager;
 import org.maps.messaging.api.features.DestinationType;
 import org.maps.messaging.engine.closure.ClosureTask;
 import org.maps.messaging.engine.closure.ClosureTaskManager;
+import org.maps.messaging.engine.destination.DestinationFactory;
 import org.maps.messaging.engine.destination.DestinationImpl;
-import org.maps.messaging.engine.destination.DestinationManager;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.messaging.engine.destination.subscription.SubscriptionController;
 import org.maps.messaging.engine.session.will.WillTaskImpl;
@@ -41,7 +42,7 @@ public class SessionImpl {
   private final SessionContext context;
   private final Future<?> scheduledFuture;
   private final SubscriptionController subscriptionManager;
-  private final DestinationManager destinationManager;
+  private final DestinationFactory destinationManager;
   private final WillTaskImpl willTaskImpl;
   private final ClosureTaskManager closureTaskManager;
   private MessageCallback messageCallback;
@@ -51,7 +52,7 @@ public class SessionImpl {
   //<editor-fold desc="Life cycle API">
   SessionImpl(SessionContext context,
       SecurityContext securityContext,
-      DestinationManager destinationManager,
+      DestinationFactory destinationManager,
       SubscriptionController subscriptionManager,
       WillTaskImpl willTaskImpl) {
     logger = LoggerFactory.getLogger(SessionImpl.class);
@@ -179,6 +180,7 @@ public class SessionImpl {
     if(isClosed){
       throw new IOException("Session is closed");
     }
+    context.setRootPath(destinationManager.getRoot());
     return subscriptionManager.addSubscription(context);
   }
 
@@ -192,6 +194,10 @@ public class SessionImpl {
 
   public void addClosureTask(ClosureTask closureTask) {
     closureTaskManager.add(closureTask);
+  }
+
+  public String absoluteToNormalised(Destination destination) {
+    return destination.getName().substring(destinationManager.getRoot().length());
   }
 
   //</editor-fold>

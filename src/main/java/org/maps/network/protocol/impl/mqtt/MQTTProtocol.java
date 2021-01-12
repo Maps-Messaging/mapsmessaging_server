@@ -173,7 +173,7 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull  Destination destination, @NotNull SubscribedEventManager subscription,
+  public void sendMessage(@NotNull  Destination destination, @NotNull String  normalisedName, @NotNull SubscribedEventManager subscription,
                           @NotNull Message message, @NotNull Runnable completionTask) {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = subInfo.getQualityOfService();
@@ -188,7 +188,7 @@ public class MQTTProtocol extends ProtocolImpl {
     else{
       payload = message.getOpaqueData();
     }
-    Publish publish = new Publish(message.isRetain(), payload, qos, packetId, destination.getName());
+    Publish publish = new Publish(message.isRetain(), payload, qos, packetId, normalisedName);
     publish.setCallback(completionTask);
     writeFrame(publish);
   }

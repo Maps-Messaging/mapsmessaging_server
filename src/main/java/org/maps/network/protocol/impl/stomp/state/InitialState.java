@@ -38,7 +38,7 @@ public class InitialState implements State {
   }
 
   @Override
-  public boolean sendMessage(StateEngine engine, Destination destination, SubscriptionContext info, Message message, Runnable completionTask) {
+  public boolean sendMessage(StateEngine engine, Destination destination, String normalisedName, SubscriptionContext info, Message message, Runnable completionTask) {
     return false;
   }
 }

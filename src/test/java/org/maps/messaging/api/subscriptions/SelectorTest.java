@@ -330,7 +330,7 @@ public class SelectorTest extends MessageAPITest implements MessageListener {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
     System.err.println("Received from "+destination.getName()+" for "+subscription.getContext().getAlias());
   }
 }

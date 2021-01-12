@@ -38,6 +38,7 @@ public interface MessageListener {
    * @param completionTask This task needs to be called once all delivery action is done
    */
   void sendMessage( @NotNull Destination destination,
+                    @NotNull String normalisedName,
                     @NotNull SubscribedEventManager subscription,
                     @NotNull Message message,
                     @NotNull Runnable completionTask);

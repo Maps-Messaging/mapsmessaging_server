@@ -173,7 +173,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
 
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
     throw new Error("This should not be called in this context");
   }
 
@@ -186,7 +186,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
     }
 
     @Override
-    public void sendMessage(@NotNull Destination destination,@NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
+    public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
       int received = (Integer)message.getDataMap().get("key").getData();
       boolean found = false;
       for(int expect:expected){

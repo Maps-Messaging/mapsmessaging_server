@@ -504,7 +504,11 @@ public enum LogMessages {
   CONSUL_PROPERTY_MANAGER_STORE(LEVEL.ERROR, CATEGORY.ENGINE, "Storing entry for {}"),
   //</editor-fold>
 
-
+  //<editor-fold desc="NameSpace mapping used to support multi tenancy">
+  NAMESPACE_MAPPING(LEVEL.INFO, CATEGORY.ENGINE,"Mapping {} to namespace {}"),
+  NAMESPACE_MAPPING_FOUND(LEVEL.INFO, CATEGORY.ENGINE,    "Found entry for  {} mapping to {}"),
+  NAMESPACE_MAPPING_DEFAULT(LEVEL.INFO, CATEGORY.ENGINE,    "Using default mapping {}"),
+  //</editor-fold>
   ;
 
   public final String message;

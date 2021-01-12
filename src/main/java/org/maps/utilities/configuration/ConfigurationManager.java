@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
-import org.maps.messaging.consul.ConsulManager;
 import org.maps.messaging.consul.ConsulManagerFactory;
 
 public class ConfigurationManager {

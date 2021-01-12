@@ -40,6 +40,7 @@
         <script.extension>.bat</script.extension>
       </properties>
     </profile>
+
     <profile>
       <id>unix</id>
       <activation>
@@ -53,27 +54,27 @@
       </properties>
       <build>
       <plugins>
-      <plugin>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>exec-maven-plugin</artifactId>
-      <version>1.2.1</version>
-        <executions>
-      <execution>
-        <id>config-self-signed-certs</id>
-        <phase>validate</phase>
-        <goals>
-          <goal>exec</goal>
-        </goals>
-        <configuration>
-          <executable>/bin/chmod</executable>
-          <arguments>
-            <argument>+x</argument>
-            <argument>./src/main/scripts/generate${script.extension}</argument>
-          </arguments>
-        </configuration>
-      </execution>
-        </executions>
-      </plugin>
+        <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+          <executions>
+            <execution>
+              <id>config-self-signed-certs</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <executable>/bin/chmod</executable>
+                <arguments>
+                  <argument>+x</argument>
+                  <argument>./src/main/scripts/generate${script.extension}</argument>
+                </arguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
       </build>
     </profile>
@@ -271,7 +272,6 @@
           </replacements>
         </configuration>
       </plugin>
-
     </plugins>
   </build>
 

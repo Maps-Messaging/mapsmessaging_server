@@ -61,6 +61,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
     scb.setPersistentSession(true); // store the details
 
     Session session = SessionManager.getInstance().create(scb.build(), this);
+    session.login();
     session.resumeState();
     Destination destination = session.findDestination("transaction", DestinationType.TOPIC);
     Assertions.assertNotNull(destination);
@@ -108,7 +109,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
   }
 
   @Override
-  public void sendMessage(@NotNull org.maps.messaging.api.Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message,
+  public void sendMessage(@NotNull org.maps.messaging.api.Destination destination,  @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message,
       @NotNull Runnable completionTask) {
     counter.incrementAndGet();
     completionTask.run();

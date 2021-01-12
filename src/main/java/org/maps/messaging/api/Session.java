@@ -66,7 +66,7 @@ public class Session {
       if(destination != null) {
         if (destination.getResourceType().equals(DestinationType.TOPIC)) {
           result = new Topic(destination);
-          destinations.put(destinationName, result);
+          destinations.put(result.getName(), result);
         } else {
           throw new IOException("Expected topic but destination is a "+destination.getResourceType().getName());
         }
@@ -82,7 +82,7 @@ public class Session {
       if(destination != null) {
         if (destination.getResourceType().equals(DestinationType.QUEUE)) {
           result = new Queue(destination);
-          destinations.put(destinationName, result);
+          destinations.put(result.getName(), result);
         } else {
           throw new IOException("Expected a queue but destination is a "+destination.getResourceType().getName());
         }
@@ -118,7 +118,7 @@ public class Session {
           TemporaryDestinationDeletionTask deletionTask = new TemporaryDestinationDeletionTask((TemporaryDestination) destination);
           sessionImpl.addClosureTask(deletionTask);
         }
-        destinations.put(destinationName, result);
+        destinations.put(result.getName(), result);
       }
     }
     return result;
@@ -213,9 +213,10 @@ public class Session {
       org.maps.messaging.api.Destination destination = destinations.get(destinationImpl.getName());
       if (destination == null) {
         destination = new org.maps.messaging.api.Destination(destinationImpl);
-        destinations.put(destinationImpl.getName(), destination);
+        destinations.put(destination.getName(), destination);
       }
-      listener.sendMessage(destination, subscription, message, completionTask);
+      String normalisedName = sessionImpl.absoluteToNormalised(destination);
+      listener.sendMessage(destination, normalisedName, subscription, message, completionTask);
     }
   }
   //</editor-fold>

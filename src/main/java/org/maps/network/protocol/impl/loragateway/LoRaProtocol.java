@@ -225,7 +225,7 @@ public class LoRaProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
     // This should not be called since this protocol is NOT registered with the messaging engine
   }
 

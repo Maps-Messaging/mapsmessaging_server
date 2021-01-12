@@ -202,13 +202,14 @@ public class SessionManager {
       //
       // Create the session
       //
+      SessionTenantManager sessionTenantManager = new SessionTenantManager(sessionContext.getProtocol(), securityContext);
       SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext, lockPipeline[lockIndex].subscriptionManagerFactory);
-      sessionImpl = new SessionImpl(sessionContext, securityContext, destinationManager, subscriptionManager, willTaskImpl);
+      SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager, sessionTenantManager);
+      sessionImpl = new SessionImpl(sessionContext, securityContext, sessionDestinationManager, subscriptionManager, willTaskImpl);
 
       //
       // Either reload or create a new subscription manager
       //
-
       ThreadContext.put("session", sessionContext.getId());
       logger.log(LogMessages.SESSION_MANAGER_LOADED_SUBSCRIPTION, sessionContext.getId(), subscriptionManager.toString());
 

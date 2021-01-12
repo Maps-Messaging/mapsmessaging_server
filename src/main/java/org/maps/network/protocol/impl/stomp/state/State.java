@@ -26,5 +26,5 @@ public interface State {
 
   void handleFrame(StateEngine engine, ClientFrame frame, boolean endOfBuffer) throws IOException;
 
-  boolean sendMessage(StateEngine engine, Destination destination, SubscriptionContext context, Message message, Runnable completionTask);
+  boolean sendMessage(StateEngine engine, Destination destination, String normalisedName, SubscriptionContext context, Message message, Runnable completionTask);
 }
