@@ -57,8 +57,8 @@ public class DestinationManager implements DestinationFactory {
   private static final String DIRECTORY = "directory";
   private static final String NAMESPACE = "namespace";
   private static final String[] QUEUE = {"/queue", "queue"};
-  private static final String TEMPORARY_QUEUE = "/dynamic/temporaryqueue";
-  private static final String TEMPORARY_TOPIC = "/dynamic/temporarytopic";
+  private static final String TEMPORARY_QUEUE = "/dynamic/temporary/queue";
+  private static final String TEMPORARY_TOPIC = "/dynamic/temporary/topic";
 
   private final Map<String, ConfigurationProperties> properties;
   private final Map<String, DestinationImpl> destinationList;
