@@ -29,7 +29,7 @@ import org.maps.logging.LoggerFactory;
 import org.maps.messaging.engine.security.PrincipalCallback;
 import org.maps.network.protocol.ProtocolImpl;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
 
 public class SecurityManager {
 
@@ -38,7 +38,7 @@ public class SecurityManager {
 
   public SecurityManager() {
     logger.log(LogMessages.SECURITY_MANAGER_STARTUP);
-    ConfigurationProperties props = PropertyManager.getInstance().getProperties("SecurityManager");
+    ConfigurationProperties props = ConfigurationManager.getInstance().getProperties("SecurityManager");
     logger.log(LogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
     properties = props;
   }

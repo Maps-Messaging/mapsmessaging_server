@@ -39,7 +39,7 @@ public class WebSocketProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
     // This is an in-line protocol and does not actively receive events to send from the messaging engine
   }
 

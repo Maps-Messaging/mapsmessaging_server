@@ -57,6 +57,7 @@ public class InitialConnectionState implements State {
           MQTT_SNPacket response = new ConAck(MQTT_SNPacket.ACCEPTED);
           Session session = stateEngine.createSession(scb, protocol, response);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+          session.login();
           return response;
         } catch (LoginException | IOException e) {
           ConAck response = new ConAck(MQTT_SNPacket.NOT_SUPPORTED);

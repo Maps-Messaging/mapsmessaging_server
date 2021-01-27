@@ -38,6 +38,7 @@ import org.maps.messaging.api.features.DestinationType;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.engine.destination.delayed.DelayedMessageManager;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
+import org.maps.messaging.engine.destination.subscription.SubscriptionController;
 import org.maps.messaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
 import org.maps.messaging.engine.destination.subscription.builders.QueueSubscriptionBuilder;
 import org.maps.messaging.engine.destination.tasks.DelayedMessageProcessor;
@@ -48,16 +49,16 @@ import org.maps.messaging.engine.resources.ResourceFactory;
 import org.maps.messaging.engine.system.SystemTopic;
 import org.maps.messaging.engine.tasks.Response;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
-public class DestinationManager {
+public class DestinationManager implements DestinationFactory {
 
   private static final String DIRECTORY = "directory";
   private static final String NAMESPACE = "namespace";
   private static final String[] QUEUE = {"/queue", "queue"};
-  private static final String TEMPORARY_QUEUE = "/dynamic/temporaryqueue";
-  private static final String TEMPORARY_TOPIC = "/dynamic/temporarytopic";
+  private static final String TEMPORARY_QUEUE = "/dynamic/temporary/queue";
+  private static final String TEMPORARY_TOPIC = "/dynamic/temporary/topic";
 
   private final Map<String, ConfigurationProperties> properties;
   private final Map<String, DestinationImpl> destinationList;
@@ -68,7 +69,7 @@ public class DestinationManager {
   public DestinationManager(int time) {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
-    Map<Integer, ConfigurationProperties> list = PropertyManager.getInstance().getPropertiesList("DestinationManager");
+    Map<Integer, ConfigurationProperties> list = ConfigurationManager.getInstance().getPropertiesList("DestinationManager");
     String root = ".";
     if(list != null) {
       for (ConfigurationProperties configuration : list.values()) {
@@ -89,18 +90,26 @@ public class DestinationManager {
     destinationList.put(systemTopic.getName(), systemTopic);
   }
 
+  @Override
   public synchronized List<DestinationImpl> getDestinations() {
     return new ArrayList<>(destinationList.values());
   }
 
+  @Override
   public synchronized DestinationImpl find(String name) {
     return destinationList.get(name);
   }
 
+  @Override
   public synchronized DestinationImpl findOrCreate(String name) throws IOException {
     return findOrCreate(name, DestinationType.TOPIC);
   }
 
+  public String getRoot(){
+    return "";
+  }
+
+  @Override
   public synchronized DestinationImpl findOrCreate(String name, DestinationType destinationType) throws IOException {
     DestinationImpl destinationImpl = find(name);
     if (destinationImpl == null) {
@@ -109,6 +118,7 @@ public class DestinationManager {
     return destinationImpl;
   }
 
+  @Override
   public synchronized DestinationImpl create(@NotNull String name, @NotNull DestinationType destinationType) throws IOException {
     if (name.startsWith("$SYS")) {
       logger.log(LogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
@@ -160,6 +170,7 @@ public class DestinationManager {
     return destinationImpl;
   }
 
+  @Override
   public synchronized DestinationImpl delete(DestinationImpl destinationImpl) {
     if (!destinationImpl.getName().startsWith("$SYS")) {
       DestinationImpl delete = destinationList.remove(destinationImpl.getName());
@@ -174,6 +185,7 @@ public class DestinationManager {
     return null;
   }
 
+  @Override
   public Map<String, DestinationImpl> get() {
     return destinationList;
   }

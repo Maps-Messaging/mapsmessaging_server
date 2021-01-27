@@ -175,7 +175,7 @@ public class ProtonEngine {
   public long unpackLong( byte[] buff) {
     long value =0;
     for(int x=0;x<buff.length;x++) {
-      int val = buff[x];
+      long val = buff[x];
       value ^= (val & 0xff) << (8 * x);
     }
     return value;
@@ -217,7 +217,8 @@ public class ProtonEngine {
     }
 
     private void processMessage() throws IOException {
-      Sender sender = subscriptions.get(manager.getContext().getAlias());
+      String alias = manager.getContext().getAlias();
+      Sender sender = subscriptions.get(alias);
       if(sender != null){
         byte[] tag = packLong(message.getIdentifier());
         Delivery dlv = sender.delivery(tag);

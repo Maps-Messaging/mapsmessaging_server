@@ -20,7 +20,7 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}, %X{category}, %X{endpoint}, %X{protocol}-%X{version}, %X{session}, [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <File name="LogFile" fileName="__TARGET_DIR__/messaging.log">
+    <File name="LogFile" fileName="./target/messaging.log">
       <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}, %X{category}, %X{endpoint}, %X{protocol}-%X{version}, %X{session}, [%t] %-5level %logger{36} - %msg%n"/>
     </File>
 

@@ -198,7 +198,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
     MessageDetails md = new MessageDetails(destination, subscription, message);
     messageList.add(md);
     completionTask.run();

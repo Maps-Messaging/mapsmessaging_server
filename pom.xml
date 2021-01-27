@@ -19,7 +19,15 @@
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>message_daemon</artifactId>
+  <groupId>org.maps.messaging</groupId>
+  <modelVersion>4.0.0</modelVersion>
+  <version>1.1-SNAPSHOT</version>
 
+  <!--
+  This section simply detects which OS is running and specifies the script extension
+  used to create the self-signed certificates used to test SSL connections in the
+  test phase
+  -->
   <profiles>
     <profile>
       <id>Windows</id>
@@ -32,6 +40,7 @@
         <script.extension>.bat</script.extension>
       </properties>
     </profile>
+
     <profile>
       <id>unix</id>
       <activation>
@@ -45,35 +54,33 @@
       </properties>
       <build>
       <plugins>
-      <plugin>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>exec-maven-plugin</artifactId>
-      <version>1.2.1</version>
-        <executions>
-      <execution>
-        <id>config-self-signed-certs</id>
-        <phase>validate</phase>
-        <goals>
-          <goal>exec</goal>
-        </goals>
-        <configuration>
-          <executable>/bin/chmod</executable>
-          <arguments>
-            <argument>+x</argument>
-            <argument>./src/main/scripts/generate${script.extension}</argument>
-          </arguments>
-        </configuration>
-      </execution>
-        </executions>
-      </plugin>
+        <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+          <executions>
+            <execution>
+              <id>config-self-signed-certs</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <executable>/bin/chmod</executable>
+                <arguments>
+                  <argument>+x</argument>
+                  <argument>./src/main/scripts/generate${script.extension}</argument>
+                </arguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
       </build>
     </profile>
   </profiles>
 
-  <!-- Code Coverage configuration -->
   <build>
-
     <plugins>
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
@@ -202,7 +209,7 @@
           <artifactId>maven-dependency-plugin</artifactId>
           <executions>
               <execution>
-                  <phase>install</phase>
+                  <phase>package</phase>
                   <goals>
                       <goal>copy-dependencies</goal>
                   </goals>
@@ -265,12 +272,10 @@
           </replacements>
         </configuration>
       </plugin>
-
     </plugins>
   </build>
 
   <!-- Repo for java stomp client used for testing Artifactory server -->
-
   <repositories>
     <repository>
       <snapshots>
@@ -298,7 +303,7 @@
     <!-- Sonar-JaCoCo properties -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
+    <sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
     <sonar.language>java</sonar.language>
   </properties>
 
@@ -346,6 +351,13 @@
       <version>3.0.8</version>
     </dependency>
 
+    <!-- Consul client API -->
+    <dependency>
+      <groupId>com.orbitz.consul</groupId>
+      <artifactId>consul-client</artifactId>
+      <version>1.4.0</version>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/net.java.dev.javacc/javacc -->
     <dependency>
       <groupId>net.java.dev.javacc</groupId>
@@ -381,7 +393,32 @@
       <version>0.33.6</version>
     </dependency>
 
-    <!-- Jolokia Dependencies -->
+    <!-- Hawtio Dependencies -->
+    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-embedded -->
+    <dependency>
+      <groupId>io.hawt</groupId>
+      <artifactId>hawtio-embedded</artifactId>
+      <version>2.12.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-war -->
+    <dependency>
+      <groupId>io.hawt</groupId>
+      <artifactId>hawtio-war</artifactId>
+      <version>2.12.1</version>
+      <scope>provided</scope>
+      <type>war</type>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-app -->
+    <dependency>
+      <groupId>io.hawt</groupId>
+      <artifactId>hawtio-app</artifactId>
+      <version>2.12.1</version>
+    </dependency>
+
+
+    <!-- Jolokia Dependencies for JMX -> Rest API -->
 
     <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-jvm -->
     <dependency>
@@ -465,18 +502,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.eclipse.paho.mqttsn</groupId>
-      <artifactId>mqttsn</artifactId>
-      <version>1.2.1</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/src/test/lib/MQTT-SN-UDP-Client-1.2.1-OKSE.jar</systemPath>
-    </dependency>
-
-    <!-- Web Based administration -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-embedded</artifactId>
-      <version>2.8.0</version>
+      <groupId>com.eclipse.paho</groupId>
+      <artifactId>MQTT-SN-UDP-Client</artifactId>
+      <version>1.2.1-OKSE</version>
       <scope>test</scope>
     </dependency>
 
@@ -488,7 +516,4 @@
     </dependency>
   </dependencies>
 
-  <groupId>org.maps.messaging</groupId>
-  <modelVersion>4.0.0</modelVersion>
-  <version>1.1-SNAPSHOT</version>
 </project>

@@ -127,5 +127,5 @@ selectorThreadCount_8 = 1
 #
 url_9 = tcp://0.0.0.0:5672/
 protocol_9 = amqp
-auth_9 = test
+auth_9 = public
 SaslMechanisms_9 = ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI

@@ -41,8 +41,8 @@ public class FakeProtocolImpl extends ProtocolImpl  {
   }
 
   @Override
-  public void sendMessage(org.maps.messaging.api.Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
-    listener.sendMessage(destination, subscription, message, completionTask);
+  public void sendMessage(org.maps.messaging.api.Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+    listener.sendMessage(destination, normalisedName, subscription, message, completionTask);
   }
 
   @Override

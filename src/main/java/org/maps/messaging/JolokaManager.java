@@ -26,7 +26,7 @@ import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.utilities.configuration.ConfigurationProperties;
-import org.maps.utilities.configuration.PropertyManager;
+import org.maps.utilities.configuration.ConfigurationManager;
 
 public class JolokaManager {
   private final Logger logger = LoggerFactory.getLogger(JolokaManager.class);
@@ -36,7 +36,7 @@ public class JolokaManager {
   private Startup startup;
 
   public JolokaManager() {
-    properties = PropertyManager.getInstance().getProperties("jolokia");
+    properties = ConfigurationManager.getInstance().getProperties("jolokia");
     enabled = properties.getProperty("enable", "true").equalsIgnoreCase("true");
   }
 

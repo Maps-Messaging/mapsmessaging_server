@@ -81,9 +81,12 @@ public abstract class BaseEventListener implements EventListener {
       SessionContextBuilder contextBuilder = new SessionContextBuilder(sessionId, protocol);
       contextBuilder.setKeepAlive(60)
           .setPersistentSession(true)
-          .setSessionExpiry(600);
+          .setSessionExpiry(600)
+          .setPassword(new char[0])
+          .setUsername("anonymous"); // To Do, wire in the username
       org.maps.messaging.api.Session session = SessionManager.getInstance().create(contextBuilder.build(), protocol);
       session.start();
+      session.login();
       sessionManager = protocol.addSession(sessionId, session);
       protocol.getLogger().log(LogMessages.AMQP_CREATED_SESSION, sessionId);
     }

@@ -3,5 +3,5 @@
 #
 name_0 = root
 namespace_0 = /
-directory_0 = __TARGET_DIR__/dataDirectory
+directory_0 = ./target/dataDirectory
 

@@ -73,7 +73,7 @@ public class EchoProtocol extends org.maps.network.protocol.ProtocolImpl
   // Yes this is duplicate, but for the sake of clarity in the classes it can stay
   @java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
     // There is nothing to do
   }
 

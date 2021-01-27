@@ -126,6 +126,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
         writeFrame(response);
       }
     } catch (Exception e) {
+      e.printStackTrace();
       logger.log(LogMessages.MQTT_SN_PACKET_EXCEPTION, e, mqtt);
       try {
         close();
@@ -153,14 +154,14 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = subInfo.getQualityOfService();
     int packetId = 0;
     if (qos.isSendPacketId()) {
       packetId = packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
     }
-    short alias = stateEngine.findTopicAlias(destination.getName());
+    short alias = stateEngine.findTopicAlias(normalisedName);
     //
     // If this event is from a wild card then the client would not have registered it, so lets do that now
     //
@@ -168,14 +169,14 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       //
       // Updating the client with the new topic id for the destination
       //
-      alias = stateEngine.getTopicAlias(destination.getName());
-      Register register = new Register(alias, (short) 0, destination.getName());
+      alias = stateEngine.getTopicAlias(normalisedName);
+      Register register = new Register(alias, (short) 0, normalisedName);
       writeFrame(register);
     }
     Publish publish = new Publish(alias, packetId, message.getOpaqueData());
     publish.setQoS(qos);
     publish.setCallback(completionTask);
-    stateEngine.sendPublish(this, destination.getName(), publish);
+    stateEngine.sendPublish(this, normalisedName, publish);
   }
 
   public void writeFrame(@NotNull MQTT_SNPacket frame) {

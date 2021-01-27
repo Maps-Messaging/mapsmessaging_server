@@ -12,7 +12,7 @@ authenticationEnabled=false
 #
 # Specifies the Hawtio war file to use for
 #
-warFileLocation = C:\\Users\\matthew\\Downloads\\hawtio-default-2.9.1.war
+warFileLocation = C:/Users/matthew/Downloads/hawtio-default-2.10.1.war
 
 # Specify if needed to be bound to a single interface
 #

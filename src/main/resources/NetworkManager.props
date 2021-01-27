@@ -180,7 +180,7 @@ auth_10 = anon
 #
 url_11 = tcp://0.0.0.0:5672/
 protocol_11 = amqp
-auth_11 = test
+auth_11 = public
 SaslMechanisms_11 = ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI
 
 

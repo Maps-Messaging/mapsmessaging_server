@@ -34,6 +34,7 @@ import org.maps.logging.LoggerFactory;
 import org.maps.messaging.admin.SubscriptionControllerJMX;
 import org.maps.messaging.api.SubscribedEventManager;
 import org.maps.messaging.api.features.RetainHandler;
+import org.maps.messaging.engine.destination.DestinationFactory;
 import org.maps.messaging.engine.destination.DestinationImpl;
 import org.maps.messaging.engine.destination.DestinationManager;
 import org.maps.messaging.engine.destination.DestinationManagerListener;
@@ -55,7 +56,7 @@ public class SubscriptionController implements DestinationManagerListener {
 
   private static final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
 
-  private final DestinationManager destinationManager;
+  private final DestinationFactory destinationManager;
   private final String sessionId;
   private final boolean isPersistent;
 
@@ -79,7 +80,7 @@ public class SubscriptionController implements DestinationManagerListener {
   private SessionImpl sessionImpl;
   private Future<Runnable> schedule;
 
-  public SubscriptionController(SessionContext sessionContext, DestinationManager destinationManager, Map<String, SubscriptionContext> contextMap) {
+  public SubscriptionController(SessionContext sessionContext, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
     this.sessionId = sessionContext.getId();
     this.destinationManager = destinationManager;
     this.contextMap = contextMap;
@@ -90,7 +91,7 @@ public class SubscriptionController implements DestinationManagerListener {
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
   }
 
-  public SubscriptionController(String sessionId, DestinationManager destinationManager, Map<String, SubscriptionContext> contextMap) {
+  public SubscriptionController(String sessionId, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
     this.sessionId = sessionId;
     this.destinationManager = destinationManager;
     this.contextMap = contextMap;

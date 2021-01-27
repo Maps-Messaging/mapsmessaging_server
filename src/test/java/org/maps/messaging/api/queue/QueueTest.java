@@ -76,7 +76,7 @@ public class QueueTest extends MessageAPITest implements MessageListener {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination,@NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
     completionTask.run();
     subscription.ackReceived(message.getIdentifier());
     System.err.println("Received event ::"+message);

@@ -16,33 +16,66 @@
 
 package org.maps.utilities.configuration;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import javax.annotation.Nullable;
+import org.json.JSONObject;
 
 public class ConfigurationProperties extends java.util.Properties {
 
-  protected ConfigurationProperties(HashMap<String, String> list) {
+  private Map<String, String> globalValues = new HashMap<>();
+
+  protected ConfigurationProperties() {
+  }
+
+  protected ConfigurationProperties(Map<String, String> list, @Nullable Map<String, String> global) {
     for (Map.Entry<String, String> entry : list.entrySet()) {
       put(entry.getKey(), entry.getValue());
     }
+    if(global != null) {
+      this.globalValues = global;
+    }
   }
 
-  protected ConfigurationProperties(String resourceName) throws IOException {
-    String propResourceName = "/" + resourceName;
-    while (propResourceName.contains(".")) {
-      propResourceName = propResourceName.replace('.', File.separatorChar);
+  public Map<String, String> getGlobalValues(){
+    return new LinkedHashMap<>(globalValues);
+  }
+
+  public JSONObject toJSON(){
+    JSONObject object = new JSONObject();
+    Set<Entry<Object, Object>> entries = super.entrySet();
+
+    for(Entry<Object, Object> entry:entries){
+      object.put(entry.getKey().toString(), entry.getValue().toString());
     }
-    propResourceName = propResourceName + ".props";
-    InputStream is = getClass().getResourceAsStream(propResourceName);
-    if (is != null) {
-      load(is);
-    } else {
-      throw new FileNotFoundException("No such resource found " + propResourceName);
+    return object;
+  }
+
+  @Override
+  public String getProperty(String key, String defaultValue) {
+    String val;
+    if(containsKey(key)){
+      val = super.getProperty(key);
     }
+    else {
+      val = globalValues.getOrDefault(key, defaultValue);
+    }
+    return val;
+  }
+
+  @Override
+  public String getProperty(String key) {
+    String val;
+    if(containsKey(key)){
+      val = super.getProperty(key);
+    }
+    else {
+      val = globalValues.get(key);
+    }
+    return val;
   }
 
   public boolean getBooleanProperty(String key, boolean defaultValue) {

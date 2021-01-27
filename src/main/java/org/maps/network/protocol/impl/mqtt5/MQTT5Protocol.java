@@ -271,7 +271,7 @@ public class MQTT5Protocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination,@NotNull  SubscribedEventManager subscription,@NotNull  Message message,@NotNull  Runnable completionTask) {
+  public void sendMessage(@NotNull Destination destination,@NotNull String normalisedName, @NotNull  SubscribedEventManager subscription,@NotNull  Message message,@NotNull  Runnable completionTask) {
     if (maxBufferSize > 0 && message.getOpaqueData().length >= maxBufferSize) {
       completionTask.run();
       logger.log(LogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
@@ -282,8 +282,8 @@ public class MQTT5Protocol extends ProtocolImpl {
       if (qos.isSendPacketId()) {
         packetId = packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
       }
-      TopicAlias alias = serverTopicAliasMapping.find(destination.getName());
-      String destinationName = destination.getName();
+      TopicAlias alias = serverTopicAliasMapping.find(normalisedName);
+      String destinationName = normalisedName;
       if (alias != null) {
         destinationName = "";
       } else {

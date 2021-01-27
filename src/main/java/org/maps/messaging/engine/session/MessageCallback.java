@@ -24,7 +24,7 @@ import org.maps.messaging.engine.destination.DestinationImpl;
 
 public interface MessageCallback {
 
-  default void sendMessage(@NotNull DestinationImpl destination,@NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
+  default void sendMessage(@NotNull DestinationImpl destination, @NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
 
   }
 

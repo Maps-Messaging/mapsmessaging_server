@@ -18,6 +18,7 @@ package org.maps.messaging.engine.destination.subscription;
 
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.Objects;
 import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.features.CreditHandler;
 import org.maps.messaging.api.features.QualityOfService;
@@ -35,6 +36,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
 
   private final String destinationName;
   private final BitSet flags;
+  private String rootPath;
   private ClientAcknowledgement acknowledgement;
   private String sharedName;
   private String selector;
@@ -55,6 +57,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
     alias = destinationName; // Make the Alias the same as the destination. In some protocols this can be overridden
     flags = new BitSet(8);
     receiveMaximum = 1;
+    rootPath = "";
   }
 
   public SubscriptionContext(SubscriptionContext rhs, String destinationName, String alias) {
@@ -86,6 +89,14 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
     if (alias == null) {
       alias = destinationName;
     }
+  }
+
+  public String getRootPath() {
+    return rootPath;
+  }
+
+  public void setRootPath(String rootPath) {
+    this.rootPath = rootPath;
   }
 
   public void write(ObjectWriter writer) throws IOException {
@@ -143,7 +154,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
   }
 
   public String getFilter() {
-    return destinationName;
+    return getCorrectedPath();
   }
 
   public ClientAcknowledgement getAcknowledgementController() {
@@ -191,11 +202,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
   }
 
   public void setAlias(String alias) {
-    if (alias == null) {
-      this.alias = destinationName;
-    } else {
-      this.alias = alias;
-    }
+    this.alias = Objects.requireNonNullElseGet(alias, this::getCorrectedPath);
   }
 
   public boolean getReplaced() {
@@ -230,6 +237,11 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
     this.creditHandler = creditHandler;
   }
 
+  private String getCorrectedPath(){
+    String lookup = rootPath+destinationName;
+    return lookup.replace("//", "/");
+  }
+
   @Override
   public int compareTo(SubscriptionContext lhs) {
     return lhs.qos.getLevel() - qos.getLevel();
@@ -251,6 +263,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("SubscriptionContext:");
+    sb.append(" Root:").append(rootPath);
     sb.append(" Destination:").append(destinationName);
     sb.append(", alias:").append(alias);
     sb.append(", QOS").append(qos);

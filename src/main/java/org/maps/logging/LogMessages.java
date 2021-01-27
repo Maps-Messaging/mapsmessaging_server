@@ -479,6 +479,36 @@ public enum LogMessages {
   TRANSACTION_MANAGER_SCANNING(LEVEL.TRACE,CATEGORY.ENGINE , "Transaction Manager expiry scan started"),
   TRANSACTION_MANAGER_CLOSE_FAILED(LEVEL.WARN, CATEGORY.ENGINE, "Transaction Manager detected exception when closing transaction id:{}"),
   TRANSACTION_MANAGER_TIMEOUT_DETECTED(LEVEL.INFO, CATEGORY.ENGINE, "Transaction Manager detected expired transaction id:{}"),
+  //</editor-fold>
+
+  //<editor-fold desc="CONSUL agent logging">
+  CONSUL_STARTUP(LEVEL.DEBUG, CATEGORY.ENGINE, "Agent startup"),
+  CONSUL_SHUTDOWN(LEVEL.DEBUG, CATEGORY.ENGINE, "Agent shutdown"),
+  CONSUL_REGISTER(LEVEL.DEBUG, CATEGORY.ENGINE, "Registering with local agent"),
+  CONSUL_PING_EXCEPTION(LEVEL.DEBUG, CATEGORY.ENGINE, "Ping failed with exception {}"),
+  //</editor-fold>
+
+  //<editor-fold desc="CONSUL management log messages">
+  CONSUL_MANAGER_START(LEVEL.DEBUG, CATEGORY.ENGINE, "Manager starting up for id {}"),
+  CONSUL_MANAGER_STOP(LEVEL.DEBUG, CATEGORY.ENGINE, "Manager shutting down"),
+  CONSUL_MANAGER_START_ABORTED(LEVEL.ERROR, CATEGORY.ENGINE, "Startup aborted due to configuration, id {}"),
+  CONSUL_MANAGER_START_DELAYED(LEVEL.ERROR, CATEGORY.ENGINE, "Startup delaying server startup due to configuration for id {}"),
+  //</editor-fold>
+
+
+  //<editor-fold desc="CONSUL Key/Value management log messages">
+  CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES(LEVEL.ERROR, CATEGORY.ENGINE, "No keys found in Consul Key/Value for id {}"),
+  CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION(LEVEL.ERROR, CATEGORY.ENGINE, "Key {}, lookup failed with exception"),
+  CONSUL_PROPERTY_MANAGER_INVALID_JSON(LEVEL.ERROR, CATEGORY.ENGINE, "Value returned is not valid json for key {}"),
+  CONSUL_PROPERTY_MANAGER_SAVE_ALL(LEVEL.ERROR, CATEGORY.ENGINE, "Saving all entries for {}"),
+  CONSUL_PROPERTY_MANAGER_STORE(LEVEL.ERROR, CATEGORY.ENGINE, "Storing entry for {}"),
+  //</editor-fold>
+
+  //<editor-fold desc="NameSpace mapping used to support multi tenancy">
+  NAMESPACE_MAPPING(LEVEL.INFO, CATEGORY.ENGINE,"Mapping {} to namespace {}"),
+  NAMESPACE_MAPPING_FOUND(LEVEL.INFO, CATEGORY.ENGINE,    "Found entry for  {} mapping to {}"),
+  NAMESPACE_MAPPING_DEFAULT(LEVEL.INFO, CATEGORY.ENGINE,    "Using default mapping {}"),
+  //</editor-fold>
   ;
 
   public final String message;

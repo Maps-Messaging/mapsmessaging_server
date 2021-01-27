@@ -102,8 +102,8 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
-    stateEngine.sendMessage(destination, subscription.getContext(), message, completionTask);
+  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+    stateEngine.sendMessage(destination, normalisedName, subscription.getContext(), message, completionTask);
   }
 
   // <editor-fold desc="Read Frame functions">
