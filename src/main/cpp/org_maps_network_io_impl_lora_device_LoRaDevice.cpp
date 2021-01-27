@@ -22,7 +22,7 @@
 *       Radio Head for the datagram and radio management
 *       BCM2835 for the Raspberry Pi GPIO interface
 */
-#include "org_buckton_network_io_impl_lora_device_LoRaDevice.h"
+#include "org_maps_network_io_impl_lora_device_LoRaDevice.h"
 #include <bcm2835.h>
 #include <stdio.h>
 #include <signal.h>
