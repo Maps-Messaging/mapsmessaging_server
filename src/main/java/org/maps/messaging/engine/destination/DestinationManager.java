@@ -38,7 +38,6 @@ import org.maps.messaging.api.features.DestinationType;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.engine.destination.delayed.DelayedMessageManager;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
-import org.maps.messaging.engine.destination.subscription.SubscriptionController;
 import org.maps.messaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
 import org.maps.messaging.engine.destination.subscription.builders.QueueSubscriptionBuilder;
 import org.maps.messaging.engine.destination.tasks.DelayedMessageProcessor;
@@ -54,13 +53,11 @@ import org.maps.utilities.threads.SimpleTaskScheduler;
 
 public class DestinationManager implements DestinationFactory {
 
-  private static final String DIRECTORY = "directory";
-  private static final String NAMESPACE = "namespace";
   private static final String[] QUEUE = {"/queue", "queue"};
   private static final String TEMPORARY_QUEUE = "/dynamic/temporary/queue";
   private static final String TEMPORARY_TOPIC = "/dynamic/temporary/topic";
 
-  private final Map<String, ConfigurationProperties> properties;
+  private final Map<String, DestinationPathManager> properties;
   private final Map<String, DestinationImpl> destinationList;
   private final List<DestinationManagerListener> destinationManagerListeners;
   private final Logger logger;
@@ -73,9 +70,10 @@ public class DestinationManager implements DestinationFactory {
     String root = ".";
     if(list != null) {
       for (ConfigurationProperties configuration : list.values()) {
-        properties.put(configuration.getProperty(NAMESPACE), configuration);
-        if (configuration.getProperty(NAMESPACE).equals("/")) {
-          root = configuration.getProperty(DIRECTORY);
+        DestinationPathManager destinationPathManager = new DestinationPathManager(configuration);
+        properties.put(destinationPathManager.getNamespace(), destinationPathManager);
+        if (destinationPathManager.getNamespace().equals("/")) {
+          root = destinationPathManager.getDirectory();
         }
       }
     }
@@ -128,9 +126,10 @@ public class DestinationManager implements DestinationFactory {
     if (destinationImpl == null) {
       UUID destinationUUID = UUID.randomUUID();
       String directoryPath = rootPath;
-      for (Map.Entry<String, ConfigurationProperties> entry : properties.entrySet()) {
+      for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
         if (name.startsWith(entry.getKey())) {
-          directoryPath = entry.getValue().getProperty(DIRECTORY);
+          directoryPath = entry.getValue().calculateDirectory(name);
+          break;
         }
       }
       if(destinationType.isTemporary()) {
@@ -196,8 +195,8 @@ public class DestinationManager implements DestinationFactory {
 
   public void start() {
     logger.log(LogMessages.DESTINATION_MANAGER_STARTING);
-    for (Map.Entry<String, ConfigurationProperties> entry : properties.entrySet()) {
-      String path = entry.getValue().getProperty(DIRECTORY);
+    for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
+      String path = entry.getValue().getDirectory();
       File scan = new File(path);
       if (scan.exists() && scan.isDirectory()) {
         processFileList(path, scan.listFiles());
