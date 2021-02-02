@@ -40,6 +40,13 @@ public class DestinationPathManager {
     return directory;
   }
 
+  public String getRootDirectory(){
+    if(remap){
+      return directory.substring(0, directory.indexOf(OPTIONAL_PATH));
+    }
+    return directory;
+  }
+
   public String getNamespace() {
     return namespace;
   }
@@ -58,5 +65,12 @@ public class DestinationPathManager {
       return response;
     }
     return directory;
+  }
+
+  public String getTrailingPath() {
+    if(remap){
+      return directory.substring(directory.indexOf(OPTIONAL_PATH)+OPTIONAL_PATH.length());
+    }
+    return "";
   }
 }
