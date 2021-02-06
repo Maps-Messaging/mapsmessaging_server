@@ -62,7 +62,7 @@ void log(JNIEnv *env, jobject obj, const char* message){
 }
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT jint JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_init
+JNIEXPORT jint JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_init
    (JNIEnv *env, jobject obj, jint node, jfloat frequency, jint cs, jint irq, jint rst){
    if(!bcm2835Initialised){
       bcm2835Initialised = true;
@@ -122,7 +122,7 @@ JNIEXPORT jint JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_i
   }
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT jboolean JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_setPower
+JNIEXPORT jboolean JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_setPower
   (JNIEnv * env, jobject obj, jint radioHandle, jint power, jboolean flag){
     if(radios[radioHandle].rf95){
       radios[radioHandle].rf95->setTxPower(power, flag);
@@ -132,7 +132,7 @@ JNIEXPORT jboolean JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevi
   }
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT jboolean JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_setCADTimeout
+JNIEXPORT jboolean JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_setCADTimeout
   (JNIEnv *env, jobject obj, jint radioHandle, jint timout){
     if(radios[radioHandle].rf95){
       radios[radioHandle].rf95->setCADTimeout(timout);
@@ -142,7 +142,7 @@ JNIEXPORT jboolean JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevi
   }
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT jboolean JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_write
+JNIEXPORT jboolean JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_write
   (JNIEnv * env, jobject obj, jint radioHandle, jbyteArray jbuf, jint len, jbyte from, jbyte to){
 
       // Copy the byte[] to a local uint8_t* structure
@@ -164,7 +164,7 @@ JNIEXPORT jboolean JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevi
 
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT jlong JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_read
+JNIEXPORT jlong JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_read
   (JNIEnv *env, jobject obj, jint radioHandle, jbyteArray jbuf, jint jlen){
     jlong returnVal =0;
     if (bcm2835_gpio_eds(radios[radioHandle].irq_pin)) {
@@ -197,20 +197,20 @@ JNIEXPORT jlong JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_
   }
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT jint JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_available
+JNIEXPORT jint JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_available
   (JNIEnv *env, jobject obj, jint radioHandle){
     return bcm2835_gpio_eds(radios[radioHandle].irq_pin);
   }
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT void JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_setPromiscuous
+JNIEXPORT void JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_setPromiscuous
     (JNIEnv *enf, jobject obj, jint radioHandle, jboolean flag){
         radios[radioHandle].rf95->setPromiscuous(flag);
     }
 
 
 //------------------------------------------------------------------------------------------
-JNIEXPORT jint JNICALL Java_org_buckton_network_io_impl_lora_device_LoRaDevice_getPacketSize
+JNIEXPORT jint JNICALL Java_org_maps_network_io_impl_lora_device_LoRaDevice_getPacketSize
   (JNIEnv *env, jobject obj, jint radioHandle){
     return radios[radioHandle].rf95->maxMessageLength( );
   }
