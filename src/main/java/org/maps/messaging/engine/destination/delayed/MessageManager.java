@@ -165,6 +165,9 @@ public class MessageManager {
     return counter;
   }
 
+  public synchronized boolean isEmpty(){
+    return counter == 0;
+  }
 
   /**
    * Simple toString override to display the context of the message manager
