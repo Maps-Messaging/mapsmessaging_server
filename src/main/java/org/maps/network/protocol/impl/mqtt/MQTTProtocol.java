@@ -100,7 +100,7 @@ public class MQTTProtocol extends ProtocolImpl {
     Connect connect = new Connect();
     if(endPoint.getConfig().getProperties().getProperty("username") != null) {
       connect.setUsername(endPoint.getConfig().getProperties().getProperty("username"));
-      connect.setPassword(endPoint.getConfig().getProperties().getProperty("password").toCharArray());
+      connect.setPassword(endPoint.getConfig().getProperties().getProperty("password").trim().toCharArray());
     }
     connect.setSessionId(endPoint.getConfig().getProperties().getProperty("sessionId"));
     writeFrame(connect);
