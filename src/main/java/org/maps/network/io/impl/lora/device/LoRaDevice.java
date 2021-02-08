@@ -43,7 +43,7 @@ public class LoRaDevice {
   }
 
   public synchronized void registerEndPoint(LoRaEndPoint endPoint) throws IOException {
-    if (!isInitialised && !init()) {
+    if (!isInitialised && !init((int)endPoint.getId())) {
       logger.log(LogMessages.LORA_DEVICE_NOT_INITIALISED, config.getName(), config.getRadio());
     } else if (radioHandle < 0) {
       logger.log(LogMessages.LORA_DEVICE_INIT_FAILED, config.getName(), config.getRadio());
@@ -63,9 +63,9 @@ public class LoRaDevice {
     return config.getName();
   }
 
-  private boolean init() throws IOException {
+  private boolean init(int addr) throws IOException {
     isInitialised = true;
-    int result = init(0xff, config.getFrequency(), config.getCs(), config.getIrq(), config.getRst());
+    int result = init(addr, config.getFrequency(), config.getCs(), config.getIrq(), config.getRst());
     if(result >= 0){
       setPower(result, config.getPower(), false);
       if(config.getCadTimeout() > 0){
