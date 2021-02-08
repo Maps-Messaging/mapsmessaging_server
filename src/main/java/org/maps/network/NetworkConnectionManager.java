@@ -44,12 +44,17 @@ public class NetworkConnectionManager implements ServiceManager {
   public void initialise() {
     for (Map.Entry<Integer, ConfigurationProperties> entry : properties.entrySet()) {
       ConfigurationProperties properties = entry.getValue();
-      EndPointURL endPointURL = new EndPointURL(properties.getProperty("url"));
-      for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-        if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-          EndPointURL url = new EndPointURL(properties.getProperty("url"));
-          EndPointConnectionHostJMX hostJMXBean = hostMapping.computeIfAbsent(url.host, k -> new EndPointConnectionHostJMX(jmxParent, url.host));
-          endPointConnectionList.add(new EndPointConnection(url, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
+      String urlString = properties.getProperty("url");
+      if (urlString != null) {
+        EndPointURL endPointURL = new EndPointURL(urlString);
+        for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
+          if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
+            EndPointURL url = new EndPointURL(properties.getProperty("url"));
+            EndPointConnectionHostJMX hostJMXBean =
+                hostMapping.computeIfAbsent(
+                    url.host, k -> new EndPointConnectionHostJMX(jmxParent, url.host));
+            endPointConnectionList.add(new EndPointConnection(url, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
+          }
         }
       }
     }
