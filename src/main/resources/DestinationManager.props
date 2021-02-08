@@ -5,6 +5,6 @@ name_0 = root
 namespace_0 = /
 directory_0 = ./data
 
-name_1 = users
-namespace_1 = /home/{folder}
-directory_1 = ./data/home/{folder}/messaging
+#name_1 = users
+#namespace_1 = /home/{folder}
+#directory_1 = ./data/home/{folder}/messaging

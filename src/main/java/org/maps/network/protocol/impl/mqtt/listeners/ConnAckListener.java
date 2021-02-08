@@ -20,7 +20,8 @@ public class ConnAckListener extends BaseConnectionListener {
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sess, false, 30000, user, pass.toCharArray());
     protocol.setKeepAlive(30000);
     try {
-      createSession(endPoint, protocol, scb, sess);
+      Session session1 = createSession(endPoint, protocol, scb, sess);
+      session1.resumeState();
       protocol.setConnected(true);
     } catch (IOException ioException) {
       try {
