@@ -27,6 +27,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,8 +36,10 @@ import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.network.admin.EndPointJMX;
 import org.maps.network.admin.EndPointManagerJMX;
+import org.maps.network.admin.EndPointConnectionJMX;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.EndPointServer;
+import org.maps.network.io.EndPointServerStatus;
 import org.maps.network.io.Packet;
 import org.maps.network.io.Selectable;
 import org.maps.network.io.impl.Selector;
@@ -52,6 +55,30 @@ public class TCPEndPoint extends EndPoint {
   private final String name;
   private final EndPointJMX mbean;
   private final AtomicBoolean isClosed;
+
+  public TCPEndPoint(long id, Socket accepted, Selector select, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
+    super(id, endPointServerStatus);
+    try {
+      logger.log(TCP_ACCEPT_START, accepted);
+      isClosed = new AtomicBoolean(false);
+      socket = accepted;
+      socketChannel = socket.getChannel();
+      selector = select;
+      authenticationConfig = null;
+      if(isClient()) {
+        name = getProtocol() + "_" + socket.getLocalAddress().toString()+"_"+socket.getLocalPort();
+      }
+      else{
+        name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
+      }
+      configure(endPointServerStatus.getConfig().getProperties());
+    } catch (IOException e) {
+      logger.log(LogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
+      throw e;
+    }
+    mbean = new EndPointJMX(jmxParent, this);
+    jmxParentPath = mbean.getTypePath();
+  }
 
   public TCPEndPoint(long id, Socket accepted, Selector select, String authConfig, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
     super(id, server);
@@ -91,10 +118,13 @@ public class TCPEndPoint extends EndPoint {
         }
         logger.log(LogMessages.TCP_CLOSE_SUCCESS, name);
       } catch (IOException e) {
+        e.printStackTrace();
         logger.log(LogMessages.TCP_CLOSE_EXCEPTION, e, name);
       } finally {
         mbean.close();
-        server.handleCloseEndPoint(this);
+        if(server != null) {
+          server.handleCloseEndPoint(this);
+        }
       }
     }
   }

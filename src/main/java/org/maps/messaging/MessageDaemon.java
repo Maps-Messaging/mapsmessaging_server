@@ -43,6 +43,7 @@ import org.maps.messaging.engine.destination.DestinationManager;
 import org.maps.messaging.engine.selector.operators.parsers.ParserFactory;
 import org.maps.messaging.engine.session.SessionManager;
 import org.maps.messaging.engine.system.SystemTopicManager;
+import org.maps.network.NetworkConnectionManager;
 import org.maps.network.NetworkManager;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.transformation.TransformationManager;
@@ -62,6 +63,7 @@ public class MessageDaemon implements WrapperListener {
 
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final NetworkManager networkManager;
+  private final NetworkConnectionManager networkConnectionManager;
   private final DestinationManager destinationManager;
   private final SessionManager sessionManager;
   private final HawtioManager hawtioManager;
@@ -139,6 +141,7 @@ public class MessageDaemon implements WrapperListener {
     TransactionManager.setExpiryTime(transactionExpiry);
 
     networkManager = new NetworkManager(mBean.getTypePath());
+    networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());
     securityManager = new org.maps.messaging.engine.session.SecurityManager();
     destinationManager = new DestinationManager(delayTimer);
     systemTopicManager = new SystemTopicManager(destinationManager);
@@ -162,6 +165,8 @@ public class MessageDaemon implements WrapperListener {
 
     logger.log(LogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Selector Parser Manager");
     logServices(ParserFactory.getInstance().getServices());
+
+    logServices(networkConnectionManager.getServices());
 
     logger.log(LogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
     ServiceLoader<ProtocolImplFactory> protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
@@ -245,6 +250,8 @@ public class MessageDaemon implements WrapperListener {
     networkManager.initialise();
     networkManager.startAll();
     hawtioManager.start();
+    networkConnectionManager.initialise();
+    networkConnectionManager.start();
     isStarted.set(true);
     return null;
   }
@@ -252,6 +259,7 @@ public class MessageDaemon implements WrapperListener {
   @Override
   public int stop(int i) {
     isStarted.set(false);
+    networkConnectionManager.stop();
     jolokaManager.stop();
     networkManager.stopAll();
     sessionManager.stop();

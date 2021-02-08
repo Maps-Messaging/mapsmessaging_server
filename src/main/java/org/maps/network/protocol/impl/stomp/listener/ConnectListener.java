@@ -25,15 +25,15 @@ import org.maps.messaging.api.Session;
 import org.maps.messaging.api.SessionContextBuilder;
 import org.maps.messaging.api.SessionManager;
 import org.maps.network.protocol.impl.stomp.DefaultConstants;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.Connect;
 import org.maps.network.protocol.impl.stomp.frames.Connected;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.frames.HeartBeat;
 import org.maps.network.protocol.impl.stomp.state.ConnectedState;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 import org.maps.network.protocol.transformation.TransformationManager;
 
-public class ConnectListener implements ClientFrameListener {
+public class ConnectListener implements FrameListener {
 
   private static final String CONTENT_TYPE_TEXT = "text/plain";
 
@@ -41,7 +41,7 @@ public class ConnectListener implements ClientFrameListener {
   private static final float MAX_VERSION = 1.2f;
 
   @Override
-  public void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
     Connect connect = (Connect) frame;
 
     // No version header supplied

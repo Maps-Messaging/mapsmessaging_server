@@ -20,11 +20,11 @@ import java.io.IOException;
 import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 
 public class ClosedState implements State {
 
-  public void handleFrame(StateEngine engine, ClientFrame frame, boolean endOfBuffer) throws IOException {
+  public void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException {
     throw new IOException("State is closed");
   }
 

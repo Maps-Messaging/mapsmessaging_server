@@ -19,17 +19,17 @@ package org.maps.network.protocol.impl.stomp.listener;
 import java.io.IOException;
 import org.maps.messaging.api.Transaction;
 import org.maps.network.protocol.impl.stomp.StompProtocolException;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.ClientTransaction;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.frames.Receipt;
 import org.maps.network.protocol.impl.stomp.frames.ServerFrame;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 
-public interface ClientFrameListener {
+public interface FrameListener {
 
-  void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) throws IOException;
+  void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException;
 
-  default void postFrameHandling(ClientFrame frame, StateEngine engine) {
+  default void postFrameHandling(Frame frame, StateEngine engine) {
     if (frame.getReceipt() != null) {
       ServerFrame receipt = new Receipt();
       receipt.setReceipt(frame.getReceipt());

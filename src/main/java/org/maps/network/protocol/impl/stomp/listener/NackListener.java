@@ -17,15 +17,15 @@
 package org.maps.network.protocol.impl.stomp.listener;
 
 import org.maps.messaging.api.SubscribedEventManager;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.Error;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.frames.Nack;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 
-public class NackListener implements ClientFrameListener {
+public class NackListener implements FrameListener {
 
   @Override
-  public void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
     Nack ackFrame = (Nack) frame;
     SubscribedEventManager subscription = engine.findSubscription(ackFrame.getSubscription());
     if (subscription != null) {

@@ -43,11 +43,11 @@ public abstract class ProtocolImplFactory implements Service {
     return description;
   }
 
+  public abstract ProtocolImpl connect(EndPoint endPoint) throws IOException;
+
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
 
-  public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-
-  }
+  public void create(EndPoint endPoint, InterfaceInformation info) throws IOException { }
 
   public boolean detect(Packet packet) throws EndOfBufferException {
     int pos = packet.position();

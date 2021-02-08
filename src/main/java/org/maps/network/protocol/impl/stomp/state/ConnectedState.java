@@ -21,15 +21,15 @@ import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.network.protocol.impl.stomp.StompProtocolException;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.CompletionHandler;
 import org.maps.network.protocol.impl.stomp.frames.Error;
-import org.maps.network.protocol.impl.stomp.listener.ClientFrameListener;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
+import org.maps.network.protocol.impl.stomp.listener.FrameListener;
 
 public class ConnectedState implements State {
 
-  public void handleFrame(StateEngine engine, ClientFrame frame, boolean endOfBuffer) throws IOException {
-    ClientFrameListener listener = frame.getFrameListener();
+  public void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException {
+    FrameListener listener = frame.getFrameListener();
     if (listener != null) {
       try {
         listener.frameEvent(frame, engine, endOfBuffer);
@@ -51,7 +51,8 @@ public class ConnectedState implements State {
 
   @Override
   public boolean sendMessage(StateEngine engine, Destination destination,String normalisedName,  SubscriptionContext context, Message message, Runnable completionTask) {
-    org.maps.network.protocol.impl.stomp.frames.Message msg = new org.maps.network.protocol.impl.stomp.frames.Message(message, normalisedName, context.getAlias());
+    org.maps.network.protocol.impl.stomp.frames.Message msg = new org.maps.network.protocol.impl.stomp.frames.Message(1024);
+    msg.packMessage(destination.getName(), context.getAlias(), message);
     msg.setCallback(new MessageCompletionHandler(completionTask));
     return engine.send(msg);
   }

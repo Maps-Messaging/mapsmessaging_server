@@ -27,7 +27,13 @@ import org.maps.network.io.Packet;
 public class Subscribe extends MQTTPacket {
 
   private final List<SubscriptionInfo> subscriptionList;
-  private final int messageId;
+  private int messageId;
+
+  public Subscribe(){
+    super(SUBSCRIBE);
+    subscriptionList = new ArrayList<>();
+    messageId = 0;
+  }
 
   public Subscribe(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException {
     super(MQTTPacket.SUBSCRIBE);
@@ -76,6 +82,22 @@ public class Subscribe extends MQTTPacket {
   }
 
   public int packFrame(Packet packet) {
+    int length = 2;
+    for(SubscriptionInfo info : subscriptionList) {
+      length += info.length()+2;
+    }
+    packControlByte(packet, 2);
+    writeVariableInt(packet, length);
+    writeShort(packet, messageId);
+    for(SubscriptionInfo info : subscriptionList){
+      writeUTF8(packet, info.getTopicName());
+      packet.put((byte) info.getQualityOfService().getLevel());
+    }
+
     return 0;
+  }
+
+  public void setMessageId(int id) {
+    messageId = id;
   }
 }

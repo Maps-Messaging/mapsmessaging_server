@@ -17,11 +17,13 @@
 package org.maps.network.protocol.impl.stomp.frames;
 
 import java.io.IOException;
+import java.net.SocketAddress;
+import org.maps.network.io.Packet;
 
 /**
  * Implements the STOMP Connect frame as per https://stomp.github.io/stomp-specification-1.2.html#CONNECT_or_STOMP_Frame
  */
-public class Connect extends ClientFrame {
+public class Connect extends Frame {
 
   private String login;
   private String passcode;
@@ -31,6 +33,39 @@ public class Connect extends ClientFrame {
 
   public Connect() {
     super();
+  }
+
+  @Override
+  byte[] getCommand() {
+    return "STOMP".getBytes();
+  }
+
+  public void setLogin(String login) {
+    putHeader("login", login);
+    this.login = login;
+  }
+
+  public void setPasscode(String passcode) {
+    putHeader("passcode", passcode);
+    this.passcode = passcode;
+  }
+
+  public void setAcceptVersion(String acceptVersion) {
+    putHeader("accept-version", acceptVersion);
+    this.acceptVersion = acceptVersion;
+  }
+
+  public void setHeartBeat(HeartBeat heartBeat) {
+    this.heartBeat = heartBeat;
+  }
+
+  public void setHost(String host) {
+    putHeader("host", host);
+    this.host = host;
+  }
+
+  @Override
+  void packBody(Packet packet) {
   }
 
   public Frame instance() {

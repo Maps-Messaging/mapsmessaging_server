@@ -28,7 +28,7 @@ public class ConfigurationProperties extends java.util.Properties {
 
   private Map<String, String> globalValues = new HashMap<>();
 
-  protected ConfigurationProperties() {
+  public ConfigurationProperties() {
   }
 
   protected ConfigurationProperties(Map<String, String> list, @Nullable Map<String, String> global) {

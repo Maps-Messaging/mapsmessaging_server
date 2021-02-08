@@ -21,18 +21,19 @@ import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.network.protocol.impl.stomp.StompProtocolException;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.Connect;
-import org.maps.network.protocol.impl.stomp.listener.ClientFrameListener;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
+import org.maps.network.protocol.impl.stomp.listener.FrameListener;
 
-public class InitialState implements State {
+public class InitialServerState implements State {
 
-  public void handleFrame(StateEngine engine, ClientFrame frame, boolean endOfBuffer) throws IOException {
+  public void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException {
     if (frame instanceof Connect) {
-      ClientFrameListener listener = frame.getFrameListener();
+      FrameListener listener = frame.getFrameListener();
       listener.frameEvent(frame, engine, endOfBuffer);
       listener.postFrameHandling(frame, engine);
-    } else {
+    }
+    else {
       throw new StompProtocolException("Invalid frame received");
     }
   }

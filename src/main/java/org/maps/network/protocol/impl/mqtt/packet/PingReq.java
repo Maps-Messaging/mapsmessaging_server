@@ -23,6 +23,10 @@ import org.maps.network.io.Packet;
  */
 public class PingReq extends MQTTPacket {
 
+  public PingReq(){
+    super(PINGREQ);
+  }
+
   public PingReq(byte fixedHeader, long remainingLen) throws MalformedException {
     super(MQTTPacket.PINGREQ);
     if ((fixedHeader & 0xf) != 0) {

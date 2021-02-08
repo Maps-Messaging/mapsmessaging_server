@@ -20,11 +20,11 @@ package org.maps.network.protocol.impl.mqtt_sn.packet;
 import org.maps.network.io.Packet;
 import org.maps.network.protocol.impl.mqtt.packet.MQTTPacket;
 
-public class ConAck extends MQTT_SNPacket {
+public class ConnAck extends MQTT_SNPacket {
 
   private final int status;
 
-  public ConAck(int status) {
+  public ConnAck(int status) {
     super(CONNACK);
     this.status = status;
   }

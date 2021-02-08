@@ -18,7 +18,7 @@ package org.maps.network.admin;
 
 public class Constants {
 
-  public static final String JMX_DOMAIN = "org.buckton";
+  public static final String JMX_DOMAIN = "io.mapsmessaging";
 
   private Constants(){
     // nothing to do

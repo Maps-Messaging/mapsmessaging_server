@@ -22,6 +22,7 @@ import java.util.List;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.InterfaceInformation;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 
 // The protocol is MQTT_SN so it makes sense
@@ -39,6 +40,11 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   public MQTT_SNProtocolFactory() {
     super("MQTT-SN", "MQTT-SN UDP based protocol as per http://mqtt.org/mqtt-specification/",null);
     mappedInterfaces = new ArrayList<>();
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    return null;
   }
 
   @Override

@@ -16,14 +16,14 @@
 
 package org.maps.network.protocol.impl.stomp.listener;
 
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.frames.Unsubscribe;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 
-public class UnsubscribeListener implements ClientFrameListener {
+public class UnsubscribeListener implements FrameListener {
 
   @Override
-  public void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
     Unsubscribe unsubscribe = (Unsubscribe) frame;
     engine.removeSubscription(unsubscribe.getId());
   }

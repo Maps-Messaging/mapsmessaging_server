@@ -50,9 +50,6 @@ public class LoRaDevice {
     } else {
       if (!registeredEndPoint.containsKey((int) endPoint.getId())) {
         registeredEndPoint.put((int) endPoint.getId(), endPoint);
-        if (registeredEndPoint.size() > 1) {
-          setPromiscuous(radioHandle, true);
-        }
         logger.log(LogMessages.LORA_DEVICE_REGISTERED, endPoint.getName(), config.getName());
       }
     }
@@ -74,6 +71,7 @@ public class LoRaDevice {
       if(config.getCadTimeout() > 0){
         setCADTimeout(result, config.getCadTimeout());
       }
+      setPromiscuous(radioHandle, true);
       packetReader = new PacketReader(this);
     }
     radioHandle = result;

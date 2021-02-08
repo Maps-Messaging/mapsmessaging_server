@@ -19,6 +19,7 @@ package org.maps.network.protocol.impl.mqtt.listeners;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import org.maps.logging.LogMessages;
 import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.MessageBuilder;
@@ -32,6 +33,7 @@ import org.maps.messaging.api.message.TypedData;
 import org.maps.network.io.EndPoint;
 import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolMessageTransformation;
+import org.maps.network.protocol.impl.mqtt.MQTTProtocol;
 import org.maps.network.protocol.impl.mqtt.packet.MQTTPacket;
 import org.maps.network.protocol.impl.mqtt.packet.MalformedException;
 import org.maps.network.protocol.impl.mqtt.packet.PubAck;
@@ -69,12 +71,21 @@ public class PublishListener extends PacketListener {
       response = new PubRec(publish.getPacketId());
     }
     if (!publish.getDestinationName().startsWith("$")) {
+      String lookup = publish.getDestinationName();
+      Map<String, String> map = ((MQTTProtocol) protocol).getTopicNameMapping();
+      if(map != null){
+        lookup = map.get(publish.getDestinationName());
+        if(lookup == null){
+          lookup = publish.getDestinationName();
+        }
+      }
       try {
-        Destination destination = session.findDestination(publish.getDestinationName());
+        Destination destination = session.findDestination(lookup);
         if(destination != null) {
           processMessage(publish, protocol, session, response, destination);
         }
       } catch (IOException e) {
+        e.printStackTrace();
         logger.log(LogMessages.MQTT_PUBLISH_STORE_FAILED);
         try {
           endPoint.close();

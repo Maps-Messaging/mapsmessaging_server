@@ -38,7 +38,7 @@ public class TCPEndPointServerFactory implements EndPointServerFactory {
   }
 
   public String getName() {
-    return "tcp";
+    return Constants.name;
   }
 
   @Override

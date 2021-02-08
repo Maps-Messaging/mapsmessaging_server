@@ -27,31 +27,43 @@ import org.maps.network.protocol.impl.stomp.listener.BeginListener;
 import org.maps.network.protocol.impl.stomp.listener.ClientHeartBeatListener;
 import org.maps.network.protocol.impl.stomp.listener.CommitListener;
 import org.maps.network.protocol.impl.stomp.listener.ConnectListener;
+import org.maps.network.protocol.impl.stomp.listener.ConnectedListener;
 import org.maps.network.protocol.impl.stomp.listener.DisconnectListener;
+import org.maps.network.protocol.impl.stomp.listener.ErrorListener;
+import org.maps.network.protocol.impl.stomp.listener.MessageListener;
 import org.maps.network.protocol.impl.stomp.listener.NackListener;
+import org.maps.network.protocol.impl.stomp.listener.ReceiptListener;
 import org.maps.network.protocol.impl.stomp.listener.SendListener;
 import org.maps.network.protocol.impl.stomp.listener.SubscribeListener;
 import org.maps.network.protocol.impl.stomp.listener.UnsubscribeListener;
 
 public class FrameFactory {
 
-  private final List<ClientFrameLookup> clientFrames;
+  private final List<FrameLookup> frames;
   private final byte[] workingBuffer;
 
-  public FrameFactory(int maxBufferSize) {
-    clientFrames = new ArrayList<>();
-    clientFrames.add(new ClientFrameLookup("".getBytes(), new ClientHeartBeat(), new ClientHeartBeatListener()));
-    clientFrames.add(new ClientFrameLookup("ABORT".getBytes(), new Abort(), new AbortListener()));
-    clientFrames.add(new ClientFrameLookup("ACK".getBytes(), new Ack(), new AckListener()));
-    clientFrames.add(new ClientFrameLookup("BEGIN".getBytes(), new Begin(), new BeginListener()));
-    clientFrames.add(new ClientFrameLookup("CONNECT".getBytes(), new Connect(), new ConnectListener()));
-    clientFrames.add(new ClientFrameLookup("STOMP".getBytes(), new Connect(), new ConnectListener()));
-    clientFrames.add(new ClientFrameLookup("COMMIT".getBytes(), new Commit(), new CommitListener()));
-    clientFrames.add(new ClientFrameLookup("DISCONNECT".getBytes(), new Disconnect(), new DisconnectListener()));
-    clientFrames.add(new ClientFrameLookup("NACK".getBytes(), new Nack(), new NackListener()));
-    clientFrames.add(new ClientFrameLookup("SEND".getBytes(), new Send(maxBufferSize), new SendListener()));
-    clientFrames.add(new ClientFrameLookup("SUBSCRIBE".getBytes(), new Subscribe(), new SubscribeListener()));
-    clientFrames.add(new ClientFrameLookup("UNSUBSCRIBE".getBytes(), new Unsubscribe(), new UnsubscribeListener()));
+  public FrameFactory(int maxBufferSize, boolean isClient) {
+    frames = new ArrayList<>();
+    if(isClient){
+      frames.add(new FrameLookup("CONNECTED".getBytes(), new Connected(), new ConnectedListener()));
+      frames.add(new FrameLookup("ERROR".getBytes(), new Error(), new ErrorListener()));
+      frames.add(new FrameLookup("MESSAGE".getBytes(), new Message(maxBufferSize), new MessageListener()));
+      frames.add(new FrameLookup("RECEIPT".getBytes(), new Receipt(), new ReceiptListener()));
+    }
+    else {
+      frames.add(new FrameLookup("".getBytes(), new ClientHeartBeat(), new ClientHeartBeatListener()));
+      frames.add(new FrameLookup("ABORT".getBytes(), new Abort(), new AbortListener()));
+      frames.add(new FrameLookup("ACK".getBytes(), new Ack(), new AckListener()));
+      frames.add(new FrameLookup("BEGIN".getBytes(), new Begin(), new BeginListener()));
+      frames.add(new FrameLookup("CONNECT".getBytes(), new Connect(), new ConnectListener()));
+      frames.add(new FrameLookup("STOMP".getBytes(), new Connect(), new ConnectListener()));
+      frames.add(new FrameLookup("COMMIT".getBytes(), new Commit(), new CommitListener()));
+      frames.add(new FrameLookup("DISCONNECT".getBytes(), new Disconnect(), new DisconnectListener()));
+      frames.add(new FrameLookup("NACK".getBytes(), new Nack(), new NackListener()));
+      frames.add(new FrameLookup("SEND".getBytes(), new Send(maxBufferSize), new SendListener()));
+      frames.add(new FrameLookup("SUBSCRIBE".getBytes(), new Subscribe(), new SubscribeListener()));
+      frames.add(new FrameLookup("UNSUBSCRIBE".getBytes(), new Unsubscribe(), new UnsubscribeListener()));
+    }
 
     //
     // OK lets parse the verbs and find the longest, this restricts our search to this max length,
@@ -59,23 +71,23 @@ public class FrameFactory {
     // a match then there isn't one to find so we can simply abort
     //
     int len = 0;
-    for (ClientFrameLookup lookup : clientFrames) {
+    for (FrameLookup lookup : frames) {
       len = Math.max(len, lookup.getCommand().length);
     }
     workingBuffer = new byte[len + 1];
   }
 
-  public ClientFrame parseFrame(Packet packet) throws StompProtocolException, EndOfBufferException {
-    ClientFrameLookup clientFrameLookup = createFrame(packet);
+  public Frame parseFrame(Packet packet) throws StompProtocolException, EndOfBufferException {
+    FrameLookup clientFrameLookup = createFrame(packet);
     if (clientFrameLookup == null) {
       throw new StompProtocolException("Unexpected Stomp frame received");
     }
-    ClientFrame clientFrame = (ClientFrame) clientFrameLookup.getClientFrame().instance();
-    clientFrame.setListener(clientFrameLookup.getFrameListener());
-    return clientFrame;
+    Frame frame = clientFrameLookup.getClientFrame().instance();
+    frame.setListener(clientFrameLookup.getFrameListener());
+    return frame;
   }
 
-  private ClientFrameLookup createFrame(Packet packet)
+  private FrameLookup createFrame(Packet packet)
       throws StompProtocolException, EndOfBufferException {
     int pos = packet.position();
     int idx = parseForVerb(packet, pos);
@@ -100,7 +112,7 @@ public class FrameFactory {
     //
     // OK we now have a command lets find the frame
     //
-    for (ClientFrameLookup lookup : clientFrames) {
+    for (FrameLookup lookup : frames) {
       byte[] command = lookup.getCommand();
       if (command.length == idx) {
         boolean found = true;

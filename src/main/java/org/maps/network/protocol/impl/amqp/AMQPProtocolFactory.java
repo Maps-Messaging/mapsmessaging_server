@@ -19,12 +19,19 @@ package org.maps.network.protocol.impl.amqp;
 import java.io.IOException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.detection.ByteArrayDetection;
 
 public class AMQPProtocolFactory extends org.maps.network.protocol.ProtocolImplFactory {
 
   public AMQPProtocolFactory() {
     super("AMQP", "AMQP version 1.0 as per https://www.amqp.org/resources/specifications ", new ByteArrayDetection("AMQP".getBytes(), 0));
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    return null;
+
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

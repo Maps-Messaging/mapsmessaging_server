@@ -16,58 +16,21 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
-import java.net.SocketAddress;
-import java.util.Map;
-import org.maps.network.io.Packet;
-import org.maps.network.io.ServerPacket;
 import org.maps.utilities.collections.PriorityEntry;
 
-public abstract class ServerFrame extends Frame implements PriorityEntry, ServerPacket {
+public abstract class ServerFrame extends Frame implements PriorityEntry {
 
   ServerFrame() {
     super();
-  }
-
-  abstract byte[] getCommand();
-
-  abstract void packBody(Packet packet);
-
-  public int packFrame(Packet packet) {
-    int start = packet.position();
-    //
-    // Pack the command
-    //
-    packet.put(getCommand());
-    packet.put(END_OF_LINE);
-
-    //
-    // Pack the header
-    //
-    if (receipt != null) {
-      packet.put("receipt-id".getBytes());
-      packet.put(DELIMITER);
-      packet.put(receipt.getBytes());
-      packet.put(END_OF_LINE);
-    }
-    for (Map.Entry<String, String> headerEntry : getHeader().entrySet()) {
-      packet.put(headerEntry.getKey().getBytes());
-      packet.put(DELIMITER);
-      packet.put(headerEntry.getValue().getBytes());
-      packet.put(END_OF_LINE);
-    }
-    packet.put(END_OF_LINE);
-
-    packBody(packet);
-
-    packet.put((byte) 0x0);
-    return packet.position() - start;
   }
 
   public int getPriority() {
     return 0;
   }
 
-  public SocketAddress getFromAddress() {
-    return null;
+  @Override
+  public boolean isValid() {
+    return true;
   }
+
 }

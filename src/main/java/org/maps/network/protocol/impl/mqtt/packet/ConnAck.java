@@ -17,6 +17,7 @@
 package org.maps.network.protocol.impl.mqtt.packet;
 
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.EndOfBufferException;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718033
@@ -35,6 +36,12 @@ public class ConnAck extends MQTTPacket {
 
   public ConnAck() {
     super(CONNACK);
+  }
+
+  public ConnAck(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
+    super(CONNACK);
+    byte isPresent = packet.get();
+    byte response = packet.get();
   }
 
   @Override

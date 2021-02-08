@@ -16,10 +16,24 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
+import org.maps.network.io.Packet;
+
 /**
  * Implements the STOMP Connect frame as per https://stomp.github.io/stomp-specification-1.2.html#ABORT
  */
 public class Abort extends ClientTransaction {
+
+  private static final byte[] command = "ABORT".getBytes();
+
+  @Override
+  byte[] getCommand() {
+    return command;
+  }
+
+  @Override
+  void packBody(Packet packet) {
+    // no body
+  }
 
   @Override
   public Frame instance() {

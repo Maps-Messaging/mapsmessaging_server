@@ -29,6 +29,7 @@
 
 #define BATTERY_BUILT_IN_PIN A9
 
+#define DEBUG 1
 //---------------------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------------------
@@ -67,7 +68,7 @@ const bool powerFlag = false;
 uint8_t deviceAddress = 16;
 
 // Gateway Server address
-uint8_t LoRaGateway = 2;
+uint8_t LoRaGateway = 0xff;
 
 // The MQTT-SN topic number
 uint16_t topicNumber   = 9;
@@ -118,6 +119,10 @@ bool packMQTT_SNPublish(short topicId, bool retain,  char* message, uint8_t mess
   bool loop = true;
   while(loop){
   // Send Packet via Radio Head
+  #ifdef DEBUG
+    Serial.print("Sending to Gateway ");
+    Serial.println(LoRaGateway);
+  #endif
     if(!manager.sendtoWait(packet, len, LoRaGateway)){
       #ifdef DEBUG
         Serial.println("Failed to send/ No Ack");
@@ -336,10 +341,10 @@ void loop() {
 
   // if the battery voltage is high enough lets power up 
   // and send the data, else lets go back to sleep
-  if(getCurrentVoltage() >= 3.1){
+ // if(getCurrentVoltage() >= 3.1){
     setupWireless();
     setupUltrasonic();
     publishEvent();
     radio.sleep();
-  }
+ // }
 }

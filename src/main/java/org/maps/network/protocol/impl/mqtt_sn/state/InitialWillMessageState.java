@@ -24,7 +24,7 @@ import org.maps.messaging.api.Session;
 import org.maps.messaging.api.SessionContextBuilder;
 import org.maps.network.io.EndPoint;
 import org.maps.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
-import org.maps.network.protocol.impl.mqtt_sn.packet.ConAck;
+import org.maps.network.protocol.impl.mqtt_sn.packet.ConnAck;
 import org.maps.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import org.maps.network.protocol.impl.mqtt_sn.packet.WillMessage;
 
@@ -49,11 +49,11 @@ public class InitialWillMessageState implements State {
       SessionContextBuilder scb = stateEngine.getSessionContextBuilder();
       scb.setWillMessage(messageBuilder.build());
       try {
-        MQTT_SNPacket response = new ConAck(MQTT_SNPacket.ACCEPTED);
+        MQTT_SNPacket response = new ConnAck(MQTT_SNPacket.ACCEPTED);
         stateEngine.createSession(scb, protocol, response);
         return response;
       } catch (LoginException | IOException e) {
-        ConAck response = new ConAck(MQTT_SNPacket.NOT_SUPPORTED);
+        ConnAck response = new ConnAck(MQTT_SNPacket.NOT_SUPPORTED);
         response.setCallback(() -> {
           try {
             protocol.close();

@@ -16,10 +16,22 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
+import org.maps.network.io.Packet;
+
 /**
  * Implements the STOMP Connect frame as per https://stomp.github.io/stomp-specification-1.2.html#ACK
  */
 public class Ack extends ClientSubscriptionTransaction {
+
+  @Override
+  byte[] getCommand() {
+    return "ACK".getBytes();
+  }
+
+  @Override
+  void packBody(Packet packet) {
+
+  }
 
   @Override
   public Frame instance() {

@@ -24,7 +24,7 @@ import org.maps.messaging.api.SessionContextBuilder;
 import org.maps.network.io.EndPoint;
 import org.maps.network.protocol.impl.mqtt_sn.DefaultConstants;
 import org.maps.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
-import org.maps.network.protocol.impl.mqtt_sn.packet.ConAck;
+import org.maps.network.protocol.impl.mqtt_sn.packet.ConnAck;
 import org.maps.network.protocol.impl.mqtt_sn.packet.Connect;
 import org.maps.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import org.maps.network.protocol.impl.mqtt_sn.packet.WillTopicRequest;
@@ -54,13 +54,13 @@ public class InitialConnectionState implements State {
         return topicRequest;
       } else {
         try {
-          MQTT_SNPacket response = new ConAck(MQTT_SNPacket.ACCEPTED);
+          MQTT_SNPacket response = new ConnAck(MQTT_SNPacket.ACCEPTED);
           Session session = stateEngine.createSession(scb, protocol, response);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
           session.login();
           return response;
         } catch (LoginException | IOException e) {
-          ConAck response = new ConAck(MQTT_SNPacket.NOT_SUPPORTED);
+          ConnAck response = new ConnAck(MQTT_SNPacket.NOT_SUPPORTED);
           response.setCallback(() -> {
             try {
               protocol.close();

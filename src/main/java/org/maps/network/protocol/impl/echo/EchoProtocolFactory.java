@@ -19,6 +19,7 @@ package org.maps.network.protocol.impl.echo;
 import java.io.IOException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.detection.ScanningByteArrayDetection;
 
 public class EchoProtocolFactory extends org.maps.network.protocol.ProtocolImplFactory {
@@ -27,6 +28,12 @@ public class EchoProtocolFactory extends org.maps.network.protocol.ProtocolImplF
 
   public EchoProtocolFactory() {
     super("ECHO", "Echo Protocol, Not for Production", new ScanningByteArrayDetection(CHECK_CODE, 0, 12));
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    return null;
+
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

@@ -16,10 +16,17 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
+import java.io.IOException;
+import java.net.SocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.maps.network.io.Packet;
+import org.maps.network.io.ServerPacket;
+import org.maps.network.protocol.EndOfBufferException;
+import org.maps.network.protocol.impl.stomp.StompProtocolException;
+import org.maps.network.protocol.impl.stomp.listener.FrameListener;
 
-public abstract class Frame {
+public abstract class Frame implements ServerPacket {
 
   static final byte END_OF_FRAME = 0x00;
   static final byte END_OF_LINE = 0x0A;
@@ -27,6 +34,10 @@ public abstract class Frame {
 
   private final Map<String, String> header;
   private final Map<String, String> caseHeader;
+  private FrameListener frameListener;
+
+  protected boolean endOfHeader;
+  protected boolean hasEndOfFrame;
 
   String receipt;
   private CompletionHandler completionHandler;
@@ -35,6 +46,8 @@ public abstract class Frame {
     header = new LinkedHashMap<>();
     caseHeader = new LinkedHashMap<>();
     completionHandler = null;
+    endOfHeader = false;
+    hasEndOfFrame = false;
   }
 
   public String getReceipt() {
@@ -74,6 +87,40 @@ public abstract class Frame {
     return header.containsKey(key.toLowerCase());
   }
 
+  abstract byte[] getCommand();
+
+  public int packFrame(Packet packet) {
+    int start = packet.position();
+    //
+    // Pack the command
+    //
+    packet.put(getCommand());
+    packet.put(END_OF_LINE);
+
+    //
+    // Pack the header
+    //
+    if (receipt != null) {
+      packet.put("receipt-id".getBytes());
+      packet.put(DELIMITER);
+      packet.put(receipt.getBytes());
+      packet.put(END_OF_LINE);
+    }
+    for (Map.Entry<String, String> headerEntry : getHeader().entrySet()) {
+      packet.put(headerEntry.getKey().getBytes());
+      packet.put(DELIMITER);
+      packet.put(headerEntry.getValue().getBytes());
+      packet.put(END_OF_LINE);
+    }
+    packet.put(END_OF_LINE);
+
+    packBody(packet);
+
+    packet.put((byte) 0x0);
+    return packet.position() - start;
+  }
+
+  abstract void packBody(Packet packet);
 
   public abstract Frame instance();
 
@@ -105,6 +152,14 @@ public abstract class Frame {
     }
   }
 
+  public FrameListener getFrameListener() {
+    return frameListener;
+  }
+
+  public void setListener(FrameListener frameListener) {
+    this.frameListener = frameListener;
+  }
+
   public String getHeaderAsString() {
     StringBuilder sb = new StringBuilder();
     for (Map.Entry<String, String> entry : header.entrySet()) {
@@ -114,5 +169,114 @@ public abstract class Frame {
       sb.append("Receipt:").append(receipt);
     }
     return sb.toString();
+  }
+
+  public void scanFrame(Packet packet) throws IOException {
+    scanFrame(packet, true);
+  }
+
+  public void scanFrame(Packet packet, boolean scanForEnd) throws IOException {
+    if (hasEndOfFrame) {
+      resume(packet);
+    } else {
+      int lastValidPos = 0;
+      int pos;
+      if (!endOfHeader) {
+        pos = packet.position();
+        lastValidPos = loadHeader(packet, pos);
+      }
+
+      if (endOfHeader && packet.hasRemaining() && scanForEnd && packet.get() == END_OF_FRAME) {
+        parseCompleted();
+        hasEndOfFrame = true;
+        return;
+      }
+      packet.position(lastValidPos);
+      throw new EndOfBufferException("Expecting End Of Frame 0x0");
+    }
+  }
+
+  private int loadHeader(Packet packet, int pos) {
+    StringBuilder keyBuilder = new StringBuilder();
+    StringBuilder valBuilder = new StringBuilder();
+    boolean isKey = true;
+    int lastValidPos = pos;
+    while (packet.limit() != packet.position() && !endOfHeader) {
+      pos++;
+      byte t = packet.get();
+      if (t == Frame.END_OF_LINE) {
+        if (isKey && keyBuilder.length() == 0) {
+          endOfHeader = true;
+          lastValidPos = pos;
+          break;
+        } else {
+          putHeader(keyBuilder.toString(), valBuilder.toString());
+          keyBuilder = new StringBuilder();
+          valBuilder = new StringBuilder();
+          isKey = true;
+          lastValidPos = pos;
+        }
+      } else if (t == DELIMITER) {
+        isKey = false;
+      } else {
+        if (isKey) {
+          keyBuilder.append((char) t);
+        } else {
+          valBuilder.append((char) t);
+        }
+      }
+    }
+    return lastValidPos;
+  }
+
+
+  protected int parseHeaderInt(String key, int def){
+    String value = getHeader(key);
+    if (value != null) {
+      try {
+        return Integer.parseInt(value.trim());
+      } catch (NumberFormatException e) {
+        // We ignore this as its not a number and return the default
+      }
+    }
+    return def;
+  }
+
+
+  public int getReceiveMaximum(){
+    String val = getHeader("receivemaximum");
+    if(val != null){
+      try {
+        return Integer.parseInt(val.trim());
+      } catch (NumberFormatException e) {
+        // Invalid number supplied so just return 0 and use the default
+      }
+    }
+    return 0;
+  }
+
+  protected long parseHeaderLong(String key, long def){
+    String value = getHeader(key);
+    if (value != null) {
+      try {
+        return Long.parseLong(value.trim());
+      } catch (NumberFormatException e) {
+        // We ignore this as its not a number and return the default
+      }
+    }
+    return def;
+  }
+  // This class doesn't throw it, however, extending classes do
+  @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
+  public void parseCompleted() throws IOException {
+    receipt = removeHeader("receipt");
+  }
+  public abstract boolean isValid();
+  public void resume(Packet packet) throws EndOfBufferException, StompProtocolException {
+  }
+
+  @Override
+  public SocketAddress getFromAddress() {
+    return null;
   }
 }

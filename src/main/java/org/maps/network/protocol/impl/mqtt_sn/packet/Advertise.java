@@ -41,6 +41,10 @@ public class Advertise extends MQTT_SNPacket {
     duration = MQTTPacket.readShort(packet);
   }
 
+  public int getId(){
+    return gatewayId;
+  }
+
   @Override
   public int packFrame(Packet packet) {
     packet.put((byte) 5);

@@ -18,14 +18,14 @@ package org.maps.network.protocol.impl.stomp.listener;
 
 import org.maps.messaging.api.TransactionException;
 import org.maps.network.protocol.impl.stomp.frames.Begin;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.Error;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 
-public class BeginListener implements ClientFrameListener {
+public class BeginListener implements FrameListener {
 
   @Override
-  public void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
     Begin begin = (Begin) frame;
     try {
       String transaction = begin.getTransaction();

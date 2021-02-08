@@ -19,6 +19,7 @@ package org.maps.network.protocol.impl.mqtt;
 import java.io.IOException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.detection.ByteArrayDetection;
 
@@ -32,6 +33,13 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
 
   public MQTTProtocolFactory() {
     super("MQTT", "MQTT version 3.1.1 as per http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html", new ByteArrayDetection(PROTOCOL, 4));
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    MQTTProtocol protocol = new MQTTProtocol(endPoint);
+    protocol.connect();
+    return protocol;
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

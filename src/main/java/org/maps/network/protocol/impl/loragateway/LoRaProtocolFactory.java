@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.loragateway;
 import java.io.IOException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.detection.ByteArrayDetection;
 
@@ -27,6 +28,12 @@ public class LoRaProtocolFactory extends ProtocolImplFactory {
 
   public LoRaProtocolFactory() {
     super("Lora_MQTT-SN", "LoRa MQTT-SN gateway via serial connection", new ByteArrayDetection("Lora <-> MQTT".getBytes(), 0));
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    return null;
+
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

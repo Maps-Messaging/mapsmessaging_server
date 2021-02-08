@@ -26,7 +26,7 @@ import org.maps.messaging.api.Session;
 import org.maps.network.io.EndPoint;
 import org.maps.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
 import org.maps.network.protocol.impl.mqtt_sn.SleepManager;
-import org.maps.network.protocol.impl.mqtt_sn.packet.ConAck;
+import org.maps.network.protocol.impl.mqtt_sn.packet.ConnAck;
 import org.maps.network.protocol.impl.mqtt_sn.packet.Disconnect;
 import org.maps.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import org.maps.network.protocol.impl.mqtt_sn.packet.PingResponse;
@@ -53,7 +53,7 @@ public class SleepState implements State {
 
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.CONNECT:
-        MQTT_SNPacket response = new ConAck(MQTT_SNPacket.ACCEPTED);
+        MQTT_SNPacket response = new ConnAck(MQTT_SNPacket.ACCEPTED);
         sleepDuration = 0;
         clearReaper();
         sendMessages();

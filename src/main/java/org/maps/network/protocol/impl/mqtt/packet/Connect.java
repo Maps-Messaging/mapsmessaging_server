@@ -16,6 +16,7 @@
 
 package org.maps.network.protocol.impl.mqtt.packet;
 
+import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.network.io.Packet;
@@ -28,34 +29,39 @@ import org.maps.network.protocol.EndOfBufferException;
 @java.lang.SuppressWarnings({"squid:S3776", "common-java:DuplicatedBlocks"})
 public class Connect extends MQTTPacket {
 
-  private final byte[] mqtt = "MQTT".getBytes();
+  private byte[] mqtt = "MQTT".getBytes();
 
-  private final byte protocolLevel;
+  private byte protocolLevel;
 
   //
   // Will fields
   //
-  private final boolean willFlag;
-  private final QualityOfService willQOS;
-  private final boolean willRetain;
-  private final String willTopic;
-  private final byte[] willMsg;
+  private boolean willFlag;
+  private QualityOfService willQOS;
+  private boolean willRetain;
+  private String willTopic;
+  private byte[] willMsg;
 
   //
   // Username / Password fields
   //
-  private final boolean passwordFlag;
-  private final boolean usernameFlag;
-  private final String username;
-  private final char[] password;
+  private boolean passwordFlag;
+  private boolean usernameFlag;
+  private String username;
+  private char[] password;
 
   //
   // Session fields
   //
-  private final boolean cleanSession;
-  private final int keepAlive;
-  private final String sessionId;
+  private boolean cleanSession;
+  private int keepAlive;
+  private String sessionId;
 
+  public Connect(){
+    super(CONNECT);
+  }
+  
+  
   public Connect(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
     super(CONNECT);
     if ((fixedHeader & 0xf) != 0) {
@@ -155,6 +161,48 @@ public class Connect extends MQTTPacket {
     }
   }
 
+  public void setWillFlag(boolean willFlag) {
+    this.willFlag = willFlag;
+  }
+
+  public void setWillQOS(QualityOfService willQOS) {
+    this.willQOS = willQOS;
+  }
+
+  public void setWillRetain(boolean willRetain) {
+    this.willRetain = willRetain;
+  }
+
+  public void setWillTopic(String willTopic) {
+    this.willTopic = willTopic;
+  }
+
+  public void setWillMsg(byte[] willMsg) {
+    this.willMsg = willMsg;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+    usernameFlag = (username != null);
+  }
+
+  public void setPassword(char[] password) {
+    this.password = password;
+    passwordFlag = (password != null);
+  }
+
+  public void setCleanSession(boolean cleanSession) {
+    this.cleanSession = cleanSession;
+  }
+
+  public void setKeepAlive(int keepAlive) {
+    this.keepAlive = keepAlive;
+  }
+
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
+  }
+
   public boolean isPasswordFlag() {
     return passwordFlag;
   }
@@ -245,6 +293,42 @@ public class Connect extends MQTTPacket {
   }
 
   public int packFrame(Packet packet) {
-    return 0;
+    ByteArrayOutputStream b = new ByteArrayOutputStream();
+    b.write(0);
+    b.write(mqtt.length);
+    b.write(mqtt, 0, mqtt.length);
+    b.write(4);
+
+    byte connectFlag = 0;
+    if(usernameFlag) connectFlag = (byte)(connectFlag + 0x80);
+    if(passwordFlag) connectFlag = (byte)(connectFlag + 0x40);
+    b.write(connectFlag);
+
+    // Keep Alive
+    b.write(0);
+    b.write((byte)60);
+
+
+    //
+    long size = 10 + sessionId.length() + 2;
+    if(passwordFlag && usernameFlag){
+      size += password.length + username.length() + 4;
+    }
+
+    //
+    // Pack the header
+    //
+    int start = packet.position();
+    byte fixed = (byte) (CONNECT << 4);
+    packet.put(fixed);
+    writeVariableInt(packet, size);
+    packet.put(b.toByteArray());
+    writeUTF8(packet, sessionId);
+    writeUTF8(packet, username);
+    writeShort(packet, password.length);
+    for (char c : password) {
+      packet.put((byte) c);
+    }
+    return packet.position() - start;
   }
 }

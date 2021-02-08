@@ -17,6 +17,7 @@
 package org.maps.network.protocol;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
@@ -49,12 +50,14 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
 
   private final ProtocolJMX mbean;
   protected long keepAlive;
+  private boolean connected;
 
   public ProtocolImpl(@NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
     sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
     receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
+    connected = false;
   }
 
   public ProtocolMessageTransformation getTransformation() {
@@ -70,6 +73,18 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
       mbean.close();
     }
     endPoint.close();
+  }
+
+  public void connect() throws IOException{
+    System.err.println("Needs to be implemented");
+  }
+
+  public void subscribeRemote(String resource, Map<String, String> destinationMap) throws IOException{
+    System.err.println("Needs to be implemented");
+  }
+
+  public void subscribeLocal(String resource, Map<String, String> destinationMap) throws IOException {
+    System.err.println("Needs to be implemented");
   }
 
   public EndPoint getEndPoint() {
@@ -104,4 +119,23 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
     keepAlive = keepAliveMilliseconds;
   }
 
+  public void setConnected(boolean connected) {
+    if(this.connected != connected){
+      this.connected = connected;
+      try {
+        if(connected) {
+          endPoint.getServer().handleNewEndPoint(endPoint);
+        }
+        else{
+          endPoint.getServer().handleCloseEndPoint(endPoint);
+        }
+      } catch (IOException ioException) {
+        ioException.printStackTrace();
+      }
+    }
+  }
+
+  public boolean isConnected(){
+    return connected;
+  }
 }

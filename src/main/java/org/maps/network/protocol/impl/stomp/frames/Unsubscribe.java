@@ -17,11 +17,12 @@
 package org.maps.network.protocol.impl.stomp.frames;
 
 import java.io.IOException;
+import org.maps.network.io.Packet;
 
 /**
  * Implements the STOMP Connect frame as per https://stomp.github.io/stomp-specification-1.2.html#UNSUBSCRIBE
  */
-public class Unsubscribe extends ClientFrame {
+public class Unsubscribe extends Frame {
 
   private String id;
   private boolean isValid;
@@ -40,6 +41,16 @@ public class Unsubscribe extends ClientFrame {
     id = getHeader("id");
     isValid = (id != null);
     super.parseCompleted();
+  }
+
+  @Override
+  byte[] getCommand() {
+    return "UNSUBSCRIBE".getBytes();
+  }
+
+  @Override
+  void packBody(Packet packet) {
+
   }
 
   @Override

@@ -27,9 +27,30 @@ public class SubAck extends MQTTPacket {
   private final byte[] result;
 
   public SubAck(int packetId, byte[] result) {
-    super(MQTTPacket.SUBACK);
+    super(SUBACK);
     this.result = result;
     this.packetId = packetId;
+  }
+
+  public int getPacketId() {
+    return packetId;
+  }
+
+  public byte[] getResult() {
+    return result;
+  }
+
+  public SubAck(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException {
+    super(SUBACK);
+    if ((fixedHeader & 0xf) != 0) {
+      throw new MalformedException("SubAck: Reserved bits in command byte not set as 0,0,0,0 as per [MQTT-3.6.1-1]");
+    }
+    if (remainingLen <= 2) {
+      throw new MalformedException("SubAck: Remaining Length must be greater than 2");
+    }
+    packetId = readShort(packet);
+    result = new byte[(int)remainingLen-2];
+    packet.get(result);
   }
 
   @Override

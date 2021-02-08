@@ -31,6 +31,9 @@ public class PacketListenerFactory {
     for (int x = 0; x < listeners.length; x++) {
       listeners[x] = new NoOpListener();
     }
+    //
+    // Server based events
+    //
     listeners[MQTTPacket.CONNECT] = new ConnectListener();
     listeners[MQTTPacket.PUBLISH] = new PublishListener();
     listeners[MQTTPacket.PUBREL] = new PubRelListener();
@@ -42,6 +45,13 @@ public class PacketListenerFactory {
     listeners[MQTTPacket.PUBREC] = new PubRecListener();
     listeners[MQTTPacket.PUBCOMP] = new PubCompListener();
     listeners[MQTTPacket.UNSUBSCRIBE] = new UnsubscribeListener();
+
+    //
+    // Client based events
+    //
+    listeners[MQTTPacket.CONNACK] = new ConnAckListener();
+    listeners[MQTTPacket.SUBACK] = new SubAckListener();
+    listeners[MQTTPacket.PINGRESP] = new PingResponseListener();
   }
 
   public PacketListener getListener(int mqttPacketId) {

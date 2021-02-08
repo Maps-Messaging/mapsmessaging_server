@@ -20,15 +20,15 @@ import java.io.IOException;
 import org.maps.messaging.api.SubscriptionContextBuilder;
 import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.network.protocol.impl.stomp.DefaultConstants;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.Error;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.frames.Subscribe;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 
-public class SubscribeListener implements ClientFrameListener {
+public class SubscribeListener implements FrameListener {
 
   @Override
-  public void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
     ClientAcknowledgement ackManger;
     Subscribe subscribe = (Subscribe) frame;
     switch (subscribe.getAck()) {

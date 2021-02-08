@@ -22,6 +22,9 @@ import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import org.maps.logging.LogMessages;
+import org.maps.logging.Logger;
+import org.maps.logging.LoggerFactory;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.SessionManager;
 import org.maps.messaging.api.features.QualityOfService;
@@ -44,6 +47,7 @@ import org.maps.network.protocol.transformation.TransformationManager;
 @java.lang.SuppressWarnings("squid:S00101")
 public class MQTTSNInterfaceManager implements SelectorCallback {
 
+  private final Logger logger;
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final HashMap<SocketAddress, MQTT_SNProtocol> currentSessions;
@@ -54,6 +58,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final ProtocolMessageTransformation transformation;
 
   public MQTTSNInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
+    logger = LoggerFactory.getLogger("MQTT-SN 1.2 Protocol on " + endPoint.getName());
     this.gatewayId = gatewayId;
     this.selectorTask = selectorTask;
     advertiserTask = null;
@@ -65,6 +70,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   public MQTTSNInterfaceManager(InterfaceInformation info, EndPoint endPoint, byte gatewayId) throws IOException {
+    logger = LoggerFactory.getLogger("MQTT-SN 1.2 Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
     currentSessions = new LinkedHashMap<>();
@@ -95,7 +101,12 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       //
       // OK so this is either a new connection request or an admin request
       //
-      MQTT_SNPacket mqttSn = packetFactory.parseFrame(packet);
+      MQTT_SNPacket mqttSn = null;
+      try {
+        mqttSn = packetFactory.parseFrame(packet);
+      } catch (IOException ioException) {
+        // We received a corrupt packet, there is not much we can do but ignore it since it could just be noise
+      }
       // Cool, so we have a new connect, so lets create a new protocol Impl and add it into our list
       // of current sessions
       if (mqttSn instanceof Connect) {
@@ -113,10 +124,20 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
         if (publish.getQoS().equals(QualityOfService.MQTT_SN_REGISTERED)) {
           String topic = registeredTopicConfiguration.getTopic(packet.getFromAddress(), publish.getTopicId());
           if (topic != null) {
+            logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT, topic);
             publishRegisteredTopic(topic, publish);
+          } else {
+            logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT_NOT_FOUND, packet.getFromAddress(), publish.getTopicId());
           }
+        } else {
+          logger.log(LogMessages.MQTT_SN_INVALID_QOS_PACKET_DETECTED, packet.getFromAddress(), publish.getQoS());
+
         }
-      } else if (!(mqttSn instanceof Advertise)) {
+      }
+      else if(mqttSn instanceof Advertise){
+        Advertise advertise = (Advertise) mqttSn;
+        logger.log(LogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getId(), packet.getFromAddress().toString());
+      } else {
         packet.flip();
       }
     }

@@ -31,15 +31,16 @@ import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.network.io.CloseHandler;
 import org.maps.network.protocol.impl.stomp.StompProtocol;
 import org.maps.network.protocol.impl.stomp.StompProtocolException;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.CompletionHandler;
-import org.maps.network.protocol.impl.stomp.frames.ServerFrame;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 
 public class StateEngine implements CloseHandler, CompletionHandler {
 
   private final Logger logger;
   private final StompProtocol protocolImpl;
   private final Map<String, SubscribedEventManager> activeSubscriptions;
+
+  private Map<String, String> destinationMap;
 
   private int requestCounter;
   private State currentState;
@@ -49,20 +50,26 @@ public class StateEngine implements CloseHandler, CompletionHandler {
   public StateEngine(StompProtocol protocolImpl) {
     this.protocolImpl = protocolImpl;
     logger = protocolImpl.getLogger();
-    currentState = new InitialState();
+    if(protocolImpl.getEndPoint().isClient()){
+      currentState = new InitialClientState();
+    }
+    else{
+      currentState = new InitialServerState();
+    }
     activeSubscriptions = new LinkedHashMap<>();
     requestCounter = 0;
     session = null;
     isValid = true;
+    destinationMap = null;
     protocolImpl.getEndPoint().setCloseHandler(this);
   }
 
-  public boolean send(ServerFrame frame) {
+  public boolean send(Frame frame) {
     protocolImpl.writeFrame(frame);
     return true;
   }
 
-  public synchronized void handleFrame(ClientFrame frame, boolean endOfBuffer) {
+  public synchronized void handleFrame(Frame frame, boolean endOfBuffer) {
     try {
       protocolImpl.receivedMessage();
       frame.setCallback(this);
@@ -100,6 +107,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
   public void setSession(Session session) throws StompProtocolException {
     if (session != null) {
       this.session = session;
+      protocolImpl.setConnected(true);
     } else {
       throw new StompProtocolException("Session already established");
     }
@@ -148,5 +156,21 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     } catch (IOException e) {
       logger.log(LogMessages.STOMP_STATE_ENGINE_FAILED_COMPLETION);
     }
+  }
+
+  public String map(String destinationName){
+    String mappedDestination = destinationName;
+    if(destinationMap != null){
+      mappedDestination = destinationMap.get(destinationName);
+    }
+    return mappedDestination;
+  }
+
+  public Map<String, String> getMap(){
+    return destinationMap;
+  }
+
+  public void setMap(Map<String, String> destinationMap) {
+    this.destinationMap = destinationMap;
   }
 }

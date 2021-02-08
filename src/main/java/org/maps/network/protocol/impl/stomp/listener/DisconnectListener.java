@@ -16,17 +16,17 @@
 
 package org.maps.network.protocol.impl.stomp.listener;
 
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.CompletionHandler;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.frames.Receipt;
 import org.maps.network.protocol.impl.stomp.frames.ServerFrame;
 import org.maps.network.protocol.impl.stomp.state.ClosedState;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 
-public class DisconnectListener implements ClientFrameListener {
+public class DisconnectListener implements FrameListener {
 
   @Override
-  public void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
     engine.changeState(new ClosedState());
     if (frame.getReceipt() != null) {
       ServerFrame receipt = new Receipt();

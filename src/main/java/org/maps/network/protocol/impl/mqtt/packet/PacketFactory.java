@@ -53,6 +53,35 @@ public class PacketFactory {
 
   protected MQTTPacket create(int packetId, byte fixedHeader, long remainingLen, Packet packet)
       throws MalformedException, EndOfBufferException {
+
+    if(protocolImpl.getEndPoint().isClient()){
+      return createClientPacket(packetId, fixedHeader, remainingLen, packet);
+    }
+    else{
+      return createServerPacket(packetId, fixedHeader, remainingLen, packet);
+    }
+  }
+
+  private MQTTPacket createClientPacket(int packetId, byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
+    switch (packetId) {
+      case MQTTPacket.CONNACK:
+        return new ConnAck(fixedHeader, remainingLen, packet);
+
+      case MQTTPacket.SUBACK:
+        return new SubAck(fixedHeader, remainingLen, packet);
+
+      case MQTTPacket.PINGRESP:
+        return new PingResp(fixedHeader, remainingLen);
+
+      case MQTTPacket.PUBLISH:
+        return new Publish(fixedHeader, remainingLen, packet, protocolImpl.getMaximumBufferSize());
+
+      default:
+        throw new MalformedException("Unexpected packet received::"+packetId);
+    }
+  }
+
+  private MQTTPacket createServerPacket(int packetId, byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
     switch (packetId) {
       case MQTTPacket.CONNECT:
         return new Connect(fixedHeader, remainingLen, packet);

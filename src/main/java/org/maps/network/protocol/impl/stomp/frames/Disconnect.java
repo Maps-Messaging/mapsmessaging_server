@@ -16,15 +16,27 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
+import org.maps.network.io.Packet;
+
 /**
  * Implements the STOMP Connect frame as per https://stomp.github.io/stomp-specification-1.2.html#DISCONNECT
  */
-public class Disconnect extends ClientFrame {
+public class Disconnect extends Frame {
 
   public static final String COMMAND = "DISCONNECT";
 
   public Disconnect() {
     super();
+  }
+
+  @Override
+  byte[] getCommand() {
+    return "DISCONNECT".getBytes();
+  }
+
+  @Override
+  void packBody(Packet packet) {
+
   }
 
   public boolean isValid() {

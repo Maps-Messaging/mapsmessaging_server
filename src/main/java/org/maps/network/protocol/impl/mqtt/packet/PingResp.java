@@ -27,6 +27,16 @@ public class PingResp extends MQTTPacket {
     super(MQTTPacket.PINGRESP);
   }
 
+  public PingResp(byte fixedHeader, long remainingLen) throws MalformedException {
+    super(PINGRESP);
+    if ((fixedHeader & 0xf) != 0) {
+      throw new MalformedException("PingResp: Reserved bits in command byte not 0");
+    }
+    if (remainingLen != 0) {
+      throw new MalformedException("PingResp: remaining length not 0");
+    }
+  }
+
   @Override
   public String toString() {
     return "MQTT PingResp[]";

@@ -39,7 +39,7 @@ public abstract class EndPoint implements Closeable {
   public static final LongAdder totalConnections = new LongAdder();
   public static final LongAdder totalDisconnections = new LongAdder();
 
-  protected final EndPointServer server;
+  protected final EndPointServerStatus server;
   protected final Logger logger;
 
   private final AtomicLong lastRead = new AtomicLong();
@@ -51,14 +51,15 @@ public abstract class EndPoint implements Closeable {
   private final LinkedMovingAverages bufferOverFlow;
   private final LinkedMovingAverages bufferUnderFlow;
 
-
+  private final boolean isClient;
   private final long id;
 
   protected List<String> jmxParentPath;
   private CloseHandler closeHandler;
 
-  public EndPoint(long id, EndPointServer server) {
+  public EndPoint(long id, EndPointServerStatus server) {
     this.server = server;
+    isClient = !(server instanceof EndPointServer);
     this.id = id;
 
     readByteAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Read Bytes", 1, 5, 4, TimeUnit.MINUTES, "Bytes");
@@ -76,20 +77,28 @@ public abstract class EndPoint implements Closeable {
     totalDisconnections.increment();
   }
 
+  public boolean isClient(){
+    return isClient;
+  }
+
   public void updateReadBytes(int read) {
     readByteAverages.add(read);
     totalReadBytes.add(read);
     lastRead.set(System.currentTimeMillis());
-    server.updateBytesRead(read);
-    server.incrementPacketsRead();
+    if(server != null) {
+      server.updateBytesRead(read);
+      server.incrementPacketsRead();
+    }
   }
 
   public void updateWriteBytes(int wrote) {
     writeByteAverages.add(wrote);
     totalWriteBytes.add(wrote);
     lastWrite.set(System.currentTimeMillis());
-    server.updateBytesSent(wrote);
-    server.incrementPacketsSent();
+    if(server != null) {
+      server.updateBytesSent(wrote);
+      server.incrementPacketsSent();
+    }
   }
 
   public NetworkConfig getConfig() {
@@ -128,7 +137,7 @@ public abstract class EndPoint implements Closeable {
     return lastWrite.get();
   }
 
-  public EndPointServer getServer() {
+  public EndPointServerStatus getServer() {
     return server;
   }
 

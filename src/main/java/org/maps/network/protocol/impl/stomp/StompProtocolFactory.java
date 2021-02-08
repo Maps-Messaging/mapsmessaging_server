@@ -19,6 +19,7 @@ package org.maps.network.protocol.impl.stomp;
 import java.io.IOException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.detection.MultiByteArrayDetection;
 
@@ -28,6 +29,13 @@ public class StompProtocolFactory extends ProtocolImplFactory {
 
   public StompProtocolFactory() {
     super("STOMP", "STOMP protocol support as per https://stomp.github.io/ ",new MultiByteArrayDetection(stompConnect, 0));
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    StompProtocol protocol = new StompProtocol(endPoint);
+    protocol.connect();
+    return protocol;
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

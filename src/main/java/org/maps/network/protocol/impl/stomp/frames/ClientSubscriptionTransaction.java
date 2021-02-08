@@ -18,7 +18,7 @@ package org.maps.network.protocol.impl.stomp.frames;
 
 import java.io.IOException;
 
-public abstract class ClientSubscriptionTransaction extends ClientFrame {
+public abstract class ClientSubscriptionTransaction extends Frame {
 
   private String subscription;
   private String messageId;

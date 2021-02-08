@@ -17,11 +17,12 @@
 package org.maps.network.protocol.impl.stomp.frames;
 
 import java.io.IOException;
+import org.maps.network.io.Packet;
 
 /**
  * Implements the Subscribe Frame as per https://stomp.github.io/stomp-specification-1.2.html#SUBSCRIBE
  */
-public class Subscribe extends ClientFrame {
+public class Subscribe extends Frame {
 
   private String id;
   private String destination;
@@ -59,6 +60,25 @@ public class Subscribe extends ClientFrame {
     return shareName;
   }
 
+  public void setId(String id) {
+    this.id = id;
+    getHeader().put("id", id);
+  }
+
+  public void setDestination(String destination) {
+    this.destination = destination;
+    getHeader().put("destination", destination);
+  }
+
+  public void setAck(String ack) {
+    this.ack = ack;
+    getHeader().put("ack", ack);
+  }
+
+  public void setShareName(String shareName) {
+    this.shareName = shareName;
+  }
+
   @Override
   public void parseCompleted() throws IOException {
     isShared = false;
@@ -80,6 +100,16 @@ public class Subscribe extends ClientFrame {
       isShared = true;
     }
     super.parseCompleted();
+  }
+
+  @Override
+  byte[] getCommand() {
+    return "SUBSCRIBE".getBytes();
+  }
+
+  @Override
+  void packBody(Packet packet) {
+
   }
 
   @Override

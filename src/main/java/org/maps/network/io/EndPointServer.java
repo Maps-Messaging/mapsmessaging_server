@@ -25,36 +25,23 @@ import org.maps.logging.Logger;
 import org.maps.network.EndPointURL;
 import org.maps.network.NetworkConfig;
 
-public abstract class EndPointServer implements Closeable, Selectable {
+public abstract class EndPointServer extends EndPointServerStatus implements Closeable, Selectable {
 
   protected final Logger logger;
   protected final AcceptHandler acceptHandler;
   protected final LinkedHashMap<Long, EndPoint> activeEndPoints;
   private final NetworkConfig config;
-  private final AtomicLong idGenerator;
-  private final EndPointURL url;
-
-  private final LongAdder totalPacketsSent;
-  private final LongAdder totalPacketsRead;
-
-  private final LongAdder totalBytesSent;
-  private final LongAdder totalBytesRead;
 
   public EndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
-    this.url = url;
+    super(url);
     this.config = config;
     acceptHandler = accept;
     activeEndPoints = new LinkedHashMap<>();
-    idGenerator = new AtomicLong(0);
     logger = createLogger(url.toString());
-    totalPacketsSent = new LongAdder();
-    totalPacketsRead = new LongAdder();
-    totalBytesSent = new LongAdder();
-    totalBytesRead = new LongAdder();
   }
 
   public long generateID() {
-    return idGenerator.incrementAndGet();
+    return Constants.getNextId();
   }
 
   public abstract void register() throws IOException;
@@ -77,10 +64,6 @@ public abstract class EndPointServer implements Closeable, Selectable {
     acceptHandler.accept(endPoint);
   }
 
-  public EndPointURL getUrl() {
-    return url;
-  }
-
   public String getName() {
     return url.getProtocol() + "_" + url.getHost() + "_" + url.getPort();
   }
@@ -93,35 +76,4 @@ public abstract class EndPointServer implements Closeable, Selectable {
 
   protected abstract Logger createLogger(String url);
 
-  public long getTotalPacketsRead(){
-    return totalPacketsRead.sum();
-  }
-
-  public long getTotalPacketsSent(){
-    return totalPacketsSent.sum();
-  }
-
-  public long getTotalBytesSent(){
-    return totalBytesSent.sum();
-  }
-
-  public long getTotalBytesRead(){
-    return totalBytesRead.sum();
-  }
-
-  public void incrementPacketsSent(){
-    totalPacketsSent.increment();
-  }
-
-  public void incrementPacketsRead(){
-    totalPacketsRead.increment();
-  }
-
-  public void updateBytesSent(int count){
-    totalBytesSent.add(count);
-  }
-
-  public void updateBytesRead(int count){
-    totalBytesRead.add(count);
-  }
 }

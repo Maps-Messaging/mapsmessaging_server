@@ -352,6 +352,11 @@ public enum LogMessages {
   MQTT_SN_ADVERTISER_SENT_PACKET(LEVEL.TRACE, CATEGORY.PROTOCOL, "Sent advertise packet {}"),
   MQTT_SN_ADVERTISE_PACKET_EXCEPTION(LEVEL.INFO, CATEGORY.PROTOCOL, "An exception occurred while send an advertise packet"),
   MQTT_SN_PACKET_EXCEPTION(LEVEL.WARN, CATEGORY.PROTOCOL, "Exception raised processing frame {}"),
+  MQTT_SN_GATEWAY_DETECTED(LEVEL.WARN, CATEGORY.PROTOCOL, "Detected MQTT-SN service advertise packet for Gateway Id {}, from {}" ),
+  MQTT_SN_REGISTERED_EVENT(LEVEL.DEBUG, CATEGORY.PROTOCOL, "Registered Event processed for {}"),
+  MQTT_SN_REGISTERED_EVENT_NOT_FOUND(LEVEL.WARN, CATEGORY.PROTOCOL, "Registered Event packet detected but no configuration found for host:{} topic Id:{}"),
+  MQTT_SN_INVALID_QOS_PACKET_DETECTED(LEVEL.WARN, CATEGORY.PROTOCOL, "Publish packet received from {}, but incorrect QoS should be 3 but found {}"),
+
   // </editor-fold>
 
   // <editor-fold desc="Protocol detection log messages">
@@ -508,9 +513,7 @@ public enum LogMessages {
   NAMESPACE_MAPPING(LEVEL.INFO, CATEGORY.ENGINE,"Mapping {} to namespace {}"),
   NAMESPACE_MAPPING_FOUND(LEVEL.INFO, CATEGORY.ENGINE,    "Found entry for  {} mapping to {}"),
   NAMESPACE_MAPPING_DEFAULT(LEVEL.INFO, CATEGORY.ENGINE,    "Using default mapping {}"),
-  //</editor-fold>
   ;
-
   public final String message;
   public final LEVEL level;
   public final CATEGORY category;

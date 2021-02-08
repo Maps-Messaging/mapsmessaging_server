@@ -19,6 +19,7 @@ package org.maps.network.protocol.impl.mqtt5;
 import java.io.IOException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.detection.ByteArrayDetection;
 
@@ -37,6 +38,12 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
 
   public MQTT5ProtocolFactory() {
     super("MQTT", "MQTT version 5.0 as per https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html", new ByteArrayDetection(PROTOCOL, 4));
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    return null;
+
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

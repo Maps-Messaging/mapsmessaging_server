@@ -21,12 +21,19 @@ import java.io.IOException;
 import javax.security.auth.login.LoginException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 
 public class NMEAProtocolFactory extends ProtocolImplFactory {
 
   public NMEAProtocolFactory() {
     super("NMEA", "NMEA Gateway as per https://en.wikipedia.org/wiki/NMEA_0183", new NMEAProtocolDetection());
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    return null;
+
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {

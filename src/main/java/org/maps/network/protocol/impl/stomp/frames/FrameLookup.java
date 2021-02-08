@@ -16,15 +16,15 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
-import org.maps.network.protocol.impl.stomp.listener.ClientFrameListener;
+import org.maps.network.protocol.impl.stomp.listener.FrameListener;
 
-public class ClientFrameLookup {
+public class FrameLookup {
 
   private byte[] command;
-  private ClientFrame clientFrame;
-  private ClientFrameListener frameListener;
+  private Frame clientFrame;
+  private FrameListener frameListener;
 
-  ClientFrameLookup(byte[] command, ClientFrame clientFrame, ClientFrameListener frameListener) {
+  FrameLookup(byte[] command, Frame clientFrame, FrameListener frameListener) {
     this.command = command;
     this.clientFrame = clientFrame;
     this.frameListener = frameListener;
@@ -34,11 +34,11 @@ public class ClientFrameLookup {
     return command;
   }
 
-  public ClientFrame getClientFrame() {
+  public Frame getClientFrame() {
     return clientFrame;
   }
 
-  public ClientFrameListener getFrameListener() {
+  public FrameListener getFrameListener() {
     return frameListener;
   }
 }

@@ -19,21 +19,25 @@ package org.maps.network.protocol.impl.stomp;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 import java.io.IOException;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.SubscribedEventManager;
+import org.maps.messaging.api.SubscriptionContextBuilder;
+import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.message.Message;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
 import org.maps.network.io.impl.SelectorTask;
 import org.maps.network.protocol.EndOfBufferException;
 import org.maps.network.protocol.ProtocolImpl;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
+import org.maps.network.protocol.impl.stomp.frames.Connect;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.frames.FrameFactory;
-import org.maps.network.protocol.impl.stomp.frames.ServerFrame;
+import org.maps.network.protocol.impl.stomp.frames.Subscribe;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 import org.maps.utilities.configuration.ConfigurationProperties;
 
@@ -44,10 +48,10 @@ public class StompProtocol extends ProtocolImpl {
   private final FrameFactory factory;
   private final StateEngine stateEngine;
   private final SelectorTask selectorTask;
-  private ClientFrame activeFrame;
+  private Frame activeFrame;
   private String version;
 
-  public StompProtocol(EndPoint endPoint, Packet packet) throws IOException {
+  public StompProtocol(EndPoint endPoint) {
     super(endPoint);
     logger = LoggerFactory.getLogger("STOMP Protocol on " + endPoint.getName());
     logger.log(LogMessages.STOMP_STARTING, endPoint.toString());
@@ -56,9 +60,13 @@ public class StompProtocol extends ProtocolImpl {
     maxBufferSize = properties.getIntProperty("maximumBufferSize",  maxBufferSize);
     version = "1.2";
     selectorTask = new SelectorTask(this, properties);
-    factory = new FrameFactory(maxBufferSize);
+    factory = new FrameFactory(maxBufferSize, endPoint.isClient());
     activeFrame = null;
     stateEngine = new StateEngine(this);
+  }
+
+  public StompProtocol(EndPoint endPoint, Packet packet) throws IOException {
+    this(endPoint);
     processPacket(packet);
     selectorTask.getReadTask().pushOutstandingData(packet);
   }
@@ -73,6 +81,30 @@ public class StompProtocol extends ProtocolImpl {
       logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }
     selectorTask.close();
+  }
+
+  @Override
+  public void connect() throws IOException {
+    Connect connect = new Connect();
+    connect.setAcceptVersion("1.2");
+    writeFrame(connect);
+    registerRead();
+  }
+
+  public void subscribeRemote(String resource, Map<String, String> destinationMap) throws IOException{
+    stateEngine.setMap(destinationMap);
+    Subscribe subscribe = new Subscribe();
+    subscribe.setDestination(resource);
+    subscribe.setId(resource);
+    subscribe.setAck("auto");
+    writeFrame(subscribe);
+  }
+
+  public void subscribeLocal(String resource, Map<String, String> destinationMap) throws IOException {
+    stateEngine.setMap(destinationMap);
+    SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
+    scb.setAlias(resource);
+    stateEngine.createSubscription(scb.build());
   }
 
   @Override
@@ -95,7 +127,7 @@ public class StompProtocol extends ProtocolImpl {
     this.version = "" + version;
   }
 
-  public void writeFrame(ServerFrame frame) {
+  public void writeFrame(Frame frame) {
     sentMessage();
     selectorTask.push(frame);
     logger.log(LogMessages.STOMP_PUSHED_WRITE, frame);
@@ -120,6 +152,7 @@ public class StompProtocol extends ProtocolImpl {
     } catch (EndOfBufferException eobe) {
       throw eobe; // Do not close on an End Of Buffer Exception
     } catch (IOException e) {
+      e.printStackTrace();
       logger.log(LogMessages.STOMP_PROCESSING_FRAME_EXCEPTION);
       endPoint.close();
       throw e;
@@ -133,7 +166,7 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   private boolean processEvent(Packet packet) throws IOException {
-    ClientFrame frame = activeFrame;
+    Frame frame = activeFrame;
     activeFrame = null;
     try {
       if (!scanFrame(packet, frame)) {
@@ -146,7 +179,7 @@ public class StompProtocol extends ProtocolImpl {
     return true;
   }
 
-  private boolean scanFrame(Packet packet, ClientFrame frame) throws IOException {
+  private boolean scanFrame(Packet packet, Frame frame) throws IOException {
     if (frame == null) {
       frame = factory.parseFrame(packet);
     }

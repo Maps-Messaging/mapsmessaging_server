@@ -18,11 +18,21 @@ package org.maps.network.protocol.impl.stomp.frames;
 
 import org.maps.network.io.Packet;
 
-public class ClientHeartBeat extends ClientFrame {
+public class ClientHeartBeat extends Frame {
 
   public ClientHeartBeat() {
     endOfHeader = true;
     hasEndOfFrame = true;
+  }
+
+  @Override
+  byte[] getCommand() {
+    return new byte[0];
+  }
+
+  @Override
+  void packBody(Packet packet) {
+
   }
 
   @Override

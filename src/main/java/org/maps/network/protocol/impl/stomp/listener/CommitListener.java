@@ -18,14 +18,14 @@ package org.maps.network.protocol.impl.stomp.listener;
 
 import java.io.IOException;
 import org.maps.messaging.api.Transaction;
-import org.maps.network.protocol.impl.stomp.frames.ClientFrame;
 import org.maps.network.protocol.impl.stomp.frames.Commit;
+import org.maps.network.protocol.impl.stomp.frames.Frame;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 
-public class CommitListener implements ClientFrameListener {
+public class CommitListener implements FrameListener {
 
   @Override
-  public void frameEvent(ClientFrame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
+  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
     Commit commit = (Commit) frame;
     Transaction transaction = find(commit, engine);
     transaction.commit();

@@ -18,6 +18,7 @@ package org.maps.network.protocol.impl.mqtt;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.util.Map;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
@@ -27,6 +28,8 @@ import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.Session;
 import org.maps.messaging.api.SessionManager;
 import org.maps.messaging.api.SubscribedEventManager;
+import org.maps.messaging.api.SubscriptionContextBuilder;
+import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
@@ -37,10 +40,14 @@ import org.maps.network.io.impl.SelectorTask;
 import org.maps.network.protocol.EndOfBufferException;
 import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
+import org.maps.network.protocol.impl.mqtt.packet.Connect;
 import org.maps.network.protocol.impl.mqtt.packet.MQTTPacket;
 import org.maps.network.protocol.impl.mqtt.packet.MalformedException;
 import org.maps.network.protocol.impl.mqtt.packet.PacketFactory;
+import org.maps.network.protocol.impl.mqtt.packet.PingReq;
 import org.maps.network.protocol.impl.mqtt.packet.Publish;
+import org.maps.network.protocol.impl.mqtt.packet.Subscribe;
+import org.maps.network.protocol.impl.mqtt.packet.SubscriptionInfo;
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
 public class MQTTProtocol extends ProtocolImpl {
@@ -52,13 +59,15 @@ public class MQTTProtocol extends ProtocolImpl {
   private final PacketIdManager packetIdManager;
   private final long maxBufferSize;
 
+  private Map<String, String> topicNameMapping;
+
   private volatile boolean closed;
   private Session session;
 
-  public MQTTProtocol(EndPoint endPoint, Packet packet) throws IOException {
+
+  public MQTTProtocol(EndPoint endPoint) throws IOException {
     super(endPoint);
     logger = LoggerFactory.getLogger("MQTT 3.1.1 Protocol on " + endPoint.getName());
-
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
@@ -69,6 +78,10 @@ public class MQTTProtocol extends ProtocolImpl {
     packetFactory = new PacketFactory(this);
     closed = false;
     packetIdManager = new PacketIdManager();
+  }
+
+  public MQTTProtocol(EndPoint endPoint, Packet packet) throws IOException {
+    this(endPoint);
     processPacket(packet);
     selectorTask.getReadTask().pushOutstandingData(packet);
   }
@@ -81,6 +94,40 @@ public class MQTTProtocol extends ProtocolImpl {
       SessionManager.getInstance().close(session);
       super.close();
     }
+  }
+
+  public void connect() throws IOException {
+    Connect connect = new Connect();
+    if(endPoint.getConfig().getProperties().getProperty("username") != null) {
+      connect.setUsername(endPoint.getConfig().getProperties().getProperty("username"));
+      connect.setPassword(endPoint.getConfig().getProperties().getProperty("password").toCharArray());
+    }
+    connect.setSessionId(endPoint.getConfig().getProperties().getProperty("sessionId"));
+    writeFrame(connect);
+    registerRead();
+  }
+
+  public void subscribeRemote(String resource, Map<String, String> destinationMap) throws IOException{
+    topicNameMapping = destinationMap;
+    Subscribe subscribe = new Subscribe();
+    subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
+    writeFrame(subscribe);
+  }
+
+  public void subscribeLocal(String resource, Map<String, String> destinationMap) throws IOException {
+    topicNameMapping = destinationMap;
+    SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
+    scb.setAlias(resource);
+    ClientAcknowledgement ackManger = QualityOfService.AT_MOST_ONCE.getClientAcknowledgement();
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(resource, ackManger);
+    builder.setQos(QualityOfService.AT_MOST_ONCE);
+    builder.setAllowOverlap(true);
+    builder.setReceiveMaximum(1024);
+    session.addSubscription(builder.build());
+  }
+
+  public Map<String, String> getTopicNameMapping() {
+    return topicNameMapping;
   }
 
   public String getVersion() {
@@ -155,6 +202,11 @@ public class MQTTProtocol extends ProtocolImpl {
     ThreadContext.put("version", getVersion());
     logger.log(LogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
     long timeout = System.currentTimeMillis() - (keepAlive + 1000);
+    if(endPoint.isClient()) {
+      writeFrame( new PingReq());
+      timeout = System.currentTimeMillis() - (keepAlive *2);
+
+    }
     boolean readTimeOut = endPoint.getLastRead() < timeout;
     boolean writeTimeOut = endPoint.getLastWrite() < timeout;
     if (readTimeOut && writeTimeOut) {
@@ -187,6 +239,12 @@ public class MQTTProtocol extends ProtocolImpl {
     }
     else{
       payload = message.getOpaqueData();
+    }
+    if(topicNameMapping != null){
+      String tmp = topicNameMapping.get(normalisedName);
+      if(tmp != null){
+        normalisedName = tmp;
+      }
     }
     Publish publish = new Publish(message.isRetain(), payload, qos, packetId, normalisedName);
     publish.setCallback(completionTask);

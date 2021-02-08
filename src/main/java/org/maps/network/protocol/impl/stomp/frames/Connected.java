@@ -59,4 +59,5 @@ public class Connected extends ServerFrame {
   public String toString() {
     return "STOMP Connected[ Header:" + getHeaderAsString() + "]";
   }
+
 }

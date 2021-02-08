@@ -16,71 +16,30 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
-import java.util.Map;
-import org.maps.messaging.api.message.TypedData;
-import org.maps.network.io.Packet;
-
-public class Message extends ServerFrame {
+public class Message extends Event {
 
   private static final byte[] COMMAND = "MESSAGE".getBytes();
 
-  private final org.maps.messaging.api.message.Message internalMessage;
-
-  public Message() {
-    internalMessage = null;
-  }
-
-  public Message(org.maps.messaging.api.message.Message message, String destination, String subscriptionId) {
-    internalMessage = message;
-    packMessage(destination, subscriptionId);
+  public Message(int maxBufferSize) {
+    super(maxBufferSize);
   }
 
   @Override
   public Frame instance() {
-    return new Message();
+    return new Message(maxBufferSize);
   }
 
   byte[] getCommand() {
     return COMMAND;
   }
 
-  private void packMessage(String destination, String subscriptionId) {
-    //
-    // Map the data map to the header
-    //
-    Map<String, TypedData> dataMap = internalMessage.getDataMap();
-    if (dataMap != null) {
-      for (Map.Entry<String, TypedData> entry : dataMap.entrySet()) {
-        putHeader(entry.getKey(), entry.getValue().getData().toString());
-      }
-    }
+  public void packMessage(String destination, String subscriptionId, org.maps.messaging.api.message.Message internalMessage) {
+    super.packMessage(destination, subscriptionId, internalMessage);
 
-    //
-    // Map the meta data to the header
-    //
-    Map<String, String> metaMap = internalMessage.getMeta();
-    if (metaMap != null) {
-      for (Map.Entry<String, String> entry : metaMap.entrySet()) {
-        putHeader(entry.getKey(), entry.getValue());
-      }
-    }
-
-    //
-    // Ensure the defined header messages are correct and not driven by the entries in the map
-    //
-    putHeader("message-id", "" + internalMessage.getIdentifier());
+    // This is only present in MESSAGE
     putHeader("subscription", subscriptionId);
-    putHeader("destination", destination);
-    if (internalMessage.getOpaqueData() != null && internalMessage.getOpaqueData().length > 0) {
-      putHeader("content-length", "" + internalMessage.getOpaqueData().length);
-    }
+    putHeader("message-id", "" + internalMessage.getIdentifier());
     putHeader("priority", "" + internalMessage.getPriority());
-  }
-
-  public void packBody(Packet packet) {
-    if (internalMessage.getOpaqueData() != null && internalMessage.getOpaqueData().length > 0) {
-      packet.put(internalMessage.getOpaqueData());
-    }
   }
 
   @Override

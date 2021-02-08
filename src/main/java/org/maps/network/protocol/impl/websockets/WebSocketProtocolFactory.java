@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.websockets;
 import java.io.IOException;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.detection.ByteArrayDetection;
 
@@ -27,6 +28,12 @@ public class WebSocketProtocolFactory extends ProtocolImplFactory {
 
   public WebSocketProtocolFactory() {
     super("WS", "WebSocket encapsulation layer as per https://tools.ietf.org/html/rfc6455", new ByteArrayDetection("GET".getBytes(), 0));
+  }
+
+  @Override
+  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+    return null;
+
   }
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {
