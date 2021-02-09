@@ -18,17 +18,3 @@ serverReadBufferSize =  1M
 serverWriteBufferSize = 1M
 selectorThreadCount   = 5
 
-# ---------------------------------------------------------------------------------------------------------
-#  Interface definitions
-# ---------------------------------------------------------------------------------------------------------
-# client interface 0
-#
-url_0 = tcp://messaging:1883/
-protocol_0 = mqtt
-username_0 = user1
-password_0 = password
-remote_namespace_0 = /hal/info/ups
-local_namespace_0 = /remote/ups
-direction_0 = pull
-sessionId_0 = thisisAsession2
-
