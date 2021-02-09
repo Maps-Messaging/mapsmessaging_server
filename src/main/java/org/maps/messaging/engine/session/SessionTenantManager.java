@@ -30,6 +30,9 @@ public class SessionTenantManager {
   public String getMapping(){
     if(pathMapping == null){
       pathMapping = getPathConfig();
+      if(pathMapping == null){
+        return "";
+      }
     }
     return pathMapping;
   }
