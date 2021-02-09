@@ -12,7 +12,8 @@ import org.maps.network.protocol.impl.stomp.state.StateEngine;
 public class MessageListener extends EventListener {
 
   protected void processEvent( StateEngine engine, Event event, Message message) throws IOException {
-    Destination destination = engine.getSession().findDestination(engine.map(event.getDestination()));
+    String lookup = engine.getMapping(event.getDestination());
+    Destination destination = engine.getSession().findDestination(lookup);
     if(destination != null) {
       if (event.getTransaction() != null) {
         Transaction transaction = engine.getSession().getTransaction(event.getTransaction());

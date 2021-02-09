@@ -159,10 +159,10 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     }
   }
 
-  public String map(String destinationName){
-    String mappedDestination = destinationName;
-    if(destinationMap != null){
-      mappedDestination = destinationMap.get(destinationName);
+  public String getMapping(String destinationName){
+    String mappedDestination = destinationMap.get(destinationName);
+    if(mappedDestination == null){
+      mappedDestination = destinationName;
     }
     return mappedDestination;
   }
