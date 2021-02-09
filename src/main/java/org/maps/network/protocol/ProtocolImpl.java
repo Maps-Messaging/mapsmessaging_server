@@ -78,10 +78,10 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   public void connect() throws IOException{
   }
 
-  public void subscribeRemote(String resource, Map<String, String> destinationMap) throws IOException{
+  public void subscribeRemote(String resource, String mappedResource) throws IOException{
   }
 
-  public void subscribeLocal(String resource, Map<String, String> destinationMap) throws IOException {
+  public void subscribeLocal(String resource, String mappedResource) throws IOException {
   }
 
   public EndPoint getEndPoint() {

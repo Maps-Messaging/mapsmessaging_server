@@ -35,21 +35,24 @@ public class EndPointConnection extends EndPointServerStatus {
   private final AtomicBoolean running;
   private final AtomicBoolean paused;
   private final SelectorLoadManager selectorLoadManager;
+  private final List<ConfigurationProperties> destinationMappings;
 
   private EndPoint endPoint;
   private ProtocolImpl connection;
   private State state;
 
-  public EndPointConnection(EndPointURL url, ConfigurationProperties properties, EndPointConnectionFactory connectionFactory,SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager){
+  public EndPointConnection(
+      EndPointURL url, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings,
+      EndPointConnectionFactory connectionFactory,SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager){
     super(url);
     this.properties = properties;
     this.url = url;
     this.manager = manager;
+    this.destinationMappings = destinationMappings;
     this.selectorLoadManager = selectorLoadManager;
     this.endPointConnectionFactory = connectionFactory;
     running = new AtomicBoolean(true);
     paused = new AtomicBoolean(false);
-   // bean = new EndPointConnectionJMX(manager.getTypePath(), this);
     logger = LoggerFactory.getLogger("EndPointConnectionStateManager_"+url.toString());
     manager.addConnection(this);
   }
@@ -68,6 +71,10 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public ConfigurationProperties getProperties() {
     return properties;
+  }
+
+  public List<ConfigurationProperties> getDestinationMappings() {
+    return destinationMappings;
   }
 
   public ProtocolImpl getConnection() {
@@ -162,4 +169,5 @@ public class EndPointConnection extends EndPointServerStatus {
   public List<String> getJMXPath() {
     return manager.getTypePath();
   }
+
 }

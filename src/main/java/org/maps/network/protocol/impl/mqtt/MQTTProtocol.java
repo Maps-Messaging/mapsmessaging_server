@@ -19,6 +19,7 @@ package org.maps.network.protocol.impl.mqtt;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
@@ -59,7 +60,7 @@ public class MQTTProtocol extends ProtocolImpl {
   private final PacketIdManager packetIdManager;
   private final long maxBufferSize;
 
-  private Map<String, String> topicNameMapping;
+  private final Map<String, String> topicNameMapping;
 
   private volatile boolean closed;
   private Session session;
@@ -71,6 +72,7 @@ public class MQTTProtocol extends ProtocolImpl {
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
+    topicNameMapping = new ConcurrentHashMap<>();
     logger.log(LogMessages.MQTT_START);
     maxBufferSize = endPoint.getConfig().getProperties().getLongProperty("maximumBufferSize", DefaultConstants.MAXIMUM_BUFFER_SIZE);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
@@ -107,15 +109,15 @@ public class MQTTProtocol extends ProtocolImpl {
     registerRead();
   }
 
-  public void subscribeRemote(String resource, Map<String, String> destinationMap) throws IOException{
-    topicNameMapping = destinationMap;
+  public void subscribeRemote(String resource,String mappedResource) throws IOException{
+    topicNameMapping.put(resource, mappedResource);
     Subscribe subscribe = new Subscribe();
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
     writeFrame(subscribe);
   }
 
-  public void subscribeLocal(String resource, Map<String, String> destinationMap) throws IOException {
-    topicNameMapping = destinationMap;
+  public void subscribeLocal(String resource, String mappedResource) throws IOException {
+    topicNameMapping.put(resource, mappedResource);
     SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
     scb.setAlias(resource);
     ClientAcknowledgement ackManger = QualityOfService.AT_MOST_ONCE.getClientAcknowledgement();

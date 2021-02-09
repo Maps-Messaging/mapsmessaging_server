@@ -19,6 +19,7 @@ package org.maps.network.protocol.impl.stomp.state;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.messaging.api.Destination;
@@ -40,7 +41,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
   private final StompProtocol protocolImpl;
   private final Map<String, SubscribedEventManager> activeSubscriptions;
 
-  private Map<String, String> destinationMap;
+  private final Map<String, String> destinationMap;
 
   private int requestCounter;
   private State currentState;
@@ -49,6 +50,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
 
   public StateEngine(StompProtocol protocolImpl) {
     this.protocolImpl = protocolImpl;
+    destinationMap = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
     if(protocolImpl.getEndPoint().isClient()){
       currentState = new InitialClientState();
@@ -60,7 +62,6 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     requestCounter = 0;
     session = null;
     isValid = true;
-    destinationMap = null;
     protocolImpl.getEndPoint().setCloseHandler(this);
   }
 
@@ -170,7 +171,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     return destinationMap;
   }
 
-  public void setMap(Map<String, String> destinationMap) {
-    this.destinationMap = destinationMap;
+  public void addMapping(String resource, String mappedResource) {
+    destinationMap.put(resource, mappedResource);
   }
 }

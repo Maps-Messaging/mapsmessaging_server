@@ -1,7 +1,6 @@
 package org.maps.network.io.connection.state;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 import org.maps.network.io.connection.EndPointConnection;
 import org.maps.utilities.configuration.ConfigurationProperties;
 
@@ -14,14 +13,16 @@ public class Connected extends State {
   @Override
   public void execute() {
     try {
-      Map<String, String> destinationMap = new LinkedHashMap<>();
-      ConfigurationProperties properties = endPointConnection.getProperties();
-      if (properties.getProperty("direction").equalsIgnoreCase("pull")) {
-        destinationMap.put(properties.getProperty("remote_namespace"), properties.getProperty("local_namespace"));
-        endPointConnection.getConnection().subscribeRemote(properties.getProperty("remote_namespace"), destinationMap);
-      } else if (properties.getProperty("direction").equalsIgnoreCase("push")) {
-        destinationMap.put(properties.getProperty("local_namespace"), properties.getProperty("remote_namespace"));
-        endPointConnection.getConnection().subscribeLocal(properties.getProperty("local_namespace"), destinationMap);
+      List<ConfigurationProperties> properties = endPointConnection.getDestinationMappings();
+      for(ConfigurationProperties property:properties) {
+        String direction = property.getProperty("direction");
+        String local =  property.getProperty("local_namespace");
+        String remote =  property.getProperty("remote_namespace");
+        if (direction.equalsIgnoreCase("pull")) {
+          endPointConnection.getConnection().subscribeRemote(remote, local);
+        } else if (direction.equalsIgnoreCase("push")) {
+          endPointConnection.getConnection().subscribeLocal(local, remote);
+        }
       }
       setState(new Established(endPointConnection));
     }
