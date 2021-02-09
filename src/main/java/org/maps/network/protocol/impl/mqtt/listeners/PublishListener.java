@@ -85,8 +85,7 @@ public class PublishListener extends PacketListener {
           processMessage(publish, protocol, session, response, destination);
         }
       } catch (IOException e) {
-        e.printStackTrace();
-        logger.log(LogMessages.MQTT_PUBLISH_STORE_FAILED);
+        logger.log(LogMessages.MQTT_PUBLISH_STORE_FAILED, e);
         try {
           endPoint.close();
         } catch (IOException ioException) {
