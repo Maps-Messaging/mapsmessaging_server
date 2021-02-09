@@ -68,7 +68,7 @@ const bool powerFlag = false;
 uint8_t deviceAddress = 16;
 
 // Gateway Server address
-uint8_t LoRaGateway = 0xff;
+uint8_t LoRaGateway = 2;
 
 // The MQTT-SN topic number
 uint16_t topicNumber   = 9;
