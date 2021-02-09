@@ -76,15 +76,12 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   }
 
   public void connect() throws IOException{
-    System.err.println("Needs to be implemented");
   }
 
   public void subscribeRemote(String resource, Map<String, String> destinationMap) throws IOException{
-    System.err.println("Needs to be implemented");
   }
 
   public void subscribeLocal(String resource, Map<String, String> destinationMap) throws IOException {
-    System.err.println("Needs to be implemented");
   }
 
   public EndPoint getEndPoint() {
