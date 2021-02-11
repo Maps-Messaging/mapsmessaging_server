@@ -10,5 +10,5 @@
 
 TenantManagement:
   -
-    default: /            # Used for all connections, unless explicitly found within the configuration
+#    default: /            # Used for all connections, unless explicitly found within the configuration
 #    user1:   /home/{user}    # Maps the user1 to /home/{user} path

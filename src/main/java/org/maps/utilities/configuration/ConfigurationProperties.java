@@ -98,7 +98,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   private Object get(String key, Object defaultValue) {
     Object val = get(key);
-    if(val == null) {
+    if(val == null && globalValues != null) {
       val = globalValues.get(key);
     }
     if(val != null){
