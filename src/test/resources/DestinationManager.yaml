@@ -1,6 +1,7 @@
 DestinationManager:
    -
-      name: root
-      directory: ./target/dataDirectory
-      namespace: /
-
+      data:
+         -
+            name: root
+            directory: ./target/dataDirectory
+            namespace: /

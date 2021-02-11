@@ -68,15 +68,31 @@ public class DestinationManager implements DestinationFactory {
     properties = new LinkedHashMap<>();
     ConfigurationProperties list = ConfigurationManager.getInstance().getProperties("DestinationManager");
     String root = ".";
-    for (Object configuration : list.values()) {
-      if(configuration instanceof ConfigurationProperties) {
-        DestinationPathManager destinationPathManager = new DestinationPathManager((ConfigurationProperties)configuration);
-        properties.put(destinationPathManager.getNamespace(), destinationPathManager);
-        if (destinationPathManager.getNamespace().equals("/")) {
-          root = destinationPathManager.getDirectory();
+
+    Object rootConf = list.get("data");
+
+    if(rootConf instanceof ConfigurationProperties){
+      ConfigurationProperties rootCfg = (ConfigurationProperties)rootConf;
+      DestinationPathManager destinationPathManager = new DestinationPathManager(rootCfg);
+      properties.put(destinationPathManager.getNamespace(), destinationPathManager);
+      if (destinationPathManager.getNamespace().equals("/")) {
+        root = destinationPathManager.getDirectory();
+      }
+    }
+    else if(rootConf instanceof List) {
+      for (Object configuration : (List) rootConf) {
+        if (configuration instanceof ConfigurationProperties) {
+          DestinationPathManager destinationPathManager = new DestinationPathManager((ConfigurationProperties) configuration);
+          properties.put(destinationPathManager.getNamespace(), destinationPathManager);
+          if (destinationPathManager.getNamespace().equals("/")) {
+            root = destinationPathManager.getDirectory();
+          }
+        } else {
+          break;
         }
       }
     }
+
     rootPath = root;
     destinationManagerListeners = new CopyOnWriteArrayList<>();
     destinationList = new ConcurrentHashMap<>();
