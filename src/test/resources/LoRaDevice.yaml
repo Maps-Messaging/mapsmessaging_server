@@ -1,0 +1,14 @@
+LoRaDevice:
+  -
+    global:
+      -
+        power: 20 # TX Power to use
+        frequency: 915.0   # Frequency to use, must be the band authorised for your country
+
+      # ---------------------------------------------------------------------------------------------------------
+      # Device specific values
+      #
+      # Generic name for this device, used in the NetworkManager.props to reference this device, any valid
+      # UTF8 name can be used
+      # ---------------------------------------------------------------------------------------------------------
+    data:

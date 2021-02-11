@@ -1,7 +1,0 @@
-#
-# Default path for all destinationImpls
-#
-name_0 = root
-namespace_0 = /
-directory_0 = ./target/dataDirectory
-

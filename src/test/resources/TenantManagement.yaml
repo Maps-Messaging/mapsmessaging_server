@@ -1,0 +1,14 @@
+#
+# This configuration file is keyed on the username, with the value being the resultant namespace used for all
+# destinations for the user. This can ensure that users namespaces do not clash.
+# If the username can not be found within the configuration, it will fall through to "default", if a default
+# entry is found then it will use it.
+#
+# Supported Tokens are
+# {user} == the username being used for the connection
+#
+
+TenantManagement:
+  -
+    default: /            # Used for all connections, unless explicitly found within the configuration
+#    user1:   /home/{user}    # Maps the user1 to /home/{user} path
