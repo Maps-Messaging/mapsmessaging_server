@@ -64,8 +64,8 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
       } else {
         datagramSize = datagramSize - IPV6_DATAGRAM_HEADER_SIZE;
       }
-      endPoint.getConfig().getProperties().setProperty("serverReadBufferSize", "" + datagramSize);
-      endPoint.getConfig().getProperties().setProperty("serverWriteBufferSize", "" + datagramSize);
+      endPoint.getConfig().getProperties().put("serverReadBufferSize", "" + datagramSize);
+      endPoint.getConfig().getProperties().put("serverWriteBufferSize", "" + datagramSize);
     }
     byte gatewayId;
     String gatewayConfig = endPoint.getConfig().getProperties().getProperty("gatewayId", "1");

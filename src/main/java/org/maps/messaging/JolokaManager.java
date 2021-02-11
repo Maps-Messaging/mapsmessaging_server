@@ -71,8 +71,8 @@ public class JolokaManager {
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      for(Entry<Object, Object> entry: properties.entrySet()){
-        map.put(entry.getKey().toString(), entry.getValue().toString());
+      for(Entry<String, Object> entry: properties.entrySet()){
+        map.put(entry.getKey(), entry.getValue().toString());
       }
       JolokiaServerConfig config = new JolokiaServerConfig(map);
       try {

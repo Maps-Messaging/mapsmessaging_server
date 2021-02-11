@@ -36,11 +36,11 @@ public class TransformationManager implements ServiceManager {
   }
 
   private final ServiceLoader<ProtocolMessageTransformation> transformations;
-  private final Map<Integer, ConfigurationProperties> properties;
+  private final ConfigurationProperties properties;
 
   private TransformationManager(){
     transformations = ServiceLoader.load(ProtocolMessageTransformation.class);
-    properties = ConfigurationManager.getInstance().getPropertiesList("TransformationManager");
+    properties = ConfigurationManager.getInstance().getProperties("TransformationManager");
   }
 
   public ProtocolMessageTransformation getTransformation(String protocol, String user){

@@ -18,13 +18,8 @@ package org.maps.utilities.configuration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
@@ -41,12 +36,12 @@ public class ConfigurationManager {
   private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
   private final List<PropertyManager> propertyManagers;
-  private PropertyManager authoritive;
+  private PropertyManager authoritative;
 
   private ConfigurationManager() {
     logger.log(LogMessages.PROPERTY_MANAGER_START);
     propertyManagers = new ArrayList<>();
-    authoritive = null;
+    authoritative = null;
   }
 
   public static ConfigurationManager getInstance() {
@@ -55,75 +50,31 @@ public class ConfigurationManager {
 
   public void initialise(@NotNull String serverId){
     if(ConsulManagerFactory.getInstance().isStarted()){
-      authoritive = new ConsulPropertyManager(serverId);
-      authoritive.load();
+      authoritative = new ConsulPropertyManager(serverId);
+      authoritative.load();
       propertyManagers.add(new ConsulPropertyManager("default_"));
     }
-    propertyManagers.add(new FilePropertyManager());
+    propertyManagers.add(new YamlPropertyManager());
     for(PropertyManager manager:propertyManagers){
       manager.load();
     }
   }
 
-  //
-  // Build up a list of property names from all the property managers
-  //
-  public Set<String> getPropertyNames(){
-    Set<String> response = new HashSet<>();
-    for(PropertyManager manager:propertyManagers){
-      Set<String> names = manager.getPropertyNames();
-      if(names != null) {
-        for (String name : names) {
-          if (!response.contains(name)) {
-            response.add(name);
-          }
-        }
-      }
-    }
-    return response;
-  }
-
-  public @Nullable Map<Integer, ConfigurationProperties> getPropertiesList(String name) {
-    Map<Integer, ConfigurationProperties> map = null;
-    if(authoritive != null){
-      map = authoritive.getPropertiesList(name);
-      if(map != null){
-        return map;
-      }
-    }
-    for(PropertyManager manager:propertyManagers) {
-      map = manager.getPropertiesList(name);
-      if(map != null){
-        if(authoritive != null) {
-          authoritive.properties.put(name, map);
-          authoritive.store(name);
-        }
-        return map;
-      }
-    }
-    return null;
-  }
-
   public @NotNull ConfigurationProperties getProperties(String name) {
     ConfigurationProperties config;
-    if(authoritive != null){
-      config = authoritive.getProperties(name);
+    if(authoritative != null){
+      config = authoritative.getProperties(name);
       if(!config.isEmpty()){
         return config;
       }
     }
+
     for(PropertyManager manager:propertyManagers) {
-      ConfigurationProperties entry = manager.getProperties(name);
-      if(!entry.isEmpty()){
-        Map<Integer, ConfigurationProperties> map = new LinkedHashMap<>();
-        map.put(0, entry);
-        if(authoritive != null) {
-          authoritive.properties.put(name, map);
-          authoritive.store(name);
-        }
-        return entry;
+      config = manager.getProperties(name);
+      if(!config.isEmpty()){
+        return config;
       }
     }
-    return new ConfigurationProperties(new HashMap<>(), null);
+    return new ConfigurationProperties(new HashMap<>());
   }
 }

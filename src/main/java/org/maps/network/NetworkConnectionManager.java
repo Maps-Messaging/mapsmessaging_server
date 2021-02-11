@@ -24,18 +24,26 @@ public class NetworkConnectionManager implements ServiceManager {
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final SelectorLoadManager selectorLoadManager;
   private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
-  private final Map<Integer, ConfigurationProperties> networkConnectionProperties;
-  private final Map<Integer, ConfigurationProperties> destinationMappingConfiguration;
+  private final ConfigurationProperties networkConnectionProperties;
   private final List<EndPointConnection> endPointConnectionList;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
+  private final List<ConfigurationProperties> connectionConfiguration;
 
   private final List<String> jmxParent;
 
   public NetworkConnectionManager(List<String> parent) throws IOException {
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
     jmxParent = parent;
-    networkConnectionProperties = ConfigurationManager.getInstance().getPropertiesList("NetworkConnectionManager");
-    destinationMappingConfiguration = ConfigurationManager.getInstance().getPropertiesList("NetworkConnectionDetails");
+    networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
+    connectionConfiguration = new ArrayList<>();
+    if(networkConnectionProperties != null) {
+      Object rootObj = networkConnectionProperties.get("data");
+      if (rootObj instanceof List) {
+        connectionConfiguration.addAll((List<ConfigurationProperties>) rootObj);
+      } else if (rootObj instanceof ConfigurationProperties) {
+        connectionConfiguration.add((ConfigurationProperties) rootObj);
+      }
+    }
     endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
     selectorLoadManager = new SelectorLoadManager(10);
@@ -44,13 +52,20 @@ public class NetworkConnectionManager implements ServiceManager {
   }
 
   public void initialise() {
-    for (Map.Entry<Integer, ConfigurationProperties> entry : networkConnectionProperties.entrySet()) {
-      ConfigurationProperties properties = entry.getValue();
+    for (ConfigurationProperties properties : connectionConfiguration) {
       String urlString = properties.getProperty("url");
       if (urlString != null) {
         EndPointURL endPointURL = new EndPointURL(urlString);
-        List<ConfigurationProperties> destinationMappings = findMatchingDestinationMappings(properties.getProperty("name"));
-        if(!destinationMappings.isEmpty()) {
+        List<ConfigurationProperties> destinationMappings = new ArrayList<>();
+        Object linkReference = properties.get("links");
+        if(linkReference instanceof ConfigurationProperties){
+          destinationMappings.add((ConfigurationProperties) linkReference);
+        }
+        else if(linkReference instanceof List){
+          destinationMappings.addAll((List<ConfigurationProperties>)linkReference);
+        }
+
+        if (!destinationMappings.isEmpty()) {
           for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
             if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
               EndPointURL url = new EndPointURL(properties.getProperty("url"));
@@ -58,9 +73,8 @@ public class NetworkConnectionManager implements ServiceManager {
               endPointConnectionList.add(new EndPointConnection(url, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
             }
           }
-        }
-        else{
-          System.err.println("Ignoring config for "+properties);
+        } else {
+          System.err.println("Ignoring config for " + properties);
         }
       }
     }
@@ -68,12 +82,6 @@ public class NetworkConnectionManager implements ServiceManager {
 
   private List<ConfigurationProperties> findMatchingDestinationMappings(String name){
     List<ConfigurationProperties> response = new ArrayList<>();
-    for (ConfigurationProperties properties : destinationMappingConfiguration.values()) {
-      String lookup = properties.getProperty("connection_name");
-      if (lookup != null && lookup.equals(name)) {
-        response.add(properties);
-      }
-    }
     return response;
   }
 

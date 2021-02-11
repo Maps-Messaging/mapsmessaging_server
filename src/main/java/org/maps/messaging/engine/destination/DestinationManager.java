@@ -66,11 +66,11 @@ public class DestinationManager implements DestinationFactory {
   public DestinationManager(int time) {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
-    Map<Integer, ConfigurationProperties> list = ConfigurationManager.getInstance().getPropertiesList("DestinationManager");
+    ConfigurationProperties list = ConfigurationManager.getInstance().getProperties("DestinationManager");
     String root = ".";
-    if(list != null) {
-      for (ConfigurationProperties configuration : list.values()) {
-        DestinationPathManager destinationPathManager = new DestinationPathManager(configuration);
+    for (Object configuration : list.values()) {
+      if(configuration instanceof ConfigurationProperties) {
+        DestinationPathManager destinationPathManager = new DestinationPathManager((ConfigurationProperties)configuration);
         properties.put(destinationPathManager.getNamespace(), destinationPathManager);
         if (destinationPathManager.getNamespace().equals("/")) {
           root = destinationPathManager.getDirectory();

@@ -16,77 +16,65 @@
 
 package org.maps.utilities.configuration;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import javax.annotation.Nullable;
-import org.json.JSONObject;
 
-public class ConfigurationProperties extends java.util.Properties {
+public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
-  private Map<String, String> globalValues = new HashMap<>();
+  private ConfigurationProperties globalValues;
 
-  public ConfigurationProperties() {
+  protected ConfigurationProperties(){
+    super();
   }
 
-  protected ConfigurationProperties(Map<String, String> list, @Nullable Map<String, String> global) {
-    for (Map.Entry<String, String> entry : list.entrySet()) {
-      put(entry.getKey(), entry.getValue());
+  protected ConfigurationProperties(Map<String, Object> map) {
+    for(Map.Entry<String, Object> entry:map.entrySet()){
+      if(entry.getValue() instanceof Map){
+        put(entry.getKey(), new ConfigurationProperties((Map<String, Object>)entry.getValue()));
+      }
+      else if(entry.getValue() instanceof List){
+        List<Object> parsedList = new ArrayList<>();
+        for(Object list:(List<Object>)entry.getValue()){
+          if(list instanceof Map){
+            parsedList.add(new ConfigurationProperties((Map<String, Object>) list));
+          }
+          else{
+            parsedList.add(list);
+          }
+        }
+        put(entry.getKey(), parsedList);
+      }
+      else{
+        put(entry.getKey(), entry.getValue());
+      }
     }
-    if(global != null) {
-      this.globalValues = global;
+
+    Object global = map.get("global");
+    if(global instanceof ConfigurationProperties){
+      globalValues = (ConfigurationProperties) global;
     }
   }
-
-  public Map<String, String> getGlobalValues(){
-    return new LinkedHashMap<>(globalValues);
-  }
-
-  public JSONObject toJSON(){
-    JSONObject object = new JSONObject();
-    Set<Entry<Object, Object>> entries = super.entrySet();
-
-    for(Entry<Object, Object> entry:entries){
-      object.put(entry.getKey().toString(), entry.getValue().toString());
-    }
-    return object;
-  }
-
-  @Override
-  public String getProperty(String key, String defaultValue) {
-    String val;
-    if(containsKey(key)){
-      val = super.getProperty(key);
-    }
-    else {
-      val = globalValues.getOrDefault(key, defaultValue);
-    }
-    return val;
-  }
-
-  @Override
   public String getProperty(String key) {
-    String val;
-    if(containsKey(key)){
-      val = super.getProperty(key);
+    return getProperty(key, null);
+  }
+
+  public String getProperty(String key, String defaultValue) {
+    Object val = get(key, defaultValue);
+    if(val != null){
+      return val.toString();
     }
-    else {
-      val = globalValues.get(key);
-    }
-    return val;
+    return null;
   }
 
   public boolean getBooleanProperty(String key, boolean defaultValue) {
-    String val = getProperty(key, "" + defaultValue).trim();
-    return Boolean.parseBoolean(val);
+    return asBoolean(get(key, defaultValue));
   }
 
   public long getLongProperty(String key, long defaultValue) {
     try {
-      String val = getProperty(key, "" + defaultValue).trim();
-      return asLong(val);
+      return asLong(get(key,  defaultValue));
     } catch (NumberFormatException e) {
       return defaultValue;
     }
@@ -94,8 +82,7 @@ public class ConfigurationProperties extends java.util.Properties {
 
   public int getIntProperty(String key, int defaultValue) {
     try {
-      String val = getProperty(key, "" + defaultValue).trim();
-      return (int) asLong(val);
+      return (int) asLong(get(key,  defaultValue));
     } catch (NumberFormatException e) {
       return defaultValue;
     }
@@ -103,36 +90,81 @@ public class ConfigurationProperties extends java.util.Properties {
 
   public float getFloatProperty(String key, float defaultValue) {
     try {
-      String val = getProperty(key, "" + defaultValue).trim();
-      return (float) asDouble(val);
+      return (float) asDouble(get(key,  defaultValue));
     } catch (NumberFormatException e) {
       return defaultValue;
     }
   }
 
-  private long asLong(String entry) {
-    long multiplier = 1L;
-    String value = entry.trim();
-    String end = value.substring(value.length() - 1);
-
-    if (end.equalsIgnoreCase("T")) {
-      multiplier = 1024L * 1024L * 1024L * 1024L;
-    } else if (end.equalsIgnoreCase("G")) {
-      multiplier = 1024L * 1024L * 1024L;
-    } else if (end.equalsIgnoreCase("M")) {
-      multiplier = 1024L * 1024L;
-    } else if (end.equalsIgnoreCase("K")) {
-      multiplier = 1024;
+  private Object get(String key, Object defaultValue) {
+    Object val = get(key);
+    if(val == null) {
+      val = globalValues.get(key);
     }
-    if (multiplier > 1) {
-      value = value.substring(0, value.length() - 1);
+    if(val != null){
+      return val;
     }
-    long val = Long.parseLong(value);
-    val = val * multiplier;
-    return val;
+    return defaultValue;
   }
 
-  private double asDouble(String entry) {
-    return Double.parseDouble(entry);
+  private boolean asBoolean(Object value){
+    if(value instanceof Boolean){
+      return (Boolean) value;
+    }
+    else if(value instanceof String){
+      return Boolean.parseBoolean(((String)value).trim());
+    }
+    return false;
+  }
+
+  private long asLong(Object entry) {
+    if(entry instanceof Number){
+      return  ((Number)entry).longValue();
+    }
+    else if(entry instanceof String) {
+      long multiplier = 1L;
+      String value = ((String)entry).trim();
+      String end = value.substring(value.length() - 1);
+      if (end.equalsIgnoreCase("T")) {
+        multiplier = 1024L * 1024L * 1024L * 1024L;
+      } else if (end.equalsIgnoreCase("G")) {
+        multiplier = 1024L * 1024L * 1024L;
+      } else if (end.equalsIgnoreCase("M")) {
+        multiplier = 1024L * 1024L;
+      } else if (end.equalsIgnoreCase("K")) {
+        multiplier = 1024;
+      }
+      if (multiplier > 1) {
+        value = value.substring(0, value.length() - 1);
+      }
+      long val = Long.parseLong(value);
+      val = val * multiplier;
+      return val;
+    }
+    throw new NumberFormatException("Unknown number format detected ["+entry+"]");
+  }
+
+  private double asDouble(Object entry) {
+    if(entry instanceof Number){
+      return ((Number)entry).doubleValue();
+    }
+    else if(entry instanceof String) {
+      return Double.parseDouble( ((String)entry).trim());
+    }
+    throw new NumberFormatException("Unknown number format detected ["+entry+"]");
+  }
+
+  public boolean containsKey(String key) {
+    if(!super.containsKey(key)){
+      if(globalValues != null) {
+        return globalValues.containsKey(key);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  public void setGlobal(ConfigurationProperties global) {
+    this.globalValues = global;
   }
 }

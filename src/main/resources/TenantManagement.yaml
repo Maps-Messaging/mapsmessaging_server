@@ -8,8 +8,7 @@
 # {user} == the username being used for the connection
 #
 
-#
-# Used for all connections, unless explicitly found within the configuration
-#
-#default = /home/{user}
-
+TenantManagement:
+  -
+    default: /            # Used for all connections, unless explicitly found within the configuration
+#    user1:   /home/{user}    # Maps the user1 to /home/{user} path

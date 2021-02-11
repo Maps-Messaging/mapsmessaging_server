@@ -44,9 +44,10 @@ public class LoRaDeviceManager {
     synchronized (physicalDevices) {
       try {
         System.loadLibrary("LoRaDevice");
-        Map<Integer, ConfigurationProperties> configMap = ConfigurationManager.getInstance().getPropertiesList("LoRaDevice");
-        if(configMap != null){
-          for (ConfigurationProperties properties : configMap.values()) {
+        ConfigurationProperties configMap = ConfigurationManager.getInstance().getProperties("LoRaDevice");
+        for (Object obj : configMap.values()) {
+          if(obj instanceof ConfigurationProperties) {
+            ConfigurationProperties properties = (ConfigurationProperties) obj;
             LoRaDeviceConfigBuilder configBuilder = new LoRaDeviceConfigBuilder();
             configBuilder.setName(properties.getProperty("name"))
                 .setRadio(properties.getProperty("radio"))
@@ -56,7 +57,7 @@ public class LoRaDeviceManager {
                 .setPower(properties.getIntProperty("power", 14))
                 .setCadTimeout(properties.getIntProperty("CADTimeout", 0))
                 .setFrequency(properties.getFloatProperty("frequency", 0.0f));
-            if(configBuilder.isValid()) {
+            if (configBuilder.isValid()) {
               LoRaDevice device = new LoRaDevice(configBuilder.build());
               physicalDevices.add(device);
             }

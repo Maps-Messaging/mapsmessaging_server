@@ -1,4 +1,4 @@
-echo off
+echo on
 echo "===================================================="
 echo "Please note: These are self signed certicates and"
 echo "not intended for production use but only local tests"
@@ -12,7 +12,12 @@ echo "===================================================="
 echo "Creating fake third-party chain root -> ca"
 echo "===================================================="
 
-REM 
+set JAVA_HOME=E:\java\zulu13.28.11-ca-jdk13.0.1-win_x64
+set PATH=%JAVA_HOME%/bin;%PATH%
+
+echo %JAVA_HOME%
+
+REM
 REM  generate private keys (for root and ca)
 REM 
 keytool -storetype JKS  -genkeypair -alias root -dname "cn=Local Network - mapsmessaging.io Testing Only" -validity 10000 -keyalg RSA -keysize 2048 -ext bc:c -keystore root.jks -keypass password -storepass password

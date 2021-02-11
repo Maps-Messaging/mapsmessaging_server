@@ -233,8 +233,9 @@ public class MessageDaemon implements WrapperListener {
   public Integer start(String[] strings) {
     logger.log(LogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
     if(ConsulManagerFactory.getInstance().isStarted()){
-      Map<Integer, ConfigurationProperties>  map = ConfigurationManager.getInstance().getPropertiesList("NetworkManager");
+      ConfigurationProperties  map = ConfigurationManager.getInstance().getProperties("NetworkManager");
       Map<String, String> meta = new LinkedHashMap<>();
+      /*
       for(ConfigurationProperties configurationProperties:map.values()){
         String protocol = configurationProperties.getProperty("protocol");
         String url = configurationProperties.getProperty("url");
@@ -242,6 +243,8 @@ public class MessageDaemon implements WrapperListener {
         protocol = protocol.replaceAll(" ", "-");
         meta.put(protocol, url);
       }
+
+       */
       ConsulManagerFactory.getInstance().getManager().register(meta);
     }
     jolokaManager.start();

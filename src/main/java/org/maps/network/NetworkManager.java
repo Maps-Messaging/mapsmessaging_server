@@ -39,16 +39,24 @@ public class NetworkManager implements ServiceManager {
   private final Logger logger = LoggerFactory.getLogger(NetworkManager.class);
   private final ServiceLoader<EndPointServerFactory> endPointServers;
   private final LinkedHashMap<String, EndPointManager> endPointManagers;
-  private final Map<Integer, ConfigurationProperties> properties;
+  private final ConfigurationProperties properties;
   private final NetworkManagerJMX bean;
+  private final List<ConfigurationProperties> adapters;
 
   public NetworkManager(List<String> parent) {
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
 
-    properties = ConfigurationManager.getInstance().getPropertiesList("NetworkManager");
+    properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
+    Object obj =  properties.get("data");
+    adapters = new ArrayList<>();
+    if(obj instanceof List){
+      adapters.addAll((List<ConfigurationProperties>) obj);
+    }
+    else if(obj instanceof ConfigurationProperties){
+      adapters.add((ConfigurationProperties) obj);
+    }
     logger.log(LogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
-
     endPointServers = ServiceLoader.load(EndPointServerFactory.class);
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
 
@@ -56,8 +64,8 @@ public class NetworkManager implements ServiceManager {
   }
 
   public void initialise() {
-    for (Map.Entry<Integer, ConfigurationProperties> entry : properties.entrySet()) {
-      NetworkConfig networkConfig = new NetworkConfig(entry.getValue());
+    for (ConfigurationProperties configurationProperties : adapters) {
+      NetworkConfig networkConfig = new NetworkConfig(configurationProperties);
       EndPointURL endPointURL = EndPointURLFactory.getInstance().create(networkConfig.getUrl());
       initialiseInstance(endPointURL, networkConfig);
     }

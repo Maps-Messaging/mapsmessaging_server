@@ -60,7 +60,7 @@ public class SelectorTask implements Selectable {
     } else {
       int readDelay = -1;
       int readFragmentation = -1;
-      boolean readDelayEnabled = properties.getBooleanProperty("readDelayOnFragmentation", DefaultConstants.TCP_READ_DELAY_ENABLED);
+      boolean readDelayEnabled = properties.getBooleanProperty("enableReadDelayOnFragmentation", DefaultConstants.TCP_READ_DELAY_ENABLED);
       if(readDelayEnabled){
         readDelay = properties.getIntProperty("readDelayOnFragmentation", DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION);
         if(readDelay <= 0){

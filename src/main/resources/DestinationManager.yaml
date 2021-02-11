@@ -1,0 +1,6 @@
+DestinationManager:
+   -
+      name: root
+      directory: ./data
+      namespace: /
+

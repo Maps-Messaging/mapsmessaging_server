@@ -23,13 +23,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import org.maps.utilities.configuration.ConfigurationProperties;
 
 public class RegisteredTopicConfiguration {
 
   private final HashMap<Integer, TopicConfiguration> topicConfigById;
 
 
-  public RegisteredTopicConfiguration(Properties properties) {
+  public RegisteredTopicConfiguration(ConfigurationProperties properties) {
     String registeredTopics = properties.getProperty("registered", "");
     topicConfigById = new LinkedHashMap<>();
     parse(registeredTopics);

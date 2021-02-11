@@ -54,11 +54,11 @@ public class NetworkConfigJMX implements DynamicMBean {
     } catch (NoSuchMethodException noSuchMethodException) {
       // We know it will never be thrown so we can ignore this
     }
-    List<Object> keyList = new ArrayList<>(networkConfig.getProperties().keySet());
+    List<String> keyList = new ArrayList<>(networkConfig.getProperties().keySet());
 
     MBeanAttributeInfo[] attributeInfos = new MBeanAttributeInfo[keyList.size()];
     for(int x=0;x<keyList.size();x++){
-      String key = (String) keyList.get(x);
+      String key = keyList.get(x);
       attributeInfos[x] = new MBeanAttributeInfo(key, "java.lang.String", "Configuration Entry", true, false, false);
     }
 
