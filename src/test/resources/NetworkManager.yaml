@@ -63,7 +63,7 @@ NetworkManager:
       -
           name: "Stomp Interface"
           url: "tcp://0.0.0.0:8675/"
-          protocol : stomp
+          protocol : stomp,ws
 
       -
           name: "MQTT Interface"
