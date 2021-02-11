@@ -1,6 +1,7 @@
 [submodule "paho.mqtt.testing"]
 	path = paho.mqtt.testing
 	url = https://github.com/eclipse/paho.mqtt.testing.git
+
 [submodule "eclipse-paho-mqtt-sn-udp-client"]
 	path = eclipse-paho-mqtt-sn-udp-client
 	url = https://github.com/okse-3/eclipse-paho-mqtt-sn-udp-client.git
