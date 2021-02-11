@@ -61,9 +61,9 @@ NetworkManager:
 
     data:
       -
-          name: "Stomp Interface"
+          name: "Stomp Interface - used for anonymous mqtt, stomp and stomp over ws tests"
           url: "tcp://0.0.0.0:8675/"
-          protocol : stomp,ws
+          protocol : stomp,ws, mqtt
 
       -
           name: "MQTT Interface"
