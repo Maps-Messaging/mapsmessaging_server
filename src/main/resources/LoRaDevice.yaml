@@ -1,21 +1,37 @@
-LoRaDevice:
-  -
-    global:
-      -
-        power: 20 # TX Power to use
-        frequency: 915.0   # Frequency to use, must be the band authorised for your country
+#
+#   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
 
-      # ---------------------------------------------------------------------------------------------------------
-      # Device specific values
-      #
-      # Generic name for this device, used in the NetworkManager.props to reference this device, any valid
-      # UTF8 name can be used
-      # ---------------------------------------------------------------------------------------------------------
-    data:
-      -
-        name: loraDevice0
-        cs: 7 # Chip Select pin used by the LoRa Radio Device
-        irq: 22 # Interrupt pin used by the LoRa Radio device indicating available data
-        rst: 25 # Reset Pin to use to reset the Radio Device, used during Startup to reset and clear the device
-        radio: rfm95 # Radio Model, currently only RFM95 supported
-        CADTimeout: 0  # A value of 0 is off, anything positive is then set
+---
+LoRaDevice:
+  global:
+    -
+      power: 20 # TX Power to use
+      frequency: 915.0   # Frequency to use, must be the band authorised for your country
+
+    # ---------------------------------------------------------------------------------------------------------
+    # Device specific values
+    #
+    # Generic name for this device, used in the NetworkManager.props to reference this device, any valid
+    # UTF8 name can be used
+    # ---------------------------------------------------------------------------------------------------------
+  data:
+    -
+      name: loraDevice0
+      cs: 7 # Chip Select pin used by the LoRa Radio Device
+      irq: 22 # Interrupt pin used by the LoRa Radio device indicating available data
+      rst: 25 # Reset Pin to use to reset the Radio Device, used during Startup to reset and clear the device
+      radio: rfm95 # Radio Model, currently only RFM95 supported
+      CADTimeout: 0  # A value of 0 is off, anything positive is then set

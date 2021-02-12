@@ -1,8 +1,51 @@
+#
+#   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+#-----------------------------------------------------------------------------
+#  Name: DestinationManager.yaml
+#
+#  Description:
+#  ------------
+#
+# This configuration maps a namespace path to a physical directory, this
+# enables specific user files to be stored separate directories and allows a
+# mechanism to monitor / manage user file space
+#
+#  Format:
+#  -------
+#
+#  name:       Generic name for the mapping, useful for management identification
+#  directory:  Physical path to directory to use for all destinations that
+#              map to the namespace
+#  namespace:  The start of the namespace path that is used to match for the
+#              mapping
+#
+#  Notes:
+#  ------
+# Substitution is support for the following tokens
+#
+#  {user} - will replace the token with the username
+#
+#-----------------------------------------------------------------------------
+
+---
 DestinationManager:
-   -
-      data:
-         -
-            name: root
-            directory: ./data
-            namespace: /
+   data:
+      -
+         name: root
+         directory: ./data
+         namespace: /
 
