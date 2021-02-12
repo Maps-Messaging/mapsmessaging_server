@@ -17,7 +17,6 @@
 ---
 NetworkConnectionManager:
     global:
-      -
         selector_pool_size: 10
 
       # ---------------------------------------------------------------------------------------------------------
@@ -38,3 +37,16 @@ NetworkConnectionManager:
         selectorThreadCount  : 5
 
     data:
+      -
+#        name: Generic name for the connection
+#        url: tcp|ssl|ws|wss://<hostname>:<port>/
+#        protocol: mqtt(4|5)|stomp|amqp
+#        username: username to use
+#        password: password to use
+#        sessionId: Unique session identifier to use
+#
+#       links:
+#          -
+#            direction: pull|push
+#            remote_namespace: Destination name on the remote server
+#            local_namespace: Destination name on the local server
