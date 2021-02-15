@@ -22,21 +22,21 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.ThreadContext;
 import org.maps.network.io.EndPoint;
+import org.maps.network.io.EndPointConnectedCallback;
 import org.maps.network.io.connection.EndPointConnection;
 import org.maps.network.protocol.ProtocolFactory;
 import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
-public class Disconnected extends State {
+public class Disconnected extends State implements EndPointConnectedCallback {
 
   public Disconnected(EndPointConnection connection) {
     super(connection);
   }
 
-  public ProtocolImpl establishConnection() throws IOException {
-    EndPoint endPoint = endPointConnection.getEndPointConnectionFactory().connect(endPointConnection.getUrl(), endPointConnection.getSelectorLoadManager(), endPointConnection, endPointConnection.getJMXPath());
-    return accept(endPoint);
+  public void establishConnection() throws IOException {
+    endPointConnection.getEndPointConnectionFactory().connect(endPointConnection.getUrl(), endPointConnection.getSelectorLoadManager(), this, endPointConnection, endPointConnection.getJMXPath());
   }
 
   public ProtocolImpl accept(EndPoint endpoint) throws IOException {
@@ -50,10 +50,20 @@ public class Disconnected extends State {
   @Override
   public void execute() {
     try {
-      ProtocolImpl protocol = establishConnection();
+      establishConnection();
+    } catch (Throwable ioException) {
+      setState(new Delayed(endPointConnection));
+      SimpleTaskScheduler.getInstance().schedule(endPointConnection.getState(), 10, TimeUnit.SECONDS);
+    }
+  }
+
+  @Override
+  public void connected(EndPoint endpoint) {
+    try {
+      ProtocolImpl protocol = accept(endpoint);
       endPointConnection.setConnection(protocol);
       setState(new Connecting(endPointConnection));
-    } catch (Throwable ioException) {
+    } catch (IOException ioException) {
       setState(new Delayed(endPointConnection));
       SimpleTaskScheduler.getInstance().schedule(endPointConnection.getState(), 10, TimeUnit.SECONDS);
     }

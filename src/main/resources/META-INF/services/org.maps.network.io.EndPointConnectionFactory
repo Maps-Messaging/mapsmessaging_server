@@ -14,3 +14,4 @@
 # limitations under the License.
 #
 org.maps.network.io.impl.tcp.TCPEndPointConnectionFactory
+org.maps.network.io.impl.ssl.SSLEndPointConnectionFactory

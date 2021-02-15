@@ -19,11 +19,18 @@
 package org.maps.network.io.impl.ssl;
 
 import java.io.IOException;
+import org.maps.network.io.Selectable;
+import org.maps.network.io.impl.Selector;
 
 public class SSLHandshakeManagerFinished implements SSLHandshakeManager {
 
   @Override
   public boolean handleSSLHandshakeStatus() throws IOException {
     return false;
+  }
+
+  @Override
+  public void selected(Selectable selectable, Selector selector, int selection) {
+
   }
 }

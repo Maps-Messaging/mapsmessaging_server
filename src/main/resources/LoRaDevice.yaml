@@ -17,9 +17,8 @@
 ---
 LoRaDevice:
   global:
-    -
-      power: 20 # TX Power to use
-      frequency: 915.0   # Frequency to use, must be the band authorised for your country
+    power: 20 # TX Power to use
+    frequency: 915.0   # Frequency to use, must be the band authorised for your country
 
     # ---------------------------------------------------------------------------------------------------------
     # Device specific values

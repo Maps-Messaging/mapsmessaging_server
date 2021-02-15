@@ -21,16 +21,21 @@ package org.maps.network.io.impl.ssl;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.security.Principal;
+import java.util.List;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.network.admin.EndPointManagerJMX;
+import org.maps.network.io.EndPointConnectedCallback;
 import org.maps.network.io.EndPointServer;
+import org.maps.network.io.EndPointServerStatus;
 import org.maps.network.io.Packet;
 import org.maps.network.io.impl.Selector;
 import org.maps.network.io.impl.tcp.TCPEndPoint;
@@ -45,20 +50,41 @@ public class SSLEndPoint extends TCPEndPoint {
   SSLHandshakeManager handshakeManager;
   SSLEngine sslEngine;
 
+  public SSLEndPoint(long id, SSLEngine engine, Socket accepted, Selector select, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
+    super(id, accepted, select, endPointServerStatus, jmxParent);
+    sslEngine = engine;
+    logger.log(LogMessages.SSL_CREATE_ENGINE);
+    int sessionSize = sslEngine.getSession().getPacketBufferSize();
+    logger.log(LogMessages.SSL_ENCRYPTION_BUFFERS, sessionSize);
+    encryptedOut = ByteBuffer.allocateDirect(sessionSize);
+    encryptedIn = ByteBuffer.allocateDirect(sessionSize);
+    init(engine, callback);
+    sendBuffer(ByteBuffer.allocate(0)); // Kick off the SSL handshake
+    select.register(accepted.getChannel(), SelectionKey.OP_READ, handshakeManager);
+  }
+
+
   public SSLEndPoint(long id, SSLEngine engine, Socket socket, Selector select, String authConfig, EndPointServer server, EndPointManagerJMX managerMBean)
       throws IOException {
     super(id, socket, select, authConfig, server, managerMBean);
-    logger.log(LogMessages.SSL_CREATE_ENGINE);
     sslEngine = engine;
+    logger.log(LogMessages.SSL_CREATE_ENGINE);
 
     int sessionSize = sslEngine.getSession().getPacketBufferSize();
     logger.log(LogMessages.SSL_ENCRYPTION_BUFFERS, sessionSize);
-
     encryptedOut = ByteBuffer.allocateDirect(sessionSize);
     encryptedIn = ByteBuffer.allocateDirect(sessionSize);
 
+    init(engine, null);
+  }
+
+  private void init(SSLEngine engine, EndPointConnectedCallback callback ) throws SSLException {
+    sslEngine = engine;
+    sslEngine.setUseClientMode(callback != null);
+
+
     logger.log(LogMessages.SSL_HANDSHAKE_START);
-    handshakeManager = new SSLHandShakeManagerImpl(this);
+    handshakeManager = new SSLHandShakeManagerImpl(this, callback);
 
     logger.log(LogMessages.SSL_HANDSHAKE_READY);
     sslEngine.beginHandshake();
@@ -101,15 +127,13 @@ public class SSLEndPoint extends TCPEndPoint {
   @Override
   protected int readBuffer(ByteBuffer applicationIn) throws IOException {
     int response = super.readBuffer(encryptedIn);
-    logger.log(
-        LogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
+    logger.log(LogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
     if (response > 0 || encryptedIn.position() != 0) {
       if (encryptedIn.limit() == encryptedIn.capacity()) {
         encryptedIn.flip();
         response = encryptedIn.limit();
       }
-      logger.log(
-          LogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
+      logger.log(LogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
       handleSSLEngineResult(sslEngine.unwrap(encryptedIn, applicationIn));
       if (encryptedIn.position() == encryptedIn.limit()) {
         encryptedIn.clear();

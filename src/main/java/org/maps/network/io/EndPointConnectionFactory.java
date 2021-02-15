@@ -27,8 +27,9 @@ import org.maps.utilities.service.Service;
 
 public abstract class EndPointConnectionFactory  implements Service {
 
-  public abstract EndPoint connect(EndPointURL url,
+  public abstract void connect(EndPointURL url,
       SelectorLoadManager selector,
+      EndPointConnectedCallback callback,
       EndPointServerStatus endPointServerStatus,
       List<String> jmxPath)
       throws IOException;

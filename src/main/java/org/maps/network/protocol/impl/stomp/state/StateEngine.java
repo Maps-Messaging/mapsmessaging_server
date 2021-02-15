@@ -130,7 +130,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
   }
 
   public void sendMessage(Destination destination, String normalisedName, SubscriptionContext context, Message message, Runnable completionTask) {
-    currentState.sendMessage(this, destination, normalisedName, context, message, completionTask);
+    currentState.sendMessage(this, destination, getMapping(normalisedName), context, message, completionTask);
   }
 
   public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {

@@ -45,8 +45,7 @@ public class SSLEndPointServerFactory extends TCPEndPointServerFactory {
       throws IOException {
     InetAddress bindAddress = InetAddress.getByName(url.getHost());
     InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, url.getPort());
-    return new SSLEndPointServer(
-        inetSocketAddress, selector, acceptHandler, config, url, managerMBean);
+    return new SSLEndPointServer(inetSocketAddress, selector, acceptHandler, config, url, managerMBean);
   }
 
   @Override

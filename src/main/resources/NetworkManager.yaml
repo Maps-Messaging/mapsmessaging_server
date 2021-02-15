@@ -17,7 +17,6 @@
 ---
 NetworkManager:
     global:
-      -
         ssl_keyStoreFile: my-keystore.jks
         ssl_keyStorePassphrase: password
         ssl_trustStoreFile: my-keystore.jks
@@ -44,7 +43,7 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
         serverReadBufferSize :  1M
         serverWriteBufferSize : 1M
-        selectorThreadCount   : 5
+        selectorThreadCount   : 1
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT Protocol configuration
@@ -84,7 +83,15 @@ NetworkManager:
           name: "MQTT Interface"
           url: "tcp://0.0.0.0:1883/"
           protocol : mqtt
-          selectorThreadCount : 24
+          selectorThreadCount : 2
+          auth : public
+          receiveBufferSize : 32000000
+          sendBufferSize    : 32000000
+      -
+          name: "MQTT SSL Interface"
+          url: "ssl://0.0.0.0:8883/"
+          protocol : mqtt, stomp
+          selectorThreadCount : 2
           auth : public
           receiveBufferSize : 32000000
           sendBufferSize    : 32000000
@@ -100,7 +107,7 @@ NetworkManager:
         url: "tcp://0.0.0.0:1882/"
         name: "MQTT WebSocket Interface"
         protocol : mqtt,ws
-        selectorThreadCount : 24
+        selectorThreadCount : 2
         auth : public
         receiveBufferSize : 32000000
         sendBufferSize    : 32000000

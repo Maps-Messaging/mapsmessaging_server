@@ -19,8 +19,9 @@
 package org.maps.network.io.impl.ssl;
 
 import java.io.IOException;
+import org.maps.network.io.Selectable;
 
-public interface SSLHandshakeManager {
+public interface SSLHandshakeManager extends Selectable  {
 
   boolean handleSSLHandshakeStatus() throws IOException;
 }

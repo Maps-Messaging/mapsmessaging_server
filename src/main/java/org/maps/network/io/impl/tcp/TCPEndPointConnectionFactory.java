@@ -25,6 +25,7 @@ import java.util.List;
 import org.maps.network.EndPointURL;
 import org.maps.network.admin.EndPointConnectionJMX;
 import org.maps.network.io.EndPoint;
+import org.maps.network.io.EndPointConnectedCallback;
 import org.maps.network.io.EndPointConnectionFactory;
 import org.maps.network.io.EndPointServerStatus;
 import org.maps.network.io.impl.SelectorLoadManager;
@@ -32,11 +33,11 @@ import org.maps.network.io.impl.SelectorLoadManager;
 public class TCPEndPointConnectionFactory extends EndPointConnectionFactory {
 
   @Override
-  public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
+  public void connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback connectedCallback, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
     channel.connect(address);
-    return new TCPEndPoint(generateID(), channel.socket(), selector.allocate(), endPointServerStatus, jmxPath);
+    connectedCallback.connected(new TCPEndPoint(generateID(), channel.socket(), selector.allocate(), endPointServerStatus, jmxPath));
   }
 
   @Override
