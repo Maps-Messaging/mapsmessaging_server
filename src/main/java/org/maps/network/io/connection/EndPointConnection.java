@@ -203,7 +203,9 @@ public class EndPointConnection extends EndPointServerStatus {
     if(futureTask != null && !futureTask.isDone()){
       futureTask.cancel(true);
     }
-    logger.log(LogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
+    if(state != null) {
+      logger.log(LogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
+    }
     setState(newState);
     futureTask = SimpleTaskScheduler.getInstance().schedule(newState, time, TimeUnit.MILLISECONDS);
   }

@@ -45,7 +45,7 @@ public abstract class ProtocolImplFactory implements Service {
     return description;
   }
 
-  public abstract ProtocolImpl connect(EndPoint endPoint) throws IOException;
+  public abstract ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException;
 
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
 

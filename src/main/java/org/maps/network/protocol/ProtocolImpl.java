@@ -19,7 +19,6 @@
 package org.maps.network.protocol;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
@@ -77,7 +76,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
     endPoint.close();
   }
 
-  public void connect() throws IOException{
+  public void connect(String sessionId, String username, String password) throws IOException{
   }
 
   public void subscribeRemote(String resource, String mappedResource) throws IOException{

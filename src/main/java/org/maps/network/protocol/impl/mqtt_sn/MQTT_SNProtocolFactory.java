@@ -45,7 +45,7 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     return null;
   }
 

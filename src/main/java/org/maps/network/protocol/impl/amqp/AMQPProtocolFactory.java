@@ -31,7 +31,7 @@ public class AMQPProtocolFactory extends org.maps.network.protocol.ProtocolImplF
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     return null;
 
   }

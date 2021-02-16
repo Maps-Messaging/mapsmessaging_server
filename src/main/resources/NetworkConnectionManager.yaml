@@ -56,8 +56,7 @@ NetworkConnectionManager:
           protocol: stomp
           username: user1
           password: password1
-          sessionId: StompSSLSession
-
+          sessionId: StompSSLSessionLocal
           links:
             -
                 direction: push
@@ -68,10 +67,14 @@ NetworkConnectionManager:
       -
           name: test server2
           url: ssl://localhost:8883/
-          protocol: stomp
+          protocol: mqtt
           username: user1
           password: password1
-          sessionId: MQTTSession
+          sessionId: MQTTSession1
+          remote:
+              username: user1
+              password: password1
+              sessionId: MQTTSession2
 
           links:
               -

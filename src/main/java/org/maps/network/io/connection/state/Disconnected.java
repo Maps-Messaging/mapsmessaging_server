@@ -22,7 +22,6 @@ import static org.maps.network.io.connection.Constants.DELAYED_TIME;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.ThreadContext;
 import org.maps.logging.LogMessages;
 import org.maps.network.EndPointURL;
@@ -33,6 +32,7 @@ import org.maps.network.io.impl.SelectorLoadManager;
 import org.maps.network.protocol.ProtocolFactory;
 import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
+import org.maps.utilities.configuration.ConfigurationProperties;
 
 public class Disconnected extends State implements EndPointConnectedCallback {
 
@@ -50,7 +50,16 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       ThreadContext.put("endpoint", url);
       ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
       ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
-      ProtocolImpl protocolImpl =  protocolImplFactory.connect(endpoint);
+      ConfigurationProperties properties = endpoint.getConfig().getProperties();
+      if(properties.containsKey("remote")){
+        properties = (ConfigurationProperties) properties.get("remote");
+      }
+
+      String sessionId = properties.getProperty("sessionId");
+      String username = properties.getProperty("username");
+      String password = properties.getProperty("password");
+
+      ProtocolImpl protocolImpl =  protocolImplFactory.connect(endpoint, sessionId, username, password);
       endPointConnection.setConnection(protocolImpl);
       endPointConnection.scheduleState(new Connecting(endPointConnection));
     } catch (IOException ioException) {

@@ -21,7 +21,6 @@ package org.maps.network.protocol.impl.stomp;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 import java.io.IOException;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -86,8 +85,10 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void connect() throws IOException {
+  public void connect(String sessionId, String username, String password) throws IOException {
     Connect connect = new Connect();
+    connect.setLogin(username);
+    connect.setPasscode(password);
     connect.setAcceptVersion("1.2");
     writeFrame(connect);
     registerRead();

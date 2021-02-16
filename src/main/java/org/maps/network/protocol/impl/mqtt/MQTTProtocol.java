@@ -100,13 +100,13 @@ public class MQTTProtocol extends ProtocolImpl {
     }
   }
 
-  public void connect() throws IOException {
+  public void connect(String sessionId, String username, String password) throws IOException {
     Connect connect = new Connect();
-    if(endPoint.getConfig().getProperties().getProperty("username") != null) {
-      connect.setUsername(endPoint.getConfig().getProperties().getProperty("username"));
-      connect.setPassword(endPoint.getConfig().getProperties().getProperty("password").trim().toCharArray());
+    if(username != null) {
+      connect.setUsername(username);
+      connect.setPassword(password.trim().toCharArray());
     }
-    connect.setSessionId(endPoint.getConfig().getProperties().getProperty("sessionId"));
+    connect.setSessionId(sessionId);
     writeFrame(connect);
     registerRead();
   }

@@ -34,9 +34,9 @@ public class StompProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint) throws IOException {
+  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     StompProtocol protocol = new StompProtocol(endPoint);
-    protocol.connect();
+    protocol.connect(sessionId, username, password);
     return protocol;
   }
 
