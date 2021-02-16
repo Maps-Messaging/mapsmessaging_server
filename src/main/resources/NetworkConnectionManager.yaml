@@ -89,6 +89,15 @@ NetworkConnectionManager:
 #        password: password to use
 #        sessionId: Unique session identifier to use
 #
+#        The remote key is optional, and if present then username, password and sessionId are expected
+#        This enables remote connections to use different auth than local.
+#        If not present will use the standard supplied values
+#        remote:
+#              username: remote username to be used
+#              password: remote password
+#              sessionId: remote session if
+#
+#
 #       links:
 #          -
 #            direction: pull|push
