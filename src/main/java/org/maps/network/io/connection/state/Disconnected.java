@@ -18,54 +18,74 @@
 
 package org.maps.network.io.connection.state;
 
+import static org.maps.network.io.connection.Constants.DELAYED_TIME;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.ThreadContext;
+import org.maps.logging.LogMessages;
+import org.maps.network.EndPointURL;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.EndPointConnectedCallback;
 import org.maps.network.io.connection.EndPointConnection;
+import org.maps.network.io.impl.SelectorLoadManager;
 import org.maps.network.protocol.ProtocolFactory;
 import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
-import org.maps.utilities.threads.SimpleTaskScheduler;
 
 public class Disconnected extends State implements EndPointConnectedCallback {
+
+  private EndPoint activeEndPoint;
 
   public Disconnected(EndPointConnection connection) {
     super(connection);
   }
 
-  public void establishConnection() throws IOException {
-    endPointConnection.getEndPointConnectionFactory().connect(endPointConnection.getUrl(), endPointConnection.getSelectorLoadManager(), this, endPointConnection, endPointConnection.getJMXPath());
-  }
-
-  public ProtocolImpl accept(EndPoint endpoint) throws IOException {
-    ThreadContext.put("endpoint", endPointConnection.getUrl().toString());
+  @Override
+  public void connected(EndPoint endpoint) {
     String protocol = endPointConnection.getProperties().getProperty("protocol");
-    ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
-    ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
-    return protocolImplFactory.connect(endpoint);
+    String url = endPointConnection.getUrl().toString();
+    try {
+      ThreadContext.put("endpoint", url);
+      ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
+      ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
+      ProtocolImpl protocolImpl =  protocolImplFactory.connect(endpoint);
+      endPointConnection.setConnection(protocolImpl);
+      endPointConnection.scheduleState(new Connecting(endPointConnection));
+    } catch (IOException ioException) {
+      endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
+      endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
+    }
   }
 
   @Override
   public void execute() {
+    EndPointURL url = endPointConnection.getUrl();
     try {
-      establishConnection();
+      SelectorLoadManager selectorLoadManager = endPointConnection.getSelectorLoadManager();
+      List<String> jmxPath = endPointConnection.getJMXPath();
+      activeEndPoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
     } catch (Throwable ioException) {
-      setState(new Delayed(endPointConnection));
-      SimpleTaskScheduler.getInstance().schedule(endPointConnection.getState(), 10, TimeUnit.SECONDS);
+      endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
+      endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
   }
 
   @Override
-  public void connected(EndPoint endpoint) {
-    try {
-      ProtocolImpl protocol = accept(endpoint);
-      endPointConnection.setConnection(protocol);
-      setState(new Connecting(endPointConnection));
-    } catch (IOException ioException) {
-      setState(new Delayed(endPointConnection));
-      SimpleTaskScheduler.getInstance().schedule(endPointConnection.getState(), 10, TimeUnit.SECONDS);
+  public void cancel() {
+    if(activeEndPoint != null){
+      try {
+        activeEndPoint.close();
+      } catch (IOException ioException) {
+        // we are closing it, not too fussed about an exception here
+      }
     }
   }
+
+  @Override
+  public String getName() {
+    return "Disconnected";
+  }
+
 }

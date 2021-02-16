@@ -30,4 +30,10 @@ public class Established extends State {
   public void execute() {
     // No Op, nothing to do until we disconnect
   }
+
+  @Override
+  public String getName() {
+    return "Established";
+  }
+
 }

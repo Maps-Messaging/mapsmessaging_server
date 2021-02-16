@@ -33,11 +33,13 @@ import org.maps.network.io.impl.SelectorLoadManager;
 public class TCPEndPointConnectionFactory extends EndPointConnectionFactory {
 
   @Override
-  public void connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback connectedCallback, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
+  public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback connectedCallback, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
     channel.connect(address);
-    connectedCallback.connected(new TCPEndPoint(generateID(), channel.socket(), selector.allocate(), endPointServerStatus, jmxPath));
+    EndPoint endPoint = new TCPEndPoint(generateID(), channel.socket(), selector.allocate(), endPointServerStatus, jmxPath);
+    connectedCallback.connected(endPoint);
+    return endPoint;
   }
 
   @Override

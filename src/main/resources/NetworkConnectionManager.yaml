@@ -51,19 +51,33 @@ NetworkConnectionManager:
 
     data:
       -
-
           name: test server
           url: ssl://localhost:8883/
           protocol: stomp
           username: user1
           password: password1
-          sessionId: SSLSession
+          sessionId: StompSSLSession
 
           links:
             -
                 direction: push
                 remote_namespace: /output
                 local_namespace: /input
+
+
+      -
+          name: test server2
+          url: ssl://localhost:8883/
+          protocol: stomp
+          username: user1
+          password: password1
+          sessionId: MQTTSession
+
+          links:
+              -
+                  direction: push
+                  remote_namespace: /output
+                  local_namespace: /input1
 
 #        name: Generic name for the connection
 #        url: tcp|ssl|ws|wss://<hostname>:<port>/

@@ -27,6 +27,7 @@ import javax.net.ssl.SSLEngine;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.network.EndPointURL;
+import org.maps.network.io.EndPoint;
 import org.maps.network.io.EndPointConnectedCallback;
 import org.maps.network.io.EndPointConnectionFactory;
 import org.maps.network.io.EndPointServerStatus;
@@ -37,7 +38,7 @@ public class SSLEndPointConnectionFactory extends EndPointConnectionFactory {
   private final Logger logger = LoggerFactory.getLogger(SSLEndPointConnectionFactory.class);
 
   @Override
-  public void connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
+  public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
     SSLContext context = SSLHelper.getInstance().createContext(endPointServerStatus.getConfig().getProperties(), logger);
     SSLEngine engine = context.createSSLEngine();
     SocketChannel channel = SocketChannel.open();
@@ -45,7 +46,7 @@ public class SSLEndPointConnectionFactory extends EndPointConnectionFactory {
     channel.configureBlocking(true);
     channel.connect(address);
     channel.configureBlocking(false);
-    new SSLEndPoint(generateID(), engine, channel.socket(), selector.allocate(), callback, endPointServerStatus, jmxPath);
+    return new SSLEndPoint(generateID(), engine, channel.socket(), selector.allocate(), callback, endPointServerStatus, jmxPath);
   }
 
   @Override

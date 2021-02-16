@@ -21,9 +21,9 @@ package org.maps.network.io.connection.state;
 import java.io.IOException;
 import org.maps.network.io.connection.EndPointConnection;
 
-public class ShutdownState extends State {
+public class Shutdown extends State {
 
-  public ShutdownState(EndPointConnection connection) {
+  public Shutdown(EndPointConnection connection) {
     super(connection);
   }
 
@@ -33,8 +33,14 @@ public class ShutdownState extends State {
       try {
         endPointConnection.getConnection().close();
       } catch (IOException ioException) {
-        ioException.printStackTrace();
+        // We are closing, so not too fussed here
       }
     }
   }
+
+  @Override
+  public String getName() {
+    return "Shutdown";
+  }
+
 }

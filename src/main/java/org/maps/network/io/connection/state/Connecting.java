@@ -30,4 +30,9 @@ public class Connecting extends State {
   public void execute() {
     // Need to wait for the protocol to be established before we can move on
   }
+
+  @Override
+  public String getName() {
+    return "Connecting";
+  }
 }

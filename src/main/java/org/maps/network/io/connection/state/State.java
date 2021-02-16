@@ -18,6 +18,7 @@
 
 package org.maps.network.io.connection.state;
 
+import org.maps.network.io.connection.Constants;
 import org.maps.network.io.connection.EndPointConnection;
 
 public abstract class State implements Runnable {
@@ -27,20 +28,23 @@ public abstract class State implements Runnable {
 
   public State(EndPointConnection connection){
     this.endPointConnection = connection;
-    timeout = System.currentTimeMillis() + 60000;
+    timeout = System.currentTimeMillis() + Constants.TIMEOUT;
   }
 
   public boolean hasTimedOut(){
     return timeout < System.currentTimeMillis();
   }
 
-  public void setState(State state){
-    endPointConnection.setState(state);
+  public void run(){
+    execute();
+  }
+
+  public void cancel(){
+    // No Op in most cases
   }
 
   public abstract void execute();
 
-  public void run(){
-    execute();
-  }
+  public abstract String getName();
+
 }

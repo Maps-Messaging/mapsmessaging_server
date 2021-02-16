@@ -515,7 +515,23 @@ public enum LogMessages {
   NAMESPACE_MAPPING(LEVEL.INFO, CATEGORY.ENGINE,"Mapping {} to namespace {}"),
   NAMESPACE_MAPPING_FOUND(LEVEL.INFO, CATEGORY.ENGINE,    "Found entry for  {} mapping to {}"),
   NAMESPACE_MAPPING_DEFAULT(LEVEL.INFO, CATEGORY.ENGINE,    "Using default mapping {}"),
+  //</editor-fold>
+
+  //<editor-fold desc="End Point Connection Management">
+  END_POINT_CONNECTION_STARTING(LEVEL.INFO, CATEGORY.NETWORK, "Starting connection manager"),
+  END_POINT_CONNECTION_SUBSCRIPTION_FAILED(LEVEL.WARN, CATEGORY.NETWORK, "Failed to establish a {} subscription in between {} and {} "),
+  END_POINT_CONNECTION_CLOSE_EXCEPTION(LEVEL.INFO, CATEGORY.NETWORK, "Exception raised while closing end point"),
+  END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED(LEVEL.INFO, CATEGORY.NETWORK, "Established a {} subscription between {} and {}"),
+  END_POINT_CONNECTION_PROTOCOL_FAILED(LEVEL.WARN, CATEGORY.NETWORK, "Exception raised while establishing protocol between {} and protocol {}"),
+  END_POINT_CONNECTION_FAILED(LEVEL.WARN, CATEGORY.NETWORK, "Exception raised while connecting to remote server {}"),
+  END_POINT_CONNECTION_INITIALISED(LEVEL.INFO, CATEGORY.NETWORK, "Initialised connection"),
+  END_POINT_CONNECTION_CLOSED(LEVEL.INFO, CATEGORY.NETWORK, "Closing connection"),
+  END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, CATEGORY.NETWORK, "Changing state from {} to {}"),
+  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, CATEGORY.NETWORK, "Stopping connection manager"),
+  //</editor-fold>
   ;
+
+
   public final String message;
   public final LEVEL level;
   public final CATEGORY category;

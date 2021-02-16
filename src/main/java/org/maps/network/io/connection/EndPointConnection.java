@@ -18,16 +18,19 @@
 
 package org.maps.network.io.connection;
 
+import static org.maps.network.io.connection.Constants.SCHEDULE_TIME;
+
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.network.EndPointURL;
 import org.maps.network.NetworkConfig;
 import org.maps.network.admin.EndPointConnectionHostJMX;
-import org.maps.network.admin.EndPointConnectionJMX;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.EndPointConnectionFactory;
 import org.maps.network.io.EndPointServerStatus;
@@ -35,7 +38,7 @@ import org.maps.network.io.connection.state.Connected;
 import org.maps.network.io.connection.state.Connecting;
 import org.maps.network.io.connection.state.Delayed;
 import org.maps.network.io.connection.state.Disconnected;
-import org.maps.network.io.connection.state.ShutdownState;
+import org.maps.network.io.connection.state.Shutdown;
 import org.maps.network.io.connection.state.State;
 import org.maps.network.io.impl.SelectorLoadManager;
 import org.maps.network.protocol.ProtocolImpl;
@@ -49,12 +52,13 @@ public class EndPointConnection extends EndPointServerStatus {
   private final EndPointURL url;
   private final EndPointConnectionHostJMX manager;
   private final EndPointConnectionFactory endPointConnectionFactory;
-  //private final EndPointConnectionJMX bean;
-  private final AtomicBoolean running;
-  private final AtomicBoolean paused;
   private final SelectorLoadManager selectorLoadManager;
   private final List<ConfigurationProperties> destinationMappings;
 
+  private final AtomicBoolean running;
+  private final AtomicBoolean paused;
+
+  private Future<Runnable> futureTask;
   private EndPoint endPoint;
   private ProtocolImpl connection;
   private State state;
@@ -69,22 +73,27 @@ public class EndPointConnection extends EndPointServerStatus {
     this.destinationMappings = destinationMappings;
     this.selectorLoadManager = selectorLoadManager;
     this.endPointConnectionFactory = connectionFactory;
-    running = new AtomicBoolean(true);
+    running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
-    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_"+url.toString());
+    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_"+url.toString()+"_"+ properties.getProperty("protocol"));
     manager.addConnection(this);
+    logger.log(LogMessages.END_POINT_CONNECTION_INITIALISED);
   }
 
   public void close(){
+    if(futureTask != null && !futureTask.isDone()){
+      futureTask.cancel(true);
+    }
     running.set(false);
     manager.delConnection(this);
     if(endPoint != null){
       try {
         endPoint.close();
       } catch (IOException ioException) {
-        ioException.printStackTrace();
+        // we are closing the connection here, typically a shutdown
       }
     }
+    logger.log(LogMessages.END_POINT_CONNECTION_CLOSED);
   }
 
   public ConfigurationProperties getProperties() {
@@ -118,20 +127,23 @@ public class EndPointConnection extends EndPointServerStatus {
 
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
+    State stateChange;
     if(state instanceof Connecting){
-      state.setState(new Connected(this));
+      stateChange = new Connected(this);
     }
     else{
       endPoint.close();
-      state.setState(new Disconnected(this));
+      stateChange = new Disconnected(this);
     }
-    scheduleTask();
+    scheduleState(stateChange);
   }
 
   @Override
   public void handleCloseEndPoint(EndPoint endPoint) {
-    state.setState(new Delayed(this));
-    scheduleTask();
+    // If the end point closes and we are not running then just let it go
+    if(running.get()) {
+      scheduleState(new Delayed(this));
+    }
   }
 
   public Logger getLogger() {
@@ -140,10 +152,6 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public State getState(){
     return state;
-  }
-
-  public void setState(State state){
-    this.state = state;
   }
 
   public EndPoint getEndPoint() {
@@ -159,21 +167,13 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   public void start(){
-    running.set(true);
-    state = new Disconnected(this);
-    scheduleTask();
+    setRunState(true, new Disconnected(this));
+    logger.log(LogMessages.END_POINT_CONNECTION_STARTING);
   }
 
   public void stop(){
-    running.set(false);
-    setState(new ShutdownState(this));
-    scheduleTask();
-  }
-
-  private void scheduleTask(){
-    if(running.get()) {
-      SimpleTaskScheduler.getInstance().schedule(state, 10, TimeUnit.MILLISECONDS);
-    }
+    setRunState(false, new Shutdown(this));
+    logger.log(LogMessages.END_POINT_CONNECTION_STOPPING);
   }
 
   public void pause() {
@@ -188,4 +188,27 @@ public class EndPointConnection extends EndPointServerStatus {
     return manager.getTypePath();
   }
 
+  private synchronized void setRunState(boolean start, State state){
+    if(running.getAndSet(start) != start) {
+      running.set(start);
+      scheduleState(state);
+    }
+  }
+
+  public synchronized void scheduleState(State state){
+    scheduleState(state, SCHEDULE_TIME);
+  }
+
+  public synchronized void scheduleState(State newState, long time){
+    if(futureTask != null && !futureTask.isDone()){
+      futureTask.cancel(true);
+    }
+    logger.log(LogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
+    setState(newState);
+    futureTask = SimpleTaskScheduler.getInstance().schedule(newState, time, TimeUnit.MILLISECONDS);
+  }
+
+  private void setState(State state){
+    this.state = state;
+  }
 }
