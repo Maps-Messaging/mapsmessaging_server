@@ -38,7 +38,9 @@ public class EndPointURL {
     String tmp = protocol + "://" + host + "/";
     port = parsePort(url.substring(tmp.length()));
     tmp = protocol + "://" + host + ":" + port + "/";
-    file = url.substring(tmp.length());
+    if(url.length() > tmp.length()) {
+      file = url.substring(tmp.length());
+    }
     parseParameterMap(url);
   }
 

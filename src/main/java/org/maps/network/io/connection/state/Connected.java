@@ -38,11 +38,12 @@ public class Connected extends State {
       String direction = property.getProperty("direction");
       String local =  property.getProperty("local_namespace");
       String remote =  property.getProperty("remote_namespace");
+      String selector = property.getProperty("selector");
       try {
         if (direction.equalsIgnoreCase("pull")) {
           endPointConnection.getConnection().subscribeRemote(remote, local);
         } else if (direction.equalsIgnoreCase("push")) {
-          endPointConnection.getConnection().subscribeLocal(local, remote);
+          endPointConnection.getConnection().subscribeLocal(local, remote, selector);
         }
         endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       }

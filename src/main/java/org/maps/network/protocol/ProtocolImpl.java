@@ -82,7 +82,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   public void subscribeRemote(String resource, String mappedResource) throws IOException{
   }
 
-  public void subscribeLocal(String resource, String mappedResource) throws IOException {
+  public void subscribeLocal(String resource, String mappedResource, String selector) throws IOException {
   }
 
   public EndPoint getEndPoint() {

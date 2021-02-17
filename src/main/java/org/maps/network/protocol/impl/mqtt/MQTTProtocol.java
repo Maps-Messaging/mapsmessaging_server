@@ -118,7 +118,7 @@ public class MQTTProtocol extends ProtocolImpl {
     writeFrame(subscribe);
   }
 
-  public void subscribeLocal(String resource, String mappedResource) throws IOException {
+  public void subscribeLocal(String resource, String mappedResource, String selector) throws IOException {
     topicNameMapping.put(resource, mappedResource);
     SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
     scb.setAlias(resource);
@@ -127,6 +127,9 @@ public class MQTTProtocol extends ProtocolImpl {
     builder.setQos(QualityOfService.AT_MOST_ONCE);
     builder.setAllowOverlap(true);
     builder.setReceiveMaximum(1024);
+    if(selector != null && selector.length() > 0) {
+      builder.setSelector(selector);
+    }
     session.addSubscription(builder.build());
   }
 

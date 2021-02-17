@@ -51,7 +51,7 @@ NetworkConnectionManager:
 
     data:
       -
-          name: test server
+          name: Connects to the local server over SSL and using the STOMP protocol
           url: ssl://localhost:8883/
           protocol: stomp
           username: user1
@@ -65,26 +65,19 @@ NetworkConnectionManager:
 
 
       -
-          name: test server2
-          url: ssl://localhost:8883/
-          protocol: mqtt
+          name: Local destination connection, connects /localInput to /output without the need for a network connection
           username: user1
           password: password1
-          sessionId: MQTTSession1
-          remote:
-              username: user1
-              password: password1
-              sessionId: MQTTSession2
-
+          sessionId: UniqueSessionId
           links:
               -
                   direction: push
                   remote_namespace: /output
-                  local_namespace: /input1
+                  local_namespace: /localInput
 
 #        name: Generic name for the connection
-#        url: tcp|ssl|ws|wss://<hostname>:<port>/
-#        protocol: mqtt(4|5)|stomp|amqp
+#        url: tcp|ssl|ws|wss://<hostname>:<port>/ This is optional, if left out it is assumed a local connection
+#        protocol: mqtt(4|5)|stomp|amqp           Only required it URL is supplied
 #        username: username to use
 #        password: password to use
 #        sessionId: Unique session identifier to use

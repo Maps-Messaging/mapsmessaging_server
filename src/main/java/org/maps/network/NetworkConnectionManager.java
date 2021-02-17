@@ -42,7 +42,6 @@ public class NetworkConnectionManager implements ServiceManager {
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final SelectorLoadManager selectorLoadManager;
   private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
-  private final ConfigurationProperties networkConnectionProperties;
   private final List<EndPointConnection> endPointConnectionList;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final List<ConfigurationProperties> connectionConfiguration;
@@ -52,15 +51,13 @@ public class NetworkConnectionManager implements ServiceManager {
   public NetworkConnectionManager(List<String> parent) throws IOException {
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
     jmxParent = parent;
-    networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
+    ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
     connectionConfiguration = new ArrayList<>();
-    if(networkConnectionProperties != null) {
-      Object rootObj = networkConnectionProperties.get("data");
-      if (rootObj instanceof List) {
-        connectionConfiguration.addAll((List<ConfigurationProperties>) rootObj);
-      } else if (rootObj instanceof ConfigurationProperties) {
-        connectionConfiguration.add((ConfigurationProperties) rootObj);
-      }
+    Object rootObj = networkConnectionProperties.get("data");
+    if (rootObj instanceof List) {
+      connectionConfiguration.addAll((List<ConfigurationProperties>) rootObj);
+    } else if (rootObj instanceof ConfigurationProperties) {
+      connectionConfiguration.add((ConfigurationProperties) rootObj);
     }
     endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
@@ -72,35 +69,33 @@ public class NetworkConnectionManager implements ServiceManager {
   public void initialise() {
     for (ConfigurationProperties properties : connectionConfiguration) {
       String urlString = properties.getProperty("url");
-      if (urlString != null) {
-        EndPointURL endPointURL = new EndPointURL(urlString);
-        List<ConfigurationProperties> destinationMappings = new ArrayList<>();
-        Object linkReference = properties.get("links");
-        if(linkReference instanceof ConfigurationProperties){
-          destinationMappings.add((ConfigurationProperties) linkReference);
-        }
-        else if(linkReference instanceof List){
-          destinationMappings.addAll((List<ConfigurationProperties>)linkReference);
-        }
+      if(urlString == null){
+        urlString = "noop://localhost/";
+        properties.put("protocol", "loop");
+      }
 
-        if (!destinationMappings.isEmpty()) {
-          for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-            if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-              EndPointURL url = new EndPointURL(properties.getProperty("url"));
-              EndPointConnectionHostJMX hostJMXBean = hostMapping.computeIfAbsent(url.host, k -> new EndPointConnectionHostJMX(jmxParent, url.host));
-              endPointConnectionList.add(new EndPointConnection(url, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
-            }
+      EndPointURL endPointURL = new EndPointURL(urlString);
+      List<ConfigurationProperties> destinationMappings = new ArrayList<>();
+      Object linkReference = properties.get("links");
+      if(linkReference instanceof ConfigurationProperties){
+        destinationMappings.add((ConfigurationProperties) linkReference);
+      }
+      else if(linkReference instanceof List){
+        destinationMappings.addAll((List<ConfigurationProperties>)linkReference);
+      }
+
+      if (!destinationMappings.isEmpty()) {
+        for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
+          if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
+
+            EndPointConnectionHostJMX hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxParent, endPointURL.host));
+            endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
           }
-        } else {
-          System.err.println("Ignoring config for " + properties);
         }
+      } else {
+        System.err.println("Ignoring config for " + properties);
       }
     }
-  }
-
-  private List<ConfigurationProperties> findMatchingDestinationMappings(String name){
-    List<ConfigurationProperties> response = new ArrayList<>();
-    return response;
   }
 
   public SelectorLoadManager getSelectorLoadManager() {

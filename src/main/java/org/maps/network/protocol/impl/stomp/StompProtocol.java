@@ -94,7 +94,8 @@ public class StompProtocol extends ProtocolImpl {
     registerRead();
   }
 
-  public void subscribeRemote(String resource, String mappedResource) throws IOException{
+  @Override
+  public void subscribeRemote(String resource, String mappedResource) {
     stateEngine.addMapping(resource, mappedResource);
     Subscribe subscribe = new Subscribe();
     subscribe.setDestination(resource);
@@ -103,10 +104,14 @@ public class StompProtocol extends ProtocolImpl {
     writeFrame(subscribe);
   }
 
-  public void subscribeLocal(String resource,  String mappedResource) throws IOException {
+  @Override
+  public void subscribeLocal(String resource,  String mappedResource, String selector) throws IOException {
     stateEngine.addMapping(resource, mappedResource);
     SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
     scb.setAlias(resource);
+    if(selector != null && selector.length() > 0) {
+      scb.setSelector(selector);
+    }
     stateEngine.createSubscription(scb.build());
   }
 
