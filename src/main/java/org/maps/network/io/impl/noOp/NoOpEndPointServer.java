@@ -46,7 +46,6 @@ public class NoOpEndPointServer extends EndPointServer {
 
   @Override
   public void start() throws IOException {
-
   }
 
   @Override
@@ -56,7 +55,6 @@ public class NoOpEndPointServer extends EndPointServer {
 
   @Override
   public void close() throws IOException {
-
   }
 
   @Override

@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.login.LoginException;
 import org.jetbrains.annotations.NotNull;
+import org.maps.logging.LogMessages;
+import org.maps.logging.Logger;
+import org.maps.logging.LoggerFactory;
 import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.Session;
@@ -39,15 +42,19 @@ import org.maps.network.protocol.ProtocolImpl;
 
 public class LocalLoopProtocol extends ProtocolImpl {
 
+  private final Map<String, String> nameMapping;
+  private final Logger logger;
   private Session session;
   private boolean closed;
-  private Map<String, String> nameMapping;
+  private String sessionId;
 
 
   public LocalLoopProtocol(@NotNull EndPoint endPoint) {
     super(endPoint);
+    logger = LoggerFactory.getLogger(LocalLoopProtocol.class);
     closed = false;
     nameMapping = new ConcurrentHashMap<>();
+    logger.log(LogMessages.LOOP_CREATED);
   }
 
   @Override
@@ -56,6 +63,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
       closed = true;
       SessionManager.getInstance().close(session);
       super.close();
+      logger.log(LogMessages.LOOP_CLOSED);
     }
   }
 
@@ -71,8 +79,9 @@ public class LocalLoopProtocol extends ProtocolImpl {
           destination.storeMessage(messageBuilder.build());
         }
         completionTask.run();
+        logger.log(LogMessages.LOOP_SENT_MESSAGE);
       } catch (IOException ioException) {
-        ioException.printStackTrace();
+        logger.log(LogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
       }
     }
   }
@@ -86,11 +95,13 @@ public class LocalLoopProtocol extends ProtocolImpl {
     try {
       session = SessionManager.getInstance().create(scb.build(), this);
     } catch (LoginException e) {
+      logger.log(LogMessages.LOOP_SEND_CONNECT_FAILED, e);
       IOException ioException = new IOException();
       e.initCause(e);
       throw ioException;
     }
     setConnected(true);
+    this.sessionId = sessionId;
   }
 
   @Override
@@ -113,6 +124,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
     }
     session.addSubscription(builder.build());
     session.resumeState();
+    logger.log(LogMessages.LOOP_SUBSCRIBED, resource, mappedResource);
   }
 
   @Override
@@ -127,7 +139,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
 
   @Override
   public String getSessionId() {
-    return null;
+    return sessionId;
   }
 
   @Override

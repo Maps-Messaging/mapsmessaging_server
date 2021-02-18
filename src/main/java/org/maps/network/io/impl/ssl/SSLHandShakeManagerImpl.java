@@ -66,7 +66,6 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
     if(callback != null){
       callback.connected(sslEndPointImpl);
     }
-    System.err.println("Completed "+callback);
     return false;
   }
 

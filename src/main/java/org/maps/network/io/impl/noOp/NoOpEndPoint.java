@@ -24,6 +24,7 @@ import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
+import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.network.io.EndPoint;
@@ -36,6 +37,13 @@ public class NoOpEndPoint extends EndPoint {
   public NoOpEndPoint(long id, EndPointServerStatus server, List<String> jmxPath) {
     super(id, server);
     jmxParentPath = new ArrayList<>(jmxPath);
+    logger.log(LogMessages.NOOP_END_POINT_CREATE, id);
+  }
+
+  @Override
+  public void close() throws IOException {
+    super.close();
+    logger.log(LogMessages.NOOP_END_POINT_CLOSE, getId());
   }
 
   @Override

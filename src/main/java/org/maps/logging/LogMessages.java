@@ -137,8 +137,14 @@ public enum LogMessages {
   TCP_SEND_BUFFER(LEVEL.TRACE, CATEGORY.NETWORK, "Sent {} bytes to socket"),
   TCP_READ_BUFFER(LEVEL.TRACE, CATEGORY.NETWORK, "Read {} bytes from socket"),
   TCP_CLOSE_ERROR(LEVEL.TRACE, CATEGORY.NETWORK, "Exception raised while closing the physical socket"),
-  TCP_CONFIGURED_PARAMETER(LEVEL.TRACE, CATEGORY.NETWORK, "Setting scoket paramater: {} to {} "),
+  TCP_CONFIGURED_PARAMETER(LEVEL.TRACE, CATEGORY.NETWORK, "Setting socket parameter: {} to {} "),
   // </editor-fold>
+
+  //<editor-fold desc="Local Loop End Point">
+  NOOP_END_POINT_CREATE(LEVEL.DEBUG, CATEGORY.NETWORK, "Created a no-op end point {}"),
+  NOOP_END_POINT_CLOSE(LEVEL.DEBUG, CATEGORY.NETWORK, "Closed a no-op end point {}"),
+  //</editor-fold>
+
 
   // <editor-fold desc="TCP/IP Server EndPoint log message">
   TCP_SERVER_ENDPOINT_CREATE(LEVEL.DEBUG, CATEGORY.NETWORK, "Creating Server Socket on port {} with backlog of {} on interface {}"),
@@ -343,7 +349,6 @@ public enum LogMessages {
   MQTT5_TOPIC_ALIAS_EXCEEDED_MAXIMUM(LEVEL.ERROR, CATEGORY.PROTOCOL, "Exceeded maximum number of alias"),
   MQTT5_TOPIC_ALIAS_INVALID_VALUE(LEVEL.ERROR, CATEGORY.PROTOCOL, "Invalid value supplied for alias, received {}"),
   MQTT5_TOPIC_ALIAS_ALREADY_EXISTS(LEVEL.ERROR, CATEGORY.PROTOCOL, "Alias already exists for {}"),
-
   // </editor-fold>
 
   // <editor-fold desc="MQTT-SN log messages">
@@ -358,7 +363,15 @@ public enum LogMessages {
   MQTT_SN_REGISTERED_EVENT(LEVEL.DEBUG, CATEGORY.PROTOCOL, "Registered Event processed for {}"),
   MQTT_SN_REGISTERED_EVENT_NOT_FOUND(LEVEL.WARN, CATEGORY.PROTOCOL, "Registered Event packet detected but no configuration found for host:{} topic Id:{}"),
   MQTT_SN_INVALID_QOS_PACKET_DETECTED(LEVEL.WARN, CATEGORY.PROTOCOL, "Publish packet received from {}, but incorrect QoS should be 3 but found {}"),
+  // </editor-fold>
 
+  // <editor-fold desc="MQTT-SN log messages">
+  LOOP_CREATED(LEVEL.DEBUG, CATEGORY.PROTOCOL, "loop protocol connection created"),
+  LOOP_CLOSED(LEVEL.DEBUG, CATEGORY.PROTOCOL, "loop protocol connection closed"),
+  LOOP_SUBSCRIBED(LEVEL.DEBUG, CATEGORY.PROTOCOL, "loop protocol subscribing to {} and delivering to {}"),
+  LOOP_SENT_MESSAGE(LEVEL.DEBUG, CATEGORY.PROTOCOL, "Delivered message via loop"),
+  LOOP_SEND_MESSAGE_FAILED(LEVEL.ERROR, CATEGORY.PROTOCOL, "Delivery of message via loop failed"),
+  LOOP_SEND_CONNECT_FAILED(LEVEL.ERROR, CATEGORY.PROTOCOL, "Authentication failed"),
   // </editor-fold>
 
   // <editor-fold desc="Protocol detection log messages">
@@ -529,6 +542,7 @@ public enum LogMessages {
   END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, CATEGORY.NETWORK, "Changing state from {} to {}"),
   END_POINT_CONNECTION_STOPPING(LEVEL.INFO, CATEGORY.NETWORK, "Stopping connection manager"),
   //</editor-fold>
+
   ;
 
 

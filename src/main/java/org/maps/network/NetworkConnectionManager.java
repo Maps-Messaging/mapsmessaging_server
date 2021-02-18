@@ -92,8 +92,6 @@ public class NetworkConnectionManager implements ServiceManager {
             endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
           }
         }
-      } else {
-        System.err.println("Ignoring config for " + properties);
       }
     }
   }
