@@ -25,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Manages a single moving average, accumulates data over the period and then provides an average that moves with time.
  * https://en.wikipedia.org/wiki/Moving_average
+ * @since 1.0
+ * @author Matthew Buckton
+ * @version 1.0
  */
 public class MovingAverage  {
 

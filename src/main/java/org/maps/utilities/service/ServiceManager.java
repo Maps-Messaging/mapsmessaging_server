@@ -22,6 +22,9 @@ import java.util.Iterator;
 
 /**
  * Provides a generic interface for all classes that manage services so they can be queried.
+ * @since 1.0
+ * @author Matthew Buckton
+ * @version 1.0
  */
 public interface ServiceManager {
 

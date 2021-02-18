@@ -18,5 +18,8 @@
 
 /**
  * This package contains helper instances used for the java services API
+ * @since 1.0
+ * @author Matthew Buckton
+ * @version 1.0
  */
 package org.maps.utilities.service;

@@ -18,5 +18,9 @@
 
 /**
  * This packages contains the implementations of a bitset and bitset operations that can be applied across the bitsets.
+ *
+ * @since 1.0
+ * @author Matthew Buckton
+ * @version 1.0
  */
 package org.maps.utilities.collections.bitset;

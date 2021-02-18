@@ -27,6 +27,10 @@ import org.maps.utilities.stats.processors.DataProcessor;
 /**
  * Creates a list of moving average with different time periods. Data is pushed through all the moving averages resulting in the ability
  * to see longer period trends versus short term trends.
+ *
+ * @since 1.0
+ * @author Matthew Buckton
+ * @version 1.0
  */
 public class LinkedMovingAverages {
 

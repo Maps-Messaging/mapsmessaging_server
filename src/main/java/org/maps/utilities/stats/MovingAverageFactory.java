@@ -31,6 +31,10 @@ import org.maps.utilities.threads.SimpleTaskScheduler;
 
 /**
  * Creates a MovingAverage instance that manages the data summing based on the ACCUMULATOR allocated to the MovingAverage
+ *
+ * @since 1.0
+ * @author Matthew Buckton
+ * @version 1.0
  */
 
 public class MovingAverageFactory {
