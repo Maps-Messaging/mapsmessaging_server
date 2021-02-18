@@ -20,35 +20,54 @@ package org.maps.messaging.api;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.features.Priority;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
+import org.maps.messaging.api.transformers.Transformer;
 import org.maps.network.protocol.ProtocolMessageTransformation;
 
 public class MessageBuilder {
 
+  @Getter
   private java.util.Map<String, String> meta;
+  @Getter
   private Map<String, TypedData> dataMap;
-
+  @Getter
   private byte[] opaqueData;
+  @Getter
   private Object correlationData;
+  @Getter
   private String contentType;
+  @Getter
   private String responseTopic;
-
+  @Getter
   private long id;
+  @Getter
   private long expiry;
+  @Getter
   private long delayed;
+  @Getter
   private Priority priority;
+  @Getter
   private long creation;
+  @Getter
   private QualityOfService qualityOfService;
+  @Getter
   private ProtocolMessageTransformation transformation;
-
+  @Getter
   private boolean retain;
+  @Getter
   private boolean storeOffline;
+  @Getter
   private boolean payloadUTF8;
+
+  @Getter
+  private Transformer transformer;
+
 
   public MessageBuilder() {
     id = 0;
@@ -83,12 +102,9 @@ public class MessageBuilder {
     delayed = previousMessage.getDelayed();
   }
 
-  public long getCreation() {
-    return creation;
-  }
-
-  public void setCreation(long creation) {
+  public @NotNull MessageBuilder setCreation(long creation) {
     this.creation = creation;
+    return this;
   }
 
   public @NotNull MessageBuilder setQoS(@NotNull QualityOfService qualityOfService) {
@@ -111,17 +127,9 @@ public class MessageBuilder {
     return this;
   }
 
-  public @Nullable Map<String, String> getMeta() {
-    return meta;
-  }
-
   public @NotNull MessageBuilder setMeta(@Nullable  Map<String, String> meta) {
     this.meta = meta;
     return this;
-  }
-
-  public @Nullable Map<String, TypedData> getDataMap() {
-    return dataMap;
   }
 
   public @NotNull MessageBuilder setDataMap(@Nullable Map<String, TypedData> dataMap) {
@@ -129,17 +137,9 @@ public class MessageBuilder {
     return this;
   }
 
-  public @Nullable byte[] getOpaqueData() {
-    return opaqueData;
-  }
-
   public @NotNull MessageBuilder setOpaqueData(@Nullable byte[] opaqueData) {
     this.opaqueData = opaqueData;
     return this;
-  }
-
-  public Object getCorrelationData() {
-    return correlationData;
   }
 
   public @NotNull MessageBuilder setCorrelationData(@Nullable byte[] correlationData) {
@@ -152,17 +152,9 @@ public class MessageBuilder {
     return this;
   }
 
-  public String getContentType() {
-    return contentType;
-  }
-
   public @NotNull MessageBuilder setContentType(@Nullable String contentType) {
     this.contentType = contentType;
     return this;
-  }
-
-  public String getResponseTopic() {
-    return responseTopic;
   }
 
   public @NotNull MessageBuilder setResponseTopic(@Nullable String responseTopicString) {
@@ -170,21 +162,9 @@ public class MessageBuilder {
     return this;
   }
 
-  public long getId() {
-    return id;
-  }
-
   public @NotNull MessageBuilder setId(long id) {
     this.id = id;
     return this;
-  }
-
-  public long getExpiry() {
-    return expiry;
-  }
-
-  public Priority getPriority() {
-    return priority;
   }
 
   public @NotNull MessageBuilder setPriority(Priority priority) {
@@ -192,27 +172,10 @@ public class MessageBuilder {
     return this;
   }
 
-  public QualityOfService getQos() {
-    return qualityOfService;
-  }
-
-  public boolean isRetain() {
-    return retain;
-  }
-
   public @NotNull MessageBuilder setRetain(boolean retain) {
     this.retain = retain;
     return this;
   }
-
-  public boolean isStoreOffline() {
-    return storeOffline;
-  }
-
-  public boolean isPayloadUTF8() {
-    return payloadUTF8;
-  }
-
 
   public @Nullable ProtocolMessageTransformation getTransformation() {
     return transformation;
@@ -223,20 +186,25 @@ public class MessageBuilder {
     return this;
   }
 
-  public long getDelayed() {
-    return delayed;
-  }
-
   public  @NotNull MessageBuilder setDelayed(long delayed) {
     this.delayed = delayed;
     return this;
   }
 
+  public  @NotNull MessageBuilder setDestinationTransformer(Transformer transformer) {
+    this.transformer = transformer;
+    return this;
+  }
+
+
   public @NotNull Message build() {
     if(transformation != null){
       ProtocolMessageTransformation local = transformation;
       transformation = null;
-      return local.incoming(this);
+      local.incoming(this);
+    }
+    if(transformer != null){
+      transformer.transform(this);
     }
     return new Message(this);
   }

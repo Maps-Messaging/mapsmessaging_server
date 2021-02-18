@@ -32,6 +32,7 @@ import org.maps.messaging.api.features.Priority;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
+import org.maps.messaging.api.transformers.Transformer;
 import org.maps.network.io.EndPoint;
 import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolMessageTransformation;
@@ -44,7 +45,7 @@ import org.maps.network.protocol.impl.mqtt.packet.Publish;
 
 public class PublishListener extends PacketListener {
 
-  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation) {
+  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation, Transformer transformer) {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "4");
@@ -52,7 +53,7 @@ public class PublishListener extends PacketListener {
 
     HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
     MessageBuilder mb = new MessageBuilder();
-    return mb.setDataMap(dataHashMap)
+    mb.setDataMap(dataHashMap)
         .setPriority(priority)
         .setRetain(retain)
         .setOpaqueData(msg)
@@ -60,7 +61,9 @@ public class PublishListener extends PacketListener {
         .setQoS(qos)
         .storeOffline(qos.storeOffline())
         .setTransformation(transformation)
-        .build();
+        .setDestinationTransformer(transformer);
+
+    return mb.build();
   }
 
   @Override
@@ -101,7 +104,8 @@ public class PublishListener extends PacketListener {
   }
 
   private void processMessage(Publish publish, ProtocolImpl protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
-    Message message = createMessage(publish.getPayload(), publish.getPriority(), publish.isRetain(), publish.getQos(), protocol.getTransformation());
+    Transformer transformer = protocol.destinationTransformationLookup(destination.getName() );
+    Message message = createMessage(publish.getPayload(), publish.getPriority(), publish.isRetain(), publish.getQos(), protocol.getTransformation(), transformer);
     if(response != null){
       Transaction transaction = null;
       try {

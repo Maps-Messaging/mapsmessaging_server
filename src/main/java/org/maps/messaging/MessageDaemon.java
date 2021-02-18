@@ -45,6 +45,7 @@ import org.maps.messaging.engine.destination.DestinationManager;
 import org.maps.messaging.engine.selector.operators.parsers.ParserFactory;
 import org.maps.messaging.engine.session.SessionManager;
 import org.maps.messaging.engine.system.SystemTopicManager;
+import org.maps.messaging.engine.transformers.TransformerManager;
 import org.maps.network.NetworkConnectionManager;
 import org.maps.network.NetworkManager;
 import org.maps.network.protocol.ProtocolImplFactory;
@@ -143,7 +144,7 @@ public class MessageDaemon implements WrapperListener {
     TransactionManager.setExpiryTime(transactionExpiry);
 
     networkManager = new NetworkManager(mBean.getTypePath());
-    networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());
+    networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath(), TransformerManager.getInstance());
     securityManager = new org.maps.messaging.engine.session.SecurityManager();
     destinationManager = new DestinationManager(delayTimer);
     systemTopicManager = new SystemTopicManager(destinationManager);
@@ -177,6 +178,8 @@ public class MessageDaemon implements WrapperListener {
       service.add(parser);
     }
     logServices(service.listIterator());
+
+    logServices(TransformerManager.getInstance().getServices());
   }
 
   private void logServices(Iterator<Service> services){

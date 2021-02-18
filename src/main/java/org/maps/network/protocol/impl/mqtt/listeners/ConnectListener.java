@@ -58,7 +58,7 @@ public class ConnectListener extends BaseConnectionListener {
     } else {
       SessionContextBuilder scb = getBuilder(endPoint, protocol, connect.getSessionId(), connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
       if (connect.isWillFlag()) {
-        Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation());
+        Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null);
         scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
       }
       protocol.setKeepAlive(connect.getKeepAlive());

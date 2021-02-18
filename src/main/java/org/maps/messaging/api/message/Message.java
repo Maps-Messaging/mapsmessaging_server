@@ -84,7 +84,7 @@ public class Message implements SerializedObject {
       priority = builder.getPriority();
     }
     storeOffline = builder.isStoreOffline();
-    qualityOfService = builder.getQos();
+    qualityOfService = builder.getQualityOfService();
     Object correlation = builder.getCorrelationData();
     if(correlation instanceof String){
       correlationData = ((String)correlation).getBytes(StandardCharsets.UTF_8);

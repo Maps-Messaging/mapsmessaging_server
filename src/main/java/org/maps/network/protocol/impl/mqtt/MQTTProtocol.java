@@ -24,10 +24,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.messaging.api.Destination;
+import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.Session;
 import org.maps.messaging.api.SessionManager;
 import org.maps.messaging.api.SubscribedEventManager;
@@ -35,6 +37,7 @@ import org.maps.messaging.api.SubscriptionContextBuilder;
 import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
+import org.maps.messaging.api.transformers.Transformer;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
@@ -100,7 +103,7 @@ public class MQTTProtocol extends ProtocolImpl {
     }
   }
 
-  public void connect(String sessionId, String username, String password) throws IOException {
+  public void connect(@NotNull String sessionId,String username,String password) throws IOException {
     Connect connect = new Connect();
     if(username != null) {
       connect.setUsername(username);
@@ -111,15 +114,21 @@ public class MQTTProtocol extends ProtocolImpl {
     registerRead();
   }
 
-  public void subscribeRemote(String resource,String mappedResource) throws IOException{
+  public void subscribeRemote(@NotNull String resource,@NotNull  String mappedResource, @Nullable Transformer transformer){
     topicNameMapping.put(resource, mappedResource);
+    if(transformer != null) {
+      destinationTransformerMap.put(resource, transformer);
+    }
     Subscribe subscribe = new Subscribe();
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
     writeFrame(subscribe);
   }
 
-  public void subscribeLocal(String resource, String mappedResource, String selector) throws IOException {
+  public void subscribeLocal(@NotNull String resource, @NotNull String mappedResource,@Nullable String selector,  @Nullable Transformer transformer) throws IOException {
     topicNameMapping.put(resource, mappedResource);
+    if(transformer != null) {
+      destinationTransformerMap.put(resource, transformer);
+    }
     SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
     scb.setAlias(resource);
     ClientAcknowledgement ackManger = QualityOfService.AT_MOST_ONCE.getClientAcknowledgement();
@@ -240,6 +249,8 @@ public class MQTTProtocol extends ProtocolImpl {
     if (qos.isSendPacketId()) {
       packetId = packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
     }
+    message = processTransformer(normalisedName, message);
+
     byte[] payload;
     if(transformation != null){
       payload = transformation.outgoing(message);
@@ -257,6 +268,7 @@ public class MQTTProtocol extends ProtocolImpl {
     publish.setCallback(completionTask);
     writeFrame(publish);
   }
+
 
   public void writeFrame(ServerPacket frame) {
     sentMessage();

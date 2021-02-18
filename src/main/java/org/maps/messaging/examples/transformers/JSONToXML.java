@@ -16,16 +16,28 @@
  *
  */
 
-package org.maps.messaging.engine.translation;
+package org.maps.messaging.examples.transformers;
 
-import org.maps.messaging.api.message.Message;
+import org.json.JSONObject;
+import org.json.XML;
+import org.maps.messaging.api.MessageBuilder;
+import org.maps.messaging.api.transformers.Transformer;
 
-public interface Translate {
+public class JSONToXML implements Transformer {
 
-  Message translate(String protocolName, String destinationName, Message original);
+  @Override
+  public void transform(MessageBuilder messageBuilder) {
+    JSONObject jsonObject = new JSONObject(new String(messageBuilder.getOpaqueData()));
+    messageBuilder.setOpaqueData(XML.toString(jsonObject).getBytes());
+  }
 
-  String getName();
+  @Override
+  public String getName() {
+    return "JSONToXML";
+  }
 
-  String getDescription();
-
+  @Override
+  public String getDescription() {
+    return "Converts JSON to XML";
+  }
 }

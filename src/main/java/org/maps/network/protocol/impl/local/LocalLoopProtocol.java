@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.login.LoginException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
@@ -36,6 +37,7 @@ import org.maps.messaging.api.SubscriptionContextBuilder;
 import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
+import org.maps.messaging.api.transformers.Transformer;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
 import org.maps.network.protocol.ProtocolImpl;
@@ -76,6 +78,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
         Destination destination = session.findDestination(lookup);
         if(destination != null) {
           MessageBuilder messageBuilder = new MessageBuilder(message);
+          messageBuilder.setDestinationTransformer(destinationTransformationLookup(normalisedName));
           destination.storeMessage(messageBuilder.build());
         }
         completionTask.run();
@@ -105,12 +108,15 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(String resource, String mappedResource) throws IOException{
-    subscribeLocal(resource, mappedResource, null);
+  public void subscribeRemote(@NotNull String resource, @NotNull String mappedResource,@Nullable Transformer transformer) throws IOException{
+    subscribeLocal(resource, mappedResource, null, transformer);
   }
 
   @Override
-  public void subscribeLocal(String resource, String mappedResource, String selector) throws IOException {
+  public void subscribeLocal(@NotNull String resource, @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
+    if(transformer != null) {
+      destinationTransformerMap.put(resource, transformer);
+    }
     nameMapping.put(resource, mappedResource);
     SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
     scb.setAlias(resource);

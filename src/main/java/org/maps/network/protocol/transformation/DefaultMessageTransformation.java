@@ -40,9 +40,7 @@ public class DefaultMessageTransformation implements ProtocolMessageTransformati
   }
 
   @Override
-  public @NotNull Message incoming(@NotNull MessageBuilder messageBuilder) {
-    return messageBuilder.build();
-  }
+  public void incoming(@NotNull MessageBuilder messageBuilder) { }
 
   @Override
   public @NotNull byte[] outgoing(@NotNull Message message) {

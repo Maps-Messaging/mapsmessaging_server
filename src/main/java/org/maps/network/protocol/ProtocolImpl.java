@@ -19,10 +19,16 @@
 package org.maps.network.protocol;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.MessageListener;
+import org.maps.messaging.api.message.Message;
+import org.maps.messaging.api.transformers.Transformer;
 import org.maps.network.admin.ProtocolJMX;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.impl.SelectorCallback;
@@ -48,6 +54,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   protected final LinkedMovingAverages receivedMessageAverages;
 
   protected ProtocolMessageTransformation transformation;
+  protected final Map<String, Transformer> destinationTransformerMap;
 
   private final ProtocolJMX mbean;
   protected long keepAlive;
@@ -59,6 +66,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
     receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
     connected = false;
+    destinationTransformerMap = new ConcurrentHashMap<>();
   }
 
   public ProtocolMessageTransformation getTransformation() {
@@ -79,10 +87,10 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   public void connect(String sessionId, String username, String password) throws IOException{
   }
 
-  public void subscribeRemote(String resource, String mappedResource) throws IOException{
+  public void subscribeRemote(@NotNull String resource,@NotNull String mappedResource, @Nullable Transformer transformer) throws IOException{
   }
 
-  public void subscribeLocal(String resource, String mappedResource, String selector) throws IOException {
+  public void subscribeLocal(@NotNull String resource,@NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
   }
 
   public EndPoint getEndPoint() {
@@ -136,4 +144,19 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   public boolean isConnected(){
     return connected;
   }
+
+  protected Message processTransformer(String normalisedName, Message message) {
+    Transformer transformer = destinationTransformerMap.get(normalisedName);
+    if(transformer != null){
+      MessageBuilder mb = new MessageBuilder(message);
+      mb.setDestinationTransformer(transformer);
+      message = mb.build();
+    }
+    return message;
+  }
+
+  public Transformer destinationTransformationLookup(String name) {
+    return destinationTransformerMap.get(name);
+  }
+
 }

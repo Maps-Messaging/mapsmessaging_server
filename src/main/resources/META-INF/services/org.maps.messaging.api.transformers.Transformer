@@ -13,7 +13,4 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-
-
-org.maps.network.protocol.transformation.DefaultMessageTransformation
-org.maps.network.protocol.transformation.JMSProtocolMessageTransformation
+org.maps.messaging.examples.transformers.JSONToXML

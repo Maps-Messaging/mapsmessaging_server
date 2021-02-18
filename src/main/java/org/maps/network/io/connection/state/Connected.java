@@ -21,6 +21,8 @@ package org.maps.network.io.connection.state;
 import java.io.IOException;
 import java.util.List;
 import org.maps.logging.LogMessages;
+import org.maps.messaging.api.transformers.Transformer;
+import org.maps.messaging.engine.transformers.TransformerManager;
 import org.maps.network.io.connection.EndPointConnection;
 import org.maps.utilities.configuration.ConfigurationProperties;
 
@@ -39,11 +41,14 @@ public class Connected extends State {
       String local =  property.getProperty("local_namespace");
       String remote =  property.getProperty("remote_namespace");
       String selector = property.getProperty("selector");
+
+      Transformer transformer  = TransformerManager.getInstance().get(property.getProperty("transformer"));
+
       try {
         if (direction.equalsIgnoreCase("pull")) {
-          endPointConnection.getConnection().subscribeRemote(remote, local);
+          endPointConnection.getConnection().subscribeRemote(remote, local, transformer);
         } else if (direction.equalsIgnoreCase("push")) {
-          endPointConnection.getConnection().subscribeLocal(local, remote, selector);
+          endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer);
         }
         endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       }

@@ -28,7 +28,7 @@ public interface ProtocolMessageTransformation extends Service {
 
   String getDescription();
 
-  Message incoming (MessageBuilder messageBuilder);
+  void incoming (MessageBuilder messageBuilder);
 
   byte[] outgoing(Message message);
 }

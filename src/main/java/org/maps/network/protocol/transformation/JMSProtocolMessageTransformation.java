@@ -45,7 +45,7 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
   }
 
   @Override
-  public @NotNull Message incoming(@NotNull MessageBuilder messageBuilder) {
+  public void incoming(@NotNull MessageBuilder messageBuilder) {
     org.apache.qpid.proton.message.Message protonMsg = Factory.create();
     byte[] data = messageBuilder.getOpaqueData();
     if (data != null) {
@@ -53,7 +53,6 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
       MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(protonMsg.getMessageAnnotations());
       translator.decode(messageBuilder, protonMsg);
     }
-    return messageBuilder.build();
   }
 
   @Override

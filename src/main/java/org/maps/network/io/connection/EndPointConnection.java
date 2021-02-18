@@ -73,6 +73,7 @@ public class EndPointConnection extends EndPointServerStatus {
     this.destinationMappings = destinationMappings;
     this.selectorLoadManager = selectorLoadManager;
     this.endPointConnectionFactory = connectionFactory;
+
     running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
     logger = LoggerFactory.getLogger("EndPointConnectionStateManager_"+url.toString()+"_"+ properties.getProperty("protocol"));

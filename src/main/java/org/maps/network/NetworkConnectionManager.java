@@ -28,6 +28,8 @@ import java.util.ServiceLoader;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
+import org.maps.messaging.api.transformers.Transformer;
+import org.maps.messaging.engine.transformers.TransformerManager;
 import org.maps.network.admin.EndPointConnectionHostJMX;
 import org.maps.network.io.EndPointConnectionFactory;
 import org.maps.network.io.connection.EndPointConnection;
@@ -45,10 +47,11 @@ public class NetworkConnectionManager implements ServiceManager {
   private final List<EndPointConnection> endPointConnectionList;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final List<ConfigurationProperties> connectionConfiguration;
+  private final TransformerManager transformerManager;
 
   private final List<String> jmxParent;
 
-  public NetworkConnectionManager(List<String> parent) throws IOException {
+  public NetworkConnectionManager(List<String> parent, TransformerManager transformerManager) throws IOException {
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
     jmxParent = parent;
     ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
@@ -64,6 +67,7 @@ public class NetworkConnectionManager implements ServiceManager {
     selectorLoadManager = new SelectorLoadManager(10);
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
+    this.transformerManager = transformerManager;
   }
 
   public void initialise() {
@@ -83,11 +87,9 @@ public class NetworkConnectionManager implements ServiceManager {
       else if(linkReference instanceof List){
         destinationMappings.addAll((List<ConfigurationProperties>)linkReference);
       }
-
       if (!destinationMappings.isEmpty()) {
         for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
           if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-
             EndPointConnectionHostJMX hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxParent, endPointURL.host));
             endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
           }

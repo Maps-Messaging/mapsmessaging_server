@@ -22,6 +22,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
@@ -30,6 +31,7 @@ import org.maps.messaging.api.SubscribedEventManager;
 import org.maps.messaging.api.SubscriptionContextBuilder;
 import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.message.Message;
+import org.maps.messaging.api.transformers.Transformer;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
 import org.maps.network.io.impl.SelectorTask;
@@ -95,8 +97,12 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(String resource, String mappedResource) {
+  public void subscribeRemote(@NotNull String resource,@NotNull String mappedResource,@Nullable Transformer transformer) {
     stateEngine.addMapping(resource, mappedResource);
+    if(transformer != null) {
+      destinationTransformerMap.put(resource, transformer);
+    }
+
     Subscribe subscribe = new Subscribe();
     subscribe.setDestination(resource);
     subscribe.setId(resource);
@@ -105,8 +111,12 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeLocal(String resource,  String mappedResource, String selector) throws IOException {
+  public void subscribeLocal(@NotNull String resource, @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
     stateEngine.addMapping(resource, mappedResource);
+    if(transformer != null) {
+      destinationTransformerMap.put(resource, transformer);
+    }
+
     SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
     scb.setAlias(resource);
     if(selector != null && selector.length() > 0) {
@@ -143,6 +153,7 @@ public class StompProtocol extends ProtocolImpl {
 
   @Override
   public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+    message = processTransformer(normalisedName, message);
     stateEngine.sendMessage(destination, normalisedName, subscription.getContext(), message, completionTask);
   }
 

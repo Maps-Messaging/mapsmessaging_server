@@ -307,7 +307,15 @@
     <sonar.language>java</sonar.language>
   </properties>
 
+
+
   <dependencies>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.18</version>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
     <dependency>
