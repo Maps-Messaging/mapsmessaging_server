@@ -29,6 +29,10 @@ import org.maps.utilities.stats.processors.DifferenceDataProcessor;
 import org.maps.utilities.stats.processors.SummerDataProcessor;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
+/**
+ * Creates a MovingAverage instance that manages the data summing based on the ACCUMULATOR allocated to the MovingAverage
+ */
+
 public class MovingAverageFactory {
 
   private static final MovingAverageFactory instance = new MovingAverageFactory();
@@ -68,6 +72,9 @@ public class MovingAverageFactory {
     movingAverages = new ArrayList<>();
   }
 
+  /**
+   * Closes and cancels the scheduler for the moving average
+  */
   public void close(LinkedMovingAverages movingAverage){
     movingAverages.remove(movingAverage);
     if(movingAverages.isEmpty()){
@@ -75,6 +82,18 @@ public class MovingAverageFactory {
     }
   }
 
+  /**
+   * Creates a new LinkedMovingAverage using the specified Accumulator
+   *
+   * @param accumulator Accumulator to use to manages the data
+   * @param name Name of the moving average
+   * @param startPeriod Initial time period that spans the moving average
+   * @param periodIncrements Incremental periods from the start period
+   * @param totalPeriods Total number of periods to link
+   * @param timeUnit The time Unit that is used to define the time periods above
+   * @param unitName The name of units being measured, time, messages, things that we are counting
+   * @return a newly created LinkedMovingAverages
+   */
   public LinkedMovingAverages createLinked(ACCUMULATOR accumulator, String name, int startPeriod, int periodIncrements, int totalPeriods, TimeUnit timeUnit, String unitName) {
     int[] entries = new int[totalPeriods];
     for(int x=0;x<totalPeriods;x++){

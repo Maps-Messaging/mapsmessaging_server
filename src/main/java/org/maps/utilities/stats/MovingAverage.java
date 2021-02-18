@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Manages a single moving average, accumulates data over the period and then provides an average that moves with time.
+ * https://en.wikipedia.org/wiki/Moving_average
+ */
 public class MovingAverage  {
 
   private final List<DataPoint> dataPoints;
@@ -29,6 +33,11 @@ public class MovingAverage  {
   private final String name;
   private final int expectedEntries;
 
+  /**
+   * Creates a new instance over the period of time in TimeUnits
+   * @param time Time span to use for the moving average
+   * @param unit The time unit that describes the time
+   */
   public MovingAverage(int time, TimeUnit unit){
     this.name = time+"_"+unit.toString();
     timePeriod = unit.toMillis(time);
@@ -36,16 +45,27 @@ public class MovingAverage  {
     expectedEntries = time;
   }
 
+  /**
+   * @return The name of this Moving Average
+   */
   public String getName(){
     return name;
   }
 
+  /**
+   * Add new data point to the MovingAverage
+   *
+   * @param data to be added to the MovingAverage
+   */
   public void add(long data){
     long now = System.currentTimeMillis();
     dataPoints.add(new DataPoint(data, now +  + timePeriod));
     clearData(now);
   }
 
+  /***
+   * @return The current moving average for the current data set
+   */
   public long getAverage(){
     clearData(System.currentTimeMillis());
     long ave = 0;
@@ -55,14 +75,18 @@ public class MovingAverage  {
     return ave/expectedEntries;
   }
 
+  /**
+   * Resets the moving average and removes any outstanding data
+   */
+  public void reset() {
+    dataPoints.clear();
+  }
+
+
   protected void clearData(long now){
     while(!dataPoints.isEmpty() && dataPoints.get(0).expiry < now ){
       dataPoints.remove(0);
     }
-  }
-
-  public void reset() {
-    dataPoints.clear();
   }
 
   protected static class DataPoint {

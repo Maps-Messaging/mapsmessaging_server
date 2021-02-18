@@ -24,6 +24,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.maps.utilities.stats.processors.DataProcessor;
 
+/**
+ * Creates a list of moving average with different time periods. Data is pushed through all the moving averages resulting in the ability
+ * to see longer period trends versus short term trends.
+ */
 public class LinkedMovingAverages {
 
   protected final List<MovingAverage> movingAverages;
@@ -36,6 +40,15 @@ public class LinkedMovingAverages {
   private long lastUpdate;
   private long timeSpan;
 
+  /**
+   * Creates an instance of a list of moving averages
+   *
+   * @param dataProcessor  The data processor object to use when adding data to the average
+   * @param name The name of this instance
+   * @param timeList A List of time intervals to create moving averages for
+   * @param unit The TimeUnit that represents the time units provied in timeList
+   * @param unitName The name of the unit being measured
+   */
   public LinkedMovingAverages (DataProcessor dataProcessor, String name, int[] timeList, TimeUnit unit, String unitName){
     this.dataProcessor = dataProcessor;
     this.name = name;
@@ -54,18 +67,33 @@ public class LinkedMovingAverages {
     timeSpan = unit.toMillis(timeList[0]);
   }
 
+  /**
+   * Closes and clears all instances of moving objects
+   */
   public void close(){
     MovingAverageFactory.getInstance().close(this);
   }
 
+  /**
+   *
+   * @return The name of this instance
+   */
   public String getName(){
     return name;
   }
 
+  /**
+   *
+   * @return The name of the units being measured
+   */
   public String getUnits(){
     return unitName;
   }
 
+  /**
+   *
+   * @return A list of complete names of all moving averages
+   */
   public String[] getNames(){
     String[] names = new String[movingAverages.size()];
     int x =0;
@@ -76,42 +104,58 @@ public class LinkedMovingAverages {
     return names;
   }
 
+  /**
+   * Increment the current value
+   */
   public void increment(){
     add(1);
   }
 
+  /**
+   * Decrement the current value
+   */
   public void decrement(){
     add(-1);
   }
 
+  /**
+   * @param value Add the supplied value to the current average
+   */
   public void add(long value){
     total.add(dataProcessor.add(value, previous));
     previous = value;
   }
 
+  /**
+   *
+   * @param value Subtract the supplied value from the current average
+   */
   public void subtract(long value){
     total.add(dataProcessor.add(value *-1, previous));
     previous = value*-1;
   }
 
+  /**
+   *
+   * @return The current value
+   */
   public long getCurrent(){
     return previous;
   }
 
+  /**
+   *
+   * @return The running total for the current period
+   */
   public long getTotal(){
     return total.sum();
   }
 
-  public long[] getAverages(){
-    long[] response = new long[movingAverages.size()];
-    int index =0;
-    for(MovingAverage average:movingAverages){
-      response[index] = average.getAverage();
-      index++;
-    }
-    return response;
-  }
-
+  /**
+   *
+   * @param name The name of the moving average to get the value for
+   * @return The current moving average if found
+   */
   public long getAverage(String name){
     for(MovingAverage average:movingAverages){
       if(average.getName().equals(name)){
@@ -122,12 +166,28 @@ public class LinkedMovingAverages {
   }
 
 
+  /**
+   *
+   * @return A String representation of this instance
+   */
+  @Override
   public String toString(){
     StringBuilder sb = new StringBuilder(getClass().getName()+":");
     for(MovingAverage movingAverage:movingAverages){
       sb.append(movingAverage.getName()).append("=").append(movingAverage.getAverage()).append(",");
     }
     return sb.toString();
+  }
+
+  /**
+   * Resets all the moving averages and clears all data
+   */
+  public void reset() {
+    total.reset();
+    dataProcessor.reset();
+    for(MovingAverage average:movingAverages){
+      average.reset();
+    }
   }
 
   protected void update(){
@@ -137,14 +197,6 @@ public class LinkedMovingAverages {
       for (MovingAverage movingAverage : movingAverages) {
         movingAverage.add(ave);
       }
-    }
-  }
-
-  public void reset() {
-    total.reset();
-    dataProcessor.reset();
-    for(MovingAverage average:movingAverages){
-      average.reset();
     }
   }
 

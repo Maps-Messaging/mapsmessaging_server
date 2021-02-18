@@ -18,6 +18,9 @@
 
 package org.maps.utilities.service;
 
+/**
+ * Generic interface that all services can implement and provides a generic mechanism to query them
+ */
 public interface Service {
 
   String getName();

@@ -91,7 +91,7 @@ public class Logger {
     ThreadContext.put(CATEGORY, logMessages.category.description);
     switch (logMessages.level) {
       case TRACE:
-        if (localLogger.isTraceEnabled()) {
+        if (isTraceEnabled()) {
           localLogger
               .atTrace()
               .withThrowable(throwable)
@@ -101,7 +101,7 @@ public class Logger {
         break;
 
       case DEBUG:
-        if (localLogger.isDebugEnabled()) {
+        if (isDebugEnabled()) {
           localLogger
               .atDebug()
               .withThrowable(throwable)
@@ -111,7 +111,7 @@ public class Logger {
         break;
 
       case INFO:
-        if (localLogger.isInfoEnabled()) {
+        if (isInfoEnabled()) {
           localLogger
               .atInfo()
               .withThrowable(throwable)
@@ -121,7 +121,7 @@ public class Logger {
         break;
 
       case WARN:
-        if (localLogger.isWarnEnabled()) {
+        if (isWarnEnabled()) {
           localLogger
               .atDebug()
               .withThrowable(throwable)
@@ -131,7 +131,7 @@ public class Logger {
         break;
 
       case ERROR:
-        if (localLogger.isErrorEnabled()) {
+        if (isErrorEnabled()) {
           localLogger
               .atError()
               .withThrowable(throwable)

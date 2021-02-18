@@ -20,6 +20,9 @@ package org.maps.utilities.service;
 
 import java.util.Iterator;
 
+/**
+ * Provides a generic interface for all classes that manage services so they can be queried.
+ */
 public interface ServiceManager {
 
   Iterator<Service> getServices();
