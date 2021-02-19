@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.MessageBuilder;
@@ -70,7 +71,7 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
     // This protocol is read only
   }
 

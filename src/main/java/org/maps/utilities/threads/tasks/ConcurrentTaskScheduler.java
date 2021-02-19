@@ -23,6 +23,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.NonNull;
+import lombok.ToString;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,6 +56,7 @@ import org.maps.utilities.threads.SimpleTaskScheduler;
  *  @author Matthew Buckton
  *  @version 1.0
  */
+@ToString
 public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
 
   private static final String DOMAIN = "domain";
@@ -70,7 +73,7 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
   protected volatile boolean shutdown;
 
 
-  public ConcurrentTaskScheduler(@NotNull String domain) {
+  public ConcurrentTaskScheduler(@NonNull @NotNull String domain) {
     context = new ThreadStateContext();
     context.add(DOMAIN, domain);
     context.add("TaskQueue", this);

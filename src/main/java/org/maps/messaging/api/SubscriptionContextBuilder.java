@@ -18,6 +18,9 @@
 
 package org.maps.messaging.api;
 
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.features.CreditHandler;
@@ -25,24 +28,25 @@ import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.features.RetainHandler;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 
+@ToString
 public class SubscriptionContextBuilder {
 
-  private final String name;
-  private final ClientAcknowledgement acknowledgementController;
-  private RetainHandler retainHandler;
-  private CreditHandler creditHandler;
-  private boolean noLocalMessages;
-  private String sharedName;
-  private String alias;
-  private String selector;
-  private QualityOfService qos;
-  private boolean retainAsPublish;
-  private boolean allowOverlap;
-  private boolean isBrowser;
-  private long subscriptionId;
-  private int receiveMaximum;
+  @Getter private final String name;
+  @Getter   private final ClientAcknowledgement acknowledgementController;
+  @Getter private RetainHandler retainHandler;
+  @Getter private CreditHandler creditHandler;
+  @Getter private boolean noLocalMessages;
+  @Getter private String sharedName;
+  @Getter private String alias;
+  @Getter private String selector;
+  @Getter private QualityOfService qos;
+  @Getter private boolean retainAsPublish;
+  @Getter private boolean allowOverlap;
+  @Getter private boolean isBrowser;
+  @Getter private long subscriptionId;
+  @Getter private int receiveMaximum;
 
-  public SubscriptionContextBuilder(@NotNull String name, @NotNull ClientAcknowledgement acknowledgementController) {
+  public SubscriptionContextBuilder(@NonNull @NotNull String name, @NonNull @NotNull ClientAcknowledgement acknowledgementController) {
     this.name = name;
     this.acknowledgementController = acknowledgementController;
     sharedName = null;
@@ -59,27 +63,27 @@ public class SubscriptionContextBuilder {
     receiveMaximum = 1;
   }
 
-  public SubscriptionContextBuilder setRetainHandler(@NotNull RetainHandler retainHandler) {
+  public SubscriptionContextBuilder setRetainHandler(@NonNull @NotNull RetainHandler retainHandler) {
     this.retainHandler = retainHandler;
     return this;
   }
 
-  public SubscriptionContextBuilder setSharedName(@NotNull String sharedName) {
+  public SubscriptionContextBuilder setSharedName(@NonNull @NotNull String sharedName) {
     this.sharedName = sharedName;
     return this;
   }
 
-  public SubscriptionContextBuilder setSelector(@NotNull String selector) {
+  public SubscriptionContextBuilder setSelector(@NonNull @NotNull String selector) {
     this.selector = selector;
     return this;
   }
 
-  public SubscriptionContextBuilder setQos(@NotNull QualityOfService qos) {
+  public SubscriptionContextBuilder setQos(@NonNull @NotNull QualityOfService qos) {
     this.qos = qos;
     return this;
   }
 
-  public SubscriptionContextBuilder setAlias(@NotNull String alias) {
+  public SubscriptionContextBuilder setAlias(@NonNull @NotNull String alias) {
     this.alias = alias;
     return this;
   }

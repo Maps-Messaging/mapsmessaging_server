@@ -18,6 +18,8 @@
 
 package org.maps.messaging.api.features;
 
+import lombok.Getter;
+
 /**
  * Specifies if the client is responsible to update the flow control values (credit based) or if the server automatically manages it
  */
@@ -39,9 +41,9 @@ public enum CreditHandler {
     }
   }
 
-  private final int value;
-  private final String name;
-  private final String description;
+  @Getter private final int value;
+  @Getter private final String name;
+  @Getter private final String description;
 
   CreditHandler(int value, String name, String description){
     this.value = value;
@@ -49,15 +51,4 @@ public enum CreditHandler {
     this.description = description;
   }
 
-  public int getValue(){
-    return value;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getDescription() {
-    return description;
-  }
 }

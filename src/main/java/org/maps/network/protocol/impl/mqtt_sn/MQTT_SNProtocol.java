@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.mqtt_sn;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -61,8 +62,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   private volatile boolean closed;
   private Session session;
 
-  public MQTT_SNProtocol(@NotNull MQTTSNInterfaceManager factory, @NotNull EndPoint endPoint,
-      @NotNull SocketAddress remoteClient, @NotNull SelectorTask selectorTask, @NotNull Connect connect) {
+  public MQTT_SNProtocol(@NonNull @NotNull MQTTSNInterfaceManager factory, @NonNull @NotNull EndPoint endPoint,
+      @NonNull @NotNull SocketAddress remoteClient, @NonNull @NotNull SelectorTask selectorTask, @NonNull @NotNull Connect connect) {
     super(endPoint);
     logger = LoggerFactory.getLogger("MQTT-SN 1.2 Protocol on " + endPoint.getName());
 
@@ -109,7 +110,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   @Override
-  public boolean processPacket(@NotNull Packet packet) throws IOException {
+  public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
     if(mqtt != null) {
       handleMQTTEvent(mqtt);
@@ -117,7 +118,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     return true;
   }
 
-  private void handleMQTTEvent(@NotNull MQTT_SNPacket mqtt) {
+  private void handleMQTTEvent(@NonNull @NotNull MQTT_SNPacket mqtt) {
     if (logger.isInfoEnabled()) {
       logger.log(LogMessages.RECEIVE_PACKET, mqtt.toString());
     }
@@ -156,7 +157,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = subInfo.getQualityOfService();
     int packetId = 0;
@@ -181,7 +182,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     stateEngine.sendPublish(this, normalisedName, publish);
   }
 
-  public void writeFrame(@NotNull MQTT_SNPacket frame) {
+  public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {
     frame.setFromAddress(remoteClient);
     sentMessageAverages.increment();
     selectorTask.push(frame);

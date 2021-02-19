@@ -24,18 +24,19 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.collections.bitset.BitSetFactory;
 import org.maps.utilities.collections.bitset.OffsetBitSet;
 
 public class NaturalOrderedLongList extends NaturalOrderedCollection implements List<Long> {
 
-  public NaturalOrderedLongList(int id, @NotNull BitSetFactory factory) {
+  public NaturalOrderedLongList(int id, @NonNull @NotNull BitSetFactory factory) {
     super(id, factory);
   }
 
   @Override
-  public boolean addAll(int index, @NotNull  Collection<? extends Long> c) {
+  public boolean addAll(int index, @NonNull @NotNull  Collection<? extends Long> c) {
     for (Long item : c) {
       add(item);
     }
@@ -73,17 +74,17 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
   }
 
   @Override
-  public @NotNull ListIterator<Long> listIterator() {
+  public @NonNull @NotNull ListIterator<Long> listIterator() {
     return new LongListIterator();
   }
 
   @Override
-  public @NotNull ListIterator<Long> listIterator(int index) {
+  public @NonNull @NotNull ListIterator<Long> listIterator(int index) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public @NotNull List<Long> subList(int fromIndex, int toIndex) {
+  public @NonNull @NotNull List<Long> subList(int fromIndex, int toIndex) {
     throw new UnsupportedOperationException();
   }
 

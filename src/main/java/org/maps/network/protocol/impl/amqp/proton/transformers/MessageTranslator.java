@@ -18,14 +18,15 @@
 
 package org.maps.network.protocol.impl.amqp.proton.transformers;
 
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.message.Message;
 
 public interface MessageTranslator {
 
-  @NotNull MessageBuilder decode(@NotNull MessageBuilder messageBuilder, @NotNull org.apache.qpid.proton.message.Message protonMessage);
+  @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage);
 
-  @NotNull org.apache.qpid.proton.message.Message encode(@NotNull Message message);
+  @NonNull @NotNull org.apache.qpid.proton.message.Message encode(@NonNull @NotNull Message message);
 
 }

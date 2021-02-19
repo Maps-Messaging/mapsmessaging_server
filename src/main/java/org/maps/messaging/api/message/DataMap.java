@@ -20,6 +20,7 @@ package org.maps.messaging.api.message;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.message.interceptors.FieldInterceptor;
@@ -62,7 +63,7 @@ public class DataMap extends LinkedHashMap<String, TypedData> {
     return val;
   }
 
-  private TypedData lookup(@NotNull Message message, String key){
+  private TypedData lookup(@NonNull @NotNull Message message, String key){
     return FieldInterceptor.getInstance().lookup(message, key);
   }
 

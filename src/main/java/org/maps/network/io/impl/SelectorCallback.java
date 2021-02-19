@@ -19,13 +19,14 @@
 package org.maps.network.io.impl;
 
 import java.io.IOException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
 
 public interface SelectorCallback {
 
-  boolean processPacket(@NotNull Packet packet) throws IOException;
+  boolean processPacket(@NonNull @NotNull Packet packet) throws IOException;
 
   void close() throws IOException;
 

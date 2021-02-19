@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.MessageBuilder;
@@ -60,7 +61,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   protected long keepAlive;
   private boolean connected;
 
-  public ProtocolImpl(@NotNull EndPoint endPoint) {
+  public ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
     sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
     receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
@@ -87,10 +88,10 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   public void connect(String sessionId, String username, String password) throws IOException{
   }
 
-  public void subscribeRemote(@NotNull String resource,@NotNull String mappedResource, @Nullable Transformer transformer) throws IOException{
+  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException{
   }
 
-  public void subscribeLocal(@NotNull String resource,@NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
   }
 
   public EndPoint getEndPoint() {

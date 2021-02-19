@@ -21,8 +21,11 @@ package org.maps.messaging.api.message;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.ToString;
 import org.maps.utilities.streams.ObjectReader;
 import org.maps.utilities.streams.ObjectWriter;
+
+@ToString(callSuper=true, includeFieldNames=true)
 
 public class TypedData {
 
@@ -136,10 +139,6 @@ public class TypedData {
 
   public Object getData() {
     return data;
-  }
-
-  public String toString() {
-    return "Type:" + type + " Value:" + data;
   }
 
   public enum TYPE {

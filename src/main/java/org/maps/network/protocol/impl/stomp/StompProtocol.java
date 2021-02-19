@@ -21,6 +21,7 @@ package org.maps.network.protocol.impl.stomp;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 import java.io.IOException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
@@ -97,7 +98,7 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NotNull String resource,@NotNull String mappedResource,@Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource,@Nullable Transformer transformer) {
     stateEngine.addMapping(resource, mappedResource);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
@@ -111,7 +112,7 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeLocal(@NotNull String resource, @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
     stateEngine.addMapping(resource, mappedResource);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
@@ -152,7 +153,7 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
     message = processTransformer(normalisedName, message);
     stateEngine.sendMessage(destination, normalisedName, subscription.getContext(), message, completionTask);
   }

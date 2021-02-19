@@ -33,6 +33,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -226,7 +227,7 @@ public class LoRaProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
     // This should not be called since this protocol is NOT registered with the messaging engine
   }
 

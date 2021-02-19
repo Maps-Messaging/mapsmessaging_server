@@ -21,6 +21,7 @@ package org.maps.network.protocol.impl.amqp.proton.transformers.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -34,7 +35,7 @@ import org.maps.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 public class StreamMessageTranslator extends BaseMessageTranslator {
 
   @Override
-  public @NotNull MessageBuilder decode(@NotNull MessageBuilder messageBuilder, @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
     if(body instanceof AmqpSequence){
@@ -56,7 +57,7 @@ public class StreamMessageTranslator extends BaseMessageTranslator {
   }
 
   @Override
-  public @NotNull Message encode(@NotNull org.maps.messaging.api.message.Message message) {
+  public @NonNull @NotNull Message encode(@NonNull @NotNull org.maps.messaging.api.message.Message message) {
     Message protonMessage = super.encode(message);
 
     int x=0;

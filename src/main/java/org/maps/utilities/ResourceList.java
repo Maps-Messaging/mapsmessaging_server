@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -47,7 +48,7 @@ public class ResourceList {
    * @return the resources in the order they are found
    * @throws IOException  if there was an issue loading values from the resource bundle
    */
-  public static Collection<String> getResources(@NotNull final Pattern pattern) throws IOException {
+  public static Collection<String> getResources(@NonNull @NotNull final Pattern pattern) throws IOException {
     final ArrayList<String> returnValue = new ArrayList<>();
     final String classPath = System.getProperty("java.class.path", ".");
     final String[] classPathElements = classPath.split(System.getProperty("path.separator"));

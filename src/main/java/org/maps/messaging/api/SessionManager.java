@@ -20,6 +20,7 @@ package org.maps.messaging.api;
 
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.MessageDaemon;
 import org.maps.messaging.api.message.Message;
@@ -54,7 +55,7 @@ public class SessionManager {
    * @throws LoginException Thrown if, during, the authentication phase the challenge fails
    * @throws IOException Thrown if unable to either restore the subscriptions or store the new session context
    */
-  public @NotNull Session create(@NotNull SessionContext sessionContext, @NotNull MessageListener listener) throws LoginException, IOException {
+  public @NonNull @NotNull Session create(@NonNull @NotNull SessionContext sessionContext, @NonNull @NotNull MessageListener listener) throws LoginException, IOException {
     SessionImpl session = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
     return new Session(session, listener);
   }
@@ -64,7 +65,7 @@ public class SessionManager {
    * @param session The session to close
    * @throws IOException Thrown if the underlying file system raises exception during the close phases
    */
-  public void close(@NotNull Session session) throws IOException {
+  public void close(@NonNull @NotNull Session session) throws IOException {
     MessageDaemon.getInstance().getSessionManager().close(session.getSession());
     session.close();
   }
@@ -77,7 +78,7 @@ public class SessionManager {
    * @param clearWillTask Flag indicating if the will task should be executed or not
    * @throws IOException Thrown if the underlying file system raises exception during the close phases
    */
-  public void close(@NotNull Session session, boolean clearWillTask) throws IOException {
+  public void close(@NonNull @NotNull Session session, boolean clearWillTask) throws IOException {
     MessageDaemon.getInstance().getSessionManager().close(session.getSession(), clearWillTask);
     session.close();
   }
@@ -92,7 +93,7 @@ public class SessionManager {
    *
    * @throws IOException Thrown if the message write failed, typically due to file system errors
    */
-  public boolean publish(@NotNull String destination,@NotNull  Message message) throws IOException {
+  public boolean publish(@NonNull @NotNull String destination,@NonNull @NotNull  Message message) throws IOException {
     DestinationImpl destinationImpl =
         MessageDaemon.getInstance().getDestinationManager().find(destination);
     if(destinationImpl != null) {

@@ -19,6 +19,7 @@
 package org.maps.network.protocol.impl.websockets;
 
 import java.io.IOException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.SubscribedEventManager;
@@ -40,7 +41,7 @@ public class WebSocketProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
     // This is an in-line protocol and does not actively receive events to send from the messaging engine
   }
 

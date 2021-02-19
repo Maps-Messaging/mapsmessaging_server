@@ -21,6 +21,8 @@ package org.maps.utilities.threads.tasks;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.FutureTask;
+import lombok.NonNull;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
  *  @author Matthew Buckton
  *  @version 1.0
  */
+@ToString
 public class SingleConcurrentTaskScheduler<V> extends ConcurrentTaskScheduler<V> {
 
   private final Queue<FutureTask<V>> queue;
@@ -42,13 +45,13 @@ public class SingleConcurrentTaskScheduler<V> extends ConcurrentTaskScheduler<V>
    *
    * @param domain a unique name defining the domain this task queue manages
    */
-  public SingleConcurrentTaskScheduler(@NotNull String domain) {
+  public SingleConcurrentTaskScheduler(@NonNull @NotNull String domain) {
     super(domain);
     queue = new ConcurrentLinkedQueue<>();
   }
 
   @Override
-  public void addTask(@NotNull FutureTask<V> task) {
+  public void addTask(@NonNull @NotNull FutureTask<V> task) {
     if(!shutdown) {
       queue.add(task);
       totalQueued.increment();
@@ -59,11 +62,6 @@ public class SingleConcurrentTaskScheduler<V> extends ConcurrentTaskScheduler<V>
     else{
       // ToDo, we can not simply ignore this, we need to raise an exception and let the caller know something is up
     }
-  }
-
-  @Override
-  public String toString(){
-    return "SingleConcurrentTaskScheduler:: QueueSize:" + queue.size() + " " + outstanding.get() + super.toString();
   }
 
   @Override

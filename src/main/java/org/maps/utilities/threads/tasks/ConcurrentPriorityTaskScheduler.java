@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.FutureTask;
+import lombok.NonNull;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Matthew Buckton
  * @version 1.0
  */
-
+@ToString
 public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<V> implements PriorityTaskScheduler<V> {
 
   private final List<Queue<FutureTask<V>>> queues;
@@ -47,7 +49,7 @@ public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<
    * @param domain  a unique domain name
    * @param prioritySize the number of unique priority levels
    */
-  public ConcurrentPriorityTaskScheduler(@NotNull String domain, int prioritySize) {
+  public ConcurrentPriorityTaskScheduler(@NonNull @NotNull String domain, int prioritySize) {
     super(domain);
     queues = new ArrayList<>();
     for(int x=0;x<prioritySize;x++){
@@ -56,12 +58,12 @@ public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<
   }
 
   @Override
-  public void addTask(@NotNull FutureTask<V> task) {
+  public void addTask(@NonNull @NotNull FutureTask<V> task) {
     addTask(task, 0);
   }
 
   @Override
-  public void addTask(@NotNull FutureTask<V> task, int priority) {
+  public void addTask(@NonNull @NotNull FutureTask<V> task, int priority) {
     if(!shutdown) {
       queues.get(priority).add(task);
       totalQueued.increment();
@@ -72,11 +74,6 @@ public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<
     else{
       // ToDo: Need to inform the caller that this operation is not going to happen
     }
-  }
-
-  @Override
-  public String toString(){
-    return "SingleConcurrentTaskScheduler:: QueueSize:" + size() + " " + outstanding.get() + super.toString();
   }
 
   @Override

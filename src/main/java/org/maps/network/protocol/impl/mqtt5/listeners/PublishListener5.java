@@ -75,7 +75,7 @@ public class PublishListener5 extends PacketListener5 {
         .setMeta(meta)
         .setQoS(qos)
         .setTransformation(transformation)
-        .storeOffline(qos.storeOffline());
+        .storeOffline(qos.isStoreOffLine());
 
     HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
     for (MessageProperty property : properties) {

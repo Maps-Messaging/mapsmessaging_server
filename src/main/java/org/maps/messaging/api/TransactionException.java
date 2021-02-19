@@ -19,6 +19,7 @@
 package org.maps.messaging.api;
 
 import java.io.IOException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class TransactionException extends IOException {
 
-  TransactionException(@NotNull String msg) {
+  TransactionException(@NonNull @NotNull String msg) {
     super(msg);
   }
 

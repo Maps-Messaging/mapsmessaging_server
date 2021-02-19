@@ -38,12 +38,6 @@ public class LinkedMovingAveragesJMX implements DynamicMBean {
   private final MBeanInfo mBeanInfo;
   private final ObjectInstance objectInstance;
 
-  public LinkedMovingAveragesJMX(){
-    movingAverages = null;
-    mBeanInfo = null;
-    objectInstance = null;
-  }
-
   public LinkedMovingAveragesJMX(List<String> jmxPath, LinkedMovingAverages movingAverages) {
     this.movingAverages = movingAverages;
     MBeanConstructorInfo[] beanConstructorInfos = new MBeanConstructorInfo[1];

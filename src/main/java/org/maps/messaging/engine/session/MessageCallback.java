@@ -18,6 +18,7 @@
 
 package org.maps.messaging.engine.session;
 
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.SubscribedEventManager;
 import org.maps.messaging.api.message.Message;
@@ -25,7 +26,7 @@ import org.maps.messaging.engine.destination.DestinationImpl;
 
 public interface MessageCallback {
 
-  default void sendMessage(@NotNull DestinationImpl destination, @NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
+  default void sendMessage(@NonNull @NotNull DestinationImpl destination, @NonNull @NotNull SubscribedEventManager subscription,@NonNull @NotNull Message message,@NonNull @NotNull Runnable completionTask) {
 
   }
 

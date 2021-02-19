@@ -20,6 +20,7 @@ package org.maps.messaging.engine.destination.subscription.builders;
 
 import java.io.IOException;
 import java.util.Iterator;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.DestinationImpl;
@@ -90,7 +91,7 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
     private final MessageStateManager stateManager;
     private final ParserExecutor executor;
 
-    public StateManagerFilterTask(@NotNull DestinationImpl destination,@NotNull MessageStateManager parent,@NotNull MessageStateManager child,@NotNull ParserExecutor executor){
+    public StateManagerFilterTask(@NonNull @NotNull DestinationImpl destination,@NonNull @NotNull MessageStateManager parent,@NonNull @NotNull MessageStateManager child,@NonNull @NotNull ParserExecutor executor){
       this.destination = destination;
       source = parent.getAll().iterator();
       stateManager = child;

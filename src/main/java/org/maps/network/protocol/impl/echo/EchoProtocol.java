@@ -23,6 +23,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -75,7 +76,7 @@ public class EchoProtocol extends org.maps.network.protocol.ProtocolImpl
   // Yes this is duplicate, but for the sake of clarity in the classes it can stay
   @java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
     // There is nothing to do
   }
 

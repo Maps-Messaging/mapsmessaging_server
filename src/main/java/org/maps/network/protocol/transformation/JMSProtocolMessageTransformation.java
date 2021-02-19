@@ -18,6 +18,7 @@
 
 package org.maps.network.protocol.transformation;
 
+import lombok.NonNull;
 import org.apache.qpid.proton.codec.DroppingWritableBuffer;
 import org.apache.qpid.proton.codec.WritableBuffer;
 import org.apache.qpid.proton.message.Message.Factory;
@@ -45,7 +46,7 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
   }
 
   @Override
-  public void incoming(@NotNull MessageBuilder messageBuilder) {
+  public void incoming(@NonNull @NotNull MessageBuilder messageBuilder) {
     org.apache.qpid.proton.message.Message protonMsg = Factory.create();
     byte[] data = messageBuilder.getOpaqueData();
     if (data != null) {
@@ -56,7 +57,7 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
   }
 
   @Override
-  public @NotNull byte[] outgoing(@NotNull Message message) {
+  public @NonNull @NotNull byte[] outgoing(@NonNull @NotNull Message message) {
 
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(message);
     org.apache.qpid.proton.message.Message protonMsg = translator.encode(message);

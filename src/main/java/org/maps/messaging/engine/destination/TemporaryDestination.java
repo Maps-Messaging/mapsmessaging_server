@@ -20,6 +20,7 @@ package org.maps.messaging.engine.destination;
 
 import java.io.IOException;
 import java.util.UUID;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.MessageDaemon;
 import org.maps.messaging.api.features.DestinationType;
@@ -31,19 +32,19 @@ public class TemporaryDestination extends DestinationImpl {
   private boolean ownerDisconnected;
 
 
-  public TemporaryDestination(@NotNull String name, @NotNull String path, @NotNull UUID uuid,
-      @NotNull DestinationType destinationType) throws IOException {
+  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull String path, @NonNull @NotNull UUID uuid,
+      @NonNull @NotNull DestinationType destinationType) throws IOException {
     super(name, path, uuid, destinationType);
     ownerDisconnected = false;
   }
 
-  public TemporaryDestination(@NotNull Resource resource,
-      @NotNull DestinationType destinationType) throws IOException {
+  public TemporaryDestination(@NonNull @NotNull Resource resource,
+      @NonNull @NotNull DestinationType destinationType) throws IOException {
     super(resource, destinationType);
     ownerDisconnected = false;
   }
 
-  public TemporaryDestination(@NotNull String name, @NotNull DestinationType destinationType) {
+  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) {
     super(name, destinationType);
     ownerDisconnected = false;
   }
@@ -53,7 +54,7 @@ public class TemporaryDestination extends DestinationImpl {
   }
 
   @Override
-  public Subscribable removeSubscription( @NotNull String subscriptionId) {
+  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) {
     Subscribable subscribable = super.removeSubscription(subscriptionId);
     checkForDeletion();
     return subscribable;

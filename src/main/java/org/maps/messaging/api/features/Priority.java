@@ -18,6 +18,10 @@
 
 package org.maps.messaging.api.features;
 
+import lombok.Getter;
+import lombok.ToString;
+
+@ToString
 public enum Priority {
 
   LOWEST (0, "Lowest priority"),
@@ -70,24 +74,11 @@ public enum Priority {
     }
   }
 
-  private final int value;
-  private final String description;
+  @Getter private final int value;
+  @Getter private final String description;
 
   Priority(int value, String description){
     this.value = value;
     this.description = description;
-  }
-
-  public int getValue(){
-    return value;
-  }
-
-  public String getDescription(){
-    return description;
-  }
-
-  @Override
-  public String toString(){
-    return description+" <"+value+">";
   }
 }

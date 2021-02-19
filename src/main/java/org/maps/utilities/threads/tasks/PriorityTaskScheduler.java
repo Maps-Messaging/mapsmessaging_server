@@ -19,6 +19,7 @@
 package org.maps.utilities.threads.tasks;
 
 import java.util.concurrent.FutureTask;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -32,6 +33,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface PriorityTaskScheduler<V> extends TaskScheduler<V> {
 
-  void addTask(@NotNull  FutureTask<V> task, int priority);
+  void addTask(@NonNull @NotNull  FutureTask<V> task, int priority);
 
 }

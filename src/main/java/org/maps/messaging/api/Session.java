@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.features.DestinationType;
@@ -41,7 +42,7 @@ public class Session {
   private final Map<String, org.maps.messaging.api.Destination> destinations;
   private final Map<String, Transaction> clientTransactions;
 
-  Session(@NotNull SessionImpl session, @NotNull MessageListener listener) {
+  Session(@NonNull @NotNull SessionImpl session, @NonNull @NotNull MessageListener listener) {
     this.sessionImpl = session;
     this.listener = listener;
     clientTransactions = new LinkedHashMap<>();
@@ -49,7 +50,7 @@ public class Session {
     destinations = new ConcurrentHashMap<>();
   }
 
-  @NotNull SessionImpl getSession() {
+  @NonNull @NotNull SessionImpl getSession() {
     return sessionImpl;
   }
 
@@ -60,7 +61,7 @@ public class Session {
   }
 
   //<editor-fold desc="Resource Control API">
-  public @Nullable org.maps.messaging.api.Destination findTopic(@NotNull String destinationName) throws IOException {
+  public @Nullable org.maps.messaging.api.Destination findTopic(@NonNull @NotNull String destinationName) throws IOException {
     org.maps.messaging.api.Destination result = destinations.get(destinationName);
     if (result == null) {
       DestinationImpl destination = sessionImpl.findDestination(destinationName, DestinationType.TOPIC);
@@ -76,7 +77,7 @@ public class Session {
     return result;
   }
 
-  public @Nullable org.maps.messaging.api.Destination findQueue(@NotNull String destinationName) throws IOException {
+  public @Nullable org.maps.messaging.api.Destination findQueue(@NonNull @NotNull String destinationName) throws IOException {
     org.maps.messaging.api.Destination result = destinations.get(destinationName);
     if (result == null) {
       DestinationImpl destination = sessionImpl.findDestination(destinationName, DestinationType.QUEUE);
@@ -100,11 +101,11 @@ public class Session {
     return deleted;
   }
 
-  public @Nullable org.maps.messaging.api.Destination findDestination(@NotNull String destinationName) throws IOException {
+  public @Nullable org.maps.messaging.api.Destination findDestination(@NonNull @NotNull String destinationName) throws IOException {
     return findDestination(destinationName, DestinationType.TOPIC);
   }
 
-  public @Nullable org.maps.messaging.api.Destination findDestination(@NotNull String destinationName, DestinationType type) throws IOException {
+  public @Nullable org.maps.messaging.api.Destination findDestination(@NonNull @NotNull String destinationName, DestinationType type) throws IOException {
     org.maps.messaging.api.Destination result = destinations.get(destinationName);
     if (result == null) {
       DestinationImpl destination = sessionImpl.findDestination(destinationName, type);
@@ -125,7 +126,7 @@ public class Session {
     return result;
   }
 
-  public void deleteResource(@NotNull org.maps.messaging.api.Destination destination) {
+  public void deleteResource(@NonNull @NotNull org.maps.messaging.api.Destination destination) {
     sessionImpl.deleteDestination(destination.destinationImpl);
   }
   //</editor-fold>
@@ -134,7 +135,7 @@ public class Session {
     sessionImpl.login();
   }
 
-  public @NotNull SecurityContext getSecurityContext(){
+  public @NonNull @NotNull SecurityContext getSecurityContext(){
     return sessionImpl.getSecurityContext();
   }
 
@@ -154,16 +155,16 @@ public class Session {
     sessionImpl.start();
   }
 
-  public SubscribedEventManager addSubscription(@NotNull SubscriptionContext context) throws IOException {
+  public SubscribedEventManager addSubscription(@NonNull @NotNull SubscriptionContext context) throws IOException {
     return sessionImpl.addSubscription(context);
   }
 
-  public void hibernateSubscription(@NotNull String subscriptionId) {
+  public void hibernateSubscription(@NonNull @NotNull String subscriptionId) {
     sessionImpl.hibernateSubscription(subscriptionId);
   }
 
 
-  public void removeSubscription(@NotNull String subscriptionId) {
+  public void removeSubscription(@NonNull @NotNull String subscriptionId) {
     sessionImpl.removeSubscription(subscriptionId);
   }
 
@@ -184,7 +185,7 @@ public class Session {
   }
 
   //<editor-fold desc="Transactional API">
-  public @NotNull Transaction startTransaction(@NotNull String transaction) throws TransactionException {
+  public @NonNull @NotNull Transaction startTransaction(@NonNull @NotNull String transaction) throws TransactionException {
     if (clientTransactions.containsKey(transaction)) {
       throw new TransactionException("Transaction already exists");
     }
@@ -193,11 +194,11 @@ public class Session {
     return clientTransaction;
   }
 
-  public @Nullable Transaction getTransaction(@NotNull String transaction) {
+  public @Nullable Transaction getTransaction(@NonNull @NotNull String transaction) {
     return clientTransactions.get(transaction);
   }
 
-  public void closeTransaction(@NotNull Transaction transaction) throws IOException {
+  public void closeTransaction(@NonNull @NotNull Transaction transaction) throws IOException {
     transaction.close();
     clientTransactions.remove(transaction.getTransactionId());
   }
@@ -210,7 +211,7 @@ public class Session {
   private final class MessageCallbackImpl implements MessageCallback {
 
     @Override
-    public void sendMessage(@NotNull DestinationImpl destinationImpl, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
+    public void sendMessage(@NonNull @NotNull DestinationImpl destinationImpl, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
       org.maps.messaging.api.Destination destination = destinations.get(destinationImpl.getName());
       if (destination == null) {
         destination = new org.maps.messaging.api.Destination(destinationImpl);

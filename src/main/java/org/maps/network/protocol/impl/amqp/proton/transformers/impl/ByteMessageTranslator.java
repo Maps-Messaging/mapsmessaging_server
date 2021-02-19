@@ -18,6 +18,7 @@
 
 package org.maps.network.protocol.impl.amqp.proton.transformers.impl;
 
+import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.message.Message;
@@ -28,7 +29,7 @@ import org.maps.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 public class ByteMessageTranslator extends BaseMessageTranslator {
 
   @Override
-  public @NotNull MessageBuilder decode(@NotNull MessageBuilder messageBuilder, @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
     super.decode(messageBuilder, protonMessage);
     Data data = (Data) protonMessage.getBody();
     messageBuilder.setOpaqueData(data.getValue().getArray());
@@ -36,7 +37,7 @@ public class ByteMessageTranslator extends BaseMessageTranslator {
   }
 
   @Override
-  public @NotNull Message encode(@NotNull org.maps.messaging.api.message.Message message) {
+  public @NonNull @NotNull Message encode(@NonNull @NotNull org.maps.messaging.api.message.Message message) {
     Message protonMessage = super.encode(message);
     Data data = new Data(new Binary(message.getOpaqueData()));
     protonMessage.setBody(data);

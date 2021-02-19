@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -58,7 +59,7 @@ public class MappedBufferHelper {
    *
    * @param byteBuffer to close and release all resources
    */
-  public static void closeDirectBuffer(@NotNull ByteBuffer byteBuffer) {
+  public static void closeDirectBuffer(@NonNull @NotNull ByteBuffer byteBuffer) {
     if (byteBuffer.isDirect()) {
       try {
         if (IS_OLD_JDK) {

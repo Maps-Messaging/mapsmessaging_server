@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.engine.destination.DestinationImpl;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
@@ -107,7 +108,7 @@ public class DestinationSet implements Set<DestinationImpl> {
   }
 
   @Override
-  public @NotNull Iterator<DestinationImpl> iterator() {
+  public @NonNull @NotNull Iterator<DestinationImpl> iterator() {
     return matching.values().iterator();
   }
 
@@ -176,7 +177,7 @@ public class DestinationSet implements Set<DestinationImpl> {
   }
 
   @Override
-  public boolean retainAll(@NotNull Collection<?> c) {
+  public boolean retainAll(@NonNull @NotNull Collection<?> c) {
     return false;
   }
 

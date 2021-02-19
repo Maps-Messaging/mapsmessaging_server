@@ -18,6 +18,7 @@
 
 package org.maps.messaging.engine.session;
 
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -85,7 +86,7 @@ public class SessionTenantManager {
     return mappingValue;
   }
 
-  private @NotNull String configurationLookup(String username){
+  private @NonNull @NotNull String configurationLookup(String username){
     String conf = null;
     if(configuration.containsKey(username)) {
       conf = configuration.getProperty(username);

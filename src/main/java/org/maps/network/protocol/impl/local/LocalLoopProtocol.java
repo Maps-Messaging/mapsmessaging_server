@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
@@ -51,7 +52,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
   private String sessionId;
 
 
-  public LocalLoopProtocol(@NotNull EndPoint endPoint) {
+  public LocalLoopProtocol(@NonNull @NotNull EndPoint endPoint) {
     super(endPoint);
     logger = LoggerFactory.getLogger(LocalLoopProtocol.class);
     closed = false;
@@ -70,8 +71,8 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination source, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message,
-      @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination source, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
+      @NonNull @NotNull Runnable completionTask) {
     String lookup = nameMapping.get(normalisedName);
     if(lookup != null){
       try {
@@ -108,12 +109,12 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NotNull String resource, @NotNull String mappedResource,@Nullable Transformer transformer) throws IOException{
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@Nullable Transformer transformer) throws IOException{
     subscribeLocal(resource, mappedResource, null, transformer);
   }
 
   @Override
-  public void subscribeLocal(@NotNull String resource, @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -134,7 +135,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public boolean processPacket(@NotNull Packet packet) throws IOException {
+  public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     return false;
   }
 

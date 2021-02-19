@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.TransactionManager;
@@ -69,31 +70,13 @@ public class Transaction {
    *
    * @param id protocol specific ID
    */
-  public Transaction(@NotNull String id) {
+  public Transaction(@NonNull @NotNull String id) {
     complete = false;
     transactionId = id;
     internalId = TRANSACTION_GENERATOR.incrementAndGet();
     expiryTime = System.currentTimeMillis() +TransactionManager.getExpiryTime();
     list = new LinkedHashMap<>();
     TransactionManager.getInstance().add(this);
-  }
-
-  /**
-   * The current time that this transaction will last before it is automatically closed
-   *
-   * @return time in milliseconds that this transaction will expire
-   */
-  public long getExpiryTime(){
-    return expiryTime;
-  }
-
-  /**
-   * The transaction identifier supplied during the constructor
-   *
-   * @return the string supplied during the constructor
-   */
-  public @NotNull String getTransactionId() {
-    return transactionId;
   }
 
   /**
@@ -156,7 +139,7 @@ public class Transaction {
    * @param message Message to store on the Destination
    * @throws IOException Is raised if unable to store the message to the specified destination
    */
-  public void add(@NotNull Destination destination, @NotNull Message message) throws IOException {
+  public void add(@NonNull @NotNull Destination destination, @NonNull @NotNull Message message) throws IOException {
     if(complete){
       throw new TransactionException(EXCEPTION_MESSAGE);
     }
@@ -169,4 +152,23 @@ public class Transaction {
     }
     destination.destinationImpl.storeTransactionalMessage(internalId, message);
   }
+
+  /**
+   * The current time that this transaction will last before it is automatically closed
+   *
+   * @return time in milliseconds that this transaction will expire
+   */
+  public long getExpiryTime(){
+    return expiryTime;
+  }
+
+  /**
+   * The transaction identifier supplied during the constructor
+   *
+   * @return the string supplied during the constructor
+   */
+  public @NonNull @NotNull String getTransactionId() {
+    return transactionId;
+  }
+
 }

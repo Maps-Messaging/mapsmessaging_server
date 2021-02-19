@@ -24,6 +24,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.Map;
+import lombok.NonNull;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
@@ -164,7 +165,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     this.session = session;
   }
 
-  public boolean processPacket(@NotNull Packet packet) throws IOException {
+  public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     if (!isClosing) {
       int pos = packet.position();
       try {
@@ -273,7 +274,7 @@ public class MQTT5Protocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination,@NotNull String normalisedName, @NotNull  SubscribedEventManager subscription,@NotNull  Message message,@NotNull  Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination,@NonNull @NotNull String normalisedName, @NonNull @NotNull  SubscribedEventManager subscription,@NonNull @NotNull  Message message,@NonNull @NotNull  Runnable completionTask) {
     if (maxBufferSize > 0 && message.getOpaqueData().length >= maxBufferSize) {
       completionTask.run();
       logger.log(LogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);

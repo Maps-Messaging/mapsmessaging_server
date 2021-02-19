@@ -18,6 +18,7 @@
 
 package org.maps.messaging.api;
 
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.message.Message;
 
@@ -38,10 +39,10 @@ public interface MessageListener {
    * @param message The message that was sent
    * @param completionTask This task needs to be called once all delivery action is done
    */
-  void sendMessage( @NotNull Destination destination,
-                    @NotNull String normalisedName,
-                    @NotNull SubscribedEventManager subscription,
-                    @NotNull Message message,
-                    @NotNull Runnable completionTask);
+  void sendMessage( @NonNull @NotNull Destination destination,
+                    @NonNull @NotNull String normalisedName,
+                    @NonNull @NotNull SubscribedEventManager subscription,
+                    @NonNull @NotNull Message message,
+                    @NonNull @NotNull Runnable completionTask);
 
 }

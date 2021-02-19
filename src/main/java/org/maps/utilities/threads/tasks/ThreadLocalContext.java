@@ -20,6 +20,8 @@ package org.maps.utilities.threads.tasks;
 
 
 import javax.annotation.Nullable;
+import lombok.NonNull;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -30,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
  *  @author Matthew Buckton
  *  @version 1.0
  */
+@ToString
 public class ThreadLocalContext {
 
   private static final ThreadLocalContext instance = new ThreadLocalContext();
@@ -41,7 +44,7 @@ public class ThreadLocalContext {
     return instance.context.get();
   }
 
-  public static void set(@NotNull ThreadStateContext entry){
+  public static void set(@NonNull @NotNull ThreadStateContext entry){
     instance.context.set(entry);
   }
 
@@ -49,7 +52,7 @@ public class ThreadLocalContext {
     instance.context.remove();
   }
 
-  public static boolean checkDomain(@NotNull String domain){
+  public static boolean checkDomain(@NonNull @NotNull String domain){
     ThreadStateContext context = ThreadLocalContext.get();
     if(context == null){
       return false;

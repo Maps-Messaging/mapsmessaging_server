@@ -20,6 +20,8 @@ package org.maps.utilities.threads.tasks;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +32,8 @@ import org.jetbrains.annotations.Nullable;
  *  @author Matthew Buckton
  *  @version 1.0
  */
+
+@ToString
 public class ThreadStateContext {
 
   private final Map<String, Object> map;
@@ -38,15 +42,15 @@ public class ThreadStateContext {
     map = new LinkedHashMap<>();
   }
 
-  public void add(@NotNull String key,@NotNull Object val){
+  public void add(@NonNull @NotNull String key,@NonNull @NotNull Object val){
     map.put(key, val);
   }
 
-  public @Nullable Object get(@NotNull String key){
+  public @Nullable Object get(@NonNull @NotNull String key){
     return map.get(key);
   }
 
-  public @Nullable Object remove(@NotNull String key){
+  public @Nullable Object remove(@NonNull @NotNull String key){
     return map.remove(key);
   }
 

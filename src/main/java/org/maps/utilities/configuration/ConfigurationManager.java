@@ -21,6 +21,7 @@ package org.maps.utilities.configuration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -50,7 +51,7 @@ public class ConfigurationManager {
     return instance;
   }
 
-  public void initialise(@NotNull String serverId){
+  public void initialise(@NonNull @NotNull String serverId){
     if(ConsulManagerFactory.getInstance().isStarted()){
       authoritative = new ConsulPropertyManager(serverId);
       authoritative.load();
@@ -62,7 +63,7 @@ public class ConfigurationManager {
     }
   }
 
-  public @NotNull ConfigurationProperties getProperties(String name) {
+  public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     ConfigurationProperties config;
     if(authoritative != null){
       config = authoritative.getProperties(name);

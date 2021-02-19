@@ -21,6 +21,7 @@ package org.maps.utilities.collections.bitset;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.ListIterator;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.collections.bitset.BitWiseOperator.And;
 import org.maps.utilities.collections.bitset.BitWiseOperator.AndNot;
@@ -44,11 +45,11 @@ public class ByteBufferBackedBitMap implements BitSet {
   private long uniqueId;
 
   // <editor-fold desc="BitSet constructors">
-  public ByteBufferBackedBitMap(@NotNull ByteBuffer buffer, int offset) {
+  public ByteBufferBackedBitMap(@NonNull @NotNull ByteBuffer buffer, int offset) {
     this(buffer, offset, 0);
   }
 
-  public ByteBufferBackedBitMap(@NotNull ByteBuffer buffer, int offset, long uniqueId) {
+  public ByteBufferBackedBitMap(@NonNull @NotNull ByteBuffer buffer, int offset, long uniqueId) {
     this.uniqueId = uniqueId;
     backing = buffer;
     int bits = backing.capacity() - offset;
@@ -61,17 +62,17 @@ public class ByteBufferBackedBitMap implements BitSet {
   // </editor-fold>
 
   // <editor-fold desc="Byte Buffer functions">
-  public @NotNull ByteBuffer getBacking() {
+  public @NonNull @NotNull ByteBuffer getBacking() {
     return backing;
   }
 
-  protected @NotNull ByteBuffer clearBacking() {
+  protected @NonNull @NotNull ByteBuffer clearBacking() {
     ByteBuffer buffer = backing;
     backing = null;
     return buffer;
   }
 
-  public @NotNull ByteBuffer getBacking(ByteBuffer copy) {
+  public @NonNull @NotNull ByteBuffer getBacking(ByteBuffer copy) {
     copy.clear();
     copy.put(backing);
     return copy;

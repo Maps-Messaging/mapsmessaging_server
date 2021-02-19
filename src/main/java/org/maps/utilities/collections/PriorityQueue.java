@@ -20,6 +20,7 @@ package org.maps.utilities.collections;
 
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,11 +36,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T>, AutoCloseable {
 
-  public PriorityQueue(int priorityBound, @NotNull PriorityFactory<T> factory) {
+  public PriorityQueue(int priorityBound, @NonNull @NotNull PriorityFactory<T> factory) {
     super(priorityBound, factory);
   }
 
-  public PriorityQueue( @NotNull  Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
+  public PriorityQueue( @NonNull @NotNull Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
     super(priorityQueues, factory);
   }
 

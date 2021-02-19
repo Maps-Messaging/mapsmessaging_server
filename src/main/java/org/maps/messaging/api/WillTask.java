@@ -18,6 +18,7 @@
 
 package org.maps.messaging.api;
 
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.engine.session.will.WillTaskImpl;
@@ -30,7 +31,7 @@ public class WillTask {
 
   private final WillTaskImpl willTaskImpl;
 
-  WillTask(@NotNull WillTaskImpl impl) {
+  WillTask(@NonNull @NotNull WillTaskImpl impl) {
     willTaskImpl = impl;
   }
 
@@ -39,7 +40,7 @@ public class WillTask {
    *
    * @param payload to send
    */
-  public void updateMessage(@NotNull byte[] payload) {
+  public void updateMessage(@NonNull @NotNull byte[] payload) {
     willTaskImpl.updateMessage(payload);
   }
 
@@ -57,7 +58,7 @@ public class WillTask {
    *
    * @param qos QualityOfService to be used
    */
-  public void updateQoS(@NotNull QualityOfService qos) {
+  public void updateQoS(@NonNull @NotNull QualityOfService qos) {
     willTaskImpl.updateQoS(qos);
   }
 
@@ -66,7 +67,7 @@ public class WillTask {
    *
    * @param destination name of a valid destination to send the message to
    */
-  public void updateTopic(@NotNull String destination) {
+  public void updateTopic(@NonNull @NotNull String destination) {
     willTaskImpl.updateTopic(destination);
   }
 }

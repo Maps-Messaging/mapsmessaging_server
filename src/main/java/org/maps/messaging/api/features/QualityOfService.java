@@ -18,9 +18,13 @@
 
 package org.maps.messaging.api.features;
 
+import lombok.Getter;
+import lombok.ToString;
+
 /**
  * Enum of features that define how a message is transferred to and from the server
  */
+@ToString
 public enum QualityOfService {
 
   AT_MOST_ONCE(
@@ -55,27 +59,24 @@ public enum QualityOfService {
   /**
    * Protocol binary format
    */
-  private final int level;
+  @Getter private final int level;
 
   /**
    * Description of what this quality level means
    */
-  private final String description;
+  @Getter private final String description;
 
   /**
    * Should events with this level be stored to disk
    */
-  private final boolean storeOffLine;
+  @Getter private final boolean storeOffLine;
 
   /**
    * Does this level require individual packet identification
    */
-  private final boolean sendPacketId;
+  @Getter private final boolean sendPacketId;
 
-  /**
-   *
-   */
-  private final ClientAcknowledgement clientAcknowledgement;
+  @Getter private final ClientAcknowledgement clientAcknowledgement;
 
   // This is a false positive, this constructor IS used by the enums above, but it is recorded as unused
   @java.lang.SuppressWarnings("squid:UnusedPrivateMethod")
@@ -102,25 +103,4 @@ public enum QualityOfService {
         throw new IllegalArgumentException("Invalid handler value supplied");
     }
   }
-
-  public int getLevel() {
-    return level;
-  }
-
-  public boolean storeOffline() {
-    return storeOffLine;
-  }
-
-  public boolean isSendPacketId() {
-    return sendPacketId;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public ClientAcknowledgement getClientAcknowledgement() {
-    return clientAcknowledgement;
-  }
-
 }

@@ -26,6 +26,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.NonNull;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -39,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Matthew Buckton
  * @version 1.0
  */
+@ToString
 public class SimpleTaskScheduler {
 
 
@@ -75,7 +78,7 @@ public class SimpleTaskScheduler {
    */
   // Will come back here but this will do for now
   @java.lang.SuppressWarnings("squid:S1452")
-  public Future<?> submit(@NotNull Runnable runnable) {
+  public Future<?> submit(@NonNull @NotNull Runnable runnable) {
     totalScheduled.increment();
     return executor.submit(runnable);
   }
@@ -90,7 +93,7 @@ public class SimpleTaskScheduler {
    * @param unit The time unit that delay and interval are specified in
    * @return The future object that maintains the state of this runnable
    */
-  public Future<Runnable> scheduleAtFixedRate(@NotNull Runnable runnable, long delay, long interval,@NotNull  TimeUnit unit) {
+  public Future<Runnable> scheduleAtFixedRate(@NonNull @NotNull Runnable runnable, long delay, long interval,@NonNull @NotNull  TimeUnit unit) {
     long delayNano = System.nanoTime() + unit.toNanos(delay);
     long intervalNano = unit.toNanos(interval);
     totalScheduled.increment();
@@ -105,7 +108,7 @@ public class SimpleTaskScheduler {
    * @param unit The TimeUnit that the delay is specified in
    * @return A Future object that can be monitored for execution state or to cancel the pending execution
    */
-  public Future<Runnable> schedule(@NotNull Runnable runnable, long delay, @NotNull TimeUnit unit) {
+  public Future<Runnable> schedule(@NonNull @NotNull Runnable runnable, long delay, @NonNull @NotNull TimeUnit unit) {
     long nano = System.nanoTime() + unit.toNanos(delay);
     totalScheduled.increment();
     return addTask(nano, new ScheduledFuture(nano, runnable));
@@ -146,7 +149,7 @@ public class SimpleTaskScheduler {
    *
    * @return true if it was found and removed from the pending queue, else false, if it has already executed or could not be found
    */
-  public boolean cancel(@NotNull Runnable runnable) {
+  public boolean cancel(@NonNull @NotNull Runnable runnable) {
     for (Map.Entry<Long, ScheduledFuture> entry : scheduledTasks.entrySet()) {
       if (entry.getValue().get() == runnable) {
         ScheduledFuture task = scheduledTasks.remove(entry.getKey());

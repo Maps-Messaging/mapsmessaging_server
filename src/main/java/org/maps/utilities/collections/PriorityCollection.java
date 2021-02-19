@@ -28,6 +28,7 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,7 +113,7 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
+  public @NonNull @NotNull Iterator<T> iterator() {
     return new PriorityCollectionIterator();
   }
 

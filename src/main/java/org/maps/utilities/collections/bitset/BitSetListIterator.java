@@ -21,6 +21,7 @@ package org.maps.utilities.collections.bitset;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 class BitSetListIterator implements ListIterator<Integer> {
@@ -28,7 +29,7 @@ class BitSetListIterator implements ListIterator<Integer> {
   private final BitSet active;
   private int current;
 
-  public BitSetListIterator(@NotNull BitSet bitSet) {
+  public BitSetListIterator(@NonNull @NotNull BitSet bitSet) {
     active = bitSet;
     current = 0;
   }

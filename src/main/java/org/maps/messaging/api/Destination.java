@@ -19,6 +19,7 @@
 package org.maps.messaging.api;
 
 import java.io.IOException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.features.DestinationType;
 import org.maps.messaging.api.message.Message;
@@ -32,11 +33,11 @@ public class Destination implements BaseDestination {
 
   protected final DestinationImpl destinationImpl;
 
-  Destination(@NotNull DestinationImpl impl) {
+  Destination(@NonNull @NotNull DestinationImpl impl) {
     destinationImpl = impl;
   }
 
-  public int storeMessage(@NotNull Message message) throws IOException {
+  public int storeMessage(@NonNull @NotNull Message message) throws IOException {
     return destinationImpl.storeMessage(message);
   }
 

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -72,11 +73,11 @@ public class TransactionManager implements Runnable {
    *
    * @param transaction object that is currently active
    */
-  public synchronized void add(@NotNull Transaction transaction){
+  public synchronized void add(@NonNull @NotNull Transaction transaction){
     transactionList.put(transaction.getTransactionId(), transaction);
   }
 
-  public synchronized Transaction find(@NotNull String transactionId){
+  public synchronized Transaction find(@NonNull @NotNull String transactionId){
     return transactionList.get(transactionId);
   }
 
@@ -86,7 +87,7 @@ public class TransactionManager implements Runnable {
    * @param transaction object to remove
    * @return true of the transaction object was removed from the list, else false if not found
    */
-  public synchronized boolean remove(@NotNull Transaction transaction){
+  public synchronized boolean remove(@NonNull @NotNull Transaction transaction){
     return transactionList.remove(transaction.getTransactionId()) != null;
   }
 

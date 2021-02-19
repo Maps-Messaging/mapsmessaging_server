@@ -59,7 +59,7 @@ public class PublishListener extends PacketListener {
         .setOpaqueData(msg)
         .setMeta(meta)
         .setQoS(qos)
-        .storeOffline(qos.storeOffline())
+        .storeOffline(qos.isStoreOffLine())
         .setTransformation(transformation)
         .setDestinationTransformer(transformer);
 

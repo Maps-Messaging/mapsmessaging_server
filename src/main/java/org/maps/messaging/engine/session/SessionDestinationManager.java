@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.features.DestinationType;
 import org.maps.messaging.engine.destination.DestinationFactory;
@@ -71,7 +72,7 @@ public class SessionDestinationManager implements DestinationFactory {
   }
 
   @Override
-  public DestinationImpl create(@NotNull String name, @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     return manager.create(adjustName(name), destinationType);
   }
 

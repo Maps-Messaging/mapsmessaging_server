@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.message.Message;
 import org.maps.utilities.collections.NaturalOrderedLongQueue;
@@ -86,7 +87,7 @@ public class MessageManager {
    * @param bucketId The bucket ID to register the message with
    * @param message Message to register with the delay structure
    */
-  public synchronized void register(long bucketId, @NotNull Message message){
+  public synchronized void register(long bucketId, @NonNull @NotNull Message message){
     DelayedBucket bucket = treeList.computeIfAbsent(bucketId, f-> {
       bucketList.add(bucketId);
       if(bucketList.size() > 1){
@@ -183,7 +184,7 @@ public class MessageManager {
     return sb.toString();
   }
 
-  public synchronized @NotNull Queue<Long> removeBucket(long bucketId) {
+  public synchronized @NonNull @NotNull Queue<Long> removeBucket(long bucketId) {
     DelayedBucket bucket = treeList.remove(bucketId);
     if(bucket != null){
       return bucket.delayedMessageState;

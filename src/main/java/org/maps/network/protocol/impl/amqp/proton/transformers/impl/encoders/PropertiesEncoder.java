@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Properties;
@@ -53,7 +54,7 @@ public class PropertiesEncoder {
     }
   }
 
-  public static void unpackProperties(@NotNull Properties properties, @NotNull Map<String, TypedData> map, @NotNull MessageBuilder messageBuilder){
+  public static void unpackProperties(@NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map, @NonNull @NotNull MessageBuilder messageBuilder){
     if(properties.getContentType() != null){
       messageBuilder.setContentType(properties.getContentType().toString());
     }
@@ -75,7 +76,7 @@ public class PropertiesEncoder {
     }
   }
 
-  public static void packProperties(@NotNull Properties properties, @NotNull Message message){
+  public static void packProperties(@NonNull @NotNull Properties properties, @NonNull @NotNull Message message){
     Map<String, TypedData> map = message.getDataMap();
     if(map != null) {
       for (JMSProperty jmsProperty : encodingList) {
@@ -101,14 +102,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if (properties.getReplyToGroupId() != null) {
         map.put(PROPERTY, new TypedData(properties.getReplyToGroupId()));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setReplyToGroupId((String) map.get(PROPERTY).getData());
@@ -129,14 +130,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getUserId() != null){
         map.put(PROPERTY, new TypedData(new String(properties.getUserId().getArray())));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setUserId(new Binary( ((String)map.get(PROPERTY).getData()).getBytes()));
@@ -157,14 +158,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getSubject() != null){
         map.put(PROPERTY, new TypedData(properties.getSubject()));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setSubject((String)map.get(PROPERTY).getData());
@@ -185,14 +186,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getTo() != null){
         map.put(PROPERTY, new TypedData(properties.getTo()));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setTo((String)map.get(PROPERTY).getData());
@@ -213,14 +214,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getReplyTo() != null){
         map.put(PROPERTY, new TypedData(properties.getReplyTo()));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setReplyTo((String)map.get(PROPERTY).getData());
@@ -242,14 +243,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getMessageId() != null){
         map.put(PROPERTY, new TypedData(properties.getMessageId()));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setMessageId(map.get(PROPERTY).getData());
@@ -270,14 +271,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getGroupSequence() != null){
         map.put(PROPERTY, new TypedData(properties.getGroupSequence().intValue()));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setGroupSequence(new UnsignedInteger((Integer) map.get(PROPERTY).getData()));
@@ -298,14 +299,14 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getGroupId() != null){
         map.put(PROPERTY, new TypedData(properties.getGroupId()));
       }
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map != null && map.containsKey(PROPERTY)) {
         properties.setGroupId(map.get(PROPERTY).getData().toString());
@@ -326,7 +327,7 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map) {
+    public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
       if(properties.getCorrelationId() != null){
         Object obj = properties.getCorrelationId();
         if(obj instanceof Binary){
@@ -340,7 +341,7 @@ public class PropertiesEncoder {
     }
 
     @Override
-    public void pack(@NotNull Message message, @NotNull Properties properties) {
+    public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       byte[] correlation = message.getCorrelationData();
       if(correlation != null) {
         if(message.isCorrelationDataByteArray()) {
@@ -354,8 +355,8 @@ public class PropertiesEncoder {
   }
 
   interface JMSProperty{
-    void unpack(@NotNull MessageBuilder messageBuilder, @NotNull Properties properties, @NotNull Map<String, TypedData> map);
-    void pack(@NotNull Message message, @NotNull Properties properties);
+    void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map);
+    void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties);
     String getName();
   }
 }

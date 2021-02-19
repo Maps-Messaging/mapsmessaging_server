@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -362,7 +363,7 @@ public class SubscriptionController implements DestinationManagerListener {
     return destinationImpl.submit(task);
   }
 
-  public Subscription createSubscription( @NotNull SubscriptionContext context, @NotNull DestinationImpl destinationImpl) throws IOException {
+  public Subscription createSubscription( @NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, isPersistent);
     Subscription subscription = builder.construct(sessionImpl, sessionId);
 
@@ -373,7 +374,7 @@ public class SubscriptionController implements DestinationManagerListener {
     return subscription;
   }
 
-  public Subscription createBrowserSubscription( @NotNull SubscriptionContext context, @NotNull DestinationSubscription parent, @NotNull DestinationImpl destinationImpl) throws IOException {
+  public Subscription createBrowserSubscription( @NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBrowserBuilder(destinationImpl, context, parent);
     Subscription subscription = builder.construct(sessionImpl, sessionId);
     activeSubscriptions.put(destinationImpl, subscription);

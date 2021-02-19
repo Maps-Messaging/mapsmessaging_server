@@ -18,9 +18,13 @@
 
 package org.maps.messaging.api.features;
 
+import lombok.Getter;
+import lombok.ToString;
+
 /**
  * Enum that indicates what to do with a retained event on a new subscription
  */
+@ToString
 public enum RetainHandler {
 
   SEND_ALWAYS(
@@ -36,8 +40,8 @@ public enum RetainHandler {
       "Do not send ANY retained messages, regardless of subscription state"
   );
 
-  public final int handler;
-  public final String description;
+  @Getter private final int handler;
+  @Getter private final String description;
 
   RetainHandler(int handler, String description) {
     this.handler = handler;
@@ -58,11 +62,4 @@ public enum RetainHandler {
     }
   }
 
-  public int getHandler() {
-    return handler;
-  }
-
-  public String getDescription() {
-    return description;
-  }
 }

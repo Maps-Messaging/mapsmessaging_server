@@ -21,6 +21,7 @@ package org.maps.messaging.engine.system;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.features.DestinationType;
@@ -44,13 +45,13 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   }
 
   @Override
-  public synchronized void addSubscription(@NotNull Subscription subscription) {
+  public synchronized void addSubscription(@NonNull @NotNull Subscription subscription) {
     super.addSubscription(subscription);
     subscription.sendMessage(generateMessage());
   }
 
   @Override
-  public synchronized int storeMessage(@NotNull Message message) throws IOException {
+  public synchronized int storeMessage(@NonNull @NotNull Message message) throws IOException {
     throw new IOException("Write to a system topic is prohibited");
   }
 

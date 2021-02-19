@@ -18,40 +18,23 @@
 
 package org.maps.utilities.admin;
 
+import lombok.Getter;
+import lombok.ToString;
+
+@ToString
 public class HealthStatus {
 
   public enum LEVEL{INFO, WARN, ERROR, CRITICAL}
 
-  private final String healthId;
-  private final LEVEL level;
-  private final String message;
-  private final String resource;
+  @Getter private final String healthId;
+  @Getter private final LEVEL level;
+  @Getter private final String message;
+  @Getter private final String resource;
 
   public HealthStatus(String healthId, LEVEL level, String message, String resource){
     this.healthId = healthId;
     this.level = level;
     this.message = message;
     this.resource = resource;
-  }
-
-  public String getHealthId() {
-    return healthId;
-  }
-
-  public String getLevel() {
-    return level.name();
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public String getResource() {
-    return resource;
-  }
-
-  @Override
-  public String toString(){
-    return healthId+", "+level.name()+", "+message+", "+resource;
   }
 }

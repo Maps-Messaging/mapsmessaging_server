@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.amqp.proton.transformers.impl;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
@@ -36,7 +37,7 @@ import org.maps.network.protocol.impl.amqp.proton.transformers.impl.encoders.Pro
 public class BaseMessageTranslator implements MessageTranslator {
 
   @Override
-  public @NotNull MessageBuilder decode(@NotNull MessageBuilder messageBuilder, @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
     Map<String, TypedData> dataMap = new LinkedHashMap<>();
     messageBuilder.setContentType(protonMessage.getContentType());
 
@@ -56,7 +57,7 @@ public class BaseMessageTranslator implements MessageTranslator {
   }
 
   @Override
-  public @NotNull Message encode(@NotNull org.maps.messaging.api.message.Message message) {
+  public @NonNull @NotNull Message encode(@NonNull @NotNull org.maps.messaging.api.message.Message message) {
     Message protonMessage = org.apache.qpid.proton.message.Message.Factory.create();
 
     Header header = new Header();

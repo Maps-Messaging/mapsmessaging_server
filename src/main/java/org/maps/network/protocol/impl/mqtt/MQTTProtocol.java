@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.NonNull;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +30,6 @@ import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.messaging.api.Destination;
-import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.Session;
 import org.maps.messaging.api.SessionManager;
 import org.maps.messaging.api.SubscribedEventManager;
@@ -103,7 +103,7 @@ public class MQTTProtocol extends ProtocolImpl {
     }
   }
 
-  public void connect(@NotNull String sessionId,String username,String password) throws IOException {
+  public void connect(@NonNull @NotNull String sessionId,String username,String password) throws IOException {
     Connect connect = new Connect();
     if(username != null) {
       connect.setUsername(username);
@@ -114,7 +114,7 @@ public class MQTTProtocol extends ProtocolImpl {
     registerRead();
   }
 
-  public void subscribeRemote(@NotNull String resource,@NotNull  String mappedResource, @Nullable Transformer transformer){
+  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull  String mappedResource, @Nullable Transformer transformer){
     topicNameMapping.put(resource, mappedResource);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
@@ -124,7 +124,7 @@ public class MQTTProtocol extends ProtocolImpl {
     writeFrame(subscribe);
   }
 
-  public void subscribeLocal(@NotNull String resource, @NotNull String mappedResource,@Nullable String selector,  @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@Nullable String selector,  @Nullable Transformer transformer) throws IOException {
     topicNameMapping.put(resource, mappedResource);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
@@ -241,8 +241,8 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull  Destination destination, @NotNull String  normalisedName, @NotNull SubscribedEventManager subscription,
-                          @NotNull Message message, @NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String  normalisedName, @NonNull @NotNull SubscribedEventManager subscription,
+                          @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = subInfo.getQualityOfService();
     int packetId = 0;

@@ -20,6 +20,7 @@ package org.maps.utilities.collections.bitset;
 
 import java.util.Iterator;
 import java.util.ListIterator;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.collections.bitset.BitWiseOperator.And;
 import org.maps.utilities.collections.bitset.BitWiseOperator.AndNot;
@@ -131,7 +132,7 @@ public class BitSetImpl implements BitSet {
   }
 
   @Override
-  public void and(@NotNull BitSet map) {
+  public void and(@NonNull @NotNull BitSet map) {
     if (map instanceof BitSetImpl) {
       bitSet.and(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
@@ -143,7 +144,7 @@ public class BitSetImpl implements BitSet {
   }
 
   @Override
-  public void xor(@NotNull BitSet map) {
+  public void xor(@NonNull @NotNull BitSet map) {
     if (map instanceof BitSetImpl) {
       bitSet.xor(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
@@ -155,7 +156,7 @@ public class BitSetImpl implements BitSet {
   }
 
   @Override
-  public void or(@NotNull BitSet map) {
+  public void or(@NonNull @NotNull BitSet map) {
     if (map instanceof BitSetImpl) {
       bitSet.or(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
@@ -167,7 +168,7 @@ public class BitSetImpl implements BitSet {
   }
 
   @Override
-  public void andNot(@NotNull BitSet map) {
+  public void andNot(@NonNull @NotNull BitSet map) {
     if (map instanceof BitSetImpl) {
       bitSet.andNot(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
@@ -178,7 +179,7 @@ public class BitSetImpl implements BitSet {
     }
   }
 
-  private void bitwiseCompute(@NotNull ByteBufferBackedBitMap map, @NotNull BitWiseOperator operator) {
+  private void bitwiseCompute(@NonNull @NotNull ByteBufferBackedBitMap map, @NonNull @NotNull BitWiseOperator operator) {
     long[] longs = bitSet.toLongArray();
     int longCount = map.getLongCount();
     if(longs.length < longCount){

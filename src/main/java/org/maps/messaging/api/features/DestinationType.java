@@ -18,9 +18,13 @@
 
 package org.maps.messaging.api.features;
 
+import lombok.Getter;
+import lombok.ToString;
+
 /**
  * Enum of the currently supported destinations
  */
+@ToString
 public enum DestinationType {
 
   TOPIC(0, true, false,"Topic", "Reading of messages are not destructive"),
@@ -47,11 +51,11 @@ public enum DestinationType {
     throw new RuntimeException("No Such Resource Type");
   }
 
-  private final int value;
-  private final String name;
-  private final String description;
-  private final boolean isTopic;
-  private final boolean isTemporary;
+  @Getter private final int value;
+  @Getter private final String name;
+  @Getter private final String description;
+  @Getter private final boolean isTopic;
+  @Getter private final boolean isTemporary;
 
   DestinationType(int value, boolean isTopic, boolean isTemporary, String name, String description){
     this.value = value;
@@ -61,32 +65,7 @@ public enum DestinationType {
     this.description = description;
   }
 
-  public boolean isTopic(){
-    return isTopic;
-  }
-
   public boolean isQueue(){
     return !isTopic;
-  }
-
-  public boolean isTemporary(){
-    return isTemporary;
-  }
-
-  public int getValue() {
-    return value;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  @Override
-  public String toString(){
-    return name;
   }
 }

@@ -21,6 +21,7 @@ package org.maps.utilities.collections.bitset;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class ByteBufferBitSetFactoryImpl extends BitSetFactory {
@@ -41,7 +42,7 @@ public class ByteBufferBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
-  public void close(@NotNull OffsetBitSet bitset) {
+  public void close(@NonNull @NotNull OffsetBitSet bitset) {
     bitset.clearAll();
   }
 

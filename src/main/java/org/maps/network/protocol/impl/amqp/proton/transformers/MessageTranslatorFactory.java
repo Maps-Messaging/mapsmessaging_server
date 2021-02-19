@@ -19,6 +19,7 @@
 package org.maps.network.protocol.impl.amqp.proton.transformers;
 
 import java.util.Map;
+import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,7 @@ import org.maps.messaging.api.message.Message;
 
 public class MessageTranslatorFactory {
 
-  public static @NotNull MessageTranslator getMessageTranslator(@Nullable MessageAnnotations annotations){
+  public static @NonNull @NotNull MessageTranslator getMessageTranslator(@Nullable MessageAnnotations annotations){
     MessageTypes messageType = MessageTypes.MESSAGE;
 
     Map<Symbol, Object> maps;
@@ -41,7 +42,7 @@ public class MessageTranslatorFactory {
     return messageType.getMessageTranslator();
   }
 
-  public static @NotNull MessageTranslator getMessageTranslator(@NotNull Message message){
+  public static @NonNull @NotNull MessageTranslator getMessageTranslator(@NonNull @NotNull Message message){
     MessageTypes messageType = MessageTypes.BYTES;
     Map<String, String> metaData = message.getMeta();
     if(metaData != null && metaData.containsKey("type")) {

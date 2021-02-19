@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.Logger;
@@ -111,18 +112,18 @@ public class AMQPProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
+  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription,@NonNull @NotNull Message message,@NonNull @NotNull Runnable completionTask) {
     protonEngine.sendMessage(message, subscription);
     completionTask.run();
   }
 
   @Override
-  public boolean processPacket(@NotNull Packet packet) throws IOException {
+  public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     protonEngine.processPacket(packet);
     return true;
   }
 
-  public @NotNull Logger getLogger(){
+  public @NonNull @NotNull Logger getLogger(){
     return logger;
   }
 

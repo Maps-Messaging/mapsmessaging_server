@@ -18,6 +18,7 @@
 
 package org.maps.messaging.api;
 
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.engine.destination.DestinationImpl;
 
@@ -28,7 +29,7 @@ import org.maps.messaging.engine.destination.DestinationImpl;
  */
 public class Queue extends Destination {
 
-  Queue(@NotNull DestinationImpl impl) {
+  Queue(@NonNull @NotNull DestinationImpl impl) {
     super(impl);
   }
 

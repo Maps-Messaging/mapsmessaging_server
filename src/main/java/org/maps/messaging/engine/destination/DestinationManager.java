@@ -30,6 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
@@ -135,7 +136,7 @@ public class DestinationManager implements DestinationFactory {
   }
 
   @Override
-  public synchronized DestinationImpl create(@NotNull String name, @NotNull DestinationType destinationType) throws IOException {
+  public synchronized DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     if (name.startsWith("$SYS")) {
       // can not create these
       logger.log(LogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);

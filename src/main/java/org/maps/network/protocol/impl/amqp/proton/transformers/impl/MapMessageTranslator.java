@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.amqp.proton.transformers.impl;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -33,7 +34,7 @@ import org.maps.network.protocol.impl.amqp.proton.transformers.MessageTypes;
 public class MapMessageTranslator extends BaseMessageTranslator {
 
   @Override
-  public @NotNull MessageBuilder decode(@NotNull MessageBuilder messageBuilder, @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
     if(body instanceof AmqpValue){
@@ -62,7 +63,7 @@ public class MapMessageTranslator extends BaseMessageTranslator {
   }
 
   @Override
-  public @NotNull Message encode(@NotNull org.maps.messaging.api.message.Message message) {
+  public @NonNull @NotNull Message encode(@NonNull @NotNull org.maps.messaging.api.message.Message message) {
     Message protonMessage = super.encode(message);
     Map<String, Object> map = new LinkedHashMap<>();
     Map<String, TypedData> dataMap = message.getDataMap();

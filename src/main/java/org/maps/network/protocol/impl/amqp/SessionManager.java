@@ -19,6 +19,7 @@
 package org.maps.network.protocol.impl.amqp;
 
 import java.io.IOException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.Session;
 
@@ -40,7 +41,7 @@ public class SessionManager {
     return interestCount--;
   }
 
-  public@NotNull Session getSession() {
+  public@NonNull @NotNull Session getSession() {
     return session;
   }
 

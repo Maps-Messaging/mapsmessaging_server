@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.amqp.proton.listeners;
 
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -254,7 +255,7 @@ public class DeliveryEventListener extends BaseEventListener {
   // For this to happen a delivery message is used and encoded with the information required, so now we need to
   // decode the incoming data and figure out what we should do with it as far as the proton protocol is concerned
   //
-  private org.apache.qpid.proton.message.Message parseIncomingMessage(@NotNull Receiver receiver) {
+  private org.apache.qpid.proton.message.Message parseIncomingMessage(@NonNull @NotNull Receiver receiver) {
     org.apache.qpid.proton.message.Message protonMsg = org.apache.qpid.proton.message.Message.Factory.create();
     protonMsg.decode(receiver.recv());
     return protonMsg;

@@ -20,13 +20,14 @@ package org.maps.utilities.collections;
 
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.collections.bitset.BitSetFactory;
 import org.maps.utilities.collections.bitset.OffsetBitSet;
 
 public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements Queue<Long> {
 
-  public NaturalOrderedLongQueue(int id, @NotNull BitSetFactory factory) {
+  public NaturalOrderedLongQueue(int id, @NonNull @NotNull BitSetFactory factory) {
     super(id, factory);
   }
 

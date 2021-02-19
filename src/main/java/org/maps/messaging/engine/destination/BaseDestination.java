@@ -19,12 +19,13 @@
 package org.maps.messaging.engine.destination;
 
 import java.io.IOException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.message.Message;
 
 public interface BaseDestination {
 
-  int storeMessage(@NotNull Message message) throws IOException;
+  int storeMessage(@NonNull @NotNull Message message) throws IOException;
   String getName();
 
 }

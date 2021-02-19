@@ -21,6 +21,7 @@ package org.maps.messaging.api;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.features.Priority;
@@ -32,42 +33,23 @@ import org.maps.network.protocol.ProtocolMessageTransformation;
 
 public class MessageBuilder {
 
-  @Getter
-  private java.util.Map<String, String> meta;
-  @Getter
-  private Map<String, TypedData> dataMap;
-  @Getter
-  private byte[] opaqueData;
-  @Getter
-  private Object correlationData;
-  @Getter
-  private String contentType;
-  @Getter
-  private String responseTopic;
-  @Getter
-  private long id;
-  @Getter
-  private long expiry;
-  @Getter
-  private long delayed;
-  @Getter
-  private Priority priority;
-  @Getter
-  private long creation;
-  @Getter
-  private QualityOfService qualityOfService;
-  @Getter
-  private ProtocolMessageTransformation transformation;
-  @Getter
-  private boolean retain;
-  @Getter
-  private boolean storeOffline;
-  @Getter
-  private boolean payloadUTF8;
-
-  @Getter
-  private Transformer transformer;
-
+  @Getter private java.util.Map<String, String> meta;
+  @Getter private Map<String, TypedData> dataMap;
+  @Getter private byte[] opaqueData;
+  @Getter private Object correlationData;
+  @Getter private String contentType;
+  @Getter private String responseTopic;
+  @Getter private long id;
+  @Getter private long expiry;
+  @Getter private long delayed;
+  @Getter private Priority priority;
+  @Getter private long creation;
+  @Getter private QualityOfService qualityOfService;
+  @Getter private ProtocolMessageTransformation transformation;
+  @Getter private boolean retain;
+  @Getter private boolean storeOffline;
+  @Getter private boolean payloadUTF8;
+  @Getter private Transformer transformer;
 
   public MessageBuilder() {
     id = 0;
@@ -102,77 +84,77 @@ public class MessageBuilder {
     delayed = previousMessage.getDelayed();
   }
 
-  public @NotNull MessageBuilder setCreation(long creation) {
+  public @NonNull @NotNull MessageBuilder setCreation(long creation) {
     this.creation = creation;
     return this;
   }
 
-  public @NotNull MessageBuilder setQoS(@NotNull QualityOfService qualityOfService) {
+  public @NonNull @NotNull MessageBuilder setQoS(@NonNull @NotNull QualityOfService qualityOfService) {
     this.qualityOfService = qualityOfService;
     return this;
   }
 
-  public @NotNull MessageBuilder storeOffline(boolean storeOffline) {
+  public @NonNull @NotNull MessageBuilder storeOffline(boolean storeOffline) {
     this.storeOffline = storeOffline;
     return this;
   }
 
-  public @NotNull MessageBuilder setPayloadIndicator(boolean payloadFormatIndicator) {
+  public @NonNull @NotNull MessageBuilder setPayloadIndicator(boolean payloadFormatIndicator) {
     payloadUTF8 = payloadFormatIndicator;
     return this;
   }
 
-  public @NotNull MessageBuilder setMessageExpiryInterval(long messageExpiryInterval, TimeUnit timeUnit) {
+  public @NonNull @NotNull MessageBuilder setMessageExpiryInterval(long messageExpiryInterval, TimeUnit timeUnit) {
     expiry = timeUnit.toMillis(messageExpiryInterval);
     return this;
   }
 
-  public @NotNull MessageBuilder setMeta(@Nullable  Map<String, String> meta) {
+  public @NonNull @NotNull MessageBuilder setMeta(@Nullable  Map<String, String> meta) {
     this.meta = meta;
     return this;
   }
 
-  public @NotNull MessageBuilder setDataMap(@Nullable Map<String, TypedData> dataMap) {
+  public @NonNull @NotNull MessageBuilder setDataMap(@Nullable Map<String, TypedData> dataMap) {
     this.dataMap = dataMap;
     return this;
   }
 
-  public @NotNull MessageBuilder setOpaqueData(@Nullable byte[] opaqueData) {
+  public @NonNull @NotNull MessageBuilder setOpaqueData(@Nullable byte[] opaqueData) {
     this.opaqueData = opaqueData;
     return this;
   }
 
-  public @NotNull MessageBuilder setCorrelationData(@Nullable byte[] correlationData) {
+  public @NonNull @NotNull MessageBuilder setCorrelationData(@Nullable byte[] correlationData) {
     this.correlationData = correlationData;
     return this;
   }
 
-  public @NotNull MessageBuilder setCorrelationData(@Nullable String correlationData) {
+  public @NonNull @NotNull MessageBuilder setCorrelationData(@Nullable String correlationData) {
     this.correlationData = correlationData;
     return this;
   }
 
-  public @NotNull MessageBuilder setContentType(@Nullable String contentType) {
+  public @NonNull @NotNull MessageBuilder setContentType(@Nullable String contentType) {
     this.contentType = contentType;
     return this;
   }
 
-  public @NotNull MessageBuilder setResponseTopic(@Nullable String responseTopicString) {
+  public @NonNull @NotNull MessageBuilder setResponseTopic(@Nullable String responseTopicString) {
     responseTopic = responseTopicString;
     return this;
   }
 
-  public @NotNull MessageBuilder setId(long id) {
+  public @NonNull @NotNull MessageBuilder setId(long id) {
     this.id = id;
     return this;
   }
 
-  public @NotNull MessageBuilder setPriority(Priority priority) {
+  public @NonNull @NotNull MessageBuilder setPriority(Priority priority) {
     this.priority = priority;
     return this;
   }
 
-  public @NotNull MessageBuilder setRetain(boolean retain) {
+  public @NonNull @NotNull MessageBuilder setRetain(boolean retain) {
     this.retain = retain;
     return this;
   }
@@ -181,23 +163,22 @@ public class MessageBuilder {
     return transformation;
   }
 
-  public  @NotNull MessageBuilder setTransformation(ProtocolMessageTransformation transformation) {
+  public  @NonNull @NotNull MessageBuilder setTransformation(ProtocolMessageTransformation transformation) {
     this.transformation = transformation;
     return this;
   }
 
-  public  @NotNull MessageBuilder setDelayed(long delayed) {
+  public  @NonNull @NotNull MessageBuilder setDelayed(long delayed) {
     this.delayed = delayed;
     return this;
   }
 
-  public  @NotNull MessageBuilder setDestinationTransformer(Transformer transformer) {
+  public  @NonNull @NotNull MessageBuilder setDestinationTransformer(Transformer transformer) {
     this.transformer = transformer;
     return this;
   }
 
-
-  public @NotNull Message build() {
+  public @NonNull @NotNull Message build() {
     if(transformation != null){
       ProtocolMessageTransformation local = transformation;
       transformation = null;

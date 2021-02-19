@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.MappedBufferHelper;
 
@@ -43,7 +44,7 @@ public class FileBitSetFactory extends BitSetFactory {
   private final int bufferSize;
   private final byte[] emptyBuffer;
 
-  public FileBitSetFactory(@NotNull String filename, int size) throws IOException {
+  public FileBitSetFactory(@NonNull @NotNull String filename, int size) throws IOException {
     super(size);
     this.filename = filename;
     bufferSize = size / BITS_PER_BYTE;
@@ -89,7 +90,7 @@ public class FileBitSetFactory extends BitSetFactory {
     raf.close();
   }
 
-  private void clearList(@NotNull List<FileOffsetBitSet> list) {
+  private void clearList(@NonNull @NotNull List<FileOffsetBitSet> list) {
     for (FileOffsetBitSet bitmap : list) {
       ByteBufferBackedBitMap mapped = (ByteBufferBackedBitMap) bitmap.getBitSet();
       bitmap.clear();
@@ -126,7 +127,7 @@ public class FileBitSetFactory extends BitSetFactory {
   }
 
   @Override
-  public void close(@NotNull OffsetBitSet bitset) {
+  public void close(@NonNull @NotNull OffsetBitSet bitset) {
     bitset.reset(0, -1);
     free.add((FileOffsetBitSet) bitset);
     used.remove(bitset);
@@ -162,7 +163,7 @@ public class FileBitSetFactory extends BitSetFactory {
     return new ByteBufferBackedBitMap(raf.getChannel().map(MapMode.READ_WRITE, pos, bufferSize), 0, uniqueId);
   }
 
-  private void unmap(@NotNull ByteBufferBackedBitMap mapped) {
+  private void unmap(@NonNull @NotNull ByteBufferBackedBitMap mapped) {
     ByteBuffer backing = mapped.clearBacking();
     MappedBufferHelper.closeDirectBuffer(backing);
   }
@@ -172,7 +173,7 @@ public class FileBitSetFactory extends BitSetFactory {
     private final BitSetFactory factory;
     private final long position;
 
-    public FileOffsetBitSet(@NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NotNull BitSetFactory factory) {
+    public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NonNull @NotNull BitSetFactory factory) {
       super(bitSet, offset);
       this.factory = factory;
       this.position = position;

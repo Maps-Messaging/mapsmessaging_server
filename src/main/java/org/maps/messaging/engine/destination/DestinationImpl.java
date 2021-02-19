@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.MessageDaemon;
@@ -111,7 +112,7 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of resource that this destination represents
    * @throws IOException if, at anytime, the file system was unable to construct, read or write to the required files
    */
-  public DestinationImpl( @NotNull String name, @NotNull  String path, @NotNull  UUID uuid, @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  String path, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = name;
     resourceTaskQueue = new ConcurrentPriorityTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
@@ -138,7 +139,7 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the resource type detected during the reload
    * @throws IOException if, at any point, the underlying file structures are corrupt or unable to be used
    */
-  public DestinationImpl( @NotNull Resource resource, @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl( @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = resource.getMappedName();
     resourceTaskQueue = new ConcurrentPriorityTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
@@ -178,7 +179,7 @@ public class DestinationImpl implements BaseDestination {
     * @param name of the destination
    * @param destinationType the type of the destination
    */
-  public DestinationImpl( @NotNull String name, @NotNull DestinationType destinationType) {
+  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) {
     this.name = name;
     resourceTaskQueue = new ConcurrentPriorityTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
@@ -368,7 +369,7 @@ public class DestinationImpl implements BaseDestination {
    *
    * @param subscription subscription object to be added
    */
-  public void addSubscription( @NotNull Subscription subscription) {
+  public void addSubscription( @NonNull @NotNull Subscription subscription) {
     stats.subscriptionAdded();
     subscriptionManager.put(subscription.getSessionId(), subscription);
   }
@@ -380,7 +381,7 @@ public class DestinationImpl implements BaseDestination {
    * @param subscriptionId  Subscription identifier to remove
    * @return the subscription that was removed
    */
-  public Subscribable removeSubscription( @NotNull String subscriptionId) {
+  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) {
     stats.subscriptionRemoved();
     Subscribable subscription = subscriptionManager.remove(subscriptionId);
     if(subscription != null) {
@@ -453,7 +454,7 @@ public class DestinationImpl implements BaseDestination {
    * @return the number of subscribers that are interested in this message
    * @throws IOException If, at any point, a file I/O exception was raised while storing this message
    */
-  public int storeMessage( @NotNull Message message) throws IOException {
+  public int storeMessage( @NonNull @NotNull Message message) throws IOException {
     Callable<Response> task;
     if(message.getDelayed() > 0 && delayedMessageManager != null){
       task = new DelayedStoreMessageTask(this, message, delayedMessageManager, message.getDelayed());
@@ -501,7 +502,7 @@ public class DestinationImpl implements BaseDestination {
    * @param message The message to store but not forward to subscribers yet
    * @throws IOException If the file system raises any File I/O exceptions during the operation
    */
-  public void storeTransactionalMessage(long transactionId, @NotNull Message message) throws IOException {
+  public void storeTransactionalMessage(long transactionId, @NonNull @NotNull Message message) throws IOException {
     Callable<Response> task;
     if(transactionMessageManager != null){
       task = new DelayedStoreMessageTask(this, message, transactionMessageManager, transactionId);
@@ -514,15 +515,15 @@ public class DestinationImpl implements BaseDestination {
   //</editor-fold>
 
   //<editor-fold desc="Specific shred subscription functions">
-  public void addShareRegistry ( @NotNull SharedSubscriptionManager shareRegistry) {
+  public void addShareRegistry ( @NonNull @NotNull SharedSubscriptionManager shareRegistry) {
     sharedSubscriptionRegistry.add(shareRegistry.getName(), shareRegistry);
   }
 
-  public SharedSubscriptionManager findShareRegister( @NotNull String sharedName) {
+  public SharedSubscriptionManager findShareRegister( @NonNull @NotNull String sharedName) {
     return sharedSubscriptionRegistry.get(sharedName);
   }
 
-  public void delShareRegistry ( @NotNull String sharedName) {
+  public void delShareRegistry ( @NonNull @NotNull String sharedName) {
     sharedSubscriptionRegistry.del(sharedName);
   }
   //</editor-fold>
@@ -544,7 +545,7 @@ public class DestinationImpl implements BaseDestination {
    *
    * @param subscription to initiate the scan on
    */
-  public void scanForDelivery( @NotNull Subscription subscription) {
+  public void scanForDelivery( @NonNull @NotNull Subscription subscription) {
     MessageDeliveryTask deliveryTask = new MessageDeliveryTask(subscription);
     submit(deliveryTask);
   }
@@ -556,7 +557,7 @@ public class DestinationImpl implements BaseDestination {
    * @param task to add on the subscription task queue.
    * @return the future response of the task that has been queued
    */
-  public FutureTask<Response> submit( @NotNull Callable<Response> task){
+  public FutureTask<Response> submit( @NonNull @NotNull Callable<Response> task){
     FutureTask<Response> future = new FutureTask<>(task);
     subscriptionTaskQueue.addTask(future);
     return future;
@@ -570,7 +571,7 @@ public class DestinationImpl implements BaseDestination {
    * @param priority the priority to process this task, some tasks can be done before other tasks
    * @return the future response of the task that has been queued
    */
-  public FutureTask<Response> submit( @NotNull  Callable<Response> task, int priority){
+  public FutureTask<Response> submit( @NonNull @NotNull  Callable<Response> task, int priority){
     FutureTask<Response> future = new FutureTask<>(task);
     resourceTaskQueue.addTask(future, priority);
     return future;
@@ -583,7 +584,7 @@ public class DestinationImpl implements BaseDestination {
    * @return the number of times the message was delivered to subscribers
    * @throws IOException if, at any point, an exception was raised because of file I/O exceptions
    */
-  public int handleTask(@NotNull Callable<Response> task)throws IOException {
+  public int handleTask(@NonNull @NotNull Callable<Response> task)throws IOException {
     Future<Response> future = submit(task, PUBLISH_PRIORITY);
     try {
       Response response = future.get(60, TimeUnit.SECONDS);

@@ -18,6 +18,8 @@
 
 package org.maps.messaging.api.features;
 
+import lombok.Getter;
+
 /**
  * Enum that supports the different modes of message acknowledgement that is supported
  */
@@ -49,8 +51,8 @@ public enum ClientAcknowledgement {
       "All messages up to an known point are acknowledged"
   );
 
-  private final int value;
-  private final String description;
+  @Getter private final int value;
+  @Getter private final String description;
 
   ClientAcknowledgement(int value, String description) {
     this.value = value;
@@ -72,22 +74,4 @@ public enum ClientAcknowledgement {
         throw new IllegalArgumentException("Invalid handler value supplied:" + clientAcknowledgementValue);
     }
   }
-
-  /**
-   * Get the internal value of the enum
-   * @return The internal value
-   */
-  public int getValue() {
-    return value;
-  }
-
-  /**
-   * Retrieve the description for this enum
-   *
-   * @return String description for the enum
-   */
-  public String getDescription() {
-    return description;
-  }
-
 }

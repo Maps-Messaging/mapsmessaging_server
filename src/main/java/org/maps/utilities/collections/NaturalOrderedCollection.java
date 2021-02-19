@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.collections.bitset.BitSetFactory;
 import org.maps.utilities.collections.bitset.OffsetBitSet;
@@ -41,7 +42,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   private final int uniqueId;
   private final int size;
 
-  public NaturalOrderedCollection(int id,@NotNull  BitSetFactory factory) {
+  public NaturalOrderedCollection(int id,@NonNull @NotNull  BitSetFactory factory) {
     tree = new TreeMap<>(new OffsetBitSetComparator());
     this.factory = factory;
     this.size = factory.getSize();
@@ -92,7 +93,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   }
 
   @Override
-  public @NotNull Iterator<Long> iterator() {
+  public @NonNull @NotNull Iterator<Long> iterator() {
     return new LongIterator();
   }
 
@@ -177,7 +178,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   }
 
   @Override
-  public boolean addAll(@NotNull Collection<? extends Long> c) {
+  public boolean addAll(@NonNull @NotNull Collection<? extends Long> c) {
     if(c instanceof NaturalOrderedCollection){
       NaturalOrderedCollection rhs = (NaturalOrderedCollection)c;
       Collection<OffsetBitSet> bitsets = rhs.tree.values();
@@ -203,7 +204,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   }
 
   @Override
-  public boolean removeAll(@NotNull Collection<?> c) {
+  public boolean removeAll(@NonNull @NotNull Collection<?> c) {
     if (c instanceof NaturalOrderedCollection) {
       NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
       Collection<OffsetBitSet> bitsets = rhs.tree.values();
@@ -239,7 +240,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   }
 
   @Override
-  public boolean retainAll(@NotNull Collection<?> c) {
+  public boolean retainAll(@NonNull @NotNull Collection<?> c) {
     return false;
   }
 

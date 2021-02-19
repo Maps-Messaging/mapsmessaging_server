@@ -21,6 +21,7 @@ package org.maps.utilities.collections.bitset;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.function.Consumer;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class OffsetBitSet implements Comparable<OffsetBitSet> {
@@ -29,7 +30,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   private long start;
   private long end;
 
-  public OffsetBitSet(@NotNull BitSet bitSet, long offset) {
+  public OffsetBitSet(@NonNull @NotNull BitSet bitSet, long offset) {
     rawBitSet = bitSet;
     this.start = offset;
     end = start + rawBitSet.length();
@@ -127,7 +128,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     rawBitSet.andNot(map);
   }
 
-  public @NotNull BitSet getBitSet() {
+  public @NonNull @NotNull BitSet getBitSet() {
     return rawBitSet;
   }
 

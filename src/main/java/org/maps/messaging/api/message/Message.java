@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.MessageBuilder;
@@ -217,7 +218,7 @@ public class Message implements SerializedObject {
     opaqueData = data;
   }
 
-  public @NotNull Priority getPriority() {
+  public @NonNull @NotNull Priority getPriority() {
     return priority;
   }
 
@@ -257,7 +258,7 @@ public class Message implements SerializedObject {
     return flags.get(UTF8_BIT);
   }
 
-  public @NotNull QualityOfService getQualityOfService() {
+  public @NonNull @NotNull QualityOfService getQualityOfService() {
     return qualityOfService;
   }
 

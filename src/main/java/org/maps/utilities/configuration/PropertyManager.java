@@ -21,6 +21,7 @@ package org.maps.utilities.configuration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,7 +40,7 @@ public abstract class PropertyManager {
 
   public abstract void copy(PropertyManager propertyManager);
 
-  public @NotNull JSONObject getPropertiesJSON(@NotNull String name) {
+  public @NonNull @NotNull JSONObject getPropertiesJSON(@NonNull @NotNull String name) {
     Object config = properties.get(name);
     if(config instanceof Map){
       Map<String, Object> root = (Map<String, Object>) config;
@@ -48,7 +49,7 @@ public abstract class PropertyManager {
     return new JSONObject();
   }
 
-  public void loadPropertiesJSON(@NotNull String name, @NotNull JSONObject config) {
+  public void loadPropertiesJSON(@NonNull @NotNull String name, @NonNull @NotNull JSONObject config) {
     properties.remove(name);
 
     JSONParser parser = new JSONParser(config);
@@ -74,7 +75,7 @@ public abstract class PropertyManager {
     return response;
   }
 
-  public @NotNull ConfigurationProperties getProperties(String name) {
+  public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     Object obj = properties.get(name);
     if(obj instanceof ConfigurationProperties){
       return (ConfigurationProperties)obj;
