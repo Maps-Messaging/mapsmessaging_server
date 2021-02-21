@@ -50,7 +50,16 @@
       <directory>${project.basedir}/src/main/resources/</directory>
       <outputDirectory>conf</outputDirectory>
       <includes>
-        <include>*.props</include>
+        <include>*.yaml</include>
+      </includes>
+    </fileSet>
+
+
+    <fileSet>
+      <directory>${project.basedir}/src/main/resources/</directory>
+      <outputDirectory>conf</outputDirectory>
+      <includes>
+        <include>jaasAuth.config</include>
       </includes>
     </fileSet>
 
