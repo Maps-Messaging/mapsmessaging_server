@@ -311,15 +311,13 @@ public class Connect extends MQTTPacket {
     b.write((byte)60);
 
 
-    //
-    long size = 10 + sessionId.length() + 2;
+    // Will never be greater then 2^31
+    int size = 10 + sessionId.length() + 2;
     if(passwordFlag && usernameFlag){
       size += password.length + username.length() + 4;
     }
 
-    //
     // Pack the header
-    //
     int start = packet.position();
     byte fixed = (byte) (CONNECT << 4);
     packet.put(fixed);
