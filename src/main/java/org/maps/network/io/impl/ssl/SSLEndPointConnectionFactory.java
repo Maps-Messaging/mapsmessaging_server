@@ -46,7 +46,7 @@ public class SSLEndPointConnectionFactory extends EndPointConnectionFactory {
     channel.configureBlocking(true);
     channel.connect(address);
     channel.configureBlocking(false);
-    return new SSLEndPoint(generateID(), engine, channel.socket(), selector.allocate(), callback, endPointServerStatus, jmxPath);
+    return new SSLEndPoint(generateID(), engine, channel, selector.allocate(), callback, endPointServerStatus, jmxPath);
   }
 
   @Override

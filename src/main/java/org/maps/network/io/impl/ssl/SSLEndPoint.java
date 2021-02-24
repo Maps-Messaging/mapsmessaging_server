@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.List;
 import javax.net.ssl.SSLEngine;
@@ -50,8 +51,8 @@ public class SSLEndPoint extends TCPEndPoint {
   SSLHandshakeManager handshakeManager;
   SSLEngine sslEngine;
 
-  public SSLEndPoint(long id, SSLEngine engine, Socket accepted, Selector select, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
-    super(id, accepted, select, endPointServerStatus, jmxParent);
+  public SSLEndPoint(long id, SSLEngine engine, SocketChannel accepted, Selector select, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
+    super(id, accepted.socket(), select, endPointServerStatus, jmxParent);
     sslEngine = engine;
     logger.log(LogMessages.SSL_CREATE_ENGINE);
     int sessionSize = sslEngine.getSession().getPacketBufferSize();
@@ -60,7 +61,7 @@ public class SSLEndPoint extends TCPEndPoint {
     encryptedIn = ByteBuffer.allocateDirect(sessionSize);
     init(engine, callback);
     sendBuffer(ByteBuffer.allocate(0)); // Kick off the SSL handshake
-    select.register(accepted.getChannel(), SelectionKey.OP_READ, handshakeManager);
+    select.register(accepted, SelectionKey.OP_READ, handshakeManager);
   }
 
 
