@@ -58,13 +58,13 @@ public class TCPEndPoint extends EndPoint {
   private final EndPointJMX mbean;
   private final AtomicBoolean isClosed;
 
-  public TCPEndPoint(long id, Socket accepted, Selector select, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
+  public TCPEndPoint(long id, SocketChannel accepted, Selector select, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
     super(id, endPointServerStatus);
     try {
       logger.log(TCP_ACCEPT_START, accepted);
       isClosed = new AtomicBoolean(false);
-      socket = accepted;
-      socketChannel = socket.getChannel();
+      socket = accepted.socket();
+      socketChannel = accepted;
       selector = select;
       authenticationConfig = null;
       if(isClient()) {

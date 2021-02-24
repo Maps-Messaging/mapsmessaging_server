@@ -37,7 +37,7 @@ public class TCPEndPointConnectionFactory extends EndPointConnectionFactory {
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
     channel.connect(address);
-    EndPoint endPoint = new TCPEndPoint(generateID(), channel.socket(), selector.allocate(), endPointServerStatus, jmxPath);
+    EndPoint endPoint = new TCPEndPoint(generateID(), channel, selector.allocate(), endPointServerStatus, jmxPath);
     connectedCallback.connected(endPoint);
     return endPoint;
   }
