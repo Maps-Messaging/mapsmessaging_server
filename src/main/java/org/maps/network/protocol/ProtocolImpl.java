@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.LongAdder;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.maps.logging.LogMessages;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.MessageListener;
 import org.maps.messaging.api.message.Message;
@@ -137,7 +138,12 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
           endPoint.getServer().handleCloseEndPoint(endPoint);
         }
       } catch (IOException ioException) {
-        ioException.printStackTrace();
+        endPoint.getLogger().log(LogMessages.END_POINT_CONNECTION_FAILED, ioException);
+        try {
+          endPoint.close();
+        } catch (IOException e) {
+          // we are closing due to an exception, we know we are in an exception state but we just need to tidy up
+        }
       }
     }
   }
