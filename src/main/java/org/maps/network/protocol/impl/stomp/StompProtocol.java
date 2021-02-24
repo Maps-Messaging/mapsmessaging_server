@@ -172,7 +172,6 @@ public class StompProtocol extends ProtocolImpl {
     } catch (EndOfBufferException eobe) {
       throw eobe; // Do not close on an End Of Buffer Exception
     } catch (IOException e) {
-      e.printStackTrace();
       logger.log(LogMessages.STOMP_PROCESSING_FRAME_EXCEPTION);
       endPoint.close();
       throw e;

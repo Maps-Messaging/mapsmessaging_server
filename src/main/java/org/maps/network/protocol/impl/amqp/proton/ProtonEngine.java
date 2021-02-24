@@ -237,7 +237,7 @@ public class ProtonEngine {
             sender.drained();
           }
         } catch (Exception e) {
-          e.printStackTrace();
+          protocol.getLogger().log(LogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, e);
         }
       }
       processOutput();

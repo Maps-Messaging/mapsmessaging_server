@@ -120,7 +120,6 @@ public class TCPEndPoint extends EndPoint {
         }
         logger.log(LogMessages.TCP_CLOSE_SUCCESS, name);
       } catch (IOException e) {
-        e.printStackTrace();
         logger.log(LogMessages.TCP_CLOSE_EXCEPTION, e, name);
       } finally {
         mbean.close();

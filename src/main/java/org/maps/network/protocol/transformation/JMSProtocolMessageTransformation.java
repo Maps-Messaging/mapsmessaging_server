@@ -62,19 +62,14 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(message);
     org.apache.qpid.proton.message.Message protonMsg = translator.encode(message);
 
-    byte[] data = new byte[0];
-    try {
-      WritableBuffer sizingBuffer = new DroppingWritableBuffer();
-      protonMsg.encode(sizingBuffer);
-      data = new byte[sizingBuffer.position()+10];
-      int size = protonMsg.encode(data, 0, data.length);
-      if(size != data.length){
-        byte[] tmp = new byte[size];
-        System.arraycopy(data, 0, tmp, 0, size);
-        data = tmp;
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
+    WritableBuffer sizingBuffer = new DroppingWritableBuffer();
+    protonMsg.encode(sizingBuffer);
+    byte[] data = new byte[sizingBuffer.position()+10];
+    int size = protonMsg.encode(data, 0, data.length);
+    if(size != data.length){
+      byte[] tmp = new byte[size];
+      System.arraycopy(data, 0, tmp, 0, size);
+      data = tmp;
     }
     return data;
   }

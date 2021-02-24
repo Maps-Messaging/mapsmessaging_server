@@ -174,6 +174,7 @@ public enum LogMessages {
   SSL_HANDSHAKE_FINISHED(LEVEL.DEBUG, CATEGORY.NETWORK, "SSL handshake state :: FINISHED"),
   SSL_HANDSHAKE_ENCRYPTED(LEVEL.DEBUG, CATEGORY.NETWORK, "Encrypted In Buffer Status : Position:{} Limit:{}"),
   SSL_HANDSHAKE_NEED_TASK(LEVEL.DEBUG, CATEGORY.NETWORK, "SSL handshake state :: NEED_TASK"),
+  SSL_HANDSHAKE_EXCEPTION(LEVEL.WARN, CATEGORY.NETWORK, "SSL handshake raised exception"),
   // </editor-fold>
 
   // <editor-fold desc="SSL Server EndPoint log messages">

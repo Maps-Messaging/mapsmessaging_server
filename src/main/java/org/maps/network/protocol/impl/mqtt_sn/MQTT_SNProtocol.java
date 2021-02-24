@@ -129,7 +129,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
         writeFrame(response);
       }
     } catch (Exception e) {
-      e.printStackTrace();
       logger.log(LogMessages.MQTT_SN_PACKET_EXCEPTION, e, mqtt);
       try {
         close();
