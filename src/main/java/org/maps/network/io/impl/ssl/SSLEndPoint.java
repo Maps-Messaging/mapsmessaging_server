@@ -52,7 +52,7 @@ public class SSLEndPoint extends TCPEndPoint {
   SSLEngine sslEngine;
 
   public SSLEndPoint(long id, SSLEngine engine, SocketChannel accepted, Selector select, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
-    super(id, accepted.socket(), select, endPointServerStatus, jmxParent);
+    super(id, accepted, select, endPointServerStatus, jmxParent);
     sslEngine = engine;
     logger.log(LogMessages.SSL_CREATE_ENGINE);
     int sessionSize = sslEngine.getSession().getPacketBufferSize();
