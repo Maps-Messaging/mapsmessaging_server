@@ -64,6 +64,8 @@ public class TCPEndPointServer extends EndPointServer {
     selectorTaskWait = config.getProperties().getIntProperty("taskWait", 10);
   }
 
+  // We need to open a socket, its a socket library so we can ignore this issue
+  @java.lang.SuppressWarnings("squid:S4818")
   public void start() throws IOException {
     serverSocket = ServerSocketChannel.open();
     serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);

@@ -107,6 +107,8 @@ public class Connecting {
     return null;
   }
 
+  // This is part of the WebSocket handshake standard so we can safely assume the use of a digest is done correctly
+  @java.lang.SuppressWarnings("squid:S4790")
   String generateAcceptKey(GetFrame getFrame) throws IOException {
     String webSocketKey = getFrame.getHeaders().get(GetFrame.SEC_WEBSOCKET_KEY_HEADER);
     if (webSocketKey != null) {

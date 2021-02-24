@@ -76,6 +76,9 @@ public class MappedBufferHelper {
   /*
   Old JVM mechanism to release resources
    */
+
+  // we need access to the cleaner method to ensure the buffers are released in a more deterministic manner
+  @java.lang.SuppressWarnings("squid:S301")
   private static void oldClean(ByteBuffer cb) throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
     Method cleaner = cb.getClass().getMethod("cleaner");
     cleaner.setAccessible(true);
