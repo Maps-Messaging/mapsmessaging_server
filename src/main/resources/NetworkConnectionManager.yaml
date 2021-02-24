@@ -50,34 +50,6 @@ NetworkConnectionManager:
         ssl_trustStore: JKS
 
     data:
-      -
-          name: Connects to main messaging server
-          url: tcp://messaging:1883/
-          protocol: mqtt
-          username: user1
-          password: password1
-          sessionId: transformationExampleTest
-          links:
-            -
-                direction: pull
-                remote_namespace: /hal/info/ups
-                local_namespace: /json
-            -
-                direction: pull
-                remote_namespace: /hal/info/airCon
-                local_namespace: /json
-
-      -
-          name: Local destination connection, connects /localInput to /output without the need for a network connection
-          username: user1
-          password: password1
-          sessionId: UniqueSessionId
-          links:
-              -
-                  direction: push
-                  remote_namespace: /xml
-                  local_namespace: /json
-                  transformer: JSONToXML
 
 #        name: Generic name for the connection
 #        url: tcp|ssl|ws|wss://<hostname>:<port>/ This is optional, if left out it is assumed a local connection

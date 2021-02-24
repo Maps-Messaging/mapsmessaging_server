@@ -13,4 +13,5 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-org.maps.messaging.examples.transformers.JSONToXML
+org.maps.messaging.api.transformers.JSONToXML
+org.maps.messaging.api.transformers.XMLToJSON

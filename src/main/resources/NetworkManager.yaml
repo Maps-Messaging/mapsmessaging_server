@@ -75,26 +75,29 @@ NetworkManager:
 
     data:
       -
-          name: "Stomp Interface"
-          url: "tcp://0.0.0.0:8675/"
-          protocol : stomp
+        url: tcp://0.0.0.0:1882/
+        name: "MQTT WebSocket Interface"
+        protocol : mqtt,ws
+        selectorThreadCount : 2
+        auth : public
+        receiveBufferSize : 32000000
+        sendBufferSize    : 32000000
 
       -
-          name: "MQTT Interface"
-          url: "tcp://0.0.0.0:1883/"
-          protocol : mqtt
-          selectorThreadCount : 2
-          auth : public
-          receiveBufferSize : 32000000
-          sendBufferSize    : 32000000
+        name: "MQTT Interface"
+        url: tcp://0.0.0.0:1883/
+        protocol : mqtt
+        selectorThreadCount : 2
+        auth : public
+        receiveBufferSize : 32000000
+        sendBufferSize    : 32000000
+
       -
-          name: "MQTT SSL Interface"
-          url: "ssl://0.0.0.0:8883/"
-          protocol : mqtt, stomp
-          selectorThreadCount : 2
-          auth : public
-          receiveBufferSize : 32000000
-          sendBufferSize    : 32000000
+        url: udp://0.0.0.0:1884/
+        name: "MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
 
       -
         url: "tcp://0.0.0.0:5672/"
@@ -104,10 +107,7 @@ NetworkManager:
         SaslMechanisms : ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI
 
       -
-        url: "tcp://0.0.0.0:1882/"
-        name: "MQTT WebSocket Interface"
-        protocol : mqtt,ws
-        selectorThreadCount : 2
-        auth : public
-        receiveBufferSize : 32000000
-        sendBufferSize    : 32000000
+        name: "Stomp Interface"
+        url: "tcp://0.0.0.0:8675/"
+        protocol : stomp
+

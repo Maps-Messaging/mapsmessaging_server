@@ -16,12 +16,11 @@
  *
  */
 
-package org.maps.messaging.examples.transformers;
+package org.maps.messaging.api.transformers;
 
 import org.json.JSONObject;
 import org.json.XML;
 import org.maps.messaging.api.MessageBuilder;
-import org.maps.messaging.api.transformers.Transformer;
 
 public class JSONToXML implements Transformer {
 
