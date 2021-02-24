@@ -31,21 +31,21 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class MQTTRetainedMessageTest extends BaseTestConfig {
+public class MQTTStoredMessageTest extends BaseTestConfig {
 
 
   @Test
-  void testRetainedMessagesQoS0() throws MqttException {
+  void testQos0() throws MqttException {
     connectSubscribeDisconnectPublishAndCheck(0);
   }
 
   @Test
-  void testRetainedMessagesQoS1() throws MqttException {
+  void testQos1() throws MqttException {
     connectSubscribeDisconnectPublishAndCheck(1);
   }
 
   @Test
-  void testRetainedMessagesQoS2() throws MqttException {
+  void testQos2() throws MqttException {
     connectSubscribeDisconnectPublishAndCheck(2);
   }
 
@@ -63,6 +63,7 @@ public class MQTTRetainedMessageTest extends BaseTestConfig {
     subscribe.subscribe("/topic/test", QoS, ml);
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
+    subscribe.close();
 
     MqttClient publish = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     MqttConnectOptions pubOption = new MqttConnectOptions();
@@ -88,7 +89,7 @@ public class MQTTRetainedMessageTest extends BaseTestConfig {
     subscribe.connect(subOption);
     subscribe.subscribe("/topic/test", QoS, ml);
     Assertions.assertTrue(subscribe.isConnected());
-    long endTime = System.currentTimeMillis() + 1000;
+    long endTime = System.currentTimeMillis() + 2000;
     while(ml.getCounter() < 10 && endTime > System.currentTimeMillis()){
       LockSupport.parkNanos(100000000);
     }
