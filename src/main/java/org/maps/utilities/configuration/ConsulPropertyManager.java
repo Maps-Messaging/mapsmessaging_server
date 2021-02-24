@@ -49,9 +49,12 @@ public class ConsulPropertyManager extends PropertyManager {
         try {
           Optional<Value> entry = keyValueClient.getValue(key);
           if (entry.isPresent()) {
-            String value = entry.get().getValue().get();
-            value = new String(Base64.getDecoder().decode(value));
-            loadPropertiesJSON(key.substring(serverPrefix.length()), new JSONObject(value));
+            Optional<String> optionalValue = entry.get().getValue();
+            optionalValue.ifPresent(s -> {
+              String value = s;
+              value = new String(Base64.getDecoder().decode(value));
+              loadPropertiesJSON(key.substring(serverPrefix.length()), new JSONObject(value));
+            });
           }
         }
         catch(ConsulException consulException){
