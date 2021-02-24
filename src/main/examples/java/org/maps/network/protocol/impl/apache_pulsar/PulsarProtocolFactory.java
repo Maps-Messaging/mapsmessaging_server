@@ -16,6 +16,13 @@
  *
  */
 
+/**
+ * This class is a proof of concept on how the server could connect to other
+ * messaging servers that do not support open messaging protocols but do have
+ * a java API that can be used to connect, subscribe and publish.
+ *
+ * This is not production ready, its a POC.
+ */
 package org.maps.network.protocol.impl.apache_pulsar;
 
 import java.io.IOException;
