@@ -78,7 +78,7 @@ public class MappedBufferHelper {
    */
 
   // we need access to the cleaner method to ensure the buffers are released in a more deterministic manner
-  @java.lang.SuppressWarnings("squid:S301")
+  @java.lang.SuppressWarnings("squid:S3011")
   private static void oldClean(ByteBuffer cb) throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
     Method cleaner = cb.getClass().getMethod("cleaner");
     cleaner.setAccessible(true);
@@ -90,6 +90,8 @@ public class MappedBufferHelper {
   /*
   New JVM mechanism that requires UnSafe to access the method
    */
+  // we need access to the cleaner method to ensure the buffers are released in a more deterministic manner
+  @java.lang.SuppressWarnings("squid:S3011")
   private static void newClean(ByteBuffer cb) throws ClassNotFoundException, NoSuchFieldException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
     Class unsafeClass;
     try {
