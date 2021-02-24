@@ -20,6 +20,7 @@ package org.maps.messaging.engine.destination;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import org.maps.messaging.engine.resources.ResourceFactory;
 
 /**
  * This class is responsible for walking the directory passed in looking for existing destination files.
@@ -58,9 +59,14 @@ public class DestinationLocator {
       }
     }
     for(File explore:rootPaths){
-      for(File potential:explore.listFiles()) {
-        if (confirmPath(potential)) {
-          valid.add(potential);
+      if (confirmPath(explore)) {
+        valid.add(explore);
+      }
+      else {
+        for (File potential : explore.listFiles()) {
+          if (confirmPath(potential)) {
+            valid.add(potential);
+          }
         }
       }
     }
@@ -79,7 +85,7 @@ public class DestinationLocator {
   public boolean confirmPath(File directory){
     String name = directory.getAbsolutePath();
     File data = new File(name+File.separator+"data.bin");
-    File resource = new File(name+File.separator+"resource.props");
+    File resource = new File(name+File.separator+ ResourceFactory.ResourceFileName);
     File delayed = new File(name+File.separator+"state"+File.separator+"delayed.bin");
     File transaction = new File(name+File.separator+"state"+File.separator+"transactions.bin");
 

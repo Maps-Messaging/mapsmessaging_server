@@ -21,6 +21,8 @@ package org.maps.messaging.engine.destination.subscription;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.ToString;
 import org.maps.messaging.api.features.ClientAcknowledgement;
 import org.maps.messaging.api.features.CreditHandler;
 import org.maps.messaging.api.features.QualityOfService;
@@ -29,6 +31,7 @@ import org.maps.messaging.engine.serializer.SerializedObject;
 import org.maps.utilities.streams.ObjectReader;
 import org.maps.utilities.streams.ObjectWriter;
 
+@ToString
 public class SubscriptionContext implements Comparable<SubscriptionContext>, SerializedObject {
 
   private static final int NO_LOCAL_MESSAGES = 0;
@@ -36,23 +39,23 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
   private static final int ALLOW_OVERLAP = 2;
   private static final int BROWSER_FLAG = 3;
 
-  private final String destinationName;
-  private final BitSet flags;
-  private String rootPath;
-  private ClientAcknowledgement acknowledgement;
-  private String sharedName;
-  private String selector;
-  private String alias;
-  private long subscriptionId;
-  private int receiveMaximum;
-  private RetainHandler retainHandler;
-  private QualityOfService qos;
-  private CreditHandler creditHandler;
+  @Getter private final String destinationName;
+  @Getter private final BitSet flags;
+  @Getter private String rootPath;
+  @Getter private ClientAcknowledgement acknowledgementController;
+  @Getter private String sharedName;
+  @Getter private String selector;
+  @Getter private String alias;
+  @Getter private long subscriptionId;
+  @Getter private int receiveMaximum;
+  @Getter private RetainHandler retainHandler;
+  @Getter private QualityOfService qualityOfService;
+  @Getter private CreditHandler creditHandler;
 
   //
   // Server Only flag
   //
-  private boolean replaced;
+  @Getter private boolean replaced;
 
   public SubscriptionContext(String destinationName) {
     this.destinationName = destinationName;
@@ -65,21 +68,21 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
   public SubscriptionContext(SubscriptionContext rhs, String destinationName, String alias) {
     this.destinationName = destinationName;
     this.alias = alias;
-    acknowledgement = rhs.acknowledgement;
+    acknowledgementController = rhs.acknowledgementController;
     sharedName = rhs.sharedName;
     selector = rhs.selector;
     subscriptionId = rhs.subscriptionId;
     receiveMaximum = rhs.receiveMaximum;
     retainHandler = rhs.retainHandler;
-    qos = rhs.qos;
+    qualityOfService = rhs.qualityOfService;
     flags = BitSet.valueOf(rhs.flags.toByteArray());
   }
 
   public SubscriptionContext(ObjectReader reader) throws IOException {
     retainHandler = RetainHandler.getInstance(reader.readByte());
     creditHandler = CreditHandler.getInstance(reader.readByte());
-    qos = QualityOfService.getInstance(reader.readByte());
-    acknowledgement = ClientAcknowledgement.getInstance(reader.readByte());
+    qualityOfService = QualityOfService.getInstance(reader.readByte());
+    acknowledgementController = ClientAcknowledgement.getInstance(reader.readByte());
     subscriptionId = reader.readLong();
 
     destinationName = reader.readString();
@@ -87,25 +90,18 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
     selector = reader.readString();
     alias = reader.readString();
     flags = BitSet.valueOf(reader.readByteArray());
+    rootPath = reader.readString();
 
     if (alias == null) {
       alias = destinationName;
     }
   }
 
-  public String getRootPath() {
-    return rootPath;
-  }
-
-  public void setRootPath(String rootPath) {
-    this.rootPath = rootPath;
-  }
-
   public void write(ObjectWriter writer) throws IOException {
     writer.write((byte)retainHandler.getHandler());
     writer.write((byte) creditHandler.getValue());
-    writer.write((byte) qos.getLevel());
-    writer.write((byte) acknowledgement.getValue());
+    writer.write((byte) qualityOfService.getLevel());
+    writer.write((byte) acknowledgementController.getValue());
     writer.write(subscriptionId);
 
     writer.write(destinationName);
@@ -113,58 +109,102 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
     writer.write(selector);
     writer.write(alias);
     writer.write(flags.toByteArray());
+    writer.write(rootPath);
   }
 
-  public boolean containsWildcard() {
-    return destinationName.contains("#") || destinationName.contains("+");
+  public SubscriptionContext setRootPath(String rootPath) {
+    this.rootPath = Objects.requireNonNullElse(rootPath, "");
+    return this;
   }
 
-  public QualityOfService getQualityOfService() {
-    return qos;
+  public SubscriptionContext setQualityOfService(QualityOfService qos) {
+    this.qualityOfService = qos;
+    return this;
   }
 
-  public void setQualityOfService(QualityOfService qos) {
-    this.qos = qos;
-  }
-
-  public boolean isRetainAsPublish() {
-    return flags.get(RETAIN_AS_PUBLISH);
-  }
-
-  public void setRetainAsPublish(boolean retainAsPublish) {
+  public SubscriptionContext setRetainAsPublish(boolean retainAsPublish) {
     flags.set(RETAIN_AS_PUBLISH, retainAsPublish);
+    return this;
+  }
+
+  public SubscriptionContext setRetainHandler(RetainHandler retainHandler) {
+    this.retainHandler = retainHandler;
+    return this;
+  }
+
+  public SubscriptionContext setAcknowledgementController(ClientAcknowledgement clientAcknowledgement) {
+    this.acknowledgementController = clientAcknowledgement;
+    return this;
+  }
+
+  public SubscriptionContext setSelector(String selector) {
+    this.selector = selector;
+    return this;
+  }
+
+  public SubscriptionContext setSubscriptionId(long subscriptionId) {
+    this.subscriptionId = subscriptionId;
+    return this;
+  }
+
+  public SubscriptionContext setReceiveMaximum(int receiveMaximum) {
+    this.receiveMaximum = receiveMaximum;
+    return this;
+  }
+
+  public SubscriptionContext setAlias(String alias) {
+    this.alias = Objects.requireNonNullElseGet(alias, this::getCorrectedPath);
+    return this;
+  }
+
+  public SubscriptionContext setReplaced(boolean flag) {
+    replaced = flag;
+    return this;
+  }
+
+  public SubscriptionContext setNoLocalMessages(boolean noLocalMessages) {
+    flags.set(NO_LOCAL_MESSAGES, noLocalMessages);
+    return this;
+  }
+
+  public SubscriptionContext setSharedName(String sharedName) {
+    this.sharedName = sharedName;
+    return this;
+  }
+
+  public SubscriptionContext setAllowOverlap(boolean allowOverlap) {
+    flags.set(ALLOW_OVERLAP, allowOverlap);
+    return this;
+  }
+
+  public SubscriptionContext setBrowserFlag(boolean isBrowser) {
+    flags.set(BROWSER_FLAG, isBrowser);
+    return this;
+  }
+
+  public SubscriptionContext setCreditHandler(CreditHandler creditHandler) {
+    this.creditHandler = creditHandler;
+    return this;
   }
 
   public boolean isSharedSubscription() {
     return (sharedName != null && sharedName.length() > 0);
   }
 
-  public String getSharedSubscriptionName() {
-    return sharedName;
-  }
-
-  public RetainHandler getRetainHandler() {
-    return retainHandler;
-  }
-
-  public void setRetainHandler(RetainHandler retainHandler) {
-    this.retainHandler = retainHandler;
-  }
-
-  public boolean noLocalMessages() {
-    return flags.get(NO_LOCAL_MESSAGES);
+  public boolean containsWildcard() {
+    return destinationName.contains("#") || destinationName.contains("+");
   }
 
   public String getFilter() {
     return getCorrectedPath();
   }
 
-  public ClientAcknowledgement getAcknowledgementController() {
-    return acknowledgement;
+  public boolean isRetainAsPublish() {
+    return flags.get(RETAIN_AS_PUBLISH);
   }
 
-  public void setAcknowledgementController(ClientAcknowledgement clientAcknowledgement) {
-    this.acknowledgement = clientAcknowledgement;
+  public boolean noLocalMessages() {
+    return flags.get(NO_LOCAL_MESSAGES);
   }
 
   public boolean allowOverlap() {
@@ -175,69 +215,6 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
     return flags.get(BROWSER_FLAG);
   }
 
-  public String getSelector() {
-    return selector;
-  }
-
-  public void setSelector(String selector) {
-    this.selector = selector;
-  }
-
-  public long getSubscriptionId() {
-    return subscriptionId;
-  }
-
-  public void setSubscriptionId(long subscriptionId) {
-    this.subscriptionId = subscriptionId;
-  }
-
-  public int getReceiveMaximum() {
-    return receiveMaximum;
-  }
-
-  public void setReceiveMaximum(int receiveMaximum) {
-    this.receiveMaximum = receiveMaximum;
-  }
-
-  public String getAlias() {
-    return alias;
-  }
-
-  public void setAlias(String alias) {
-    this.alias = Objects.requireNonNullElseGet(alias, this::getCorrectedPath);
-  }
-
-  public boolean getReplaced() {
-    return replaced;
-  }
-
-  public void setReplaced(boolean flag) {
-    replaced = flag;
-  }
-
-  public void setNoLocalMessages(boolean noLocalMessages) {
-    flags.set(NO_LOCAL_MESSAGES, noLocalMessages);
-  }
-
-  public void setSharedName(String sharedName) {
-    this.sharedName = sharedName;
-  }
-
-  public void setAllowOverlap(boolean allowOverlap) {
-    flags.set(ALLOW_OVERLAP, allowOverlap);
-  }
-
-  public void setBrowserFlag(boolean isBrowser) {
-    flags.set(BROWSER_FLAG, isBrowser);
-  }
-
-  public CreditHandler getCreditHandler() {
-    return creditHandler;
-  }
-
-  public void setCreditHandler(CreditHandler creditHandler) {
-    this.creditHandler = creditHandler;
-  }
 
   private String getCorrectedPath(){
     String lookup = rootPath+destinationName;
@@ -246,13 +223,13 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
 
   @Override
   public int compareTo(SubscriptionContext lhs) {
-    return lhs.qos.getLevel() - qos.getLevel();
+    return lhs.qualityOfService.getLevel() - qualityOfService.getLevel();
   }
 
   @Override
   public boolean equals(Object lhs) {
     if (lhs instanceof SubscriptionContext) {
-      return ((SubscriptionContext) lhs).qos == qos;
+      return ((SubscriptionContext) lhs).qualityOfService == qualityOfService;
     }
     return false;
   }
@@ -262,22 +239,6 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
     return super.hashCode();
   }
 
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder("SubscriptionContext:");
-    sb.append(" Root:").append(rootPath);
-    sb.append(" Destination:").append(destinationName);
-    sb.append(", alias:").append(alias);
-    sb.append(", QOS").append(qos);
-    sb.append(", shareName:").append(sharedName);
-    sb.append(", Selector:").append(selector);
-    sb.append(", subscriptionId:").append(subscriptionId);
-    sb.append(", receiveMax:").append(receiveMaximum);
-    sb.append(", retainHandler:").append(retainHandler);
-    sb.append(", flags:").append(flags.toString());
-    sb.append(", ClientAck:").append(acknowledgement.toString());
-    sb.append(", CreditHandler:").append(creditHandler.getName());
-    sb.append(", isBrowser:").append(isBrowser());
-    return sb.toString();
-  }
+
+
 }

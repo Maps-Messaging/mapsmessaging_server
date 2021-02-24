@@ -367,7 +367,7 @@ public class SubscriptionController implements DestinationManagerListener {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, isPersistent);
     Subscription subscription = builder.construct(sessionImpl, sessionId);
 
-    if (!context.getReplaced() || context.getRetainHandler().equals(RetainHandler.SEND_ALWAYS)) {
+    if (!context.isReplaced() || context.getRetainHandler().equals(RetainHandler.SEND_ALWAYS)) {
       queueRetainedMessage(destinationImpl, subscription);
     }
     activeSubscriptions.put(destinationImpl, subscription);

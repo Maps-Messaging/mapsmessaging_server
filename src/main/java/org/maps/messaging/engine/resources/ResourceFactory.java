@@ -20,16 +20,18 @@ package org.maps.messaging.engine.resources;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Date;
-import java.util.Properties;
 import java.util.UUID;
 import org.maps.messaging.BuildInfo;
 import org.maps.messaging.api.features.DestinationType;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 public class ResourceFactory {
+  public final static String ResourceFileName = "resource.yaml";
 
   private static final ResourceFactory instance = new ResourceFactory();
 
@@ -67,22 +69,22 @@ public class ResourceFactory {
     if (resourceName.toLowerCase().startsWith("$sys")) {
       return new MemoryResource(resourceName);
     } else {
+      createMetaData(path, resourceName, uuid, destinationType);
       return createPersistentResource(path, resourceName, uuid, destinationType);
     }
   }
 
   public Resource scan(String root, File directory) throws IOException {
-    Properties properties = new Properties();
-    File props = new File(directory, "resource.props");
+    File props = new File(directory, ResourceFileName);
     if(!props.exists()){
-      Files.delete(directory.toPath());
       return null;
     }
     try (FileInputStream fis = new FileInputStream(props)) {
-      properties.load(fis);
-      String name = properties.getProperty("resourceName");
-      String uuidProp = properties.getProperty("UUID");
-      DestinationType destinationType = DestinationType.getType(properties.getProperty("type"));
+      Yaml yaml = new Yaml();
+      ResourceProperties properties = yaml.load(fis);
+      String name = properties.getResourceName();
+      String uuidProp = properties.getUUID();
+      DestinationType destinationType = DestinationType.getType(properties.getType());
       if (name != null && uuidProp != null) {
         int idx = uuidProp.indexOf(':');
         if (idx != -1) {
@@ -100,7 +102,6 @@ public class ResourceFactory {
   }
 
   private Resource createPersistentResource(String path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
-    createMetaData(path, resourceName, uuid, destinationType);
     String directoryPath = path + File.separator + uuid.toString() + File.separator;
     switch(type){
       case DATABASE:
@@ -124,20 +125,22 @@ public class ResourceFactory {
       if (!directoryPath.mkdirs()) {
         throw new IOException("Unable to construct directory path " + directoryPath.toString());
       }
-      Properties properties = new Properties();
-      Date dt = new Date();
-      properties.put("created", dt.toString());
-      properties.put("resourceName", resourceName);
-      properties.put("type", destinationType.getName());
-      properties.put("UUID", uuid.getMostSignificantBits() + ":" + uuid.getLeastSignificantBits());
-      properties.put("BuildDate", BuildInfo.getInstance().getBuildDate());
-      properties.put("BuildVersion", BuildInfo.getInstance().getBuildVersion());
-
-      File props = new File(directoryPath, "resource.props");
-      try (FileOutputStream fos = new FileOutputStream(props)) {
-        properties.store(fos, "Auto created, please do not edit, may cause instabilities");
-        fos.flush();
-      }
+      ResourceProperties properties = new ResourceProperties(
+          new Date(),
+          resourceName,
+          destinationType.getName(),
+          uuid.getMostSignificantBits() + ":" + uuid.getLeastSignificantBits(),
+          BuildInfo.getInstance().getBuildDate(),
+          BuildInfo.getInstance().getBuildVersion()
+      );
+      final DumperOptions options = new DumperOptions();
+      options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+      options.setPrettyFlow(true);
+      final Yaml yaml = new Yaml(options);
+      FileWriter writer = new FileWriter(directoryPath + File.separator + ResourceFileName);
+      yaml.dump(properties, writer);
+      writer.close();
+      System.err.println("Created new Resource::" + properties);
     }
   }
 }
