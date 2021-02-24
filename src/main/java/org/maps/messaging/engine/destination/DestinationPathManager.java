@@ -22,10 +22,6 @@ import org.maps.utilities.configuration.ConfigurationProperties;
 
 public class DestinationPathManager {
 
-  private static final String NAME = "name";
-  private static final String NAMESPACE = "namespace";
-  private static final String DIRECTORY = "directory";
-
   private static final String OPTIONAL_PATH = "{folder}";
 
   private final String name;
@@ -34,19 +30,19 @@ public class DestinationPathManager {
   private final boolean remap;
 
   public DestinationPathManager(ConfigurationProperties properties){
-    String nam = properties.getProperty(NAMESPACE);
-    String tmp = properties.getProperty(DIRECTORY);
+    name = properties.getProperty("name");
+    String propertyNamespace = properties.getProperty("namespace" );
+    String tmp = properties.getProperty("directory");
     if(tmp == null){
       tmp = "";
     }
     directory = tmp;
-    name = properties.getProperty(NAME);
-    remap = (nam.endsWith(OPTIONAL_PATH) && directory.contains(OPTIONAL_PATH));
+    remap = (propertyNamespace.endsWith(OPTIONAL_PATH) && directory.contains(OPTIONAL_PATH));
     if(remap){
-      namespace = nam.substring(0, nam.indexOf(OPTIONAL_PATH));
+      namespace = propertyNamespace.substring(0, propertyNamespace.indexOf(OPTIONAL_PATH));
     }
     else{
-      namespace = nam;
+      namespace = propertyNamespace;
     }
   }
 

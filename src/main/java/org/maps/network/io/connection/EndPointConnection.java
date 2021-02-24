@@ -49,7 +49,6 @@ public class EndPointConnection extends EndPointServerStatus {
 
   private final Logger logger;
   private final ConfigurationProperties properties;
-  private final EndPointURL url;
   private final EndPointConnectionHostJMX manager;
   private final EndPointConnectionFactory endPointConnectionFactory;
   private final SelectorLoadManager selectorLoadManager;
@@ -68,7 +67,6 @@ public class EndPointConnection extends EndPointServerStatus {
       EndPointConnectionFactory connectionFactory,SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager){
     super(url);
     this.properties = properties;
-    this.url = url;
     this.manager = manager;
     this.destinationMappings = destinationMappings;
     this.selectorLoadManager = selectorLoadManager;
