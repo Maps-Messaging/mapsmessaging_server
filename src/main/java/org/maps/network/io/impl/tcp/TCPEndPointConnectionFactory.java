@@ -33,7 +33,7 @@ import org.maps.network.io.impl.SelectorLoadManager;
 public class TCPEndPointConnectionFactory extends EndPointConnectionFactory {
 
   // We need to open a socket, its a socket library so we can ignore this issue
-  @java.lang.SuppressWarnings("squid:S4818")
+  @java.lang.SuppressWarnings("squid:S4818, squid:S2095")
   @Override
   public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback connectedCallback, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
     SocketChannel channel = SocketChannel.open();
