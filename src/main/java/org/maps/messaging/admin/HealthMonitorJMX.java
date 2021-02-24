@@ -87,7 +87,7 @@ public class HealthMonitorJMX  {
     StringBuilder stringBuffer = new StringBuilder();
     for (HealthMonitor monitor : monitors) {
       HealthStatus status = monitor.checkHealth();
-      if(!status.getLevel().equals(LEVEL.INFO.name())){
+      if(!status.getLevel().name().equals(LEVEL.INFO.name())){
         stringBuffer.append(status.getMessage()).append(",");
       }
       statuses.add(status);
