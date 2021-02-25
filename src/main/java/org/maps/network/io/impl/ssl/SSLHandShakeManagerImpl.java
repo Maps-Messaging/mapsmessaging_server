@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
-import org.maps.logging.LoggerFactory;
 import org.maps.network.io.EndPointConnectedCallback;
 import org.maps.network.io.Selectable;
 import org.maps.network.io.impl.Selector;
