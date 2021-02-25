@@ -1,10 +1,13 @@
 name: Build
 on:
   push:
-    branches:
-      - master
+    branches: [ main ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
+  schedule:
+    - cron: '37 22 * * 7'
+
 jobs:
   build:
     name: Build
@@ -12,11 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          submodules: recursive
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 11
+
+      - name: Set up JDK 13
         uses: actions/setup-java@v1
         with:
-          java-version: 11
+          java-version: 13
+
+        # build the mqtt-sn test jar
+      - name: Build mqtt-sn test jar
+        run: mvn clean install --file eclipse-paho-mqtt-sn-udp-client/pom.xml -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
+
       - name: Cache SonarCloud packages
         uses: actions/cache@v1
         with:
