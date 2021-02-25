@@ -38,6 +38,7 @@ public class Error extends ServerFrame {
     return COMMAND;
   }
 
+  @Override
   public void packBody(Packet packet) {
     packet.put(payload);
     packet.put((byte) 0x0);
