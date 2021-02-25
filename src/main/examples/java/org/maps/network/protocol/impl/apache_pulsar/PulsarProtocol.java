@@ -186,11 +186,6 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
   }
 
   @Override
-  public void sendKeepAlive() {
-
-  }
-
-  @Override
   public void received(Consumer<byte[]> consumer, org.apache.pulsar.client.api.Message<byte[]> message) {
 
     Map<String, TypedData> dataMap = new LinkedHashMap<>();
@@ -219,6 +214,6 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
 
   @Override
   public void reachedEndOfTopic(Consumer<byte[]> consumer) {
-
+    // This is called via pulsar, no action required here, for now
   }
 }

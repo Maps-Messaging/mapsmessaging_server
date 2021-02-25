@@ -47,6 +47,6 @@ public class PulsarProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, Packet packet) throws IOException {
-
+    // We don't accept incoming pulsar client connections
   }
 }
