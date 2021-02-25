@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -414,9 +415,10 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public void hibernateSubscription(String subscriptionId) {
     //ToDo this needs to be queued via the task queue
-    Subscription subscription = activeSubscriptions.get(subscriptionId);
-    if(subscription != null){
-      subscription.hibernate();
+    for(Entry<DestinationImpl, Subscription> entry:activeSubscriptions.entrySet()){
+      if(entry.getKey().getName().equals(subscriptionId)){
+        entry.getValue().hibernate();
+      }
     }
   }
 
