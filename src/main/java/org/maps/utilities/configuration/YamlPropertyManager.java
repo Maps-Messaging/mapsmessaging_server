@@ -35,8 +35,6 @@ import org.yaml.snakeyaml.Yaml;
 public class YamlPropertyManager extends PropertyManager {
   private final Logger logger = LoggerFactory.getLogger(YamlPropertyManager.class);
 
-  public YamlPropertyManager(){ }
-
   @Override
   protected void load(){
     try {
@@ -105,11 +103,11 @@ public class YamlPropertyManager extends PropertyManager {
 
   @Override
   protected void store(String name) {
-
+    // ToDo: Add the ability to store the config to the specified file
   }
 
   @Override
   public void copy(PropertyManager propertyManager) {
-
+    // ToDo: Add the ability to copy from one property manager to another. This is useful for consul integration
   }
 }
