@@ -70,6 +70,8 @@ public class ResourceList {
     return returnValue;
   }
 
+  // We are parsing the classpath jar files, these should be safe, else we are in a world of pain
+  @java.lang.SuppressWarnings("squid:S5042")
   private static Collection<String> getResourcesFromJarFile(final File file, final Pattern pattern)
       throws IOException {
     final ArrayList<String> returnValue = new ArrayList<>();
