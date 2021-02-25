@@ -58,10 +58,13 @@ jobs:
     - name: Build mqtt-sn test jar
       run: mvn clean install --file eclipse-paho-mqtt-sn-udp-client/pom.xml -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
 
+    - name: Build main code and exclude test
+      run: mvn clean install -DskipTests=true
+
       # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+    # - name: Autobuild
+    #  uses: github/codeql-action/autobuild@v1
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
