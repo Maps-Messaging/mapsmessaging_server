@@ -31,11 +31,6 @@ public class Commit extends ClientTransaction {
   }
 
   @Override
-  void packBody(Packet packet) {
-
-  }
-
-  @Override
   public Frame instance() {
     return new Commit();
   }

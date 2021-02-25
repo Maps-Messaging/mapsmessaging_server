@@ -18,10 +18,6 @@
 
 package org.maps.network.protocol.transformation;
 
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.maps.messaging.api.MessageBuilder;
-import org.maps.messaging.api.message.Message;
 import org.maps.network.protocol.ProtocolMessageTransformation;
 
 public class DefaultMessageTransformation implements ProtocolMessageTransformation {
@@ -40,11 +36,4 @@ public class DefaultMessageTransformation implements ProtocolMessageTransformati
     return "Default Transformation, does nothing to the messages";
   }
 
-  @Override
-  public void incoming(@NonNull @NotNull MessageBuilder messageBuilder) { }
-
-  @Override
-  public @NonNull @NotNull byte[] outgoing(@NonNull @NotNull Message message) {
-    return message.getOpaqueData();
-  }
 }

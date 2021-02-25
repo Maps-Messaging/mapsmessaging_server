@@ -19,7 +19,6 @@
 package org.maps.network.protocol.impl.stomp.frames;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import org.maps.network.io.Packet;
 
 /**
@@ -64,10 +63,6 @@ public class Connect extends Frame {
   public void setHost(String host) {
     putHeader("host", host);
     this.host = host;
-  }
-
-  @Override
-  void packBody(Packet packet) {
   }
 
   public Frame instance() {

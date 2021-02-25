@@ -20,22 +20,17 @@ package org.maps.network.protocol.impl.mqtt.listeners;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.login.LoginException;
 import org.maps.logging.LogMessages;
 import org.maps.messaging.api.Session;
 import org.maps.messaging.api.SessionContextBuilder;
-import org.maps.messaging.api.SessionManager;
 import org.maps.messaging.api.features.Priority;
 import org.maps.messaging.api.message.Message;
 import org.maps.network.io.EndPoint;
 import org.maps.network.protocol.ProtocolImpl;
-import org.maps.network.protocol.impl.mqtt.DefaultConstants;
-import org.maps.network.protocol.impl.mqtt.MQTTProtocol;
 import org.maps.network.protocol.impl.mqtt.packet.ConnAck;
 import org.maps.network.protocol.impl.mqtt.packet.Connect;
 import org.maps.network.protocol.impl.mqtt.packet.MQTTPacket;
 import org.maps.network.protocol.impl.mqtt.packet.MalformedException;
-import org.maps.network.protocol.transformation.TransformationManager;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
 public class ConnectListener extends BaseConnectionListener {

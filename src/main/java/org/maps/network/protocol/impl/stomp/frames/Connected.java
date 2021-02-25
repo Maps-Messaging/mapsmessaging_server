@@ -53,10 +53,6 @@ public class Connected extends ServerFrame {
     return COMMAND;
   }
 
-  public void packBody(Packet packet) {
-    // No Op || No Body
-  }
-
   @Override
   public String toString() {
     return "STOMP Connected[ Header:" + getHeaderAsString() + "]";

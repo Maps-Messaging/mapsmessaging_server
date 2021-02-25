@@ -18,8 +18,6 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
-import java.net.SocketAddress;
-import java.nio.charset.StandardCharsets;
 import org.maps.network.io.Packet;
 
 /**
@@ -30,11 +28,6 @@ public class Nack extends ClientSubscriptionTransaction {
   @Override
   byte[] getCommand() {
     return "NACK".getBytes();
-  }
-
-  @Override
-  void packBody(Packet packet) {
-
   }
 
   @Override

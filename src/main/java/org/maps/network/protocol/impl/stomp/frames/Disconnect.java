@@ -25,7 +25,7 @@ import org.maps.network.io.Packet;
  */
 public class Disconnect extends Frame {
 
-  public static final String COMMAND = "DISCONNECT";
+  public static final byte[] COMMAND = "DISCONNECT".getBytes();
 
   public Disconnect() {
     super();
@@ -33,12 +33,7 @@ public class Disconnect extends Frame {
 
   @Override
   byte[] getCommand() {
-    return "DISCONNECT".getBytes();
-  }
-
-  @Override
-  void packBody(Packet packet) {
-
+    return COMMAND;
   }
 
   public boolean isValid() {

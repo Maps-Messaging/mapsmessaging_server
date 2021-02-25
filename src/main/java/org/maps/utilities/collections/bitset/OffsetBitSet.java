@@ -81,7 +81,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   public long nextSetBit(long fromIndex) {
     int index = (int) (fromIndex - start);
-    int response = rawBitSet.nextSetBit(index);
+    long response = rawBitSet.nextSetBit(index);
     if (response >= 0) {
       response += start;
     }
@@ -89,7 +89,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   }
 
   public long nextSetBitAndClear(long fromIndex) {
-    int response = rawBitSet.nextSetBitAndClear((int) (fromIndex - start));
+    long response = rawBitSet.nextSetBitAndClear((int) (fromIndex - start));
     if (response >= 0) {
       response += start;
     }

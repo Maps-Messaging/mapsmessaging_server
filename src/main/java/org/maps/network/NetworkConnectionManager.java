@@ -28,7 +28,6 @@ import java.util.ServiceLoader;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
-import org.maps.messaging.api.transformers.Transformer;
 import org.maps.messaging.engine.transformers.TransformerManager;
 import org.maps.network.admin.EndPointConnectionHostJMX;
 import org.maps.network.io.EndPointConnectionFactory;

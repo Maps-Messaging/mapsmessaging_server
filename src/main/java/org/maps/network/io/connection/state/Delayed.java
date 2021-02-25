@@ -18,7 +18,6 @@
 
 package org.maps.network.io.connection.state;
 
-import java.util.concurrent.TimeUnit;
 import org.maps.network.io.connection.Constants;
 import org.maps.network.io.connection.EndPointConnection;
 

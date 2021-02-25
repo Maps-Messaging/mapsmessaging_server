@@ -71,7 +71,7 @@ public class SubscribeListener extends PacketListener {
       try {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
-        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), (byte) SubAck.ACCEPTED);
+        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), (byte) MQTT_SNPacket.ACCEPTED);
         subAck.setQoS(subscribe.getQoS());
         stateEngine.addSubscribeResponse(topicName, subAck);
         return subAck;

@@ -117,7 +117,9 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
     totalSent.increment();
   }
 
-  public abstract void sendKeepAlive();
+  public void sendKeepAlive(){
+    // by default we don't do anything. A protocol that needs to do something can override this function
+  }
 
   public long getKeepAlive() {
     return keepAlive;

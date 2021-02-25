@@ -22,7 +22,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Properties;
 import java.util.StringTokenizer;
 import org.maps.utilities.configuration.ConfigurationProperties;
 

@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.mqtt5.packet;
 
 import org.maps.network.io.Packet;
 import org.maps.network.protocol.EndOfBufferException;
+import org.maps.network.protocol.impl.mqtt.packet.MQTTPacket;
 import org.maps.network.protocol.impl.mqtt.packet.MalformedException;
 import org.maps.network.protocol.impl.mqtt5.MQTT5Protocol;
 
@@ -46,7 +47,7 @@ public class PacketFactory5 {
     }
 
     byte fixedHeader = packet.get();
-    long remainingLen = MQTTPacket5.readVariableInt(packet);
+    long remainingLen = MQTTPacket.readVariableInt(packet);
 
     int packetId = (fixedHeader >> 4) & 0xf;
     if (packet.available() < remainingLen) {
@@ -58,37 +59,37 @@ public class PacketFactory5 {
   protected MQTTPacket5 create(int packetId, byte fixedHeader, long remainingLen, Packet packet)
       throws MalformedException, EndOfBufferException {
     switch (packetId) {
-      case MQTTPacket5.PUBLISH:
+      case MQTTPacket.PUBLISH:
         return new Publish5(fixedHeader, remainingLen, packet, protocolImpl.getMaximumBufferSize());
 
       case MQTTPacket5.AUTH:
         return new Auth5(fixedHeader, remainingLen, packet);
 
-      case MQTTPacket5.CONNECT:
+      case MQTTPacket.CONNECT:
         return new Connect5(fixedHeader, remainingLen, packet);
 
-      case MQTTPacket5.DISCONNECT:
+      case MQTTPacket.DISCONNECT:
         return new Disconnect5(remainingLen, packet);
 
-      case MQTTPacket5.PINGREQ:
+      case MQTTPacket.PINGREQ:
         return new PingReq5(fixedHeader, remainingLen);
 
-      case MQTTPacket5.SUBSCRIBE:
+      case MQTTPacket.SUBSCRIBE:
         return new Subscribe5(fixedHeader, remainingLen, packet);
 
-      case MQTTPacket5.PUBCOMP:
+      case MQTTPacket.PUBCOMP:
         return new PubComp5(fixedHeader, remainingLen, packet);
 
-      case MQTTPacket5.PUBACK:
+      case MQTTPacket.PUBACK:
         return new PubAck5(fixedHeader, remainingLen, packet);
 
-      case MQTTPacket5.PUBREL:
+      case MQTTPacket.PUBREL:
         return new PubRel5(fixedHeader, remainingLen, packet);
 
-      case MQTTPacket5.PUBREC:
+      case MQTTPacket.PUBREC:
         return new PubRec5(fixedHeader, remainingLen, packet);
 
-      case MQTTPacket5.UNSUBSCRIBE:
+      case MQTTPacket.UNSUBSCRIBE:
         return new Unsubscribe5(fixedHeader, remainingLen, packet);
 
       default:

@@ -154,8 +154,4 @@ public class LocalLoopProtocol extends ProtocolImpl {
     return "1.0";
   }
 
-  @Override
-  public void sendKeepAlive() {
-
-  }
 }

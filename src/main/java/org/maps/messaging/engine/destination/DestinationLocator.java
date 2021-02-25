@@ -20,6 +20,7 @@ package org.maps.messaging.engine.destination;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import org.maps.messaging.engine.resources.ResourceFactory;
 
 /**
@@ -34,8 +35,8 @@ public class DestinationLocator {
   private final String root;
   private final String subDirectory;
 
-  private final List<File> rejected;
-  private final List<File> valid;
+  @Getter private final List<File> rejected;
+  @Getter private final List<File> valid;
 
   public DestinationLocator(String root, String subdirectory){
     this.root = root;
@@ -44,48 +45,48 @@ public class DestinationLocator {
     rejected = new ArrayList<>();
   }
 
-  public List<File> parse(){
+  public void parse(){
     File path = new File(root);
     List<File> rootPaths = new ArrayList<>();
     if(path.exists()) {
       if (subDirectory != null) {
-        for (File sub : path.listFiles()) {
-          if (sub.isDirectory()) {
-            rootPaths.add(new File(root + File.separator + sub.getName() + File.separator + subDirectory));
-          }
-        }
+        scanSubdirectory(path, rootPaths);
       } else {
         rootPaths.add(path);
       }
     }
+    valid.addAll(scanForValidDirectories(rootPaths));
+  }
+
+  private List<File> scanForValidDirectories(List<File> rootPaths){
+    List<File> validPaths = new ArrayList<>();
     for(File explore:rootPaths){
       if (confirmPath(explore)) {
-        valid.add(explore);
+        validPaths.add(explore);
       }
       else {
         for (File potential : explore.listFiles()) {
           if (confirmPath(potential)) {
-            valid.add(potential);
+            validPaths.add(potential);
           }
         }
       }
     }
-
-    return valid;
+    return validPaths;
   }
 
-  public List<File> getRejected() {
-    return rejected;
+  private void scanSubdirectory( File path,  List<File> rootPaths){
+    for (File sub : path.listFiles()) {
+      if (sub.isDirectory()) {
+        rootPaths.add(new File(root + File.separator + sub.getName() + File.separator + subDirectory));
+      }
+    }
   }
 
-  public List<File> getValid() {
-    return valid;
-  }
-
-  public boolean confirmPath(File directory){
+  private boolean confirmPath(File directory){
     String name = directory.getAbsolutePath();
     File data = new File(name+File.separator+"data.bin");
-    File resource = new File(name+File.separator+ ResourceFactory.ResourceFileName);
+    File resource = new File(name+File.separator+ ResourceFactory.RESOURCE_FILE_NAME);
     File delayed = new File(name+File.separator+"state"+File.separator+"delayed.bin");
     File transaction = new File(name+File.separator+"state"+File.separator+"transactions.bin");
 
@@ -95,7 +96,6 @@ public class DestinationLocator {
         rejected.add(directory);
       }
     }
-
     return isDestinationDirectory;
   }
 }

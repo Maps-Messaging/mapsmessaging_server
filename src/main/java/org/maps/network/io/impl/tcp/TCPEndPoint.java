@@ -38,7 +38,6 @@ import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.network.admin.EndPointJMX;
 import org.maps.network.admin.EndPointManagerJMX;
-import org.maps.network.admin.EndPointConnectionJMX;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.EndPointServer;
 import org.maps.network.io.EndPointServerStatus;

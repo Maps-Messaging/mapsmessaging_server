@@ -19,6 +19,7 @@
 package org.maps.network.protocol.impl.mqtt5.packet;
 
 import org.maps.network.io.Packet;
+import org.maps.network.protocol.impl.mqtt.packet.MQTTPacket;
 import org.maps.network.protocol.impl.mqtt.packet.MalformedException;
 
 /**
@@ -29,7 +30,7 @@ import org.maps.network.protocol.impl.mqtt.packet.MalformedException;
 public class PingReq5 extends MQTTPacket5 {
 
   public PingReq5(byte fixedHeader, long remainingLen) throws MalformedException {
-    super(MQTTPacket5.PINGREQ);
+    super(MQTTPacket.PINGREQ);
     if ((fixedHeader & 0xf) != 0) {
       throw new MalformedException("PingReq: Reserved bits in command byte not 0");
     }

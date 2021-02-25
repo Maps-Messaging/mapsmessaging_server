@@ -26,6 +26,6 @@ public class ErrorListener implements FrameListener {
 
   @Override
   public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
-
+    // ToDo: If the remote server returns an error, we need to process it and handle the error state
   }
 }

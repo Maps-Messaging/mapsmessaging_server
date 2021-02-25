@@ -31,8 +31,8 @@ import org.maps.logging.LoggerFactory;
 import org.maps.network.EndPointManager.STATE;
 import org.maps.network.admin.NetworkManagerJMX;
 import org.maps.network.io.EndPointServerFactory;
-import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.configuration.ConfigurationManager;
+import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.service.Service;
 import org.maps.utilities.service.ServiceManager;
 

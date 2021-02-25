@@ -122,7 +122,9 @@ public abstract class Frame implements ServerPacket {
     return packet.position() - start;
   }
 
-  abstract void packBody(Packet packet);
+  void packBody(Packet packet){
+    // requires the extending class to provide this mechanism, if one is required
+  }
 
   public abstract Frame instance();
 

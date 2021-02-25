@@ -7,9 +7,17 @@ on:
     branches: [ main ]
 
 jobs:
+
+
   build:
     name: Build
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['java' ]
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -25,6 +33,7 @@ jobs:
       - name: Build mqtt-sn test jar
         run: mvn clean install --file eclipse-paho-mqtt-sn-udp-client/pom.xml -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
 
+        # perform the sonarcloud scan, this seems more detailed
       - name: Cache SonarCloud packages
         uses: actions/cache@v1
         with:
@@ -42,3 +51,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests=true
+
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: ${{ matrix.language }}
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1

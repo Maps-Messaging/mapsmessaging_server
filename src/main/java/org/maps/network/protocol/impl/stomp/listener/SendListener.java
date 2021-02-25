@@ -19,7 +19,6 @@
 package org.maps.network.protocol.impl.stomp.listener;
 
 import java.io.IOException;
-import java.util.Map;
 import org.maps.messaging.api.Destination;
 import org.maps.messaging.api.Transaction;
 import org.maps.messaging.api.message.Message;

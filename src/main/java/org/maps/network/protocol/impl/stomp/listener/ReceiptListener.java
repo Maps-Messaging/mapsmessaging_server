@@ -26,6 +26,6 @@ public class ReceiptListener  implements FrameListener {
 
   @Override
   public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
-
+    // ToDo: On return of a receipt from the server we need to process the transactional state, not yet implemented
   }
 }

@@ -21,11 +21,10 @@ package org.maps.network.protocol.transformation;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
 import org.maps.network.protocol.ProtocolMessageTransformation;
-import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.configuration.ConfigurationManager;
+import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.service.Service;
 import org.maps.utilities.service.ServiceManager;
 

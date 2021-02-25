@@ -28,8 +28,8 @@ import java.io.File;
 import java.lang.reflect.Method;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
-import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.configuration.ConfigurationManager;
+import org.maps.utilities.configuration.ConfigurationProperties;
 
 public class HawtioManager {
 

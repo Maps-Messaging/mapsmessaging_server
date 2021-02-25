@@ -30,6 +30,7 @@ import org.maps.network.protocol.impl.stomp.StompProtocolException;
 
 public abstract class Event extends Frame {
 
+  private static final String CONTENT_LENGTH = "content-length";
   private static final String END_OF_FRAME_MSG = "Expected end of frame";
   private static final String MORE_DATA = "Need more data";
 
@@ -80,7 +81,7 @@ public abstract class Event extends Frame {
     //
     putHeader("destination", destination);
     if (internalMessage.getOpaqueData() != null && internalMessage.getOpaqueData().length > 0) {
-      putHeader("content-length", "" + internalMessage.getOpaqueData().length);
+      putHeader(CONTENT_LENGTH, "" + internalMessage.getOpaqueData().length);
     }
     buffer = internalMessage.getOpaqueData();
   }
@@ -100,7 +101,7 @@ public abstract class Event extends Frame {
   public boolean isValid() {
     destination = getHeader().remove("destination");
     transaction = getHeader().remove("transaction");
-    getHeader().remove("content-length");
+    getHeader().remove(CONTENT_LENGTH);
     priority = parseHeaderInt("priority", Priority.NORMAL.getValue());
     expiry = parseHeaderLong("expiry", 0);
     delay = parseHeaderLong("delay", 0);
@@ -110,7 +111,7 @@ public abstract class Event extends Frame {
   @Override
   public void parseCompleted() throws IOException {
     super.parseCompleted();
-    String lengthString = getHeader("content-length");
+    String lengthString = getHeader(CONTENT_LENGTH);
     if (lengthString != null) {
       lengthString = lengthString.trim();
       int length = Integer.parseInt(lengthString);

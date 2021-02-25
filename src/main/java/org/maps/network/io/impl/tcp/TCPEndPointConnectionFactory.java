@@ -23,7 +23,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import org.maps.network.EndPointURL;
-import org.maps.network.admin.EndPointConnectionJMX;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.EndPointConnectedCallback;
 import org.maps.network.io.EndPointConnectionFactory;
@@ -46,7 +45,7 @@ public class TCPEndPointConnectionFactory extends EndPointConnectionFactory {
 
   @Override
   public String getName() {
-    return Constants.name;
+    return Constants.NAME;
   }
 
   @Override

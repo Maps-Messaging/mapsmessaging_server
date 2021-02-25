@@ -40,7 +40,6 @@ import org.maps.messaging.api.SubscribedEventManager;
 import org.maps.messaging.api.features.RetainHandler;
 import org.maps.messaging.engine.destination.DestinationFactory;
 import org.maps.messaging.engine.destination.DestinationImpl;
-import org.maps.messaging.engine.destination.DestinationManager;
 import org.maps.messaging.engine.destination.DestinationManagerListener;
 import org.maps.messaging.engine.destination.subscription.impl.DestinationSubscription;
 import org.maps.messaging.engine.destination.subscription.set.DestinationSet;

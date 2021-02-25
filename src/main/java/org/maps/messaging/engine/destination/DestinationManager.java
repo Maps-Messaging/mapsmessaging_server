@@ -50,8 +50,8 @@ import org.maps.messaging.engine.resources.Resource;
 import org.maps.messaging.engine.resources.ResourceFactory;
 import org.maps.messaging.engine.system.SystemTopic;
 import org.maps.messaging.engine.tasks.Response;
-import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.configuration.ConfigurationManager;
+import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
 public class DestinationManager implements DestinationFactory {
@@ -218,7 +218,8 @@ public class DestinationManager implements DestinationFactory {
     for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
       DestinationPathManager mapManager = entry.getValue();
       DestinationLocator destinationLocator = new DestinationLocator(mapManager.getRootDirectory(), mapManager.getTrailingPath());
-      processFileList(destinationLocator.parse());
+      destinationLocator.parse();
+      processFileList(destinationLocator.getValid());
     }
   }
 

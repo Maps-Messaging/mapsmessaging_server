@@ -33,11 +33,6 @@ public class ClientHeartBeat extends Frame {
   }
 
   @Override
-  void packBody(Packet packet) {
-
-  }
-
-  @Override
   public Frame instance() {
     return new ClientHeartBeat();
   }

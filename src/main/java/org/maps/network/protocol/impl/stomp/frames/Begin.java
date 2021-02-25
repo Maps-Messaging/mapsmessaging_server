@@ -31,11 +31,6 @@ public class Begin extends ClientTransaction {
   }
 
   @Override
-  void packBody(Packet packet) {
-
-  }
-
-  @Override
   public Frame instance() {
     return new Begin();
   }

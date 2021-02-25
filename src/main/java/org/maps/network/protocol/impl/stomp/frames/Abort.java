@@ -33,11 +33,6 @@ public class Abort extends ClientTransaction {
   }
 
   @Override
-  void packBody(Packet packet) {
-    // no body
-  }
-
-  @Override
   public Frame instance() {
     return new Abort();
   }

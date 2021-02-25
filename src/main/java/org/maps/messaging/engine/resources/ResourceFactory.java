@@ -31,7 +31,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 public class ResourceFactory {
-  public final static String ResourceFileName = "resource.yaml";
+  public final static String RESOURCE_FILE_NAME = "resource.yaml";
 
   private static final ResourceFactory instance = new ResourceFactory();
 
@@ -75,7 +75,7 @@ public class ResourceFactory {
   }
 
   public Resource scan(String root, File directory) throws IOException {
-    File props = new File(directory, ResourceFileName);
+    File props = new File(directory, RESOURCE_FILE_NAME);
     if(!props.exists()){
       return null;
     }
@@ -137,7 +137,7 @@ public class ResourceFactory {
       options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
       options.setPrettyFlow(true);
       final Yaml yaml = new Yaml(options);
-      FileWriter writer = new FileWriter(directoryPath + File.separator + ResourceFileName);
+      FileWriter writer = new FileWriter(directoryPath + File.separator + RESOURCE_FILE_NAME);
       yaml.dump(properties, writer);
       writer.close();
       System.err.println("Created new Resource::" + properties);

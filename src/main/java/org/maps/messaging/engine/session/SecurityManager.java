@@ -30,8 +30,8 @@ import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.messaging.engine.security.PrincipalCallback;
 import org.maps.network.protocol.ProtocolImpl;
-import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.configuration.ConfigurationManager;
+import org.maps.utilities.configuration.ConfigurationProperties;
 
 public class SecurityManager {
 

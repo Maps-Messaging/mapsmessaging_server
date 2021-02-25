@@ -49,12 +49,7 @@ public class Unsubscribe extends Frame {
   byte[] getCommand() {
     return "UNSUBSCRIBE".getBytes();
   }
-
-  @Override
-  void packBody(Packet packet) {
-
-  }
-
+  
   @Override
   public Frame instance() {
     return new Unsubscribe();

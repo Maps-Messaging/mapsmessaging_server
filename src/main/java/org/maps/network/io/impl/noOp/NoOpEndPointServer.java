@@ -28,6 +28,10 @@ import org.maps.network.io.EndPointServer;
 import org.maps.network.io.Selectable;
 import org.maps.network.io.impl.Selector;
 
+/**
+ * This class is simply a place holder where an EndPointServer object is required but we don't have
+ * an end point. For example, locally connected protocols that have no network requirements
+ */
 public class NoOpEndPointServer extends EndPointServer {
 
   public NoOpEndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
@@ -36,16 +40,17 @@ public class NoOpEndPointServer extends EndPointServer {
 
   @Override
   public void register() throws IOException {
-
+    // There is nothing here to do, its all a No Operation
   }
 
   @Override
   public void deregister() throws IOException {
-
+    // There is nothing here to do, its all a No Operation
   }
 
   @Override
   public void start() throws IOException {
+    // There is nothing here to do, its all a No Operation
   }
 
   @Override
@@ -55,10 +60,11 @@ public class NoOpEndPointServer extends EndPointServer {
 
   @Override
   public void close() throws IOException {
+    // There is nothing here to do, its all a No Operation
   }
 
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
-
+    // There is nothing here to do, its all a No Operation
   }
 }

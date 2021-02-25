@@ -24,7 +24,6 @@ import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.messaging.api.features.DestinationType;
-import org.maps.messaging.engine.destination.subscription.SubscriptionController;
 
 public interface DestinationFactory {
 

@@ -28,7 +28,11 @@ public interface ProtocolMessageTransformation extends Service {
 
   String getDescription();
 
-  void incoming (MessageBuilder messageBuilder);
+  default void incoming (MessageBuilder messageBuilder){
+    // nothing to do here
+  }
 
-  byte[] outgoing(Message message);
+  default byte[] outgoing(Message message){
+    return message.getOpaqueData();
+  }
 }

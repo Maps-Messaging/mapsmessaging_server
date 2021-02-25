@@ -20,10 +20,9 @@ package org.maps.network.io.impl.lora.device;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.maps.network.EndPointURL;
-import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.configuration.ConfigurationManager;
+import org.maps.utilities.configuration.ConfigurationProperties;
 
 public class LoRaDeviceManager {
 

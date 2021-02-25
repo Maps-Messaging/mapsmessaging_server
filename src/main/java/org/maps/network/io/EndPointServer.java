@@ -21,8 +21,6 @@ package org.maps.network.io;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.LinkedHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 import org.maps.logging.Logger;
 import org.maps.network.EndPointURL;
 import org.maps.network.NetworkConfig;
