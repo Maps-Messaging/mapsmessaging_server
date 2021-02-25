@@ -73,13 +73,9 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
   public PulsarProtocol(@NonNull @NotNull EndPoint endPoint) {
     super(endPoint);
     EndPointURL url = new EndPointURL(endPoint.getConfig().getProperties().getProperty("url"));
-    try {
-      client = PulsarClient.builder()
-          .serviceUrl("pulsar://"+url.getHost()+":"+url.getPort())
-          .build();
-    } catch (PulsarClientException e) {
-      e.printStackTrace();
-    }
+    client = PulsarClient.builder()
+        .serviceUrl("pulsar://"+url.getHost()+":"+url.getPort())
+        .build();
     logger = LoggerFactory.getLogger(PulsarProtocol.class);
     closed = false;
     nameMapping = new ConcurrentHashMap<>();
