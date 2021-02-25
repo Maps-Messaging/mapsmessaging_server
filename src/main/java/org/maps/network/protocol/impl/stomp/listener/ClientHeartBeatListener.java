@@ -26,7 +26,7 @@ public class ClientHeartBeatListener implements FrameListener {
 
   @Override
   public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
-
+    // We simply swallow the event, there is no other processing required
   }
 
 }
