@@ -80,12 +80,6 @@
     </profile>
   </profiles>
 
-  <properties>
-    <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
-    <sonar.organization>maps-messaging</sonar.organization>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-  </properties>
-
   <build>
     <plugins>
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
@@ -311,6 +305,11 @@
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
     <sonar.language>java</sonar.language>
+
+    <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
+    <sonar.organization>maps-messaging</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+
   </properties>
 
 
