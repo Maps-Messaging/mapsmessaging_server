@@ -18,8 +18,6 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
-import org.maps.network.io.Packet;
-
 public class Connected extends ServerFrame {
 
   private static final byte[] COMMAND = "CONNECTED".getBytes();

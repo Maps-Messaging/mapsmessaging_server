@@ -19,7 +19,6 @@
 package org.maps.network.protocol.impl.stomp.frames;
 
 import java.io.IOException;
-import org.maps.network.io.Packet;
 
 /**
  * Implements the STOMP Connect frame as per https://stomp.github.io/stomp-specification-1.2.html#UNSUBSCRIBE

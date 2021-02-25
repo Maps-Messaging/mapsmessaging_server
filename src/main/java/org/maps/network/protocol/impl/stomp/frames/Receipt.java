@@ -18,8 +18,6 @@
 
 package org.maps.network.protocol.impl.stomp.frames;
 
-import org.maps.network.io.Packet;
-
 /**
  * https://stomp.github.io/stomp-specification-1.2.html#RECEIPT
  */
