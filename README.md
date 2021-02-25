@@ -1,34 +1,30 @@
 # protocol_server
-Multi Adapter and Protocol Standard messaging server
-
+MAPS(Multi Adapter and Protocol Standards)messaging server
 
 ## Introduction
-Wire protocol standards for messaging has enabled the messaging world to approach a plug and play approach to clients and servers, with the promise of no vendor lock in and ability to swap out clients / servers as requirements change. While this is a noble approach and has, to some extent, been realized, there is also an increasing realization that as protocol versions change or new ones are standardized that the promise of interoperability is not so attenable.
-
-Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) and [V5](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html), while similar the functionality being offered in V5 far exceeds what was available in V3. Also add in that AMQP V1.0 has been ratified and is gaining grounds in IoT means that when trying to architect a coherent messaging fabric currently either requires multiple messaging servers with standalone integration systems or messaging servers with plugins that have limited support of the protocol. This results in potentially complex deployments, rigid client support and not what open wire protocols where meant to deliver.
-
+Wire protocol standardisation for messaging has enabled an unprecidented interoperability for both clients and servers. It has come with the promise of no vendor lock in, healthy competition and the ability to swap out clients and servers as requirements change. While this is a noble approach, and has to some extent been fulfilled, there is an increasing realisation that as protocols evolve or new protocols are ratified the promise of interoperability is not attainable.
+Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) and [V5](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html), while evolution of the same protocol the functionality being offered in V5 far exceeds what was available in V3. Add to this AMQP V1.0, which is gaining ground in IoT, when trying to architect a coherent messaging fabric it requires multiple messaging servers with standalone integration systems or messaging servers with plugins that have limited support of the protocol. This results in complex deployments, rigid client and server deployments and not achieving the utopia that open wire protocols were promising to deliver.
 
 ## Protocol Support
-With mapsmessaging server, the entire purpose of the server is to support all of the open standards, completely and allow for message flow between different protocols and versions seamlessly and without any additional servers or code. It currently supports, out of the box
+With mapsmessaging server, the entire purpose is to support all of the open messaging standards in their entirety and to facilitate message flow between different protocols and versions seamlessly out of the box.
+Current support:
 
 | Protocol | Version | Support Status | WebSocket | Secure WebSockets | TCP | SSL | UDP | LoRa :red_circle: | Serial |
 | -------- | ------- | -------------- | --------- | ----------------- | --- | --- | --- | ---- | ------ |
 | Stomp    | 1.1     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark:| :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | Stomp    | 1.2     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| MQTT     | 3.1     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: | 
+| MQTT     | 3.1     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | MQTT     | 3.1.1   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | MQTT     | 5.0     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | MQTT-SN  | 1.2     | :heavy_check_mark: | :x: | :x: | :x: | :x: | :heavy_check_mark: | :heavy_check_mark: | :x: |
 | AMQP     | 1.0     | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | JMS-AMQP :small_orange_diamond: | JMS 2.0  | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-
-:heavy_check_mark: - Tested, has conformance tests for validity of the protocol\
-:small_red_triangle: - Not tested, but should work\
-:small_blue_diamond: - Still building conformance tests to ensure correct integration\
-:small_orange_diamond: - Using the QPID [JMS2.0 over AMQP client](https://qpid.apache.org/components/jms/index.html)\
-:red_circle: - Requires appropriate hardware for support\
-:heavy_exclamation_mark: - Transport does not really support a connection based protocol\
-:x: - The protocol and the transport are not compatible\
+:heavy_check_mark: - Tested, has conformance tests for validity of the protocol \
+:small_red_triangle: - Not tested \
+:small_blue_diamond: - Conformance tests under development \
+:small_orange_diamond: - Using the QPID [JMS2.0 over AMQP client](https://qpid.apache.org/components/jms/index.html) \
+:red_circle: - Requires appropriate hardware for support \
+:heavy_exclamation_mark: - Transport does not support a connection based protocol \
+:x: - The protocol and the transport are not compatible \
 \
-These protocols and transports are supported natively by the server, no additional plugins are necessary to enable them. They are all first rate citizens of the server and can interop with each other.
-
+These protocols and transports are supported natively by the server,
