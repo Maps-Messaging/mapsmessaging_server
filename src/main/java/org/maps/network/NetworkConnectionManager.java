@@ -49,7 +49,7 @@ public class NetworkConnectionManager implements ServiceManager {
 
   private final List<String> jmxParent;
 
-  public NetworkConnectionManager(List<String> parent, TransformerManager transformerManager) throws IOException {
+  public NetworkConnectionManager(List<String> parent) throws IOException {
     logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
     jmxParent = parent;
     ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");

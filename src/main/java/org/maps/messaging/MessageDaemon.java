@@ -144,7 +144,7 @@ public class MessageDaemon implements WrapperListener {
     TransactionManager.setExpiryTime(transactionExpiry);
 
     networkManager = new NetworkManager(mBean.getTypePath());
-    networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath(), TransformerManager.getInstance());
+    networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());
     securityManager = new org.maps.messaging.engine.session.SecurityManager();
     destinationManager = new DestinationManager(delayTimer);
     systemTopicManager = new SystemTopicManager(destinationManager);
