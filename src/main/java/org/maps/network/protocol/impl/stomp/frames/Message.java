@@ -35,6 +35,7 @@ public class Message extends Event {
     return COMMAND;
   }
 
+  @Override
   public void packMessage(String destination, String subscriptionId, org.maps.messaging.api.message.Message internalMessage) {
     super.packMessage(destination, subscriptionId, internalMessage);
 
