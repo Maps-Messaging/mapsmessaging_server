@@ -131,10 +131,9 @@ public class ExtendedSelectorTest extends StompBaseTest implements Listener {
       map.put(key, val);
       client.send(topicName, json, map);
     }
-    int counter =0;
-    while(adder.sum() != EVENT_COUNT && counter < 3) {
+    long timeout = System.currentTimeMillis() + 5000;
+    while(adder.sum() != EVENT_COUNT && timeout < System.currentTimeMillis()) {
       LockSupport.parkNanos(100000000);
-      counter++;
     }
     client.disconnect();
     Assertions.assertEquals(EVENT_COUNT, adder.sum(), selector);
