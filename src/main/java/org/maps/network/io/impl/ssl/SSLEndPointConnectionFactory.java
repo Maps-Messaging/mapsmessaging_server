@@ -33,7 +33,7 @@ import org.maps.network.io.EndPointConnectionFactory;
 import org.maps.network.io.EndPointServerStatus;
 import org.maps.network.io.impl.SelectorLoadManager;
 
-public class SSLEndPointConnectionFactory extends EndPointConnectionFactory {
+public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
 
   private final Logger logger = LoggerFactory.getLogger(SSLEndPointConnectionFactory.class);
 

@@ -29,17 +29,17 @@ public class ResourceProperties {
   @Getter @Setter private Date date;
   @Getter @Setter private String resourceName;
   @Getter @Setter private String type;
-  @Getter @Setter private String UUID;
+  @Getter @Setter private String uuid;
   @Getter @Setter private String buildDate;
   @Getter @Setter private String buildVersion;
 
   public ResourceProperties(){}
 
-  public ResourceProperties(Date date, String resourceName, String type, String UUID, String buildDate, String buildVersion){
+  public ResourceProperties(Date date, String resourceName, String type, String uuid, String buildDate, String buildVersion){
     this.date = date;
     this.resourceName = resourceName;
     this.type = type;
-    this.UUID = UUID;
+    this.uuid = uuid;
     this.buildDate = buildDate;
     this.buildVersion = buildVersion;
   }

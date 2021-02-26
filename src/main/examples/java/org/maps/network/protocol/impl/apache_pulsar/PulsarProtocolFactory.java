@@ -32,7 +32,7 @@ import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.detection.NoOpDetection;
 
-public class PulsarProtocolFactory extends ProtocolImplFactory {
+public class PulsarProtocolFactory implements ProtocolImplFactory {
 
   public PulsarProtocolFactory(){
     super("pulsar", "Provides a connection an apache Pulsar server", new NoOpDetection());

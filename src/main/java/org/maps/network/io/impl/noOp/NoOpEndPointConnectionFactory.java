@@ -27,7 +27,7 @@ import org.maps.network.io.EndPointConnectionFactory;
 import org.maps.network.io.EndPointServerStatus;
 import org.maps.network.io.impl.SelectorLoadManager;
 
-public class NoOpEndPointConnectionFactory extends EndPointConnectionFactory {
+public class NoOpEndPointConnectionFactory implements EndPointConnectionFactory {
 
   @Override
   public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)

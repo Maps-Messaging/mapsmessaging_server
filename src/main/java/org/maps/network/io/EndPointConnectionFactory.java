@@ -24,7 +24,7 @@ import org.maps.network.EndPointURL;
 import org.maps.network.io.impl.SelectorLoadManager;
 import org.maps.utilities.service.Service;
 
-public abstract class EndPointConnectionFactory  implements Service {
+public interface EndPointConnectionFactory  extends Service {
 
   public abstract EndPoint connect(EndPointURL url,
       SelectorLoadManager selector,
@@ -33,7 +33,7 @@ public abstract class EndPointConnectionFactory  implements Service {
       List<String> jmxPath)
       throws IOException;
 
-  public long generateID() {
+  default long generateID() {
     return Constants.getNextId();
   }
 

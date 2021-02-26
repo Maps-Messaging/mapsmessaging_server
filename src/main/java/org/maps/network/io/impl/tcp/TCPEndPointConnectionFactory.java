@@ -29,7 +29,7 @@ import org.maps.network.io.EndPointConnectionFactory;
 import org.maps.network.io.EndPointServerStatus;
 import org.maps.network.io.impl.SelectorLoadManager;
 
-public class TCPEndPointConnectionFactory extends EndPointConnectionFactory {
+public class TCPEndPointConnectionFactory implements EndPointConnectionFactory {
 
   // We need to open a socket, its a socket library so we can ignore this issue
   @java.lang.SuppressWarnings({"squid:S4818", "squid:S2095"})
