@@ -16,7 +16,7 @@
  *
  */
 
-package org.maps.network.io.impl.noOp;
+package org.maps.network.io.impl.noop;
 
 import java.io.IOException;
 import org.maps.logging.Logger;

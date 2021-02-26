@@ -20,4 +20,4 @@ org.maps.network.io.impl.ssl.SSLEndPointServerFactory
 org.maps.network.io.impl.udp.UDPEndPointServerFactory
 org.maps.network.io.impl.serial.SerialEndPointServerFactory
 org.maps.network.io.impl.lora.LoRaEndPointServerFactory
-org.maps.network.io.impl.noOp.NoOpEndPointServerFactory
+org.maps.network.io.impl.noop.NoOpEndPointServerFactory

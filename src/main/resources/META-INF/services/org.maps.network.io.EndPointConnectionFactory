@@ -16,4 +16,4 @@
 
 org.maps.network.io.impl.tcp.TCPEndPointConnectionFactory
 org.maps.network.io.impl.ssl.SSLEndPointConnectionFactory
-org.maps.network.io.impl.noOp.NoOpEndPointConnectionFactory
+org.maps.network.io.impl.noop.NoOpEndPointConnectionFactory

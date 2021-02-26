@@ -16,28 +16,25 @@
  *
  */
 
-package org.maps.network.io.impl.noOp;
+package org.maps.network.io.impl.noop;
 
 import java.io.IOException;
+import java.util.List;
 import org.maps.network.EndPointURL;
-import org.maps.network.NetworkConfig;
-import org.maps.network.admin.EndPointManagerJMX;
-import org.maps.network.io.AcceptHandler;
-import org.maps.network.io.EndPointServer;
-import org.maps.network.io.EndPointServerFactory;
+import org.maps.network.io.EndPoint;
+import org.maps.network.io.EndPointConnectedCallback;
+import org.maps.network.io.EndPointConnectionFactory;
+import org.maps.network.io.EndPointServerStatus;
 import org.maps.network.io.impl.SelectorLoadManager;
 
-public class NoOpEndPointServerFactory implements EndPointServerFactory {
+public class NoOpEndPointConnectionFactory implements EndPointConnectionFactory {
 
   @Override
-  public EndPointServer instance(EndPointURL url, SelectorLoadManager selector, AcceptHandler acceptHandler, NetworkConfig config, EndPointManagerJMX managerMBean)
+  public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)
       throws IOException {
-    return new NoOpEndPointServer(acceptHandler, url, config);
-  }
-
-  @Override
-  public boolean active() {
-    return true;
+    EndPoint endPoint = new NoOpEndPoint(generateID(),endPointServerStatus, jmxPath);
+    callback.connected(endPoint);
+    return endPoint;
   }
 
   @Override
