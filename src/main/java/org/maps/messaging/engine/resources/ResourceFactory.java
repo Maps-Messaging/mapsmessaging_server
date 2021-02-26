@@ -83,7 +83,7 @@ public class ResourceFactory {
       Yaml yaml = new Yaml();
       ResourceProperties properties = yaml.load(fis);
       String name = properties.getResourceName();
-      String uuidProp = properties.getUUID();
+      String uuidProp = properties.getUuid();
       if (name != null && uuidProp != null) {
         int idx = uuidProp.indexOf(':');
         if (idx != -1) {
