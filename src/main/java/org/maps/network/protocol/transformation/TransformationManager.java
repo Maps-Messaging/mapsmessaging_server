@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
 import org.maps.network.protocol.ProtocolMessageTransformation;
-import org.maps.utilities.configuration.ConfigurationManager;
-import org.maps.utilities.configuration.ConfigurationProperties;
 import org.maps.utilities.service.Service;
 import org.maps.utilities.service.ServiceManager;
 
@@ -36,11 +34,9 @@ public class TransformationManager implements ServiceManager {
   }
 
   private final ServiceLoader<ProtocolMessageTransformation> transformations;
-  private final ConfigurationProperties properties;
 
   private TransformationManager(){
     transformations = ServiceLoader.load(ProtocolMessageTransformation.class);
-    properties = ConfigurationManager.getInstance().getProperties("TransformationManager");
   }
 
   public ProtocolMessageTransformation getTransformation(String protocol, String user){
