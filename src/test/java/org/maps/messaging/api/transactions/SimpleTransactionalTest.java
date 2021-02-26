@@ -19,6 +19,7 @@
 package org.maps.messaging.api.transactions;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import javax.security.auth.login.LoginException;
@@ -43,6 +44,7 @@ import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.features.RetainHandler;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.session.FakeProtocolImpl;
+import org.maps.test.WaitForState;
 
 class SimpleTransactionalTest extends MessageAPITest implements MessageListener {
   private static final int MESSAGE_COUNT = 10;
@@ -87,11 +89,8 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
     messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
     transaction2.add(destination, messageBuilder.build());
 
-    long end = System.currentTimeMillis()+1000;
-    while(end > System.currentTimeMillis() && counter.get() == 0){
-      LockSupport.parkNanos(1000000000);
-      Assertions.assertEquals(0, counter.get());
-    }
+    WaitForState.waitFor(1, TimeUnit.SECONDS, () -> counter.get() != 0);
+    Assertions.assertEquals(0, counter.get());
     SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(destination.getName(), ClientAcknowledgement.AUTO);
     subscriptionContextBuilder.setReceiveMaximum(MESSAGE_COUNT)
         .setCreditHandler(CreditHandler.AUTO)
@@ -99,10 +98,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
     Assertions.assertNotNull(session.addSubscription(subscriptionContextBuilder.build()));
     transaction.commit();
 
-    end = System.currentTimeMillis()+1000;
-    while(end > System.currentTimeMillis() && counter.get() < MESSAGE_COUNT){
-      LockSupport.parkNanos(1000000000);
-    }
+    WaitForState.waitFor(1, TimeUnit.SECONDS, () -> counter.get() == MESSAGE_COUNT);
     Assertions.assertEquals(MESSAGE_COUNT, counter.get());
 
     SessionManager.getInstance().close(session);

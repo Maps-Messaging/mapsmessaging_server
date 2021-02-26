@@ -21,6 +21,7 @@ package org.maps.network.protocol.impl.stomp;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 import javax.security.auth.login.LoginException;
@@ -28,14 +29,15 @@ import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.maps.test.WaitForState;
 
-public class StompSelectorTest extends StompBaseTest implements Listener {
+class StompSelectorTest extends StompBaseTest implements Listener {
 
   private static final int EVENT_COUNT = 100;
   LongAdder adder = new LongAdder();
 
   @Test
-  public void simpleSelectorTest() throws IOException, LoginException, InterruptedException {
+  void simpleSelectorTest() throws IOException, LoginException, InterruptedException {
     adder.reset();
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
@@ -48,9 +50,7 @@ public class StompSelectorTest extends StompBaseTest implements Listener {
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
       client.send(topicName, json);
     }
-    while(adder.sum() != EVENT_COUNT/2) {
-      LockSupport.parkNanos(1000000000);
-    }
+    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> adder.sum() == EVENT_COUNT/2);
     client.disconnect();
     Assertions.assertEquals(EVENT_COUNT/2, adder.sum());
   }

@@ -19,7 +19,7 @@
 package org.maps.messaging.api.subscriptions;
 
 import java.io.IOException;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -38,42 +38,43 @@ import org.maps.messaging.api.features.DestinationType;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.session.FakeProtocolImpl;
+import org.maps.test.WaitForState;
 
-public class UnsubscribeValidation extends MessageAPITest implements MessageListener {
+class UnsubscribeValidation extends MessageAPITest implements MessageListener {
 
   private static final int EVENT_COUNT = 10000;
 
   @Test
-  public void topicUnsubscribeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
+  void topicUnsubscribeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, true, false);
 
   }
 
   @Test
-  public void queueUnsubscribeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
+  void queueUnsubscribeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "queue/queue1", true, true, false);
   }
 
   @Test
-  public void topicDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
+  void topicDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, false, false);
 
   }
 
   @Test
-  public void queueDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
+  void queueDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "queue/queue1", true, false, false);
   }
 
 
   @Test
-  public void topicResumeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
+  void topicResumeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, false, true);
 
   }
 
   @Test
-  public void queueResumeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
+  void queueResumeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "queue/queue1", true, false, true);
   }
 
@@ -155,18 +156,10 @@ public class UnsubscribeValidation extends MessageAPITest implements MessageList
       subContextBuilder.setQos(QualityOfService.AT_LEAST_ONCE);
       subscription = publisher.addSubscription(subContextBuilder.build());
       Assertions.assertNotNull(subscription);
-      int count =0;
-      while(destination.getStoredMessages() != 0 && count < 20) {
-        LockSupport.parkNanos(1000000000);
-        count++;
-      }
+      WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
+    }
 
-    }
-    int count =0;
-    while(destination.getStoredMessages() != 0 && count < 20) {
-      LockSupport.parkNanos(1000000000);
-      count++;
-    }
+    WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     Assertions.assertEquals(0, destination.getStoredMessages());
     close(publisher);
   }
