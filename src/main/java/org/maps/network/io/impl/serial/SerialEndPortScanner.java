@@ -68,6 +68,9 @@ public class SerialEndPortScanner implements Runnable {
     }
   }
 
+  // While knownPorts.computeIfAbsent could be used, the following logic being performed
+  // on the addition of a port seems rather large and the logic flows better as is
+  @java.lang.SuppressWarnings("java:S3824")
   private void scanPorts(SerialPort[] ports) {
     for (SerialPort port : ports) {
       String key = port.getSystemPortName().toLowerCase();
