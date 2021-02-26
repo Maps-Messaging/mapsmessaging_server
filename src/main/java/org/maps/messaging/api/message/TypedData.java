@@ -53,7 +53,7 @@ public class TypedData {
     writer.write(type.value);
     switch (type) {
       case BOOLEAN:
-        if( ((Boolean)data)){
+        if( ((boolean)data)){
           writer.write((byte)1);
         }
         else{
