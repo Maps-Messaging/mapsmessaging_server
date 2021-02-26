@@ -72,7 +72,7 @@ public class HawtioManager {
         logger.log(HAWTIO_STARTUP);
         if (warFile.length() > 0) {
           try {
-            Class hawtioMain = Class.forName("io.hawt.embedded.Main");
+            Class<?> hawtioMain = Class.forName("io.hawt.embedded.Main");
             Object main = hawtioMain.getConstructor().newInstance();
             Method setWar = hawtioMain.getMethod("setWar", String.class);
             setWar.invoke(main, warFile);

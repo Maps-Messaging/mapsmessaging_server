@@ -93,7 +93,7 @@ public class MappedBufferHelper {
   // we need access to the cleaner method to ensure the buffers are released in a more deterministic manner
   @java.lang.SuppressWarnings("squid:S3011")
   private static void newClean(ByteBuffer cb) throws ClassNotFoundException, NoSuchFieldException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-    Class unsafeClass;
+    Class<?> unsafeClass;
     try {
       unsafeClass = Class.forName("sun.misc.Unsafe");
     } catch (Exception ex) {

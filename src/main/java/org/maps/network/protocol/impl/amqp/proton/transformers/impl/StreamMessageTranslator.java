@@ -40,7 +40,7 @@ public class StreamMessageTranslator extends BaseMessageTranslator {
     Section body = protonMessage.getBody();
     if(body instanceof AmqpSequence){
       AmqpSequence sequence = (AmqpSequence)body;
-      List list = sequence.getValue();
+      List<?> list = sequence.getValue();
       Map<String, TypedData> dataMap = messageBuilder.getDataMap();
       for(int x =0;x<list.size();x++){
         Object val = list.get(x);
