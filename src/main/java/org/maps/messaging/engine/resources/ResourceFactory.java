@@ -31,7 +31,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 public class ResourceFactory {
-  public final static String RESOURCE_FILE_NAME = "resource.yaml";
+  public static final String RESOURCE_FILE_NAME = "resource.yaml";
 
   private static final ResourceFactory instance = new ResourceFactory();
 
