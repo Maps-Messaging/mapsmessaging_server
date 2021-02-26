@@ -21,8 +21,8 @@ package org.maps.messaging.api.subscriptions;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
 import javax.security.auth.login.LoginException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -42,12 +42,14 @@ import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
 import org.maps.messaging.engine.session.FakeProtocolImpl;
+import org.maps.test.WaitForState;
 
-public class DelayedPublishTest extends MessageAPITest  {
+
+class DelayedPublishTest extends MessageAPITest  {
   private static final int EVENT_COUNT = 10;
 
   @Test
-  public void delayedPublishTest(TestInfo testInfo) throws LoginException, IOException {
+  void delayedPublishTest(TestInfo testInfo) throws LoginException, IOException {
     String destinationName = "topic/delayTest";
     AtomicLong counter = new AtomicLong(0);
     String name = testInfo.getTestMethod().get().getName();
@@ -86,19 +88,12 @@ public class DelayedPublishTest extends MessageAPITest  {
     close(publisher);
 
     // OK we have 2 subscribers with different selectors, each take 50% of all events so the store should have 100%
-    long time = System.currentTimeMillis() + 200;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != EVENT_COUNT){
-      LockSupport.parkNanos(1000000000);
-    }
+    WaitForState.waitFor(200, TimeUnit.MILLISECONDS, () -> destination.getStoredMessages() == EVENT_COUNT);
 
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
     Assertions.assertEquals(0, counter.get());
 
-    time = System.currentTimeMillis() + 4000;
-    while(time > System.currentTimeMillis() && counter.get() != (EVENT_COUNT)){
-      LockSupport.parkNanos(1000000000);
-    }
-
+    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> counter.get() == (EVENT_COUNT));
     Assertions.assertEquals(EVENT_COUNT, counter.get());
     close(session);
   }

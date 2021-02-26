@@ -21,7 +21,7 @@ package org.maps.messaging.api.subscriptions;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -41,13 +41,14 @@ import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
 import org.maps.messaging.engine.session.FakeProtocolImpl;
+import org.maps.test.WaitForState;
 
-public class SelectorTest extends MessageAPITest implements MessageListener {
+class SelectorTest extends MessageAPITest implements MessageListener {
 
   private static final int EVENT_COUNT = 1000;
 
   @Test
-  public void topicTrueSelectorTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
+  void topicTrueSelectorTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new FakeProtocolImpl(this));
@@ -103,19 +104,12 @@ public class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
     close(session2);
 
-    // Now we wait for the 2 second disconnect and expiry of the session
-    long time = System.currentTimeMillis() + 4000;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != (EVENT_COUNT)){
-      LockSupport.parkNanos(1000000000);
-    }
+    // Now we wait for the 5 second disconnect and expiry of the session
+    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> destination.getStoredMessages() == EVENT_COUNT);
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
 
     close(session1);
-    time = System.currentTimeMillis() + 8000;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != 0){
-      LockSupport.parkNanos(1000000000);
-      System.err.println("Size:"+destination.getStoredMessages());
-    }
+    WaitForState.waitFor(8, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     Assertions.assertEquals(0, destination.getStoredMessages());
   }
 
@@ -177,19 +171,11 @@ public class SelectorTest extends MessageAPITest implements MessageListener {
     close(session2);
 
     // Now we wait for the 2 second disconnect and expiry of the session
-    long time = System.currentTimeMillis() + 8000;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != (EVENT_COUNT/2)){
-      LockSupport.parkNanos(1000000000);
-      System.err.println("Remaining::"+destination.getStoredMessages());
-    }
+    WaitForState.waitFor(8, TimeUnit.SECONDS, () -> destination.getStoredMessages() == EVENT_COUNT/2);
     Assertions.assertEquals(EVENT_COUNT/2, destination.getStoredMessages());
 
     close(session1);
-    time = System.currentTimeMillis() + 8000;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != 0){
-      LockSupport.parkNanos(1000000000);
-      System.err.println("Remaining::"+destination.getStoredMessages());
-    }
+    WaitForState.waitFor(8, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     Assertions.assertEquals(0, destination.getStoredMessages());
   }
 
@@ -246,17 +232,11 @@ public class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
 
     session1.removeSubscription(destinationName);
-    long time = System.currentTimeMillis() + 500;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != (EVENT_COUNT/2)){
-      LockSupport.parkNanos(1000000000);
-    }
+    WaitForState.waitFor(500, TimeUnit.MILLISECONDS, () -> destination.getStoredMessages() == (EVENT_COUNT/2));
     Assertions.assertEquals(EVENT_COUNT/2, destination.getStoredMessages());
 
     session2.removeSubscription(destinationName);
-    time = System.currentTimeMillis() + 100;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != 0){
-      LockSupport.parkNanos(1000000000);
-    }
+    WaitForState.waitFor(100, TimeUnit.MILLISECONDS, () -> destination.getStoredMessages() == 0);
     Assertions.assertEquals(0, destination.getStoredMessages());
   }
 
@@ -314,19 +294,12 @@ public class SelectorTest extends MessageAPITest implements MessageListener {
     // OK we have 2 subscribers with different selectors, each take 50% of all events so the store should have 100%
     Assertions.assertEquals(roundOut, destination.getStoredMessages());
     session1.removeSubscription(destinationName);
-
-    long time = System.currentTimeMillis() + 500;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != (2 * roundOut/3)){
-      LockSupport.parkNanos(1000000000);
-    }
+    int rounded = roundOut;
+    WaitForState.waitFor(500, TimeUnit.MILLISECONDS, () -> destination.getStoredMessages() == (2 * rounded/3));
     Assertions.assertEquals(2 * roundOut/3, destination.getStoredMessages());
 
     session2.removeSubscription(destinationName);
-    time = System.currentTimeMillis() + 500;
-    while(time > System.currentTimeMillis() && destination.getStoredMessages() != 0){
-      LockSupport.parkNanos(1000000000);
-    }
-
+    WaitForState.waitFor(500, TimeUnit.MILLISECONDS, () -> destination.getStoredMessages() == 0);
     Assertions.assertEquals(0, destination.getStoredMessages());
   }
 

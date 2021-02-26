@@ -21,15 +21,16 @@ package org.maps.network.protocol.impl.stomp;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.locks.LockSupport;
 import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.maps.test.WaitForState;
 
-public class ExtendedSelectorTest extends StompBaseTest implements Listener {
+class ExtendedSelectorTest extends StompBaseTest implements Listener {
 
   private final String[] trueSelectors = {
       "JMSTimestamp >= 0",
@@ -131,10 +132,7 @@ public class ExtendedSelectorTest extends StompBaseTest implements Listener {
       map.put(key, val);
       client.send(topicName, json, map);
     }
-    long timeout = System.currentTimeMillis() + 5000;
-    while(adder.sum() != EVENT_COUNT && timeout < System.currentTimeMillis()) {
-      LockSupport.parkNanos(100000000);
-    }
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> adder.sum() == EVENT_COUNT);
     client.disconnect();
     Assertions.assertEquals(EVENT_COUNT, adder.sum(), selector);
   }
@@ -154,10 +152,7 @@ public class ExtendedSelectorTest extends StompBaseTest implements Listener {
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
       client.send(topicName, json);
     }
-    long end = System.currentTimeMillis() + 10000;
-    while(adder.sum() != EVENT_COUNT && end > System.currentTimeMillis()) {
-      LockSupport.parkNanos(100000000);
-    }
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> adder.sum() == EVENT_COUNT);
     client.disconnect();
     Assertions.assertEquals(EVENT_COUNT, adder.sum(), selector);
   }
@@ -175,7 +170,7 @@ public class ExtendedSelectorTest extends StompBaseTest implements Listener {
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
       client.send(topicName, json);
     }
-    LockSupport.parkNanos(500000000);
+    WaitForState.waitFor(5, TimeUnit.SECONDS, () -> false);
     client.disconnect();
     Assertions.assertEquals(0, adder.sum());
   }
@@ -184,7 +179,6 @@ public class ExtendedSelectorTest extends StompBaseTest implements Listener {
   public void message(Map map, String s) {
     adder.add(1);
   }
-
 
 
 }
