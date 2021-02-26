@@ -27,16 +27,16 @@ public abstract class PublishMonitorPacket5 extends StatusPacket {
   protected final int reservedBits;
   protected int packetId;
 
-  public PublishMonitorPacket5(int id) {
+  protected PublishMonitorPacket5(int id) {
     this(id, 0);
   }
 
-  public PublishMonitorPacket5(int id, int reservedBits) {
+  protected PublishMonitorPacket5(int id, int reservedBits) {
     super(id);
     this.reservedBits = reservedBits;
   }
 
-  public PublishMonitorPacket5(byte fixedHeader, long remainingLen, Packet packet)
+  protected PublishMonitorPacket5(byte fixedHeader, long remainingLen, Packet packet)
       throws MalformedException, EndOfBufferException {
     super(fixedHeader >> 4);
     reservedBits = fixedHeader & 0xf;

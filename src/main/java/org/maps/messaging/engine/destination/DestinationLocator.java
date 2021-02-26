@@ -91,10 +91,8 @@ public class DestinationLocator {
     File transaction = new File(name+File.separator+"state"+File.separator+"transactions.bin");
 
     boolean isDestinationDirectory = (data.exists() && resource.exists() && delayed.exists() && transaction.exists());
-    if(data.exists() || resource.exists() || delayed.exists()||transaction.exists()){
-      if(!isDestinationDirectory){
-        rejected.add(directory);
-      }
+    if((data.exists() || resource.exists() || delayed.exists()|| transaction.exists()) && !isDestinationDirectory) {
+      rejected.add(directory);
     }
     return isDestinationDirectory;
   }

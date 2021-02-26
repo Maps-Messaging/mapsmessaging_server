@@ -25,14 +25,16 @@ public abstract class BitSetFactory {
 
   protected final int windowSize;
 
-  public BitSetFactory(int size) {
+  protected BitSetFactory(int size) {
     windowSize = size;
   }
 
   public void close() throws IOException {
+    // Nothing required to clean up any resources
   }
 
   public void delete() throws IOException {
+    // Nothing required to clean up any resources
   }
 
   public int getSize() {

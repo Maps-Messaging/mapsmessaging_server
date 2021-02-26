@@ -31,7 +31,7 @@ public abstract class MQTTPacket5 extends MQTTPacket {
 
   private MessageProperties properties;
 
-  public MQTTPacket5(int id) {
+  protected MQTTPacket5(int id) {
     super(id);
     properties = new MessageProperties();
   }

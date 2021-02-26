@@ -73,7 +73,7 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
   protected volatile boolean shutdown;
 
 
-  public ConcurrentTaskScheduler(@NonNull @NotNull String domain) {
+  protected ConcurrentTaskScheduler(@NonNull @NotNull String domain) {
     context = new ThreadStateContext();
     context.add(DOMAIN, domain);
     context.add("TaskQueue", this);

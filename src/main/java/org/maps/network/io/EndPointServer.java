@@ -32,7 +32,7 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
   protected final LinkedHashMap<Long, EndPoint> activeEndPoints;
   private final NetworkConfig config;
 
-  public EndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
+  protected EndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
     super(url);
     this.config = config;
     acceptHandler = accept;

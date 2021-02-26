@@ -31,7 +31,7 @@ public abstract class ComparisonOperator extends ComputableOperator {
   protected Object lhs;
   protected Object rhs;
 
-  public ComparisonOperator(Object lhs, Object rhs)  {
+  protected ComparisonOperator(Object lhs, Object rhs)  {
     this.lhs = lhs;
     this.rhs = rhs;
   }

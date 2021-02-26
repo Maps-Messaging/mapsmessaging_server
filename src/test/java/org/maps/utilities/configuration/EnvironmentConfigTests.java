@@ -28,9 +28,8 @@ public class EnvironmentConfigTests extends BaseTest {
   @Test
   public void checkDefaultVersionLoad(){
     EnvironmentConfig config = EnvironmentConfig.getInstance();
-    Assertions.assertTrue(config.getMajor() != -1);
+    Assertions.assertNotEquals(config.getMajor(), -1);
   }
-
 
   @Test
   public void checkDifferentJDKVersionParsing(){

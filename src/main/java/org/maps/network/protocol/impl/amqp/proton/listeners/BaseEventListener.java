@@ -51,7 +51,7 @@ public abstract class BaseEventListener implements EventListener {
   protected final AMQPProtocol protocol;
   protected final ProtonEngine engine;
 
-  public BaseEventListener(AMQPProtocol protocol, ProtonEngine engine) {
+  protected BaseEventListener(AMQPProtocol protocol, ProtonEngine engine) {
     this.protocol = protocol;
     this.engine = engine;
     window = 10;

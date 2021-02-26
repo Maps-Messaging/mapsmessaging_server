@@ -27,7 +27,7 @@ public abstract class ArithmeticOperator extends ComputableOperator {
   protected Object lhs;
   protected Object rhs;
 
-  public ArithmeticOperator(Object lhs, Object rhs) throws ParseException {
+  protected ArithmeticOperator(Object lhs, Object rhs) throws ParseException {
     if (NumericValidator.isValid(lhs)) {
       this.lhs = lhs;
     } else {

@@ -38,7 +38,6 @@ public class EndPointManagerJMX implements HealthMonitor {
   private final EndPointManager endPointManager;
   private final List<String> typePath;
   private final ObjectInstance mbean;
-  private final NetworkConfigJMX config;
 
   //<editor-fold desc="Life cycle functions">
   public EndPointManagerJMX(List<String> parent, EndPointManager endPoint, NetworkConfig nc) {
@@ -46,7 +45,7 @@ public class EndPointManagerJMX implements HealthMonitor {
     typePath = new ArrayList<>(parent);
     typePath.add("endPointManagerName=" + endPoint.getName());
     mbean = JMXManager.getInstance().register(this, typePath);
-    config = new NetworkConfigJMX(typePath, nc);
+    new NetworkConfigJMX(typePath, nc);
   }
 
   public List<String> getTypePath() {

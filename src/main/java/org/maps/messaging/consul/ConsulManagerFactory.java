@@ -49,7 +49,6 @@ public class ConsulManagerFactory {
         LockSupport.parkNanos(1000000000L);
         counter++;
         if(!forceWait){
-          // Log the fact that Consul is not available;
           logger.log(LogMessages.CONSUL_MANAGER_START_ABORTED, id.toString(), e);
           return;
         }

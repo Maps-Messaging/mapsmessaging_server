@@ -62,7 +62,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   protected long keepAlive;
   private boolean connected;
 
-  public ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
+  protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
     sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
     receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");

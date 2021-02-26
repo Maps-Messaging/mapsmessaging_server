@@ -33,7 +33,7 @@ public abstract class EndPointServerStatus {
   private final LongAdder totalBytesRead;
   protected final EndPointURL url;
 
-  public EndPointServerStatus(EndPointURL url){
+  protected EndPointServerStatus(EndPointURL url){
     this.url = url;
     totalPacketsSent = new LongAdder();
     totalPacketsRead = new LongAdder();

@@ -46,7 +46,6 @@ public class NetworkConnectionManager implements ServiceManager {
   private final List<EndPointConnection> endPointConnectionList;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final List<ConfigurationProperties> connectionConfiguration;
-  private final TransformerManager transformerManager;
 
   private final List<String> jmxParent;
 
@@ -66,7 +65,6 @@ public class NetworkConnectionManager implements ServiceManager {
     selectorLoadManager = new SelectorLoadManager(10);
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
-    this.transformerManager = transformerManager;
   }
 
   public void initialise() {

@@ -59,7 +59,7 @@ public abstract class EndPoint implements Closeable {
   protected List<String> jmxParentPath;
   private CloseHandler closeHandler;
 
-  public EndPoint(long id, EndPointServerStatus server) {
+  protected EndPoint(long id, EndPointServerStatus server) {
     this.server = server;
     isClient = !(server instanceof EndPointServer);
     this.id = id;

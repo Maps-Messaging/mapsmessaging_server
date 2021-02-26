@@ -46,26 +46,30 @@ public class ConsulPropertyManager extends PropertyManager {
       KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
       List<String> keys = keyValueClient.getKeys(serverPrefix);
       for (String key : keys) {
-        try {
-          Optional<Value> entry = keyValueClient.getValue(key);
-          if (entry.isPresent()) {
-            Optional<String> optionalValue = entry.get().getValue();
-            optionalValue.ifPresent(s -> {
-              String value = s;
-              value = new String(Base64.getDecoder().decode(value));
-              loadPropertiesJSON(key.substring(serverPrefix.length()), new JSONObject(value));
-            });
-          }
-        }
-        catch(ConsulException consulException){
-          logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
-        }
-        catch(JSONException JSONException){
-          logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, JSONException);
-        }
+        processKey(keyValueClient, key);
       }
     } catch (ConsulException e) {
       logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES, serverPrefix);
+    }
+  }
+
+  private void processKey(KeyValueClient keyValueClient, String key){
+    try {
+      Optional<Value> entry = keyValueClient.getValue(key);
+      if (entry.isPresent()) {
+        Optional<String> optionalValue = entry.get().getValue();
+        optionalValue.ifPresent(s -> {
+          String value = s;
+          value = new String(Base64.getDecoder().decode(value));
+          loadPropertiesJSON(key.substring(serverPrefix.length()), new JSONObject(value));
+        });
+      }
+    }
+    catch(ConsulException consulException){
+      logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
+    }
+    catch(JSONException JSONException){
+      logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, JSONException);
     }
   }
 

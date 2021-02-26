@@ -39,7 +39,7 @@ import org.maps.messaging.engine.session.SessionImpl;
 
 public abstract  class CommonSubscriptionBuilder  extends SubscriptionBuilder {
 
-  public CommonSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context)  throws IOException {
+  protected CommonSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context)  throws IOException {
     super(destination, context);
   }
 

@@ -25,9 +25,6 @@ import org.maps.messaging.engine.tasks.EngineTask;
 
 public abstract class StoreMessageTask extends EngineTask {
 
-  public StoreMessageTask(){
-  }
-
   protected void storeMessage(DestinationImpl destination, Message message) throws IOException {
     destination.addMessage(message);
   }

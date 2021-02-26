@@ -42,8 +42,8 @@ public class ConnAck extends MQTTPacket {
 
   public ConnAck(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
     super(CONNACK);
-    byte isPresent = packet.get();
-    byte response = packet.get();
+    isPresent = packet.get() != 0;
+    response = packet.get();
   }
 
   @Override

@@ -40,7 +40,7 @@ public abstract class Resource implements Closeable {
   private final AtomicLong keyGen;
   private long retainedIdentifier;
 
-  public Resource(String name, String mappedName) {
+  protected Resource(String name, String mappedName) {
     this.name = name;
     this.mappedName = mappedName;
     keyGen = new AtomicLong(0);

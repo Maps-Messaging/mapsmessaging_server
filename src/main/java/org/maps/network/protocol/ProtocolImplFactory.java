@@ -31,7 +31,7 @@ public abstract class ProtocolImplFactory implements Service {
   private final String description;
   private final Detection detection;
 
-  public ProtocolImplFactory(String name, String description, Detection detection) {
+  protected ProtocolImplFactory(String name, String description, Detection detection) {
     this.name = name;
     this.description = description;
     this.detection = detection;

@@ -22,7 +22,7 @@ public abstract class StatusPacket extends MQTTPacket5 {
 
   protected StatusCode statusCode;
 
-  public StatusPacket(int id) {
+  protected StatusPacket(int id) {
     super(id);
     statusCode = StatusCode.SUCCESS;
   }

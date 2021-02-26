@@ -45,13 +45,13 @@ public abstract class SubscriptionBuilder {
   protected final DestinationImpl destination;
   protected final ParserExecutor parserExecutor;
 
-  public SubscriptionBuilder( DestinationImpl destination, SubscriptionContext context) throws IOException {
+  protected SubscriptionBuilder( DestinationImpl destination, SubscriptionContext context) throws IOException {
     this.context = context;
     this.destination = destination;
     this.parserExecutor = compileParser(context.getSelector());
   }
 
-  public SubscriptionBuilder( DestinationImpl destination, SubscriptionContext context, SubscriptionContext parent) throws IOException {
+  protected SubscriptionBuilder( DestinationImpl destination, SubscriptionContext context, SubscriptionContext parent) throws IOException {
     this.context = context;
     this.destination = destination;
     String selector = context.getSelector();

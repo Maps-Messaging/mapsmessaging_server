@@ -26,7 +26,7 @@ public abstract class State implements Runnable {
   protected final EndPointConnection endPointConnection;
   private final long timeout;
 
-  public State(EndPointConnection connection){
+  protected State(EndPointConnection connection){
     this.endPointConnection = connection;
     timeout = System.currentTimeMillis() + Constants.TIMEOUT;
   }

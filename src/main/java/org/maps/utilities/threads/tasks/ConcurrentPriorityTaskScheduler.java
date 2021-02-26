@@ -86,17 +86,6 @@ public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<
     return true;
   }
 
-
-  private int size(){
-    int size =0;
-    for(Queue<FutureTask<V>> queue:queues){
-      if(!queue.isEmpty()){
-        size += queue.size();
-      }
-    }
-    return size;
-  }
-
   @Override
   protected @Nullable FutureTask<V> poll(){
     for(Queue<FutureTask<V>> queue:queues){

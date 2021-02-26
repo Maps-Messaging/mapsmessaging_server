@@ -70,7 +70,7 @@ public class ResourceFactory {
       return new MemoryResource(resourceName);
     } else {
       createMetaData(path, resourceName, uuid, destinationType);
-      return createPersistentResource(path, resourceName, uuid, destinationType);
+      return createPersistentResource(path, resourceName, uuid);
     }
   }
 
@@ -84,7 +84,6 @@ public class ResourceFactory {
       ResourceProperties properties = yaml.load(fis);
       String name = properties.getResourceName();
       String uuidProp = properties.getUUID();
-      DestinationType destinationType = DestinationType.getType(properties.getType());
       if (name != null && uuidProp != null) {
         int idx = uuidProp.indexOf(':');
         if (idx != -1) {
@@ -93,7 +92,7 @@ public class ResourceFactory {
           long least = Long.parseLong(leastString);
           long most = Long.parseLong(mostString);
           UUID uuid = new UUID(most, least);
-          return createPersistentResource(root, name, uuid, destinationType);
+          return createPersistentResource(root, name, uuid);
         }
       }
     }
@@ -101,7 +100,7 @@ public class ResourceFactory {
     return null;
   }
 
-  private Resource createPersistentResource(String path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
+  private Resource createPersistentResource(String path, String resourceName, UUID uuid) throws IOException {
     String directoryPath = path + File.separator + uuid.toString() + File.separator;
     switch(type){
       case DATABASE:
@@ -140,7 +139,6 @@ public class ResourceFactory {
       FileWriter writer = new FileWriter(directoryPath + File.separator + RESOURCE_FILE_NAME);
       yaml.dump(properties, writer);
       writer.close();
-      System.err.println("Created new Resource::" + properties);
     }
   }
 }

@@ -115,10 +115,6 @@ public class EndPointConnection extends EndPointServerStatus {
     return endPointConnectionFactory;
   }
 
-  public EndPointURL getUrl() {
-    return url;
-  }
-
   @Override
   public NetworkConfig getConfig() {
     return new NetworkConfig(properties);

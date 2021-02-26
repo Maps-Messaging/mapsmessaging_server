@@ -22,7 +22,7 @@ public abstract class CreditManager {
 
   protected int currentCredit;
 
-  public CreditManager(int initialCredit){
+  protected CreditManager(int initialCredit){
     currentCredit = initialCredit;
   }
 

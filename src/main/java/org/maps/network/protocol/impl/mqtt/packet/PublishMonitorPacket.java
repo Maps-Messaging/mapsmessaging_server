@@ -25,11 +25,11 @@ public abstract class PublishMonitorPacket extends MQTTPacket {
   protected final int reservedBits;
   protected int packetId;
 
-  public PublishMonitorPacket(int id) {
+  protected PublishMonitorPacket(int id) {
     this(id, 0);
   }
 
-  public PublishMonitorPacket(int id, int reservedBits) {
+  protected PublishMonitorPacket(int id, int reservedBits) {
     super(id);
     this.reservedBits = reservedBits;
   }

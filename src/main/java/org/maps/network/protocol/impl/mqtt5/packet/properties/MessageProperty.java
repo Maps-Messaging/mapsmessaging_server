@@ -27,7 +27,7 @@ public abstract class MessageProperty {
   private final int id;
   private final String name;
 
-  public MessageProperty(int id, String name) {
+  protected MessageProperty(int id, String name) {
     this.id = id;
     this.name = name;
   }

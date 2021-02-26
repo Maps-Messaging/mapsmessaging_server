@@ -32,7 +32,7 @@ public class SubAckListener extends PacketListener {
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     SubAck subAck = (SubAck) mqttPacket;
-    PacketIdentifierMap mapping = ((MQTTProtocol) protocol).getPacketIdManager().completePacketId(subAck.getPacketId());
+    ((MQTTProtocol) protocol).getPacketIdManager().completePacketId(subAck.getPacketId());
     return null;
   }
 }

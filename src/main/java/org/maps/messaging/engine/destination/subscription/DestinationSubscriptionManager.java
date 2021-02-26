@@ -65,10 +65,10 @@ public class DestinationSubscriptionManager implements Subscribable{
   }
 
   public void put(String name, Subscription subscription) {
-    if (!subscriptions.containsKey(name)) {
+    subscriptions.computeIfAbsent(name, k -> {
       logger.log(LogMessages.DESTINATION_SUBSCRIPTION_PUT, subscription.getSessionId(), name, subscription.getName());
-      subscriptions.put(name, subscription);
-    }
+      return subscription;
+    });
   }
 
   public Subscribable remove(String name) {

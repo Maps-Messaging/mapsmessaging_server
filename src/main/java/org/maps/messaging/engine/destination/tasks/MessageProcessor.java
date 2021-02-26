@@ -32,7 +32,7 @@ public abstract class MessageProcessor extends SubscriptionTask {
   protected final DestinationSubscriptionManager subscriptionManager;
   private final long bucketId;
 
-  public MessageProcessor(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager,MessageManager messageManager, long bucketId){
+  protected MessageProcessor(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager,MessageManager messageManager, long bucketId){
     super();
     this.destination = destination;
     this.messageManager = messageManager;

@@ -21,9 +21,6 @@ package org.maps.messaging.engine.selector.operators;
 
 public abstract class ComputableOperator extends Operation {
 
-  public ComputableOperator(){
-  }
-
   protected Object processDouble(Double arg0, Number arg1) {
     if (arg1 instanceof Double) {
       return compute(arg0, arg1.doubleValue());

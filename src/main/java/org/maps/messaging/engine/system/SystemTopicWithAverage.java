@@ -28,7 +28,7 @@ public abstract class SystemTopicWithAverage extends SystemTopic implements Data
   private final List<SystemTopic> movingAverageTopics;
   private long lastUpdate;
 
-  public SystemTopicWithAverage(String name, boolean diff) {
+  protected SystemTopicWithAverage(String name, boolean diff) {
     super(name);
     movingAverageTopics = new ArrayList<>();
     movingAverageTopics.add(new MovingAverageTopic(name+"/1", 1, TimeUnit.MINUTES, this, diff));

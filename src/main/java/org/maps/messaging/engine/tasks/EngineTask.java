@@ -27,7 +27,7 @@ public abstract class EngineTask implements Callable<Response> {
 
   private final Map<String, String> logContext;
 
-  public EngineTask() {
+  protected EngineTask() {
     logContext = ThreadContext.getContext();
   }
 

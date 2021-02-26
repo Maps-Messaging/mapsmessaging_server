@@ -26,7 +26,7 @@ public abstract class LogicalOperator extends Operation {
   protected Object lhs;
   protected Object rhs;
 
-  public LogicalOperator(Object lhs, Object rhs)  {
+  protected LogicalOperator(Object lhs, Object rhs)  {
     this.lhs = lhs;
     this.rhs = rhs;
   }

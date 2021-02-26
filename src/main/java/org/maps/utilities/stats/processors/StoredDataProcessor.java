@@ -25,7 +25,7 @@ public abstract class StoredDataProcessor implements DataProcessor{
 
   protected final List<DataPoint> dataPoints;
 
-  public StoredDataProcessor(){
+  protected StoredDataProcessor(){
     dataPoints = new ArrayList<>();
   }
 

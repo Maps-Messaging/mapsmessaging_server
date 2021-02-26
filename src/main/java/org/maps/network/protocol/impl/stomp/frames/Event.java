@@ -45,7 +45,7 @@ public abstract class Event extends Frame {
   protected long expiry;
   protected long delay;
 
-  public Event(int maxBufferSize) {
+  protected Event(int maxBufferSize) {
     this.maxBufferSize = maxBufferSize;
     buffer = null;
     byteArrayOutputStream = null;
@@ -128,6 +128,7 @@ public abstract class Event extends Frame {
     }
   }
 
+  @Override
   protected void putHeader(String key, String val) {
     super.putHeader(key, val);
   }

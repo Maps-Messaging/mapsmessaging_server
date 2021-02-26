@@ -44,7 +44,7 @@ public abstract class Frame implements ServerPacket {
   String receipt;
   private CompletionHandler completionHandler;
 
-  public Frame() {
+  protected Frame() {
     header = new LinkedHashMap<>();
     caseHeader = new LinkedHashMap<>();
     completionHandler = null;

@@ -103,6 +103,7 @@ public class MQTTProtocol extends ProtocolImpl {
     }
   }
 
+  @Override
   public void connect(@NonNull @NotNull String sessionId,String username,String password) throws IOException {
     Connect connect = new Connect();
     if(username != null) {
@@ -114,6 +115,7 @@ public class MQTTProtocol extends ProtocolImpl {
     registerRead();
   }
 
+  @Override
   public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull  String mappedResource, @Nullable Transformer transformer){
     topicNameMapping.put(resource, mappedResource);
     if(transformer != null) {
@@ -124,6 +126,7 @@ public class MQTTProtocol extends ProtocolImpl {
     writeFrame(subscribe);
   }
 
+  @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@Nullable String selector,  @Nullable Transformer transformer) throws IOException {
     topicNameMapping.put(resource, mappedResource);
     if(transformer != null) {

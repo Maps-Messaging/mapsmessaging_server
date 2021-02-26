@@ -45,7 +45,7 @@ public abstract class MQTTPacket implements ServerPacket {
   private final int controlPacketId;
   private Runnable completionHandler;
 
-  public MQTTPacket(int id) {
+  protected MQTTPacket(int id) {
     controlPacketId = id;
   }
 

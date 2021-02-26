@@ -32,7 +32,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
   protected SessionImpl sessionImpl;
   protected boolean hibernating;
 
-  public Subscription(SessionImpl sessionImpl, SubscriptionContext context) {
+  protected Subscription(SessionImpl sessionImpl, SubscriptionContext context) {
     this.sessionImpl = sessionImpl;
     contextList = new ArrayList<>();
     contextList.add(context);

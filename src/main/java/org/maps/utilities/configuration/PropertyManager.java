@@ -29,7 +29,7 @@ public abstract class PropertyManager {
 
   protected final ConfigurationProperties properties;
 
-  public PropertyManager(){
+  protected PropertyManager(){
     properties = new ConfigurationProperties();
   }
 
@@ -56,10 +56,6 @@ public abstract class PropertyManager {
 
   public void loadPropertiesJSON(@NonNull @NotNull String name, @NonNull @NotNull JSONObject config) {
     properties.remove(name);
-
-    JSONParser parser = new JSONParser(config);
-
-
     JSONArray array = config.getJSONArray(name);
     Map<String, Object> globalProperties = new LinkedHashMap<>();
     if(config.has("global")) {

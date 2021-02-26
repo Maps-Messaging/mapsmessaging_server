@@ -28,7 +28,7 @@ public abstract class MapBasedResource extends Resource {
 
   protected final Map<Long, MessageCache> index;
 
-  public MapBasedResource(String name, String mapped) throws IOException {
+  protected MapBasedResource(String name, String mapped) throws IOException {
     super(name, mapped);
     index = new LinkedHashMap<>();
   }

@@ -42,7 +42,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   protected final String name;
   protected final BitSetFactory bitsetFactory;
 
-  public BaseMessageStateManager(String name, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
+  protected BaseMessageStateManager(String name, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
     this.name = name;
     this.bitsetFactory = priorityBitSetFactory;
     logger = LoggerFactory.getLogger(MessageStateManagerImpl.class);
