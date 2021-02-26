@@ -26,4 +26,9 @@ public class Constants {
   public static long getNextId() {
     return idGenerator.incrementAndGet();
   }
+
+  private Constants(){
+    // hide the default constructor
+  }
+
 }

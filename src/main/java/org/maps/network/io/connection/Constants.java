@@ -24,4 +24,7 @@ public class Constants {
   public static final long DELAYED_TIME = 10000; // 10 Seconds
   public static final long SCHEDULE_TIME = 10; // 10 Milliseconds
 
+  private Constants(){
+    // hide the default constructor
+  }
 }
