@@ -113,7 +113,7 @@ public abstract class SubscriptionBuilder {
           parser = (ParserExecutor)parsed;
         }
         else if(parsed instanceof Boolean){
-          if(!(Boolean)parsed){
+          if(!(boolean)parsed){
             parser = new ParserExecutor(new FalseOperator()); // Reject ALL events
           }
           else{
