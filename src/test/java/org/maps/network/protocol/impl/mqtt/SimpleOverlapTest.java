@@ -35,10 +35,10 @@ import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 import org.maps.test.WaitForState;
 
-public class SimpleOverlapTest extends BaseTestConfig  {
+class SimpleOverlapTest extends BaseTestConfig  {
 
   @Test
-  public void testWildcardAndSystemTopics() throws MqttException, IOException {
+  void testWildcardAndSystemTopics() throws MqttException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:2001", "testWildcardAndSystemTopics", new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
@@ -70,7 +70,7 @@ public class SimpleOverlapTest extends BaseTestConfig  {
   }
 
   @Test
-  public void testSystemTopics() throws MqttException {
+  void testSystemTopics() throws MqttException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
@@ -108,7 +108,7 @@ public class SimpleOverlapTest extends BaseTestConfig  {
 
   @Test
   @Disabled
-  public void testOtherSystemTopics() throws MqttException {
+  void testOtherSystemTopics() throws MqttException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
@@ -144,7 +144,7 @@ public class SimpleOverlapTest extends BaseTestConfig  {
   }
 
   @Test
-  public void testSubscriptionThenWildcard() throws MqttException, IOException {
+  void testSubscriptionThenWildcard() throws MqttException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
