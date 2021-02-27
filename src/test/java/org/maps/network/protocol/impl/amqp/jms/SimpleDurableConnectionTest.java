@@ -31,7 +31,7 @@ import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SimpleDurableConnectionTest extends BaseConnection {
+class SimpleDurableConnectionTest extends BaseConnection {
 
   @Test
   void simpleDurableTopicPubSub() throws JMSException, NamingException, IOException, InterruptedException {
@@ -74,8 +74,12 @@ public class SimpleDurableConnectionTest extends BaseConnection {
     }
 
     Assertions.assertEquals(sent, counter);
-    shared.close();
-    connection.close();
-    context.close();
+    try {
+      shared.close();
+      connection.close();
+      context.close();
+    } catch (JMSException e) {
+      e.printStackTrace();
+    }
   }
 }
