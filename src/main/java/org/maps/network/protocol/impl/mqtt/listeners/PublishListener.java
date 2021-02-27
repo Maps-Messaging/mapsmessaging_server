@@ -75,15 +75,17 @@ public class PublishListener extends PacketListener {
     } else if (publish.getQos().equals(QualityOfService.EXACTLY_ONCE)) {
       response = new PubRec(publish.getPacketId());
     }
-    if (!publish.getDestinationName().startsWith("$")) {
-      String lookup = publish.getDestinationName();
-      Map<String, String> map = ((MQTTProtocol) protocol).getTopicNameMapping();
-      if(map != null){
-        lookup = map.get(publish.getDestinationName());
-        if(lookup == null){
-          lookup = publish.getDestinationName();
-        }
+
+    String lookup = publish.getDestinationName();
+    Map<String, String> map = ((MQTTProtocol) protocol).getTopicNameMapping();
+    if(map != null){
+      lookup = map.get(publish.getDestinationName());
+      if(lookup == null){
+        lookup = publish.getDestinationName();
       }
+    }
+
+    if (!lookup.startsWith("$")) {
       try {
         Destination destination = session.findDestination(lookup);
         if(destination != null) {
