@@ -18,27 +18,27 @@
 
 package org.maps.network.protocol.impl.mqtt5.packet.properties;
 
-import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class MessagePropertiesTest {
+import java.util.Map;
+
+class MessagePropertiesTest {
 
 
   @Test
-  public void simpleFactoryLookupTest(){
+  void simpleFactoryLookupTest(){
     MessagePropertyFactory factory = MessagePropertyFactory.getInstance();
     for(Integer identifier:factory.getProperties().keySet()){
       MessageProperty property = factory.find(identifier);
-      Assertions.assertTrue(property != null);
+      Assertions.assertNotNull(property);
     }
   }
 
   @Test
-  public void simpleMessagePropertyInstance(){
+  void simpleMessagePropertyInstance(){
     MessagePropertyFactory factory = MessagePropertyFactory.getInstance();
     for(Map.Entry<Integer, MessageProperty> entry:factory.getProperties().entrySet()){
-
       MessageProperty check = entry.getValue().instance();
       Assertions.assertEquals(entry.getValue().getClass().toString(), check.getClass().toString());
       Assertions.assertEquals(entry.getValue().getName(), check.getName());

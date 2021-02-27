@@ -18,29 +18,30 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.SimpleBufferBasedTest;
 
-public class SimpleBufferBasedMQTTIT extends SimpleBufferBasedTest {
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+class SimpleBufferBasedMQTTIT extends SimpleBufferBasedTest {
 
   @Test
   @DisplayName("Send MQTT frame single character at a time")
-  public void simpleCharByCharTest() throws IOException, URISyntaxException {
+  void simpleCharByCharTest() throws IOException, URISyntaxException {
     simpleByteWriteTest(1);
   }
 
   @Test
   @DisplayName("Send MQTT frame single character at a time")
-  public void simple2By2Test() throws IOException, URISyntaxException {
+  void simple2By2Test() throws IOException, URISyntaxException {
     simpleByteWriteTest(2);
   }
 
   @Test
   @DisplayName("Send MQTT frame single character at a time")
-  public void simple5By5Test() throws IOException, URISyntaxException {
+  void simple5By5Test() throws IOException, URISyntaxException {
     simpleByteWriteTest(5);
   }
 
@@ -50,19 +51,19 @@ public class SimpleBufferBasedMQTTIT extends SimpleBufferBasedTest {
 
   @Test
   @DisplayName("Delay subscriber by 1ms to force flow control back to the server")
-  public void slowSubscriberWith1msDelay() throws IOException, URISyntaxException {
+  void slowSubscriberWith1msDelay() throws IOException, URISyntaxException {
     slowSubscriberTest("/mqtt_3_1_1.txt", "localhost", 1883,-1, 0x20, 1);
   }
 
   @Test
   @DisplayName("Delay subscriber by 10ms to force flow control back to the server")
-  public void slowSubscriberWith10msDelay() throws IOException, URISyntaxException {
+  void slowSubscriberWith10msDelay() throws IOException, URISyntaxException {
     slowSubscriberTest("/mqtt_3_1_1.txt", "localhost", 1883,-1, 0x20, 10);
   }
 
   @Test
   @DisplayName("Delay subscriber by 50ms to force flow control back to the server")
-  public void slowSubscriberWith50msDelay() throws IOException, URISyntaxException {
+  void slowSubscriberWith50msDelay() throws IOException, URISyntaxException {
     slowSubscriberTest("/mqtt_3_1_1.txt", "localhost", 1883,-1, 0x20, 50);
   }
 

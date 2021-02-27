@@ -19,11 +19,8 @@
 package org.maps.network.protocol.impl.conformance;
 
 public class PahoMQTT3ConformanceIT extends PahoConformance {
-
-
-
+  @Override
   public String getFileName(){
     return "client_test.py";
   }
-
 }

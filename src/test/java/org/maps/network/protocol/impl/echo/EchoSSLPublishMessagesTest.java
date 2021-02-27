@@ -18,17 +18,18 @@
 
 package org.maps.network.protocol.impl.echo;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class EchoSSLPublishMessagesTest extends BaseTestConfig {
+import java.io.IOException;
+
+class EchoSSLPublishMessagesTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Connect to ECHO server over SSL")
-  public void testEchoMessages() throws IOException {
+  void testEchoMessages() throws IOException {
     EchoClient echoClient = new SSLEchoClient("localhost", 8444);
     for(int x=0;x<100;x++) {
       String sentMsg = "This should be returned to me";

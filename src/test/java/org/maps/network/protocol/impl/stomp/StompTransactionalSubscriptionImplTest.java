@@ -18,11 +18,10 @@
 
 package org.maps.network.protocol.impl.stomp;
 
-import java.net.URISyntaxException;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.maps.test.WaitForState;
 import org.projectodd.stilts.stomp.StompException;
 import org.projectodd.stilts.stomp.StompMessage;
 import org.projectodd.stilts.stomp.StompMessages;
@@ -30,11 +29,16 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.StompClient;
 
-public class StompTransactionalSubscriptionImplTest extends StompBaseTest {
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+class StompTransactionalSubscriptionImplTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test publish events with priority using block based transactions")
-  public void testPriorityPublishTransactionalWithClientCommit() throws InterruptedException, URISyntaxException, StompException {
+  void testPriorityPublishTransactionalWithClientCommit() throws InterruptedException, URISyntaxException, StompException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -80,7 +84,7 @@ public class StompTransactionalSubscriptionImplTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test publish events with priority using transactions")
-  public void testPriorityPublishTransactionalWithCommit() throws InterruptedException, URISyntaxException, StompException {
+  void testPriorityPublishTransactionalWithCommit() throws InterruptedException, URISyntaxException, StompException, IOException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -109,12 +113,11 @@ public class StompTransactionalSubscriptionImplTest extends StompBaseTest {
       client.send(msg);
     }
     int start = counter.get();
-    long endTime = System.currentTimeMillis()+10000;
-    while(counter.get()<msgNumber && System.currentTimeMillis()< endTime){
+    while(counter.get() < msgNumber){
+      WaitForState.waitFor(10, TimeUnit.SECONDS, ()->counter.get() == msgNumber);
       delay(10);
       if(start != counter.get()){
         start = counter.get();
-        endTime = System.currentTimeMillis()+10000;
       }
     }
     subscription.unsubscribe();

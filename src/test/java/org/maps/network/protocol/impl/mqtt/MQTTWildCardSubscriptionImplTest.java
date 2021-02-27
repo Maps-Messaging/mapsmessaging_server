@@ -18,43 +18,42 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
+import org.maps.test.WaitForState;
 
-public class MQTTWildCardSubscriptionImplTest extends BaseTestConfig implements MqttCallback {
+import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-  private AtomicInteger eventCounter = new AtomicInteger(0);
+class MQTTWildCardSubscriptionImplTest extends BaseTestConfig implements MqttCallback {
+
+  private final AtomicInteger eventCounter = new AtomicInteger(0);
 
   @Test
   @DisplayName("Test QoS:0 wildcard subscription")
-  public void testWildcardSubscribeQOS0hEvent() throws MqttException, InterruptedException {
+  void testWildcardSubscribeQOS0hEvent() throws MqttException, InterruptedException, IOException {
     testWildcardSubscription(0);
   }
 
   @Test
   @DisplayName("Test QoS:1  wildcard subscription")
-  public void testWildcardSubscribeQOS1hEvent() throws MqttException, InterruptedException {
+  void testWildcardSubscribeQOS1hEvent() throws MqttException, InterruptedException, IOException {
     testWildcardSubscription(1);
   }
 
   @Test
   @DisplayName("Test QoS:2  wildcard subscription")
-  public void testWildcardSubscribeQOS2hEvent() throws MqttException, InterruptedException {
+  void testWildcardSubscribeQOS2hEvent() throws MqttException, InterruptedException, IOException {
     testWildcardSubscription(2);
   }
 
-  private void testWildcardSubscription(int QoS) throws MqttException, InterruptedException{
+  private void testWildcardSubscription(int QoS) throws MqttException, InterruptedException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(),  new MemoryPersistence());
     MqttConnectOptions options = new MqttConnectOptions();
     options.setWill("/topic/will", "this is my will msg".getBytes(), QoS, true);
@@ -62,7 +61,6 @@ public class MQTTWildCardSubscriptionImplTest extends BaseTestConfig implements 
     options.setPassword("password1".toCharArray());
     client.connect(options);
     client.setCallback(this);
-    String topicName = getTopicName();
     client.subscribe("/wildcard/topic/#");
     Assertions.assertTrue(client.isConnected());
     for(int x=0;x<10;x++) {
@@ -75,10 +73,7 @@ public class MQTTWildCardSubscriptionImplTest extends BaseTestConfig implements 
     MqttMessage finish =  new MqttMessage("End".getBytes());
     finish.setQos(1);
     client.publish("/wildcard"+getTopicName(), finish);
-    long timeout = System.currentTimeMillis() + 10000;
-    while(eventCounter.get() < 11 && timeout > System.currentTimeMillis()){
-      delay(10);
-    }
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> eventCounter.get() == 11);
     client.unsubscribe("/wildcard/topic/#");
     client.disconnect();
     Assertions.assertEquals(11, eventCounter.get());

@@ -18,43 +18,42 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
+import org.maps.test.WaitForState;
 
-public class MQTTSubscriptionImplTest extends BaseTestConfig implements MqttCallback {
+import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-  private AtomicInteger eventCounter = new AtomicInteger(0);
+class MQTTSubscriptionImplTest extends BaseTestConfig implements MqttCallback {
+
+  private final AtomicInteger eventCounter = new AtomicInteger(0);
 
   @Test
   @DisplayName("Test QoS:0 subscription")
-  public void testSubscribeQOS0hEvent() throws MqttException, InterruptedException {
+  void testSubscribeQOS0hEvent() throws MqttException, InterruptedException, IOException {
     testSubscription(0);
   }
 
   @Test
   @DisplayName("Test QoS:1 subscription")
-  public void testSubscribeQOS1hEvent() throws MqttException, InterruptedException {
+  void testSubscribeQOS1hEvent() throws MqttException, InterruptedException, IOException {
     testSubscription(1);
   }
 
   @Test
   @DisplayName("Test QoS:2 subscription")
-  public void testSubscribeQOS2hEvent() throws MqttException, InterruptedException {
+  void testSubscribeQOS2hEvent() throws MqttException, InterruptedException, IOException {
     testSubscription(2);
   }
 
-  private void testSubscription(int QoS) throws MqttException, InterruptedException{
+  private void testSubscription(int QoS) throws MqttException, InterruptedException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     MqttConnectOptions options = new MqttConnectOptions();
     options.setWill("/topic/will", "this is my will msg".getBytes(), QoS, true);
@@ -76,9 +75,8 @@ public class MQTTSubscriptionImplTest extends BaseTestConfig implements MqttCall
     finish.setQos(1);
     client.publish(topicName, finish);
     long timeout = System.currentTimeMillis() + 10000;
-    while(eventCounter.get() < 11 && timeout > System.currentTimeMillis()){
-      delay(10);
-    }
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> eventCounter.get() == 1);
+
     Assertions.assertFalse(timeout < System.currentTimeMillis());
     client.unsubscribe(topicName);
     client.disconnect();

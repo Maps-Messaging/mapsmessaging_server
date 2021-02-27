@@ -18,22 +18,18 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.io.IOException;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 import org.maps.test.WaitForState;
+
+import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class SimpleOverlapTest extends BaseTestConfig  {
 
@@ -108,7 +104,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
 
   @Test
   @Disabled
-  void testOtherSystemTopics() throws MqttException {
+  void testOtherSystemTopics() throws MqttException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
@@ -119,7 +115,6 @@ class SimpleOverlapTest extends BaseTestConfig  {
 
       @Override
       public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
-        System.err.println("Received Event:"+s+" "+mqttMessage.toString());
         counter.incrementAndGet();
       }
 
@@ -134,10 +129,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
     options.setPassword("password1".toCharArray());
     client.connect(options);
     client.subscribe("$NMEA/#"); // ALL System topics
-    long endTime = System.currentTimeMillis() + 20000;
-    while(counter.get() == 0 && endTime > System.currentTimeMillis()){
-      delay(10);
-    }
+    WaitForState.waitFor(20, TimeUnit.SECONDS, () -> counter.get() != 0);
     Assertions.assertTrue(counter.get() != 0);
     client.disconnect();
     client.close();

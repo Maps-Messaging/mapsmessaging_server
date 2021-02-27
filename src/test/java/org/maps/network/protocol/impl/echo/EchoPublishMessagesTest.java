@@ -18,17 +18,18 @@
 
 package org.maps.network.protocol.impl.echo;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class EchoPublishMessagesTest extends BaseTestConfig {
+import java.io.IOException;
+
+class EchoPublishMessagesTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test simple echo messages")
-  public void testEchoMessages() throws IOException {
+  void testEchoMessages() throws IOException {
     EchoClient echoClient = new EchoClient("localhost", 2001);
     for(int x=0;x<100;x++) {
       String sentMsg = "This should be returned to me";

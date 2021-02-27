@@ -18,17 +18,18 @@
 
 package org.maps.network.protocol.impl.echo;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class EchoConnectionTest  extends BaseTestConfig {
+import java.io.IOException;
+
+class EchoConnectionTest  extends BaseTestConfig {
 
   @Test
   @DisplayName("Simple connect to the server using the ECHO protocol")
-  public void connectToServer() {
+  void connectToServer() {
     try {
       EchoClient echoClient = new EchoClient("localhost", 2001);
       echoClient.close();
@@ -39,7 +40,7 @@ public class EchoConnectionTest  extends BaseTestConfig {
 
   @Test
   @DisplayName("Simple connect to the server using the ECHO protocol but not a supported protocol")
-  public void connectToInvalidServer() throws IOException {
+  void connectToInvalidServer() throws IOException {
     EchoClient echoClient = null; // No echo configured
     try {
       echoClient = new EchoClient("localhost", 8675);
@@ -54,7 +55,7 @@ public class EchoConnectionTest  extends BaseTestConfig {
 
   @Test
   @DisplayName("Test simple invalid passphrase")
-  public void checkInvalidPassphraseEndPoint() throws IOException {
+  void checkInvalidPassphraseEndPoint() throws IOException {
     EchoClient echoClient;
     try {
       echoClient = new EchoClient("localhost", 8999);

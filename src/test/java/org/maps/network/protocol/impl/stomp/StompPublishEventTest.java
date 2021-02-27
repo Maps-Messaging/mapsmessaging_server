@@ -18,19 +18,6 @@
 
 package org.maps.network.protocol.impl.stomp;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
@@ -53,11 +40,25 @@ import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
-public class StompPublishEventTest extends StompBaseTest {
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test with a STOMP client that passes content length with large content")
-  public void testPublishLargeEventsContentLength() throws URISyntaxException, StompException, InterruptedException {
+  void testPublishLargeEventsContentLength() throws URISyntaxException, StompException, InterruptedException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -89,7 +90,7 @@ public class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test with a STOMP client that passes content length with small content")
-  public void testPublishSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException {
+  void testPublishSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -133,7 +134,7 @@ public class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test Transactional publishing with content length")
-  public void testTransactionalPublishContentLength() throws URISyntaxException, StompException, InterruptedException {
+  void testTransactionalPublishContentLength() throws URISyntaxException, StompException, InterruptedException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     String topicName = getTopicName();
@@ -200,7 +201,7 @@ public class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test publishing with large content length")
-  public void testPublishLargeEvents() throws IOException, LoginException, InterruptedException {
+  void testPublishLargeEvents() throws IOException, LoginException, InterruptedException {
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
@@ -246,7 +247,7 @@ public class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test with small content length")
-  public void testPublishSmallEvents() throws IOException, LoginException, InterruptedException {
+  void testPublishSmallEvents() throws IOException, LoginException, InterruptedException {
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
@@ -279,7 +280,7 @@ public class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test Transactional publishing")
-  public void testTransactionalPublish() throws StompException, IOException, LoginException, InterruptedException {
+  void testTransactionalPublish() throws StompException, IOException, LoginException, InterruptedException {
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
@@ -319,7 +320,7 @@ public class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test Transactional delay publishing")
-  public void testTransactionalDelayPublish() throws StompException, IOException, LoginException, InterruptedException {
+  void testTransactionalDelayPublish() throws StompException, IOException, LoginException, InterruptedException {
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
@@ -361,7 +362,7 @@ public class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("WebSocket Stomp Publish Test")
-  public void webSocketPublishTest() throws InterruptedException, ExecutionException, TimeoutException {
+  void webSocketPublishTest() throws InterruptedException, ExecutionException, TimeoutException {
     WebSocketClient client = new StandardWebSocketClient();
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();

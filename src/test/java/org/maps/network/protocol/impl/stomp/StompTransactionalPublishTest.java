@@ -18,10 +18,6 @@
 
 package org.maps.network.protocol.impl.stomp;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -29,11 +25,16 @@ import org.junit.jupiter.api.Test;
 import org.projectodd.stilts.stomp.StompMessage;
 import org.projectodd.stilts.stomp.StompMessages;
 
-public class StompTransactionalPublishTest extends StompBaseTest {
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+class StompTransactionalPublishTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test transactional publishing with commit")
-  public void testPublishTransactionalWithCommit() throws IOException, LoginException, InterruptedException {
+  void testPublishTransactionalWithCommit() throws IOException, LoginException, InterruptedException {
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
@@ -66,7 +67,7 @@ public class StompTransactionalPublishTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test transactional publishing with abort")
-  public void testPublishTransactionalWithAbort() throws IOException, LoginException, InterruptedException {
+  void testPublishTransactionalWithAbort() throws IOException, LoginException, InterruptedException {
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();

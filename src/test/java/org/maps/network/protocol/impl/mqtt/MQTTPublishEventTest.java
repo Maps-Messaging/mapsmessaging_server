@@ -18,7 +18,6 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.util.UUID;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -29,24 +28,26 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class MQTTPublishEventTest extends BaseTestConfig {
+import java.util.UUID;
+
+class MQTTPublishEventTest extends BaseTestConfig {
 
 
   @Test
   @DisplayName("Test QoS:0 publishing")
-  public void testPublishQOS0hEvent() throws MqttException, InterruptedException {
+  void testPublishQOS0hEvent() throws MqttException, InterruptedException {
     testPublish(0);
   }
 
   @Test
   @DisplayName("Test QoS:1 publishing")
-  public void testPublishQOS1hEvent() throws MqttException, InterruptedException {
+  void testPublishQOS1hEvent() throws MqttException, InterruptedException {
     testPublish(1);
   }
 
   @Test
   @DisplayName("Test QoS:2 publishing")
-  public void testPublishQOS2hEvent() throws MqttException, InterruptedException {
+  void testPublishQOS2hEvent() throws MqttException, InterruptedException {
     testPublish(2);
   }
 

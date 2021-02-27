@@ -18,24 +18,20 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.util.UUID;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class MQTTConnectionTest extends BaseTestConfig {
+import java.util.UUID;
+
+class MQTTConnectionTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test anonymous MQTT client connection")
-  public void testAnonymous() throws MqttException {
+  void testAnonymous() throws MqttException {
     MqttClient client = new MqttClient("tcp://localhost:8675", UUID.randomUUID().toString(), new MemoryPersistence());
     client.connect();
     Assertions.assertTrue(client.isConnected());
@@ -46,7 +42,7 @@ public class MQTTConnectionTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test valid username/password MQTT client connection")
-  public void testValidUser() throws MqttException {
+  void testValidUser() throws MqttException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     MqttConnectOptions options = new MqttConnectOptions();
     options.setWill("/topic/will", "this is my will msg".getBytes(), 2, true);
@@ -61,7 +57,7 @@ public class MQTTConnectionTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test valid user/password MQTT client connection with a reset session set")
-  public void testValidUserResetState() throws MqttException {
+  void testValidUserResetState() throws MqttException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     MqttConnectOptions options = new MqttConnectOptions();
     options.setCleanSession(true);
@@ -88,7 +84,7 @@ public class MQTTConnectionTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test invalid MQTT client connection")
-  public void testInvalidUser() throws MqttException {
+  void testInvalidUser() throws MqttException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     MqttCallback callback = new MqttCallback(){
 

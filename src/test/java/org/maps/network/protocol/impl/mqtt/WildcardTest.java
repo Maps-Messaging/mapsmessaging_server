@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.messaging.engine.destination.subscription.set.DestinationSet;
 
-public class WildcardTest {
+class WildcardTest {
 
   @Test
-  public void wildcardTest(){
+  void wildcardTest(){
     Assertions.assertTrue(mqttWildcard("test/foo/bar", "test/foo/bar")); // []
     Assertions.assertTrue(mqttWildcard("test/foo/bar", "test/+/bar")); // ["foo"]
     Assertions.assertTrue(mqttWildcard("test/foo/bar", "test/#")); // ["foo/bar"]

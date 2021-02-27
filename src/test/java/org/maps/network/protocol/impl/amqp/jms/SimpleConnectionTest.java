@@ -18,19 +18,15 @@
 
 package org.maps.network.protocol.impl.amqp.jms;
 
-import java.io.IOException;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import javax.jms.Topic;
-import javax.naming.Context;
-import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SimpleConnectionTest extends BaseConnection {
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import java.io.IOException;
+
+class SimpleConnectionTest extends BaseConnection {
 
   @Test
   void simpleTopicPubSub() throws JMSException, NamingException, IOException {

@@ -18,23 +18,19 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.io.IOException;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
-import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 import org.maps.test.WaitForState;
 
-public class MQTTStoredMessageTest extends BaseTestConfig {
+import java.io.IOException;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+class MQTTStoredMessageTest extends BaseTestConfig {
 
 
   @Test

@@ -18,11 +18,10 @@
 
 package org.maps.network.protocol.impl.stomp;
 
-import java.net.URISyntaxException;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.maps.test.WaitForState;
 import org.projectodd.stilts.stomp.StompException;
 import org.projectodd.stilts.stomp.StompMessage;
 import org.projectodd.stilts.stomp.StompMessages;
@@ -30,11 +29,16 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.StompClient;
 
-public class StompPublishingEventIT extends StompBaseTest {
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+class StompPublishingEventIT extends StompBaseTest {
 
   @Test
   @DisplayName("Test with a STOMP client that doesn't pass content length with small content")
-  public void testPublishPerformanceSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException {
+  void testPublishPerformanceSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException, IOException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -56,10 +60,7 @@ public class StompPublishingEventIT extends StompBaseTest {
       client.send(msg);
     }
     long startTime = System.currentTimeMillis();
-    long waitTime = System.currentTimeMillis()+20000;
-    while(waitTime > System.currentTimeMillis() && counter.get() != messageCount){
-      delay(1);
-    }
+    WaitForState.waitFor(20, TimeUnit.SECONDS, () -> counter.get() == messageCount);
     delay(100);
     Assertions.assertTrue(client.isConnected());
     subscription.unsubscribe();

@@ -18,25 +18,19 @@
 
 package org.maps.network.protocol.impl.amqp.jms;
 
-import java.io.IOException;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.naming.Context;
-import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class MessageTypeTest extends BaseConnection {
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import java.io.IOException;
+
+class MessageTypeTest extends BaseConnection {
 
 
   @Test
+
   void sendAllMessageTypeTest() throws IOException, NamingException, JMSException {
     Context context = loadContext();
     Assertions.assertNotNull(context);
@@ -55,7 +49,7 @@ public class MessageTypeTest extends BaseConnection {
 
     String payload = "Hello world! this should be a byte []";
     Message message1;
-    /*
+
     Message message = session.createMessage();
     message.setIntProperty("IntProperty", 100);
     message.setLongProperty("LongProperty", 1L << 32);
@@ -96,7 +90,7 @@ public class MessageTypeTest extends BaseConnection {
     ((BytesMessage) message1).readBytes(test);
     Assertions.assertEquals(payload, new String(test));
 
-*/
+
     MapMessage mapMessage = session.createMapMessage();
     mapMessage.setIntProperty("IntProperty", 3);
     mapMessage.setLongProperty("LongProperty", 1 << 10);
@@ -112,7 +106,7 @@ public class MessageTypeTest extends BaseConnection {
     Assertions.assertEquals("This is a string property", message1.getStringProperty("StringProperty"));
     Assertions.assertEquals(payload, mapMessage.getString("body"));
 
-    /*
+
     StreamMessage streamMessage = session.createStreamMessage();
     streamMessage.setIntProperty("IntProperty", 4);
     streamMessage.setLongProperty("LongProperty", 1 << 16);
@@ -148,7 +142,7 @@ public class MessageTypeTest extends BaseConnection {
     Object result = ((ObjectMessage) message1).getObject();
     Assertions.assertTrue(result instanceof String);
     Assertions.assertEquals("This Should be a object message of a string", result);
-*/
+
     messageProducer.close();
     messageConsumer.close();
     connection.close();

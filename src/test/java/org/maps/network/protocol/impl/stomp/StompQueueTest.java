@@ -18,10 +18,6 @@
 
 package org.maps.network.protocol.impl.stomp;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.LongAdder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.projectodd.stilts.stomp.Headers;
@@ -32,14 +28,19 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.StompClient;
 
-public class StompQueueTest extends StompBaseTest {
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.LongAdder;
+
+class StompQueueTest extends StompBaseTest {
 
   String getQueue(){
     return "/queue/testQueue1";
   }
 
   @Test
-  public void testBasicQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicQueueLogic() throws URISyntaxException, StompException, InterruptedException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
     //
@@ -93,7 +94,7 @@ public class StompQueueTest extends StompBaseTest {
   }
 
   @Test
-  public void testBasicUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
     String queueName = getQueue();
 
     List<StompQueueClient> clients = new ArrayList<>();
@@ -185,7 +186,7 @@ public class StompQueueTest extends StompBaseTest {
   }
 
   @Test
-  public void testBasicSubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicSubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
     //
@@ -270,7 +271,7 @@ public class StompQueueTest extends StompBaseTest {
   }
 
   @Test
-  public void testBasicRollingUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicRollingUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
     String queueName = getQueue();
 
     List<StompQueueClient> clients = new ArrayList<>();

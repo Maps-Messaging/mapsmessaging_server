@@ -18,18 +18,19 @@
 
 package org.maps.network.protocol.impl.echo;
 
-import java.io.IOException;
-import javax.net.ssl.SSLException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class EchoSSLConnectionTest extends BaseTestConfig  {
+import javax.net.ssl.SSLException;
+import java.io.IOException;
+
+class EchoSSLConnectionTest extends BaseTestConfig  {
 
   @Test
   @DisplayName("Connect to ECHO server over SSL")
-  public void connectToServer() throws IOException {
+  void connectToServer() throws IOException {
     try {
       EchoClient echoClient = new SSLEchoClient("localhost", 8444);
       echoClient.close();
@@ -40,7 +41,7 @@ public class EchoSSLConnectionTest extends BaseTestConfig  {
 
   @Test
   @DisplayName("Connect to ECHO server over SSL to an invalid port")
-  public void connectToInvalidServer() throws IOException {
+  void connectToInvalidServer() throws IOException {
     try {
       EchoClient echoClient = new SSLEchoClient("localhost", 2001);
       echoClient.close();

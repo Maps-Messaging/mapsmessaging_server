@@ -18,75 +18,76 @@
 
 package org.maps.network.protocol.impl.stomp;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.SimpleBufferBasedTest;
 
-public class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
 
   private final int TOTAL_FRAMES = 101;
 
   @Test
   @DisplayName("Send Stomp frame single character at a time")
-  public void simpleCharByCharTest() throws IOException,  URISyntaxException {
+  void simpleCharByCharTest() throws IOException,  URISyntaxException {
     simpleByteWriteTest(1);
   }
 
 
   @Test
   @DisplayName("Send Stomp frame single character at a time with no delay")
-  public void simpleCharByCharFastTest() throws IOException,  URISyntaxException {
+  void simpleCharByCharFastTest() throws IOException,  URISyntaxException {
     simpleByteWrite("/input.txt", 0x0, 1,  "localhost", 8675, TOTAL_FRAMES, null, true);
 
   }
 
   @Test
   @DisplayName("Send Stomp frame 10 characters at a time")
-  public void simple10BlockTest() throws IOException,  URISyntaxException {
+  void simple10BlockTest() throws IOException,  URISyntaxException {
     simpleByteWriteTest(10);
   }
 
   @Test
   @DisplayName("Send Stomp frame 100 characters at a time")
-  public void simple100BlockTest() throws IOException, URISyntaxException {
+  void simple100BlockTest() throws IOException, URISyntaxException {
     simpleByteWriteTest(100);
   }
 
   @Test
   @DisplayName("Send Stomp frame 1K characters at a time")
-  public void simple1KBlockTest() throws IOException, URISyntaxException {
+  void simple1KBlockTest() throws IOException, URISyntaxException {
     simpleByteWriteTest(1024);
   }
 
   @Test
   @DisplayName("Send Stomp frame 10K characters at a time")
-  public void simple10KBlockTest() throws IOException, URISyntaxException {
+  void simple10KBlockTest() throws IOException, URISyntaxException {
     simpleByteWriteTest(10240);
   }
 
   @Test
   @DisplayName("Delay subscriber by 1ms to force flow control back to the server")
-  public void slowSubscriberWith1msDelay() throws IOException, URISyntaxException {
+  void slowSubscriberWith1msDelay() throws IOException, URISyntaxException {
     slowSubscriberTest(1);
   }
 
   @Test
   @DisplayName("Delay subscriber by 10ms to force flow control back to the server")
-  public void slowSubscriberWith10msDelay() throws IOException, URISyntaxException {
+  void slowSubscriberWith10msDelay() throws IOException, URISyntaxException {
     slowSubscriberTest(10);
   }
 
   @Test
   @DisplayName("Delay subscriber by 50ms to force flow control back to the server")
-  public void slowSubscriberWith50msDelay() throws IOException, URISyntaxException {
+  void slowSubscriberWith50msDelay() throws IOException, URISyntaxException {
     slowSubscriberTest(50);
   }
 
   @Test
   @DisplayName("Send Stomp frames but delay the framing bytes")
-  public void frameCharacterTest() throws IOException, URISyntaxException {
+  void frameCharacterTest() throws IOException, URISyntaxException {
     int[] frames = {0x0, 0xA};
     super.frameCharacter("/input.txt", "localhost", 8675, frames, TOTAL_FRAMES);
   }

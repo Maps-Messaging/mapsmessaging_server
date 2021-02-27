@@ -18,23 +18,15 @@
 
 package org.maps.network.protocol.impl.amqp.jms;
 
-import java.io.IOException;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
-import javax.jms.TextMessage;
-import javax.naming.Context;
-import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TemporaryDestinationTest extends BaseConnection {
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import java.io.IOException;
+
+class TemporaryDestinationTest extends BaseConnection {
 
   @Test
   void simpleTemporaryTopicTest() throws JMSException, NamingException, IOException {

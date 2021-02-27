@@ -18,7 +18,6 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
-import java.util.UUID;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -28,11 +27,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
 
-public class SSLMQTTConnectionTest extends BaseTestConfig {
+import java.util.UUID;
+
+class SSLMQTTConnectionTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test valid user over SSL")
-  public void testValidUser() throws MqttException {
+  void testValidUser() throws MqttException {
     try {
       MqttClient client = new MqttClient("ssl://127.0.0.1:8444", UUID.randomUUID().toString(),  new MemoryPersistence());
       MqttConnectOptions options = new MqttConnectOptions();
@@ -55,7 +56,7 @@ public class SSLMQTTConnectionTest extends BaseTestConfig {
 
   @Test
   @DisplayName("Test valid user over SSL")
-  public void testValidSSLUser() throws MqttException {
+  void testValidSSLUser() throws MqttException {
     try {
       MqttClient client = new MqttClient("ssl://127.0.0.1:8445", UUID.randomUUID().toString(), new MemoryPersistence());
       MqttConnectOptions options = new MqttConnectOptions();
