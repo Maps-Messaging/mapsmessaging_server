@@ -18,7 +18,9 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
+import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -30,26 +32,27 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
+import org.maps.test.WaitForState;
 
 public class MQTTStoredMessageTest extends BaseTestConfig {
 
 
   @Test
-  void testQos0() throws MqttException {
+  void testQos0() throws MqttException, IOException {
     connectSubscribeDisconnectPublishAndCheck(0);
   }
 
   @Test
-  void testQos1() throws MqttException {
+  void testQos1() throws MqttException, IOException {
     connectSubscribeDisconnectPublishAndCheck(1);
   }
 
   @Test
-  void testQos2() throws MqttException {
+  void testQos2() throws MqttException, IOException {
     connectSubscribeDisconnectPublishAndCheck(2);
   }
 
-  void connectSubscribeDisconnectPublishAndCheck(int QoS) throws MqttException {
+  void connectSubscribeDisconnectPublishAndCheck(int QoS) throws MqttException, IOException {
 
     String subId = UUID.randomUUID().toString();
     MqttClient subscribe = new MqttClient("tcp://localhost:2001", subId, new MemoryPersistence());
@@ -89,10 +92,7 @@ public class MQTTStoredMessageTest extends BaseTestConfig {
     subscribe.connect(subOption);
     subscribe.subscribe("/topic/test", QoS, ml);
     Assertions.assertTrue(subscribe.isConnected());
-    long endTime = System.currentTimeMillis() + 2000;
-    while(ml.getCounter() < 10 && endTime > System.currentTimeMillis()){
-      LockSupport.parkNanos(100000000);
-    }
+    WaitForState.waitFor(2, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
     if(QoS == 0){
       Assertions.assertEquals(0, ml.getCounter());
     }

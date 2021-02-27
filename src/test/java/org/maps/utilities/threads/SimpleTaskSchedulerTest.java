@@ -18,23 +18,23 @@
 
 package org.maps.utilities.threads;
 
+import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.maps.test.WaitForState;
 
-public class SimpleTaskSchedulerTest {
+class SimpleTaskSchedulerTest {
 
   @Test
-  public void simpleScheduleTest(){
+  void simpleScheduleTest() throws IOException {
     SimpleTaskScheduler scheduler = SimpleTaskScheduler.getInstance();
     TestTask task = new TestTask();
     long time = System.currentTimeMillis();
     Future<?> future = scheduler.schedule(task, 1, TimeUnit.SECONDS);
-    while(!future.isDone() && time+2000 >System.currentTimeMillis()){
-      LockSupport.parkNanos(1000000);
-    }
+    WaitForState.waitFor(2, TimeUnit.SECONDS, future::isDone);
     time = task.executedTime - time;
     System.err.println(time);
     Assertions.assertTrue(time < 1600);
@@ -43,10 +43,9 @@ public class SimpleTaskSchedulerTest {
   }
 
   @Test
-  public void simpleCancelTest(){
+  void simpleCancelTest(){
     SimpleTaskScheduler scheduler = SimpleTaskScheduler.getInstance();
     TestTask task = new TestTask();
-    long time = System.currentTimeMillis();
     Future<?> future = scheduler.schedule(task, 2, TimeUnit.SECONDS);
     LockSupport.parkNanos(1000000);
     future.cancel(true);
@@ -54,7 +53,7 @@ public class SimpleTaskSchedulerTest {
     Assertions.assertTrue(future.isCancelled());
   }
 
-  private class TestTask implements Runnable{
+  private static class TestTask implements Runnable{
 
     private long executedTime;
 

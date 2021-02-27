@@ -18,7 +18,9 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
+import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -31,11 +33,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
+import org.maps.test.WaitForState;
 
 public class SimpleOverlapTest extends BaseTestConfig  {
 
   @Test
-  public void testWildcardAndSystemTopics() throws MqttException {
+  public void testWildcardAndSystemTopics() throws MqttException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:2001", "testWildcardAndSystemTopics", new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
@@ -141,7 +144,7 @@ public class SimpleOverlapTest extends BaseTestConfig  {
   }
 
   @Test
-  public void testSubscriptionThenWildcard() throws MqttException {
+  public void testSubscriptionThenWildcard() throws MqttException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
@@ -233,37 +236,25 @@ public class SimpleOverlapTest extends BaseTestConfig  {
 
 
 
-  private boolean waitFor(AtomicInteger counter, int expected, long wait){
-    long end = System.currentTimeMillis() + wait;
-    while(System.currentTimeMillis() < end && counter.get() != expected){
-      delayMS(10L);
-    }
+  private boolean waitFor(AtomicInteger counter, int expected, long wait) throws IOException {
+    WaitForState.waitFor(wait, TimeUnit.MILLISECONDS, () -> counter.get() == expected);
     //
     // Lets see if there are any more updates coming
     //
-    if(counter.get() == expected){
-      delayMS(10L);
-    }
+    WaitForState.waitFor(10, TimeUnit.MILLISECONDS, () -> counter.get() != expected);
     boolean response = counter.get() == expected;
     counter.set(0);
     return response;
   }
 
-  private boolean waitForError(AtomicInteger counter, int expected, long wait){
-    long end = System.currentTimeMillis() + wait;
+  private boolean waitForError(AtomicInteger counter, int expected, long wait) throws IOException {
     long waited = 0;
-    while(System.currentTimeMillis() < end && counter.get() != expected){
-      delayMS(10L);
-      waited += 10;
-    }
-
+    WaitForState.waitFor(wait, TimeUnit.MILLISECONDS, () -> counter.get() == expected);
     //
     // Lets see if there are any more updates coming
     //
-    while(counter.get() == expected && waited <= wait){
-      delayMS(10L);
-      waited += 10;
-    }
+    WaitForState.waitFor(wait, TimeUnit.MILLISECONDS, () -> counter.get() != expected);
+
     boolean response = counter.get() == expected;
     counter.set(0);
     return response;

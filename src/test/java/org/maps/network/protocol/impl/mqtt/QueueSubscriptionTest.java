@@ -18,7 +18,9 @@
 
 package org.maps.network.protocol.impl.mqtt;
 
+import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -30,26 +32,27 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
+import org.maps.test.WaitForState;
 
 public class QueueSubscriptionTest extends BaseTestConfig {
 
 
   @Test
-  void simpleQueueSubscriptionQoS0() throws MqttException {
+  void simpleQueueSubscriptionQoS0() throws MqttException, IOException {
     simpleQueueSubscription(0);
   }
 
   @Test
-  void simpleQueueSubscriptionQoS1() throws MqttException {
+  void simpleQueueSubscriptionQoS1() throws MqttException, IOException {
     simpleQueueSubscription(1);
   }
 
   @Test
-  void simpleQueueSubscriptionQoS2() throws MqttException {
+  void simpleQueueSubscriptionQoS2() throws MqttException, IOException {
     simpleQueueSubscription(2);
   }
 
-  private void simpleQueueSubscription(int QoS) throws MqttException {
+  private void simpleQueueSubscription(int QoS) throws MqttException, IOException {
     MqttClient client = new MqttClient("tcp://localhost:1883", UUID.randomUUID().toString(), new MemoryPersistence());
     MqttConnectOptions options = new MqttConnectOptions();
     options.setUserName("user1");
@@ -72,10 +75,8 @@ public class QueueSubscriptionTest extends BaseTestConfig {
         message.setRetained(false);
         client.publish("queue/queue1", message);
       }
-      long time = System.currentTimeMillis() + 5000;
-      while (counter.get() != 10 && time > System.currentTimeMillis()) {
-        LockSupport.parkNanos(1000000000);
-      }
+      WaitForState.waitFor(5, TimeUnit.SECONDS,() -> counter.get() == 10 );
+
       client.unsubscribe("queue/queue1");
       Assertions.assertEquals(10, counter.get());
     }
