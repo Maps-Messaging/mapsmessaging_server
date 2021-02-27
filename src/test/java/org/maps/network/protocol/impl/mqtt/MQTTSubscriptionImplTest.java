@@ -24,11 +24,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.maps.test.BaseTestConfig;
-import org.maps.test.WaitForState;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class MQTTSubscriptionImplTest extends BaseTestConfig implements MqttCallback {
@@ -75,8 +73,9 @@ class MQTTSubscriptionImplTest extends BaseTestConfig implements MqttCallback {
     finish.setQos(1);
     client.publish(topicName, finish);
     long timeout = System.currentTimeMillis() + 10000;
-    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> eventCounter.get() == 1);
-
+    while(eventCounter.get() < 11 && timeout > System.currentTimeMillis()){
+      delay(10);
+    }
     Assertions.assertFalse(timeout < System.currentTimeMillis());
     client.unsubscribe(topicName);
     client.disconnect();
