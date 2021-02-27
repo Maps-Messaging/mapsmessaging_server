@@ -60,7 +60,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
     options.setConnectionTimeout(10);
     client.connect(options);
     client.subscribe("#"); // ALL topics
-    Assertions.assertTrue(waitForError(counter, 0, 2000));
+    Assertions.assertTrue(waitForError(counter, 0));
     client.disconnect();
     client.close();
   }
@@ -164,62 +164,62 @@ class SimpleOverlapTest extends BaseTestConfig  {
     // Create 3 topics
     client.subscribe("overlap/topic1");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 1, 1000));
+    Assertions.assertTrue(waitFor(counter, 1));
 
     client.subscribe("overlap/topic2");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 2, 1000));
+    Assertions.assertTrue(waitFor(counter, 2));
 
     client.subscribe("overlap/topic3");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 3, 1000));
+    Assertions.assertTrue(waitFor(counter, 3));
 
     //
     // Create the wildcard subscription
     client.subscribe("overlap/#");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 3, 1000));
+    Assertions.assertTrue(waitFor(counter, 3));
 
     //
     // Unsubscribe from 2
     client.unsubscribe("overlap/topic2");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 3, 1000));
+    Assertions.assertTrue(waitFor(counter, 3));
 
     client.unsubscribe("overlap/topic3");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 3, 1000));
+    Assertions.assertTrue(waitFor(counter, 3));
 
 
     //
     // Unsubscribe from the first topic
     client.unsubscribe("overlap/topic1");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 3, 1000));
+    Assertions.assertTrue(waitFor(counter, 3));
 
     //
     // Unsubscribe from the wildcard
     client.unsubscribe("overlap/#");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 0, 1000));
+    Assertions.assertTrue(waitFor(counter, 0));
 
     //
     // Now subscribe to the wildcard
     client.subscribe("overlap/#");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 3, 1000));
+    Assertions.assertTrue(waitFor(counter, 3));
 
     client.subscribe("overlap/topic1");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 3, 1000));
+    Assertions.assertTrue(waitFor(counter, 3));
 
     client.unsubscribe("overlap/#");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 1, 1000));
+    Assertions.assertTrue(waitFor(counter, 1));
 
     client.unsubscribe("overlap/topic1");
     publish(client, topics, (byte)0);
-    Assertions.assertTrue(waitFor(counter, 0, 1000));
+    Assertions.assertTrue(waitFor(counter, 0));
 
     delayMS(1000L);
     client.disconnect();
@@ -228,25 +228,19 @@ class SimpleOverlapTest extends BaseTestConfig  {
 
 
 
-  private boolean waitFor(AtomicInteger counter, int expected, long wait) throws IOException {
-    WaitForState.waitFor(wait, TimeUnit.MILLISECONDS, () -> counter.get() == expected);
-    //
+  private boolean waitFor(AtomicInteger counter, int expected) throws IOException {
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> counter.get() == expected);
     // Lets see if there are any more updates coming
-    //
-    WaitForState.waitFor(10, TimeUnit.MILLISECONDS, () -> counter.get() != expected);
+    WaitForState.waitFor(50, TimeUnit.MILLISECONDS, () -> counter.get() != expected);
     boolean response = counter.get() == expected;
     counter.set(0);
     return response;
   }
 
-  private boolean waitForError(AtomicInteger counter, int expected, long wait) throws IOException {
-    long waited = 0;
-    WaitForState.waitFor(wait, TimeUnit.MILLISECONDS, () -> counter.get() == expected);
-    //
+  private boolean waitForError(AtomicInteger counter, int expected) throws IOException {
+    WaitForState.waitFor(20, TimeUnit.SECONDS, () -> counter.get() == expected);
     // Lets see if there are any more updates coming
-    //
-    WaitForState.waitFor(wait, TimeUnit.MILLISECONDS, () -> counter.get() != expected);
-
+    WaitForState.waitFor(20, TimeUnit.SECONDS, () -> counter.get() != expected);
     boolean response = counter.get() == expected;
     counter.set(0);
     return response;
