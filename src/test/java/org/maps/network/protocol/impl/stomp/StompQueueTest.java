@@ -18,8 +18,11 @@
 
 package org.maps.network.protocol.impl.stomp;
 
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.maps.test.WaitForState;
 import org.projectodd.stilts.stomp.Headers;
 import org.projectodd.stilts.stomp.StompException;
 import org.projectodd.stilts.stomp.StompMessage;
@@ -34,13 +37,14 @@ import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
 
 class StompQueueTest extends StompBaseTest {
+  private static final long MAX_WAIT_SECONDS = 15;
 
   String getQueue(){
     return "/queue/testQueue1";
   }
 
   @Test
-  void testBasicQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
     //
@@ -67,34 +71,27 @@ class StompQueueTest extends StompBaseTest {
       client.send(msg);
     }
 
-    boolean completed = false;
-    long endTime = System.currentTimeMillis() + 10000;
-    while(System.currentTimeMillis() < endTime && !completed){
-      completed = true;
+    WaitForState.waitFor(MAX_WAIT_SECONDS, TimeUnit.SECONDS, ()->{
       for(StompQueueClient queueClient:clients){
         if(queueClient.counter.sum() < 10){ // Ensures even distribution across all clients
-          completed = false;
-          break;
+          return false;
         }
       }
-      delay(100);
-    }
+      return true;
+    });
+
     int total = 0;
     for(StompQueueClient queueClient:clients){
       queueClient.close();
       total += queueClient.counter.sum();
     }
 
-    if(total == 0){
-      System.err.println("Error!!!");
-    }
     client.disconnect(10);
     Assertions.assertEquals(10*clients.size(), total);
-    Assertions.assertTrue(completed);
   }
 
   @Test
-  void testBasicUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
     String queueName = getQueue();
 
     List<StompQueueClient> clients = new ArrayList<>();
@@ -122,18 +119,14 @@ class StompQueueTest extends StompBaseTest {
       client.send(msg);
     }
 
-    boolean completed = false;
-    long endTime = System.currentTimeMillis() + 10000;
-    while(System.currentTimeMillis() < endTime && !completed){
-      completed = true;
+    WaitForState.waitFor(MAX_WAIT_SECONDS, TimeUnit.SECONDS, ()->{
       for(StompQueueClient queueClient:clients){
         if(queueClient.counter.sum() < 10){ // Ensures even distribution across all clients
-          completed = false;
-          break;
+          return false;
         }
       }
-      delay(100);
-    }
+      return true;
+    });
     int total = 0;
     for(StompQueueClient queueClient:clients){
       total += queueClient.counter.sum();
@@ -145,7 +138,6 @@ class StompQueueTest extends StompBaseTest {
       }
       Assertions.assertEquals(10*clients.size(), total);
     }
-    Assertions.assertTrue(completed);
 
     //
     // Close 1/2 of the clients
@@ -162,18 +154,15 @@ class StompQueueTest extends StompBaseTest {
       header.put("message_id", "testBasicUnsubscribeQueueLogic <part II>"+x);
       client.send(msg);
     }
-    completed = false;
-    endTime = System.currentTimeMillis() + 15000;
-    while(System.currentTimeMillis() < endTime && !completed){
-      completed = true;
+    WaitForState.waitFor(MAX_WAIT_SECONDS, TimeUnit.SECONDS, ()->{
       for(StompQueueClient queueClient:clients){
         if(queueClient.counter.sum() < 10){ // Ensures even distribution across all clients
-          completed = false;
-          break;
+          return false;
         }
       }
-      delay(100);
-    }
+      return true;
+    });
+
     total = 0;
     for(StompQueueClient queueClient:clients){
       queueClient.close();
@@ -182,11 +171,10 @@ class StompQueueTest extends StompBaseTest {
     client.disconnect(100);
 
     Assertions.assertEquals(10*clients.size(), total);
-    Assertions.assertTrue(completed);
   }
 
   @Test
-  void testBasicSubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicSubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
     //
@@ -213,25 +201,21 @@ class StompQueueTest extends StompBaseTest {
       client.send(msg);
     }
 
-    boolean completed = false;
-    long endTime = System.currentTimeMillis() + 10000;
-    while(System.currentTimeMillis() < endTime && !completed){
-      completed = true;
+    WaitForState.waitFor(MAX_WAIT_SECONDS, TimeUnit.SECONDS, ()->{
       for(StompQueueClient queueClient:clients){
         if(queueClient.counter.sum() < 10){ // Ensures even distribution across all clients
-          completed = false;
-          break;
+          return false;
         }
       }
-      delay(100);
-    }
+      return true;
+    });
+
     int total = 0;
     for(StompQueueClient queueClient:clients){
       total += queueClient.counter.sum();
     }
 
     Assertions.assertEquals(10*clients.size(), total);
-    Assertions.assertTrue(completed);
 
     for(StompQueueClient queueClient:clients) {
       queueClient.counter.reset();
@@ -248,18 +232,16 @@ class StompQueueTest extends StompBaseTest {
       header.put("message_id", "testBasicUnsubscribeQueueLogic <part II>"+x);
       client.send(msg);
     }
-    completed = false;
-    endTime = System.currentTimeMillis() + 10000;
-    while(System.currentTimeMillis() < endTime && !completed){
-      completed = true;
+
+    WaitForState.waitFor(MAX_WAIT_SECONDS, TimeUnit.SECONDS, ()->{
       for(StompQueueClient queueClient:clients){
         if(queueClient.counter.sum() < 10){ // Ensures even distribution across all clients
-          completed = false;
-          break;
+          return false;
         }
       }
-      delay(100);
-    }
+      return true;
+    });
+
     total = 0;
     for(StompQueueClient queueClient:clients){
       queueClient.close();
@@ -267,11 +249,10 @@ class StompQueueTest extends StompBaseTest {
     }
     client.disconnect(100);
     Assertions.assertEquals(10*clients.size(), total);
-    Assertions.assertTrue(completed);
   }
 
   @Test
-  void testBasicRollingUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException {
+  void testBasicRollingUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
     String queueName = getQueue();
 
     List<StompQueueClient> clients = new ArrayList<>();
@@ -299,25 +280,21 @@ class StompQueueTest extends StompBaseTest {
       client.send(msg);
     }
 
-    boolean completed = false;
-    long endTime = System.currentTimeMillis() + 10000;
-    while(System.currentTimeMillis() < endTime && !completed){
-      completed = true;
+    WaitForState.waitFor(MAX_WAIT_SECONDS, TimeUnit.SECONDS, ()->{
       for(StompQueueClient queueClient:clients){
         if(queueClient.counter.sum() < 10){ // Ensures even distribution across all clients
-          completed = false;
-          break;
+          return false;
         }
       }
-      delay(100);
-    }
+      return true;
+    });
+
     int total = 0;
     for(StompQueueClient queueClient:clients){
       total += queueClient.counter.sum();
     }
 
     Assertions.assertEquals(10*clients.size(), total);
-    Assertions.assertTrue(completed);
 
     //
     // Close 1/2 of the clients
@@ -326,10 +303,7 @@ class StompQueueTest extends StompBaseTest {
     }
     StompQueueClient remaining = clients.remove(0);
 
-    endTime = System.currentTimeMillis() + 10000;
-    while(System.currentTimeMillis() < endTime && (remaining.counter.sum() < 100)){
-      delay(100);
-    }
+    WaitForState.waitFor(MAX_WAIT_SECONDS, TimeUnit.SECONDS, () -> remaining.counter.sum() == 100);
     total = (int) remaining.counter.sum();
     remaining.close();
     Assertions.assertEquals(100, total);
