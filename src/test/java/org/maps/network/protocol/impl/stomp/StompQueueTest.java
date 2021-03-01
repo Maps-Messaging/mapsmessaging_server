@@ -18,8 +18,6 @@
 
 package org.maps.network.protocol.impl.stomp;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.test.WaitForState;
@@ -31,9 +29,11 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.StompClient;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 class StompQueueTest extends StompBaseTest {
@@ -80,7 +80,7 @@ class StompQueueTest extends StompBaseTest {
       return true;
     });
 
-    int total = 0;
+    long total = 0;
     for(StompQueueClient queueClient:clients){
       queueClient.close();
       total += queueClient.counter.sum();
@@ -210,12 +210,12 @@ class StompQueueTest extends StompBaseTest {
       return true;
     });
 
-    int total = 0;
+    long total = 0;
     for(StompQueueClient queueClient:clients){
       total += queueClient.counter.sum();
     }
 
-    Assertions.assertEquals(10*clients.size(), total);
+    Assertions.assertEquals(10L*clients.size(), total);
 
     for(StompQueueClient queueClient:clients) {
       queueClient.counter.reset();
@@ -289,7 +289,7 @@ class StompQueueTest extends StompBaseTest {
       return true;
     });
 
-    int total = 0;
+    long total = 0;
     for(StompQueueClient queueClient:clients){
       total += queueClient.counter.sum();
     }
