@@ -88,7 +88,7 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     subscribe.connect(subOption);
     subscribe.subscribe("/topic/test", QoS, ml);
     Assertions.assertTrue(subscribe.isConnected());
-    WaitForState.waitFor(2, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
+    WaitForState.waitFor(10, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
     if(QoS == 0){
       Assertions.assertEquals(0, ml.getCounter());
     }

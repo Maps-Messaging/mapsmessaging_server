@@ -77,7 +77,6 @@ class SimpleOverlapTest extends BaseTestConfig  {
 
       @Override
       public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
-        System.err.println("Received Event:"+s+" "+mqttMessage.toString());
         counter.incrementAndGet();
       }
 
