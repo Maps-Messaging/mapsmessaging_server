@@ -59,7 +59,7 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     subOption.setCleanSession(false);
 
     subscribe.connect(subOption);
-    subscribe.subscribe("/topic/test", QoS, ml);
+    subscribe.subscribeWithResponse("/topic/test", QoS, ml).waitForCompletion(2000);
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
     subscribe.close();
@@ -88,11 +88,12 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     subscribe.connect(subOption);
     subscribe.subscribe("/topic/test", QoS, ml);
     Assertions.assertTrue(subscribe.isConnected());
-    WaitForState.waitFor(10, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
     if(QoS == 0){
+      WaitForState.waitFor(2, TimeUnit.SECONDS,() -> ml.getCounter() != 0 );
       Assertions.assertEquals(0, ml.getCounter());
     }
     else {
+      WaitForState.waitFor(10, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
       Assertions.assertEquals(10, ml.getCounter());
     }
     subscribe.unsubscribe("/topic/test");
