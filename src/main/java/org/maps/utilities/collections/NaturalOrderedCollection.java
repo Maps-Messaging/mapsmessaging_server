@@ -36,7 +36,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   private final int uniqueId;
   private final int size;
 
-  public NaturalOrderedCollection(int id,@NonNull @NotNull  BitSetFactory factory) {
+  public NaturalOrderedCollection(int id,@NonNull BitSetFactory factory) {
     tree = new TreeMap<>(new OffsetBitSetComparator());
     this.factory = factory;
     this.size = factory.getSize();
