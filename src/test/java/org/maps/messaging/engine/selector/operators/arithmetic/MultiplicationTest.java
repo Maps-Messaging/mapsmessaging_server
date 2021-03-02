@@ -41,4 +41,11 @@ public class MultiplicationTest {
     multiplyOperator = new MultiplyOperator(20l, 0);
     Assertions.assertEquals(0L, multiplyOperator.evaluate(null));
   }
+
+  @Test
+  void simpleErrorTests()  {
+    Assertions.assertThrows(ParseException.class, ()->{ new MultiplyOperator(2L, "fred");});
+    Assertions.assertThrows(ParseException.class, ()->{ new MultiplyOperator("fred", 2L);});
+  }
+
 }

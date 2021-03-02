@@ -20,8 +20,9 @@ package org.maps.messaging.engine.selector.validators;
 
 public class BooleanValidator implements Validator {
 
-  private BooleanValidator(){}
   public static boolean isValid(Object parameter) {
     return (parameter instanceof Boolean);
   }
+
+  private BooleanValidator(){}
 }

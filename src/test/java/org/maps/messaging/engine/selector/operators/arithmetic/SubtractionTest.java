@@ -39,6 +39,12 @@ public class SubtractionTest {
     subtractOperator = new SubtractOperator(2l, 2.4);
     check = -0.4 - ((Double)subtractOperator.evaluate(null));
     Assertions.assertTrue(check < 0.01);
-
   }
+
+  @Test
+  void simpleErrorTests()  {
+    Assertions.assertThrows(ParseException.class, ()->{ new SubtractOperator(2L, "fred");});
+    Assertions.assertThrows(ParseException.class, ()->{ new SubtractOperator("fred", 2L);});
+  }
+
 }

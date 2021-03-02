@@ -26,7 +26,10 @@ public class NegateOperator extends Operation {
 
   private Object lhs;
 
-  public NegateOperator(Object lhs) {
+  public NegateOperator(Object lhs) throws ParseException {
+    if(lhs == null){
+      throw new ParseException("Expected a non null value");
+    }
     this.lhs = lhs;
   }
 

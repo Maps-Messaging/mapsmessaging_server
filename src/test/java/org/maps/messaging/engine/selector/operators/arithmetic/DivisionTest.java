@@ -42,4 +42,11 @@ public class DivisionTest {
     divideOperator = new DivideOperator(20l, 0);
     Assertions.assertEquals(Double.NaN, divideOperator.evaluate(null));
   }
+
+  @Test
+  void simpleErrorTests()  {
+    Assertions.assertThrows(ParseException.class, ()->{ new DivideOperator(2L, "fred");});
+    Assertions.assertThrows(ParseException.class, ()->{ new DivideOperator("fred", 2L);});
+  }
+
 }

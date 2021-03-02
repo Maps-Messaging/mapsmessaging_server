@@ -206,7 +206,7 @@ public class Message implements SerializedObject {
     return meta;
   }
 
-  public @Nullable Map<String, TypedData> getDataMap() {
+  public @NotNull Map<String, TypedData> getDataMap() {
     return dataMap;
   }
 

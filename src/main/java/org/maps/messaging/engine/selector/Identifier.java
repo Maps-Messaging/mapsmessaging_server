@@ -30,26 +30,20 @@ public class Identifier extends Operation {
     this.key = key;
   }
 
-  public String getKey(){
-    return key;
-  }
-
   public Object evaluate(Message message){
     if(message == null){
       return null;
     }
-    if(message.getDataMap() != null) {
-      TypedData data = message.getDataMap().get(key);
-      if (data != null) {
-        Object response = data.getData();
-        if(response instanceof Number){
-          if(response instanceof Double || response instanceof Float){
-            return ((Number)response).doubleValue();
-          }
-          return ((Number)response).longValue();
+    TypedData data = message.getDataMap().get(key);
+    if (data != null) {
+      Object response = data.getData();
+      if(response instanceof Number){
+        if(response instanceof Double || response instanceof Float){
+          return ((Number)response).doubleValue();
         }
-        return data.getData();
+        return ((Number)response).longValue();
       }
+      return data.getData();
     }
     if(message.getMeta() != null) {
       return message.getMeta().get(key);

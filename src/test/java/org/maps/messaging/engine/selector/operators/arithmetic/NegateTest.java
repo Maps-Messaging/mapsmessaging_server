@@ -25,13 +25,31 @@ import org.maps.messaging.engine.selector.ParseException;
 public class NegateTest {
   @Test
   public void simpleMathTests() throws ParseException {
-    NegateOperator negateOperator = new NegateOperator(8l);
-    Assertions.assertEquals(-8l, negateOperator.evaluate(null));
+    NegateOperator negateOperator = new NegateOperator(8L);
+    Assertions.assertEquals(-8L, negateOperator.evaluate(null));
+
+    negateOperator = new NegateOperator(8);
+    Assertions.assertEquals(-8L, negateOperator.evaluate(null));
+
+    negateOperator = new NegateOperator((short)8);
+    Assertions.assertEquals(-8L, negateOperator.evaluate(null));
+
+    negateOperator = new NegateOperator((byte)8);
+    Assertions.assertEquals(-8L, negateOperator.evaluate(null));
 
     negateOperator = new NegateOperator(4.8);
     Assertions.assertEquals(-4.8, negateOperator.evaluate(null));
 
+    negateOperator = new NegateOperator(4.8f);
+    Assertions.assertEquals(-4.8, (Math.round((Double)negateOperator.evaluate(null) *10.0) /10.0));
+
     negateOperator = new NegateOperator( 0L);
     Assertions.assertEquals(0L, negateOperator.evaluate(null));
   }
+
+  @Test
+  void simpleErrorTests()  {
+    Assertions.assertThrows(ParseException.class, ()->{ new NegateOperator(null);});
+  }
+
 }

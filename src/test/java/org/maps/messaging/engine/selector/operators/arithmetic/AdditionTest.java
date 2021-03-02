@@ -22,12 +22,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.messaging.engine.selector.ParseException;
 
-public class AdditionTest {
+class AdditionTest {
 
 
   // test the different paths (Long + Long, Double+Long, Long+Double and Double + Double)
   @Test
-  public void simpleMathTests() throws ParseException {
+  void simpleMathTests() throws ParseException {
     AddOperator addOperator = new AddOperator(2l, 2l);
     Assertions.assertEquals(4l, addOperator.evaluate(null));
 
@@ -39,6 +39,11 @@ public class AdditionTest {
 
     addOperator = new AddOperator(2l, 2.4);
     Assertions.assertEquals(4.4, addOperator.evaluate(null));
+  }
 
+  @Test
+  void simpleErrorTests()  {
+    Assertions.assertThrows(ParseException.class, ()->{ new AddOperator(2L, "fred");});
+    Assertions.assertThrows(ParseException.class, ()->{ new AddOperator("fred", 2L);});
   }
 }

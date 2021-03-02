@@ -30,10 +30,7 @@ public class NumericValidator implements Validator {
     return
         (parameter instanceof Identifier) ||  // This could return a number value from the message
         ( parameter instanceof ArithmeticOperator) ||
-        (parameter instanceof Float ) ||
-        (parameter instanceof Double ) ||
-        (parameter instanceof Integer ) ||
-        (parameter instanceof NegateOperator) ||
-        (parameter instanceof Long );
+        (parameter instanceof Number ) ||
+        (parameter instanceof NegateOperator);
   }
 }
