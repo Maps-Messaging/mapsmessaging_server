@@ -18,16 +18,17 @@
 
 package org.maps.utilities.collections;
 
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.maps.utilities.collections.bitset.BitSetFactory;
+import org.maps.utilities.collections.bitset.OffsetBitSet;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.maps.utilities.collections.bitset.BitSetFactory;
-import org.maps.utilities.collections.bitset.OffsetBitSet;
 
 public class NaturalOrderedLongList extends NaturalOrderedCollection implements List<Long> {
 
@@ -134,6 +135,12 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public boolean hasPrevious() {
+      if(active == null){
+        if(iteratorIndex >= iterators.size()){
+          iteratorIndex = iterators.size() -1;
+        }
+        active = iterators.get(iteratorIndex);
+      }
       if (active.hasPrevious()) {
         return true;
       } else {

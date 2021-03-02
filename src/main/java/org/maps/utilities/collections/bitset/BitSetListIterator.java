@@ -18,11 +18,12 @@
 
 package org.maps.utilities.collections.bitset;
 
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 class BitSetListIterator implements ListIterator<Integer> {
 
@@ -54,8 +55,11 @@ class BitSetListIterator implements ListIterator<Integer> {
 
   @Override
   public boolean hasPrevious() {
-    int previousSet = active.previousSetBit(current);
-    return previousSet != -1;
+    if (current >= 0) {
+      int previousSet = active.previousSetBit(current);
+      return previousSet != -1;
+    }
+    return false;
   }
 
   @Override

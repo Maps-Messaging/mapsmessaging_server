@@ -18,22 +18,16 @@
 
 package org.maps.utilities.collections;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Spliterator;
-import java.util.TreeMap;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.collections.bitset.BitSetFactory;
 import org.maps.utilities.collections.bitset.OffsetBitSet;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable {
 
@@ -241,7 +235,16 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
 
   @Override
   public boolean retainAll(@NonNull @NotNull Collection<?> c) {
-    return false;
+    Iterator<Long> itr = this.iterator();
+    boolean changed = false;
+    while(itr.hasNext()){
+      long val = itr.next();
+      if(!c.contains(val)){
+        itr.remove();
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   @Override

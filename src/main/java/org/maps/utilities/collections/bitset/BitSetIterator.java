@@ -18,19 +18,22 @@
 
 package org.maps.utilities.collections.bitset;
 
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 public class BitSetIterator implements Iterator<Integer> {
 
   private final BitSet bitSet;
   private int current;
+  private int active;
 
   public BitSetIterator(@NonNull @NotNull BitSet bitSet) {
     this.bitSet = bitSet;
+    active = -1;
   }
 
   @Override
@@ -46,14 +49,16 @@ public class BitSetIterator implements Iterator<Integer> {
     if (current > bitSet.length()) {
       throw new NoSuchElementException();
     }
-    int res = bitSet.nextSetBit(current);
-    current = res + 1;
-    return res;
+    active = bitSet.nextSetBit(current);
+    current = active + 1;
+    return active;
   }
 
   @Override
   public void remove() {
-    bitSet.clear(current);
+    if(active != -1){
+      bitSet.clear(active);
+    }
   }
 
   @Override
