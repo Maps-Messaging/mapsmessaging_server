@@ -32,6 +32,13 @@ import org.maps.messaging.engine.selector.operators.parsers.ParserFactory;
 
 public class ParserTest {
 
+  @Test
+  public void parserLoadToStringTest() throws ParseException {
+    String[] arguments = {"value"};
+    FunctionOperator operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
+    Assertions.assertEquals("Parse (JSON, 'value')", operation.toString());
+  }
+
 
   @Test
   public void parserLoadTest() throws ParseException {
@@ -40,7 +47,30 @@ public class ParserTest {
     String jsonString = "{test:10; value:20}";
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(jsonString.getBytes());
-    Assertions.assertEquals(20l, operation.evaluate(messageBuilder.build()));
+    Assertions.assertEquals(20L, operation.evaluate(messageBuilder.build()));
+    Assertions.assertNotEquals(21L, operation.evaluate(messageBuilder.build()));
+  }
+
+  @Test
+  public void parserLoadDoubleTest() throws ParseException {
+    String[] arguments = {"value"};
+    FunctionOperator operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
+    String jsonString = "{test:10.0; value:20.0}";
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(jsonString.getBytes());
+    Assertions.assertEquals(20.0, operation.evaluate(messageBuilder.build()));
+    Assertions.assertNotEquals(201.0, operation.evaluate(messageBuilder.build()));
+  }
+
+  @Test
+  public void parserLoadStringTest() throws ParseException {
+    String[] arguments = {"value"};
+    FunctionOperator operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
+    String jsonString = "{test:10.0; value:'hello'}";
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(jsonString.getBytes());
+    Assertions.assertEquals("hello", operation.evaluate(messageBuilder.build()));
+    Assertions.assertNotEquals("hello1", operation.evaluate(messageBuilder.build()));
   }
 
 
@@ -66,4 +96,18 @@ public class ParserTest {
     messageBuilder.setOpaqueData(jsonString.getBytes());
     Assertions.assertEquals(20l, operation.evaluate(messageBuilder.build()));
   }
+
+  @Test
+  public void unknownParseFromIdentifier() throws ParseException{
+    String[] arguments = {"value"};
+    FunctionOperator operation = ParserFactory.getInstance().loadParser(new Identifier("protocol"), Arrays.asList(arguments));
+    String jsonString = "{test:10; value:20}";
+    MessageBuilder messageBuilder = new MessageBuilder();
+    Map<String, TypedData> dataMap = new HashMap<>();
+    dataMap.put("protocol", new TypedData("secret"));
+    messageBuilder.setDataMap(dataMap);
+    messageBuilder.setOpaqueData(jsonString.getBytes());
+    Assertions.assertEquals(false, operation.evaluate(messageBuilder.build()));
+  }
+
 }

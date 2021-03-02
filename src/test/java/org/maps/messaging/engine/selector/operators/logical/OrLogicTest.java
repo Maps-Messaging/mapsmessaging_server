@@ -37,5 +37,43 @@ public class OrLogicTest {
 
     orOperator = new OrOperator(false, false);
     Assertions.assertFalse( (Boolean) orOperator.evaluate(null), "Failed on simple tests tests");
+
+
+    orOperator = new OrOperator(true, true);
+    Assertions.assertTrue( (Boolean) orOperator.compile(), "Failed on simple tests tests");
+
+    orOperator = new OrOperator(true, false);
+    Assertions.assertTrue( (Boolean) orOperator.compile(), "Failed on simple tests tests");
+
+
+    orOperator = new OrOperator(false, true);
+    Assertions.assertTrue( (Boolean) orOperator.compile(), "Failed on simple tests tests");
+
+    orOperator = new OrOperator(false, false);
+    Assertions.assertFalse( (Boolean) orOperator.compile(), "Failed on simple tests tests");
+
+  }
+
+  @Test
+  void checkEquivalence(){
+    OrOperator orOperator1 = new OrOperator(true, true);
+    OrOperator orOperator2 = new OrOperator(true, true);
+    Assertions.assertEquals(orOperator1, orOperator2);
+
+    orOperator1 = new OrOperator(false, false);
+    orOperator2 = new OrOperator(false, false);
+    Assertions.assertEquals(orOperator1, orOperator2);
+
+    orOperator1 = new OrOperator(true, true);
+    orOperator2 = new OrOperator(false, false);
+    Assertions.assertNotEquals(orOperator1, orOperator2);
+
+
+    orOperator1 = new OrOperator(true, false);
+    orOperator2 = new OrOperator(false, true);
+    Assertions.assertNotEquals(orOperator1, orOperator2);
+
+    orOperator1 = new OrOperator(true, false);
+    Assertions.assertNotEquals(orOperator1, this);
   }
 }

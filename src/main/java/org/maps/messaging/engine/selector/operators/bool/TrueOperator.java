@@ -35,9 +35,4 @@ public class TrueOperator extends Operation {
     return this;
   }
 
-  @Override
-  public String toString(){
-    return "TRUE";
-  }
-
 }

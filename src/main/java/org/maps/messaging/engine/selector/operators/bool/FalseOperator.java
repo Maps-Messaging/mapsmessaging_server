@@ -35,9 +35,4 @@ public class FalseOperator extends Operation {
     return this;
   }
 
-  @Override
-  public String toString(){
-    return "FALSE";
-  }
-
 }

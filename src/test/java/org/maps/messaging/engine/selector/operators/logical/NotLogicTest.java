@@ -30,5 +30,30 @@ public class NotLogicTest {
 
     notOperator = new NotOperator(true);
     Assertions.assertFalse( (Boolean) notOperator.evaluate(null), "Failed on simple tests tests");
+
+    notOperator = new NotOperator(false);
+    Assertions.assertTrue( (Boolean) notOperator.compile(), "Failed on simple tests tests");
+
+    notOperator = new NotOperator(true);
+    Assertions.assertFalse( (Boolean) notOperator.compile(), "Failed on simple tests tests");
+
+  }
+
+  @Test
+  void checkEquivalence(){
+    NotOperator notOperator1 = new NotOperator(true);
+    NotOperator notOperator2 = new NotOperator(true );
+    Assertions.assertEquals(notOperator1, notOperator2);
+
+    notOperator1 = new NotOperator(false);
+    notOperator2 = new NotOperator(false );
+    Assertions.assertEquals(notOperator1, notOperator2);
+
+    notOperator1 = new NotOperator(true);
+    notOperator2 = new NotOperator(false );
+    Assertions.assertNotEquals(notOperator1, notOperator2);
+
+    notOperator1 = new NotOperator(true);
+    Assertions.assertNotEquals(notOperator1, this);
   }
 }

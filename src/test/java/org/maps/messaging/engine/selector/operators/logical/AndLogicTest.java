@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.messaging.engine.selector.ParseException;
 
-public class AndLogicTest {
+class AndLogicTest {
   @Test
-  public void simpleValidation() throws ParseException {
+  void simpleValidation() throws ParseException {
     AndOperator andOperator = new AndOperator(true, true);
     Assertions.assertTrue( (Boolean) andOperator.evaluate(null), "Failed on simple tests tests");
 
@@ -36,5 +36,41 @@ public class AndLogicTest {
 
     andOperator = new AndOperator(false, false);
     Assertions.assertFalse( (Boolean) andOperator.evaluate(null), "Failed on simple tests tests");
+
+    andOperator = new AndOperator(true, true);
+    Assertions.assertTrue( (Boolean) andOperator.compile(), "Failed on simple tests tests");
+
+    andOperator = new AndOperator(true, false);
+    Assertions.assertFalse( (Boolean) andOperator.compile(), "Failed on simple tests tests");
+
+    andOperator = new AndOperator(false, true);
+    Assertions.assertFalse( (Boolean) andOperator.compile(), "Failed on simple tests tests");
+
+    andOperator = new AndOperator(false, false);
+    Assertions.assertFalse( (Boolean) andOperator.compile(), "Failed on simple tests tests");
   }
+
+  @Test
+  void checkEquivalence(){
+    AndOperator andOperator1 = new AndOperator(true, true);
+    AndOperator andOperator2 = new AndOperator(true, true);
+    Assertions.assertEquals(andOperator2, andOperator1);
+
+    andOperator1 = new AndOperator(false, false);
+    andOperator2 = new AndOperator(false, false);
+    Assertions.assertEquals(andOperator2, andOperator1);
+
+    andOperator1 = new AndOperator(true, true);
+    andOperator2 = new AndOperator(false, false);
+    Assertions.assertNotEquals(andOperator2, andOperator1);
+
+
+    andOperator1 = new AndOperator(false, true);
+    andOperator2 = new AndOperator(true, false);
+    Assertions.assertNotEquals(andOperator2, andOperator1);
+
+    andOperator2 = new AndOperator(true, false);
+    Assertions.assertNotEquals(andOperator2, this);
+  }
+
 }

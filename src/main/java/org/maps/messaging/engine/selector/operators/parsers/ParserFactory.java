@@ -54,7 +54,7 @@ public class ParserFactory implements ServiceManager {
         return new IdentityLoadParser((Identifier) parserName, arguments);
       }
     }
-    throw new ParseException("No known parser loaded for "+parserName);
+    return null;
   }
 
   @Override

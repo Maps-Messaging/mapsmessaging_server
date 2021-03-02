@@ -46,6 +46,9 @@ public class IdentityLoadParser extends FunctionOperator {
       if(parser != null){
         Object result = parser.evaluate(message);
         if(result instanceof Number || result instanceof String || result instanceof Boolean){
+          if(result instanceof Double){
+            return result;
+          }
           if(result instanceof Float){
             return ((Float)result).doubleValue();
           }
@@ -55,7 +58,6 @@ public class IdentityLoadParser extends FunctionOperator {
           return result;
         }
         return false;
-
       }
     }
     return false;
