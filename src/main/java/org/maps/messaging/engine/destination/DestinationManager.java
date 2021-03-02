@@ -195,7 +195,7 @@ public class DestinationManager implements DestinationFactory {
       DestinationImpl delete = destinationList.remove(destinationImpl.getName());
       StoreMessageTask deleteDestinationTask = new ShutdownPhase1Task(delete, destinationManagerListeners, logger);
       FutureTask<Response> response = destinationImpl.submit(deleteDestinationTask);
-      long timeout = System.currentTimeMillis() + 2000; // ToDo: make configurable
+      long timeout = System.currentTimeMillis() + 10000; // ToDo: make configurable
       while(!response.isDone() && timeout > System.currentTimeMillis()){
         LockSupport.parkNanos(10000000);
       }

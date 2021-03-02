@@ -58,7 +58,7 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     subOption.setPassword("password1".toCharArray());
     subOption.setCleanSession(false);
 
-    subscribe.connect(subOption);
+    subscribe.connectWithResult(subOption).waitForCompletion(2000);
     subscribe.subscribeWithResponse("/topic/test", QoS, ml).waitForCompletion(2000);
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
