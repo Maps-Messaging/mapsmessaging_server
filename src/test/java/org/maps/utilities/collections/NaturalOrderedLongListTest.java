@@ -32,7 +32,7 @@ class NaturalOrderedLongListTest extends BaseTest {
 
   @Test
   void constructors(){
-    Assertions.assertThrows(IllegalArgumentException.class, () ->{
+    Assertions.assertThrows(NullPointerException.class, () ->{
       new NaturalOrderedLongList(0, null);
     });
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(4096);

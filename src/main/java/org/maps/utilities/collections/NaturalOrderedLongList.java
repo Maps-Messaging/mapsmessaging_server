@@ -32,7 +32,7 @@ import java.util.function.IntFunction;
 
 public class NaturalOrderedLongList extends NaturalOrderedCollection implements List<Long> {
 
-  public NaturalOrderedLongList(int id, @NonNull @NotNull BitSetFactory factory) {
+  public NaturalOrderedLongList(int id, @NonNull BitSetFactory factory) {
     super(id, factory);
   }
 
