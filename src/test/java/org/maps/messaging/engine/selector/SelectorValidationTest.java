@@ -30,15 +30,6 @@ import org.maps.messaging.engine.selector.operators.ParserExecutor;
 class SelectorValidationTest {
 
   @Test
-  void checkBooleanEvaluations() throws ParseException {
-    Object parser = SelectorParser.doParse("TRUE", null);
-    Assertions.assertTrue(parser instanceof ParserExecutor);
-    ParserExecutor parserExecutor = (ParserExecutor) parser;
-    MessageBuilder messageBuilder = new MessageBuilder();
-    Assertions.assertTrue(parserExecutor.evaluate(messageBuilder.build()));
-  }
-
-  @Test
   void checkEmptyMessage() throws ParseException {
     Object parser = SelectorParser.doParse("key = 'found'", null);
     Assertions.assertTrue(parser instanceof ParserExecutor);

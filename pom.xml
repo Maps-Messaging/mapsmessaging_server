@@ -103,6 +103,14 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.5</version>
+        <configuration>
+          <excludes>
+            <!-- test code, lets not track the testing -->
+            <exclude>**/*Test.*</exclude>
+            <!-- Example code, not part of the server -->
+            <exclude>**/PulsarProtocol*.*</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <goals>
