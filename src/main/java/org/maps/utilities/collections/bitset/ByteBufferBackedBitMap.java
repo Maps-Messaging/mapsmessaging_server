@@ -257,6 +257,10 @@ public class ByteBufferBackedBitMap implements BitSet {
   // <editor-fold desc="Search Functions">
   @Override
   public int nextSetBit(int fromIndex) {
+    if (fromIndex < 0 || fromIndex >= capacity){
+      return -1;
+    }
+
     int internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
     long word = backing.getLong(position) & (LONG_MASK << internalBit);
@@ -324,6 +328,9 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public int previousSetBit(int fromIndex) {
+    if (fromIndex < 0 || fromIndex >= capacity){
+      return -1;
+    }
     int internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
     long word = backing.getLong(position) & (LONG_MASK >>> -(fromIndex + 1));
@@ -455,8 +462,7 @@ public class ByteBufferBackedBitMap implements BitSet {
     // Must be within range
     //
     if (bit < 0 || bit > capacity) {
-      throw new IndexOutOfBoundsException(
-          "Expecting range from 0 to " + (capacity) + " received " + bit);
+      throw new IndexOutOfBoundsException("Expecting range from 0 to " + (capacity) + " received " + bit);
     }
     return bit;
   }

@@ -210,23 +210,47 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   @Override
-  public <T1> T1[] toArray(T1[] a) {
-    throw new UnsupportedOperationException("toArray");
+  public <T> T[] toArray(T[] a) {
+    Iterator<?> itr = iterator();
+    for (int x = 0; x < a.length && itr.hasNext(); x++) {
+      a[x] = (T) itr.next();
+    }
+    return a;
   }
 
   @Override
   public boolean containsAll(Collection<?> c) {
-    throw new UnsupportedOperationException("containsAll");
+    for (Object l : c) {
+      if (!contains(l)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
   public boolean removeAll(Collection<?> c) {
-    throw new UnsupportedOperationException("removeAll");
+    boolean result = true;
+    for (Object l : c) {
+      if (!remove(l)) {
+        result = false;
+      }
+    }
+    return result;
   }
 
   @Override
-  public boolean retainAll(Collection<?> c) {
-    throw new UnsupportedOperationException("retainAll");
+  public boolean retainAll(@NotNull Collection<?> c) {
+    Iterator<?> itr = iterator();
+    boolean changed = false;
+    while(itr.hasNext()){
+      Object val = itr.next();
+      if(!c.contains(val)){
+        itr.remove();
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   boolean push(T entry) {
@@ -254,12 +278,14 @@ public class PriorityCollection<T> implements Collection<T> {
   private class PriorityCollectionIterator implements Iterator<T> {
 
     private final List<Iterator<T>> iterators;
+    private Iterator<T> active;
 
     public PriorityCollectionIterator() {
       iterators = new ArrayList<>();
       for (int x = prioritySize - 1; x >= 0; x--) {
         iterators.add(priorityStructure.get(x).iterator());
       }
+      active = null;
     }
 
     @Override
@@ -281,7 +307,8 @@ public class PriorityCollection<T> implements Collection<T> {
     public T next() {
       if (!iterators.isEmpty()) {
         if (iterators.get(0).hasNext()) {
-          return iterators.get(0).next();
+          active = iterators.get(0);
+          return active.next();
         } else {
           iterators.remove(0);
           return next();
@@ -292,23 +319,11 @@ public class PriorityCollection<T> implements Collection<T> {
 
     @Override
     public void remove() {
-      if (!iterators.isEmpty()) {
-        if (iterators.get(0).hasNext()) {
-          iterators.get(0).remove();
-        } else {
-          iterators.remove(0);
-          remove();
-        }
+      if(active != null){
+        active.remove();
       }
-      throw new NoSuchElementException();
-    }
-
-    @Override
-    public void forEachRemaining(Consumer<? super T> action) {
-      if (!iterators.isEmpty()) {
-        for (Iterator<T> iterator : iterators) {
-          iterator.forEachRemaining(action);
-        }
+      else {
+        throw new NoSuchElementException();
       }
     }
   }

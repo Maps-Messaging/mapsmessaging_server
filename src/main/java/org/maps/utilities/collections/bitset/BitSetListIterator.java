@@ -29,10 +29,12 @@ class BitSetListIterator implements ListIterator<Integer> {
 
   private final BitSet active;
   private int current;
+  private int selected;
 
   public BitSetListIterator(@NonNull @NotNull BitSet bitSet) {
     active = bitSet;
     current = 0;
+    selected = -1;
   }
 
   @Override
@@ -45,17 +47,20 @@ class BitSetListIterator implements ListIterator<Integer> {
     if (current > active.length()) {
       throw new NoSuchElementException();
     }
-    int res = active.nextSetBit(current);
-    if (res == -1) {
+    selected = active.nextSetBit(current);
+    if (selected == -1) {
       throw new NoSuchElementException();
     }
-    current = res + 1;
-    return res;
+    current = selected + 1;
+    return selected;
   }
 
   @Override
   public boolean hasPrevious() {
     if (current >= 0) {
+      if(current >= active.length()){
+        current--;
+      }
       int previousSet = active.previousSetBit(current);
       return previousSet != -1;
     }
@@ -67,12 +72,12 @@ class BitSetListIterator implements ListIterator<Integer> {
     if (current < 0) {
       throw new NoSuchElementException();
     }
-    int res = active.previousSetBit(current);
+    int selected = active.previousSetBit(current);
     if (current == -1) {
       throw new NoSuchElementException();
     }
-    current = res - 1;
-    return res;
+    current = selected - 1;
+    return selected;
   }
 
   @Override
@@ -87,7 +92,9 @@ class BitSetListIterator implements ListIterator<Integer> {
 
   @Override
   public void remove() {
-    active.clear(current);
+    if(selected != -1) {
+      active.clear(selected);
+    }
   }
 
   @Override

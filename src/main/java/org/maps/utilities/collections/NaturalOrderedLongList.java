@@ -32,18 +32,27 @@ import java.util.function.IntFunction;
 
 public class NaturalOrderedLongList extends NaturalOrderedCollection implements List<Long> {
 
-  public NaturalOrderedLongList(int id, @NonNull BitSetFactory factory) {
+  public NaturalOrderedLongList(int id, BitSetFactory factory) {
     super(id, factory);
   }
 
   @Override
   public boolean addAll(int index, @NonNull @NotNull  Collection<? extends Long> c) {
-    for (Long item : c) {
-      add(item);
-    }
-    return true;
+    return super.addAll(c);
   }
 
+  @Override
+  public @NonNull @NotNull ListIterator<Long> listIterator() {
+    return new LongListIterator();
+  }
+
+  @Override
+  public <T> T[] toArray(IntFunction<T[]> generator) {
+    return toArray(generator.apply(size()));
+  }
+
+
+  //<editor-fold desc="Unsupported Index based APIs since this is a natural order list, indexes will change">
   @Override
   public Long get(int index) {
     throw new UnsupportedOperationException();
@@ -75,11 +84,6 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
   }
 
   @Override
-  public @NonNull @NotNull ListIterator<Long> listIterator() {
-    return new LongListIterator();
-  }
-
-  @Override
   public @NonNull @NotNull ListIterator<Long> listIterator(int index) {
     throw new UnsupportedOperationException();
   }
@@ -88,11 +92,8 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
   public @NonNull @NotNull List<Long> subList(int fromIndex, int toIndex) {
     throw new UnsupportedOperationException();
   }
+  //</editor-fold>
 
-  @Override
-  public <T> T[] toArray(IntFunction<T[]> generator) {
-    throw new UnsupportedOperationException();
-  }
 
   // <editor-fold desc="Standard Iterator">
   class LongListIterator implements ListIterator<Long> {

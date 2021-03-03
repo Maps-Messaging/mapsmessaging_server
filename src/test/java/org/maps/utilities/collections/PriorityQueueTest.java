@@ -18,6 +18,7 @@
 
 package org.maps.utilities.collections;
 
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -83,6 +84,40 @@ public abstract class PriorityQueueTest extends BaseTest {
     for(int[] values:insertionTests) {
       limitedInsertionAndDrain(values[0], values[1]);
     }
+  }
+
+  @Test
+  public void checkEmptyQueue(){
+    PriorityQueue<TestData> priorityQueue = createQueue( 16);
+    Assertions.assertNull(priorityQueue.poll());
+    Assertions.assertNull(priorityQueue.peek());
+  }
+
+  @Test
+  public void alternativeMethods(){
+    for(int[] values:insertionTests) {
+      alternateDrainMethods(values[0], values[1]);
+    }
+  }
+
+  private void alternateDrainMethods(int entries, int priorities) {
+    PriorityQueue<TestData> priorityQueue = createAndInsert(entries, priorities);
+    for (int x = 0; x < priorities; x++) {
+      Queue<TestData> list = priorityQueue.priorityStructure.get(x);
+      Assertions.assertEquals(entries / priorities, list.size());
+      int uniqueIdStart = list.peek().uniqueId;
+      for (TestData testData : list) {
+        Assertions.assertEquals(uniqueIdStart, testData.uniqueId);
+        Assertions.assertEquals(testData.priority, x % priorities);
+        uniqueIdStart += priorities;
+      }
+    }
+    Assertions.assertThrows(NoSuchElementException.class, ()-> {
+      while(priorityQueue.element() != null){
+        priorityQueue.remove();
+      }
+    });
+    Assertions.assertThrows(NoSuchElementException.class, priorityQueue::remove );
   }
 
   private void limitedInsertionAndDrain(int entries, int priorities){

@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable {
 
@@ -36,7 +35,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   private final int uniqueId;
   private final int size;
 
-  public NaturalOrderedCollection(int id,@NonNull BitSetFactory factory) {
+  public NaturalOrderedCollection(int id, @NonNull BitSetFactory factory) {
     tree = new TreeMap<>(new OffsetBitSetComparator());
     this.factory = factory;
     this.size = factory.getSize();
@@ -93,7 +92,15 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
 
   @Override
   public Object[] toArray() {
-    return tree.values().toArray();
+    Collection<OffsetBitSet> bitsets = tree.values();
+    List<Long> response = new ArrayList<>();
+    for(OffsetBitSet bitSet:bitsets){
+      Iterator<Long> itr = bitSet.iterator();
+      while(itr.hasNext()){
+        response.add(itr.next());
+      }
+    }
+    return response.toArray();
   }
 
   @Override
@@ -252,21 +259,6 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
     for (OffsetBitSet bitMap : tree.values()) {
       bitMap.clearAll();
     }
-  }
-
-  @Override
-  public Spliterator<Long> spliterator() {
-    return null;
-  }
-
-  @Override
-  public Stream<Long> stream() {
-    return null;
-  }
-
-  @Override
-  public Stream<Long> parallelStream() {
-    return null;
   }
 
   public String toString() {
