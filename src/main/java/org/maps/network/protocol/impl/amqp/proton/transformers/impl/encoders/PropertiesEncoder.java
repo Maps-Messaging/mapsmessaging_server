@@ -77,11 +77,8 @@ public class PropertiesEncoder {
   }
 
   public static void packProperties(@NonNull @NotNull Properties properties, @NonNull @NotNull Message message){
-    Map<String, TypedData> map = message.getDataMap();
-    if(map != null) {
-      for (JMSProperty jmsProperty : encodingList) {
-        jmsProperty.pack(message, properties);
-      }
+    for (JMSProperty jmsProperty : encodingList) {
+      jmsProperty.pack(message, properties);
     }
     properties.setCreationTime(new Date(message.getCreation()));
   }
@@ -111,7 +108,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setReplyToGroupId((String) map.get(PROPERTY).getData());
       }
     }
@@ -139,7 +136,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setUserId(new Binary( ((String)map.get(PROPERTY).getData()).getBytes()));
       }
     }
@@ -167,7 +164,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setSubject((String)map.get(PROPERTY).getData());
       }
     }
@@ -195,7 +192,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setTo((String)map.get(PROPERTY).getData());
       }
     }
@@ -223,7 +220,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setReplyTo((String)map.get(PROPERTY).getData());
       }
     }
@@ -252,7 +249,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if ( map.containsKey(PROPERTY)) {
         properties.setMessageId(map.get(PROPERTY).getData());
       }
     }
@@ -280,7 +277,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setGroupSequence(new UnsignedInteger((Integer) map.get(PROPERTY).getData()));
       }
     }
@@ -308,7 +305,7 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if (map != null && map.containsKey(PROPERTY)) {
+      if ( map.containsKey(PROPERTY)) {
         properties.setGroupId(map.get(PROPERTY).getData().toString());
       }
     }
