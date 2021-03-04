@@ -28,7 +28,7 @@ import org.maps.messaging.engine.destination.delayed.TransactionalMessageManager
 import org.maps.messaging.engine.destination.subscription.state.MessageStateManagerImpl;
 import org.maps.utilities.collections.bitset.BitSetFactory;
 import org.maps.utilities.collections.bitset.BitSetFactoryImpl;
-import org.maps.utilities.collections.bitset.FileBitSetFactory;
+import org.maps.utilities.collections.bitset.FileBitSetFactoryImpl;
 
 public class DestinationStateManagerFactory {
 
@@ -70,7 +70,7 @@ public class DestinationStateManagerFactory {
       File directory = new File(tmpName);
       Files.createDirectories(directory.toPath());
       tmpName += File.separator + name + ".bin";
-      return new FileBitSetFactory(tmpName, BITSET_BLOCK_SIZE);
+      return new FileBitSetFactoryImpl(tmpName, BITSET_BLOCK_SIZE);
     } else {
       return new BitSetFactoryImpl(BITSET_BLOCK_SIZE);
     }

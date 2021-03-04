@@ -31,7 +31,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.MappedBufferHelper;
 
-public class FileBitSetFactory extends BitSetFactory {
+public class FileBitSetFactoryImpl extends BitSetFactory {
 
   private static final int BITS_PER_BYTE = 8;
   private static final int HEADER_SIZE = 16;
@@ -44,7 +44,7 @@ public class FileBitSetFactory extends BitSetFactory {
   private final int bufferSize;
   private final byte[] emptyBuffer;
 
-  public FileBitSetFactory(@NonNull @NotNull String filename, int size) throws IOException {
+  public FileBitSetFactoryImpl(@NonNull @NotNull String filename, int size) throws IOException {
     super(size);
     this.filename = filename;
     bufferSize = size / BITS_PER_BYTE;
@@ -93,7 +93,7 @@ public class FileBitSetFactory extends BitSetFactory {
   private void clearList(@NonNull @NotNull List<FileOffsetBitSet> list) {
     for (FileOffsetBitSet bitmap : list) {
       ByteBufferBackedBitMap mapped = (ByteBufferBackedBitMap) bitmap.getBitSet();
-      bitmap.clear();
+      bitmap.releaseBitSet();
       unmap(mapped);
     }
     list.clear();

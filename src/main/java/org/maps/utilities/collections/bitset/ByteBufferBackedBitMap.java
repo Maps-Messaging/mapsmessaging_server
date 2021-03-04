@@ -72,12 +72,6 @@ public class ByteBufferBackedBitMap implements BitSet {
     return buffer;
   }
 
-  public @NonNull @NotNull ByteBuffer getBacking(ByteBuffer copy) {
-    copy.clear();
-    copy.put(backing);
-    return copy;
-  }
-
   public long getOffset() {
     return offset;
   }

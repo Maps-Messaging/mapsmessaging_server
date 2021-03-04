@@ -21,12 +21,14 @@ package org.maps.utilities.collections.bitset;
 import java.util.Iterator;
 import java.util.ListIterator;
 import lombok.NonNull;
+import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 import org.maps.utilities.collections.bitset.BitWiseOperator.And;
 import org.maps.utilities.collections.bitset.BitWiseOperator.AndNot;
 import org.maps.utilities.collections.bitset.BitWiseOperator.Or;
 import org.maps.utilities.collections.bitset.BitWiseOperator.Xor;
 
+@ToString
 public class BitSetImpl implements BitSet {
 
   private final int capacity;
@@ -137,9 +139,6 @@ public class BitSetImpl implements BitSet {
       bitSet.and(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
       bitwiseCompute((ByteBufferBackedBitMap) map, new And());
-    } else {
-      throw new UnsupportedOperationException(
-          "Unable to perform AND bitwise operation from " + map.getClass().toString());
     }
   }
 
@@ -149,9 +148,6 @@ public class BitSetImpl implements BitSet {
       bitSet.xor(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
       bitwiseCompute((ByteBufferBackedBitMap) map, new Xor());
-    } else {
-      throw new UnsupportedOperationException(
-          "Unable to perform XOR bitwise operation from " + map.getClass().toString());
     }
   }
 
@@ -161,9 +157,6 @@ public class BitSetImpl implements BitSet {
       bitSet.or(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
       bitwiseCompute((ByteBufferBackedBitMap) map, new Or());
-    } else {
-      throw new UnsupportedOperationException(
-          "Unable to perform OR bitwise operation from " + map.getClass().toString());
     }
   }
 
@@ -173,9 +166,6 @@ public class BitSetImpl implements BitSet {
       bitSet.andNot(((BitSetImpl) map).bitSet);
     } else if (map instanceof ByteBufferBackedBitMap) {
       bitwiseCompute((ByteBufferBackedBitMap) map, new AndNot());
-    } else {
-      throw new UnsupportedOperationException(
-          "Unable to perform AND-NOT bitwise operation from " + map.getClass().toString());
     }
   }
 
@@ -228,7 +218,4 @@ public class BitSetImpl implements BitSet {
     this.uniqueId = uniqueId;
   }
 
-  public String toString() {
-    return bitSet.toString();
-  }
 }

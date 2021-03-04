@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
-  private BitSet rawBitSet;
+  protected BitSet rawBitSet;
   private long start;
   private long end;
 
@@ -36,8 +36,12 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     end = start + rawBitSet.length();
   }
 
-  public void clear() {
+  public void releaseBitSet() {
     rawBitSet = null;
+  }
+
+  public void clear(){
+    rawBitSet.clear();
   }
 
   public boolean set(long bit) {
@@ -223,11 +227,6 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     }
 
     @Override
-    public void forEachRemaining(Consumer<? super Long> action) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void set(Long aLong) {
       throw new UnsupportedOperationException();
     }
@@ -261,9 +260,5 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
       implIterator.remove();
     }
 
-    @Override
-    public void forEachRemaining(Consumer<? super Long> action) {
-      throw new UnsupportedOperationException();
-    }
   }
 }

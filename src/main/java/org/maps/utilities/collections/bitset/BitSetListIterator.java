@@ -98,11 +98,6 @@ class BitSetListIterator implements ListIterator<Integer> {
   }
 
   @Override
-  public void forEachRemaining(Consumer<? super Integer> action) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void set(Integer integer) {
     throw new UnsupportedOperationException();
   }

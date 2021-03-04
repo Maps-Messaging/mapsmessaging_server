@@ -60,9 +60,4 @@ public class BitSetIterator implements Iterator<Integer> {
       bitSet.clear(active);
     }
   }
-
-  @Override
-  public void forEachRemaining(Consumer<? super Integer> action) {
-    throw new UnsupportedOperationException();
-  }
 }

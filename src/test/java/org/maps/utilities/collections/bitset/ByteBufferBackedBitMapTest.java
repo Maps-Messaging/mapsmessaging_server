@@ -18,12 +18,7 @@
 
 package org.maps.utilities.collections.bitset;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel.MapMode;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -56,31 +51,6 @@ public class ByteBufferBackedBitMapTest extends BitSetTest{
     }
     bitset.set(64);
     Assertions.assertEquals(64, bitset.nextSetBit(0));
-  }
-
-  @Test
-  public void testDiskPerformance(){
-    long bufferSize = 1024L*1024L;
-    File file = new File("test.dmp");
-    try {
-      if(file.exists()){
-        file.delete();
-      }
-      file.createNewFile();
-      byte[] buffer = new byte[1024];
-      IntStream.range(0, buffer.length).forEach(x -> buffer[x] = 0);
-      RandomAccessFile raf = new RandomAccessFile(file, "rw");
-      for(int x=0;x<1024;x++) {
-        raf.write(buffer);
-      }
-      ByteBuffer bb = raf.getChannel().map(MapMode.READ_WRITE, 0, bufferSize);
-      ByteBufferBackedBitMap bitMap = new ByteBufferBackedBitMap(bb, 0);
-      testPerformance(bitMap);
-      raf.close();
-      file.deleteOnExit();
-    } catch (IOException e) {
-      Assertions.fail(e);
-    }
   }
 
   @Override

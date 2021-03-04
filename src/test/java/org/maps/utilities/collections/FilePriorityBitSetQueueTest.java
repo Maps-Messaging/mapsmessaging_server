@@ -24,12 +24,12 @@ import java.util.Queue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.maps.utilities.collections.bitset.FileBitSetFactory;
+import org.maps.utilities.collections.bitset.FileBitSetFactoryImpl;
 
 public class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
 
   static long counter =0;
-  FileBitSetFactory factory;
+  FileBitSetFactoryImpl factory;
 
   public FilePriorityBitSetQueueTest()  {
     try {
@@ -37,7 +37,7 @@ public class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
       if(file.exists()){
         file.delete();
       }
-      factory = new FileBitSetFactory(file.getName(),4096);
+      factory = new FileBitSetFactoryImpl(file.getName(),4096);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -63,7 +63,7 @@ public class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
     if(file.exists()){
       file.delete();
     }
-    FileBitSetFactory localFactory = new FileBitSetFactory(file.getName(),4096);
+    FileBitSetFactoryImpl localFactory = new FileBitSetFactoryImpl(file.getName(),4096);
     PriorityQueue<Long> priorityList = createQueue(16, localFactory);
     for(int x=0;x<2048;x++){
       long t = x;
@@ -71,7 +71,7 @@ public class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
     }
     localFactory.close();
 
-    localFactory = new FileBitSetFactory(file.getName(),4096);
+    localFactory = new FileBitSetFactoryImpl(file.getName(),4096);
     priorityList = createQueue(16, localFactory);
 
     for(int y = 15;y>=0;y--) {
@@ -94,7 +94,7 @@ public class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
     return createQueue(priorities, factory);
   }
 
-  private  PriorityQueue<Long> createQueue(int priorities,  FileBitSetFactory bitsetFactory){
+  private  PriorityQueue<Long> createQueue(int priorities,  FileBitSetFactoryImpl bitsetFactory){
     Runtime.getRuntime().gc();
     Queue<Long>[] external = new Queue[priorities];
 

@@ -24,6 +24,6 @@ public class ByteBufferOffsetTest  extends OffsetBitSetTest {
 
   @Override
   public BitSet createBitSet() {
-    return new ByteBufferBackedBitMap(ByteBuffer.allocate(8*1024), 0);
+    return new ByteBufferBackedBitMap(ByteBuffer.allocate(1024), 0);
   }
 }

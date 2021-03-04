@@ -27,13 +27,20 @@ import org.maps.BaseTest;
 
 public abstract class BitSetTest extends BaseTest {
 
-  private static final int bufferSize = 1024;
   private static final int offsetDefault = 8192;
 
   public BitSet getBitSet(){
     return getBitSet(offsetDefault);
   }
   public abstract BitSet getBitSet(int size);
+
+  @Test
+  public void simpleGetSet(){
+    BitSet bitmap = getBitSet();
+    long id = System.currentTimeMillis();
+    bitmap.setUniqueId(id);
+    Assertions.assertEquals(id, bitmap.getUniqueId());
+  }
 
   @Test
   public void testSimpleBitOperations(){
@@ -79,7 +86,6 @@ public abstract class BitSetTest extends BaseTest {
     Assertions.assertFalse(bitmap.isSet(2));
   }
 
-
   @Test
   public void testClearing(){
     BitSet bitmap = getBitSet();
@@ -88,11 +94,47 @@ public abstract class BitSetTest extends BaseTest {
       bitmap.set(x);
       Assertions.assertTrue(bitmap.isSet(x));
     }
+    Assertions.assertFalse(bitmap.isEmpty());
     bitmap.clear();
     for(int x=0;x<bitCount;x++){
       Assertions.assertFalse(bitmap.isSet(x));
     }
+    Assertions.assertTrue(bitmap.isEmpty());
   }
+
+
+  @Test
+  public void testIsSetAndClear(){
+    BitSet bitmap = getBitSet();
+    long bitCount = bitmap.length();
+    for(int x=0;x<bitCount;x++){
+      bitmap.set(x);
+      Assertions.assertTrue(bitmap.isSet(x));
+    }
+    for(int x=0;x<bitCount;x++){
+      Assertions.assertTrue(bitmap.isSetAndClear(x));
+    }
+    for(int x=0;x<bitCount;x++){
+      Assertions.assertFalse(bitmap.isSet(x));
+    }
+  }
+
+  @Test
+  public void testNextSetAndClear(){
+    BitSet bitmap = getBitSet();
+    long bitCount = bitmap.length();
+    for(int x=0;x<bitCount;x++){
+      bitmap.set(x);
+      Assertions.assertTrue(bitmap.isSet(x));
+    }
+    for(int x=0;x<bitCount;x++){
+      Assertions.assertNotEquals(-1, bitmap.nextSetBitAndClear(0));
+    }
+    for(int x=0;x<bitCount;x++){
+      Assertions.assertFalse(bitmap.isSet(x));
+    }
+  }
+
 
   @Test
   public void testFlipping(){
@@ -526,43 +568,16 @@ public abstract class BitSetTest extends BaseTest {
       idx++;
     }
 
+    idx =0;
+    iterator = bitmap.iterator();
+    while(iterator.hasNext()){
+      int next = iterator.next();
+      Assertions.assertEquals(idx, next);
+      iterator.remove();
+      idx++;
+    }
+    Assertions.assertTrue(bitmap.isEmpty());
   }
 
-  @Test
-  public void testMemoryPerformance(){
-    BitSet bitmap = getBitSet(1024*1024);
-    testPerformance(bitmap);
-  }
 
-  public void testPerformance(BitSet bitmap){
-    long start = System.currentTimeMillis();
-    int len = bitmap.length();
-    Random rdm = new Random();
-    int bit = 0;
-    while(bit < len){
-      bitmap.set(Math.abs(rdm.nextInt())%bitmap.length());
-      bit++;
-    }
-    System.err.println("time to randomly set "+len+" "+(System.currentTimeMillis()-start)+"ms");
-
-    bitmap.clear();
-    start = System.currentTimeMillis();
-    bit = 0;
-    while(bit < len){
-      bitmap.set(bit);
-      bit++;
-    }
-    start = System.currentTimeMillis()- start;
-    System.err.println("time to set "+bitmap.length()+" "+start+"ms");
-    Assertions.assertEquals(len, bitmap.cardinality() );
-
-    start = System.currentTimeMillis();
-    bit = 0;
-    while(bit < len){
-      bitmap.clear(bit);
-      bit++;
-    }
-    System.err.println("time to clear "+bitmap.length()+" "+(System.currentTimeMillis()-start)+"ms");
-    Assertions.assertEquals(0L, bitmap.cardinality() );
-  }
 }

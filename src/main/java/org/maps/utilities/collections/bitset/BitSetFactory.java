@@ -21,7 +21,7 @@ package org.maps.utilities.collections.bitset;
 import java.io.IOException;
 import java.util.List;
 
-public abstract class BitSetFactory {
+public abstract class BitSetFactory implements AutoCloseable {
 
   protected final int windowSize;
 
