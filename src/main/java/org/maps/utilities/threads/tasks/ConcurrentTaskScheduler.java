@@ -20,7 +20,6 @@ package org.maps.utilities.threads.tasks;
 
 import java.util.Map;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.NonNull;
@@ -59,17 +58,20 @@ import org.maps.utilities.threads.SimpleTaskScheduler;
 @ToString
 public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
 
+  //Allow a maximum of so many tasks when the thread is external to the task scheduler
+  private static final int MAX_TASK_EXECUTION_EXTERNAL_THREAD = 10;
+  //Allow a maximum of so many tasks in a single scheduled runner execution
+  private static final int MAX_TASK_EXECUTION_SCHEDULED_THREAD = Integer.MAX_VALUE;
   private static final String DOMAIN = "domain";
 
   private final ThreadStateContext context;
 
   protected final AtomicLong outstanding;
-  protected final AtomicLong maxOutstanding;
   protected final LongAdder offloadedCount;
   protected final LongAdder totalQueued;
-  protected final AtomicBoolean offloaded;
   protected final Runnable offloadThread;
 
+  protected volatile long maxOutstanding;
   protected volatile boolean shutdown;
 
 
@@ -78,10 +80,9 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
     context.add(DOMAIN, domain);
     context.add("TaskQueue", this);
     outstanding = new AtomicLong(0);
-    maxOutstanding = new AtomicLong(0);
+    maxOutstanding = 0;
     totalQueued = new LongAdder();
     offloadedCount = new LongAdder();
-    offloaded = new AtomicBoolean(false);
     offloadThread = new QueueRunner();
     shutdown = false;
   }
@@ -119,7 +120,7 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
    * @return the maximum number of tasks that have been waiting
    */
   public long getMaxOutstanding(){
-    return maxOutstanding.get();
+    return maxOutstanding;
   }
 
   /**
@@ -145,42 +146,27 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
   protected abstract @Nullable FutureTask<V> poll();
 
   /**
-   * Task Loop that runs until the queue is empty, or, offloaded to a dedicated thread
+   * Entry point to start processing tasks off the queue when adding
    */
-  protected void taskRun() {
-    int runnerCount = 0;
-    FutureTask<V> task = poll();
-    while (task != null) {
-      task.run();
-      runnerCount++;
-      long count = outstanding.decrementAndGet();
-      if (count > maxOutstanding.get()) {
-        maxOutstanding.set(count);
-      }
-      if ((runnerCount > 10 || count > 10) && !offloaded.get()) {
-        offloaded.set(true);
-        offloadedCount.increment();
-        SimpleTaskScheduler.getInstance().submit(offloadThread);
-        return;
-      }
-      if (count != 0) {
-        task = poll();
-      } else {
-        task = null;
-        offloaded.set(false);
-      }
+  protected void executeQueue() {
+    totalQueued.increment();
+    long count = outstanding.incrementAndGet();
+    if (count > maxOutstanding) {
+      maxOutstanding = count;
+    }
+    //If we are equal to 1 we enter the queue execution path and process our task, this will lead to scheduling a the
+    // QueueRunner if necessary
+    if (count == 1) {
+      internalExecuteQueue(MAX_TASK_EXECUTION_EXTERNAL_THREAD);
     }
   }
 
-  /**
-   * Entry point to start processing tasks off the queue
-   */
-  protected void executeQueue() {
+  private void internalExecuteQueue(int maxTaskExecutions) {
     Map<String, String> logContext = ThreadContext.getContext();
     ThreadStateContext originalDomain = ThreadLocalContext.get();
     ThreadLocalContext.set(context);
     try {
-      taskRun();
+      taskRun(maxTaskExecutions);
     } finally {
       ThreadContext.putAll(logContext);
       if(originalDomain != null){
@@ -193,9 +179,36 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
   }
 
   /**
+   * Task Loop that runs until the queue is empty or offloaded to a dedicated thread
+   */
+  private void taskRun(int maxTaskExecutions) {
+    int runnerCount = 0;
+    FutureTask<V> task = poll();
+    while (task != null) {
+      task.run();
+      runnerCount++;
+      long count = outstanding.decrementAndGet();
+      //If we return a value higher than zero we still have work to be done
+      if (count != 0) {
+        //If we have hit our max task executions schedule a new instance to run
+        if (runnerCount >= maxTaskExecutions) {
+          offloadedCount.increment();
+          SimpleTaskScheduler.getInstance().submit(offloadThread);
+          return;
+        }
+        //Otherwise keep processing
+        task = poll();
+      } else {
+        //We have completed all of our work
+        return;
+      }
+    }
+  }
+  /**
    * Class used for the offload thread
    */
-  class QueueRunner implements Runnable {
+  private class QueueRunner implements Runnable {
+
     Map<String, String> context;
 
     public QueueRunner(){
@@ -206,7 +219,7 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
       String threadName = Thread.currentThread().getName();
       Thread.currentThread().setName("TaskQueue_OffLoad");
       ThreadContext.putAll(context); // Ensure the logging thread context is copied over
-      executeQueue();
+      internalExecuteQueue(MAX_TASK_EXECUTION_SCHEDULED_THREAD);
       Thread.currentThread().setName(threadName);
     }
   }

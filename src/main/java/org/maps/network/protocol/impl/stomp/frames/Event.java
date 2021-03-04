@@ -60,10 +60,8 @@ public abstract class Event extends Frame {
     // Map the data map to the header
     //
     Map<String, TypedData> dataMap = internalMessage.getDataMap();
-    if (dataMap != null) {
-      for (Map.Entry<String, TypedData> entry : dataMap.entrySet()) {
-        putHeader(entry.getKey(), entry.getValue().getData().toString());
-      }
+    for (Map.Entry<String, TypedData> entry : dataMap.entrySet()) {
+      putHeader(entry.getKey(), entry.getValue().getData().toString());
     }
 
     //

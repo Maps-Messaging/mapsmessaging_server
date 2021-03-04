@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.function.Consumer;
 
 public class BitSetIterator implements Iterator<Integer> {
 

@@ -21,6 +21,7 @@ package org.maps.messaging.api.subscriptions;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.login.LoginException;
@@ -43,6 +44,7 @@ import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.messaging.engine.session.FakeProtocolImpl;
+import org.maps.test.WaitForState;
 
 class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageListener{
 
@@ -87,6 +89,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
 
     Session publisher = createSession(name, 60, 10, false, this);
     Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC);
+    Assertions.assertNotNull(destination);
 
     for(int x=0;x<EVENT_COUNT;x++) {
       MessageBuilder messageBuilder = new MessageBuilder();
@@ -103,6 +106,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
 
     int total = 0;
     for(AtomicInteger counter:counters){
+      WaitForState.waitFor(100, TimeUnit.MILLISECONDS, ()->{return EVENT_COUNT/3 == counter.get();});
       Assertions.assertEquals(EVENT_COUNT/3, counter.get(), "The delivered numbers should be the same");
       total += counter.get();
     }

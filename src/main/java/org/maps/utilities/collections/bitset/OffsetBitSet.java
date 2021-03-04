@@ -20,7 +20,6 @@ package org.maps.utilities.collections.bitset;
 
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.function.Consumer;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 

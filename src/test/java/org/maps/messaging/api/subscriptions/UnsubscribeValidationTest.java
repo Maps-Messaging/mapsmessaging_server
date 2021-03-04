@@ -40,11 +40,10 @@ import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.session.FakeProtocolImpl;
 import org.maps.test.WaitForState;
 
-class UnsubscribeValidation extends MessageAPITest implements MessageListener {
+class UnsubscribeValidationTest extends MessageAPITest implements MessageListener {
 
   private static final int EVENT_COUNT = 10000;
 
-  @Test
   void topicUnsubscribeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, true, false);
 
@@ -55,7 +54,6 @@ class UnsubscribeValidation extends MessageAPITest implements MessageListener {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "queue/queue1", true, true, false);
   }
 
-  @Test
   void topicDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, false, false);
 
@@ -67,7 +65,6 @@ class UnsubscribeValidation extends MessageAPITest implements MessageListener {
   }
 
 
-  @Test
   void topicResumeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, false, true);
 

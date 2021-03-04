@@ -124,7 +124,7 @@ public class BaseConnection extends BaseTestConfig {
     int counter = 0;
     while (true) {
       try {
-        message = (TextMessage) consumer.receive(2);
+        message = (TextMessage) consumer.receive(2000);
         if (message != null) {
           message.acknowledge();
           counter++;

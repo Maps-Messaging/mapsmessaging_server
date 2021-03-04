@@ -320,10 +320,8 @@ public class MQTT5Protocol extends ProtocolImpl {
 
   private void addProperties(Message message, Publish5 publish, SubscribedEventManager subscription) {
     Map<String, TypedData> hash = message.getDataMap();
-    if (hash != null) {
-      for (Map.Entry<String, TypedData> entry : hash.entrySet()) {
-        publish.add(new UserProperty(entry.getKey(), entry.getValue().getData().toString()));
-      }
+    for (Map.Entry<String, TypedData> entry : hash.entrySet()) {
+      publish.add(new UserProperty(entry.getKey(), entry.getValue().getData().toString()));
     }
     if (message.getContentType() != null) {
       publish.add(new ContentType(message.getContentType()));

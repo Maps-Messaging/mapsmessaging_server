@@ -54,10 +54,7 @@ public class SingleConcurrentTaskScheduler<V> extends ConcurrentTaskScheduler<V>
   public void addTask(@NonNull @NotNull FutureTask<V> task) {
     if(!shutdown) {
       queue.add(task);
-      totalQueued.increment();
-      if (outstanding.incrementAndGet() == 1) {
-        executeQueue();
-      }
+      executeQueue();
     }
     else{
       // ToDo, we can not simply ignore this, we need to raise an exception and let the caller know something is up

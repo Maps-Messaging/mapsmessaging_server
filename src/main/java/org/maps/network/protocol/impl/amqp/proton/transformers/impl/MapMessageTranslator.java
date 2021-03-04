@@ -67,15 +67,13 @@ public class MapMessageTranslator extends BaseMessageTranslator {
     Message protonMessage = super.encode(message);
     Map<String, Object> map = new LinkedHashMap<>();
     Map<String, TypedData> dataMap = message.getDataMap();
-    if(dataMap != null) {
-      for (Map.Entry<String, TypedData> entry : dataMap.entrySet()) {
-        if (entry.getValue().getType().equals(TYPE.BYTE_ARRAY)) {
-          byte[] bytes = (byte[]) entry.getValue().getData();
-          Binary bin = new Binary(bytes);
-          map.put(entry.getKey(), bin);
-        } else {
-          map.put(entry.getKey(), entry.getValue().getData());
-        }
+    for (Map.Entry<String, TypedData> entry : dataMap.entrySet()) {
+      if (entry.getValue().getType().equals(TYPE.BYTE_ARRAY)) {
+        byte[] bytes = (byte[]) entry.getValue().getData();
+        Binary bin = new Binary(bytes);
+        map.put(entry.getKey(), bin);
+      } else {
+        map.put(entry.getKey(), entry.getValue().getData());
       }
     }
     AmqpValue amqpBody = new AmqpValue(map);

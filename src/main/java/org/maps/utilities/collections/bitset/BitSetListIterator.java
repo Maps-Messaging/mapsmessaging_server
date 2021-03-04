@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.function.Consumer;
 
 class BitSetListIterator implements ListIterator<Integer> {
 
@@ -72,7 +71,7 @@ class BitSetListIterator implements ListIterator<Integer> {
     if (current < 0) {
       throw new NoSuchElementException();
     }
-    int selected = active.previousSetBit(current);
+    selected = active.previousSetBit(current);
     if (current == -1) {
       throw new NoSuchElementException();
     }

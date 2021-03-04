@@ -66,10 +66,7 @@ public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<
   public void addTask(@NonNull @NotNull FutureTask<V> task, int priority) {
     if(!shutdown) {
       queues.get(priority).add(task);
-      totalQueued.increment();
-      if (outstanding.incrementAndGet() == 1) {
-        executeQueue();
-      }
+      executeQueue();
     }
     else{
       // ToDo: Need to inform the caller that this operation is not going to happen
