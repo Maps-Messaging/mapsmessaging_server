@@ -209,10 +209,10 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   @Override
-  public <T> T[] toArray(T[] a) {
+  public <T1> T1[] toArray(T1[] a) {
     Iterator<?> itr = iterator();
     for (int x = 0; x < a.length && itr.hasNext(); x++) {
-      a[x] = (T) itr.next();
+      a[x] = (T1) itr.next();
     }
     return a;
   }
