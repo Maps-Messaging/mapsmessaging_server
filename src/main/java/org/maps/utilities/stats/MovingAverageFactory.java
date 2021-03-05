@@ -69,7 +69,7 @@ public class MovingAverageFactory {
     }
   }
 
-  private final List<LinkedMovingAverages> movingAverages;
+  protected final List<LinkedMovingAverages> movingAverages;
   private Future<Runnable> scheduledTask;
 
   public MovingAverageFactory(){

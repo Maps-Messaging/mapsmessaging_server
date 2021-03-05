@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class AdderDataProcessor implements DataProcessor{
 
-  private LongAdder adder;
+  private final LongAdder adder;
 
   public AdderDataProcessor(){
     adder = new LongAdder();

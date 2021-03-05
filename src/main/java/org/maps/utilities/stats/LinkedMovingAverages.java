@@ -39,10 +39,10 @@ public class LinkedMovingAverages {
   private final LongAdder total;
   private final String name;
   private final String unitName;
+  private final long timeSpan;
 
   private long previous;
   private long lastUpdate;
-  private long timeSpan;
 
   /**
    * Creates an instance of a list of moving averages
@@ -53,7 +53,7 @@ public class LinkedMovingAverages {
    * @param unit The TimeUnit that represents the time units provied in timeList
    * @param unitName The name of the unit being measured
    */
-  public LinkedMovingAverages (DataProcessor dataProcessor, String name, int[] timeList, TimeUnit unit, String unitName){
+  protected LinkedMovingAverages (DataProcessor dataProcessor, String name, int[] timeList, TimeUnit unit, String unitName){
     this.dataProcessor = dataProcessor;
     this.name = name;
     this.unitName = unitName;
@@ -69,13 +69,6 @@ public class LinkedMovingAverages {
     previous = 0;
     lastUpdate = 0L;
     timeSpan = unit.toMillis(timeList[0]);
-  }
-
-  /**
-   * Closes and clears all instances of moving objects
-   */
-  public void close(){
-    MovingAverageFactory.getInstance().close(this);
   }
 
   /**
