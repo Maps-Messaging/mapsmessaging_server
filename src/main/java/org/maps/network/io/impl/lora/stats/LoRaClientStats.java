@@ -50,8 +50,8 @@ public class LoRaClientStats {
 
   public LoRaClientStats(List<String> parent, int clientId){
     rssiStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, RSSI, MOVING_AVERAGE, TIME_UNIT, RSSI);
-    missedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.SUM, PACKETS,MOVING_AVERAGE, TIME_UNIT, PACKETS);
-    receivedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.SUM, "Missed",MOVING_AVERAGE, TIME_UNIT, PACKETS);
+    missedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, PACKETS,MOVING_AVERAGE, TIME_UNIT, PACKETS);
+    receivedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, "Missed",MOVING_AVERAGE, TIME_UNIT, PACKETS);
     lastPacketId = -1;
     nodeId = clientId;
     movingAveragesJMXList = new ArrayList<>();

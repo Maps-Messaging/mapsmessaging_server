@@ -26,7 +26,6 @@ import org.maps.utilities.stats.processors.AdderDataProcessor;
 import org.maps.utilities.stats.processors.AverageDataProcessor;
 import org.maps.utilities.stats.processors.DataProcessor;
 import org.maps.utilities.stats.processors.DifferenceDataProcessor;
-import org.maps.utilities.stats.processors.SummerDataProcessor;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
 /**
@@ -48,9 +47,7 @@ public class MovingAverageFactory {
   public enum ACCUMULATOR {
     ADD("Adder", "Adds all incoming data, useful for tick type stats"),
     DIFF("Difference", "Subtracts the current from the last entry and adds it, useful for dealing with totals"),
-    AVE("Average", "Maintains an average"),
-    SUM("Summer", "Simply puts the value into the moving average");
-
+    AVE("Average", "Maintains an average");
 
     private final String name;
     private final String description;
@@ -111,10 +108,6 @@ public class MovingAverageFactory {
     switch (accumulator) {
       case DIFF:
         processor = new DifferenceDataProcessor();
-        break;
-
-      case SUM:
-        processor = new SummerDataProcessor();
         break;
 
       case AVE:

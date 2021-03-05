@@ -61,6 +61,5 @@ class MovingAverageFactoryTest {
     assertEquals("Average", ACCUMULATOR.AVE.getName());
     assertEquals("Adder", ACCUMULATOR.ADD.getName());
     assertEquals("Difference", ACCUMULATOR.DIFF.getName());
-    assertEquals("Summer", ACCUMULATOR.SUM.getName());
   }
 }
