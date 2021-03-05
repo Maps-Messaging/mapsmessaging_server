@@ -23,6 +23,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.maps.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import org.maps.utilities.stats.processors.AdderDataProcessor;
+import org.maps.utilities.stats.processors.AverageDataProcessor;
+import org.maps.utilities.stats.processors.DifferenceDataProcessor;
 
 class MovingAverageFactoryTest {
 
@@ -53,6 +56,17 @@ class MovingAverageFactoryTest {
     int[] entries = {1, 2, 4, 8, 16, 32, 64};
     LinkedMovingAverages linked = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Test", entries,  TimeUnit.SECONDS, "Tests");
     assertNotNull(linked);
+    assertTrue(linked.dataProcessor instanceof AdderDataProcessor);
+    MovingAverageFactory.getInstance().close(linked);
+
+    linked = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, "Test", entries,  TimeUnit.SECONDS, "Tests");
+    assertNotNull(linked);
+    assertTrue(linked.dataProcessor instanceof AverageDataProcessor);
+    MovingAverageFactory.getInstance().close(linked);
+
+    linked = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.DIFF, "Test", entries,  TimeUnit.SECONDS, "Tests");
+    assertNotNull(linked);
+    assertTrue(linked.dataProcessor instanceof DifferenceDataProcessor);
     MovingAverageFactory.getInstance().close(linked);
   }
 
@@ -61,5 +75,8 @@ class MovingAverageFactoryTest {
     assertEquals("Average", ACCUMULATOR.AVE.getName());
     assertEquals("Adder", ACCUMULATOR.ADD.getName());
     assertEquals("Difference", ACCUMULATOR.DIFF.getName());
+    assertNotNull(ACCUMULATOR.AVE.getDescription());
+    assertNotNull(ACCUMULATOR.ADD.getDescription());
+    assertNotNull(ACCUMULATOR.DIFF.getDescription());
   }
 }

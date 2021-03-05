@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.ToString;
 import org.maps.utilities.stats.processors.DataProcessor;
 
 /**
@@ -32,10 +33,11 @@ import org.maps.utilities.stats.processors.DataProcessor;
  * @author Matthew Buckton
  * @version 1.0
  */
+@ToString
 public class LinkedMovingAverages {
 
   protected final List<MovingAverage> movingAverages;
-  private final DataProcessor dataProcessor;
+  protected final DataProcessor dataProcessor;
   private final LongAdder total;
   private final String name;
   private final String unitName;
@@ -162,24 +164,11 @@ public class LinkedMovingAverages {
     return -1;
   }
 
-
-  /**
-   *
-   * @return A String representation of this instance
-   */
-  @Override
-  public String toString(){
-    StringBuilder sb = new StringBuilder(getClass().getName()+":");
-    for(MovingAverage movingAverage:movingAverages){
-      sb.append(movingAverage.getName()).append("=").append(movingAverage.getAverage()).append(",");
-    }
-    return sb.toString();
-  }
-
   /**
    * Resets all the moving averages and clears all data
    */
   public void reset() {
+    previous = 0;
     total.reset();
     dataProcessor.reset();
     for(MovingAverage average:movingAverages){
