@@ -36,7 +36,9 @@ class MovingAverageFactoryTest {
     LinkedMovingAverages linked = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Test", 1, 10, 6,  TimeUnit.SECONDS, "Tests");
     assertNotNull(linked);
     MovingAverageFactory.getInstance().close(linked);
-    assertTrue(MovingAverageFactory.getInstance().movingAverages.isEmpty());
+    for(LinkedMovingAverages movingAverage:MovingAverageFactory.getInstance().movingAverages){
+      assertNotEquals(linked, movingAverage);
+    }
   }
 
   @Test
