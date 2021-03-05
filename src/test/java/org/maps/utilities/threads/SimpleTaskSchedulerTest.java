@@ -50,7 +50,7 @@ class SimpleTaskSchedulerTest {
     long count = scheduler.getTotalScheduled();
     Future<?> future = scheduler.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
     WaitForState.waitFor(4, TimeUnit.SECONDS, future::isDone);
-    scheduler.cancel(task);
+    future.cancel(true);
     Assertions.assertTrue(future.isCancelled());
     Assertions.assertTrue(count < scheduler.getTotalScheduled());
     count = scheduler.getTotalScheduled();
@@ -75,8 +75,7 @@ class SimpleTaskSchedulerTest {
     SimpleTaskScheduler scheduler = SimpleTaskScheduler.getInstance();
     TestTask task = new TestTask();
     Future<?> future = scheduler.schedule(task, 1, TimeUnit.SECONDS);
-    scheduler.cancel(task);
-    WaitForState.waitFor(2, TimeUnit.SECONDS, () -> future.isDone() );
+    future.cancel(true);
     Assertions.assertFalse(future.isDone());
     Assertions.assertTrue(future.isCancelled());
     Assertions.assertEquals(-1, task.executedTime);

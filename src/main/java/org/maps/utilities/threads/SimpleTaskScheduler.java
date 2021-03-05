@@ -44,7 +44,7 @@ public class SimpleTaskScheduler {
   private static final long TICK_PERIOD = 100;
   private static final SimpleTaskScheduler instance = new SimpleTaskScheduler();
 
-  private final ConcurrentSkipListMap<Long, ScheduledFuture> scheduledTasks;
+  private final ConcurrentNavigableMap<Long, ScheduledFuture> scheduledTasks;
   private final ExecutorService executor;
   private final LongAdder totalScheduled;
   private final LongAdder totalExecuted;
@@ -138,33 +138,6 @@ public class SimpleTaskScheduler {
   }
 
   /**
-   * This will cancel a pending Runnable task, if it is currently running or has run, then this has no impact, else it will simply remove it from the
-   * execution queue
-   *
-   * @param runnable the task to cancel the execution on
-   *
-   * @return true if it was found and removed from the pending queue, else false, if it has already executed or could not be found
-   */
-  public boolean cancel(@NonNull @NotNull Runnable runnable) {
-    ScheduledFuture collision = null;
-    boolean exists = true;
-    while(exists){
-      exists = false;
-      for (Map.Entry<Long, ScheduledFuture> entry : scheduledTasks.entrySet()) {
-        if (entry.getValue().get() == runnable) {
-          exists = true;
-          collision = scheduledTasks.remove(entry.getKey());
-          if (collision != null) {
-            collision.cancelled = true;
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
    * This class runs the queued tasks and will reschedule if they need to be, this is an internal class and is not exposed via the API
    */
   private class TaskExecutor implements Runnable {
@@ -244,7 +217,7 @@ public class SimpleTaskScheduler {
     }
 
     @Override
-    public Runnable get(long timeout, TimeUnit unit) {
+    public Runnable get(long timeout, @NotNull TimeUnit unit) {
       return task;
     }
 
