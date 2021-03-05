@@ -18,15 +18,16 @@
 
 package org.maps.utilities.threads.tasks;
 
+import lombok.NonNull;
+import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.FutureTask;
-import lombok.NonNull;
-import lombok.ToString;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class implements a ConcurrentTaskScheduler with a priority based concurrent queue. This enables tasks with a higher priority to
@@ -69,7 +70,7 @@ public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<
       executeQueue();
     }
     else{
-      // ToDo: Need to inform the caller that this operation is not going to happen
+      task.cancel(true);
     }
   }
 
