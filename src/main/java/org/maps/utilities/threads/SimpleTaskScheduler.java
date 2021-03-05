@@ -18,17 +18,13 @@
 
 package org.maps.utilities.threads;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.LongAdder;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * This class uses the Java Executor classes to make a simple task scheduler singleton. It offers simple scheduled at set intervals as well as a once only execution queue.
@@ -150,11 +146,19 @@ public class SimpleTaskScheduler {
    * @return true if it was found and removed from the pending queue, else false, if it has already executed or could not be found
    */
   public boolean cancel(@NonNull @NotNull Runnable runnable) {
-    for (Map.Entry<Long, ScheduledFuture> entry : scheduledTasks.entrySet()) {
-      if (entry.getValue().get() == runnable) {
-        ScheduledFuture task = scheduledTasks.remove(entry.getKey());
-        task.cancelled = true;
-        return true;
+    ScheduledFuture collision = null;
+    boolean exists = true;
+    while(exists){
+      exists = false;
+      for (Map.Entry<Long, ScheduledFuture> entry : scheduledTasks.entrySet()) {
+        if (entry.getValue().get() == runnable) {
+          exists = true;
+          collision = scheduledTasks.remove(entry.getKey());
+          if (collision != null) {
+            collision.cancelled = true;
+            return true;
+          }
+        }
       }
     }
     return false;

@@ -18,10 +18,11 @@
 
 package org.maps.utilities.stats;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 public class MovingAverageTest {
 
@@ -61,11 +62,10 @@ public class MovingAverageTest {
     while(epoch > System.currentTimeMillis()){
       movingAverage.add(1);
     }
-    epoch = System.currentTimeMillis() + 1000;
+    epoch = System.currentTimeMillis() + 1100;
     while(epoch > System.currentTimeMillis()){
       LockSupport.parkNanos(1000000000);
     }
-
     // Should be cleared since it has exceeded the time unit
     Assertions.assertEquals(0, movingAverage.getAverage());
   }

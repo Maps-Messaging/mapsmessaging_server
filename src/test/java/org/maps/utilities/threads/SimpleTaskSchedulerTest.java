@@ -18,13 +18,14 @@
 
 package org.maps.utilities.threads;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.maps.test.WaitForState;
+
 import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.maps.test.WaitForState;
 
 class SimpleTaskSchedulerTest {
 
@@ -36,10 +37,26 @@ class SimpleTaskSchedulerTest {
     Future<?> future = scheduler.schedule(task, 1, TimeUnit.SECONDS);
     WaitForState.waitFor(2, TimeUnit.SECONDS, future::isDone);
     time = task.executedTime - time;
-    System.err.println(time);
     Assertions.assertTrue(time < 1600);
     Assertions.assertTrue(future.isDone());
     Assertions.assertFalse(future.isCancelled());
+    Assertions.assertTrue(task.executedTime > 0);
+  }
+
+  @Test
+  void simpleScheduleRepeat() throws IOException {
+    SimpleTaskScheduler scheduler = SimpleTaskScheduler.getInstance();
+    TestTask task = new TestTask();
+    long count = scheduler.getTotalScheduled();
+    Future<?> future = scheduler.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
+    WaitForState.waitFor(4, TimeUnit.SECONDS, future::isDone);
+    scheduler.cancel(task);
+    Assertions.assertTrue(future.isCancelled());
+    Assertions.assertTrue(count < scheduler.getTotalScheduled());
+    count = scheduler.getTotalScheduled();
+    WaitForState.waitFor(2, TimeUnit.SECONDS, future::isDone);
+    Assertions.assertEquals(scheduler.getTotalScheduled(), count);
+
   }
 
   @Test
@@ -51,6 +68,18 @@ class SimpleTaskSchedulerTest {
     future.cancel(true);
     Assertions.assertFalse(future.isDone());
     Assertions.assertTrue(future.isCancelled());
+  }
+
+  @Test
+  void simpleCancel() throws IOException {
+    SimpleTaskScheduler scheduler = SimpleTaskScheduler.getInstance();
+    TestTask task = new TestTask();
+    Future<?> future = scheduler.schedule(task, 1, TimeUnit.SECONDS);
+    scheduler.cancel(task);
+    WaitForState.waitFor(2, TimeUnit.SECONDS, () -> future.isDone() );
+    Assertions.assertFalse(future.isDone());
+    Assertions.assertTrue(future.isCancelled());
+    Assertions.assertEquals(-1, task.executedTime);
   }
 
   private static class TestTask implements Runnable{
