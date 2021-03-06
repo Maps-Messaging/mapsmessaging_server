@@ -71,7 +71,7 @@ class SimpleTaskSchedulerTest {
   }
 
   @Test
-  void simpleCancel() throws IOException {
+  void simpleCancel() {
     SimpleTaskScheduler scheduler = SimpleTaskScheduler.getInstance();
     TestTask task = new TestTask();
     Future<?> future = scheduler.schedule(task, 1, TimeUnit.SECONDS);

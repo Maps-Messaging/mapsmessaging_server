@@ -57,7 +57,7 @@ public class SingleConcurrentTaskScheduler<V> extends ConcurrentTaskScheduler<V>
       executeQueue();
     }
     else{
-      // ToDo, we can not simply ignore this, we need to raise an exception and let the caller know something is up
+      task.cancel(true); // Mark it as cancelled
     }
   }
 
