@@ -42,9 +42,6 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
           if(list instanceof Map){
             parsedList.add(new ConfigurationProperties((Map<String, Object>) list));
           }
-          else{
-            parsedList.add(list);
-          }
         }
         put(entry.getKey(), parsedList);
       }
