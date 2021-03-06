@@ -40,7 +40,7 @@ import java.util.concurrent.FutureTask;
  * @version 1.0
  */
 @ToString
-public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<V> implements PriorityTaskScheduler<V> {
+public class PriorityConcurrentTaskScheduler<V> extends ConcurrentTaskScheduler<V> implements PriorityTaskScheduler<V> {
 
   private final List<Queue<FutureTask<V>>> queues;
 
@@ -50,7 +50,7 @@ public class ConcurrentPriorityTaskScheduler<V> extends ConcurrentTaskScheduler<
    * @param domain  a unique domain name
    * @param prioritySize the number of unique priority levels
    */
-  public ConcurrentPriorityTaskScheduler(@NonNull @NotNull String domain, int prioritySize) {
+  public PriorityConcurrentTaskScheduler(@NonNull @NotNull String domain, int prioritySize) {
     super(domain);
     queues = new ArrayList<>();
     for(int x=0;x<prioritySize;x++){

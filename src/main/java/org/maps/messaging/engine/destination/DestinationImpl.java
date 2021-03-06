@@ -58,7 +58,7 @@ import org.maps.messaging.engine.resources.ResourceFactory;
 import org.maps.messaging.engine.tasks.FutureResponse;
 import org.maps.messaging.engine.tasks.LongResponse;
 import org.maps.messaging.engine.tasks.Response;
-import org.maps.utilities.threads.tasks.ConcurrentPriorityTaskScheduler;
+import org.maps.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import org.maps.utilities.threads.tasks.PriorityTaskScheduler;
 import org.maps.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import org.maps.utilities.threads.tasks.TaskScheduler;
@@ -114,7 +114,7 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  String path, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = name;
-    resourceTaskQueue = new ConcurrentPriorityTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
+    resourceTaskQueue = new PriorityConcurrentTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
@@ -141,7 +141,7 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl( @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = resource.getMappedName();
-    resourceTaskQueue = new ConcurrentPriorityTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
+    resourceTaskQueue = new PriorityConcurrentTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
@@ -181,7 +181,7 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) {
     this.name = name;
-    resourceTaskQueue = new ConcurrentPriorityTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
+    resourceTaskQueue = new PriorityConcurrentTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);

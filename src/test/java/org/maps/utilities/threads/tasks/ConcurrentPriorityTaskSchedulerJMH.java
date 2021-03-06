@@ -41,7 +41,7 @@ public class ConcurrentPriorityTaskSchedulerJMH {
   @Setup
   public void createState(){
     System.err.println("New Queue created");
-    queue = new ConcurrentPriorityTaskScheduler<>("Benchmark", 32);
+    queue = new PriorityConcurrentTaskScheduler<>("Benchmark", 32);
     adder = new LongAdder();
   }
 
