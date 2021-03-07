@@ -59,9 +59,9 @@ import org.maps.utilities.threads.SimpleTaskScheduler;
 public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
 
   //Allow a maximum of so many tasks when the thread is external to the task scheduler
-  private static final int MAX_TASK_EXECUTION_EXTERNAL_THREAD = 10;
+  protected static final int MAX_TASK_EXECUTION_EXTERNAL_THREAD = 10;
   //Allow a maximum of so many tasks in a single scheduled runner execution
-  private static final int MAX_TASK_EXECUTION_SCHEDULED_THREAD = Integer.MAX_VALUE;
+  protected static final int MAX_TASK_EXECUTION_SCHEDULED_THREAD = Integer.MAX_VALUE;
   private static final String DOMAIN = "domain";
 
   private final ThreadStateContext context;

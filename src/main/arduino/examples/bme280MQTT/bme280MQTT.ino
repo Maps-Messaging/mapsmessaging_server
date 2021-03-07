@@ -66,7 +66,7 @@ bool powerFlag = false;
 #include <RHReliableDatagram.h>
 
 // Singleton instance of the radio driver
-uint8_t LORA_GATEWAY = 1;
+uint8_t LORA_GATEWAY = 2;
 uint8_t MY_ADDRESS = 20;
 uint8_t packet [PACKET_LENGTH];
 
