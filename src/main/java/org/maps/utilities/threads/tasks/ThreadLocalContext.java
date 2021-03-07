@@ -35,10 +35,21 @@ import org.jetbrains.annotations.NotNull;
 @ToString
 public class ThreadLocalContext {
 
+  private static final boolean DEBUG_DOMAIN;
+  static{
+    String value = System.getProperty("debug_domain", "true");
+    boolean check = false;
+    try {
+      check = Boolean.parseBoolean(value);
+    } catch (Exception exception) {
+      // ignore we simply disable it
+    }
+    DEBUG_DOMAIN = check;
+  }
+
   private static final ThreadLocalContext instance = new ThreadLocalContext();
 
   protected final ThreadLocal<ThreadStateContext> context;
-
 
   public static @Nullable ThreadStateContext get(){
     return instance.context.get();
@@ -53,14 +64,20 @@ public class ThreadLocalContext {
   }
 
   public static boolean checkDomain(@NonNull @NotNull String domain){
+    boolean response = false;
     ThreadStateContext context = ThreadLocalContext.get();
-    if(context == null){
-      return false;
+    String check = "";
+    if(context != null){
+      check = (String) context.get("domain");
+      response = domain.equals(check);
     }
-    else {
-      String check = (String) context.get("domain");
-      return domain.equals(check);
+    if(DEBUG_DOMAIN && !response){
+      RuntimeException exception = new RuntimeException("Incorrect thread domain detected! > "+check+" Expected "+domain);
+      exception.fillInStackTrace();
+      exception.printStackTrace();
+      throw exception;
     }
+    return response;
   }
 
   private ThreadLocalContext(){
