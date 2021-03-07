@@ -33,7 +33,6 @@ import org.maps.utilities.stats.processors.DataProcessor;
  * @author Matthew Buckton
  * @version 1.0
  */
-@ToString
 public class LinkedMovingAverages {
 
   protected final List<MovingAverage> movingAverages;
