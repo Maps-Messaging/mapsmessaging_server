@@ -33,6 +33,14 @@ abstract class ConcurrentTaskSchedulerTest {
 
   protected abstract ConcurrentTaskScheduler<Object> create();
 
+
+  @Test
+  void validation() {
+    ConcurrentTaskScheduler<Object> taskScheduler = create();
+    assertThrows(Exception.class, ()->taskScheduler.addTask(null));
+    assertDoesNotThrow( ()->taskScheduler.addTask(new FutureTask<>(new Task())));
+  }
+
   @Test
   void shutdown() {
     ConcurrentTaskScheduler<Object> taskScheduler = create();
@@ -46,6 +54,7 @@ abstract class ConcurrentTaskSchedulerTest {
   @Test
   void offloadThread() throws IOException {
     ConcurrentTaskScheduler<Object> taskScheduler = create();
+    assertTrue(taskScheduler.isEmpty());
     AtomicBoolean atomicBoolean = new AtomicBoolean(false);
     Thread th = new Thread(() -> {
       FutureTask<Object> futureTask = new FutureTask<>(new DelayedTask());
@@ -62,6 +71,7 @@ abstract class ConcurrentTaskSchedulerTest {
     CheckTask task = new CheckTask();
     FutureTask<Object> futureTask = new FutureTask<>(task);
     taskScheduler.addTask(futureTask);
+    assertFalse(taskScheduler.isEmpty());
     WaitForState.waitFor(5, TimeUnit.SECONDS, futureTask::isDone);
     assertTrue(futureTask.isDone());
     assertFalse(futureTask.isCancelled());
