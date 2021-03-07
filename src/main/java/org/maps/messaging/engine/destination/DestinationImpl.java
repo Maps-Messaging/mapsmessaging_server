@@ -481,7 +481,7 @@ public class DestinationImpl implements BaseDestination {
    * @throws IOException If the file system raises any File I/O exceptions during the operation
    */
   public void abort(long transactionId) throws IOException {
-    submit(new BulkRemoveMessageTask(this, transactionMessageManager.removeBucket(transactionId)));
+    submit(new BulkRemoveMessageTask(this, transactionMessageManager.removeBucket(transactionId)), DELETE_PRIORITY);
   }
 
   /**
