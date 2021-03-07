@@ -50,12 +50,4 @@ public class ThreadStateContext {
     return map.get(key);
   }
 
-  public @Nullable Object remove(@NonNull @NotNull String key){
-    return map.remove(key);
-  }
-
-  public void clear(){
-    map.clear();
-  }
-
 }
