@@ -18,6 +18,7 @@
 
 package org.maps.messaging.engine.destination.subscription.impl.shared;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -72,7 +73,7 @@ public class SharedSubscription extends DestinationSubscription {
     return subscription;
   }
 
-  public void removeSession(SessionImpl remove) {
+  public void removeSession(SessionImpl remove) throws IOException {
     subscriptions.remove(remove);
     if (subscriptions.isEmpty()) {
       destinationImpl.removeSubscription(getSessionId());

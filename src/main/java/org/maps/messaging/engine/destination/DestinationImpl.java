@@ -381,7 +381,7 @@ public class DestinationImpl implements BaseDestination {
    * @param subscriptionId  Subscription identifier to remove
    * @return the subscription that was removed
    */
-  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) {
+  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) throws IOException {
     stats.subscriptionRemoved();
     Subscribable subscription = subscriptionManager.remove(subscriptionId);
     if(subscription != null) {
@@ -392,7 +392,7 @@ public class DestinationImpl implements BaseDestination {
         eventQueue = subscriptionManager.scanForInterest(eventQueue);
         if (!eventQueue.isEmpty()) {
           stats.getStoredMessageAverages().subtract(eventQueue.size());
-          submit(new BulkRemoveMessageTask(this, eventQueue));
+          handleTask(new BulkRemoveMessageTask(this, eventQueue));
         }
       }
     }
@@ -492,7 +492,7 @@ public class DestinationImpl implements BaseDestination {
    * @throws IOException If the file system raises any File I/O exceptions during the operation
    */
   public void commit(long transactionId) throws IOException {
-    handleTask(new TransactionalMessageProcessor(this, subscriptionManager, transactionMessageManager, transactionId));
+    submit(new TransactionalMessageProcessor(this, subscriptionManager, transactionMessageManager, transactionId));
   }
 
   /**

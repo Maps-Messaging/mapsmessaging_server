@@ -54,7 +54,7 @@ public class TemporaryDestination extends DestinationImpl {
   }
 
   @Override
-  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) {
+  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) throws IOException {
     Subscribable subscribable = super.removeSubscription(subscriptionId);
     checkForDeletion();
     return subscribable;

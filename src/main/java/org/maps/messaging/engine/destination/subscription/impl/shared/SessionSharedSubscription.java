@@ -18,10 +18,12 @@
 
 package org.maps.messaging.engine.destination.subscription.impl.shared;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import org.apache.logging.log4j.ThreadContext;
+import org.maps.logging.LogMessages;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.subscription.OutstandingEventDetails;
 import org.maps.messaging.engine.destination.subscription.Subscription;
@@ -53,7 +55,7 @@ public class SessionSharedSubscription extends Subscription {
   }
 
   @Override
-  public void cancel() {
+  public void cancel() throws IOException {
     List<OutstandingEventDetails> outstandingEvents = acknowledgementController.getOutstanding();
     for (OutstandingEventDetails outstandingEvent : outstandingEvents) {
       sharedSubscription.handleTransaction(false, outstandingEvent.getId());
@@ -62,7 +64,7 @@ public class SessionSharedSubscription extends Subscription {
   }
 
   @Override
-  public void close() {
+  public void close() throws IOException {
     cancel();
   }
 

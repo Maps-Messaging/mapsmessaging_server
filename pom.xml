@@ -108,7 +108,7 @@
             <!-- test code, lets not track the testing -->
             <exclude>**/*Test.*</exclude>
             <!-- Example code, not part of the server -->
-            <exclude>**/PulsarProtocol*.*</exclude>
+            <exclude>**/apache_pulsar/*.*</exclude>
           </excludes>
         </configuration>
         <executions>
