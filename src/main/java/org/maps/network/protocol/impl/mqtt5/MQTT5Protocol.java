@@ -279,42 +279,52 @@ public class MQTT5Protocol extends ProtocolImpl {
       completionTask.run();
       logger.log(LogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
-      SubscriptionContext subInfo = subscription.getContext();
-      QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
-      int packetId = 0;
-      if (qos.isSendPacketId()) {
-        packetId = packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
+      sendPublishFrame(normalisedName, subscription, message, completionTask);
+    }
+  }
+
+  private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull  SubscribedEventManager subscription,@NonNull @NotNull  Message message,@NonNull @NotNull  Runnable completionTask){
+    SubscriptionContext subInfo = subscription.getContext();
+    QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
+    int packetId = getPacketId(qos, subscription, message);
+    TopicAlias alias = serverTopicAliasMapping.find(normalisedName);
+    String destinationName = normalisedName;
+    if (alias != null) {
+      destinationName = "";
+    } else {
+      if (serverTopicAliasMapping.size() < serverTopicAliasMapping.getMaximum()) {
+        alias = serverTopicAliasMapping.create(destinationName);
       }
-      TopicAlias alias = serverTopicAliasMapping.find(normalisedName);
-      String destinationName = normalisedName;
-      if (alias != null) {
-        destinationName = "";
-      } else {
-        if (serverTopicAliasMapping.size() < serverTopicAliasMapping.getMaximum()) {
-          alias = serverTopicAliasMapping.create(destinationName);
-        }
-      }
-      //
-      // Weird MQTT5 flag
-      //
-      boolean retain = message.isRetain();
-      if (!subInfo.isRetainAsPublish()) {
-        retain = false;
-      }
-      byte[] payload;
-      if(transformation != null){
-        payload = transformation.outgoing(message);
-      }
-      else{
-        payload = message.getOpaqueData();
-      }
-      Publish5 publish = new Publish5(payload, qos, packetId, destinationName, retain);
-      if (alias != null) {
-        publish.add(alias);
-      }
-      addProperties(message, publish, subscription);
-      publish.setCallback(completionTask);
-      writeFrame(publish);
+    }
+    //
+    // Weird MQTT5 flag
+    //
+    boolean retain = message.isRetain();
+    if (!subInfo.isRetainAsPublish()) {
+      retain = false;
+    }
+    Publish5 publish = new Publish5(createPayload(message), qos, packetId, destinationName, retain);
+    if (alias != null) {
+      publish.add(alias);
+    }
+    addProperties(message, publish, subscription);
+    publish.setCallback(completionTask);
+    writeFrame(publish);
+  }
+
+  private int getPacketId(QualityOfService qos, SubscribedEventManager subscription, Message message){
+    if (qos.isSendPacketId()) {
+      return packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
+    }
+    return 0;
+  }
+
+  private byte[] createPayload(Message message){
+    if(transformation != null){
+      return transformation.outgoing(message);
+    }
+    else{
+      return message.getOpaqueData();
     }
   }
 
