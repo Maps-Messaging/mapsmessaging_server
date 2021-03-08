@@ -19,10 +19,11 @@
 package org.maps.utilities.threads.tasks;
 
 
-import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
 
 /**
  * This class, is used by the Task Queue to validate the domain that the thread is running is is authorised to
@@ -75,7 +76,7 @@ public class ThreadLocalContext {
         }
       }
       if (!response) {
-        throw new RuntimeException("Incorrect thread domain detected! > " + check + " Expected " + domain);
+        throw new DomainDebuggingException("Incorrect thread domain detected! > " + check + " Expected " + domain);
       }
     }
   }
@@ -84,4 +85,10 @@ public class ThreadLocalContext {
     context = new ThreadLocal<>();
   }
 
+  private static class DomainDebuggingException extends RuntimeException{
+
+    public DomainDebuggingException(String msg) {
+      super(msg);
+    }
+  }
 }

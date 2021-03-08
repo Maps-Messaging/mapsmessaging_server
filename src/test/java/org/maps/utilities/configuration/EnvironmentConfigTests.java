@@ -24,7 +24,6 @@ import org.maps.BaseTest;
 
 class EnvironmentConfigTests extends BaseTest {
 
-
   @Test
   void checkDefaultVersionLoad(){
     EnvironmentConfig config = EnvironmentConfig.getInstance();

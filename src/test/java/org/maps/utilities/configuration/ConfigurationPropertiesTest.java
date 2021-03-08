@@ -18,11 +18,12 @@
 
 package org.maps.utilities.configuration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class ConfigurationPropertiesTest {
 
@@ -54,7 +55,6 @@ class ConfigurationPropertiesTest {
 
     assertFalse(properties.getBooleanProperty("booleanError", false));
     assertTrue(properties.getBooleanProperty("empty", true));
-
   }
 
   @Test
@@ -79,7 +79,6 @@ class ConfigurationPropertiesTest {
 
     assertEquals(123, properties.getLongProperty("longError", 123));
     assertEquals(123, properties.getLongProperty("empty", 123));
-
   }
 
   @Test
@@ -99,7 +98,6 @@ class ConfigurationPropertiesTest {
     assertEquals(10L*1024*1024, properties.getIntProperty("longPowerM", 0));
     assertEquals(123, properties.getIntProperty("longError", 123));
     assertEquals(123, properties.getIntProperty("empty", 123));
-
   }
 
   @Test
@@ -136,7 +134,6 @@ class ConfigurationPropertiesTest {
 
     assertEquals(123.5, properties.getDoubleProperty("doubleError", 123.5));
     assertEquals(123.5, properties.getDoubleProperty("empty", 123.5));
-
   }
 
   @Test

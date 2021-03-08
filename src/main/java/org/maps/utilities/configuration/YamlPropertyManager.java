@@ -18,24 +18,19 @@
 
 package org.maps.utilities.configuration;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
 import org.maps.utilities.ResourceList;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
 public class YamlPropertyManager extends PropertyManager {
+  private static final String GLOBAL = "global";
+
   private final Logger logger = LoggerFactory.getLogger(YamlPropertyManager.class);
 
   @Override
@@ -58,7 +53,7 @@ public class YamlPropertyManager extends PropertyManager {
       Object objRoot = map.get(propertyName);
       if(objRoot instanceof ConfigurationProperties) {
         ConfigurationProperties root = (ConfigurationProperties)objRoot;
-        Object global = root.get("global");
+        Object global = root.get(GLOBAL);
         Object data = root.get("data");
         if (data != null && global instanceof ConfigurationProperties) {
           if (data instanceof List) {
@@ -68,7 +63,7 @@ public class YamlPropertyManager extends PropertyManager {
           } else if (data instanceof ConfigurationProperties) {
             ((ConfigurationProperties) data).setGlobal((ConfigurationProperties) global);
           }
-          root.remove("global");
+          root.remove(GLOBAL);
         }
       }
 
@@ -107,7 +102,7 @@ public class YamlPropertyManager extends PropertyManager {
   @Override
   protected void store(String name) throws IOException {
     HashMap<String, Object> data = new LinkedHashMap<>(properties);
-    data.put("global",  new LinkedHashMap<>(properties.getGlobal()));
+    data.put(GLOBAL,  new LinkedHashMap<>(properties.getGlobal()));
     try(PrintWriter writer = new PrintWriter(name)) {
       Yaml yaml = new Yaml();
       yaml.dump(data, writer);
