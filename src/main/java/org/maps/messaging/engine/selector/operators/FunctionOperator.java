@@ -26,4 +26,19 @@ public abstract class FunctionOperator extends Operation {
   @Override
   public abstract Object evaluate(Message message) throws ParseException;
 
+  protected Object convertResult(Object result){
+    if(result instanceof Number || result instanceof String || result instanceof Boolean){
+      if(result instanceof Double){
+        return result;
+      }
+      if(result instanceof Float){
+        return ((Float)result).doubleValue();
+      }
+      else if(result instanceof Number){
+        return ((Number)result).longValue(); // Forces byte, short, int all to long
+      }
+      return result;
+    }
+    return false;
+  }
 }
