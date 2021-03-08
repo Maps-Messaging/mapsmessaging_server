@@ -102,48 +102,59 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       //
       // OK so this is either a new connection request or an admin request
       //
-      MQTT_SNPacket mqttSn = null;
       try {
-        mqttSn = packetFactory.parseFrame(packet);
+        processIncomingPacket(packet, packetFactory.parseFrame(packet));
       } catch (IOException ioException) {
-        // We received a corrupt packet, there is not much we can do but ignore it since it could just be noise
-      }
-      // Cool, so we have a new connect, so lets create a new protocol Impl and add it into our list
-      // of current sessions
-      if (mqttSn instanceof Connect) {
-        MQTT_SNProtocol impl = new MQTT_SNProtocol(this, endPoint, packet.getFromAddress(), selectorTask, (Connect) mqttSn);
-        currentSessions.put(packet.getFromAddress(), impl);
-      } else if (mqttSn instanceof SearchGateway) {
-        // This is a client asking for information about existing gateways on the network
-        GatewayInfo gatewayInfo = new GatewayInfo(gatewayId);
-        Packet gwInfo = new Packet(3, false);
-        gatewayInfo.packFrame(gwInfo);
-        gwInfo.setFromAddress(packet.getFromAddress());
-        endPoint.sendPacket(gwInfo);
-      } else if (mqttSn instanceof Publish) {
-        Publish publish = (Publish) mqttSn;
-        if (publish.getQoS().equals(QualityOfService.MQTT_SN_REGISTERED)) {
-          String topic = registeredTopicConfiguration.getTopic(packet.getFromAddress(), publish.getTopicId());
-          if (topic != null) {
-            logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT, topic);
-            publishRegisteredTopic(topic, publish);
-          } else {
-            logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT_NOT_FOUND, packet.getFromAddress(), publish.getTopicId());
-          }
-        } else {
-          logger.log(LogMessages.MQTT_SN_INVALID_QOS_PACKET_DETECTED, packet.getFromAddress(), publish.getQoS());
-
-        }
-      }
-      else if(mqttSn instanceof Advertise){
-        Advertise advertise = (Advertise) mqttSn;
-        logger.log(LogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getId(), packet.getFromAddress().toString());
-      } else {
-        packet.flip();
+        return true;
       }
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
+  }
+
+  private void processIncomingPacket(Packet packet, MQTT_SNPacket mqttSn) throws IOException {
+    if (mqttSn instanceof Connect) {
+      // Cool, so we have a new connect, so lets create a new protocol Impl and add it into our list
+      // of current sessions
+      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, endPoint, packet.getFromAddress(), selectorTask, (Connect) mqttSn);
+      currentSessions.put(packet.getFromAddress(), impl);
+    } else if (mqttSn instanceof SearchGateway) {
+      handleSearch(packet);
+    } else if (mqttSn instanceof Publish) {
+      handlePublish(packet, (Publish) mqttSn);
+    }
+    else if(mqttSn instanceof Advertise){
+      handleAdvertise(packet, (Advertise) mqttSn);
+    } else {
+      packet.flip();
+    }
+  }
+
+  private void handleSearch(Packet packet) throws IOException {
+    // This is a client asking for information about existing gateways on the network
+    GatewayInfo gatewayInfo = new GatewayInfo(gatewayId);
+    Packet gwInfo = new Packet(3, false);
+    gatewayInfo.packFrame(gwInfo);
+    gwInfo.setFromAddress(packet.getFromAddress());
+    endPoint.sendPacket(gwInfo);
+  }
+
+  private void handlePublish(Packet packet, Publish publish) throws IOException {
+    if (publish.getQoS().equals(QualityOfService.MQTT_SN_REGISTERED)) {
+      String topic = registeredTopicConfiguration.getTopic(packet.getFromAddress(), publish.getTopicId());
+      if (topic != null) {
+        logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT, topic);
+        publishRegisteredTopic(topic, publish);
+      } else {
+        logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT_NOT_FOUND, packet.getFromAddress(), publish.getTopicId());
+      }
+    } else {
+      logger.log(LogMessages.MQTT_SN_INVALID_QOS_PACKET_DETECTED, packet.getFromAddress(), publish.getQoS());
+    }
+  }
+
+  private void handleAdvertise(Packet packet, Advertise advertise ){
+    logger.log(LogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getId(), packet.getFromAddress().toString());
   }
 
   private void publishRegisteredTopic(String topic, Publish publish) throws IOException {
