@@ -37,7 +37,7 @@ public class ThreadLocalContext {
 
   private static final boolean DEBUG_DOMAIN;
   static{
-    String value = System.getProperty("debug_domain", "true");
+    String value = System.getProperty("debug_domain", "false");
     boolean check = false;
     try {
       check = Boolean.parseBoolean(value);
