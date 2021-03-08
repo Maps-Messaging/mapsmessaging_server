@@ -72,10 +72,7 @@ public class ThreadLocalContext {
       response = domain.equals(check);
     }
     if(DEBUG_DOMAIN && !response){
-      RuntimeException exception = new RuntimeException("Incorrect thread domain detected! > "+check+" Expected "+domain);
-      exception.fillInStackTrace();
-      exception.printStackTrace();
-      throw exception;
+      throw new RuntimeException("Incorrect thread domain detected! > "+check+" Expected "+domain);
     }
     return response;
   }
