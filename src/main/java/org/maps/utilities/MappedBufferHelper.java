@@ -44,13 +44,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class MappedBufferHelper {
 
-  private static final boolean IS_OLD_JDK;
-
-  static {
-    String version = System.getProperty("java.specification.version", "99");
-    IS_OLD_JDK = version.startsWith("1.");
-  }
-
   /**
    * Ensures the ByteBuffer is a direct buffer and then ensures the "cleaner" function is run and, thus, freeing up any resources it may have open.
    * <br>
@@ -62,29 +55,11 @@ public class MappedBufferHelper {
   public static void closeDirectBuffer(@NonNull @NotNull ByteBuffer byteBuffer) {
     if (byteBuffer.isDirect()) {
       try {
-        if (IS_OLD_JDK) {
-          oldClean(byteBuffer);
-        } else {
-          newClean(byteBuffer);
-        }
+        newClean(byteBuffer);
       } catch (Exception ex) {
         // we can ignore this really, worst case is the JVM needs to release the byte buffer
       }
     }
-  }
-
-  /*
-  Old JVM mechanism to release resources
-   */
-
-  // we need access to the cleaner method to ensure the buffers are released in a more deterministic manner
-  @java.lang.SuppressWarnings("squid:S3011")
-  private static void oldClean(ByteBuffer cb) throws NoSuchMethodException, ClassNotFoundException, InvocationTargetException, IllegalAccessException {
-    Method cleaner = cb.getClass().getMethod("cleaner");
-    cleaner.setAccessible(true);
-    Method clean = Class.forName("sun.misc.Cleaner").getMethod("clean");
-    clean.setAccessible(true);
-    clean.invoke(cleaner.invoke(cb));
   }
 
   /*
