@@ -86,6 +86,22 @@ public class PriorityCollectionTest {
   }
 
   @Test
+  void testToString(){
+    PriorityCollection<Long> collection = new PriorityCollection<Long>(16, null);
+    for(long x=0;x<16;x++){
+      collection.add(x, 15-(int)x);
+    }
+    String shouldBe = "Count:16,[15]\n[14]\n[13]\n[12]\n[11]\n[10]\n[9]\n[8]\n[7]\n[6]\n[5]\n[4]\n[3]\n[2]\n[1]\n[0]\n";
+    Assertions.assertEquals(shouldBe, collection.toString());
+    collection.clear();
+    for(long x=0;x<16;x++){
+      collection.add(x, (int)x);
+    }
+    shouldBe = "Count:16,[0]\n[1]\n[2]\n[3]\n[4]\n[5]\n[6]\n[7]\n[8]\n[9]\n[10]\n[11]\n[12]\n[13]\n[14]\n[15]\n";
+    Assertions.assertEquals(shouldBe, collection.toString());
+  }
+
+  @Test
   void allAPICollections(){
     List<Long> list = new ArrayList<>();
     for(long x=0;x< 1000;x++){
@@ -200,7 +216,21 @@ public class PriorityCollectionTest {
       }
     }
 
+    collection.clear();
+    for(int priority=0;priority<16;priority++) {
+      for (long x = 0; x < 4096; x++) {
+        collection.add(x, priority);
+      }
+      array = collection.toArray(array);
+      Assertions.assertEquals(4096, array.length);
 
+      expecting = 0;
+      for (Object o : array) {
+        Assertions.assertEquals(expecting, o);
+        expecting += 1;
+      }
+      collection.clear();
+    }
   }
 
 
