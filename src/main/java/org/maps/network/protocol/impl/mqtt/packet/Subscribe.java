@@ -26,6 +26,7 @@ import org.maps.network.io.Packet;
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718063
  */
+@java.lang.SuppressWarnings("common-java:DuplicatedBlocks") // MQTT 3/4 and MQTT5 share a lot in common, however, the changes don't make it easy to extend.
 public class Subscribe extends MQTTPacket {
 
   private final List<SubscriptionInfo> subscriptionList;

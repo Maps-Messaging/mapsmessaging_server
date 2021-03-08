@@ -125,12 +125,7 @@ public abstract class Event extends Frame {
       byteArrayOutputStream = new ByteArrayOutputStream();
     }
   }
-
-  @Override
-  protected void putHeader(String key, String val) {
-    super.putHeader(key, val);
-  }
-
+  
   @Override
   public void scanFrame(Packet packet) throws IOException {
 

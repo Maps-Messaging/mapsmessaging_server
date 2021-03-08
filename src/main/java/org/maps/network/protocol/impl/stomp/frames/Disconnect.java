@@ -23,7 +23,7 @@ package org.maps.network.protocol.impl.stomp.frames;
  */
 public class Disconnect extends Frame {
 
-  public static final byte[] COMMAND = "DISCONNECT".getBytes();
+  protected static final byte[] COMMAND = "DISCONNECT".getBytes();
 
   public Disconnect() {
     super();

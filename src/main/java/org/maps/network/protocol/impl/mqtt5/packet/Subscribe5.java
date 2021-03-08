@@ -36,7 +36,7 @@ import org.maps.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdenti
  */
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
-@java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
+@java.lang.SuppressWarnings("common-java:DuplicatedBlocks") // MQTT 3/4 and MQTT5 share a lot in common, however, the changes don't make it easy to extend.
 public class Subscribe5 extends MQTTPacket5 {
 
   private final List<SubscriptionInfo> subscriptionList;

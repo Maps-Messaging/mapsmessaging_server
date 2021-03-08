@@ -22,17 +22,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.BaseTest;
 
-public class EnvironmentConfigTests extends BaseTest {
+class EnvironmentConfigTests extends BaseTest {
 
 
   @Test
-  public void checkDefaultVersionLoad(){
+  void checkDefaultVersionLoad(){
     EnvironmentConfig config = EnvironmentConfig.getInstance();
     Assertions.assertNotEquals(config.getMajor(), -1);
   }
 
   @Test
-  public void checkDifferentJDKVersionParsing(){
+  void checkDifferentJDKVersionParsing(){
     String[] versions = {
         "1.3.0",
         "1.3.1-beta",

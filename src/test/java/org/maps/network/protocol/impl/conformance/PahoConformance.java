@@ -31,7 +31,7 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
 import org.maps.test.BaseTestConfig;
 
-public abstract class PahoConformance extends BaseTestConfig {
+abstract class PahoConformance extends BaseTestConfig {
 
   public static final String[] EXCEPTIONS = {"test_subscribe_options", "test_request_response"}; // Raised issue with paho, waiting for response
 
@@ -51,7 +51,7 @@ public abstract class PahoConformance extends BaseTestConfig {
     return tests;
   }
 
-  public void runTests(String testName) throws InterruptedException, IOException {
+  void runTests(String testName) throws InterruptedException, IOException {
     logTestStart(null);
     String interOpDirectory = System.getProperty("paho.interop.directory", ".");
     File workingDirectory = new File(interOpDirectory);
