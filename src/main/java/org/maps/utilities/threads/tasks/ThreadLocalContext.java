@@ -63,18 +63,21 @@ public class ThreadLocalContext {
     instance.context.remove();
   }
 
-  public static boolean checkDomain(@NonNull @NotNull String domain){
-    boolean response = false;
-    ThreadStateContext context = ThreadLocalContext.get();
-    String check = "";
-    if(context != null){
-      check = (String) context.get("domain");
-      response = domain.equals(check);
+  public static void checkDomain(@NonNull @NotNull String domain){
+    if(DEBUG_DOMAIN) {
+      boolean response = false;
+      ThreadStateContext context = ThreadLocalContext.get();
+      Object check = "";
+      if (context != null) {
+        check = context.get("domain");
+        if (check instanceof String) {
+          response = domain.equals(check);
+        }
+      }
+      if (!response) {
+        throw new RuntimeException("Incorrect thread domain detected! > " + check + " Expected " + domain);
+      }
     }
-    if(DEBUG_DOMAIN && !response){
-      throw new RuntimeException("Incorrect thread domain detected! > "+check+" Expected "+domain);
-    }
-    return response;
   }
 
   private ThreadLocalContext(){

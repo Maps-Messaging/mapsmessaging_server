@@ -108,7 +108,7 @@
             <!-- test code, lets not track the testing -->
             <exclude>**/*Test.*</exclude>
             <!-- Example code, not part of the server -->
-            <exclude>**/apache_pulsar/*.*</exclude>
+            <exclude>**/apache_pulsar/Pulsar*.*</exclude>
           </excludes>
         </configuration>
         <executions>
@@ -301,7 +301,7 @@
     <!-- Below property indicates the pattern of the test suite -->
     <runSuite>**/*Suite.class</runSuite>
     <sonar.test.exclusions>
-      **/*Test.*,**/*IT.*
+      **/*Test.*,**/*IT.*,**/apache_pulsar/*, **.*JMH.*
     </sonar.test.exclusions>
 
     <!-- Sonar-JaCoCo properties -->
