@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import org.apache.logging.log4j.ThreadContext;
-import org.maps.logging.LogMessages;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.subscription.OutstandingEventDetails;
 import org.maps.messaging.engine.destination.subscription.Subscription;
