@@ -102,7 +102,9 @@ public class YamlPropertyManager extends PropertyManager {
   @Override
   protected void store(String name) throws IOException {
     HashMap<String, Object> data = new LinkedHashMap<>(properties);
-    data.put(GLOBAL,  new LinkedHashMap<>(properties.getGlobal()));
+    if(properties.getGlobal() != null) {
+      data.put(GLOBAL, new LinkedHashMap<>(properties.getGlobal()));
+    }
     try(PrintWriter writer = new PrintWriter(name)) {
       Yaml yaml = new Yaml();
       yaml.dump(data, writer);

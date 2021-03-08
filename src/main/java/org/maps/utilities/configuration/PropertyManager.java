@@ -72,7 +72,7 @@ public abstract class PropertyManager {
   private Map<String, Object> fromJSON(JSONObject object){
     Map<String, Object> response = new LinkedHashMap<>();
     for(String key:object.keySet()){
-      response.put(key, object.getString(key));
+      response.put(key, object.get(key));
     }
     return response;
   }
