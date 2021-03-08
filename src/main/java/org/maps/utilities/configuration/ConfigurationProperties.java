@@ -95,6 +95,14 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
     }
   }
 
+  public double getDoubleProperty(String key, double defaultValue) {
+    try {
+      return asDouble(get(key,  defaultValue));
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
+  }
+
   private Object get(String key, Object defaultValue) {
     Object val = get(key);
     if(val == null && globalValues != null) {
@@ -118,11 +126,21 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   private long asLong(Object entry) {
     if(entry instanceof Number){
+      if(entry instanceof Float ){
+        return Math.round((float)entry);
+      }
+      if(entry instanceof Double){
+        return Math.round((double)entry);
+      }
       return  ((Number)entry).longValue();
     }
     else if(entry instanceof String) {
-      long multiplier = 1L;
       String value = ((String)entry).trim();
+      if(value.contains(".")){
+        double d = asDouble(value);
+        return Math.round(d);
+      }
+      long multiplier = 1L;
       String end = value.substring(value.length() - 1);
       if (end.equalsIgnoreCase("T")) {
         multiplier = 1024L * 1024L * 1024L * 1024L;
@@ -165,5 +183,9 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   public void setGlobal(ConfigurationProperties global) {
     this.globalValues = global;
+  }
+
+  public ConfigurationProperties getGlobal() {
+    return globalValues;
   }
 }

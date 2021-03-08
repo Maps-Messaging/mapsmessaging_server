@@ -18,6 +18,7 @@
 
 package org.maps.utilities.configuration;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.NonNull;
@@ -35,7 +36,7 @@ public abstract class PropertyManager {
 
   protected abstract void load();
 
-  protected abstract void store(String name);
+  protected abstract void store(String name) throws IOException;
 
   public abstract void copy(PropertyManager propertyManager);
 

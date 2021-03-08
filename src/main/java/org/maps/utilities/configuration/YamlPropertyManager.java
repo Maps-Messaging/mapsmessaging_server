@@ -22,7 +22,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -102,12 +105,20 @@ public class YamlPropertyManager extends PropertyManager {
   }
 
   @Override
-  protected void store(String name) {
-    // ToDo: Add the ability to store the config to the specified file
+  protected void store(String name) throws IOException {
+    HashMap<String, Object> data = new LinkedHashMap<>(properties);
+    data.put("global",  new LinkedHashMap<>(properties.getGlobal()));
+    try(PrintWriter writer = new PrintWriter(name)) {
+      Yaml yaml = new Yaml();
+      yaml.dump(data, writer);
+    }
   }
 
   @Override
   public void copy(PropertyManager propertyManager) {
-    // ToDo: Add the ability to copy from one property manager to another. This is useful for consul integration
+    HashMap<String, Object> data = new LinkedHashMap<>(propertyManager.properties);
+    properties.clear();
+    properties.putAll(data);
+    properties.setGlobal(properties.getGlobal());
   }
 }
