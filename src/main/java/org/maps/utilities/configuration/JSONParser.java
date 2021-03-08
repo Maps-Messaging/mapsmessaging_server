@@ -32,10 +32,6 @@ public class JSONParser {
 
   protected JSONParser(){}
 
-  public  JSONParser(JSONObject json){
-    Json = json;
-  }
-
   public JSONObject getJson() {
     return Json;
   }
