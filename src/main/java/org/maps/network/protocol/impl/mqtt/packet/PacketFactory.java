@@ -64,7 +64,7 @@ public class PacketFactory {
     }
   }
 
-  private MQTTPacket createClientPacket(int packetId, byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
+  private MQTTPacket createClientPacket(int packetId, byte fixedHeader, long remainingLen, Packet packet) throws MalformedException {
     switch (packetId) {
       case MQTTPacket.CONNACK:
         return new ConnAck(fixedHeader, remainingLen, packet);

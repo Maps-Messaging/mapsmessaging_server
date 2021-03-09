@@ -25,7 +25,7 @@ import java.util.Map;
 public class YamlParser extends JsonParser {
 
   public YamlParser(Object mapStructure) {
-    Json = convertToJson(mapStructure);
+    json = convertToJson(mapStructure);
   }
 
   private JSONObject convertToJson(Object yamlLoad) {

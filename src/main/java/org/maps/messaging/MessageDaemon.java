@@ -239,17 +239,17 @@ public class MessageDaemon implements WrapperListener {
     logger.log(LogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
     if(ConsulManagerFactory.getInstance().isStarted()){
       ConfigurationProperties  map = ConfigurationManager.getInstance().getProperties("NetworkManager");
+      List<ConfigurationProperties> list = (List<ConfigurationProperties>) map.get("data");
       Map<String, String> meta = new LinkedHashMap<>();
-      /*
-      for(ConfigurationProperties configurationProperties:map.values()){
-        String protocol = configurationProperties.getProperty("protocol");
-        String url = configurationProperties.getProperty("url");
+
+      for(ConfigurationProperties properties:list){
+
+        String protocol = properties.getProperty("protocol");
+        String url = properties.getProperty("url");
         protocol = protocol.replaceAll(",", "-");
         protocol = protocol.replaceAll(" ", "-");
         meta.put(protocol, url);
       }
-
-       */
       ConsulManagerFactory.getInstance().getManager().register(meta);
     }
     jolokaManager.start();

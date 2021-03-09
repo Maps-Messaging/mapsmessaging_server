@@ -57,25 +57,25 @@ public class EndPointConnectionJMX implements HealthMonitor {
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "pause", description ="Pauses the connection")
-  public void pauseConnection() throws IOException {
+  public void pauseConnection()  {
     connection.pause();
   }
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "resume", description ="Resumes the connection")
-  public void resumeConnection() throws IOException {
+  public void resumeConnection() {
     connection.resume();
   }
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "stop", description ="Stops the connection")
-  public void stopConnection() throws IOException {
+  public void stopConnection()  {
     connection.stop();
   }
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "start", description ="Starts the connection")
-  public void startConnection() throws IOException {
+  public void startConnection() {
     connection.start();
   }
 

@@ -20,7 +20,6 @@ package org.maps.utilities.threads.tasks;
 
 import java.util.Map;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.NonNull;
@@ -86,7 +85,6 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
     offloadedCount = new LongAdder();
     offloadThread = new QueueRunner();
     shutdown = false;
-    new SchedulerMonitor();
   }
 
 
@@ -223,30 +221,6 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
       ThreadContext.putAll(context); // Ensure the logging thread context is copied over
       internalExecuteQueue(MAX_TASK_EXECUTION_SCHEDULED_THREAD);
       Thread.currentThread().setName(threadName);
-    }
-  }
-
-  private class SchedulerMonitor implements Runnable{
-
-    private long lastQueueSize;
-    private long lastExecuted;
-
-    public SchedulerMonitor(){
-      lastQueueSize = getOutstanding();
-      lastExecuted = getTotalTasksQueued();
-      SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
-    }
-
-    @Override
-    public void run() {
-      long currentQueued = getOutstanding();
-      if(currentQueued != 0 && lastQueueSize == currentQueued){
-        if(lastExecuted == getTotalTasksQueued()){
-          System.err.println("Stalled Scheduler:::"+context.toString());
-        }
-      }
-      lastQueueSize = currentQueued;
-      lastExecuted = getTotalTasksQueued();
     }
   }
 }

@@ -63,7 +63,7 @@ public class EndPointConnectionHostJMX implements HealthMonitor {
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "pauseAll", description ="Pauses all the connections to the specified host")
-  public void pauseConnection() throws IOException {
+  public void pauseConnection()  {
     for(EndPointConnection connection:connections) {
       connection.pause();
     }
@@ -71,7 +71,7 @@ public class EndPointConnectionHostJMX implements HealthMonitor {
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "resumeAll", description ="Resumes all the connections to the specified host")
-  public void resumeConnection() throws IOException {
+  public void resumeConnection()  {
     for(EndPointConnection connection:connections) {
       connection.resume();
     }
@@ -79,7 +79,7 @@ public class EndPointConnectionHostJMX implements HealthMonitor {
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "stopAll", description ="Stops all the connections to the specified host")
-  public void stopConnection() throws IOException {
+  public void stopConnection()  {
     for(EndPointConnection connection:connections) {
       connection.stop();
     }
@@ -87,7 +87,7 @@ public class EndPointConnectionHostJMX implements HealthMonitor {
 
   //<editor-fold desc="JMX Bean functions">
   @JMXBeanOperation(name = "startAll", description ="Starts all the connections to the specified host")
-  public void startConnection() throws IOException {
+  public void startConnection()  {
     for(EndPointConnection connection:connections) {
       connection.start();
     }
