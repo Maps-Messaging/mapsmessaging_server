@@ -183,7 +183,7 @@ public class DeliveryEventListener extends BaseEventListener {
 
     // If we have everything, then lets  continue with either commit / abort
     boolean success = false;
-    if (errorMsg.isEmpty() && txId != null && transaction.getTransactionId().equals(new String(txId))) {
+    if ( txId != null && transaction != null && transaction.getTransactionId().equals(new String(txId))) {
       try {
         dischargeTransaction(discharge, transaction);
         success = true;
