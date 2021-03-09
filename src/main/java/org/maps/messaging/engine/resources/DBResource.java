@@ -18,6 +18,13 @@
 
 package org.maps.messaging.engine.resources;
 
+import org.mapdb.BTreeMap;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+import org.mapdb.Serializer;
+import org.maps.messaging.api.message.Message;
+import org.maps.messaging.engine.serializer.MapDBSerializer;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
@@ -25,12 +32,6 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.mapdb.BTreeMap;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.Serializer;
-import org.maps.messaging.api.message.Message;
-import org.maps.messaging.engine.serializer.MapDBSerializer;
 
 public class DBResource extends Resource {
 
@@ -93,10 +94,10 @@ public class DBResource extends Resource {
   }
 
   @Override
-  public synchronized void delete() {
+  public synchronized void delete() throws IOException {
     close();
     File tmp = new File(fileName);
-    tmp.delete();
+    Files.delete(tmp.toPath());
   }
 
   @Override
