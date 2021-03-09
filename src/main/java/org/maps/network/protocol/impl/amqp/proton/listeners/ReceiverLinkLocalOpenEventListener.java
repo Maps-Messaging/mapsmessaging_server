@@ -47,28 +47,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
       Target target = receiver.getTarget();
       if(target instanceof org.apache.qpid.proton.amqp.messaging.Target ) {
         org.apache.qpid.proton.amqp.messaging.Target messagingTarget = (org.apache.qpid.proton.amqp.messaging.Target) receiver.getTarget();
-        if (messagingTarget.getDynamic()) {
-          Symbol[] capabilities = messagingTarget.getCapabilities();
-          DestinationType type = DestinationType.TEMPORARY_TOPIC;
-          if (capabilities != null) {
-            for (Symbol capability : capabilities) {
-              if (capability.toString().contains("queue")) {
-                type = DestinationType.TEMPORARY_QUEUE;
-                break;
-              }
-            }
-          }
-          try {
-            UUID uuid = UUID.randomUUID();
-            String address = "/dynamic/" + type.getName() + "/" + uuid.toString();
-            String sessionId = parseSessionId(event.getConnection().getRemoteContainer());
-            SessionManager sessionManager = super.protocol.getSession(sessionId);
-            sessionManager.getSession().findDestination(address, type);
-            messagingTarget.setAddress(address);
-          } catch (IOException e) {
-            link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
-          }
-        }
+        handleDynamicTarget(event, link, messagingTarget);
       }
       receiver.open();
       return true;
@@ -76,4 +55,34 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     return false;
   }
 
+  private void handleDynamicTarget(Event event, Link link, org.apache.qpid.proton.amqp.messaging.Target messagingTarget){
+    if (messagingTarget.getDynamic()) {
+      DestinationType type = DestinationType.TEMPORARY_TOPIC;
+      if(!scanForQueue(messagingTarget)){
+        type = DestinationType.QUEUE;
+      }
+      try {
+        UUID uuid = UUID.randomUUID();
+        String address = "/dynamic/" + type.getName() + "/" + uuid.toString();
+        String sessionId = parseSessionId(event.getConnection().getRemoteContainer());
+        SessionManager sessionManager = super.protocol.getSession(sessionId);
+        sessionManager.getSession().findDestination(address, type);
+        messagingTarget.setAddress(address);
+      } catch (IOException e) {
+        link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
+      }
+    }
+  }
+
+  private boolean scanForQueue(org.apache.qpid.proton.amqp.messaging.Target messagingTarget){
+    Symbol[] capabilities = messagingTarget.getCapabilities();
+    if (capabilities != null) {
+      for (Symbol capability : capabilities) {
+        if (capability.toString().contains("queue")) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }

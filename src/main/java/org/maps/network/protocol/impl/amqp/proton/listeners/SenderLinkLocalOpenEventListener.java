@@ -68,17 +68,7 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
   private boolean processEvent(Event event, Link link, Sender sender, Source source, String destinationName) throws LoginException, IOException {
     int initialCredit = sender.getCredit();
     Symbol distribution = source.getDistributionMode();
-    boolean browser = false;
-    if(distribution != null && distribution.toString().equalsIgnoreCase("copy")){
-      browser = true;
-    }
-    org.maps.messaging.api.Session session;
-    try {
-      session = getOrCreateSession(event);
-    } catch (LoginException | IOException e) {
-      link.setCondition(new ErrorCondition(SESSION_CREATION, "Failed to construct a session::" + e.getMessage()));
-      throw e;
-    }
+    boolean browser = (distribution != null && distribution.toString().equalsIgnoreCase("copy"));
 
     SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.BLOCK);
     contextBuilder.setQos(QualityOfService.AT_LEAST_ONCE)
@@ -97,29 +87,41 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
       throw new IOException("Must Supply a share name");
     }
     else {
-      SubscriptionContext context = contextBuilder.build();
+      org.maps.messaging.api.Session session;
       try {
-        Destination destination = session.findDestination(destinationName, destinationType);
-        if (destination != null) {
-          SubscribedEventManager eventManager = session.resume(destination);
-          if (eventManager == null || browser) {
-            eventManager = session.addSubscription(context);
-          }
-          engine.addSubscription(context.getAlias(), sender);
-          link.setContext(eventManager);
-        }
-        protocol.getLogger().log(LogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
-      } catch (IOException e) {
-        ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
-        Throwable throwable = e.getCause();
-        if(throwable instanceof TokenMgrError){
-          errorCondition =new ErrorCondition(SELECTOR_ERROR, "Selector exception raised::" + throwable.getMessage());
-        }
-        link.setCondition(errorCondition);
+        session = getOrCreateSession(event);
+      } catch (LoginException | IOException e) {
+        link.setCondition(new ErrorCondition(SESSION_CREATION, "Failed to construct a session::" + e.getMessage()));
         throw e;
       }
+      handleSubscription(link, sender, browser, contextBuilder, session, destinationName, destinationType);
     }
     return true;
+  }
+
+  private void handleSubscription(Link link, Sender sender, boolean browser, SubscriptionContextBuilder contextBuilder, org.maps.messaging.api.Session session, String destinationName, DestinationType destinationType)
+      throws IOException {
+    SubscriptionContext context = contextBuilder.build();
+    try {
+      Destination destination = session.findDestination(destinationName, destinationType);
+      if (destination != null) {
+        SubscribedEventManager eventManager = session.resume(destination);
+        if (eventManager == null || browser) {
+          eventManager = session.addSubscription(context);
+        }
+        engine.addSubscription(context.getAlias(), sender);
+        link.setContext(eventManager);
+      }
+      protocol.getLogger().log(LogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
+    } catch (IOException e) {
+      ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
+      Throwable throwable = e.getCause();
+      if(throwable instanceof TokenMgrError){
+        errorCondition =new ErrorCondition(SELECTOR_ERROR, "Selector exception raised::" + throwable.getMessage());
+      }
+      link.setCondition(errorCondition);
+      throw e;
+    }
   }
 
   private org.maps.messaging.api.Session getOrCreateSession(Event event) throws LoginException, IOException {
