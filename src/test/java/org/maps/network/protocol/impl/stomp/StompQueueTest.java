@@ -86,8 +86,14 @@ class StompQueueTest extends StompBaseTest {
       total += queueClient.counter.sum();
     }
 
-    client.disconnect(10);
-    Assertions.assertEquals(10*clients.size(), total);
+    try {
+      client.disconnect(10);
+    } catch (StompException e) { // Ignore network disconnect on closure
+      if(!e.getMessage().startsWith("Connection timed out")){
+        throw e;
+      }
+    }
+    Assertions.assertEquals(10L*clients.size(), total);
   }
 
   @Test
