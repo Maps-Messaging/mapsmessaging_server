@@ -18,18 +18,6 @@
 
 package org.maps.messaging.engine.destination.subscription;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.maps.logging.LogMessages;
@@ -50,6 +38,19 @@ import org.maps.messaging.engine.session.SessionImpl;
 import org.maps.messaging.engine.tasks.ListResponse;
 import org.maps.messaging.engine.tasks.Response;
 import org.maps.messaging.engine.tasks.SubscriptionResponse;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * This class simply manages the subscription to destination mapping. It also manages the wildcard subscriptions, the overlap between wildcard subscriptions and simple
@@ -230,10 +231,13 @@ public class SubscriptionController implements DestinationManagerListener {
       AtomicLong counter = new AtomicLong(lostInterest.size());
       for (DestinationImpl destinationImpl : lostInterest) {
         UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl,  destinationSet, counter);
-        destinationImpl.submit(task);
+        if(destinationImpl.submit(task).isCancelled()){
+          counter.decrementAndGet();
+        }
       }
+      long time = System.currentTimeMillis();
       int timeout = 1000;
-      while (counter.get() != 0 && timeout > 0) {
+      while (counter.get() > 0 && timeout > 0) {
         LockSupport.parkNanos(10000000);
         timeout--;
       }
