@@ -22,7 +22,7 @@ import org.json.JSONObject;
 
 import java.util.Map;
 
-public class YamlParser extends JSONParser {
+public class YamlParser extends JsonParser {
 
   public YamlParser(Object mapStructure) {
     Json = convertToJson(mapStructure);

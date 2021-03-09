@@ -188,4 +188,23 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
   public ConfigurationProperties getGlobal() {
     return globalValues;
   }
+
+  public boolean equals(Object object){
+    if(object instanceof ConfigurationProperties){
+      boolean listEquals = super.equals(object);
+      if(globalValues != null) {
+        return listEquals && globalValues.equals(((ConfigurationProperties) object).globalValues);
+      }
+      return listEquals;
+    }
+    return false;
+  }
+
+  public int hashCode(){
+    if(globalValues != null) {
+      return super.hashCode() + globalValues.hashCode();
+    }
+    return super.hashCode();
+  }
+
 }

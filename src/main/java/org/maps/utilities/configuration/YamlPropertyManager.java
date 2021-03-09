@@ -84,7 +84,7 @@ public class YamlPropertyManager extends PropertyManager {
     Map<String, Object> response;
     if (is != null) {
       Yaml yaml = new Yaml();
-      JSONParser parser = new YamlParser(yaml.load(is));
+      JsonParser parser = new YamlParser(yaml.load(is));
       is.close();
       response = parser.parse();
       Object topLevel = response.get(propertyName);

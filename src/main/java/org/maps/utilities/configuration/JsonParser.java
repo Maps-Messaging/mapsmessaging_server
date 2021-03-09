@@ -26,18 +26,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.json.JSONObject;
 
-public class JSONParser {
+public class JsonParser {
 
   protected JSONObject Json;
 
-  protected JSONParser(){}
+  protected JsonParser(){}
 
   public JSONObject getJson() {
     return Json;
   }
 
   public Map<String, Object> parse()throws IOException {
-    Map<String, Object> result = (Map<String, Object>) new ObjectMapper().readValue(Json.toString(2), LinkedHashMap.class);
+    Map<String, Object> result = new ObjectMapper().readValue(Json.toString(2), LinkedHashMap.class);
     Map<String, Object> map = removeUnnecessaryLists(result);
     return new ConfigurationProperties(map);
   }
