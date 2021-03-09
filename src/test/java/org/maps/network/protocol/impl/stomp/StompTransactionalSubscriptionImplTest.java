@@ -42,7 +42,7 @@ class StompTransactionalSubscriptionImplTest extends StompBaseTest {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
-    byte[] buffer = new byte[10240];
+    byte[] buffer = new byte[128];
     for (int x = 0; x < buffer.length; x++) {
       buffer[x] = (byte) ((x + 32) % 110);
     }

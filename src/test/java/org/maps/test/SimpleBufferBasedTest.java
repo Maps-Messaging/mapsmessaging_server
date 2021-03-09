@@ -109,7 +109,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
     try (TestClient testClient = new TestClient(host, port, delay, frameCharacter)) {
         delay(1000); // Pause for a second while things start up
         byte[] source = parseToBytes(filename);
-        byte[] write = new byte[1024*1024];
+        byte[] write = new byte[1024];
         int idx = 0;
         OutputStream outputStream = testClient.getOutputStream();
         while (idx < source.length) {
