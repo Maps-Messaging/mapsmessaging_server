@@ -18,18 +18,6 @@
 
 package org.maps.messaging.engine.destination;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,13 +33,7 @@ import org.maps.messaging.engine.destination.subscription.Subscription;
 import org.maps.messaging.engine.destination.subscription.impl.DestinationSubscription;
 import org.maps.messaging.engine.destination.subscription.impl.shared.SharedSubscriptionManager;
 import org.maps.messaging.engine.destination.subscription.impl.shared.SharedSubscriptionRegister;
-import org.maps.messaging.engine.destination.tasks.BulkRemoveMessageTask;
-import org.maps.messaging.engine.destination.tasks.DelayedStoreMessageTask;
-import org.maps.messaging.engine.destination.tasks.MessageDeliveryTask;
-import org.maps.messaging.engine.destination.tasks.NonDelayedStoreMessageTask;
-import org.maps.messaging.engine.destination.tasks.QueueBasedStoreMessageTask;
-import org.maps.messaging.engine.destination.tasks.RemoveMessageTask;
-import org.maps.messaging.engine.destination.tasks.TransactionalMessageProcessor;
+import org.maps.messaging.engine.destination.tasks.*;
 import org.maps.messaging.engine.resources.MemoryResource;
 import org.maps.messaging.engine.resources.Resource;
 import org.maps.messaging.engine.resources.ResourceFactory;
@@ -62,6 +44,15 @@ import org.maps.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import org.maps.utilities.threads.tasks.PriorityTaskScheduler;
 import org.maps.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import org.maps.utilities.threads.tasks.TaskScheduler;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.UUID;
+import java.util.concurrent.*;
 
 /**
  * This class represents a mechanism for clients to publish to a known point, subscribe to this point and the complex mechanisms around that, including
@@ -235,14 +226,32 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  public static boolean deleteFile(File directoryToBeDeleted) {
+  public static void deleteFile(File directoryToBeDeleted) {
     File[] allContents = directoryToBeDeleted.listFiles();
     if (allContents != null) {
+      List<File> failed = new ArrayList<>();
       for (File file : allContents) {
-        deleteFile(file);
+        try {
+          Files.delete(file.toPath());
+        } catch (IOException e) {
+          failed.add(file);
+        }
+      }
+      // Try once more
+      for (File file : failed) {
+        try {
+          Files.delete(file.toPath());
+        }
+        catch (IOException io){
+          // ToDo create a log entry here
+        }
       }
     }
-    return directoryToBeDeleted.delete();
+    try {
+      Files.delete(directoryToBeDeleted.toPath());
+    } catch (IOException e) {
+      // ToDo create a log entry here
+    }
   }
 
   public boolean isClosed() {
@@ -595,6 +604,12 @@ public class DestinationImpl implements BaseDestination {
         if (response instanceof LongResponse) {
           return (int) ((LongResponse) response).getResponse();
         }
+      }
+      return 0;
+    } catch (CancellationException exception){
+      // We have a cancelled task..
+      if(!isClosed()){
+        throw exception;
       }
       return 0;
     } catch (InterruptedException e) {

@@ -18,6 +18,13 @@
 
 package org.maps.messaging.api.message;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.maps.messaging.api.MessageBuilder;
+import org.maps.messaging.api.features.Priority;
+import org.maps.messaging.api.features.QualityOfService;
+import org.maps.messaging.engine.resources.DBResource;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,12 +32,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.maps.messaging.api.MessageBuilder;
-import org.maps.messaging.api.features.Priority;
-import org.maps.messaging.api.features.QualityOfService;
-import org.maps.messaging.engine.resources.DBResource;
 
 public class MessageStreamTest {
 
@@ -97,7 +98,6 @@ public class MessageStreamTest {
       Message message = createMessageBuilder(x).build();
       validateMessage(message, x);
       dbResource.add(message);
-      System.err.println("Saved::"+message.getIdentifier());
     }
     Assertions.assertEquals(10, dbResource.size());
     dbResource.flush();

@@ -18,15 +18,6 @@
 
 package org.maps.network.io.impl;
 
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
-
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
@@ -34,6 +25,16 @@ import org.maps.network.io.EndPoint;
 import org.maps.network.io.Selectable;
 import org.maps.network.io.ServerPacket;
 import org.maps.utilities.configuration.ConfigurationProperties;
+
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class SelectorTask implements Selectable {
 
@@ -149,6 +150,7 @@ public class SelectorTask implements Selectable {
       } catch (ExecutionException e) {
         throw new IOException(e);
       } catch (TimeoutException e) {
+        e.printStackTrace();
         // Nothing to do yet.. ToDo: work on the futures
       }
     }
