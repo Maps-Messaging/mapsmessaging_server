@@ -27,6 +27,7 @@ import java.util.concurrent.locks.LockSupport;
 class MovingAverageTest {
 
   private static final long EPOCH = 100;
+
   @Test
   void getName() {
     MovingAverage movingAverage = new MovingAverage(1, TimeUnit.SECONDS);

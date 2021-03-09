@@ -150,7 +150,6 @@ public class SelectorTask implements Selectable {
       } catch (ExecutionException e) {
         throw new IOException(e);
       } catch (TimeoutException e) {
-        e.printStackTrace();
         // Nothing to do yet.. ToDo: work on the futures
       }
     }
