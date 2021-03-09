@@ -24,8 +24,9 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-public class MovingAverageTest {
+class MovingAverageTest {
 
+  private static final long EPOCH = 100;
   @Test
   void getName() {
     MovingAverage movingAverage = new MovingAverage(1, TimeUnit.SECONDS);
@@ -36,7 +37,7 @@ public class MovingAverageTest {
   void add() {
     MovingAverage movingAverage = new MovingAverage(1, TimeUnit.SECONDS);
     long count =0;
-    long epoch = System.currentTimeMillis() + 500;
+    long epoch = System.currentTimeMillis() + EPOCH;
     while(epoch > System.currentTimeMillis()){
       movingAverage.add(1);
       count++;
@@ -47,7 +48,7 @@ public class MovingAverageTest {
   @Test
   void reset() {
     MovingAverage movingAverage = new MovingAverage(1, TimeUnit.SECONDS);
-    long epoch = System.currentTimeMillis() + 500;
+    long epoch = System.currentTimeMillis() + EPOCH;
     while(epoch > System.currentTimeMillis()){
       movingAverage.add(1);
     }
@@ -58,7 +59,7 @@ public class MovingAverageTest {
   @Test
   void clearData() {
     MovingAverage movingAverage = new MovingAverage(1, TimeUnit.SECONDS);
-    long epoch = System.currentTimeMillis() + 500;
+    long epoch = System.currentTimeMillis() + EPOCH;
     while(epoch > System.currentTimeMillis()){
       movingAverage.add(1);
     }
