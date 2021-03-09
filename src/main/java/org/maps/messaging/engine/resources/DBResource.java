@@ -96,23 +96,7 @@ public class DBResource extends Resource {
   public synchronized void delete() {
     close();
     File tmp = new File(fileName);
-    try {
-      File parent = tmp.getParentFile();
-      deleteDirectory(parent);
-      Files.delete(parent.toPath()); // Remove ALL files for this resource
-    } catch (IOException e) {
-      // ignore at this point
-    }
-  }
-
-  private void deleteDirectory(File parent) throws IOException {
-    File[] files = parent.listFiles();
-    for (File file : files) {
-      if (file.isDirectory()) {
-        deleteDirectory(file);
-      }
-      Files.delete(file.toPath());
-    }
+    tmp.delete();
   }
 
   @Override

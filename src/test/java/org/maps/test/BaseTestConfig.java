@@ -20,6 +20,7 @@ package org.maps.test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +49,17 @@ public class BaseTestConfig extends BaseTest {
   @AfterEach
   public void clear(){
     Runtime.getRuntime().gc(); // Try and free up memory before the next test kicks off
+    List<DestinationImpl> destinations = md.getDestinationManager().getDestinations();
+    List<DestinationImpl> toDelete = new ArrayList<>();
+    for(DestinationImpl destination:destinations){
+      if(!destination.getName().startsWith("$")){
+        toDelete.add(destination);
+      }
+    }
+    for(DestinationImpl destination:toDelete){
+      md.getDestinationManager().delete(destination);
+    }
+
   }
 
   @BeforeAll

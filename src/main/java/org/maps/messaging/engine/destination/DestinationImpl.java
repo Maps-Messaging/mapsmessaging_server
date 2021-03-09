@@ -221,12 +221,12 @@ public class DestinationImpl implements BaseDestination {
   }
 
   public void delete() throws IOException {
-    if(closed) {
+    if(!closed) {
       closed = true;
       subscriptionManager.close();
-      resource.delete();
       transactionMessageManager.delete();
       delayedMessageManager.delete();
+      resource.delete();
       if (destinationJMXBean != null) {
         destinationJMXBean.close();
       }
