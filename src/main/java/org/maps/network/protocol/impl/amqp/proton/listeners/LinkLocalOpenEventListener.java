@@ -38,6 +38,13 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
     super(protocol, engine);
   }
 
+  protected String getDestinationName(Source source){
+    if(source != null) {
+      return source.getAddress();
+    }
+    return null;
+  }
+
   @Override
   public boolean handleEvent(Event event) {
     // Check to see if we update the credit

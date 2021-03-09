@@ -52,74 +52,83 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     Link link = event.getLink();
     if(link instanceof Sender) {
       Sender sender = (Sender) link;
-      String destinationName = null;
       Source source = (Source) sender.getRemoteSource();
-      if(source != null) {
-        destinationName = source.getAddress();
-      }
-      int initialCredit = sender.getCredit();
-      if(destinationName == null){
-        return false;
-      }
-      Symbol distribution = source.getDistributionMode();
-      boolean browser = false;
-      if(distribution != null && distribution.toString().equalsIgnoreCase("copy")){
-        browser = true;
-      }
-      org.maps.messaging.api.Session session = (org.maps.messaging.api.Session) event.getSession().getContext();
-      if(session == null){
+      String destinationName = getDestinationName(source);
+      if(destinationName != null){
         try {
-          SessionManager sessionManager = createOrReuseSession(event.getConnection());
-          session = sessionManager.getSession();
-          event.getSession().setContext(session);
-        } catch (LoginException | IOException e) {
-          link.setCondition(new ErrorCondition(SESSION_CREATION, "Failed to construct a session::"+e.getMessage()));
-          link.close();
-          return false;
-        }
-      }
-
-      SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.BLOCK);
-      contextBuilder.setQos(QualityOfService.AT_LEAST_ONCE)
-          .setNoLocalMessages(false) // This should be able to be set to true
-          .setAllowOverlap(false)
-          .setReceiveMaximum(initialCredit)
-          .setAlias(destinationName)
-          .setBrowserFlag(browser)
-          .setCreditHandler(CreditHandler.CLIENT); // AMQP Link credit requires the AMQP engine / link to manage the credit
-      getSelector(source, contextBuilder);
-      getShareName(sender, contextBuilder);
-
-      DestinationType destinationType = getDestinationType(source);
-      if (isShared(source) && destinationType.isTopic() && !getShareName(sender, contextBuilder)){
-        link.setCondition(new ErrorCondition(SHARE_NAME_ERROR, "Must supply a share name"));
-        link.close();
-      }
-      else {
-        SubscriptionContext context = contextBuilder.build();
-        try {
-          Destination destination = session.findDestination(destinationName, destinationType);
-          if (destination != null) {
-            SubscribedEventManager eventManager = session.resume(destination);
-            if (eventManager == null || browser) {
-              eventManager = session.addSubscription(context);
-            }
-            engine.addSubscription(context.getAlias(), sender);
-            link.setContext(eventManager);
-          }
-          protocol.getLogger().log(LogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
-        } catch (IOException e) {
-          ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
-          Throwable throwable = e.getCause();
-          if(throwable instanceof TokenMgrError){
-            errorCondition =new ErrorCondition(SELECTOR_ERROR, "Selector exception raised::" + throwable.getMessage());
-          }
-          link.setCondition(errorCondition);
+          return processEvent(event, link, sender, source, destinationName);
+        } catch  (LoginException | IOException e){
           link.close();
         }
       }
-      return true;
     }
     return false;
+  }
+
+  private boolean processEvent(Event event, Link link, Sender sender, Source source, String destinationName) throws LoginException, IOException {
+    int initialCredit = sender.getCredit();
+    Symbol distribution = source.getDistributionMode();
+    boolean browser = false;
+    if(distribution != null && distribution.toString().equalsIgnoreCase("copy")){
+      browser = true;
+    }
+    org.maps.messaging.api.Session session;
+    try {
+      session = getOrCreateSession(event);
+    } catch (LoginException | IOException e) {
+      link.setCondition(new ErrorCondition(SESSION_CREATION, "Failed to construct a session::" + e.getMessage()));
+      throw e;
+    }
+
+    SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.BLOCK);
+    contextBuilder.setQos(QualityOfService.AT_LEAST_ONCE)
+        .setNoLocalMessages(false) // This should be able to be set to true
+        .setAllowOverlap(false)
+        .setReceiveMaximum(initialCredit)
+        .setAlias(destinationName)
+        .setBrowserFlag(browser)
+        .setCreditHandler(CreditHandler.CLIENT); // AMQP Link credit requires the AMQP engine / link to manage the credit
+    getSelector(source, contextBuilder);
+    getShareName(sender, contextBuilder);
+
+    DestinationType destinationType = getDestinationType(source);
+    if (isShared(source) && destinationType.isTopic() && !getShareName(sender, contextBuilder)){
+      link.setCondition(new ErrorCondition(SHARE_NAME_ERROR, "Must supply a share name"));
+      throw new IOException("Must Supply a share name");
+    }
+    else {
+      SubscriptionContext context = contextBuilder.build();
+      try {
+        Destination destination = session.findDestination(destinationName, destinationType);
+        if (destination != null) {
+          SubscribedEventManager eventManager = session.resume(destination);
+          if (eventManager == null || browser) {
+            eventManager = session.addSubscription(context);
+          }
+          engine.addSubscription(context.getAlias(), sender);
+          link.setContext(eventManager);
+        }
+        protocol.getLogger().log(LogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
+      } catch (IOException e) {
+        ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
+        Throwable throwable = e.getCause();
+        if(throwable instanceof TokenMgrError){
+          errorCondition =new ErrorCondition(SELECTOR_ERROR, "Selector exception raised::" + throwable.getMessage());
+        }
+        link.setCondition(errorCondition);
+        throw e;
+      }
+    }
+    return true;
+  }
+
+  private org.maps.messaging.api.Session getOrCreateSession(Event event) throws LoginException, IOException {
+    org.maps.messaging.api.Session session = (org.maps.messaging.api.Session) event.getSession().getContext();
+    if (session == null) {
+      SessionManager sessionManager = createOrReuseSession(event.getConnection());
+      session = sessionManager.getSession();
+      event.getSession().setContext(session);
+    }
+    return session;
   }
 }
