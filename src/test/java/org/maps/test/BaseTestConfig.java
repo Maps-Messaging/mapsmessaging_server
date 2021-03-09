@@ -45,6 +45,11 @@ public class BaseTestConfig extends BaseTest {
     Runtime.getRuntime().addShutdownHook(new TestExitHandler());
   }
 
+  @AfterEach
+  public void clear(){
+    Runtime.getRuntime().gc(); // Try and free up memory before the next test kicks off
+  }
+
   @BeforeAll
   public static void beforeAll() throws IOException {
     if(md == null) {

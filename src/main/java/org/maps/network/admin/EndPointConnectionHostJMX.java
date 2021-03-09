@@ -20,7 +20,6 @@ package org.maps.network.admin;
 
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanOperation;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.management.ObjectInstance;

@@ -46,6 +46,9 @@ public class ConnAckListener extends BaseConnectionListener {
         endPoint.close();
         protocol.setConnected(false);
       } catch (IOException e) {
+        MalformedException malformedException =  new MalformedException();
+        malformedException.initCause(e);
+        throw malformedException;
       }
     }
 

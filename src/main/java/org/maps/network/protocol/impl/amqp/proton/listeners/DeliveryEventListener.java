@@ -204,7 +204,7 @@ public class DeliveryEventListener extends BaseEventListener {
   }
 
   private void dischargeTransaction(Discharge discharge, Transaction transaction) throws IOException {
-    if (discharge.getFail()) {
+    if (Boolean.TRUE.equals(discharge.getFail())) {
       transaction.abort();
     } else {
       transaction.commit();

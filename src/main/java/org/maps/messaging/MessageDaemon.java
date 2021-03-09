@@ -246,8 +246,12 @@ public class MessageDaemon implements WrapperListener {
 
         String protocol = properties.getProperty("protocol");
         String url = properties.getProperty("url");
-        protocol = protocol.replaceAll(",", "-");
-        protocol = protocol.replaceAll(" ", "-");
+        while(protocol.contains(",")) {
+          protocol = protocol.replace(",", "-");
+        }
+        while(protocol.contains(" ")) {
+          protocol = protocol.replace(" ", "-");
+        }
         meta.put(protocol, url);
       }
       ConsulManagerFactory.getInstance().getManager().register(meta);

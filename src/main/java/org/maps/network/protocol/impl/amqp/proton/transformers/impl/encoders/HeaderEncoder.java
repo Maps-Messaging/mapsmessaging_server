@@ -47,7 +47,7 @@ public class HeaderEncoder {
       }
 
       // Process the durable flag
-      if(header.getDurable()){
+      if(Boolean.TRUE.equals(header.getDurable())){
         messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
       }
       else{

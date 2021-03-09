@@ -39,7 +39,7 @@ public class ConnAck extends MQTTPacket {
     super(CONNACK);
   }
 
-  public ConnAck(byte fixedHeader, long remainingLen, Packet packet) {
+  public ConnAck(Packet packet) {
     super(CONNACK);
     isPresent = packet.get() != 0;
     response = packet.get();

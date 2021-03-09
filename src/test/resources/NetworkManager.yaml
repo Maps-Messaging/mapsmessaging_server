@@ -27,15 +27,15 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
       # Generic protocol configuration
       # ---------------------------------------------------------------------------------------------------------
-        serverReadBufferSize :  1M
-        serverWriteBufferSize : 1M
+        serverReadBufferSize :  128K
+        serverWriteBufferSize : 128K
         selectorThreadCount   : 2
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT Protocol configuration
       # ---------------------------------------------------------------------------------------------------------
         maximumSessionExpiry : 86400
-        maximumBufferSize: 10M
+        maximumBufferSize: 128K
         serverReceiveMaximum : 10
         clientReceiveMaximum : 65535
         clientMaximumTopicAlias : 32767
@@ -70,8 +70,6 @@ NetworkManager:
           url: "tcp://0.0.0.0:1883/"
           protocol : mqtt
           auth : public
-          receiveBufferSize : 32000000
-          sendBufferSize    : 32000000
 
       -
         url: "tcp://0.0.0.0:5672/"
@@ -85,8 +83,6 @@ NetworkManager:
         name: "MQTT WebSocket Interface"
         protocol : mqtt,ws
         auth : public
-        receiveBufferSize : 32000000
-        sendBufferSize    : 32000000
 
       - 
         url: udp://0.0.0.0:1884/
