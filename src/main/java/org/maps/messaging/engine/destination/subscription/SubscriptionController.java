@@ -235,7 +235,6 @@ public class SubscriptionController implements DestinationManagerListener {
           counter.decrementAndGet();
         }
       }
-      long time = System.currentTimeMillis();
       int timeout = 1000;
       while (counter.get() > 0 && timeout > 0) {
         LockSupport.parkNanos(10000000);
