@@ -88,7 +88,7 @@ class StompTransactionalSubscriptionImplTest extends StompBaseTest {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
-    byte[] buffer = new byte[10240];
+    byte[] buffer = new byte[128];
     for (int x = 0; x < buffer.length; x++) {
       buffer[x] = (byte) ((x + 32) % 110);
     }
@@ -113,12 +113,13 @@ class StompTransactionalSubscriptionImplTest extends StompBaseTest {
       client.send(msg);
     }
     int start = counter.get();
-    while(counter.get() < msgNumber){
-      WaitForState.waitFor(10, TimeUnit.SECONDS, ()->counter.get() == msgNumber);
-      delay(10);
+    int loop = 20;
+    while(counter.get() < msgNumber && loop > 0){
+      WaitForState.waitFor(1, TimeUnit.SECONDS, ()->counter.get() == msgNumber);
       if(start != counter.get()){
         start = counter.get();
       }
+      loop--;
     }
     subscription.unsubscribe();
     client.disconnect();
