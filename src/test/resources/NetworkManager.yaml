@@ -29,13 +29,13 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
         serverReadBufferSize :  1M
         serverWriteBufferSize : 1M
-        selectorThreadCount   : 2
+        selectorThreadCount   : 5
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT Protocol configuration
       # ---------------------------------------------------------------------------------------------------------
         maximumSessionExpiry : 86400
-        maximumBufferSize: 128K
+        maximumBufferSize: 10M
         serverReceiveMaximum : 10
         clientReceiveMaximum : 65535
         clientMaximumTopicAlias : 32767
