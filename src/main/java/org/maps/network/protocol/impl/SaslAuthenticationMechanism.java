@@ -51,7 +51,7 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
     return saslServer.isComplete();
   }
 
-  class ServerCallbackHandler implements CallbackHandler {
+  static class ServerCallbackHandler implements CallbackHandler {
 
     @Override
     public void handle(Callback[] cbs) {

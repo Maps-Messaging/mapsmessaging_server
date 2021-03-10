@@ -119,12 +119,12 @@ public class MessageBuilder {
     return this;
   }
 
-  public @NonNull @NotNull MessageBuilder setOpaqueData(@Nullable byte[] opaqueData) {
+  public @NonNull @NotNull MessageBuilder setOpaqueData(byte[] opaqueData) {
     this.opaqueData = opaqueData;
     return this;
   }
 
-  public @NonNull @NotNull MessageBuilder setCorrelationData(@Nullable byte[] correlationData) {
+  public @NonNull @NotNull MessageBuilder setCorrelationData(byte[] correlationData) {
     this.correlationData = correlationData;
     return this;
   }
@@ -157,10 +157,6 @@ public class MessageBuilder {
   public @NonNull @NotNull MessageBuilder setRetain(boolean retain) {
     this.retain = retain;
     return this;
-  }
-
-  public @Nullable ProtocolMessageTransformation getTransformation() {
-    return transformation;
   }
 
   public  @NonNull @NotNull MessageBuilder setTransformation(ProtocolMessageTransformation transformation) {

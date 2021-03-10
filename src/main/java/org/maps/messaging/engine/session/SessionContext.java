@@ -181,17 +181,15 @@ public class SessionContext {
   }
 
   public String toString() {
-    StringBuilder sb = new StringBuilder("SessionContext:");
-    sb.append("Id:").append(id);
-    sb.append(" Protocol:").append(protocol.toString());
-    sb.append(" ResetState:").append(resetState);
-    sb.append(" PersistentSession:").append(persistentSession);
-    sb.append(" WillDelay:").append(willDelay);
-    sb.append(" Expiry:").append(expiry);
-    sb.append(" ReceiveMaximum:").append(receiveMaximum);
-    sb.append(" Restored:").append(isRestored);
-    sb.append(" KeepAlive:").append(duration);
-    return sb.toString();
+    return  "SessionContext:" + "Id:" + id
+        + " Protocol:" + protocol.toString()
+        + " ResetState:" + resetState
+        + " PersistentSession:" + persistentSession
+        + " WillDelay:" + willDelay
+        + " Expiry:" + expiry
+        + " ReceiveMaximum:" + receiveMaximum
+        + " Restored:" + isRestored
+        + " KeepAlive:" + duration;
   }
 
   public void setAuthenticationMethod(String authenticationMethod) {

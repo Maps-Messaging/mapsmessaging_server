@@ -47,6 +47,6 @@ public abstract class BinaryDataMessageProperty extends MessageProperty {
 
   @Override
   public String toString() {
-    return super.toString() + ":" + value;
+    return super.toString() + ":" + new String(value);
   }
 }

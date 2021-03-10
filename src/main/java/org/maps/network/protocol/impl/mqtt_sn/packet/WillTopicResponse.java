@@ -23,7 +23,7 @@ import org.maps.network.protocol.impl.mqtt.packet.MQTTPacket;
 
 public class WillTopicResponse extends MQTT_SNPacket {
 
-  private int status;
+  private final int status;
 
   public WillTopicResponse(int status) {
     super(WILLTOPICRESP);

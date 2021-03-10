@@ -210,7 +210,7 @@ public class Message implements SerializedObject {
     return dataMap;
   }
 
-  public @Nullable byte[] getOpaqueData() {
+  public byte[] getOpaqueData() {
     return opaqueData;
   }
 
@@ -230,7 +230,7 @@ public class Message implements SerializedObject {
     return storeOffline;
   }
 
-  public @Nullable byte[] getCorrelationData() {
+  public byte[] getCorrelationData() {
     return correlationData;
   }
 

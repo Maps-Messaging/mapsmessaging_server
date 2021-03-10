@@ -65,8 +65,8 @@ public class SeekableChannelResource extends MapBasedResource {
     if (file.exists()) {
       length = file.length();
     }
-    writeBuffer = ByteBuffer.allocateDirect(1*1024*1024);
-    readBuffer = ByteBuffer.allocateDirect(1*1024*1024);
+    writeBuffer = ByteBuffer.allocateDirect(1024 * 1024);
+    readBuffer = ByteBuffer.allocateDirect(1024 * 1024);
 
     writeChannel = Files.newByteChannel(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
     readChannel = Files.newByteChannel(file.toPath(),  StandardOpenOption.READ);

@@ -16,9 +16,6 @@
  *
  */
 
-/**
- * This interface is the base for all subscriptions, for topics, queues and shared subscriptions. With or without filtering
- */
 
 package org.maps.messaging.engine.destination.subscription;
 
@@ -26,6 +23,9 @@ import java.io.Closeable;
 import java.util.Queue;
 import org.maps.messaging.api.message.Message;
 
+/**
+ * This interface is the base for all subscriptions, for topics, queues and shared subscriptions. With or without filtering
+ */
 public interface Subscribable extends Closeable {
 
   int register(Message messageIdentifier);

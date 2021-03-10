@@ -53,7 +53,7 @@ public class PacketListenerFactory5 {
     return listeners[mqttPacketId];
   }
 
-  private class NoOpListener extends PacketListener5 {
+  private static class NoOpListener extends PacketListener5 {
 
     @Override
     public MQTTPacket5 handlePacket(

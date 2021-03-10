@@ -60,7 +60,7 @@ public class PacketListenerFactory {
     return listeners[mqttPacketId];
   }
 
-  private class NoOpListener extends PacketListener {
+  private static class NoOpListener extends PacketListener {
 
     @Override
     public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {

@@ -57,9 +57,7 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
   }
 
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
-    if (activeEndPoints.containsKey(endPoint.getId())) {
-      activeEndPoints.remove(endPoint.getId());
-    }
+    activeEndPoints.remove(endPoint.getId());
     activeEndPoints.put(endPoint.getId(), endPoint);
     acceptHandler.accept(endPoint);
   }

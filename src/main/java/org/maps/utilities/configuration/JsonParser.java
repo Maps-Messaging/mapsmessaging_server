@@ -49,11 +49,8 @@ public class JsonParser {
         if(list.size() == 1){
           entry.setValue(list.remove(0));
         }
-        if(entry.getValue() instanceof Map){
-          entry.setValue(removeUnnecessaryLists(objectToMap(entry.getValue())));
-        }
       }
-      else if(entry.getValue() instanceof Map){
+      if(entry.getValue() instanceof Map){
         entry.setValue(removeUnnecessaryLists(objectToMap(entry.getValue())));
       }
     }

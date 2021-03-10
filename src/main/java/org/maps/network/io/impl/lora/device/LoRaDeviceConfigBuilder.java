@@ -20,7 +20,7 @@ package org.maps.network.io.impl.lora.device;
 
 public class LoRaDeviceConfigBuilder {
 
-  private LoRaDeviceConfig config;
+  private final LoRaDeviceConfig config;
 
 
   public LoRaDeviceConfigBuilder(){

@@ -41,7 +41,7 @@ public class EchoProtocol extends org.maps.network.protocol.ProtocolImpl
 
   private final Executor executor = Executors.newFixedThreadPool(10);
   private final Packet packet;
-  private Logger logger = LoggerFactory.getLogger(EchoProtocol.class);
+  private final Logger logger = LoggerFactory.getLogger(EchoProtocol.class);
 
   public EchoProtocol(EndPoint endPoint, Packet pck) throws IOException {
     super(endPoint);

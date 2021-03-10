@@ -71,7 +71,7 @@ public class DestinationPathManager {
 
   public String calculateDirectory(String destinationPath){
     if(remap){
-      String response = "";
+      String response;
       String tmp = destinationPath.substring(namespace.length());
       if(tmp.contains("/")){
         String sub = tmp.substring(0, tmp.indexOf("/"));

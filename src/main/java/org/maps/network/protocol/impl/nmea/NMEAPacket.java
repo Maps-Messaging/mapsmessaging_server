@@ -53,9 +53,6 @@ public class NMEAPacket {
 
   private void parseSentence(Packet packet) throws IOException {
     int checksum = 0;
-    byte[] buffer = new byte[256];
-    int bufferPos = 0;
-
     while (packet.hasRemaining()) {
       byte val = packet.get();
       if (val == Constants.CHECKSUM) {
@@ -74,8 +71,6 @@ public class NMEAPacket {
           throw new IOException("Invalid Checksum calculated");
         }
       } else {
-        buffer[bufferPos] = val;
-        bufferPos++;
         checksum ^= val;
       }
       if (!packet.hasRemaining()) {

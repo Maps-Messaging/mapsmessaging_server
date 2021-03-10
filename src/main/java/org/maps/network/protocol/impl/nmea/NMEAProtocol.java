@@ -109,7 +109,9 @@ public class NMEAProtocol extends ProtocolImpl {
             .setQoS(QualityOfService.AT_MOST_ONCE)
             .setTransformation(getTransformation());
 
-        destination.storeMessage(messageBuilder.build());
+        if(destination != null) {
+          destination.storeMessage(messageBuilder.build());
+        }
         receivedMessage();
       } catch (EndOfBufferException e) {
         packet.position(pos);

@@ -22,9 +22,9 @@ import org.maps.network.protocol.impl.stomp.listener.FrameListener;
 
 public class FrameLookup {
 
-  private byte[] command;
-  private Frame clientFrame;
-  private FrameListener frameListener;
+  private final byte[] command;
+  private final Frame clientFrame;
+  private final FrameListener frameListener;
 
   FrameLookup(byte[] command, Frame clientFrame, FrameListener frameListener) {
     this.command = command;

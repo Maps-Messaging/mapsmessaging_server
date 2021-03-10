@@ -31,7 +31,7 @@ import org.maps.network.protocol.EndOfBufferException;
 @java.lang.SuppressWarnings({"squid:S3776", "common-java:DuplicatedBlocks"})
 public class Connect extends MQTTPacket {
 
-  private byte[] mqtt = "MQTT".getBytes();
+  private final byte[] mqtt = "MQTT".getBytes();
 
   private byte protocolLevel;
 

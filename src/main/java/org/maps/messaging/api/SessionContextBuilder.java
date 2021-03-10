@@ -70,7 +70,7 @@ public class SessionContextBuilder {
     return this;
   }
 
-  public @NonNull @NotNull SessionContextBuilder setPassword(@NonNull @NotNull char[] password) {
+  public @NonNull @NotNull SessionContextBuilder setPassword(@NonNull char[] password) {
     this.password = password;
     return this;
   }
@@ -120,7 +120,7 @@ public class SessionContextBuilder {
     return this;
   }
 
-  public @NonNull @NotNull SessionContextBuilder setAuthenticationData(@NonNull @NotNull byte[] authenticationData) {
+  public @NonNull @NotNull SessionContextBuilder setAuthenticationData(@NonNull byte[] authenticationData) {
     this.authenticationData = authenticationData;
     return this;
   }

@@ -19,6 +19,7 @@
 package org.maps.messaging.engine.serializer;
 
 import java.io.IOException;
+import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.serializer.GroupSerializerObjectArray;
@@ -35,12 +36,12 @@ public class MapDBSerializer<P extends SerializedObject> extends GroupSerializer
     classDefinition = aClass;
   }
 
-  public void serialize(DataOutput2 out, P context) throws IOException {
+  public void serialize(@NotNull DataOutput2 out, P context) throws IOException {
     ObjectWriter writer = new StreamObjectWriter(out);
     context.write(writer);
   }
 
-  public P deserialize(DataInput2 in, int available) throws IOException {
+  public P deserialize(@NotNull DataInput2 in, int available) throws IOException {
     ObjectReader reader = new DataObjectReader(in);
     try {
       return classDefinition.getConstructor(ObjectReader.class).newInstance(reader);

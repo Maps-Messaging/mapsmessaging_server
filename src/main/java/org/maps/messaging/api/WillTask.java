@@ -40,7 +40,7 @@ public class WillTask {
    *
    * @param payload to send
    */
-  public void updateMessage(@NonNull @NotNull byte[] payload) {
+  public void updateMessage(@NonNull byte[] payload) {
     willTaskImpl.updateMessage(payload);
   }
 

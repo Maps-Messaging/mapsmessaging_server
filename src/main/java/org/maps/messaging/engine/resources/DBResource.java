@@ -36,7 +36,7 @@ import java.util.Map;
 public class DBResource extends Resource {
 
   private final Map<Long, MessageCache> index;
-  private  BTreeMap<Long, Message> diskMap;
+  private final  BTreeMap<Long, Message> diskMap;
   private final DB dataStore;
   private final String fileName;
 

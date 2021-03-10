@@ -327,7 +327,7 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public SubscribedEventManager wake(SessionImpl sessionImpl, DestinationImpl destination){
     for (Subscription subscription : activeSubscriptions.values()) {
-      if(subscription.getContext().getFilter().equals(destination.getName())){
+      if(subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getName())){
         subscription.wakeUp(sessionImpl);
         if (subscription instanceof DestinationSubscription && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
           queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
@@ -345,7 +345,7 @@ public class SubscriptionController implements DestinationManagerListener {
       for (Subscription subscription : activeSubscriptions.values()) {
         subscription.wakeUp(this.sessionImpl);
         if (subscription instanceof DestinationSubscription
-            && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
+            && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
           queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
         }
       }
@@ -353,7 +353,7 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   public void queueRetainedMessage(DestinationImpl destinationImpl, Subscription subscription) {
-    if (!subscription.getContext().getRetainHandler().equals(RetainHandler.DO_NOT_SEND)) {
+    if (subscription.getContext() != null && !subscription.getContext().getRetainHandler().equals(RetainHandler.DO_NOT_SEND)) {
       long retainedId = destinationImpl.getRetainedIdentifier();
       if (retainedId >= 0) {
         subscription.register(retainedId);

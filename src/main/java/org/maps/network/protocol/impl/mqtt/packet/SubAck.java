@@ -62,7 +62,7 @@ public class SubAck extends MQTTPacket {
       if (b == -1) {
         sb.append("Error");
       } else {
-        sb.append("" + b);
+        sb.append(b);
       }
     }
     sb.append(" Packet Id:").append(packetId).append("]");

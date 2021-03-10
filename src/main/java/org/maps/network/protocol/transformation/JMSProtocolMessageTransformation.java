@@ -57,7 +57,7 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
   }
 
   @Override
-  public @NonNull @NotNull byte[] outgoing(@NonNull @NotNull Message message) {
+  public @NonNull byte[] outgoing(@NonNull @NotNull Message message) {
 
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(message);
     org.apache.qpid.proton.message.Message protonMsg = translator.encode(message);

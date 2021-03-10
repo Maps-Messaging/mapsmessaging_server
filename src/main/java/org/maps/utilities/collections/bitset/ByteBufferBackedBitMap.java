@@ -327,7 +327,7 @@ public class ByteBufferBackedBitMap implements BitSet {
     }
     int internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
-    long word = backing.getLong(position) & (LONG_MASK >>> -(fromIndex + 1));
+    long word = backing.getLong(position) & (LONG_MASK >>> -((fromIndex + 1)%64));
 
     while (true) {
       if (word != 0) {

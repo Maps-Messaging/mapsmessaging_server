@@ -36,16 +36,18 @@ public class WillTopicUpdateListener extends PacketListener {
     WillTopicUpdate willTopicUpdate = (WillTopicUpdate) mqttPacket;
 
     int status = 0;
-    if (willTopicUpdate.getTopic() == null) {
-      session.getWillTask().cancel();
-    } else {
-      WillTask task = session.getWillTask();
-      if (task != null) {
+    WillTask task = session.getWillTask();
+    if(task != null){
+      if (willTopicUpdate.getTopic() == null) {
+        task.cancel();
+      }
+      else{
         task.updateQoS(willTopicUpdate.getQoS());
         task.updateTopic(willTopicUpdate.getTopic());
-      } else {
-        status = NOT_SUPPORTED;
       }
+    }
+    else{
+      status = NOT_SUPPORTED;
     }
     return new WillTopicResponse(status);
   }

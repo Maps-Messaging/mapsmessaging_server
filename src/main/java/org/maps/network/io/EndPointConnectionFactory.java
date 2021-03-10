@@ -26,7 +26,7 @@ import org.maps.utilities.service.Service;
 
 public interface EndPointConnectionFactory  extends Service {
 
-  public abstract EndPoint connect(EndPointURL url,
+  EndPoint connect(EndPointURL url,
       SelectorLoadManager selector,
       EndPointConnectedCallback callback,
       EndPointServerStatus endPointServerStatus,

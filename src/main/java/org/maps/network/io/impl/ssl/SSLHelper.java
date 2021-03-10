@@ -46,7 +46,7 @@ public class SSLHelper {
 
   
   public SSLContext createContext(ConfigurationProperties configurationProperties, Logger logger) throws IOException{
-    SSLContext sslContext = null; 
+    SSLContext sslContext;
     // We have a physical socket bound, so now build up the SSL Context for this interface
     //
     try {

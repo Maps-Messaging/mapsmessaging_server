@@ -209,7 +209,7 @@ public abstract class ConcurrentTaskScheduler<V> implements TaskScheduler<V> {
    */
   private class QueueRunner implements Runnable {
 
-    Map<String, String> context;
+    final Map<String, String> context;
 
     public QueueRunner(){
       context = ThreadContext.getContext();

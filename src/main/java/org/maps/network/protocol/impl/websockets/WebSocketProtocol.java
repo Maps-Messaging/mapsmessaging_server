@@ -51,7 +51,7 @@ public class WebSocketProtocol extends ProtocolImpl {
   }
 
   @Override
-  public boolean processPacket(Packet packet) throws IOException {
+  public boolean processPacket(@NotNull Packet packet) throws IOException {
     ServerPacket serverPacket = connectingHandler.handle(packet, endPoint);
     if (serverPacket != null) {
       Packet response = new Packet(64 * 1024, false);

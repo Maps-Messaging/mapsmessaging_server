@@ -22,7 +22,7 @@ import org.maps.network.io.Packet;
 
 public class WillMessage extends MQTT_SNPacket {
 
-  private byte[] message;
+  private final byte[] message;
 
   public WillMessage(Packet packet, int length) {
     super(WILLMSG);

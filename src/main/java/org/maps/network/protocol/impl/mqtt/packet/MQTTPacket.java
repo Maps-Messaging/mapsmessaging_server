@@ -59,7 +59,7 @@ public abstract class MQTTPacket implements ServerPacket {
         throw new EndOfBufferException("Ran off the buffer reading variable int");
       }
       encoded = packet.get();
-      value += ((encoded & 0x7F) << (7 * counter));
+      value += ((encoded & 0x7FL) << (7L * counter));
       if (counter > 4) {
         throw new MalformedException();
       }

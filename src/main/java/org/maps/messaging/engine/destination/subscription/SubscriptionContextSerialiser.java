@@ -19,6 +19,7 @@
 package org.maps.messaging.engine.destination.subscription;
 
 import java.io.IOException;
+import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.serializer.GroupSerializerObjectArray;
@@ -33,12 +34,12 @@ public class SubscriptionContextSerialiser extends GroupSerializerObjectArray<Su
     // This is used via a class for
   }
 
-  public void serialize(DataOutput2 out, SubscriptionContext context) throws IOException {
+  public void serialize(@NotNull DataOutput2 out, SubscriptionContext context) throws IOException {
     ObjectWriter writer = new StreamObjectWriter(out);
     context.write(writer);
   }
 
-  public SubscriptionContext deserialize(DataInput2 in, int available) throws IOException {
+  public SubscriptionContext deserialize(@NotNull DataInput2 in, int available) throws IOException {
     ObjectReader reader = new DataObjectReader(in);
     return new SubscriptionContext(reader);
   }

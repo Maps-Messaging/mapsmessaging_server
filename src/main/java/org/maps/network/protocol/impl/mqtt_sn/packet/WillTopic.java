@@ -22,7 +22,7 @@ import org.maps.network.io.Packet;
 
 public class WillTopic extends MQTT_SNPacket {
 
-  private String topic;
+  private final String topic;
 
   public WillTopic(Packet packet, int length) {
     super(WILLTOPIC);

@@ -28,7 +28,7 @@ import org.maps.network.protocol.impl.mqtt.packet.MalformedException;
 
 public class Disconnect5 extends MQTTPacket5 {
 
-  private StatusCode disconnectReason;
+  private final  StatusCode disconnectReason;
 
   public Disconnect5(long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
     super(DISCONNECT);

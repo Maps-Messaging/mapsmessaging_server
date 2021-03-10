@@ -100,16 +100,14 @@ public class SharedSubscription extends DestinationSubscription {
 
   @Override
   protected boolean isReady(){
-    boolean response = super.isReady();
-    if(response){
+    if(super.isReady()){
       for(SessionSharedSubscription subscription:subscriptions.flatMap){
         if(subscription.canSend()){
           return true;
         }
       }
-      response = false; // There are NO subscriptions that can actually send events
     }
-    return response;
+    return false;
   }
 
   private static class SessionSubscriptionMap {
