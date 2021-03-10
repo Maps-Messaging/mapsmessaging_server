@@ -226,7 +226,8 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  public static void deleteFile(File directoryToBeDeleted) {
+  public static void deleteFile(File directoryToBeDeleted) throws IOException {
+    StringBuilder failedFiles = new StringBuilder();
     File[] allContents = directoryToBeDeleted.listFiles();
     if (allContents != null) {
       List<File> failed = new ArrayList<>();
@@ -243,14 +244,15 @@ public class DestinationImpl implements BaseDestination {
           Files.delete(file.toPath());
         }
         catch (IOException io){
-          // ToDo create a log entry here
+          failedFiles.append(file.getAbsolutePath()).append(",");
         }
       }
     }
     try {
       Files.delete(directoryToBeDeleted.toPath());
     } catch (IOException e) {
-      // ToDo create a log entry here
+      failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
+      throw new IOException("Failed to delete the following files: "+failedFiles, e);
     }
   }
 
