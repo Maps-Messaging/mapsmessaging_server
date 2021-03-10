@@ -55,7 +55,7 @@ public abstract class Event extends Frame {
     delay = 0;
   }
 
-  public void packMessage(String destination, String subscriptionId, Message internalMessage) {
+  public void packMessage(String destination, Message internalMessage) {
     //
     // Map the data map to the header
     //

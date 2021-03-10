@@ -31,21 +31,6 @@ public class MessageListener extends EventListener {
   protected void processEvent( StateEngine engine, Event event, Message message) throws IOException {
     String lookup = engine.getMapping(event.getDestination());
     Destination destination = engine.getSession().findDestination(lookup);
-    if(destination != null) {
-      if (event.getTransaction() != null) {
-        Transaction transaction = engine.getSession().getTransaction(event.getTransaction());
-        if (transaction == null) {
-          Error error = new Error();
-          error.setReceipt(event.getReceipt());
-          error.setContent(("No known transaction found " + event.getTransaction()).getBytes());
-          error.setContentType("text/plain");
-          event.setReceipt(null);
-        } else {
-          transaction.add(destination, message);
-        }
-      } else {
-        destination.storeMessage(message);
-      }
-    }
+    handleMessageStoreToDestination(destination, engine, event, message);
   }
 }

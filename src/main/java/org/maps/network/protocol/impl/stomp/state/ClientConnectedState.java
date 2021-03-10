@@ -28,7 +28,7 @@ public class ClientConnectedState extends ConnectedState {
   @Override
   public boolean sendMessage(StateEngine engine, Destination destination,String normalisedName,  SubscriptionContext context, Message message, Runnable completionTask) {
     Send msg = new Send(1024);
-    msg.packMessage(normalisedName, context.getAlias(), message);
+    msg.packMessage(normalisedName, message);
     msg.setCallback(new MessageCompletionHandler(completionTask));
     return engine.send(msg);
   }

@@ -75,7 +75,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       SelectorLoadManager selectorLoadManager = endPointConnection.getSelectorLoadManager();
       List<String> jmxPath = endPointConnection.getJMXPath();
       activeEndPoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
-    } catch (Throwable ioException) {
+    } catch (Exception ioException) {
       endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }

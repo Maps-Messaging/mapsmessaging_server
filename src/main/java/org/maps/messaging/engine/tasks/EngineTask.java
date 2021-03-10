@@ -41,9 +41,6 @@ public abstract class EngineTask implements Callable<Response> {
     try{
       return taskCall();
     }
-    catch(Throwable th){
-      throw new Exception(th);
-    }
     finally{
       ThreadContext.clearAll();
     }
