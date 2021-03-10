@@ -63,7 +63,6 @@ public class YamlPropertyManager extends PropertyManager {
           } else if (data instanceof ConfigurationProperties) {
             ((ConfigurationProperties) data).setGlobal((ConfigurationProperties) global);
           }
-          //root.remove(GLOBAL);
         }
       }
 
