@@ -99,7 +99,7 @@ NetworkManager:
 
       -
         url: ssl://0.0.0.0:8444/
-        protocol: stomp,mqtt,all
+        protocol: all
         auth: public
 
       -
@@ -112,6 +112,6 @@ NetworkManager:
       -
         url: ssl://0.0.0.0:8445/
         name: "generic interface for all protocols on SSL"
-        protocol: stomp,mqtt,all,ws
+        protocol: all
         auth: ssl
         ssl_clientCertificateRequired: true

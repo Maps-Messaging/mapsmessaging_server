@@ -63,6 +63,14 @@ public abstract  class CommonSubscriptionBuilder  extends SubscriptionBuilder {
     else{
       lookupName += "_normal";
     }
+    while(lookupName.contains("/")){
+      lookupName = lookupName.replace("/", "");
+    }
+
+    while(lookupName.contains("\\")){
+      lookupName = lookupName.replace("\\", "");
+    }
+    lookupName = lookupName.trim();
 
 
     SharedSubscription sharedSubscription = sharedSubscriptionManager.find(lookupName);

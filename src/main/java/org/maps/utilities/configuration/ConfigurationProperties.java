@@ -27,7 +27,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   private ConfigurationProperties globalValues;
 
-  protected ConfigurationProperties(){
+  public ConfigurationProperties(){
     super();
   }
 
@@ -186,6 +186,9 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
   }
 
   public ConfigurationProperties getGlobal() {
+    if(globalValues == null){
+      return (ConfigurationProperties) get("global");
+    }
     return globalValues;
   }
 
@@ -207,4 +210,11 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
     return super.hashCode();
   }
 
+  @Override
+  public String toString(){
+    if(globalValues != null) {
+      return super.toString() + " " + globalValues.toString();
+    }
+    return super.toString();
+  }
 }
