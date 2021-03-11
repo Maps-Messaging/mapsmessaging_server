@@ -54,14 +54,8 @@ public class SelectorLoadManager {
   }
 
   private Selector create() throws IOException {
-    Selector selector;
-    if (EnvironmentConfig.getInstance().supportThreadSafeSelector()) {
-      selector = new Selector();
-      logger.log(LogMessages.END_POINT_MANAGER_NEW_SELECTOR);
-    } else {
-      selector = new SelectorOld();
-      logger.log(LogMessages.END_POINT_MANAGER_OLD_SELECTOR);
-    }
+    Selector selector = new Selector();
+    logger.log(LogMessages.END_POINT_MANAGER_NEW_SELECTOR);
     selectorExecutor.execute(selector);
     return selector;
   }

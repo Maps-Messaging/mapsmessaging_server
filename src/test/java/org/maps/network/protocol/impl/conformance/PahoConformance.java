@@ -76,6 +76,7 @@ abstract class PahoConformance extends BaseTestConfig {
         Assumptions.assumeTrue(result);
       }
     }
+    clear();
     Assertions.assertTrue(result);
   }
 

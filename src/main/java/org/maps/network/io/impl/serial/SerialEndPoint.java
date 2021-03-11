@@ -37,7 +37,6 @@ import org.maps.network.io.Packet;
 import org.maps.network.io.Selectable;
 import org.maps.network.io.StreamEndPoint;
 import org.maps.network.io.StreamHandler;
-import org.maps.network.io.impl.SimpleStreamHandler;
 import org.maps.utilities.threads.SimpleTaskScheduler;
 
 public class SerialEndPoint extends EndPoint implements StreamEndPoint {

@@ -20,9 +20,7 @@ package org.maps.network.protocol.impl.stomp.listener;
 
 import java.io.IOException;
 import org.maps.messaging.api.Destination;
-import org.maps.messaging.api.Transaction;
 import org.maps.messaging.api.message.Message;
-import org.maps.network.protocol.impl.stomp.frames.Error;
 import org.maps.network.protocol.impl.stomp.frames.Event;
 import org.maps.network.protocol.impl.stomp.state.StateEngine;
 

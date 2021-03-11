@@ -19,8 +19,6 @@
 package org.maps.network.protocol.impl.stomp.listener;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.StringTokenizer;
 import java.util.UUID;
 import javax.security.auth.login.LoginException;
 import org.maps.messaging.api.Session;

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,7 +49,10 @@ public class BaseTestConfig extends BaseTest {
 
   @AfterEach
   public void clear(){
-    Runtime.getRuntime().gc(); // Try and free up memory before the next test kicks off
+    removeResources();
+  }
+
+  private static void removeResources(){
     List<DestinationImpl> destinations = md.getDestinationManager().getDestinations();
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations){
@@ -57,9 +61,11 @@ public class BaseTestConfig extends BaseTest {
       }
     }
     for(DestinationImpl destination:toDelete){
+      System.err.println("Deleting "+destination.getName());
+      long start = System.currentTimeMillis();
       md.getDestinationManager().delete(destination);
+      System.err.println("Time to delete:"+(System.currentTimeMillis()-start)+"ms");
     }
-
   }
 
   @BeforeAll
@@ -148,6 +154,7 @@ public class BaseTestConfig extends BaseTest {
 
     @Override
     public void run() {
+      removeResources();
       md.stop(0);
       try {
         th.join(2000);
