@@ -33,9 +33,11 @@ import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class BrowserConnectionTest extends BaseConnection {
 
+  @Test
   void simpleBrowserTest() throws JMSException, NamingException, IOException {
     Context context = loadContext();
     Assertions.assertNotNull(context);
@@ -81,6 +83,7 @@ public class BrowserConnectionTest extends BaseConnection {
     }
   }
 
+  @Test
   void simpleFilterBrowserTest() throws JMSException, NamingException, IOException {
     Context context = loadContext();
     Assertions.assertNotNull(context);
