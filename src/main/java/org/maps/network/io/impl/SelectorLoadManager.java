@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
 import org.maps.logging.LogMessages;
 import org.maps.logging.Logger;
 import org.maps.logging.LoggerFactory;
-import org.maps.utilities.configuration.EnvironmentConfig;
 
 public class SelectorLoadManager {
 
