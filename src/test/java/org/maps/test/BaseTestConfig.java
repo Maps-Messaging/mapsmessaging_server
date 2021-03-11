@@ -80,7 +80,7 @@ public class BaseTestConfig extends BaseTest {
       setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
       md = new MessageDaemon();
       Runnable runnable = () -> {
-        md.start(null)
+        md.start(null);
       };
       th = new Thread(runnable);
       th.start();
