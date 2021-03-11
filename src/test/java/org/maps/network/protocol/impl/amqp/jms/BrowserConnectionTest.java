@@ -20,6 +20,7 @@ package org.maps.network.protocol.impl.amqp.jms;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -34,11 +35,19 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.maps.logging.LogMessages;
+import org.maps.logging.Logger;
+import org.maps.logging.LoggerFactory;
+import org.maps.messaging.engine.destination.DestinationImpl;
+import org.maps.test.WaitForState;
 
 public class BrowserConnectionTest extends BaseConnection {
 
   @Test
   void simpleBrowserTest() throws JMSException, NamingException, IOException {
+    WaitForState.wait(1, TimeUnit.SECONDS);
+    Logger logger = LoggerFactory.getLogger("Browser");
+    logger.log(LogMessages.DEBUG, "Starting the AMQP - JMS browser test");
     Context context = loadContext();
     Assertions.assertNotNull(context);
 
@@ -46,7 +55,7 @@ public class BrowserConnectionTest extends BaseConnection {
     Assertions.assertNotNull(connectionFactory);
     try (Connection connection = connectionFactory.createConnection()) {
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-      Queue queue = session.createQueue("browseQueue");
+      Queue queue = session.createQueue("queueBrowserTestQueue");
       MessageProducer producer = session.createProducer(queue);
       String task = "Task";
       for (int i = 0; i < 10; i++) {
@@ -62,11 +71,16 @@ public class BrowserConnectionTest extends BaseConnection {
       System.out.println("Browse through the elements in queue");
       QueueBrowser browser = session.createBrowser(queue);
       int counter =0;
-      Enumeration e = browser.getEnumeration();
-      while (e.hasMoreElements()) {
-        TextMessage message = (TextMessage) e.nextElement();
-        System.out.println("Browse [" + message.getText() + "]");
-        counter++;
+      int looped = 0;
+      while(counter < 10 && looped < 5) {
+        Enumeration e = browser.getEnumeration();
+        while (e.hasMoreElements()) {
+          TextMessage message = (TextMessage) e.nextElement();
+          System.out.println("Browse [" + message.getText() + "]");
+          counter++;
+        }
+        looped++;
+        WaitForState.wait(100, TimeUnit.MILLISECONDS);
       }
       Assertions.assertEquals(10, counter, "We pushed 10 messages, we expect the browser to see 10 messages");
       System.out.println("Done");
@@ -74,16 +88,24 @@ public class BrowserConnectionTest extends BaseConnection {
 
 
       for (int i = 0; i < 10; i++) {
-        TextMessage textMsg = (TextMessage) consumer.receive();
-        Assertions.assertNotNull(textMsg, "We now expect the consumer to receive the messages sent since the browser is read only");
-        System.out.println(textMsg);
-        System.out.println("Received: " + textMsg.getText());
+        final TextMessage[] textMsg = new TextMessage[1];
+        WaitForState.waitFor(2, TimeUnit.SECONDS, ()-> {
+          try {
+            textMsg[0] = (TextMessage) consumer.receive(100);
+            return textMsg[0] != null;
+          } catch (JMSException e) {
+            throw new IOException(e);
+          }
+        });
+        Assertions.assertNotNull(textMsg[0], "We now expect the consumer to receive the messages sent since the browser is read only");
+        System.out.println(textMsg[0]);
+        System.out.println("Received: " + textMsg[0].getText());
       }
       session.close();
     }
   }
 
-  @Test
+
   void simpleFilterBrowserTest() throws JMSException, NamingException, IOException {
     Context context = loadContext();
     Assertions.assertNotNull(context);
