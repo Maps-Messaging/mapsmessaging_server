@@ -19,8 +19,10 @@
 package org.maps.messaging.engine.destination.subscription;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import org.maps.logging.LogMessages;
@@ -122,7 +124,8 @@ public class DestinationSubscriptionManager implements Subscribable{
 
   @Override
   public void close() throws IOException {
-    for (Subscribable subscribable : subscriptions.values()) {
+    List<Subscribable> closeList = new ArrayList<>(subscriptions.values());
+    for (Subscribable subscribable : closeList) {
       subscribable.close();
     }
   }
