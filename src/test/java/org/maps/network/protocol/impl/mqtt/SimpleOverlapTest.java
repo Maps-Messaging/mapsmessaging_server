@@ -44,7 +44,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
       }
 
       @Override
-      public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+      public void messageArrived(String s, MqttMessage mqttMessage) {
         counter.incrementAndGet();
       }
 
@@ -76,7 +76,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
       }
 
       @Override
-      public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+      public void messageArrived(String s, MqttMessage mqttMessage) {
         counter.incrementAndGet();
       }
 
@@ -113,7 +113,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
       }
 
       @Override
-      public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+      public void messageArrived(String s, MqttMessage mqttMessage) {
         counter.incrementAndGet();
       }
 
@@ -145,7 +145,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
       }
 
       @Override
-      public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+      public void messageArrived(String s, MqttMessage mqttMessage) {
         counter.incrementAndGet();
       }
 
@@ -219,8 +219,6 @@ class SimpleOverlapTest extends BaseTestConfig  {
     client.unsubscribe("overlap/topic1");
     publish(client, topics, (byte)0);
     Assertions.assertTrue(waitFor(counter, 0));
-
-    delayMS(1000L);
     client.disconnect();
     client.close();
   }

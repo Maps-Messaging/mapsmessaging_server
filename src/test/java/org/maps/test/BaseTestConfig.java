@@ -49,10 +49,6 @@ public class BaseTestConfig extends BaseTest {
 
   @AfterEach
   public void clear(){
-    removeResources();
-  }
-
-  private static void removeResources(){
     List<DestinationImpl> destinations = md.getDestinationManager().getDestinations();
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations){
@@ -61,10 +57,7 @@ public class BaseTestConfig extends BaseTest {
       }
     }
     for(DestinationImpl destination:toDelete){
-      System.err.println("Deleting "+destination.getName());
-      long start = System.currentTimeMillis();
       md.getDestinationManager().delete(destination);
-      System.err.println("Time to delete:"+(System.currentTimeMillis()-start)+"ms");
     }
   }
 
@@ -87,7 +80,7 @@ public class BaseTestConfig extends BaseTest {
       setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
       md = new MessageDaemon();
       Runnable runnable = () -> {
-        md.start(null);
+        md.start(null)
       };
       th = new Thread(runnable);
       th.start();
@@ -154,7 +147,6 @@ public class BaseTestConfig extends BaseTest {
 
     @Override
     public void run() {
-      removeResources();
       md.stop(0);
       try {
         th.join(2000);
@@ -175,7 +167,4 @@ public class BaseTestConfig extends BaseTest {
     return "/queue/queue"+destinationInc.incrementAndGet();
   }
 
-  protected void delayMS(long milliseconds){
-    LockSupport.parkNanos(milliseconds * 1000L * 1000L);
-  }
 }
