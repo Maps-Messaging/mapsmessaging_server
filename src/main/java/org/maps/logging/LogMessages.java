@@ -24,6 +24,9 @@ package org.maps.logging;
  */
 
 public enum LogMessages {
+  DEBUG(LEVEL.DEBUG, CATEGORY.TEST, "Testing Only - {}"),
+  INFO(LEVEL.INFO, CATEGORY.TEST, "Testing Only - {}"),
+  WARN(LEVEL.WARN, CATEGORY.TEST, "Testing Only - {}"),
 
   // <editor-fold desc="Generic messages">
   PUSH_WRITE(LEVEL.DEBUG, CATEGORY.PROTOCOL, "Pushed Packet for write, {}"),
@@ -574,6 +577,7 @@ public enum LogMessages {
   }
 
   public enum CATEGORY {
+    TEST("Test"),
     AUTHORISATION("Authorisation"),
     AUTHENTICATION("Authentication"),
     NETWORK("Network"),
