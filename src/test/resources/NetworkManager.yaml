@@ -115,3 +115,9 @@ NetworkManager:
         protocol: all
         auth: ssl
         ssl_clientCertificateRequired: true
+
+      -
+        name: NMEA GPS port
+        url: serial://ttyUSB0,9600,8,N,1/
+        protocol: NMEA
+        selectorThreadCount: 1
