@@ -65,7 +65,7 @@ public class JolokaManager {
         try {
           jolokiaServer.stop();
         } catch (Exception e) {
-          logger.log(LogMessages.JOLOKIA_SHUTDOWN_FAILURE, e);
+         // Do not log this, Jolokia throws a NPE every time we shut down
         }
       }
     }
