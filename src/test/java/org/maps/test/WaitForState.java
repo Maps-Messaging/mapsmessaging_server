@@ -30,4 +30,12 @@ public class WaitForState {
       LockSupport.parkNanos(100000000);
     }
   }
+
+  public static void wait(long time, TimeUnit timeUnit) {
+    long timeout = System.currentTimeMillis() + timeUnit.toMillis(time);
+    while(timeout > System.currentTimeMillis()){
+      LockSupport.parkNanos(100000000);
+    }
+  }
+
 }
