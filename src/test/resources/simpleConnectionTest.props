@@ -27,4 +27,3 @@ connectionfactory.QueueConnectionFactory = amqp://localhost:5672/test?brokerlist
 # destination.[jndiname] = [address_string]
 topic.topicExchange = amqp.topic
 queue.queueExchange = amqp.queue
-

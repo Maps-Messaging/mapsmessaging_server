@@ -22,9 +22,13 @@ import java.util.Date;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+import org.maps.logging.LogMessages;
+import org.maps.logging.Logger;
+import org.maps.logging.LoggerFactory;
 
 public class BaseTest {
 
+  private static final Logger logger = LoggerFactory.getLogger("TestLogger");
   private final int HEADER_SIZE = 80;
 
   private long start;
@@ -44,12 +48,14 @@ public class BaseTest {
     }
     System.err.println(pad("Date    :: "+dt.toString(), " "));
     System.err.println(getHeaderPartition());
+    logger.log(LogMessages.DEBUG, "Starting "+ testInfo.getDisplayName() );
   }
 
   @AfterEach
   public void logTestFinish(TestInfo testInfo){
     System.err.println(pad("Completed:: "+testInfo.getDisplayName()+", "+(System.currentTimeMillis()-start)+"ms", " "));
     System.err.println(getHeaderPartition());
+    logger.log(LogMessages.DEBUG, "Completed "+ testInfo.getDisplayName()+" " +(System.currentTimeMillis()-start)+"ms");
   }
 
   private String getHeaderPartition(){
