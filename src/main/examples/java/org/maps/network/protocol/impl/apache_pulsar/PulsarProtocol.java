@@ -46,9 +46,6 @@ import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
 import org.maps.messaging.api.transformers.Transformer;
-import org.maps.messaging.engine.selector.ParseException;
-import org.maps.messaging.engine.selector.SelectorParser;
-import org.maps.messaging.engine.selector.operators.ParserExecutor;
 import org.maps.network.EndPointURL;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
@@ -199,11 +196,10 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
 
     // Create a MapsMessage
     MessageBuilder mb = new MessageBuilder();
-    Message mapsMessage = mb.setOpaqueData(message.getData())
+    mb.setOpaqueData(message.getData())
         .setDataMap(dataMap)
-        .setCreation(message.getEventTime())
+        .setCreation(message.getEventTime());
         // Add whatever other mapping you need here
-        .build();
 
     //------------------------------------------------------------------
     // Based on a match or not then do something
@@ -212,7 +208,7 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
       try {
         Destination destination = session.findDestination(topicName);
         if (destination != null) {
-          destination.storeMessage(mapsMessage);
+          destination.storeMessage(mb.build());
         }
         consumer.acknowledge(message);
       } catch (IOException ioException) {
