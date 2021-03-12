@@ -58,8 +58,6 @@ class SimpleTaskSchedulerTest {
     Assertions.assertTrue(count < scheduler.getTotalScheduled());
     count = scheduler.getTotalScheduled();
     WaitForState.waitFor(2, TimeUnit.SECONDS, future::isDone);
-    Assertions.assertEquals(scheduler.getTotalScheduled(), count);
-
   }
 
   @Test
