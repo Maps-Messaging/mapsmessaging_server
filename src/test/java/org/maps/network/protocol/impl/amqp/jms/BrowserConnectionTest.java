@@ -67,27 +67,8 @@ public class BrowserConnectionTest extends BaseConnection {
 
       MessageConsumer consumer = session.createConsumer(queue);
       connection.start();
-
-      System.out.println("Browse through the elements in queue");
-      int counter =0;
-      QueueBrowser browser = session.createBrowser(queue);
-      WaitForState.wait(100, TimeUnit.MILLISECONDS);
-
-      Enumeration e = browser.getEnumeration();
-      while(!e.hasMoreElements()){
-        e = browser.getEnumeration();
-        WaitForState.wait(100, TimeUnit.MILLISECONDS);
-      }
-      Assertions.assertTrue(e.hasMoreElements());
-      while (e.hasMoreElements()) {
-        TextMessage message = (TextMessage) e.nextElement();
-        System.out.println("Browse [" + message.getText() + "]");
-        counter++;
-      }
-      WaitForState.wait(100, TimeUnit.MILLISECONDS);
-      browser.close();
+      int counter = checkTheBrowser(session, queue, null);
       Assertions.assertEquals(10, counter, "We pushed 10 messages, we expect the browser to see 10 messages");
-      System.out.println("Done");
 
 
       for (int i = 0; i < 10; i++) {
@@ -95,9 +76,6 @@ public class BrowserConnectionTest extends BaseConnection {
         WaitForState.waitFor(10, TimeUnit.SECONDS, ()-> {
           try {
             textMsg[0] = (TextMessage) consumer.receive(100);
-            if(textMsg[0] == null){
-              System.err.println("Consumer retry..");
-            }
             return textMsg[0] != null;
           } catch (JMSException e1) {
             throw new IOException(e1);
@@ -112,6 +90,7 @@ public class BrowserConnectionTest extends BaseConnection {
   }
 
 
+  @Test
   void simpleFilterBrowserTest() throws JMSException, NamingException, IOException {
     Context context = loadContext();
     Assertions.assertNotNull(context);
@@ -135,17 +114,9 @@ public class BrowserConnectionTest extends BaseConnection {
       connection.start();
 
       System.out.println("Browse through the elements in queue");
-      QueueBrowser browser = session.createBrowser(queue, "odd = true");
-      Enumeration e = browser.getEnumeration();
-      int counter =0;
-      while (e.hasMoreElements()) {
-        TextMessage message = (TextMessage) e.nextElement();
-        System.out.println("Browse [" + message.getText() + "]");
-        counter++;
-      }
-      Assertions.assertEquals(5, counter, "We expect 1/2 the messages since now we are filtering it by odd/even");
-      System.out.println("Done");
-      browser.close();
+
+      int counter = checkTheBrowser(session, queue, "odd = true");
+      Assertions.assertEquals(5, counter, "We pushed 10 messages, we expect the browser to see 10 messages");
 
       for (int i = 0; i < 10; i++) {
         TextMessage textMsg = (TextMessage) consumer.receive();
@@ -155,5 +126,32 @@ public class BrowserConnectionTest extends BaseConnection {
       }
       session.close();
     }
+  }
+
+  private int checkTheBrowser(Session session, Queue queue, String selector) throws JMSException {
+    QueueBrowser browser;
+    if(selector == null){
+       browser = session.createBrowser(queue);
+    }
+    else{
+      browser = session.createBrowser(queue, selector);
+    }
+    WaitForState.wait(100, TimeUnit.MILLISECONDS);
+
+    Enumeration e = browser.getEnumeration();
+    while(!e.hasMoreElements()){
+      e = browser.getEnumeration();
+      WaitForState.wait(100, TimeUnit.MILLISECONDS);
+    }
+    int counter =0;
+    Assertions.assertTrue(e.hasMoreElements());
+    while (e.hasMoreElements()) {
+      TextMessage message = (TextMessage) e.nextElement();
+      System.out.println("Browse [" + message.getText() + "]");
+      counter++;
+    }
+    WaitForState.wait(100, TimeUnit.MILLISECONDS);
+    browser.close();
+    return counter;
   }
 }
