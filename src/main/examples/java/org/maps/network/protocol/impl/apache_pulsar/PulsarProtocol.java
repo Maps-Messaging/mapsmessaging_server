@@ -204,43 +204,19 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
         .setCreation(message.getEventTime())
         // Add whatever other mapping you need here
         .build();
-    //------------------------------------------------------------------
-
-
-    //------------------------------------------------------------------
-    // We now have message, so lets see if it matches the selector
-    // Please Note: The parser is a 2 pass parser.
-    // The first pass builds up the syntax
-    // The second pass compiles it. During the compilation the result
-    // may be one of the following objects
-    //
-    // ParserExecutor : Meaning it requires a message to resolve to true / false
-    // TRUE           : Meaning the selector compiled to a TRUE always result ( TRUE, 5 = 10/2, etc )
-    // FALSE          : Meaning the syntax compiled to a FALSE always result ( FALSE, TRUE = FALSE, 10 < 5 etc )
-    //
-    boolean match = false;
-    try {
-      ParserExecutor parser = SelectorParser.doParse("key1 = key2 + 5", null);
-      match = parser.evaluate(mapsMessage);
-    } catch (ParseException e) {
-      // Parsing failed
-    }
-    //------------------------------------------------------------------
 
     //------------------------------------------------------------------
     // Based on a match or not then do something
-    if(match) {
-      String topicName = nameMapping.get(message.getTopicName());
-      if (topicName != null) {
-        try {
-          Destination destination = session.findDestination(topicName);
-          if (destination != null) {
-            destination.storeMessage(mapsMessage);
-          }
-          consumer.acknowledge(message);
-        } catch (IOException ioException) {
-          logger.log(LogMessages.LOOP_SUBSCRIBED, ioException);
+    String topicName = nameMapping.get(message.getTopicName());
+    if (topicName != null) {
+      try {
+        Destination destination = session.findDestination(topicName);
+        if (destination != null) {
+          destination.storeMessage(mapsMessage);
         }
+        consumer.acknowledge(message);
+      } catch (IOException ioException) {
+        logger.log(LogMessages.LOOP_SUBSCRIBED, ioException);
       }
     }
   }
