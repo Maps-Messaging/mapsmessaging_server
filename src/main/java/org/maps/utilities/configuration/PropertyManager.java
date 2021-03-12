@@ -51,6 +51,9 @@ public abstract class PropertyManager {
       else if(jsonValue instanceof String){
         return new JSONObject(jsonValue);
       }
+      else if(jsonValue == null){
+        return new JSONObject(root);
+      }
     }
     return new JSONObject();
   }
