@@ -18,14 +18,10 @@
 
 package org.maps.utilities.configuration;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.util.UUID;
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.maps.messaging.consul.ConsulManager;
 import org.maps.messaging.consul.ConsulManagerFactory;
 
 class ConsulPropertyManagerTest {
