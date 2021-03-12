@@ -48,7 +48,9 @@ public class BaseTest {
     }
     System.err.println(pad("Date    :: "+dt.toString(), " "));
     System.err.println(getHeaderPartition());
-    logger.log(LogMessages.DEBUG, "Starting "+ testInfo.getDisplayName() );
+    if(testInfo != null && testInfo.getDisplayName() != null) {
+      logger.log(LogMessages.DEBUG, "Starting " + testInfo.getDisplayName());
+    }
   }
 
   @AfterEach
