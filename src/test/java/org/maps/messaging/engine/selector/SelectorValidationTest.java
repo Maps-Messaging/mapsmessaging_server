@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.message.TypedData;
+import org.maps.messaging.engine.selector.operators.ParserBooleanOperation;
 import org.maps.messaging.engine.selector.operators.ParserExecutor;
 import org.maps.messaging.engine.selector.operators.ParserOperationExecutor;
 
@@ -51,6 +52,30 @@ class SelectorValidationTest {
     messageBuilder.setMeta(meta);
     Assertions.assertTrue(parser.evaluate(messageBuilder.build()), "Should have fallen back to the meta data and retrieved the value");
   }
+
+  @Test
+  void checkTrueBooleanResults() throws ParseException {
+    ParserExecutor parser1 = SelectorParser.doParse("20 = 5 * 4", null);
+    Assertions.assertTrue(parser1 instanceof ParserBooleanOperation);
+
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setDataMap(createMap("key1", 10L));
+    messageBuilder.getDataMap().put("key2", new TypedData(5));
+    Assertions.assertTrue(parser1.evaluate(messageBuilder.build()), "Should have evaluated to true, 10 = 5 * 4 == TRUE");
+
+  }
+
+  @Test
+  void checkFalseBooleanResults() throws ParseException {
+    ParserExecutor parser1 = SelectorParser.doParse("10 = 50 * 4", null);
+    Assertions.assertTrue(parser1 instanceof ParserBooleanOperation);
+
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setDataMap(createMap("key1", 10L));
+    messageBuilder.getDataMap().put("key2", new TypedData(5));
+    Assertions.assertFalse(parser1.evaluate(messageBuilder.build()), "Should have evaluated to true, 10 = 50 * 4 == FALSE");
+  }
+
 
   @Test
   void checkArithmeticAdditionKeys() throws ParseException {

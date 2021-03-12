@@ -34,9 +34,6 @@ import org.maps.messaging.engine.destination.subscription.transaction.Individual
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.SelectorParser;
 import org.maps.messaging.engine.selector.operators.ParserExecutor;
-import org.maps.messaging.engine.selector.operators.ParserOperationExecutor;
-import org.maps.messaging.engine.selector.operators.bool.FalseOperator;
-import org.maps.messaging.engine.selector.operators.bool.TrueOperator;
 import org.maps.messaging.engine.session.SessionImpl;
 
 public abstract class SubscriptionBuilder {
