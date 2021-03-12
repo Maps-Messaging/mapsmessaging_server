@@ -54,7 +54,7 @@ public class BrowserConnectionTest extends BaseConnection {
     ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");
     Assertions.assertNotNull(connectionFactory);
     try (Connection connection = connectionFactory.createConnection()) {
-      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      Session session = connection.createSession( Session.AUTO_ACKNOWLEDGE);
       Queue queue = session.createQueue("queueBrowserTestQueue");
       MessageProducer producer = session.createProducer(queue);
       String task = "Task";
@@ -69,32 +69,38 @@ public class BrowserConnectionTest extends BaseConnection {
       connection.start();
 
       System.out.println("Browse through the elements in queue");
-      QueueBrowser browser = session.createBrowser(queue);
       int counter =0;
-      int looped = 0;
-      while(counter < 10 && looped < 5) {
-        Enumeration e = browser.getEnumeration();
-        while (e.hasMoreElements()) {
-          TextMessage message = (TextMessage) e.nextElement();
-          System.out.println("Browse [" + message.getText() + "]");
-          counter++;
-        }
-        looped++;
+      QueueBrowser browser = session.createBrowser(queue);
+      WaitForState.wait(100, TimeUnit.MILLISECONDS);
+
+      Enumeration e = browser.getEnumeration();
+      while(!e.hasMoreElements()){
+        e = browser.getEnumeration();
         WaitForState.wait(100, TimeUnit.MILLISECONDS);
       }
+      Assertions.assertTrue(e.hasMoreElements());
+      while (e.hasMoreElements()) {
+        TextMessage message = (TextMessage) e.nextElement();
+        System.out.println("Browse [" + message.getText() + "]");
+        counter++;
+      }
+      WaitForState.wait(100, TimeUnit.MILLISECONDS);
+      browser.close();
       Assertions.assertEquals(10, counter, "We pushed 10 messages, we expect the browser to see 10 messages");
       System.out.println("Done");
-      browser.close();
 
 
       for (int i = 0; i < 10; i++) {
         final TextMessage[] textMsg = new TextMessage[1];
-        WaitForState.waitFor(2, TimeUnit.SECONDS, ()-> {
+        WaitForState.waitFor(10, TimeUnit.SECONDS, ()-> {
           try {
             textMsg[0] = (TextMessage) consumer.receive(100);
+            if(textMsg[0] == null){
+              System.err.println("Consumer retry..");
+            }
             return textMsg[0] != null;
-          } catch (JMSException e) {
-            throw new IOException(e);
+          } catch (JMSException e1) {
+            throw new IOException(e1);
           }
         });
         Assertions.assertNotNull(textMsg[0], "We now expect the consumer to receive the messages sent since the browser is read only");
