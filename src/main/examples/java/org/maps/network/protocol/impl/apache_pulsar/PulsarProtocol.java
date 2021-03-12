@@ -15,13 +15,6 @@
  *
  *
  */
-/**
- * This class is a proof of concept on how the server could connect to other
- * messaging servers that do not support open messaging protocols but do have
- * a java API that can be used to connect, subscribe and publish.
- *
- * This is not production ready, its a POC.
- */
 package org.maps.network.protocol.impl.apache_pulsar;
 
 import java.io.IOException;
@@ -35,6 +28,7 @@ import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.MessageListener;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClient;
+import org.apache.pulsar.client.api.PulsarClientException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.maps.logging.LogMessages;
@@ -52,11 +46,21 @@ import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
 import org.maps.messaging.api.transformers.Transformer;
+import org.maps.messaging.engine.selector.ParseException;
+import org.maps.messaging.engine.selector.SelectorParser;
+import org.maps.messaging.engine.selector.operators.ParserExecutor;
 import org.maps.network.EndPointURL;
 import org.maps.network.io.EndPoint;
 import org.maps.network.io.Packet;
 import org.maps.network.protocol.ProtocolImpl;
 
+/**
+ * This class is a proof of concept on how the server could connect to other
+ * messaging servers that do not support open messaging protocols but do have
+ * a java API that can be used to connect, subscribe and publish.
+ *
+ * This is not production ready, its a POC.
+ */
 public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte[]> {
 
   private final Map<String, String> nameMapping;
@@ -64,12 +68,12 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
   private Session session;
   private boolean closed;
   private String sessionId;
-  private PulsarClient client;
+  private final PulsarClient client;
 
-  private Map<String,Producer<byte[]> > producers;
-  private Map<String,Consumer<byte[]>> consumers;
+  private final Map<String,Producer<byte[]> > producers;
+  private final Map<String,Consumer<byte[]>> consumers;
 
-  public PulsarProtocol(@NonNull @NotNull EndPoint endPoint) {
+  public PulsarProtocol(@NonNull @NotNull EndPoint endPoint) throws PulsarClientException {
     super(endPoint);
     EndPointURL url = new EndPointURL(endPoint.getConfig().getProperties().getProperty("url"));
     client = PulsarClient.builder()
@@ -186,27 +190,57 @@ public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte
 
   @Override
   public void received(Consumer<byte[]> consumer, org.apache.pulsar.client.api.Message<byte[]> message) {
-
+    //------------------------------------------------------------------
+    // Convert the properties in the Pulsar message to a base map
     Map<String, TypedData> dataMap = new LinkedHashMap<>();
     for(Entry<String, String> entry:message.getProperties().entrySet()) {
       dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
     }
-    Transformer transformer = destinationTransformationLookup(message.getTopicName());
-    MessageBuilder mb = new MessageBuilder();
-    mb.setOpaqueData(message.getData())
-        .setDestinationTransformer(transformer)
-        .setDataMap(dataMap);
 
-    String topicName = nameMapping.get(message.getTopicName());
-    if(topicName != null) {
-      try {
-        Destination destination = session.findDestination(topicName);
-        if (destination != null) {
-          destination.storeMessage(mb.build());
+    // Create a MapsMessage
+    MessageBuilder mb = new MessageBuilder();
+    Message mapsMessage = mb.setOpaqueData(message.getData())
+        .setDataMap(dataMap)
+        .setCreation(message.getEventTime())
+        // Add whatever other mapping you need here
+        .build();
+    //------------------------------------------------------------------
+
+
+    //------------------------------------------------------------------
+    // We now have message, so lets see if it matches the selector
+    // Please Note: The parser is a 2 pass parser.
+    // The first pass builds up the syntax
+    // The second pass compiles it. During the compilation the result
+    // may be one of the following objects
+    //
+    // ParserExecutor : Meaning it requires a message to resolve to true / false
+    // TRUE           : Meaning the selector compiled to a TRUE always result ( TRUE, 5 = 10/2, etc )
+    // FALSE          : Meaning the syntax compiled to a FALSE always result ( FALSE, TRUE = FALSE, 10 < 5 etc )
+    //
+    boolean match = false;
+    try {
+      ParserExecutor parser = SelectorParser.doParse("key1 = key2 + 5", null);
+      match = parser.evaluate(mapsMessage);
+    } catch (ParseException e) {
+      // Parsing failed
+    }
+    //------------------------------------------------------------------
+
+    //------------------------------------------------------------------
+    // Based on a match or not then do something
+    if(match) {
+      String topicName = nameMapping.get(message.getTopicName());
+      if (topicName != null) {
+        try {
+          Destination destination = session.findDestination(topicName);
+          if (destination != null) {
+            destination.storeMessage(mapsMessage);
+          }
+          consumer.acknowledge(message);
+        } catch (IOException ioException) {
+          logger.log(LogMessages.LOOP_SUBSCRIBED, ioException);
         }
-        consumer.acknowledge(message);
-      } catch (IOException ioException) {
-        logger.log(LogMessages.LOOP_SUBSCRIBED, ioException);
       }
     }
   }

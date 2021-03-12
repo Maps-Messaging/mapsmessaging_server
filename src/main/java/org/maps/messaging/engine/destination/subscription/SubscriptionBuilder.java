@@ -34,6 +34,7 @@ import org.maps.messaging.engine.destination.subscription.transaction.Individual
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.SelectorParser;
 import org.maps.messaging.engine.selector.operators.ParserExecutor;
+import org.maps.messaging.engine.selector.operators.ParserOperationExecutor;
 import org.maps.messaging.engine.selector.operators.bool.FalseOperator;
 import org.maps.messaging.engine.selector.operators.bool.TrueOperator;
 import org.maps.messaging.engine.session.SessionImpl;
@@ -108,21 +109,7 @@ public abstract class SubscriptionBuilder {
     ParserExecutor parser;
     if (selector != null && selector.length() > 0) {
       try {
-        Object parsed = SelectorParser.doParse(selector, null);
-        if(parsed instanceof ParserExecutor){
-          parser = (ParserExecutor)parsed;
-        }
-        else if(parsed instanceof Boolean){
-          if(!(boolean)parsed){
-            parser = new ParserExecutor(new FalseOperator()); // Reject ALL events
-          }
-          else{
-            parser = new ParserExecutor(new TrueOperator()); // Accept ALL events
-          }
-        }
-        else{
-          throw new IOException("Unexpected parsing result, compile :: "+parsed);
-        }
+        parser = SelectorParser.doParse(selector, null);
       } catch (ParseException e) {
         logger.log(LogMessages.SUBSCRIPTION_MGR_SELECTOR_EXCEPTION, context.getSelector(), e);
         throw new IOException("Failed to parse selector", e);

@@ -27,7 +27,7 @@ class BooleanValidatorTest {
   @Test
   @DisplayName("Check valid booleans")
   void checkValid() {
-    Assertions.assertEquals(true, BooleanValidator.isValid(true));
+    Assertions.assertTrue(BooleanValidator.isValid(true));
     Boolean objTest = new Boolean(true);
     Assertions.assertTrue(BooleanValidator.isValid(objTest));
   }

@@ -16,13 +16,6 @@
  *
  */
 
-/**
- * This class is a proof of concept on how the server could connect to other
- * messaging servers that do not support open messaging protocols but do have
- * a java API that can be used to connect, subscribe and publish.
- *
- * This is not production ready, its a POC.
- */
 package org.maps.network.protocol.impl.apache_pulsar;
 
 import java.io.IOException;
@@ -32,7 +25,14 @@ import org.maps.network.protocol.ProtocolImpl;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.detection.NoOpDetection;
 
-public class PulsarProtocolFactory implements ProtocolImplFactory {
+/**
+ * This class is a proof of concept on how the server could connect to other
+ * messaging servers that do not support open messaging protocols but do have
+ * a java API that can be used to connect, subscribe and publish.
+ *
+ * This is not production ready, its a POC.
+ */
+public class PulsarProtocolFactory extends ProtocolImplFactory {
 
   public PulsarProtocolFactory(){
     super("pulsar", "Provides a connection an apache Pulsar server", new NoOpDetection());

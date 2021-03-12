@@ -35,8 +35,10 @@ PARSER_BEGIN(SelectorParser)
 
 package org.maps.messaging.engine.selector;
 
+import org.maps.messaging.engine.selector.operators.ParserBooleanOperation;
 import org.maps.messaging.engine.selector.operators.ParserExecutor;
 import org.maps.messaging.engine.selector.operators.Operation;
+import org.maps.messaging.engine.selector.operators.ParserOperationExecutor;
 import org.maps.messaging.engine.selector.operators.arithmetic.*;
 import org.maps.messaging.engine.selector.operators.comparison.*;
 import org.maps.messaging.engine.selector.operators.logical.*;
@@ -84,20 +86,23 @@ public class SelectorParser {
       return image.substring(1, image.length() - 1);
    }
 
- public static Object doParse(String selector, Map<String, Identifier>  identifierMap)
-      throws ParseException
+  public static ParserExecutor doParse(String selector, Map<String, Identifier>  identifierMap)
+     throws ParseException
    {
       Object parser = doParse(selector, identifierMap, false);
       if (parser instanceof Operation) {
         parser = ((Operation) parser).compile();
         if (parser instanceof Operation) {
-          parser = new ParserExecutor((Operation) parser);
+          return new ParserOperationExecutor((Operation) parser);
         }
       }
-      return parser;
+      if(parser instanceof Boolean){
+        return new ParserBooleanOperation((Boolean) parser);
+      }
+     return new ParserBooleanOperation((Boolean) false);
    }
 
-   public static Object doParse(String selector, Map<String, Identifier>  identifierMap, boolean trace)
+   private static Object doParse(String selector, Map<String, Identifier>  identifierMap, boolean trace)
       throws ParseException
    {
       SelectorParser parser = new SelectorParser(new ByteArrayInputStream(selector.getBytes()), "UTF-8");
