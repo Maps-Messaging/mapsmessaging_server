@@ -14,4 +14,4 @@
 #    limitations under the License.
 #
 
-org.maps.messaging.api.selector.parsers.JsonParser
+org.maps.selector.parsers.JsonParser
