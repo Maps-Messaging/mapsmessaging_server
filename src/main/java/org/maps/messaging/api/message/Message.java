@@ -29,11 +29,12 @@ import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.features.Priority;
 import org.maps.messaging.api.features.QualityOfService;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.messaging.engine.serializer.SerializedObject;
 import org.maps.utilities.streams.ObjectReader;
 import org.maps.utilities.streams.ObjectWriter;
 
-public class Message implements SerializedObject {
+public class Message implements SerializedObject, IdentifierResolver {
 
   private static final int RETAIN_BIT = 0;
   private static final int UTF8_BIT = 1;
@@ -210,12 +211,29 @@ public class Message implements SerializedObject {
     return dataMap;
   }
 
-  public byte[] getOpaqueData() {
-    return opaqueData;
+  @Override
+  public Object get(String key) {
+    TypedData data = dataMap.get(key);
+    if (data != null) {
+      Object response = data.getData();
+      if (response != null) {
+        if (response instanceof Number) {
+          if (response instanceof Double || response instanceof Float) {
+            return ((Number) response).doubleValue();
+          }
+          return ((Number) response).longValue();
+        }
+        return data.getData();
+      }
+      if (meta != null) {
+        return meta.get(key);
+      }
+    }
+    return null;
   }
 
-  public void updateOpaqueData(byte[] data) {
-    opaqueData = data;
+  public byte[] getOpaqueData() {
+    return opaqueData;
   }
 
   public @NonNull @NotNull Priority getPriority() {

@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.messaging.engine.selector.operators.parsers.SelectorParser;
 
 public class JsonParser implements SelectorParser {
@@ -80,8 +80,8 @@ public class JsonParser implements SelectorParser {
   }
 
   @Override
-  public Object parse(Message message) {
-    byte[] payload = message.getOpaqueData();
+  public Object parse(IdentifierResolver resolver) {
+    byte[] payload = resolver.getOpaqueData();
     if (payload != null && payload.length > 0) {
       JSONObject json = new JSONObject(new String(payload));
       if (!json.isEmpty()) {
