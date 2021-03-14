@@ -208,7 +208,7 @@
           <show>public</show>
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
-          <excludePackageNames>org.maps.messaging.engine.selector</excludePackageNames>
+          <excludePackageNames>org.maps.selector</excludePackageNames>
         </configuration>
       </plugin>
 

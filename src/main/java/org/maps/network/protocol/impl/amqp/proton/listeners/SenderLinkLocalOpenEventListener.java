@@ -35,10 +35,10 @@ import org.maps.messaging.api.features.CreditHandler;
 import org.maps.messaging.api.features.DestinationType;
 import org.maps.messaging.api.features.QualityOfService;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
-import org.maps.messaging.engine.selector.TokenMgrError;
 import org.maps.network.protocol.impl.amqp.AMQPProtocol;
 import org.maps.network.protocol.impl.amqp.SessionManager;
 import org.maps.network.protocol.impl.amqp.proton.ProtonEngine;
+import org.maps.selector.TokenMgrError;
 
 public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener {
 

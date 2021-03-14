@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.StringTokenizer;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.maps.messaging.engine.selector.ParseException;
-import org.maps.messaging.engine.selector.operators.IdentifierResolver;
-import org.maps.messaging.engine.selector.operators.parsers.SelectorParser;
+import org.maps.selector.ParseException;
+import org.maps.selector.operators.IdentifierResolver;
+import org.maps.selector.operators.parsers.SelectorParser;
 
 public class JsonParser implements SelectorParser {
 

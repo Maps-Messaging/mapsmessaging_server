@@ -33,17 +33,17 @@ options {
 
 PARSER_BEGIN(SelectorParser)
 
-package org.maps.messaging.engine.selector;
+package org.maps.selector;
 
-import org.maps.messaging.engine.selector.operators.ParserBooleanOperation;
-import org.maps.messaging.engine.selector.operators.ParserExecutor;
-import org.maps.messaging.engine.selector.operators.Operation;
-import org.maps.messaging.engine.selector.operators.ParserOperationExecutor;
-import org.maps.messaging.engine.selector.operators.arithmetic.*;
-import org.maps.messaging.engine.selector.operators.comparison.*;
-import org.maps.messaging.engine.selector.operators.logical.*;
-import org.maps.messaging.engine.selector.operators.functions.*;
-import org.maps.messaging.engine.selector.operators.parsers.ParserFactory;
+import org.maps.selector.operators.ParserBooleanOperation;
+import org.maps.selector.operators.ParserExecutor;
+import org.maps.selector.operators.Operation;
+import org.maps.selector.operators.ParserOperationExecutor;
+import org.maps.selector.operators.arithmetic.*;
+import org.maps.selector.operators.comparison.*;
+import org.maps.selector.operators.logical.*;
+import org.maps.selector.operators.functions.*;
+import org.maps.selector.operators.parsers.ParserFactory;
 
 import java.nio.charset.Charset;
 import java.io.StringReader;

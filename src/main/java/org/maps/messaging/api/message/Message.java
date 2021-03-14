@@ -29,8 +29,8 @@ import org.jetbrains.annotations.Nullable;
 import org.maps.messaging.api.MessageBuilder;
 import org.maps.messaging.api.features.Priority;
 import org.maps.messaging.api.features.QualityOfService;
-import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.messaging.engine.serializer.SerializedObject;
+import org.maps.selector.operators.IdentifierResolver;
 import org.maps.utilities.streams.ObjectReader;
 import org.maps.utilities.streams.ObjectWriter;
 
@@ -225,9 +225,9 @@ public class Message implements SerializedObject, IdentifierResolver {
         }
         return data.getData();
       }
-      if (meta != null) {
-        return meta.get(key);
-      }
+    }
+    if (meta != null) {
+      return meta.get(key);
     }
     return null;
   }

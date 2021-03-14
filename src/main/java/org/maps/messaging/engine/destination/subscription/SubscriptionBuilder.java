@@ -31,10 +31,10 @@ import org.maps.messaging.engine.destination.subscription.transaction.ClientCred
 import org.maps.messaging.engine.destination.subscription.transaction.CreditManager;
 import org.maps.messaging.engine.destination.subscription.transaction.FixedCreditManager;
 import org.maps.messaging.engine.destination.subscription.transaction.IndividualAcknowledgementController;
-import org.maps.messaging.engine.selector.ParseException;
-import org.maps.messaging.engine.selector.SelectorParser;
-import org.maps.messaging.engine.selector.operators.ParserExecutor;
 import org.maps.messaging.engine.session.SessionImpl;
+import org.maps.selector.ParseException;
+import org.maps.selector.SelectorParser;
+import org.maps.selector.operators.ParserExecutor;
 
 public abstract class SubscriptionBuilder {
   private static final Logger logger = LoggerFactory.getLogger(SubscriptionBuilder.class);

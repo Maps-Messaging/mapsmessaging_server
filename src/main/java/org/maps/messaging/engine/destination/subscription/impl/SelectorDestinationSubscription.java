@@ -24,9 +24,9 @@ import org.maps.messaging.engine.destination.DestinationImpl;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.messaging.engine.destination.subscription.state.MessageStateManager;
 import org.maps.messaging.engine.destination.subscription.transaction.AcknowledgementController;
-import org.maps.messaging.engine.selector.ParseException;
-import org.maps.messaging.engine.selector.operators.ParserExecutor;
 import org.maps.messaging.engine.session.SessionImpl;
+import org.maps.selector.ParseException;
+import org.maps.selector.operators.ParserExecutor;
 
 
 public class SelectorDestinationSubscription extends DestinationSubscription {
