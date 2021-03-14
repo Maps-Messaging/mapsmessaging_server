@@ -21,5 +21,7 @@ package org.maps.selector.operators;
 public interface IdentifierResolver {
   Object get(String key);
 
-  byte[] getOpaqueData();
+  default byte[] getOpaqueData(){
+    return null;
+  }
 }

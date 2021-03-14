@@ -105,7 +105,7 @@ class SelectorConformanceTest {
   void syntaxTest() {
     for (String selector : SELECTOR_TEXT) {
       try {
-        Object parser = SelectorParser.doParse(selector, null);
+        Object parser = SelectorParser.doParse(selector);
         parser.toString();
       } catch (ParseException e) {
         e.printStackTrace();
@@ -121,7 +121,7 @@ class SelectorConformanceTest {
     while (endTime > System.currentTimeMillis()) {
       for (String selector : SELECTOR_TEXT) {
         try {
-          SelectorParser.doParse(selector, null);
+          SelectorParser.doParse(selector);
           counter++;
         } catch (ParseException e) {
           Assertions.fail("Selector text:" + selector + " failed with exception " + e.getMessage());
@@ -136,8 +136,8 @@ class SelectorConformanceTest {
   void selectorEqualityTests() {
     for (String selector : SELECTOR_TEXT) {
       try {
-        Object parser1 = SelectorParser.doParse(selector, null);
-        Object parser2 = SelectorParser.doParse(selector, null);
+        Object parser1 = SelectorParser.doParse(selector);
+        Object parser2 = SelectorParser.doParse(selector);
         Assertions.assertEquals(parser1, parser2);
         Assertions.assertEquals(parser1.hashCode(), parser2.hashCode());
       } catch (ParseException e) {
