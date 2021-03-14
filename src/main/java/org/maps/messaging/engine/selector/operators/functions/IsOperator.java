@@ -18,9 +18,9 @@
 
 package org.maps.messaging.engine.selector.operators.functions;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.operators.FunctionOperator;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 
 public class IsOperator extends FunctionOperator {
 
@@ -37,8 +37,8 @@ public class IsOperator extends FunctionOperator {
   }
 
   @Override
-  public Object evaluate(Message message) throws ParseException {
-    Object lookup = evaluate(lhs, message);
+  public Object evaluate(IdentifierResolver resolver) throws ParseException {
+    Object lookup = evaluate(lhs, resolver);
     boolean isNull = lookup == null;
     if(not){
       return !isNull;

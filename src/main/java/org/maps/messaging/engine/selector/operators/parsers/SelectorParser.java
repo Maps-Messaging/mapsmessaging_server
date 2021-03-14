@@ -18,15 +18,16 @@
 
 package org.maps.messaging.engine.selector.operators.parsers;
 
-import java.util.List;
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.utilities.service.Service;
+
+import java.util.List;
 
 public interface SelectorParser extends Service {
 
   SelectorParser createInstance(List<String> arguments) throws ParseException;
 
-  Object parse(Message message);
+  Object parse(IdentifierResolver resolver);
 
 }

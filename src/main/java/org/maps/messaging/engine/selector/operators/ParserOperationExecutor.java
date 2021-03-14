@@ -18,7 +18,6 @@
 
 package org.maps.messaging.engine.selector.operators;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 
 public class ParserOperationExecutor implements ParserExecutor {
@@ -29,8 +28,8 @@ public class ParserOperationExecutor implements ParserExecutor {
     this.parser = parser;
   }
 
-  public boolean evaluate(Message message) throws ParseException {
-    Object result = parser.evaluate(message);
+  public boolean evaluate(IdentifierResolver resolver) throws ParseException {
+    Object result = parser.evaluate(resolver);
     if(result instanceof Boolean){
       return (Boolean)result;
     }

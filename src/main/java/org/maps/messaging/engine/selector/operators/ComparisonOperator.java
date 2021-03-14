@@ -18,7 +18,6 @@
 
 package org.maps.messaging.engine.selector.operators;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 
 /**
@@ -59,9 +58,9 @@ public abstract class ComparisonOperator extends ComputableOperator {
     return this;
   }
 
-  public Object evaluate(Message message) throws ParseException {
-    Object lhsValue = evaluate(lhs, message);
-    Object rhsValue = evaluate(rhs, message);
+  public Object evaluate(IdentifierResolver resolver) throws ParseException {
+    Object lhsValue = evaluate(lhs, resolver);
+    Object rhsValue = evaluate(rhs, resolver);
     return evaluate(lhsValue, rhsValue);
   }
 

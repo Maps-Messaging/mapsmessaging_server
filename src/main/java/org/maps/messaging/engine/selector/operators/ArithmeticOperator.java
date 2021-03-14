@@ -18,7 +18,6 @@
 
 package org.maps.messaging.engine.selector.operators;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.validators.NumericValidator;
 
@@ -51,9 +50,9 @@ public abstract class ArithmeticOperator extends ComputableOperator {
     return compile(lhs, rhs);
   }
 
-  public Object evaluate(Message message) throws ParseException {
-    Number lhsNumber = evaluateToNumber(lhs, message);
-    Number rhsNumber = evaluateToNumber(rhs, message);
+  public Object evaluate(IdentifierResolver resolver) throws ParseException {
+    Number lhsNumber = evaluateToNumber(lhs, resolver);
+    Number rhsNumber = evaluateToNumber(rhs, resolver);
     if(lhsNumber == null || rhsNumber == null){
       return false;
     }

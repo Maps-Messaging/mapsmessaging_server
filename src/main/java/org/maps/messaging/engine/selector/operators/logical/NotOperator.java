@@ -18,8 +18,8 @@
 
 package org.maps.messaging.engine.selector.operators.logical;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.messaging.engine.selector.operators.LogicalOperator;
 import org.maps.messaging.engine.selector.operators.Operation;
 
@@ -30,8 +30,8 @@ public class NotOperator extends LogicalOperator {
   }
 
   @Override
-  public Object evaluate(Message message) throws ParseException {
-    return !test(lhs, message);
+  public Object evaluate(IdentifierResolver resolver) throws ParseException {
+    return !test(lhs, resolver);
   }
 
   public Object compile(){

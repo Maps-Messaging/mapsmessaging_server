@@ -18,13 +18,12 @@
 
 package org.maps.messaging.engine.selector.operators;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 
 public abstract class FunctionOperator extends Operation {
 
   @Override
-  public abstract Object evaluate(Message message) throws ParseException;
+  public abstract Object evaluate(IdentifierResolver resolver) throws ParseException;
 
   protected Object convertResult(Object result){
     if(result instanceof Number || result instanceof String || result instanceof Boolean){

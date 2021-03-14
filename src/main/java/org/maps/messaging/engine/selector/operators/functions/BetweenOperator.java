@@ -18,10 +18,10 @@
 
 package org.maps.messaging.engine.selector.operators.functions;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.operators.ComparisonOperator;
 import org.maps.messaging.engine.selector.operators.FunctionOperator;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.messaging.engine.selector.operators.Operation;
 import org.maps.messaging.engine.selector.operators.comparison.GreaterOrEqualOperator;
 import org.maps.messaging.engine.selector.operators.comparison.LessOrEqualOperator;
@@ -59,10 +59,10 @@ public class BetweenOperator extends FunctionOperator {
   }
 
   @Override
-  public Object evaluate(Message message) throws ParseException {
-    boolean bottom = ((Boolean)bottomOperator.evaluate(message));
+  public Object evaluate(IdentifierResolver resolver) throws ParseException {
+    boolean bottom = ((Boolean)bottomOperator.evaluate(resolver));
     if(bottom) {
-      return topOperator.evaluate(message);
+      return topOperator.evaluate(resolver);
     }
     return false;
   }

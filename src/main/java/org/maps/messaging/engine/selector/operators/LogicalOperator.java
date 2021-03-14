@@ -18,7 +18,6 @@
 
 package org.maps.messaging.engine.selector.operators;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 
 public abstract class LogicalOperator extends Operation {
@@ -31,12 +30,12 @@ public abstract class LogicalOperator extends Operation {
     this.rhs = rhs;
   }
 
-  protected boolean test(Object value, Message message) throws ParseException {
+  protected boolean test(Object value, IdentifierResolver resolver) throws ParseException {
     if(value instanceof Boolean){
       return (Boolean)value;
     }
     if(value instanceof Operation){
-      Object result = evaluate( ((Operation)value).evaluate(message), message);
+      Object result = evaluate( ((Operation)value).evaluate(resolver), resolver);
       if(result instanceof Boolean){
         return (Boolean)result;
       }

@@ -18,8 +18,7 @@
 
 package org.maps.messaging.engine.selector;
 
-import org.maps.messaging.api.message.Message;
-import org.maps.messaging.api.message.TypedData;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.messaging.engine.selector.operators.Operation;
 
 public class Identifier extends Operation {
@@ -30,23 +29,19 @@ public class Identifier extends Operation {
     this.key = key;
   }
 
-  public Object evaluate(Message message){
-    if(message == null){
+  public Object evaluate(IdentifierResolver resolver){
+    if(resolver == null){
       return null;
     }
-    TypedData data = message.getDataMap().get(key);
-    if (data != null) {
-      Object response = data.getData();
+    Object response = resolver.get(key);
+    if (response != null) {
       if(response instanceof Number){
         if(response instanceof Double || response instanceof Float){
           return ((Number)response).doubleValue();
         }
         return ((Number)response).longValue();
       }
-      return data.getData();
-    }
-    if(message.getMeta() != null) {
-      return message.getMeta().get(key);
+      return response;
     }
     return null;
   }

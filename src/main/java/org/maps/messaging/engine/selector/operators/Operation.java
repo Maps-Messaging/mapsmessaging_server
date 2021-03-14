@@ -18,12 +18,11 @@
 
 package org.maps.messaging.engine.selector.operators;
 
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 
 public abstract class Operation {
 
-  public abstract Object evaluate(Message message) throws ParseException;
+  public abstract Object evaluate(IdentifierResolver resolver) throws ParseException;
 
   public abstract Object compile();
 
@@ -34,17 +33,17 @@ public abstract class Operation {
     return test;
   }
 
-  protected static Object evaluate(Object parameter, Message message) throws ParseException {
+  protected static Object evaluate(Object parameter, IdentifierResolver resolver) throws ParseException {
     if(parameter instanceof Operation){
-      return ((Operation) parameter).evaluate(message);
+      return ((Operation) parameter).evaluate(resolver);
     }
     else{
       return parameter;
     }
   }
 
-  protected static Number evaluateToNumber(Object parameter, Message message) throws ParseException {
-    Object result = evaluate(parameter, message);
+  protected static Number evaluateToNumber(Object parameter, IdentifierResolver resolver) throws ParseException {
+    Object result = evaluate(parameter, resolver);
     if (result instanceof Number) {
       return (Number) result;
     }

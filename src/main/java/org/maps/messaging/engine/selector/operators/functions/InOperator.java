@@ -18,10 +18,11 @@
 
 package org.maps.messaging.engine.selector.operators.functions;
 
-import java.util.Set;
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.operators.FunctionOperator;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
+
+import java.util.Set;
 
 public class InOperator extends FunctionOperator {
 
@@ -41,8 +42,8 @@ public class InOperator extends FunctionOperator {
   }
 
   @Override
-  public Object evaluate(Message message) throws ParseException {
-    Object lookup = evaluate(lhs, message);
+  public Object evaluate(IdentifierResolver resolver) throws ParseException {
+    Object lookup = evaluate(lhs, resolver);
     if(lookup != null) {
       return evaluate(lookup.toString());
     }

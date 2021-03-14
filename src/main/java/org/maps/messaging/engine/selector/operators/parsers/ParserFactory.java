@@ -18,15 +18,16 @@
 
 package org.maps.messaging.engine.selector.operators.parsers;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ServiceLoader;
 import org.maps.messaging.engine.selector.Identifier;
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.operators.FunctionOperator;
 import org.maps.utilities.service.Service;
 import org.maps.utilities.service.ServiceManager;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceLoader;
 
 public class ParserFactory implements ServiceManager {
 
@@ -50,7 +51,7 @@ public class ParserFactory implements ServiceManager {
         }
       }
       else if(parserName instanceof Identifier){
-        // We need to lazy load on each message here
+        // We need to lazy load on each resolver here
         return new IdentityLoadParser((Identifier) parserName, arguments);
       }
     }

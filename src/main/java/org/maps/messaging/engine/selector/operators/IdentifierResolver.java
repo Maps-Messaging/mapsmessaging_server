@@ -18,10 +18,8 @@
 
 package org.maps.messaging.engine.selector.operators;
 
-import org.maps.messaging.engine.selector.ParseException;
+public interface IdentifierResolver {
+  Object get(String key);
 
-public interface ParserExecutor {
-
-  boolean evaluate(IdentifierResolver resolver) throws ParseException;
-
+  byte[] getOpaqueData();
 }

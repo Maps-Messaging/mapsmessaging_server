@@ -18,11 +18,12 @@
 
 package org.maps.messaging.engine.selector.operators.parsers;
 
-import java.util.List;
-import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.selector.Identifier;
 import org.maps.messaging.engine.selector.ParseException;
 import org.maps.messaging.engine.selector.operators.FunctionOperator;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
+
+import java.util.List;
 
 public class IdentityLoadParser extends FunctionOperator {
 
@@ -39,12 +40,12 @@ public class IdentityLoadParser extends FunctionOperator {
   }
 
   @Override
-  public Object evaluate(Message message) throws ParseException {
-    Object parserName = evaluate(parserIdentifier, message);
+  public Object evaluate(IdentifierResolver resolver) throws ParseException {
+    Object parserName = evaluate(parserIdentifier, resolver);
     if(parserName != null){
       FunctionOperator parser = ParserFactory.getInstance().loadParser(parserName, arguments);
       if(parser != null){
-        return convertResult(parser.evaluate(message));
+        return convertResult(parser.evaluate(resolver));
       }
     }
     return false;

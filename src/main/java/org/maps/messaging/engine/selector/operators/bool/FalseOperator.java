@@ -18,7 +18,7 @@
 
 package org.maps.messaging.engine.selector.operators.bool;
 
-import org.maps.messaging.api.message.Message;
+import org.maps.messaging.engine.selector.operators.IdentifierResolver;
 import org.maps.messaging.engine.selector.operators.Operation;
 
 public class FalseOperator extends Operation {
@@ -27,7 +27,7 @@ public class FalseOperator extends Operation {
     // Nothing to do here
   }
 
-  public Object evaluate(Message message) {
+  public Object evaluate(IdentifierResolver resolver) {
     return false;
   }
 
