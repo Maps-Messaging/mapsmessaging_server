@@ -49,7 +49,7 @@ public class Message implements SerializedObject, IdentifierResolver {
   private final String responseTopic;
   private final String contentType;
   private final byte[] correlationData;
-  private byte[] opaqueData;
+  private final byte[] opaqueData;
   private final Map<String, String> meta;
   private final Map<String, TypedData> dataMap;
   private long delayed;
