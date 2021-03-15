@@ -22,6 +22,6 @@ public interface IdentifierResolver {
   Object get(String key);
 
   default byte[] getOpaqueData(){
-    return null;
+    return new byte[0];
   }
 }

@@ -232,6 +232,7 @@ public class Message implements SerializedObject, IdentifierResolver {
     return null;
   }
 
+  @Override
   public byte[] getOpaqueData() {
     return opaqueData;
   }
