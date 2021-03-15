@@ -39,4 +39,20 @@ public class DifferentComparatorTest {
     }
 
   }
+
+  @Test
+  void simpleEquality(){
+    DifferentOperator differentOperator = new DifferentOperator(10.0, 20);
+    Assertions.assertEquals("(10.0) != (20)", differentOperator.toString());
+
+    DifferentOperator differentOperator2 = new DifferentOperator(10.0, 20);
+    Assertions.assertEquals( differentOperator, differentOperator2);
+    Assertions.assertEquals( differentOperator.hashCode(), differentOperator2.hashCode());
+
+    differentOperator2 = new DifferentOperator(10.0, 20.2);
+    Assertions.assertNotEquals( differentOperator, differentOperator2);
+    Assertions.assertNotEquals( differentOperator.hashCode(), differentOperator2.hashCode());
+    Assertions.assertNotEquals( differentOperator, this);
+
+  }
 }

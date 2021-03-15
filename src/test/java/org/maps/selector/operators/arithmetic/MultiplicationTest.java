@@ -40,6 +40,18 @@ public class MultiplicationTest {
 
     multiplyOperator = new MultiplyOperator(20l, 0);
     Assertions.assertEquals(0L, multiplyOperator.evaluate(null));
+    Assertions.assertEquals("(20) * (0)", multiplyOperator.toString());
+
+    multiplyOperator = new MultiplyOperator(2L, 2.4);
+    MultiplyOperator multiplyOperator2 = new MultiplyOperator(2L, 2.4);
+    Assertions.assertEquals(multiplyOperator, multiplyOperator2);
+    Assertions.assertEquals(multiplyOperator.hashCode(), multiplyOperator2.hashCode());
+
+    multiplyOperator2 = new MultiplyOperator(2L, 240);
+    Assertions.assertNotEquals(multiplyOperator, multiplyOperator2);
+    Assertions.assertNotEquals(multiplyOperator.hashCode(), multiplyOperator2.hashCode());
+    Assertions.assertNotEquals(multiplyOperator, this);
+
   }
 
   @Test

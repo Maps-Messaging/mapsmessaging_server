@@ -45,6 +45,21 @@ public class NegateTest {
 
     negateOperator = new NegateOperator( 0L);
     Assertions.assertEquals(0L, negateOperator.evaluate(null));
+
+    negateOperator = new NegateOperator(4.8);
+    Assertions.assertEquals(-4.8, negateOperator.compile());
+
+
+    negateOperator = new NegateOperator(4.8);
+    NegateOperator negateOperator2 = new NegateOperator(4.8);
+    Assertions.assertEquals(negateOperator, negateOperator2);
+    Assertions.assertEquals(negateOperator.hashCode(), negateOperator2.hashCode());
+
+    negateOperator2 = new NegateOperator(10.8);
+    Assertions.assertNotEquals(negateOperator, negateOperator2);
+    Assertions.assertNotEquals(negateOperator.hashCode(), negateOperator2.hashCode());
+    Assertions.assertNotEquals(negateOperator,this);
+
   }
 
   @Test

@@ -39,6 +39,19 @@ public class SubtractionTest {
     subtractOperator = new SubtractOperator(2l, 2.4);
     check = -0.4 - ((Double)subtractOperator.evaluate(null));
     Assertions.assertTrue(check < 0.01);
+
+    Assertions.assertEquals("(2) - (2.4)", subtractOperator.toString());
+
+    subtractOperator = new SubtractOperator(2l, 2.4);
+    SubtractOperator subtractOperator2 = new SubtractOperator(2l, 2.4);
+    Assertions.assertEquals(subtractOperator, subtractOperator2);
+    Assertions.assertEquals(subtractOperator.hashCode(), subtractOperator2.hashCode());
+
+    subtractOperator2 = new SubtractOperator(2l, 240);
+    Assertions.assertNotEquals(subtractOperator, subtractOperator2);
+    Assertions.assertNotEquals(subtractOperator.hashCode(), subtractOperator2.hashCode());
+    Assertions.assertNotEquals(subtractOperator, this);
+
   }
 
   @Test

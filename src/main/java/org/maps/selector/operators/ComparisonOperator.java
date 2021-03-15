@@ -35,10 +35,6 @@ public abstract class ComparisonOperator extends ComputableOperator {
     this.rhs = rhs;
   }
 
-  public Object getLHS(){
-    return lhs;
-  }
-
   public Object getRHS(){
     return rhs;
   }

@@ -41,6 +41,33 @@ public class DivisionTest {
 
     divideOperator = new DivideOperator(20l, 0);
     Assertions.assertEquals(Double.NaN, divideOperator.evaluate(null));
+
+    divideOperator = new DivideOperator(100.10, 2.0);
+    Assertions.assertEquals(50.05, divideOperator.evaluate(null));
+
+    divideOperator = new DivideOperator(100.10, 0.0);
+    Assertions.assertEquals(Double.NaN, divideOperator.evaluate(null));
+
+    divideOperator = new DivideOperator(100.10, 0);
+    Assertions.assertEquals(Double.NaN, divideOperator.evaluate(null));
+
+    divideOperator = new DivideOperator(100L, 0.0);
+    Assertions.assertEquals(Double.NaN, divideOperator.evaluate(null));
+
+    DivideOperator divideOperator2 = new DivideOperator(100.10, 2.0);
+    Assertions.assertNotEquals(divideOperator, divideOperator2);
+    Assertions.assertNotEquals(divideOperator.hashCode(), divideOperator2.hashCode());
+
+    divideOperator = new DivideOperator(100.10, 0.0);
+    divideOperator2 = new DivideOperator(100.10, 0.0);
+    Assertions.assertEquals(divideOperator, divideOperator2);
+    Assertions.assertEquals(divideOperator.hashCode(), divideOperator2.hashCode());
+
+    Assertions.assertNotEquals(divideOperator, this);
+
+    divideOperator = new DivideOperator(27.4, 10.0);
+    Assertions.assertEquals("(27.4) / (10.0)", divideOperator.toString());
+
   }
 
   @Test

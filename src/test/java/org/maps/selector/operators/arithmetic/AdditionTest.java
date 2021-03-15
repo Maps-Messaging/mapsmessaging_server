@@ -39,6 +39,18 @@ class AdditionTest {
 
     addOperator = new AddOperator(2l, 2.4);
     Assertions.assertEquals(4.4, addOperator.evaluate(null));
+    Assertions.assertEquals("(2) + (2.4)", addOperator.toString());
+
+    addOperator = new AddOperator(2l, 2.4);
+    AddOperator addOperator2 = new AddOperator(2l, 2.4);
+    Assertions.assertEquals(addOperator, addOperator2);
+    Assertions.assertEquals(addOperator.hashCode(), addOperator2.hashCode());
+
+    addOperator2 = new AddOperator(2l, 240);
+    Assertions.assertNotEquals(addOperator, addOperator2);
+    Assertions.assertNotEquals(addOperator.hashCode(), addOperator2.hashCode());
+    Assertions.assertNotEquals(addOperator, this);
+
   }
 
   @Test
