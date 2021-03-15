@@ -20,9 +20,11 @@ package org.maps.selector.operators.comparison;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.maps.selector.Identifier;
 import org.maps.selector.ParseException;
 
-public class LessThanOrEqualComparatorTest {
+public class LessThanOrEqualComparatorTest  extends ComparisonOperatorTest {
+
   Object[][] SUCCESS_VALUES = {{5l,30l},{2l,3.1},{1.9,2l}, {2.0,2.1}, {5L, 5L}, {10L, 10.0}, {10.0, 10}, {10.0, 10.0}};
   Object[][] FAILURE_VALUES = {{4l,3l},{4l,2.1},{3.9,2l}, {5.0,2.0}, {"42", "2"}, {false, true}, {true, false}, {"2", "3"}, {true, true}, {false, false}  };
 
@@ -37,5 +39,68 @@ public class LessThanOrEqualComparatorTest {
       Assertions.assertFalse((Boolean) lessOrEqualOperator.evaluate(null), "Failed on {"+values[0]+","+values[1]+"}");
     }
   }
+  @Test
+  void simpleEquality(){
+    LessOrEqualOperator LessOrEqualOperator = new LessOrEqualOperator(10.0, 10);
+    Assertions.assertEquals("(10.0) <= (10)", LessOrEqualOperator.toString());
 
+    LessOrEqualOperator LessOrEqualOperator2 = new LessOrEqualOperator(10.0, 10);
+    Assertions.assertEquals( LessOrEqualOperator, LessOrEqualOperator2);
+    Assertions.assertEquals( LessOrEqualOperator.hashCode(), LessOrEqualOperator2.hashCode());
+
+    LessOrEqualOperator2 = new LessOrEqualOperator(10.0, 20.2);
+    Assertions.assertNotEquals( LessOrEqualOperator, LessOrEqualOperator2);
+    Assertions.assertNotEquals( LessOrEqualOperator.hashCode(), LessOrEqualOperator2.hashCode());
+    Assertions.assertNotEquals( LessOrEqualOperator, this);
+  }
+
+  @Test
+  void evaluationCheck() throws ParseException {
+    LessOrEqualOperator operator = new LessOrEqualOperator(new Identifier("textKey"),"text data");
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("textKey"),"text 1 data");
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+    operator = new LessOrEqualOperator(new Identifier("textNumericLongKey"),10L);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("textNumericLongKey"),122L);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+    operator = new LessOrEqualOperator(new Identifier("textNumericRealKey"),10.11);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("textNumericRealKey"),102.12);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+
+    operator = new LessOrEqualOperator(new Identifier("longKey"),10L);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("longKey"),10200.12);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+
+    operator = new LessOrEqualOperator(new Identifier("intKey"),10L);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("intKey"),10200.12);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+    operator = new LessOrEqualOperator(new Identifier("shortKey"),10L);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("shortKey"),10200.12);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+    operator = new LessOrEqualOperator(new Identifier("byteKey"),0x1);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("byteKey"),10200.12);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+    operator = new LessOrEqualOperator(new Identifier("doubleKey"),10.12);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("doubleKey"),10200.12);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+
+    operator = new LessOrEqualOperator(new Identifier("floatKey"),10.12f);
+    Assertions.assertNotEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+    operator = new LessOrEqualOperator(new Identifier("floatKey"),10200.12);
+    Assertions.assertEquals(operator.evaluate(getResolver()), Boolean.TRUE);
+  }
 }

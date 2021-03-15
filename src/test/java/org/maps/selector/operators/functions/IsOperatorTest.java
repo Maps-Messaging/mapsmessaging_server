@@ -42,6 +42,21 @@ public class IsOperatorTest {
 
     isOperator = new IsOperator(new Identifier("lhs"), true);
     Assertions.assertFalse((Boolean) isOperator.evaluate(null));
+    Assertions.assertNotEquals(isOperator, this);
+
+
+    isOperator = new IsOperator(new Identifier("lhs"), false);
+    Assertions.assertEquals("(<IDENTIFIER>[lhs]) IS NULL", isOperator.toString());
+
+    IsOperator isOperator2 = new IsOperator(new Identifier("lhs"), true);
+    Assertions.assertEquals("(<IDENTIFIER>[lhs]) IS NOT NULL", isOperator2.toString());
+    Assertions.assertNotEquals(isOperator, isOperator2);
+    Assertions.assertNotEquals(isOperator.hashCode(), isOperator2.hashCode());
+
+    isOperator = new IsOperator(new Identifier("lhs"), true);
+    Assertions.assertFalse((Boolean) isOperator.evaluate(null));
+    Assertions.assertNotEquals(isOperator, this);
+
 
   }
 }

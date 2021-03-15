@@ -36,6 +36,7 @@ public class InOperatorTest {
 
     inOperator = new InOperator("fail", new HashSet<>(Arrays.asList(list)));
     Assertions.assertFalse((Boolean)inOperator.evaluate(null));
+    Assertions.assertNotEquals(inOperator, this);
 
 
   }

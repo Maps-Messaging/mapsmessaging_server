@@ -131,6 +131,8 @@ public class LikeOperatorTest {
     test = "_"+ SOURCE_STRING.substring(1, SOURCE_STRING.length()-1)+"_";
     likeOperator = new LikeOperator(SOURCE_STRING, test);
     Assertions.assertEquals(true, likeOperator.evaluate(null), "Failed on "+test);
+
+    Assertions.assertNotEquals(likeOperator, this);
   }
 
 

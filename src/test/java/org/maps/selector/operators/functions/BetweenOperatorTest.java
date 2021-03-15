@@ -36,5 +36,7 @@ public class BetweenOperatorTest {
     // This can not be evaluated since strings can not be compared besides = and !=
     betweenOperator = new BetweenOperator("12", "10", "20");
     Assertions.assertFalse( (Boolean) betweenOperator.evaluate(null), "Failed on numeric tests");
+
+    Assertions.assertNotEquals(betweenOperator, this);
   }
 }

@@ -19,6 +19,7 @@
 package org.maps.selector;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
@@ -28,6 +29,9 @@ import org.maps.messaging.api.message.TypedData;
 import org.maps.selector.operators.ParserBooleanOperation;
 import org.maps.selector.operators.ParserExecutor;
 import org.maps.selector.operators.ParserOperationExecutor;
+import org.maps.selector.operators.extentions.ParserExtension;
+import org.maps.selector.operators.extentions.ParserFactory;
+import org.maps.utilities.service.Service;
 
 class SelectorValidationTest {
 
@@ -231,9 +235,15 @@ class SelectorValidationTest {
     Assertions.assertFalse(parser.evaluate(messageBuilder.build()), "Should have evaluated to true, key=1");
   }
 
-  @Test
-  void checkNegateFunctions() throws ParseException {
 
+  @Test
+  void checkParserExtensions(){
+    Iterator<Service> iterator = ParserFactory.getInstance().getServices();
+    while(iterator.hasNext()){
+      Service service = iterator.next();
+      Assertions.assertTrue(service instanceof ParserExtension);
+
+    }
   }
 
   private Map<String, TypedData> createMap(String key, Object val){
