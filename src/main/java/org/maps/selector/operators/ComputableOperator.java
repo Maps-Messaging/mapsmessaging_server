@@ -22,7 +22,7 @@ package org.maps.selector.operators;
 public abstract class ComputableOperator extends Operation {
 
   protected Object processDouble(Double arg0, Number arg1) {
-    if (arg1 instanceof Double) {
+    if (arg1 instanceof Double || arg1 instanceof Float) {
       return compute(arg0, arg1.doubleValue());
     } else {
       return compute(arg0, arg1.longValue());
