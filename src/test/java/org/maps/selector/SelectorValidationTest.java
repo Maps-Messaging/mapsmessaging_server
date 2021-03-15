@@ -33,7 +33,7 @@ class SelectorValidationTest {
 
   @Test
   void checkEmptyMessage() throws ParseException {
-    ParserExecutor parser = SelectorParser.doParse("key = 'found'");
+    ParserExecutor parser = SelectorParser.compile("key = 'found'");
     Assertions.assertTrue(parser instanceof ParserOperationExecutor);
     MessageBuilder messageBuilder = new MessageBuilder();
     Assertions.assertFalse(parser.evaluate(messageBuilder.build()));
@@ -41,7 +41,7 @@ class SelectorValidationTest {
 
   @Test
   void checkEmptyDataMapMessage() throws ParseException {
-    ParserExecutor parser = SelectorParser.doParse("key = 'found'");
+    ParserExecutor parser = SelectorParser.compile("key = 'found'");
     Assertions.assertTrue(parser instanceof ParserOperationExecutor);
     MessageBuilder messageBuilder = new MessageBuilder();
     Assertions.assertFalse(parser.evaluate(messageBuilder.build()), "Should not have returned true since there was no match");
@@ -55,7 +55,7 @@ class SelectorValidationTest {
 
   @Test
   void checkTrueBooleanResults() throws ParseException {
-    ParserExecutor parser1 = SelectorParser.doParse("20 = 5 * 4");
+    ParserExecutor parser1 = SelectorParser.compile("20 = 5 * 4");
     Assertions.assertTrue(parser1 instanceof ParserBooleanOperation);
 
     MessageBuilder messageBuilder = new MessageBuilder();
@@ -67,7 +67,7 @@ class SelectorValidationTest {
 
   @Test
   void checkFalseBooleanResults() throws ParseException {
-    ParserExecutor parser1 = SelectorParser.doParse("10 = 50 * 4");
+    ParserExecutor parser1 = SelectorParser.compile("10 = 50 * 4");
     Assertions.assertTrue(parser1 instanceof ParserBooleanOperation);
 
     MessageBuilder messageBuilder = new MessageBuilder();
@@ -79,8 +79,8 @@ class SelectorValidationTest {
 
   @Test
   void checkArithmeticAdditionKeys() throws ParseException {
-    ParserExecutor parser1 = SelectorParser.doParse("key1 = key2 + 5");
-    ParserExecutor parser2 = SelectorParser.doParse("key1 = 5 + key2");
+    ParserExecutor parser1 = SelectorParser.compile("key1 = key2 + 5");
+    ParserExecutor parser2 = SelectorParser.compile("key1 = 5 + key2");
     Assertions.assertTrue(parser1 instanceof ParserOperationExecutor);
     Assertions.assertTrue(parser2 instanceof ParserOperationExecutor);
 
@@ -103,8 +103,8 @@ class SelectorValidationTest {
 
   @Test
   void checkArithmeticSubtractionKeys() throws ParseException {
-    ParserExecutor parser1 = SelectorParser.doParse("key1 = key2 - 5");
-    ParserExecutor parser2 = SelectorParser.doParse("key1 = 5 - key2");
+    ParserExecutor parser1 = SelectorParser.compile("key1 = key2 - 5");
+    ParserExecutor parser2 = SelectorParser.compile("key1 = 5 - key2");
     Assertions.assertTrue(parser1 instanceof ParserOperationExecutor);
     Assertions.assertTrue(parser2 instanceof ParserOperationExecutor);
 
@@ -127,8 +127,8 @@ class SelectorValidationTest {
 
   @Test
   void checkArithmeticDivisionKeys() throws ParseException {
-    ParserExecutor parser1 = SelectorParser.doParse("key1 = key2 / 5");
-    ParserExecutor parser2 = SelectorParser.doParse("key1 = 5 / key2");
+    ParserExecutor parser1 = SelectorParser.compile("key1 = key2 / 5");
+    ParserExecutor parser2 = SelectorParser.compile("key1 = 5 / key2");
     Assertions.assertTrue(parser1 instanceof ParserOperationExecutor);
     Assertions.assertTrue(parser2 instanceof ParserOperationExecutor);
 
@@ -151,8 +151,8 @@ class SelectorValidationTest {
 
   @Test
   void checkArithmeticMultiplyKeys() throws ParseException {
-    ParserExecutor parser1 = SelectorParser.doParse("key1 = key2 * 5");
-    ParserExecutor parser2 = SelectorParser.doParse("key1 = 5 * key2");
+    ParserExecutor parser1 = SelectorParser.compile("key1 = key2 * 5");
+    ParserExecutor parser2 = SelectorParser.compile("key1 = 5 * key2");
     Assertions.assertTrue(parser1 instanceof ParserOperationExecutor);
     Assertions.assertTrue(parser2 instanceof ParserOperationExecutor);
 
@@ -175,7 +175,7 @@ class SelectorValidationTest {
 
   @Test
   void checkNumericEvaluations() throws ParseException {
-    ParserExecutor parser = SelectorParser.doParse("key = 1");
+    ParserExecutor parser = SelectorParser.compile("key = 1");
     Assertions.assertTrue(parser instanceof ParserOperationExecutor);
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setDataMap(createMap("key", 1L));
@@ -204,7 +204,7 @@ class SelectorValidationTest {
 
   @Test
   void checkNumericMissedEvaluations() throws ParseException {
-    ParserExecutor parser = SelectorParser.doParse("key = 2");
+    ParserExecutor parser = SelectorParser.compile("key = 2");
     Assertions.assertTrue(parser instanceof ParserOperationExecutor);
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setDataMap(createMap("key", 1L));

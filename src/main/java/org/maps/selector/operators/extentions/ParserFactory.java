@@ -16,7 +16,7 @@
  *
  */
 
-package org.maps.selector.operators.parsers;
+package org.maps.selector.operators.extentions;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,14 +36,14 @@ public class ParserFactory implements ServiceManager {
     return instance;
   }
 
-  private final ServiceLoader<SelectorParser> knownParsers;
+  private final ServiceLoader<ParserExtension> knownParsers;
 
   private ParserFactory(){
-    knownParsers = ServiceLoader.load(SelectorParser.class);
+    knownParsers = ServiceLoader.load(ParserExtension.class);
   }
 
   public FunctionOperator loadParser(Object parserName, List<String> arguments) throws ParseException{
-    for(SelectorParser parser:knownParsers){
+    for(ParserExtension parser:knownParsers){
       if(parserName instanceof String) {
         if (parser.getName().equalsIgnoreCase(parserName.toString())) {
           return new ParserProxy(parser.createInstance(arguments));
@@ -60,7 +60,7 @@ public class ParserFactory implements ServiceManager {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
-    for(SelectorParser parser:knownParsers){
+    for(ParserExtension parser:knownParsers){
       service.add(parser);
     }
     return service.listIterator();

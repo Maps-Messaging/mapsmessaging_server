@@ -43,10 +43,8 @@ import org.maps.selector.operators.arithmetic.*;
 import org.maps.selector.operators.comparison.*;
 import org.maps.selector.operators.logical.*;
 import org.maps.selector.operators.functions.*;
-import org.maps.selector.operators.parsers.ParserFactory;
+import org.maps.selector.operators.extentions.ParserFactory;
 
-import java.nio.charset.Charset;
-import java.io.StringReader;
 import java.io.ByteArrayInputStream;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
@@ -86,10 +84,10 @@ public class SelectorParser {
       return image.substring(1, image.length() - 1);
    }
 
-  public static ParserExecutor doParse(String selector)
+  public static ParserExecutor compile(String selector)
      throws ParseException
    {
-      Object parser = doParse(selector,  false);
+      Object parser = compile(selector,  false);
       if (parser instanceof Operation) {
         parser = ((Operation) parser).compile();
         if (parser instanceof Operation) {
@@ -102,7 +100,7 @@ public class SelectorParser {
      return new ParserBooleanOperation((Boolean) false);
    }
 
-   private static Object doParse(String selector,  boolean trace)
+   private static Object compile(String selector,  boolean trace)
       throws ParseException
    {
       SelectorParser parser = new SelectorParser(new ByteArrayInputStream(selector.getBytes()), "UTF-8");

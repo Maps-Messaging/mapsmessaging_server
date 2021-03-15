@@ -25,21 +25,21 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.maps.selector.ParseException;
 import org.maps.selector.operators.IdentifierResolver;
-import org.maps.selector.operators.parsers.SelectorParser;
+import org.maps.selector.operators.extentions.ParserExtension;
 
-public class JsonParser implements SelectorParser {
+public class JsonParserExtension implements ParserExtension {
 
   private final String keyName;
   private final String[] keyPath;
   private final int arrayIndex;
 
-  public JsonParser(){
+  public JsonParserExtension(){
     keyName = null;
     keyPath = null;
     arrayIndex = -1;
   }
 
-  protected JsonParser(List<String> arguments) throws ParseException {
+  protected JsonParserExtension(List<String> arguments) throws ParseException {
     if(arguments.isEmpty()) throw new ParseException("Requires at least 1 argument");
     String key = arguments.get(0);
     if(arguments.size() > 1){
@@ -65,8 +65,8 @@ public class JsonParser implements SelectorParser {
   }
 
   @Override
-  public SelectorParser createInstance(List<String> arguments) throws ParseException {
-    return new JsonParser(arguments);
+  public ParserExtension createInstance(List<String> arguments) throws ParseException {
+    return new JsonParserExtension(arguments);
   }
 
   @Override
@@ -131,8 +131,8 @@ public class JsonParser implements SelectorParser {
 
   @Override
   public boolean equals(Object test){
-    if(test instanceof JsonParser){
-      return keyName.equals(((JsonParser) test).keyName) && arrayIndex == ((JsonParser)test).arrayIndex;
+    if(test instanceof JsonParserExtension){
+      return keyName.equals(((JsonParserExtension) test).keyName) && arrayIndex == ((JsonParserExtension)test).arrayIndex;
     }
     return false;
   }

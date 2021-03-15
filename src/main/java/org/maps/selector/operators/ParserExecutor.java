@@ -18,10 +18,8 @@
 
 package org.maps.selector.operators;
 
-import org.maps.selector.ParseException;
-
 public interface ParserExecutor {
 
-  boolean evaluate(IdentifierResolver resolver) throws ParseException;
+  boolean evaluate(IdentifierResolver resolver);
 
 }

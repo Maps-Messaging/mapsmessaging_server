@@ -16,7 +16,7 @@
  *
  */
 
-package org.maps.selector.operators.parsers;
+package org.maps.selector.operators.extentions;
 
 import org.maps.selector.ParseException;
 import org.maps.selector.operators.FunctionOperator;
@@ -24,9 +24,9 @@ import org.maps.selector.operators.IdentifierResolver;
 
 public class ParserProxy extends FunctionOperator {
 
-  private final SelectorParser parser;
+  private final ParserExtension parser;
 
-  public ParserProxy(SelectorParser parser){
+  public ParserProxy(ParserExtension parser){
     this.parser = parser;
   }
 

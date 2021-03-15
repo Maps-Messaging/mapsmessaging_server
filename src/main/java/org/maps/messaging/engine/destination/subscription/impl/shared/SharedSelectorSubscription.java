@@ -18,13 +18,11 @@
 
 package org.maps.messaging.engine.destination.subscription.impl.shared;
 
-import org.maps.logging.LogMessages;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.DestinationImpl;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.messaging.engine.destination.subscription.state.MessageStateManager;
 import org.maps.messaging.engine.destination.subscription.transaction.AcknowledgementController;
-import org.maps.selector.ParseException;
 import org.maps.selector.operators.ParserExecutor;
 
 public class SharedSelectorSubscription extends SharedSubscription {
@@ -43,12 +41,8 @@ public class SharedSelectorSubscription extends SharedSubscription {
 
   @Override
   public int register(Message message) {
-    try {
-      if(parserExecutor == null || parserExecutor.evaluate(message)) {
-        return super.register(message);
-      }
-    } catch (ParseException e) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_SELECTOR, parserExecutor.toString(), e);
+    if(parserExecutor == null || parserExecutor.evaluate(message)) {
+      return super.register(message);
     }
     return 0;
   }

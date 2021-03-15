@@ -18,14 +18,12 @@
 
 package org.maps.messaging.engine.destination.subscription.impl;
 
-import org.maps.logging.LogMessages;
 import org.maps.messaging.api.message.Message;
 import org.maps.messaging.engine.destination.DestinationImpl;
 import org.maps.messaging.engine.destination.subscription.SubscriptionContext;
 import org.maps.messaging.engine.destination.subscription.state.MessageStateManager;
 import org.maps.messaging.engine.destination.subscription.transaction.AcknowledgementController;
 import org.maps.messaging.engine.session.SessionImpl;
-import org.maps.selector.ParseException;
 import org.maps.selector.operators.ParserExecutor;
 
 
@@ -47,12 +45,8 @@ public class SelectorDestinationSubscription extends DestinationSubscription {
 
   @Override
   public int register(Message message) {
-    try {
-      if(selector.evaluate(message)) {
-        return super.register(message);
-      }
-    } catch (ParseException e) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_SELECTOR, selector.toString(), e);
+    if(selector.evaluate(message)) {
+      return super.register(message);
     }
     return 0;
   }

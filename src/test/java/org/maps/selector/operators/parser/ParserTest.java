@@ -28,7 +28,7 @@ import org.maps.messaging.api.message.TypedData;
 import org.maps.selector.Identifier;
 import org.maps.selector.ParseException;
 import org.maps.selector.operators.FunctionOperator;
-import org.maps.selector.operators.parsers.ParserFactory;
+import org.maps.selector.operators.extentions.ParserFactory;
 
 public class ParserTest {
 

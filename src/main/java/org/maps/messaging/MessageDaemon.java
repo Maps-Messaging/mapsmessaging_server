@@ -49,7 +49,7 @@ import org.maps.network.NetworkConnectionManager;
 import org.maps.network.NetworkManager;
 import org.maps.network.protocol.ProtocolImplFactory;
 import org.maps.network.protocol.transformation.TransformationManager;
-import org.maps.selector.operators.parsers.ParserFactory;
+import org.maps.selector.operators.extentions.ParserFactory;
 import org.maps.utilities.admin.SimpleTaskSchedulerJMX;
 import org.maps.utilities.configuration.ConfigurationManager;
 import org.maps.utilities.configuration.ConfigurationProperties;

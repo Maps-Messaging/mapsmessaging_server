@@ -16,7 +16,7 @@
  *
  */
 
-package org.maps.selector.operators.parsers;
+package org.maps.selector.operators.extentions;
 
 import java.util.List;
 import org.maps.selector.Identifier;

@@ -18,8 +18,6 @@
 
 package org.maps.selector.operators;
 
-import org.maps.selector.ParseException;
-
 public class ParserBooleanOperation implements ParserExecutor {
 
   private final Boolean result;
@@ -28,7 +26,8 @@ public class ParserBooleanOperation implements ParserExecutor {
     this.result = result;
   }
 
-  public boolean evaluate(IdentifierResolver resolver) throws ParseException {
+  @Override
+  public boolean evaluate(IdentifierResolver resolver) {
     return Boolean.TRUE.equals(result);
   }
 

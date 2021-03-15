@@ -16,16 +16,16 @@
  *
  */
 
-package org.maps.selector.operators.parsers;
+package org.maps.selector.operators.extentions;
 
 import java.util.List;
 import org.maps.selector.ParseException;
 import org.maps.selector.operators.IdentifierResolver;
 import org.maps.utilities.service.Service;
 
-public interface SelectorParser extends Service {
+public interface ParserExtension extends Service {
 
-  SelectorParser createInstance(List<String> arguments) throws ParseException;
+  ParserExtension createInstance(List<String> arguments) throws ParseException;
 
   Object parse(IdentifierResolver resolver);
 

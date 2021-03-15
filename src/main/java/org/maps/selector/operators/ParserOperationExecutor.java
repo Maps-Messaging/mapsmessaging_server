@@ -28,10 +28,13 @@ public class ParserOperationExecutor implements ParserExecutor {
     this.parser = parser;
   }
 
-  public boolean evaluate(IdentifierResolver resolver) throws ParseException {
+  public boolean evaluate(IdentifierResolver resolver){
+    try {
     Object result = parser.evaluate(resolver);
     if(result instanceof Boolean){
       return (Boolean)result;
+    }
+    } catch (ParseException e) {
     }
     return false;
   }

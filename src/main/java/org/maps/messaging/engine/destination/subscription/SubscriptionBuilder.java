@@ -106,7 +106,7 @@ public abstract class SubscriptionBuilder {
     ParserExecutor parser;
     if (selector != null && selector.length() > 0) {
       try {
-        parser = SelectorParser.doParse(selector);
+        parser = SelectorParser.compile(selector);
       } catch (ParseException e) {
         logger.log(LogMessages.SUBSCRIPTION_MGR_SELECTOR_EXCEPTION, context.getSelector(), e);
         throw new IOException("Failed to parse selector", e);
