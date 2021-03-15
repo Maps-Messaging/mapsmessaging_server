@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 class SelectorConformanceTest {
 
-  private static final String[] SELECTOR_TEXT =
+  public static final String[] SELECTOR_TEXT =
       {
           "not dummy",
           "1.0 <> false",

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.maps.selector.operators.IdentifierResolver;
 import org.maps.selector.operators.ParserExecutor;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -48,6 +49,20 @@ public class ParallelStreamJMH {
 
     executor = SelectorParser.compile("even = true");
   }
+
+  @Benchmark
+  @BenchmarkMode(Mode.Throughput)
+  public void compilation(){
+    for (String selector : SelectorConformanceTest.SELECTOR_TEXT) {
+      try {
+        Object parser = SelectorParser.compile(selector);
+        parser.toString();
+      } catch (ParseException e) {
+        Assertions.fail("Selector text:" + selector + " failed with exception " + e.getMessage());
+      }
+    }
+  }
+
   @Benchmark
   @BenchmarkMode(Mode.Throughput)
   public void calculateParallelFilteredCount(){
