@@ -63,4 +63,11 @@ public class ParallelStreamJMH {
         .filter(executor::evaluate)
         .count();
   }
+  @Benchmark
+  @BenchmarkMode(Mode.Throughput)
+  public void calculateFilteredAny(){
+    data.stream()
+        .anyMatch(executor::evaluate);
+  }
+
 }
