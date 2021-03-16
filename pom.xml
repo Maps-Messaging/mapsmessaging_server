@@ -22,6 +22,28 @@
   <groupId>org.maps.messaging</groupId>
   <modelVersion>4.0.0</modelVersion>
   <version>1.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>Maps Messaging</name>
+  <description>A multi adapter and protocol server</description>
+  <url>http://www.mapsmessaging.io</url>
+
+  <licenses>
+    <license>
+      <name>Mozilla Public License Version 2.0</name>
+      <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>CommonsClause</name>
+      <url>https://commonsclause.com/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/Maps-Messaging/mapsmessaging_server</url>
+  </scm>
 
   <!--
   This section simply detects which OS is running and specifies the script extension
