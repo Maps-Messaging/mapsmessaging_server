@@ -32,6 +32,7 @@ void setup() {
     delay(500);
   }
   wifiServer.begin();
+  delay(1000);
 }
  
 void loop() {
@@ -48,5 +49,7 @@ void loop() {
         client.write(c);
       }
     }
+    ESP.restart();
   }
+  delay(100);
 }
