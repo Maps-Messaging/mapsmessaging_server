@@ -133,4 +133,38 @@ public class JsonParserExtension implements ParserExtension {
     return null;
   }
 
+  @Override
+  public String toString(){
+    StringBuilder sb = new StringBuilder("JSON, '");
+    for(String path:keyPath){
+      sb.append(path).append("' ,");
+    }
+    return sb.toString();
+  }
+
+  @Override
+  public boolean equals(Object test){
+    if(test instanceof JsonParserExtension){
+      JsonParserExtension rhs = (JsonParserExtension)test;
+      if(keyPath.length == rhs.keyPath.length){
+        for(int x=0;x<keyPath.length;x++){
+          if(!keyPath[x].equals(rhs.keyPath[x])){
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode(){
+    long largeHash = 0;
+    for(String path:keyPath){
+      largeHash += path.hashCode();
+    }
+    return Math.toIntExact(largeHash);
+  }
+
 }
