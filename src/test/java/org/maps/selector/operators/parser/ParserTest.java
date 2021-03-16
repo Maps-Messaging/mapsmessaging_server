@@ -56,9 +56,14 @@ public class ParserTest {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(jsonString.getBytes());
     Assertions.assertNotEquals(100L, operation.evaluate(messageBuilder.build()));
+  }
 
-    jsonString = "{\"test\": 10, \"value\": 20, \"secondLevel\": { \"test\": 30, \"data\": 40 },\"array\": [ 10, 20],\"arrayData\": [{ \"fred\": 50}, {\"bill\": 60 }]}";
-    messageBuilder = new MessageBuilder();
+  @Test
+  public void jsonWalking() throws ParseException {
+    String jsonString = "{\"test\": 10, \"value\": 20, \"secondLevel\": { \"test\": 30, \"data\": 40 },\"array\": [ 10, 20],\"arrayData\": [{ \"fred\": 50}, {\"bill\": 60 }]}";
+    String[]  arguments = {"secondLevel.data"};
+    FunctionOperator operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
+    MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(jsonString.getBytes());
     Message message = messageBuilder.build();
     Assertions.assertEquals(40L, operation.evaluate(message));
@@ -70,8 +75,16 @@ public class ParserTest {
     String[] arrayDeepArgs = {"arrayData.1.bill"};
     operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arrayDeepArgs));
     Assertions.assertEquals(60L, operation.evaluate(message));
-  }
 
+    jsonString = "{\"array\": [ [ 10, 20, 30],[ 40, 50, 60]]}";
+    String[] multiArrays = {"array.1.2"};
+    operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(multiArrays));
+    messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(jsonString.getBytes());
+    message = messageBuilder.build();
+    Assertions.assertEquals(60L, operation.evaluate(message));
+
+  }
 
   @Test
   public void parserLoadTest() throws ParseException {

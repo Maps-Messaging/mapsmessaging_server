@@ -114,7 +114,7 @@ public class JsonParserExtension implements ParserExtension {
     }
     else if(lookup instanceof JSONArray){
       String[] sub = new String[path.length-1];
-      System.arraycopy(path, 0, sub, 1, path.length - 1);
+      System.arraycopy(path, 1, sub, 0, sub.length);
       return arrayLookup( (JSONArray) lookup, sub);
     }
     return lookup;
