@@ -37,7 +37,12 @@ public class ParserTest {
   public void parserLoadToStringTest() throws ParseException {
     String[] arguments = {"value"};
     FunctionOperator operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
+    FunctionOperator operation2 = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
     Assertions.assertEquals("Parse (JSON, 'value' ,)", operation.toString());
+    Assertions.assertEquals(operation,operation2);
+    Assertions.assertEquals(operation.hashCode(),operation2.hashCode());
+    Assertions.assertNotEquals(operation, this);
+
   }
 
   @Test
