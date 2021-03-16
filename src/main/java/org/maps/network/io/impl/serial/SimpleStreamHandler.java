@@ -55,6 +55,7 @@ public class SimpleStreamHandler implements StreamHandler {
         throw new IOException("Stream has been closed");
       }
     }
+    System.err.println("Reading "+totalRead+" bytes");
     return totalRead;
   }
 
@@ -65,12 +66,16 @@ public class SimpleStreamHandler implements StreamHandler {
     while (available > outBuffer.length) {
       packet.get(outBuffer, 0, available);
       output.write(outBuffer, 0, available);
+      output.flush();
       available = packet.available();
+      System.err.println("Wrote "+available+" bytes to output");
     }
     if (available > 0) {
       packet.get(outBuffer, 0, available);
       output.write(outBuffer, 0, available);
+      System.err.println("Wrote "+available+" bytes to output");
     }
+    output.flush();
     return total;
   }
 }

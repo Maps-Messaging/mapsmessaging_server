@@ -69,7 +69,9 @@ public class SerialEndPointServer extends EndPointServer {
     } else {
       ProtocolImplFactory factory = protocolFactory.getBoundedProtocol();
       try {
-        factory.create(endPoint, (Packet)null);
+        Packet packet = new Packet(10, false);
+        packet.flip();
+        factory.create(endPoint, packet);
       } catch (IOException e) {
         logger.log(LogMessages.SERIAL_SERVER_CREATE_EXCEPTION, e);
       }
