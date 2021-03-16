@@ -105,17 +105,15 @@ public class WriteTask implements Selectable {
         while(count < coalesceSize && serverPacket != null){
           int startPos = packet.position();
           try {
-            System.err.println("Packing "+serverPacket);
             serverPacket.packFrame(packet);
             completedFrames.add(serverPacket);
             count++;
           }
           catch(BufferOverflowException overflow){
-            overflow.printStackTrace();
             selectorCallback.getEndPoint().incrementOverFlow();
             coalesceSize = count;
             packet.position(startPos);
-            ((ConcurrentLinkedDeque<ServerPacket>)outboundFrame).addFirst(serverPacket);
+            ((LinkedList<ServerPacket>)outboundFrame).addFirst(serverPacket);
             serverPacket = null;
             count = coalesceSize;
           }
