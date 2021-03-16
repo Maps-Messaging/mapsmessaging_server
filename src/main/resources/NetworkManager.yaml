@@ -111,7 +111,3 @@ NetworkManager:
         url: "tcp://0.0.0.0:8675/"
         protocol : stomp
 
-      -
-        name: "MQTT Serial Interface"
-        url: "serial://com3,115200,8,1,n/"
-        protocol : mqtt
