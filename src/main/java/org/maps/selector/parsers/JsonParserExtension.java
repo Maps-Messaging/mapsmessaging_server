@@ -29,38 +29,27 @@ import org.maps.selector.operators.extentions.ParserExtension;
 
 public class JsonParserExtension implements ParserExtension {
 
-  private final String keyName;
   private final String[] keyPath;
-  private final int arrayIndex;
 
   public JsonParserExtension(){
-    keyName = null;
     keyPath = null;
-    arrayIndex = -1;
   }
 
   protected JsonParserExtension(List<String> arguments) throws ParseException {
     if(arguments.isEmpty()) throw new ParseException("Requires at least 1 argument");
     String key = arguments.get(0);
-    if(arguments.size() > 1){
-      arrayIndex = Integer.parseInt(arguments.get(1));
-    }
-    else{
-      arrayIndex = -1;
-    }
     if(key.contains(".")){
       StringTokenizer stringTokenizer = new StringTokenizer(key, ".");
       List<String> tmp = new ArrayList<>();
       while(stringTokenizer.hasMoreElements()){
         tmp.add(stringTokenizer.nextElement().toString());
       }
-      keyName = tmp.remove(tmp.size()-1);
       String[] tmpPath = new String[tmp.size()];
       keyPath = tmp.toArray(tmpPath);
     }
     else{
-      keyPath = null;
-      keyName = key;
+      keyPath = new String[1];
+      keyPath[0] = key;
     }
   }
 
@@ -85,24 +74,50 @@ public class JsonParserExtension implements ParserExtension {
     if (payload != null && payload.length > 0) {
       JSONObject json = new JSONObject(new String(payload));
       if (!json.isEmpty()) {
-        return locateObject(json);
+        Object located = locateObject(json, keyPath);
+        return parseJSON(located);
       }
     }
     return null;
   }
 
-  private Object locateObject(JSONObject json){
+  private Object locateObject(JSONObject json, String[] searchPath){
     if(keyPath != null){
       // Walk the JSON path first
-      for(String path:keyPath){
-        json = json.getJSONObject(path);
-        if(json == null){
-          return null;
+      for(int x=0;x<searchPath.length;x++){
+        String path = searchPath[x];
+        Object jsonObject = json.get(path);
+        if(jsonObject instanceof JSONArray){
+          String[] sub = new String[searchPath.length-(x +1)];
+          System.arraycopy(searchPath, x+1, sub, 0, sub.length);
+          return arrayLookup(json.getJSONArray(path), sub);
+        }
+        else if(jsonObject instanceof JSONObject){
+          json = (JSONObject) jsonObject;
+        }
+        else{
+          return jsonObject;
         }
       }
     }
-    return parseJSON(json.get(keyName));
+    return null;
+  }
 
+  private Object arrayLookup(JSONArray array, String[] path){
+    // We have an array, so the next element in the path must be an index ( ie number)
+    int idx = Integer.parseInt(path[0]);
+    Object lookup = array.get(idx);
+    if(lookup instanceof JSONObject){
+      String[] sub = new String[path.length-1];
+      System.arraycopy(path, 1, sub, 0, sub.length);
+      return locateObject( (JSONObject) lookup, sub);
+    }
+    else if(lookup instanceof JSONArray){
+      String[] sub = new String[path.length-1];
+      System.arraycopy(path, 0, sub, 1, path.length - 1);
+      return arrayLookup( (JSONArray) lookup, sub);
+    }
+    return lookup;
   }
 
   private Object parseJSON(Object lookup){
@@ -115,31 +130,7 @@ public class JsonParserExtension implements ParserExtension {
         lookup instanceof Long) {
       return lookup;
     }
-    if(lookup instanceof JSONArray && arrayIndex > -1){
-      return parseJSON(((JSONArray)lookup).get(arrayIndex));
-    }
     return null;
-  }
-
-  @Override
-  public String toString(){
-    if(arrayIndex > -1) {
-      return "JSON, '" + keyName+"', "+arrayIndex;
-    }
-    return "JSON, '" + keyName+"'";
-  }
-
-  @Override
-  public boolean equals(Object test){
-    if(test instanceof JsonParserExtension){
-      return keyName.equals(((JsonParserExtension) test).keyName) && arrayIndex == ((JsonParserExtension)test).arrayIndex;
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode(){
-    return keyName.hashCode() | arrayIndex;
   }
 
 }

@@ -24,6 +24,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.maps.messaging.api.MessageBuilder;
+import org.maps.messaging.api.message.Message;
 import org.maps.messaging.api.message.TypedData;
 import org.maps.selector.Identifier;
 import org.maps.selector.ParseException;
@@ -37,6 +38,33 @@ public class ParserTest {
     String[] arguments = {"value"};
     FunctionOperator operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
     Assertions.assertEquals("Parse (JSON, 'value')", operation.toString());
+  }
+
+  @Test
+  public void exceptions() throws ParseException {
+    String[] empty = {};
+    Assertions.assertThrows(ParseException.class, ()-> ParserFactory.getInstance().loadParser("json", Arrays.asList(empty)));
+    String[]  arguments = {"secondLevel.data"};
+    FunctionOperator operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arguments));
+
+    String jsonString = "";
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(jsonString.getBytes());
+    Assertions.assertNotEquals(100L, operation.evaluate(messageBuilder.build()));
+
+    jsonString = "{\"test\": 10, \"value\": 20, \"secondLevel\": { \"test\": 30, \"data\": 40 },\"array\": [ 10, 20],\"arrayData\": [{ \"fred\": 50}, {\"bill\": 60 }]}";
+    messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(jsonString.getBytes());
+    Message message = messageBuilder.build();
+    Assertions.assertEquals(40L, operation.evaluate(message));
+
+    String[] arrayArgs = {"array.1"};
+    operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arrayArgs));
+    Assertions.assertEquals(20L, operation.evaluate(message));
+
+    String[] arrayDeepArgs = {"arrayData.1.bill"};
+    operation = ParserFactory.getInstance().loadParser("json", Arrays.asList(arrayDeepArgs));
+    Assertions.assertEquals(60L, operation.evaluate(message));
   }
 
 
