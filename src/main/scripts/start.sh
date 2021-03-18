@@ -14,5 +14,5 @@ export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-1.1-SNAPSHOT.jar:"$MAPS_L
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME org.maps.messaging.MessageDaemon
+java -classpath $CLASSPATH -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.messaging.MessageDaemon
 

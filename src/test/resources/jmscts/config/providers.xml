@@ -10,7 +10,7 @@
 
   <provider>
       <name>ProtonJ</name>
-      <class>org.maps.network.protocol.impl.amqp.jms.jmscts.JmsProvider</class>
+      <class>io.mapsmessaging.network.protocol.impl.amqp.jms.jmscts.JmsProvider</class>
       <paths>
         <path>${jmscts.home}/config</path>
         <path>${home}/target/classes</path>

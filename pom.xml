@@ -18,13 +18,14 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <groupId>io.mapsmessaging</groupId>
   <artifactId>message_daemon</artifactId>
-  <groupId>org.maps.messaging</groupId>
   <modelVersion>4.0.0</modelVersion>
   <version>1.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Maps Messaging</name>
+  <name>Maps Messaging Server</name>
   <description>A multi adapter and protocol server</description>
   <url>http://www.mapsmessaging.io</url>
 
@@ -166,24 +167,6 @@
         </configuration>
       </plugin>
 
-      <!-- Build JavaCC files -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>javacc-maven-plugin</artifactId>
-        <version>2.5</version>
-        <executions>
-          <execution>
-            <id>javacc</id>
-            <goals>
-              <goal>javacc</goal>
-            </goals>
-            <configuration>
-              <sourceDirectory>${basedir}/src/main/javacc</sourceDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
       <!-- Now build a single jar with everything in it -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -202,7 +185,7 @@
               <archive>
                 <manifest>
                   <mainClass>
-                    org.maps.messaging.MessageDaemon
+                    io.mapsmessaging.MessageDaemon
                   </mainClass>
                 </manifest>
               </archive>
@@ -230,7 +213,6 @@
           <show>public</show>
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
-          <excludePackageNames>org.maps.selector</excludePackageNames>
         </configuration>
       </plugin>
 
@@ -305,8 +287,14 @@
     </plugins>
   </build>
 
-  <!-- Repo for java stomp client used for testing Artifactory server -->
   <repositories>
+    <!-- Repo for java stomp client used for testing Artifactory server -->
+    <repository>
+      <id>central</id>
+      <name>artifactory-releases</name>
+      <url>http://10.140.62.179:8081/artifactory/libs-release</url>
+    </repository>
+
     <repository>
       <snapshots>
         <enabled>false</enabled>
@@ -339,12 +327,18 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-
   </properties>
 
 
 
   <dependencies>
+
+    <!-- JMS Selector logic module -->
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>Extensible_JMS_Selector_Parser</artifactId>
+      <version>1.0.0</version>
+    </dependency>
 
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -405,13 +399,6 @@
       <groupId>com.orbitz.consul</groupId>
       <artifactId>consul-client</artifactId>
       <version>1.4.0</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/net.java.dev.javacc/javacc -->
-    <dependency>
-      <groupId>net.java.dev.javacc</groupId>
-      <artifactId>javacc</artifactId>
-      <version>7.0.5</version>
     </dependency>
 
     <!-- Serial Port support -->
