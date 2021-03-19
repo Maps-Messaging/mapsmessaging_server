@@ -29,10 +29,6 @@ jobs:
         with:
           java-version: 13
 
-        # build the mqtt-sn test jar
-      - name: Build mqtt-sn test jar
-        run: mvn clean install --file eclipse-paho-mqtt-sn-udp-client/pom.xml -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
-
         # perform the sonarcloud scan, this seems more detailed
       - name: Cache SonarCloud packages
         uses: actions/cache@v1
