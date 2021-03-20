@@ -290,9 +290,9 @@
   <repositories>
     <!-- Repo for java stomp client used for testing Artifactory server -->
     <repository>
-      <id>central</id>
+      <id>mapsmessaging.io</id>
       <name>artifactory-releases</name>
-      <url>http://10.140.62.179:8081/artifactory/libs-release</url>
+      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
     </repository>
 
     <repository>
