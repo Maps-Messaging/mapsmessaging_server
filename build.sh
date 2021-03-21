@@ -15,6 +15,4 @@
 #
 #
 #
-
-mvn clean install --file eclipse-paho-mqtt-sn-udp-client/pom.xml -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
 mvn clean install

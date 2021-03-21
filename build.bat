@@ -16,8 +16,7 @@ rem
 rem
 rem
 
-set JAVA_HOME=e:\java\zulu13.28.11-ca-jdk13.0.1-win_x64
-set MAVEN_HOME=d:\apache-maven-3.5.2
+set JAVA_HOME="<Enter the path to java home, ensure it is JDK15"
+set MAVEN_HOME="<Enter the path to maven>"
 set PATH=PATH=%JAVA_HOME%\bin;%MAVEN_HOME%\bin;%PATH%
-call mvn clean install --file eclipse-paho-mqtt-sn-udp-client/pom.xml -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
 call mvn clean install
