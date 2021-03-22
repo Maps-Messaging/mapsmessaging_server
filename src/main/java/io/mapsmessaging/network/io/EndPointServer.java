@@ -23,20 +23,21 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class EndPointServer extends EndPointServerStatus implements Closeable, Selectable {
 
   protected final Logger logger;
   protected final AcceptHandler acceptHandler;
-  protected final LinkedHashMap<Long, EndPoint> activeEndPoints;
+  protected final Map<Long, EndPoint> activeEndPoints;
   private final NetworkConfig config;
 
   protected EndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
     super(url);
     this.config = config;
     acceptHandler = accept;
-    activeEndPoints = new LinkedHashMap<>();
+    activeEndPoints = new ConcurrentHashMap<>();
     logger = createLogger(url.toString());
   }
 
@@ -57,7 +58,6 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
   }
 
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
-    activeEndPoints.remove(endPoint.getId());
     activeEndPoints.put(endPoint.getId(), endPoint);
     acceptHandler.accept(endPoint);
   }
