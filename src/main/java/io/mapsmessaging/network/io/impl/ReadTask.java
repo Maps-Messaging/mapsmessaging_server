@@ -91,7 +91,7 @@ public class ReadTask implements Selectable {
         }
       }
     } catch (IOException e) {
-      if(!(e.getMessage().equalsIgnoreCase("Socket closed"))) {
+      if(!(e.getMessage().equalsIgnoreCase("Socket closed") || e.getMessage().equalsIgnoreCase("Connection reset"))) {
         logger.log(READ_TASK_PACKET_EXCEPTION, e);
       }
       closeProtocol();
