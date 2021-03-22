@@ -74,7 +74,6 @@ public class StateEngine implements CloseHandler, CompletionHandler {
 
   public synchronized void handleFrame(Frame frame, boolean endOfBuffer) {
     try {
-      System.err.println("Received "+frame.toString());
       protocolImpl.receivedMessage();
       frame.setCallback(this);
       requestCounter++;
