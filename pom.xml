@@ -296,12 +296,9 @@
     </repository>
 
     <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>bintray-paultegelaar-maven</id>
-      <name>bintray</name>
-      <url>https://dl.bintray.com/paultegelaar/maven/</url>
+      <id>snaphsot.mapsmessaging.io</id>
+      <name>artifactory-snapshot</name>
+      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-snapshot</url>
     </repository>
   </repositories>
 
@@ -332,7 +329,6 @@
 
 
   <dependencies>
-
     <!-- JMS Selector logic module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
@@ -525,7 +521,7 @@
     <dependency>
       <groupId>net.ser1</groupId>
       <artifactId>gozirra-client</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.2-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
 
