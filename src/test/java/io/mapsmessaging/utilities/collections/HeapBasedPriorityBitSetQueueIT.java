@@ -22,6 +22,7 @@ import java.util.Queue;
 import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
 
 public class HeapBasedPriorityBitSetQueueIT extends PriorityBitSetQueueIT {
+
   public PriorityQueue<Long> createQueue(int priorities){
     Queue<Long>[] external = new Queue[priorities];
     for(int x=0;x<priorities;x++){

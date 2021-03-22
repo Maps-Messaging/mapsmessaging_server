@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import io.mapsmessaging.utilities.collections.bitset.FileBitSetFactoryImpl;
 
-public class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
+class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
 
   static long counter =0;
   FileBitSetFactoryImpl factory;
@@ -52,13 +52,10 @@ public class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
         System.err.println("Unabled to delete "+file.getName());
       }
     }
-
   }
 
-
-
   @Test
-  public void testFileReload() throws Exception {
+  void testFileReload() throws Exception {
     File file = new File("test_file_bitset.queue_reload");
     if(file.exists()){
       file.delete();

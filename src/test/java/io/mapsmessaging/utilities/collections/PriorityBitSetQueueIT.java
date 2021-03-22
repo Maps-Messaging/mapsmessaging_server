@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import io.mapsmessaging.BaseTest;
 
-public abstract class PriorityBitSetQueueIT extends BaseTest {
+
+abstract class PriorityBitSetQueueIT extends BaseTest {
 
   private static final int RUN_TIME = 1000;
 
@@ -30,7 +31,7 @@ public abstract class PriorityBitSetQueueIT extends BaseTest {
 
 
   @Test
-  public void testLinearPerformanceEntries() throws Exception{
+  void testLinearPerformanceEntries() throws Exception{
     try (PriorityQueue<Long> priorityQueue = createQueue(16)){
       long endTime = System.currentTimeMillis()+ RUN_TIME;
       long count = 0;
