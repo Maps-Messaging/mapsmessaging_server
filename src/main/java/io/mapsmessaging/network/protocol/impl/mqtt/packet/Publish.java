@@ -79,13 +79,16 @@ public class Publish extends MQTTPacket {
     if (destinationName.length() == 0) {
       throw new MalformedException("Topic name must be present Reference: [MQTT-3.3.2-1]");
     }
-    if (!topicAllowed(destinationName) || destinationName.contains("..") || destinationName.contains("//")) {
+    if (!topicAllowed(destinationName) ||
+        destinationName.contains("..") ||
+        destinationName.contains("//") ||
+        destinationName.toLowerCase().startsWith("$sys")) {
       throw new MalformedException("Destination name must not contain wildcards Reference: [MQTT-3.3.2-2]");
     }
   }
 
   boolean topicAllowed(String topicName){
-    return topicName.chars().noneMatch(c -> (c <= 0x1f || (c >=0x7f && c <= 0x9f)) || (c == '$') || (c == '#' || (c == '+')));
+    return topicName.chars().noneMatch(c -> (c <= 0x1f || (c >=0x7f && c <= 0x9f)) || (c == '#' || (c == '+')));
   }
 
 
