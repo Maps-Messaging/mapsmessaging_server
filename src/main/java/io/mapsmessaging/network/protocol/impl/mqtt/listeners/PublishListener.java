@@ -68,6 +68,8 @@ public class PublishListener extends PacketListener {
 
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+    checkState(session);
+
     Publish publish = (Publish) mqttPacket;
     MQTTPacket response = null;
     if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {
@@ -76,7 +78,10 @@ public class PublishListener extends PacketListener {
       response = new PubRec(publish.getPacketId());
     }
 
+
     String lookup = publish.getDestinationName();
+
+
     Map<String, String> map = ((MQTTProtocol) protocol).getTopicNameMapping();
     if(map != null){
       lookup = map.get(publish.getDestinationName());
@@ -125,5 +130,4 @@ public class PublishListener extends PacketListener {
       destination.storeMessage(message);
     }
   }
-
 }

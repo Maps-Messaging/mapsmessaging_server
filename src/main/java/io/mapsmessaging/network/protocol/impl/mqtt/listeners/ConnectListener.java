@@ -35,6 +35,9 @@ import java.util.concurrent.TimeUnit;
 
 public class ConnectListener extends BaseConnectionListener {
 
+  private static final String RESTRICTED_CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  private static final int RESTRICTED_LENGTH = 23;
+
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session shouldBeNull, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     if (shouldBeNull != null) {
       logger.log(LogMessages.MQTT_CONNECT_LISTENER_SECOND_CONNECT);
@@ -48,17 +51,19 @@ public class ConnectListener extends BaseConnectionListener {
     Connect connect = (Connect) mqttPacket;
     ConnAck connAck = new ConnAck();
 
-    if (!connect.isCleanSession() && connect.getSessionId().length() == 0) {
+    boolean strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
+    String sessionId = connect.getSessionId();
+    if ((!connect.isCleanSession() && sessionId.length() == 0) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
     } else {
-      SessionContextBuilder scb = getBuilder(endPoint, protocol, connect.getSessionId(), connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
+      SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
       if (connect.isWillFlag()) {
         Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null);
         scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
       }
       protocol.setKeepAlive(connect.getKeepAlive());
       try {
-        Session session = createSession(endPoint, protocol, scb, connect.getSessionId());
+        Session session = createSession(endPoint, protocol, scb, sessionId);
         connAck.setResponseCode(ConnAck.SUCCESS);
         connAck.setRestoredFlag(session.isRestored());
         connAck.setCallback(session::resumeState);
@@ -79,4 +84,15 @@ public class ConnectListener extends BaseConnectionListener {
     }
     return connAck;
   }
+
+  boolean clientIdAllowed(String clientId, boolean strict){
+    if(strict) {
+      boolean legalChars = clientId.chars().allMatch(c -> RESTRICTED_CHARACTERS.contains(String.valueOf((char) c)));
+      return clientId.length() <= RESTRICTED_LENGTH && legalChars;
+    }
+    else{
+      return true;
+    }
+  }
+
 }

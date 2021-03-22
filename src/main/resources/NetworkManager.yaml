@@ -17,6 +17,10 @@
 ---
 NetworkManager:
     global:
+        # ---------------------------------------------------------------------------------------------------------
+        # Global configuration for SSL
+        # ---------------------------------------------------------------------------------------------------------
+
         ssl_keyStoreFile: my-keystore.jks
         ssl_keyStorePassphrase: password
         ssl_trustStoreFile: my-keystore.jks
@@ -54,6 +58,7 @@ NetworkManager:
         clientReceiveMaximum : 65535
         clientMaximumTopicAlias : 32767
         serverMaximumTopicAlias : 0
+        strictClientId : true
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT 5.0 specific
@@ -78,7 +83,7 @@ NetworkManager:
         url: tcp://0.0.0.0:1882/
         name: "MQTT WebSocket Interface"
         protocol : mqtt,ws
-        selectorThreadCount : 2
+        selectorThreadCount : 4
         auth : public
         receiveBufferSize : 32000000
         sendBufferSize    : 32000000
@@ -88,7 +93,7 @@ NetworkManager:
         url: tcp://0.0.0.0:1883/
         protocol : mqtt
         selectorThreadCount : 2
-        auth : public
+        auth : private
         receiveBufferSize : 32000000
         sendBufferSize    : 32000000
 
