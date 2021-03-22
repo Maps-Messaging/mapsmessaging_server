@@ -58,7 +58,7 @@ NetworkManager:
         clientReceiveMaximum : 65535
         clientMaximumTopicAlias : 32767
         serverMaximumTopicAlias : 0
-        strictClientId : true
+        strictClientId : false
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT 5.0 specific
