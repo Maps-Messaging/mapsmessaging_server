@@ -16,7 +16,7 @@
  *
  */
 
-package io.mapsmessaging.utilities;
+package io.mapsmessaging.utilities.collections;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

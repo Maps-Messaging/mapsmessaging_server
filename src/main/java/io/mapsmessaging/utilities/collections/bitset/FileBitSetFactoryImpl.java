@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import io.mapsmessaging.utilities.MappedBufferHelper;
+import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 
 public class FileBitSetFactoryImpl extends BitSetFactory {
 
