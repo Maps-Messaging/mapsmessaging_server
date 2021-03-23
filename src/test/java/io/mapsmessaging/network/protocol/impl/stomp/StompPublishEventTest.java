@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.test.WaitForState;
+import java.util.concurrent.atomic.AtomicLong;
 import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
@@ -31,6 +33,10 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.ClientTransaction;
 import org.projectodd.stilts.stomp.client.StompClient;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.SimpleMessageConverter;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
@@ -362,9 +368,10 @@ class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("WebSocket Stomp Publish Test")
-  void webSocketPublishTest() throws InterruptedException, ExecutionException, TimeoutException {
+  void webSocketPublishTest() throws InterruptedException, ExecutionException, TimeoutException, IOException {
     WebSocketClient client = new StandardWebSocketClient();
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
+    webSocketStompClient.setMessageConverter(new SimpleMessageConverter());
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
     ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8675", handler );
 
@@ -377,49 +384,45 @@ class StompPublishEventTest extends StompBaseTest {
     for(int x=0;x<10;x++) {
       stompSession.send("/topic/test", tmpBuffer);
     }
-    Assertions.assertTrue(handler.subscriptionCount.await(5, TimeUnit.SECONDS));
-    Assertions.assertEquals( 0, handler.subscriptionCount.getCount());
+    WaitForState.waitFor(5, TimeUnit.SECONDS, ()->handler.subscriptionCount.get() == 0);
 
-    handler.subscriptionCount = new CountDownLatch(10);
+    handler.subscriptionCount.set(10); // Reset it
     Arrays.fill(tmpBuffer, (byte) 0);
     for(int x=0;x<10;x++) {
       stompSession.send("/topic/test", tmpBuffer);
     }
-    Assertions.assertTrue(handler.subscriptionCount.await(5, TimeUnit.SECONDS));
-    Assertions.assertEquals( 0, handler.subscriptionCount.getCount());
+    WaitForState.waitFor(5, TimeUnit.SECONDS, ()->handler.subscriptionCount.get() == 0);
 
     subscription.unsubscribe();
-    delay(100);
+    WaitForState.wait(100, TimeUnit.MILLISECONDS);
     stompSession.disconnect();
-    delay(100);
+    WaitForState.wait(100, TimeUnit.MILLISECONDS);
   }
 
   private static final class StompSessionHandlerImpl implements StompSessionHandler {
-    CountDownLatch subscriptionCount = new CountDownLatch(10);
+    AtomicLong subscriptionCount = new AtomicLong(10);
     @Override
     public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
-      System.err.println("After Connected");
     }
 
     @Override
     public void handleException(StompSession stompSession, StompCommand stompCommand, StompHeaders stompHeaders, byte[] bytes, Throwable throwable) {
-      System.err.println("Handle Exception");
+      throwable.printStackTrace(System.err);
     }
 
     @Override
     public void handleTransportError(StompSession stompSession, Throwable throwable) {
-      System.err.println("Handle Transport Error");
+      throwable.printStackTrace(System.err);
     }
 
     @Override
     public Type getPayloadType(StompHeaders stompHeaders) {
-      return null;
+      return byte[].class;
     }
 
     @Override
     public void handleFrame(StompHeaders stompHeaders, Object o) {
-      System.err.println("Received frame::"+stompHeaders+" "+o);
-      subscriptionCount.countDown();
+      subscriptionCount.decrementAndGet();
     }
   }
 

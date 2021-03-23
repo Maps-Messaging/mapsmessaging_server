@@ -243,7 +243,7 @@
         <executions>
           <execution>
             <id>self-signed-certs</id>
-            <phase>compile</phase>
+            <phase>generate-test-resources</phase>
             <goals>
               <goal>exec</goal>
             </goals>
@@ -336,11 +336,13 @@
       <version>1.0.0</version>
     </dependency>
 
+    <!-- Non Blocking Task Queue module -->
     <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.18</version>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>Non_Block_Task_Scheduler</artifactId>
+      <version>1.0.0</version>
     </dependency>
+
 
     <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
     <dependency>
@@ -356,31 +358,24 @@
       <version>3.2.3</version>
     </dependency>
 
-    <!--JMX annotations -->
-    <dependency>
-      <groupId>com.udojava</groupId>
-      <artifactId>JMXWrapper</artifactId>
-      <version>1.4</version>
-    </dependency>
-
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>1.27</version>
+      <version>1.28</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <version>2.13.2</version>
+      <version>2.14.1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
-      <version>2.13.2</version>
+      <version>2.14.1</version>
     </dependency>
 
     <!-- Map based disk store -->
@@ -394,7 +389,7 @@
     <dependency>
       <groupId>com.orbitz.consul</groupId>
       <artifactId>consul-client</artifactId>
-      <version>1.4.0</version>
+      <version>1.4.2</version>
     </dependency>
 
     <!-- Serial Port support -->
@@ -408,7 +403,7 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20200518</version>
+      <version>20210307</version>
     </dependency>
 
     <!-- Add annotations for not null -->
@@ -417,6 +412,18 @@
       <artifactId>annotations</artifactId>
       <version>16.0.2</version>
     </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.18</version>
+    </dependency>
+    <!--JMX annotations -->
+    <dependency>
+      <groupId>com.udojava</groupId>
+      <artifactId>JMXWrapper</artifactId>
+      <version>1.4</version>
+    </dependency>
+
 
     <!-- https://mvnrepository.com/artifact/org.apache.qpid/proton-j -->
     <dependency>
@@ -430,14 +437,14 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-embedded</artifactId>
-      <version>2.12.1</version>
+      <version>2.13.1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-war -->
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-war</artifactId>
-      <version>2.12.1</version>
+      <version>2.13.1</version>
       <scope>provided</scope>
       <type>war</type>
     </dependency>
@@ -446,7 +453,7 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-app</artifactId>
-      <version>2.12.1</version>
+      <version>2.13.1</version>
     </dependency>
 
 
@@ -474,7 +481,7 @@
     <dependency>
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-      <version>1.2.4</version>
+      <version>1.2.5</version>
       <scope>test</scope>
     </dependency>
 
@@ -482,7 +489,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>
-      <version>0.53.0</version>
+      <version>0.56.0</version>
       <scope>test</scope>
     </dependency>
 
@@ -499,21 +506,21 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>5.2.6.RELEASE</version>
+      <version>5.2.13.RELEASE</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-messaging</artifactId>
-      <version>4.3.12.RELEASE</version>
+      <version>5.2.13.RELEASE</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.glassfish.tyrus.bundles</groupId>
       <artifactId>tyrus-standalone-client</artifactId>
-      <version>1.9</version>
+      <version>1.17</version>
       <scope>test</scope>
     </dependency>
 
@@ -546,6 +553,7 @@
       <version>1.19</version>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>org.openjdk.jmh</groupId>
       <artifactId>jmh-generator-annprocess</artifactId>
