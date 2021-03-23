@@ -339,10 +339,16 @@
     <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
-      <artifactId>Non_Block_Task_Scheduler</artifactId>
+      <artifactId>Naturally_Ordered_Long_Collections</artifactId>
       <version>1.0.0</version>
     </dependency>
 
+    <!-- Non Blocking Task Queue module -->
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>Non_Block_Task_Scheduler</artifactId>
+      <version>1.0.0</version>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
     <dependency>
