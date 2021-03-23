@@ -336,7 +336,7 @@
       <version>1.0.0</version>
     </dependency>
 
-    <!-- Non Blocking Task Queue module -->
+    <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
