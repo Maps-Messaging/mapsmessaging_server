@@ -4,13 +4,14 @@
 export MAPS_HOME=<INSERT_PATH_TO_INSTALLATION>
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
+
 #
 # From there configure all the paths.
 #
 # Note::: The conf directory must be at the start else the configuration is loaded from the jars
 #
 export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-1.1-SNAPSHOT.jar:"$MAPS_LIB/*"
-
+export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
 # Now start the the daemon
 #
