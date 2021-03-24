@@ -83,6 +83,7 @@ public class AMQPProtocol extends ProtocolImpl {
   }
 
   public SessionManager addSession(String sessionId, Session session){
+    completedConnection();
     SessionManager sessionManager = new SessionManager(session);
     activeSessions.put(sessionId, sessionManager);
     return sessionManager;

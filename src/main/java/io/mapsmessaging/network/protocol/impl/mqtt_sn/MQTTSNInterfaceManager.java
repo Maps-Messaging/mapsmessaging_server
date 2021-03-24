@@ -40,6 +40,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.SearchGateway;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -79,13 +80,18 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
-    if (info.getBroadcast() != null && !info.isLoopback()) {
+    if (startAdvertiseTask(info)) {
       advertiserTask = new AdvertiserTask(gatewayId, endPoint, info, info.getBroadcast(), DefaultConstants.ADVERTISE_INTERVAL);
     } else {
       advertiserTask = null;
     }
     registeredTopicConfiguration = new RegisteredTopicConfiguration(endPoint.getConfig().getProperties());
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
+  }
+
+  private boolean startAdvertiseTask(InterfaceInformation info) throws SocketException {
+    boolean configToSend = getEndPoint().getConfig().getProperties().getBooleanProperty("advertiseGateway", false);
+    return configToSend && info.getBroadcast() != null && !info.isLoopback();
   }
 
   @Override

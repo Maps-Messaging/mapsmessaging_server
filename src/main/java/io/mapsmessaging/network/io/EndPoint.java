@@ -103,6 +103,10 @@ public abstract class EndPoint implements Closeable {
     }
   }
 
+  public void completedConnection() {
+
+  }
+
   public NetworkConfig getConfig() {
     return server.getConfig();
   }

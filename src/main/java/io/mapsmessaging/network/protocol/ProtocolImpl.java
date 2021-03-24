@@ -61,6 +61,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   private final ProtocolJMX mbean;
   protected long keepAlive;
   private boolean connected;
+  private boolean completed;
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
@@ -68,7 +69,15 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
     receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
     connected = false;
+    completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
+  }
+
+  public void completedConnection() {
+    if(!completed) {
+      completed = true;
+      endPoint.completedConnection();
+    }
   }
 
   public ProtocolMessageTransformation getTransformation() {

@@ -111,6 +111,8 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     if (session != null) {
       this.session = session;
       protocolImpl.setConnected(true);
+      protocolImpl.completedConnection();
+
     } else {
       throw new StompProtocolException("Session already established");
     }

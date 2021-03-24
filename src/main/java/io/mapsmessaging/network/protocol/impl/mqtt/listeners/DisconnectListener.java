@@ -30,9 +30,7 @@ import java.io.IOException;
 public class DisconnectListener extends PacketListener {
 
   @Override
-  public MQTTPacket handlePacket(
-      MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol)
-      throws MalformedException {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     logger.log(LogMessages.MQTT_DISCONNECT_CLOSE);
     if (session != null) {
       try {

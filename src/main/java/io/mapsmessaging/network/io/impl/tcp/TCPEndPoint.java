@@ -19,7 +19,6 @@
 package io.mapsmessaging.network.io.impl.tcp;
 
 import static io.mapsmessaging.logging.LogMessages.TCP_ACCEPT_START;
-import static io.mapsmessaging.logging.LogMessages.TCP_CLOSE_ERROR;
 import static io.mapsmessaging.logging.LogMessages.TCP_CONFIGURED_PARAMETER;
 import static io.mapsmessaging.logging.LogMessages.TCP_READ_BUFFER;
 import static io.mapsmessaging.logging.LogMessages.TCP_SEND_BUFFER;
@@ -36,15 +35,14 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TCPEndPoint extends EndPoint {
@@ -111,12 +109,8 @@ public class TCPEndPoint extends EndPoint {
         selector.wakeup();
         socket.shutdownInput();
         socket.shutdownOutput();
-        if (!socket.isClosed()) {
-          SimpleTaskScheduler.getInstance().schedule(new SocketCloseTask(this), 500, TimeUnit.MILLISECONDS);
-        } else {
-          socketChannel.close();
-          socket.close();
-        }
+        socketChannel.close();
+        socket.close();
         logger.log(LogMessages.TCP_CLOSE_SUCCESS, name);
       } catch (IOException e) {
         logger.log(LogMessages.TCP_CLOSE_EXCEPTION, e, name);
@@ -225,24 +219,12 @@ public class TCPEndPoint extends EndPoint {
     socketChannel.configureBlocking(false);
   }
 
-  private final class SocketCloseTask implements Runnable {
-
-    private final SocketChannel socketChannel;
-    private final Socket socket;
-
-    public SocketCloseTask(TCPEndPoint tcpEndPoint) {
-      socket = tcpEndPoint.socket;
-      socketChannel = tcpEndPoint.socketChannel;
-    }
-
-    @Override
-    public void run() {
-      try {
-        socketChannel.close();
-        socket.close();
-      } catch (IOException e) {
-        logger.log(TCP_CLOSE_ERROR, e);
-      }
+  public void completedConnection() {
+    int linger = getConfig().getProperties().getIntProperty("soLingerDelaySec", 10);
+    try {
+      socket.setSoLinger(true, linger);
+    } catch (SocketException e) {
+      logger.log(TCP_CONFIGURED_PARAMETER, "Unable to set soLinger to "+linger, e);
     }
   }
 }

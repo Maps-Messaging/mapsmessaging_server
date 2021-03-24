@@ -163,6 +163,7 @@ public class MQTT5Protocol extends ProtocolImpl {
 
   public void setSession(Session session) {
     this.session = session;
+    completedConnection();
   }
 
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {

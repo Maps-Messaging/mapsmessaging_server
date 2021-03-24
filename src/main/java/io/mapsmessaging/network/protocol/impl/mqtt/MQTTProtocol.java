@@ -113,6 +113,7 @@ public class MQTTProtocol extends ProtocolImpl {
     connect.setSessionId(sessionId);
     writeFrame(connect);
     registerRead();
+    completedConnection();
   }
 
   @Override
@@ -124,6 +125,7 @@ public class MQTTProtocol extends ProtocolImpl {
     Subscribe subscribe = new Subscribe();
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
     writeFrame(subscribe);
+    completedConnection();
   }
 
   @Override
@@ -171,6 +173,7 @@ public class MQTTProtocol extends ProtocolImpl {
 
   public void setSession(Session session) {
     this.session = session;
+    completedConnection();
   }
 
   public boolean processPacket(Packet packet) throws IOException {
