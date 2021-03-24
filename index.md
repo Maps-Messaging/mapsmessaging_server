@@ -23,13 +23,13 @@ All these wire protocols can be run over
 
 As well as the standard TCP/UDP connections the server also supports LoRa devices on a raspberryPi enabling direct messaging between a LoRa sensor and the server using MQTT-SN, removing the requirement for another hop between sensor and messaging server.
 
-###Inter-server Connections
+### Inter-server Connections
 
 The server also supports connections to other servers, such that MapsMessaging can connect to other MQTT, AMQP, Stomp servers and pull data from them and publish to local resources or it can be configured to push data from local resources to remote servers removing any need for another application to enable this message flow.
 These connections support the JMS Selector syntax on events coming in or out of the server enabling only events that have interest to be processed.
 
 
-###Modularisation
+### Modularisation
 
 As part of the architecture design for the server the approach was taken that if a module could be reused or would be helpful to the OSS eco-system then it would be pulled out of the Daemon, and a new project created for it. To this end we currently have
 
