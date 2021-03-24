@@ -1,7 +1,7 @@
 #
 # Define the home directory for the messaging daemon
 #
-export MAPS_HOME=<INSERT_PATH_TO_INSTALLATION>
+export MAPS_HOME=/opt/message_daemon-1.1-SNAPSHOT
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
 
@@ -15,5 +15,5 @@ export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.messaging.MessageDaemon
+java -classpath $CLASSPATH -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
 
