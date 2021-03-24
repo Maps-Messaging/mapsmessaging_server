@@ -14,9 +14,6 @@ With the MapsMessaging Daemon it natively supports the following protocols
 
 Independently of where messages arrive from all clients on all protocols and interact with each other.  
 
-#### Protocol Extensibility
-The protocol library is extendable and if an organisation has an internal proprietary protocol it can be added to the server as a native protocol.
-
 All these wire protocols can be run over 
 
   * tcp
@@ -28,8 +25,10 @@ All these wire protocols can be run over
 
 As well as the standard TCP/UDP connections the server also supports LoRa devices on a raspberryPi enabling direct messaging between a LoRa sensor and the server using MQTT-SN, removing the requirement for another hop between sensor and messaging server.
 
-### Inter-server Connections
+#### Protocol Extensibility
+The protocol library is extendable and if an organisation has an internal proprietary protocol it can be added to the server as a native protocol.
 
+### Inter-server Connections
 
 #### Native Server Connections
 The server also supports connections to other servers, such that MapsMessaging can connect to other MQTT, AMQP, Stomp servers and pull data from them and publish to local resources or it can be configured to push data from local resources to remote servers removing any need for another application to enable this message flow.
