@@ -67,6 +67,7 @@ The nightly installation builds can be found here
 [message_daemon-1.1-SNAPSHOT-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1-SNAPSHOT-install.zip)
 
 
+Installation instructions can be found [here](index.md)
 
 The MapsMessaging repository is [here](https://mapsmessaging.jfrog.io/)
 
