@@ -31,7 +31,8 @@ import java.util.UUID;
 @java.lang.SuppressWarnings({"squid:S3776", "common-java:DuplicatedBlocks"})
 public class Connect extends MQTTPacket {
 
-  private final byte[] mqtt = "MQTT".getBytes();
+  private final byte[] mqtt_3_1_1 = "MQTT".getBytes();
+  private final byte[] mqtt_3_1   = "MQIsdp".getBytes();
 
   private byte protocolLevel;
 
@@ -78,17 +79,37 @@ public class Connect extends MQTTPacket {
     len = (short) (len << 8);
     byte tmp = packet.get();
     len += tmp;
-    if (len < mqtt.length) {
+    if (len < mqtt_3_1_1.length) {
       throw new MalformedException();
     }
     byte[] header = new byte[len];
     packet.get(header, 0, len);
-    for (int x = 0; x < len; x++) {
-      if (header[x] != mqtt[x]) {
+
+    // Confirm we start with MQ
+    for(int x=0;x<2;x++){
+      if (header[x] != mqtt_3_1_1[x]) {
         throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
       }
     }
-    protocolLevel = packet.get();
+    if(header[2] == mqtt_3_1[2]){
+      for (int x = 2; x < len; x++) {
+        if (header[x] != mqtt_3_1[x]) {
+          throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
+        }
+      }
+      protocolLevel = packet.get();
+    }
+    else if(header[2] == mqtt_3_1_1[2]){
+      for (int x = 2; x < len; x++) {
+        if (header[x] != mqtt_3_1_1[x]) {
+          throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
+        }
+      }
+      protocolLevel = packet.get();
+    }
+    else{
+      throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
+    }
 
     // BYTE 8
     byte connectFlag = packet.get();
@@ -297,8 +318,8 @@ public class Connect extends MQTTPacket {
   public int packFrame(Packet packet) {
     ByteArrayOutputStream b = new ByteArrayOutputStream();
     b.write(0);
-    b.write(mqtt.length);
-    b.write(mqtt, 0, mqtt.length);
+    b.write(mqtt_3_1_1.length);
+    b.write(mqtt_3_1_1, 0, mqtt_3_1_1.length);
     b.write(4);
 
     byte connectFlag = 0;

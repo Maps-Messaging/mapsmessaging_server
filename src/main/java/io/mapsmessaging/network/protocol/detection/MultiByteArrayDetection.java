@@ -44,9 +44,12 @@ public class MultiByteArrayDetection implements Detection {
   @Override
   public boolean detected(Packet packet) throws EndOfBufferException {
     EndOfBufferException exception = null;
+    int start = packet.position();
     for (ByteArrayDetection detection : individualDetection) {
       try {
-        if (detection.detected(packet)) {
+        boolean found = detection.detected(packet);
+        packet.position(start);
+        if(found){
           return true;
         }
       } catch (EndOfBufferException e) {

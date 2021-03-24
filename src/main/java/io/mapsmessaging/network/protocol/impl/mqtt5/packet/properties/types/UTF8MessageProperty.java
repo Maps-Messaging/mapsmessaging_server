@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.types;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
 
 public abstract class UTF8MessageProperty extends MessageProperty {
@@ -31,7 +32,7 @@ public abstract class UTF8MessageProperty extends MessageProperty {
   }
 
   @Override
-  public void load(Packet packet) {
+  public void load(Packet packet) throws MalformedException {
     value = MQTTPacket.readUTF8(packet);
   }
 

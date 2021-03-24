@@ -22,19 +22,19 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.detection.ByteArrayDetection;
+import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
 import java.io.IOException;
 
 public class MQTTProtocolFactory extends ProtocolImplFactory {
 
-  private static final byte[] PROTOCOL;
+  private static final byte[][] PROTOCOL;
 
   static {
-    PROTOCOL = new byte[]{'M', 'Q', 'T', 'T', 4};
+    PROTOCOL = new byte[][]{{'M', 'Q', 'T', 'T', 4},{'M','Q','I','s','d','p'}};
   }
 
   public MQTTProtocolFactory() {
-    super("MQTT", "MQTT version 3.1.1 as per http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html", new ByteArrayDetection(PROTOCOL, 4));
+    super("MQTT", "MQTT version 3.1.1 as per http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html", new MultiByteArrayDetection(PROTOCOL, 4));
   }
 
   @Override
