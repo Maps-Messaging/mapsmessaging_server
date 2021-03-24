@@ -95,7 +95,9 @@
     </fileSet>
     <fileSet>
       <directory>${project.basedir}</directory>
-      <includes>libLoRaDevice.so</includes>
+      <includes>
+        <include>libLoRaDevice.so</include>
+      </includes>
       <outputDirectory>lib</outputDirectory>
     </fileSet>
     <fileSet>
