@@ -12,6 +12,11 @@ With the MapsMessaging Daemon it natively supports the following protocols
 * AMQP 1.0 - (JMS over AMQP)
 * Stomp (1.1, 1.2)
 
+Independently of where messages arrive from all clients on all protocols and interact with each other.  
+
+#### Protocol Extensibility
+The protocol library is extendable and if an organisation has an internal proprietary protocol it can be added to the server as a native protocol.
+
 All these wire protocols can be run over 
 
   * tcp
@@ -25,8 +30,13 @@ As well as the standard TCP/UDP connections the server also supports LoRa device
 
 ### Inter-server Connections
 
+
+#### Native Server Connections
 The server also supports connections to other servers, such that MapsMessaging can connect to other MQTT, AMQP, Stomp servers and pull data from them and publish to local resources or it can be configured to push data from local resources to remote servers removing any need for another application to enable this message flow.
 These connections support the JMS Selector syntax on events coming in or out of the server enabling only events that have interest to be processed.
+
+#### Pluggable Server Connections
+With anything within MapsMessaging there is the ability to provide custom connection code to enable the server to connect to other messaging servers that do not comply with open messaging servers. Enabling the events to flow to enterprise messaging servers that other applications are currently bound to. There is an [example](https://github.com/Maps-Messaging/mapsmessaging_server/tree/main/src/examples/java/io/mapsmessaging/network/protocol/impl/apache_pulsar) of this in the code base using the native [Apache Pulsar](https://pulsar.apache.org/) client to send and receive events.   
 
 
 ### Modularisation
