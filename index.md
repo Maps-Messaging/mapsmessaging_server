@@ -3,6 +3,10 @@
 This project is in response to the growing deployment of IoT networks, and the challenge to connect large numbers of low power, low resource devices to large enterprise level applications.
 With the evolution of various IoT protocols to handle the different requirements for messaging the integration and message flow to applications that need the data has become complex and in some cases involves multiple servers and protocols just to receive a sensor reading.
 
+### Installation
+
+Installation instructions can be found [here](installation.md)
+
 ### Protocols Supported
 
 With the MapsMessaging Daemon it natively supports the following protocols 
@@ -66,8 +70,6 @@ The nightly installation builds can be found here
 [message_daemon-1.1-SNAPSHOT-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1-SNAPSHOT-install.tar.gz) \
 [message_daemon-1.1-SNAPSHOT-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1-SNAPSHOT-install.zip)
 
-
-Installation instructions can be found [here](index.md)
 
 The MapsMessaging repository is [here](https://mapsmessaging.jfrog.io/)
 
