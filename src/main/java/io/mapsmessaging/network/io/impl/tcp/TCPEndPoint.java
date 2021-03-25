@@ -199,7 +199,7 @@ public class TCPEndPoint extends EndPoint {
     socket.setKeepAlive(true);
     socket.setReuseAddress(true);
     socket.setTcpNoDelay(true);
-    socket.setSoLinger(false, 0);
+    socket.setSoLinger(true, 0);
 
     /*
     Configurable settings for Sockets
