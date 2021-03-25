@@ -24,7 +24,7 @@ All these wire protocols can be run over
   * ssl
   * ws
   * wss 
-  * LoRa hardware  
+  * [LoRa hardware](LoRaDevice_config.md)  
   * Serial devices
 
 As well as the standard TCP/UDP connections the server also supports LoRa devices on a raspberryPi enabling direct messaging between a LoRa sensor and the server using MQTT-SN, removing the requirement for another hop between sensor and messaging server.
