@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import java.util.UUID;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -26,12 +27,10 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.BaseTestConfig;
 
-import java.util.UUID;
+abstract class MQTTPublishEventTest extends MQTTBaseTests {
 
-class MQTTPublishEventTest extends BaseTestConfig {
-
+  abstract int getVersion();
 
   @Test
   @DisplayName("Test QoS:0 publishing")
@@ -52,11 +51,12 @@ class MQTTPublishEventTest extends BaseTestConfig {
   }
 
   private void testPublish(int QoS) throws MqttException, InterruptedException{
-    MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttClient client = new MqttClient("tcp://localhost:2001", getClientId(UUID.randomUUID().toString(), getVersion()), new MemoryPersistence());
     MqttConnectOptions options = new MqttConnectOptions();
     options.setWill("/topic/will", "this is my will msg".getBytes(), QoS, true);
     options.setUserName("user1");
     options.setPassword("password1".toCharArray());
+    options.setMqttVersion(getVersion());
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
     for(int x=0;x<10;x++) {
