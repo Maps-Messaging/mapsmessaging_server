@@ -41,6 +41,9 @@ public class EndPointURL {
     if(url.length() > tmp.length()) {
       file = url.substring(tmp.length());
     }
+    else{
+      file = "";
+    }
     parseParameterMap(url);
   }
 
@@ -71,7 +74,10 @@ public class EndPointURL {
 
   @Override
   public String toString() {
-    return protocol + "://" + host + ":" + port + "/" + file;
+    if(file != null) {
+      return protocol + "://" + host + ":" + port + "/" + file;
+    }
+    return protocol + "://" + host + ":" + port + "/";
   }
 
   protected String parseProtocol(String url) {
