@@ -106,7 +106,7 @@ NetworkManager:
         maxTopicsInSleep: 10
 
       -
-        url: "tcp://0.0.0.0:5672/"
+        url: tcp://0.0.0.0:5672/
         name: "AMQP Interface"
         protocol : amqp
         auth : public
@@ -114,6 +114,6 @@ NetworkManager:
 
       -
         name: "Stomp Interface"
-        url: "tcp://0.0.0.0:8675/"
+        url: tcp://0.0.0.0:8675/
         protocol : stomp
 
