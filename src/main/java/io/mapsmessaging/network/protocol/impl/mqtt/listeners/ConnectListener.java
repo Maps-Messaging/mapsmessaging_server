@@ -51,7 +51,13 @@ public class ConnectListener extends BaseConnectionListener {
     Connect connect = (Connect) mqttPacket;
     ConnAck connAck = new ConnAck();
 
-    boolean strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
+    boolean strict;
+    if(connect.getProtocolLevel() == 3){
+      strict = true; // For MQTT 3.1 it must be strict to adhere to the standard
+    }
+    else{
+      strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
+    }
     String sessionId = connect.getSessionId();
     if ((!connect.isCleanSession() && sessionId.length() == 0) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
