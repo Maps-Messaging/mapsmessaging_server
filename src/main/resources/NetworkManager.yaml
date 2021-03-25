@@ -117,3 +117,8 @@ NetworkManager:
         url: tcp://0.0.0.0:8675/
         protocol : stomp
 
+      -
+        name: "Global Interface for all interfaces"
+        url: tcp://0.0.0.0:8888/
+        protocol : all
+        auth : public
