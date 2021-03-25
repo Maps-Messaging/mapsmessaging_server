@@ -18,11 +18,15 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
+import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LoRaDeviceManager {
 
@@ -31,6 +35,7 @@ public class LoRaDeviceManager {
     return instance;
   }
 
+  private final Logger logger = LoggerFactory.getLogger(LoRaDeviceManager.class);
 
   //
   // Some devices can run up to 3 different radio devices, all independent of each other
@@ -39,6 +44,7 @@ public class LoRaDeviceManager {
   // send / receive packets specific to their configured Node ID
   //
   private final List<LoRaDevice> physicalDevices = new ArrayList<>();
+  private final AtomicBoolean active = new AtomicBoolean(false);
 
   private LoRaDeviceManager() {
     synchronized (physicalDevices) {
@@ -60,11 +66,12 @@ public class LoRaDeviceManager {
             if (configBuilder.isValid()) {
               LoRaDevice device = new LoRaDevice(configBuilder.build());
               physicalDevices.add(device);
+              active.set(true);
             }
           }
         }
       } catch (UnsatisfiedLinkError e) {
-        // No point in worrying if its not a Pi it will not load
+        logger.log(LogMessages.LORA_DEVICE_LIBRARY_NOT_LOADED, e.getMessage());
       }
     }
   }
@@ -81,6 +88,6 @@ public class LoRaDeviceManager {
   }
 
   public boolean isLoaded() {
-    return !physicalDevices.isEmpty();
+    return active.get();
   }
 }

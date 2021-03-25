@@ -471,6 +471,7 @@ public enum LogMessages {
   //</editor-fold>
 
   //<editor-fold desc="LoRa Device log messages">
+  LORA_DEVICE_LIBRARY_NOT_LOADED(LEVEL.WARN, CATEGORY.NETWORK, "LoRa device library failed to load {}"),
   LORA_DEVICE_NOT_INITIALISED(LEVEL.WARN, CATEGORY.PROTOCOL, "LoRa device for {} on device {} not yet initialised"),
   LORA_DEVICE_INIT_FAILED(LEVEL.WARN, CATEGORY.PROTOCOL, "LoRa device for {} on device {} failed to during initialised"),
   LORA_DEVICE_REGISTERED(LEVEL.INFO, CATEGORY.PROTOCOL, "Registering endPoint {} on {}"),
