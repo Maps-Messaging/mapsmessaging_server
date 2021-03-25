@@ -10,11 +10,11 @@ if you want to support heavy radio traffic than a proper LoRa gateway device wou
 
 There are a couple of prerequisites required to enable this feature
 
-1. RaspberryPi - Model 3 or better
-2. LoRa device - The one from Adafruit linked above is used locally but any RFM95 chipset should work, you may need to adjust the configuration for the device.
-3. MapsMessaging Server installation - Please check the [Installation Document](installation.md). The LoRa device library for the raspberryPi is packaged with the server.
+* RaspberryPi - Model 3 or better
+* LoRa device - The one from Adafruit linked above is used locally but any RFM95 chipset should work, you may need to adjust the configuration for the device.
+* MapsMessaging Server installation - Please check the [Installation Document](installation.md). The LoRa device library for the raspberryPi is packaged with the server.
 
-# Configuration
+## Configuration
 
 Install the LoRa device as per the manufactures' recommendation, in the case of the Adafruit LoRa bonnet, refer to the [Adafruit Guide](https://learn.adafruit.com/adafruit-radio-bonnets).
 
@@ -22,7 +22,7 @@ Please note that the frequency of your device is dependent on your countries res
 
 To configure the device ready for use with the server the first thing we need to do is to tell the server what the specific pinout is for the device. In the case of the Adafruit Bonnet they are
 
-## Configuring the device
+### Configuring the device
 LoRaDevice.yaml
 ```yaml
 LoRaDevice:
@@ -50,7 +50,7 @@ Here you will need to change the <u>frequency</u> to match your countries restri
 
 The server will then load the LoRaDevice library and attempt to connect to the physical device based on the configuration supplied. If successful a new device within the server will be available, in this case it will be called <b>loraDevice0</b>.
 
-## Mapping the device to a protocol
+### Mapping the device to a protocol
 
 The next step is to tell the server how you wish to use it, this is done in the [NetworkManager.yaml](NetworkManager_Config.md) file. By adding the following snippet to the file the server will map MQTT-SN to the device and register specific MQTT-SN topics
 
@@ -66,6 +66,7 @@ The next step is to tell the server how you wish to use it, this is done in the 
 
 In the snippet above the server will create a new interface using loraDevice0, configured in the LoRaDevice.yaml, map node 10 for itself and then bind to the MQTT-SN protocol ready to process incoming packets.
 
+#### MQTT-SN Registered Topics
 The mqtt-sn registered event format is as a : separated csv format as follows
 
 1. Node Address or * for all nodes
@@ -87,3 +88,12 @@ On a successful load and startup you should see something like
 ```log
 2021-03-25 13:40:41, Engine, , -, , [main] WARN  io.mapsmessaging.MessageDaemon -               Loaded service lora, LoRa End Point Server Factory
 ```
+
+## Example Arduino Code
+
+There are examples for Arduino's that have a LoRa device 
+
+* [Water Tank Ultrasonic sensor](https://github.com/Maps-Messaging/mapsmessaging_server/blob/main/src/main/arduino/examples/waterTankMonitor/waterTankMonitor.ino) 
+* [Simple BME280 sensor](https://github.com/Maps-Messaging/mapsmessaging_server/blob/main/src/main/arduino/examples/bme280MQTT/bme280MQTT.ino)
+* [Weather Station](https://github.com/Maps-Messaging/mapsmessaging_server/blob/main/src/main/arduino/examples/weatherStation/weatherStation.ino)
+
