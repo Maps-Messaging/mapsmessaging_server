@@ -1,9 +1,63 @@
-# Connecting to other Messaging Servers
+# NetworkConnectionManager.yaml
 
 MapsMessaging has a feature that enables it to directly connect to other messaging servers that support MQTT, AMQP and Stomp. The server can also be extended to use proprietary code to connect to servers that do not support open wire protocol standards.
 
+To configure an inter-server link the first section is to define the link details
 
-#Generic Configuration
+* Protocol to use, once of ( Stomp | mqtt | AMQP )
+* URL for the remote server, (tcp | ssl | ws | wss)://(hostname):(port)/
+* Username for authentication of the link
+* Password for authenticaiton of the link
+* SessionId, for MQTT this is mapped to the client ID and is used locally for log messages
+
+For example
+
+```yaml
+      - # ---------------------------------------------------------------------------------------------------------
+        #  Interface definitions for local loragateway
+        # ---------------------------------------------------------------------------------------------------------
+        name: loraGateWayServer
+        url: tcp://192.168.1.200:1883/
+        protocol: mqtt
+        username: loraAdmin
+        password: password
+        sessionId: loraAdminLink
+```
+
+The above configuration will connect to host 192.168.1.200 port 1883 and establish a MQTT connection using the supplied username, password and client ID.
+At this point we just have a connection, the next part of the configuration is a list of links that contain 
+
+* Local topic name
+* Remote topic name
+* Direction of message flow
+* Selector to use to filter events
+
+```yaml
+        links:
+          -
+            direction: pull 
+            remote_namespace: /outdoor/temperature
+            local_namespace: /lora/outdoor/temperature
+          -
+            direction: pull
+            remote_namespace: /outdoor/humidity
+            local_namespace: /lora/outdoor/humidity
+          -
+            direction: pull
+            remote_namespace: /outdoor/pressure
+            local_namespace: /lora/outdoor/pressure
+          -
+            direction: push
+            remote_namespace: /admin/messages
+            local_namespace: /lora/admin
+```
+The above configuration will create 3 subscriptions to the remote server and remote namespace, ( please note for MQTT wildcard subscription is supported )
+It will also create a local subscription to /lore/admin and any events will be published to the remote nodes /admin/messages topic.
+
+There can be multiple links defined for a single connection as well as multiple connections to the same remote host.
+
+
+#Global Configuration
 
 
 ```yaml
@@ -27,7 +81,6 @@ NetworkConnectionManager:
         serverReadBufferSize:  1M
         serverWriteBufferSize: 1M
         selectorThreadCount  : 5
-
 ```
 ## Generic MQTT Connection
 
@@ -49,8 +102,9 @@ NetworkConnectionManager:
             local_namespace: <local topic name>
 ```
 
+##Adafruit.IO MQTT connection
 
-##Adafruit MQTT connection
+For up to date information regarding rhe Adafruit MQTT server please check the [Adafruit IO MQTT API](https://io.adafruit.com/api/docs/mqtt.html#adafruit-io-mqtt-api) page regarding SSL, WS etc.
 
 ```yaml
     -
