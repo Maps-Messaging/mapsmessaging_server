@@ -1,13 +1,13 @@
 # NetworkConnectionManager.yaml
 
-MapsMessaging has a feature that enables it to directly connect to other messaging servers that support MQTT, AMQP and Stomp. The server can also be extended to use proprietary code to connect to servers that do not support open wire protocol standards.
+MapsMessaging has a feature that enables it to directly connect to other messaging servers that support MQTT, AMQP and Stomp. The server can also be extended to use proprietary APIs to connect to servers that do not support open wire protocol standards.
 
 To configure an inter-server link the first section is to define the link details
 
 * Protocol to use, once of ( Stomp | mqtt | AMQP )
 * URL for the remote server, (tcp | ssl | ws | wss)://(hostname):(port)/
 * Username for authentication of the link
-* Password for authenticaiton of the link
+* Password for authentication of the link
 * SessionId, for MQTT this is mapped to the client ID and is used locally for log messages
 
 For example
@@ -29,8 +29,8 @@ At this point we just have a connection, the next part of the configuration is a
 
 * Local topic name
 * Remote topic name
-* Direction of message flow
-* Selector to use to filter events
+* Direction of message flow, Pull indicates that the local server will pull (subscribe) events from the other server, Push indicates that the local server will send events to the remote server
+* Selector to use as a filter for events, This is a standard JMS-Selector string.
 
 ```yaml
         links:
@@ -57,8 +57,12 @@ It will also create a local subscription to /lore/admin and any events will be p
 There can be multiple links defined for a single connection as well as multiple connections to the same remote host.
 
 
+
 #Global Configuration
 
+As for all yaml configuration files for MapsMessaging there is a global section that can be used to set defaults for all configured connections. The values are the same as in the [NetworkManager](NetworkManager_Config.md) configuration file.
+
+For example:
 
 ```yaml
 NetworkConnectionManager:
@@ -82,6 +86,8 @@ NetworkConnectionManager:
         serverWriteBufferSize: 1M
         selectorThreadCount  : 5
 ```
+
+
 ## Generic MQTT Connection
 
 ```yaml
