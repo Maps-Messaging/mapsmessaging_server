@@ -34,6 +34,8 @@ The protocol library is extendable and if an organisation has an internal propri
 
 ### Inter-server Connections
 
+MapsMessaging can be configured to ingest events from other remote servers or to publish events to other remote servers. This removes the requirement for additional agents to move messages from 1 server to another. The configuration for these can be found in [NetworkConnectionManager.yaml](InterServerConnection_config.md) file.
+
 #### Native Server Connections
 The server also supports connections to other servers, such that MapsMessaging can connect to other MQTT, AMQP, Stomp servers and pull data from them and publish to local resources or it can be configured to push data from local resources to remote servers removing any need for another application to enable this message flow.
 These connections support the JMS Selector syntax on events coming in or out of the server enabling only events that have interest to be processed.

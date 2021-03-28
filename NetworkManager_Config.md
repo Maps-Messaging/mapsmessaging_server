@@ -11,7 +11,7 @@ The global section is just a list of key/value pairs that can be used to
 * Override the servers defaults
 * Specify site specific configuration for all interfaces
 
-In the example below we can see that the SSL keystores are setup, this configuration will be used for ALL SSL based interfaces unless they are overwritten in the specific SSL configuration.
+In the example below we can see that the SSL keystores are set up, this configuration will be used for ALL SSL based interfaces unless they are overwritten in the specific SSL configuration.
 
 ```yaml
   global:
@@ -68,12 +68,12 @@ This enables a default value that is useful for a specific site that the built-i
 
 ### Interface Configuration
 
-Each unique interface that you want to setup needs to have 
+Each unique interface that you want to set up needs to have 
 * url
 * name
 * protocol
 
-The other parameters are optional and will be filled in by the servers defaults or any values specified in the 'global' seciont
+The other parameters are optional and will be filled in by the servers defaults or any values specified in the 'global' section
 
 ```yaml
     -
