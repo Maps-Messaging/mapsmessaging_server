@@ -99,7 +99,7 @@ public class DestinationManager implements DestinationFactory {
     rootPath = root;
     destinationManagerListeners = new CopyOnWriteArrayList<>();
     destinationList = new ConcurrentHashMap<>();
-    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 2000, time, TimeUnit.MILLISECONDS);
+    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, time, TimeUnit.MILLISECONDS);
   }
 
   public void addSystemTopic(SystemTopic systemTopic) {
