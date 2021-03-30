@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-abstract class MQTTPublishEventTest extends MQTTBaseTests {
+abstract class MQTTPublishEventTest extends MQTTBaseTest {
 
   abstract int getVersion();
 

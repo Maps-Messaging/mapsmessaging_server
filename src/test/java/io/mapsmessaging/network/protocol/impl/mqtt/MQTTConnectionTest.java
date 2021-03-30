@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-abstract class  MQTTConnectionTest extends MQTTBaseTests {
+abstract class  MQTTConnectionTest extends MQTTBaseTest {
 
   abstract int getVersion();
 
