@@ -51,32 +51,13 @@ public class ConnectListener extends BaseConnectionListener {
     Connect connect = (Connect) mqttPacket;
     ConnAck connAck = new ConnAck();
 
-    boolean strict;
-    if(connect.getProtocolLevel() == 3){
-      strict = true; // For MQTT 3.1 it must be strict to adhere to the standard
-    }
-    else{
-      strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
-    }
+    boolean strict = checkStrict(connect, protocol);
+
     String sessionId = connect.getSessionId();
     if ((!connect.isCleanSession() && sessionId.length() == 0) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
     } else {
-      SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
-      if (connect.isWillFlag()) {
-        Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null);
-        scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
-      }
-      protocol.setKeepAlive(connect.getKeepAlive());
-      try {
-        Session session = createSession(endPoint, protocol, scb, sessionId);
-        connAck.setResponseCode(ConnAck.SUCCESS);
-        connAck.setRestoredFlag(session.isRestored());
-        connAck.setCallback(session::resumeState);
-      } catch (IOException e) {
-        logger.log(LogMessages.MQTT_BAD_USERNAME_PASSWORD, e);
-        connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
-      }
+      createSession(sessionId, connect, connAck, endPoint, protocol);
     }
 
     if (connAck.getResponseCode() != ConnAck.SUCCESS) {
@@ -89,6 +70,35 @@ public class ConnectListener extends BaseConnectionListener {
       }, 100, TimeUnit.MILLISECONDS));
     }
     return connAck;
+  }
+
+  void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+    SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
+    if (connect.isWillFlag()) {
+      Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null);
+      scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
+    }
+    protocol.setKeepAlive(connect.getKeepAlive());
+    try {
+      Session session = createSession(endPoint, protocol, scb, sessionId);
+      connAck.setResponseCode(ConnAck.SUCCESS);
+      connAck.setRestoredFlag(session.isRestored());
+      connAck.setCallback(session::resumeState);
+    } catch (IOException e) {
+      logger.log(LogMessages.MQTT_BAD_USERNAME_PASSWORD, e);
+      connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
+    }
+  }
+
+  boolean checkStrict(Connect connect,ProtocolImpl protocol){
+    boolean strict;
+    if(connect.getProtocolLevel() == 3){
+      strict = true; // For MQTT 3.1 it must be strict to adhere to the standard
+    }
+    else{
+      strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
+    }
+    return strict;
   }
 
   boolean clientIdAllowed(String clientId, boolean strict){

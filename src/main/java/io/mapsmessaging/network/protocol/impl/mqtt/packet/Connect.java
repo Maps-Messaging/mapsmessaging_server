@@ -31,6 +31,8 @@ import java.util.UUID;
 @java.lang.SuppressWarnings({"squid:S3776", "common-java:DuplicatedBlocks"})
 public class Connect extends MQTTPacket {
 
+  private static final String NO_PROTOCOL_FOUND_MSG = "No Protocol string specified. [MQTT-3.1.2-1]";
+
   private final byte[] mqtt_3_1_1 = "MQTT".getBytes();
   private final byte[] mqtt_3_1   = "MQIsdp".getBytes();
 
@@ -88,13 +90,13 @@ public class Connect extends MQTTPacket {
     // Confirm we start with MQ
     for(int x=0;x<2;x++){
       if (header[x] != mqtt_3_1_1[x]) {
-        throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
+        throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
       }
     }
     if(header[2] == mqtt_3_1[2]){
       for (int x = 2; x < len; x++) {
         if (header[x] != mqtt_3_1[x]) {
-          throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
+          throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
         }
       }
       protocolLevel = packet.get();
@@ -102,13 +104,13 @@ public class Connect extends MQTTPacket {
     else if(header[2] == mqtt_3_1_1[2]){
       for (int x = 2; x < len; x++) {
         if (header[x] != mqtt_3_1_1[x]) {
-          throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
+          throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
         }
       }
       protocolLevel = packet.get();
     }
     else{
-      throw new MalformedException("No Protocol string specified. [MQTT-3.1.2-1]");
+      throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
     }
 
     // BYTE 8
