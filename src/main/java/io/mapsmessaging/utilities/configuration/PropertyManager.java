@@ -60,6 +60,9 @@ public abstract class PropertyManager {
 
   public void loadPropertiesJSON(@NonNull @NotNull String name, @NonNull @NotNull JSONObject config) {
     properties.remove(name);
+    if(!(config.get(name) instanceof JSONArray)){
+      return; // not all Yaml Configurations are arrays
+    }
     JSONArray array = config.getJSONArray(name);
     Map<String, Object> globalProperties = new LinkedHashMap<>();
     if(config.has("global")) {
