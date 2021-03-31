@@ -1,18 +1,17 @@
 /*
+ *    Copyright [ 2020 - 2021 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  *
  */
 
@@ -26,6 +25,7 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.StreamEndPoint;
@@ -34,6 +34,7 @@ import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
+import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -46,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
+
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,6 +58,9 @@ public class NMEAProtocol extends ProtocolImpl {
   private final SelectorTask selectorTask;
   private final Map<String, Destination> sentenceMap;
   private final SentenceFactory sentenceFactory;
+  private final String format;
+  private final String serverLocationSentence;
+  private final boolean publishRecords;
 
   public NMEAProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint);
@@ -75,7 +80,17 @@ public class NMEAProtocol extends ProtocolImpl {
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));
-    sentenceFactory = new SentenceFactory((ConfigurationProperties) ConfigurationManager.getInstance().getProperties("nmea").get("sentences"));
+    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("nmea");
+    format = configurationProperties.getProperty("format", "raw");
+    boolean setServerLocation = configurationProperties.getBooleanProperty("serverLocation", false);
+    if(setServerLocation){
+      serverLocationSentence = configurationProperties.getProperty("sentenceForPosition");
+    }
+    else{
+      serverLocationSentence = null;
+    }
+    publishRecords = configurationProperties.getBooleanProperty("publish", false);
+    sentenceFactory = new SentenceFactory((ConfigurationProperties) configurationProperties.get("sentences"));
   }
 
   @Override
@@ -88,6 +103,21 @@ public class NMEAProtocol extends ProtocolImpl {
     // It has no keep alive mechanism
   }
 
+  private String processPacket(String raw, String sentenceId, Iterator<String> gpsWords){
+    if(format.equalsIgnoreCase("json") || serverLocationSentence != null) {
+      Sentence sentence = sentenceFactory.parse(sentenceId, gpsWords);
+      if(serverLocationSentence.equalsIgnoreCase(sentenceId)){
+        PositionType latitude = (PositionType) sentence.get("latitude");
+        PositionType longitude = (PositionType) sentence.get("longitude");
+        LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
+      }
+      if(sentence != null && format.equalsIgnoreCase("json")) {
+        return sentence.toJSON();
+      }
+    }
+    return raw;
+  }
+
   @Override
   public boolean processPacket(Packet packet) throws IOException {
     while (packet.hasRemaining()) {
@@ -98,29 +128,31 @@ public class NMEAProtocol extends ProtocolImpl {
         String sentence = new String(buffer);
         Iterator<String> gpsWords = new ArrayList<>(Arrays.asList(sentence.split(","))).iterator();
         String sentenceId = gpsWords.next();
-        Sentence sentence1 = sentenceFactory.parse(sentenceId, gpsWords);
-        MessageBuilder messageBuilder = new MessageBuilder();
-        messageBuilder.setOpaqueData(sentence.getBytes());
-        messageBuilder.storeOffline(false);
-        messageBuilder.setRetain(false);
-        messageBuilder.setMessageExpiryInterval(8,  TimeUnit.SECONDS); // Expire the event in 8 seconds
-        messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
-        raw.storeMessage(messageBuilder.build());
-        Destination destination = sentenceMap.get(sentenceId);
-        if (destination == null) {
-          destination = session.findDestination("$NMEA/sentence/" + sentenceId);
-          sentenceMap.put(sentenceId, destination);
-        }
-        messageBuilder = new MessageBuilder();
-        messageBuilder.setOpaqueData(sentence.getBytes())
-            .setRetain(false)
-            .storeOffline(false)
-            .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
-            .setQoS(QualityOfService.AT_MOST_ONCE)
-            .setTransformation(getTransformation());
+        String processed = processPacket(sentence, sentenceId, gpsWords);
+        if(publishRecords) {
+          MessageBuilder messageBuilder = new MessageBuilder();
+          messageBuilder.setOpaqueData(sentence.getBytes());
+          messageBuilder.storeOffline(false);
+          messageBuilder.setRetain(false);
+          messageBuilder.setMessageExpiryInterval(8, TimeUnit.SECONDS); // Expire the event in 8 seconds
+          messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
+          raw.storeMessage(messageBuilder.build());
+          Destination destination = sentenceMap.get(sentenceId);
+          if (destination == null) {
+            destination = session.findDestination("$NMEA/sentence/" + sentenceId);
+            sentenceMap.put(sentenceId, destination);
+          }
+          messageBuilder = new MessageBuilder();
+          messageBuilder.setOpaqueData(processed.getBytes())
+              .setRetain(false)
+              .storeOffline(false)
+              .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
+              .setQoS(QualityOfService.AT_MOST_ONCE)
+              .setTransformation(getTransformation());
 
-        if(destination != null) {
-          destination.storeMessage(messageBuilder.build());
+          if (destination != null) {
+            destination.storeMessage(messageBuilder.build());
+          }
         }
         receivedMessage();
       } catch (EndOfBufferException e) {

@@ -1,3 +1,20 @@
+/*
+ *    Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.network.protocol.impl.nmea.sentences;
 
 import io.mapsmessaging.network.protocol.impl.nmea.types.EnumTypeFactory;
@@ -38,27 +55,37 @@ public class SentenceParser {
     }
   }
 
+  public String getDescription(){
+    return description;
+  }
+
   public Sentence parse(Iterator<String> entries){
     List<String> order = new ArrayList<>();
     Map<String, Type> values = new LinkedHashMap<>();
     for(Config config:configs){
-      int repeat = config.repeats;
-      for(int x=0;x<repeat;x++) {
-        Type type = TypeFactory.create(config.name, config.type, config.parameters, entries);
-        if(type != null) {
-          if (repeat == 1) {
-            values.put(config.name, type);
-            order.add(config.name);
-          } else {
-            values.put(config.name + "_" + x, type);
-            order.add(config.name + "_" + x);
-          }
+      if(entries.hasNext()) {
+        int repeat = config.repeats;
+        parseEntry(config, entries, repeat, values, order);
+      }
+    }
+    return new Sentence(name, description, order, values);
+  }
+
+  private void parseEntry(Config config, Iterator<String> entries, int repeat, Map<String, Type> values, List<String> order){
+    for (int x = 0; x < repeat; x++) {
+      Type type = TypeFactory.create(config.name, config.type, config.parameters, entries);
+      if (type != null) {
+        if (repeat == 1) {
+          values.put(config.name, type);
+          order.add(config.name);
+        } else {
+          values.put(config.name + "_" + x, type);
+          order.add(config.name + "_" + x);
         }
       }
     }
-    return new Sentence(name, order, values, "raw");
-  }
 
+  }
 
   private static final class Config {
     private final String name;
