@@ -219,6 +219,7 @@ public class TCPEndPoint extends EndPoint {
     socketChannel.configureBlocking(false);
   }
 
+  @Override
   public void completedConnection() {
     int linger = getConfig().getProperties().getIntProperty("soLingerDelaySec", 10);
     try {
