@@ -41,6 +41,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
     try {
       new NMEAProtocol(endPoint, packet);
     } catch (LoginException e) {
+      e.printStackTrace();
       // Ignore since it should just work
     }
   }

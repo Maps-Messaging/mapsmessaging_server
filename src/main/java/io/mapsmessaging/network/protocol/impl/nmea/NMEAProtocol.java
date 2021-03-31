@@ -32,9 +32,16 @@ import io.mapsmessaging.network.io.StreamEndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
+import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +55,7 @@ public class NMEAProtocol extends ProtocolImpl {
   private final Destination raw;
   private final SelectorTask selectorTask;
   private final Map<String, Destination> sentenceMap;
-
+  private final SentenceFactory sentenceFactory;
 
   public NMEAProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint);
@@ -68,6 +75,7 @@ public class NMEAProtocol extends ProtocolImpl {
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));
+    sentenceFactory = new SentenceFactory((ConfigurationProperties) ConfigurationManager.getInstance().getProperties("nmea").get("sentences"));
   }
 
   @Override
@@ -88,7 +96,9 @@ public class NMEAProtocol extends ProtocolImpl {
         byte[] buffer = new byte[packet.available()];
         packet.get(buffer);
         String sentence = new String(buffer);
-        String sentenceId = sentence.substring(0, sentence.indexOf(','));
+        Iterator<String> gpsWords = new ArrayList<>(Arrays.asList(sentence.split(","))).iterator();
+        String sentenceId = gpsWords.next();
+        Sentence sentence1 = sentenceFactory.parse(sentenceId, gpsWords);
         MessageBuilder messageBuilder = new MessageBuilder();
         messageBuilder.setOpaqueData(sentence.getBytes());
         messageBuilder.storeOffline(false);
