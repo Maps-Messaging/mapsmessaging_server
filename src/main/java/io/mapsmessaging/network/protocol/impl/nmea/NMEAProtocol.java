@@ -47,7 +47,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
-
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -126,9 +125,13 @@ public class NMEAProtocol extends ProtocolImpl {
         byte[] buffer = new byte[packet.available()];
         packet.get(buffer);
         String sentence = new String(buffer);
+        if(sentence.startsWith("$")){
+          sentence = removeFraming(sentence);
+        }
         Iterator<String> gpsWords = new ArrayList<>(Arrays.asList(sentence.split(","))).iterator();
         String sentenceId = gpsWords.next();
         String processed = processPacket(sentence, sentenceId, gpsWords);
+
         if(publishRecords) {
           MessageBuilder messageBuilder = new MessageBuilder();
           messageBuilder.setOpaqueData(sentence.getBytes());
@@ -161,6 +164,12 @@ public class NMEAProtocol extends ProtocolImpl {
     }
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     return true;
+  }
+
+  private String removeFraming(String sentence) {
+    sentence = sentence.substring(1);
+    sentence = sentence.substring(0, sentence.indexOf("*"));
+    return sentence;
   }
 
   @Override
