@@ -21,6 +21,7 @@ Current support:
 | MQTT-SN  | 1.2     | :heavy_check_mark: | :x: | :x: | :x: | :x: | :heavy_check_mark: | :heavy_check_mark: | :x: |
 | AMQP     | 1.0     | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | JMS-AMQP :small_orange_diamond: | JMS 2.0  | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
+| NMEA     | 0183    | :heavy_check_mark: | :x: | :x: | :x: | :x: | :x: | :x: | ::heavy_check_mark: |
 
 
 :heavy_check_mark: - Tested, has conformance tests for validity of the protocol \
