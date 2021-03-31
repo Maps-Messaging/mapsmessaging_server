@@ -122,3 +122,9 @@ NetworkManager:
         url: tcp://0.0.0.0:8888/
         protocol : all
         auth : public
+
+      -
+        name: NMEA GPS port
+        url: serial://tty.usbserial-016e3398,9600,8,N,1/
+        protocol: NMEA
+        selectorThreadCount: 1
