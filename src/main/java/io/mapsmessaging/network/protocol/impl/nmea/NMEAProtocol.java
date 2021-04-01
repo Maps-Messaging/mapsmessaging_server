@@ -25,6 +25,7 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -49,17 +50,19 @@ import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class NMEAProtocol extends ProtocolImpl {
 
   private final Session session;
-  private final Destination raw;
   private final SelectorTask selectorTask;
   private final Map<String, Destination> sentenceMap;
   private final SentenceFactory sentenceFactory;
   private final String format;
   private final String serverLocationSentence;
   private final boolean publishRecords;
+  private final Map<String, SentenceMapping> registeredSentences;
+  private final String destinationName;
 
   public NMEAProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
     super(endPoint);
@@ -74,7 +77,6 @@ public class NMEAProtocol extends ProtocolImpl {
     sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
-    raw = session.findDestination("$NMEA/raw");
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
@@ -90,6 +92,19 @@ public class NMEAProtocol extends ProtocolImpl {
     }
     publishRecords = configurationProperties.getBooleanProperty("publish", false);
     sentenceFactory = new SentenceFactory((ConfigurationProperties) configurationProperties.get("sentences"));
+    registeredSentences = new LinkedHashMap<>();
+    destinationName = "$NMEA/"+endPoint.getName();
+    setConnected(true);
+  }
+
+  @Override
+  public void connect(String sessionId, String username, String password) throws IOException{
+    completedConnection();
+  }
+
+  @Override
+  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException{
+    registeredSentences.put(resource, new SentenceMapping(mappedResource, transformer));
   }
 
   @Override
@@ -100,21 +115,6 @@ public class NMEAProtocol extends ProtocolImpl {
   @Override
   public void sendKeepAlive() {
     // It has no keep alive mechanism
-  }
-
-  private String processPacket(String raw, String sentenceId, Iterator<String> gpsWords){
-    if(format.equalsIgnoreCase("json") || serverLocationSentence != null) {
-      Sentence sentence = sentenceFactory.parse(sentenceId, gpsWords);
-      if(serverLocationSentence.equalsIgnoreCase(sentenceId)){
-        PositionType latitude = (PositionType) sentence.get("latitude");
-        PositionType longitude = (PositionType) sentence.get("longitude");
-        LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
-      }
-      if(sentence != null && format.equalsIgnoreCase("json")) {
-        return sentence.toJSON();
-      }
-    }
-    return raw;
   }
 
   @Override
@@ -130,40 +130,78 @@ public class NMEAProtocol extends ProtocolImpl {
         }
         Iterator<String> gpsWords = new ArrayList<>(Arrays.asList(sentence.split(","))).iterator();
         String sentenceId = gpsWords.next();
-        String processed = processPacket(sentence, sentenceId, gpsWords);
-
-        if(publishRecords) {
-          MessageBuilder messageBuilder = new MessageBuilder();
-          messageBuilder.setOpaqueData(sentence.getBytes());
-          messageBuilder.storeOffline(false);
-          messageBuilder.setRetain(false);
-          messageBuilder.setMessageExpiryInterval(8, TimeUnit.SECONDS); // Expire the event in 8 seconds
-          messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
-          raw.storeMessage(messageBuilder.build());
-          Destination destination = sentenceMap.get(sentenceId);
-          if (destination == null) {
-            destination = session.findDestination("$NMEA/sentence/" + sentenceId);
-            sentenceMap.put(sentenceId, destination);
-          }
-          messageBuilder = new MessageBuilder();
-          messageBuilder.setOpaqueData(processed.getBytes())
-              .setRetain(false)
-              .storeOffline(false)
-              .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
-              .setQoS(QualityOfService.AT_MOST_ONCE)
-              .setTransformation(getTransformation());
-
-          if (destination != null) {
-            destination.storeMessage(messageBuilder.build());
-          }
+        if(sentenceId.length() == 5){
+          prepareSentence(sentence, sentenceId, gpsWords);
         }
-        receivedMessage();
       } catch (EndOfBufferException e) {
         packet.position(pos);
       }
     }
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     return true;
+  }
+
+  private void prepareSentence(String sentence, String sentenceId, Iterator<String> gpsWords) throws IOException {
+    if(registeredSentences.isEmpty()){
+      publishMessage(sentence, sentenceId, gpsWords, destinationName, null);
+    }
+    else{
+      SentenceMapping mapping = registeredSentences.get(sentenceId);
+      if(mapping != null){
+        publishMessage(sentence, sentenceId, gpsWords, mapping.destination, mapping.transformer);
+      }
+      else{ // check wild card
+        mapping = registeredSentences.get("#");
+        if(mapping != null){
+          String destination = mapping.destination;
+          if(destination.contains("#")){
+            destination = destination.replace("#", sentenceId);
+          }
+          publishMessage(sentence, sentenceId, gpsWords, destination, mapping.transformer);
+        }
+      }
+    }
+  }
+
+  private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) throws IOException {
+    String processed = parseSentence(sentence, sentenceId, gpsWords);
+    if(publishRecords) {
+      Destination destination = sentenceMap.get(sentenceId);
+      if (destination == null) {
+        destination = session.findDestination(destinationName);
+        sentenceMap.put(sentenceId, destination);
+      }
+      if (destination != null) {
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setOpaqueData(processed.getBytes())
+            .setRetain(false)
+            .storeOffline(false)
+            .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
+            .setQoS(QualityOfService.AT_MOST_ONCE)
+            .setTransformation(getTransformation());
+
+        if (transformer != null) {
+          transformer.transform(messageBuilder);
+        }
+        destination.storeMessage(messageBuilder.build());
+      }
+    }
+    receivedMessage();
+  }
+
+  private String parseSentence(String raw, String sentenceId, Iterator<String> gpsWords){
+    if(format.equalsIgnoreCase("json") || serverLocationSentence != null) {
+      Sentence sentence = sentenceFactory.parse(sentenceId, gpsWords);
+      if(serverLocationSentence.equalsIgnoreCase(sentenceId)){
+        PositionType latitude = (PositionType) sentence.get("latitude");
+        PositionType longitude = (PositionType) sentence.get("longitude");
+        LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
+      }
+      if(sentence != null && format.equalsIgnoreCase("json")) {
+        return sentence.toJSON();
+      }
+    }
+    return raw;
   }
 
   private String removeFraming(String sentence) {
@@ -184,6 +222,19 @@ public class NMEAProtocol extends ProtocolImpl {
 
   @Override
   public String getVersion() {
-    return "0.1";
+    return "0183";
   }
+
+
+  private final class SentenceMapping{
+
+    private final String destination;
+    private final Transformer transformer;
+
+    public SentenceMapping(String destination, Transformer transformer) {
+      this.destination = destination;
+      this.transformer = transformer;
+    }
+  }
+
 }
