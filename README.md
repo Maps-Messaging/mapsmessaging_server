@@ -21,7 +21,7 @@ Current support:
 | MQTT-SN  | 1.2     | :heavy_check_mark: | :x: | :x: | :x: | :x: | :heavy_check_mark: | :heavy_check_mark: | :x: |
 | AMQP     | 1.0     | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
 | JMS-AMQP :small_orange_diamond: | JMS 2.0  | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| NMEA     | 0183    | :heavy_check_mark: | :x: | :x: | :x: | :x: | :x: | :x: | :heavy_check_mark: |
+| NMEA :small_green_diamond:    | 0183    | :heavy_check_mark: | :x: | :x: | :heavy_check_mark: | :x: | :x: | :x: | :heavy_check_mark: |
 
 
 :heavy_check_mark: - Tested, has conformance tests for validity of the protocol \
@@ -30,6 +30,7 @@ Current support:
 :small_orange_diamond: - Using the QPID [JMS2.0 over AMQP client](https://qpid.apache.org/components/jms/index.html) \
 :red_circle: - Requires appropriate hardware for support \
 :heavy_exclamation_mark: - Transport does not support a connection based protocol \
+:small_green_diamond: - NMEA requires either a GPS device or be configured for GPSD socket connection \
 :x: - The protocol and the transport are not compatible \
 \
 These protocols and transports are supported natively by the server,
