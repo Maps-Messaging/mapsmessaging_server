@@ -5,32 +5,22 @@
 
 ## Introduction
 Wire protocol standardisation for messaging has enabled an unprecidented interoperability for both clients and servers. It has come with the promise of no vendor lock in, healthy competition and the ability to swap out clients and servers as requirements change. While this is a noble approach, and has to some extent been fulfilled, there is an increasing realisation that as protocols evolve or new protocols are ratified the promise of interoperability is not attainable.
-Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) and [V5](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html), while evolution of the same protocol the functionality being offered in V5 far exceeds what was available in V3. Add to this AMQP V1.0, which is gaining ground in IoT, when trying to architect a coherent messaging fabric it requires multiple messaging servers with standalone integration systems or messaging servers with plugins that have limited support of the protocol. This results in complex deployments, rigid client and server deployments and not achieving the utopia that open wire protocols were promising to deliver.
+Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) and [V5](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html), while evolution of the same protocol the functionality being offered in V5 far exceeds what was available in V3. Add to this AMQP V1.0, which is gaining ground in IoT, when trying to design a coherent messaging fabric it requires multiple messaging servers with standalone integration systems or messaging servers with plugins that have limited support of the protocol. This results in complex deployments, rigid client and server deployments and not achieving the utopia that open wire protocols were promising to deliver.
 
-## Protocol Support
-With mapsmessaging server, the entire purpose is to support all of the open messaging standards in their entirety and to facilitate message flow between different protocols and versions seamlessly out of the box.
-Current support:
+## Features
+* MapsMessaging supports the MQTT, MQTT-SN, AMQP (JMS over AMQP) and STOMP. For the complete list of [supported protocol versions](https://www.mapsmessaging.io/protocol_support.html). 
 
-| Protocol | Version | Support Status | WebSocket | Secure WebSockets | TCP | SSL | UDP | LoRa :red_circle: | Serial |
-| -------- | ------- | -------------- | --------- | ----------------- | --- | --- | --- | ---- | ------ |
-| Stomp    | 1.1     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark:| :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| Stomp    | 1.2     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| MQTT     | 3.1     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| MQTT     | 3.1.1   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| MQTT     | 5.0     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| MQTT-SN  | 1.2     | :heavy_check_mark: | :x: | :x: | :x: | :x: | :heavy_check_mark: | :heavy_check_mark: | :x: |
-| AMQP     | 1.0     | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| JMS-AMQP :small_orange_diamond: | JMS 2.0  | :heavy_check_mark: :small_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :heavy_exclamation_mark: | :small_red_triangle: |
-| NMEA :small_green_diamond:    | 0183    | :heavy_check_mark: | :x: | :x: | :heavy_check_mark: | :x: | :x: | :x: | :heavy_check_mark: |
+* It also supports connections to other messaging servers that support MQTT, Stomp and AMQP allowing the server to either publish data to the remote servers or subscribe to data on the remote servers. Removing the need to add extra hops in message delivery systems. More information can be found [here](https://www.mapsmessaging.io/InterServerConnection_config.html)
+
+* [JMS Selector](https://github.com/Maps-Messaging/jms_selector_parser) based filtering support for AMPQ_JMS, Stomp, MQTT V5.
+
+* Designed to be able to plug in new protocols or add proprietary protocols to enable older closed systems to be able to interact with IoT systems
+
+* Pluggable payload translations can be configured on the server such that in-flight data can be transmuted to other formats. For example data may come in as XML but be translated to [JSON](https://github.com/Maps-Messaging/mapsmessaging_server/tree/main/src/main/java/io/mapsmessaging/api/transformers) as it arrives.
+
+* Support for a partitioned namespace for users and groups
+
+* Support for JMX management, RestAPI via [Jolokia](https://jolokia.org/) as well as web based management via [hawtio](https://hawt.io/)
 
 
-:heavy_check_mark: - Tested, has conformance tests for validity of the protocol \
-:small_red_triangle: - Not tested \
-:small_blue_diamond: - Conformance tests under development \
-:small_orange_diamond: - Using the QPID [JMS2.0 over AMQP client](https://qpid.apache.org/components/jms/index.html) \
-:red_circle: - Requires appropriate hardware for support \
-:heavy_exclamation_mark: - Transport does not support a connection based protocol \
-:small_green_diamond: - NMEA requires either a GPS device or be configured for GPSD socket connection \
-:x: - The protocol and the transport are not compatible \
-\
-These protocols and transports are supported natively by the server,
+
