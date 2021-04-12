@@ -4,8 +4,8 @@ MapsMessaging has a feature that enables it to directly connect to other messagi
 
 To configure an inter-server link the first section is to define the link details
 
-* Protocol to use, once of ( Stomp | mqtt | AMQP )
-* URL for the remote server, (tcp | ssl | ws | wss)://(hostname):(port)/
+* Protocol to use, once of  Stomp | mqtt | AMQP 
+* URL for the remote server, tcp | ssl | ws | wss ://hostname:port/
 * Username for authentication of the link
 * Password for authentication of the link
 * SessionId, for MQTT this is mapped to the client ID and is used locally for log messages
