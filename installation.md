@@ -47,7 +47,7 @@ Change the following
 #
 # Define the home directory for the messaging daemon
 #
-export MAPS_HOME=/opt/message_daemon-1.1-SNAPSHOT
+export MAPS_HOME=<your path to the installation here>
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
 ```
@@ -58,7 +58,7 @@ To
 #
 # Define the home directory for the messaging daemon
 #
-export MAPS_HOME=<your path to the installation here>
+export MAPS_HOME=/opt/message_daemon-1.1-SNAPSHOT
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
 ```
