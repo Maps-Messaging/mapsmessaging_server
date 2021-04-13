@@ -18,6 +18,10 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.jms;
 
+import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
@@ -35,10 +39,6 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.logging.LogMessages;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.test.WaitForState;
 
 public class BrowserConnectionTest extends BaseConnection {
 
@@ -60,7 +60,6 @@ public class BrowserConnectionTest extends BaseConnection {
       for (int i = 0; i < 10; i++) {
         String payload = task + i;
         Message msg = session.createTextMessage(payload);
-        System.out.println("Sending text '" + payload + "'");
         producer.send(msg);
       }
 
@@ -81,8 +80,6 @@ public class BrowserConnectionTest extends BaseConnection {
           }
         });
         Assertions.assertNotNull(textMsg[0], "We now expect the consumer to receive the messages sent since the browser is read only");
-        System.out.println(textMsg[0]);
-        System.out.println("Received: " + textMsg[0].getText());
       }
       session.close();
     }
@@ -105,14 +102,11 @@ public class BrowserConnectionTest extends BaseConnection {
         String payload = task + i;
         Message msg = session.createTextMessage(payload);
         msg.setBooleanProperty("odd", i%2==1);
-        System.out.println("Sending text '" + payload + "'");
         producer.send(msg);
       }
 
       MessageConsumer consumer = session.createConsumer(queue);
       connection.start();
-
-      System.out.println("Browse through the elements in queue");
 
       int counter = checkTheBrowser(session, queue, "odd = true");
       Assertions.assertEquals(5, counter, "We pushed 10 messages, we expect the browser to see 10 messages");
@@ -120,8 +114,6 @@ public class BrowserConnectionTest extends BaseConnection {
       for (int i = 0; i < 10; i++) {
         TextMessage textMsg = (TextMessage) consumer.receive();
         Assertions.assertNotNull(textMsg, "We now expect the consumer to receive the messages sent since the browser is read only");
-        System.out.println(textMsg);
-        System.out.println("Received: " + textMsg.getText());
       }
       session.close();
     }
@@ -146,7 +138,6 @@ public class BrowserConnectionTest extends BaseConnection {
     Assertions.assertTrue(e.hasMoreElements());
     while (e.hasMoreElements()) {
       TextMessage message = (TextMessage) e.nextElement();
-      System.out.println("Browse [" + message.getText() + "]");
       counter++;
     }
     WaitForState.wait(100, TimeUnit.MILLISECONDS);
