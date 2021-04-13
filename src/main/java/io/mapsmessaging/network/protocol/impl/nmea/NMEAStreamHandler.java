@@ -52,43 +52,18 @@ public class NMEAStreamHandler implements StreamHandler {
     // Read to CheckSum char
     //
     int idx = 0;
-    int checksum = 0;
+    inputBuffer[idx++] = (byte) val;
     val = input.read(); // Start on the next byte not the START frame
-    while (val != Constants.CHECKSUM &&
-        val != Constants.CR &&
-        val != Constants.LF &&
-        idx < inputBuffer.length) {
-      inputBuffer[idx] = (byte) val;
-      idx++;
-      checksum ^= val;
+    while (val != Constants.CR && val != Constants.LF && idx < inputBuffer.length) {
+      inputBuffer[idx++] = (byte) val;
       val = input.read();
     }
     if (idx >= inputBuffer.length) {
       throw new IOException("Exceeded buffer size of known NMEA sentences");
     }
-    //
-    // Now read the checksum
-    //
-    if (val == Constants.CHECKSUM) {
-      val = input.read();
-      int count = 0;
-      StringBuilder sb = new StringBuilder();
-      while (val != Constants.CR &&
-          val != Constants.LF &&
-          count < 4) {
-        sb.append((char) val);
-        val = input.read();
-        count++;
-      }
-      // Skip the eok char
-      input.read(); // Need to skip this one char
-      int sentCheckSum = Integer.parseInt(sb.toString(), 16);
-      if (sentCheckSum == checksum) {
-        packet.put(inputBuffer, 0, idx);
-      } else {
-        throw new IOException("Invalid Checksum calculated");
-      }
-    }
+    inputBuffer[idx++] = (byte)Constants.CR;
+    inputBuffer[idx++] = (byte)Constants.LF;
+    packet.put(inputBuffer, 0, idx);
     return idx;
   }
 

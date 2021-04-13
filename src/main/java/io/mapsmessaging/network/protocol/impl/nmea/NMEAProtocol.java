@@ -94,7 +94,7 @@ public class NMEAProtocol extends ProtocolImpl {
     sentenceFactory = new SentenceFactory((ConfigurationProperties) configurationProperties.get("sentences"));
     registeredSentences = new LinkedHashMap<>();
     destinationName = "$NMEA/"+endPoint.getName();
-    setConnected(true);
+   // setConnected(true);
   }
 
   @Override
@@ -122,12 +122,8 @@ public class NMEAProtocol extends ProtocolImpl {
     while (packet.hasRemaining()) {
       int pos = packet.position();
       try {
-        byte[] buffer = new byte[packet.available()];
-        packet.get(buffer);
-        String sentence = new String(buffer);
-        if(sentence.startsWith("$")){
-          sentence = removeFraming(sentence);
-        }
+        NMEAPacket nmeaPacket = new NMEAPacket(packet);
+        String sentence = nmeaPacket.getSentence();
         Iterator<String> gpsWords = new ArrayList<>(Arrays.asList(sentence.split(","))).iterator();
         String sentenceId = gpsWords.next();
         if(sentenceId.length() == 5){

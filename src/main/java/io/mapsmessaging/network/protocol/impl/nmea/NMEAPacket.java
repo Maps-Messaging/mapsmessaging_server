@@ -23,20 +23,26 @@ import java.io.IOException;
 
 public class NMEAPacket {
 
+  private final String sentence;
+
   public NMEAPacket(Packet packet) throws IOException {
     int pos = packet.position();
     int startPos = skipToStart(packet);
-
     if (startPos != -1) {
       try {
-        parseSentence(packet);
+        sentence = parseSentence(packet);
       } catch (EndOfBufferException e) {
         packet.position(pos);
         throw e;
       }
-    } else {
-      throw new EndOfBufferException();
     }
+    else{
+      sentence = "";
+    }
+  }
+
+  public String getSentence(){
+    return sentence;
   }
 
   private int skipToStart(Packet packet) {
@@ -50,8 +56,9 @@ public class NMEAPacket {
     return startPos;
   }
 
-  private void parseSentence(Packet packet) throws IOException {
+  private String parseSentence(Packet packet) throws IOException {
     int checksum = 0;
+    StringBuilder sentenceBuilder = new StringBuilder();
     while (packet.hasRemaining()) {
       byte val = packet.get();
       if (val == Constants.CHECKSUM) {
@@ -65,17 +72,18 @@ public class NMEAPacket {
         packet.get(); // Eat the last char
         int sentCheckSum = Integer.parseInt(sb.toString(), 16);
         if (sentCheckSum == checksum) {
-          return;
+          return sentenceBuilder.toString();
         } else {
           throw new IOException("Invalid Checksum calculated");
         }
       } else {
+        sentenceBuilder.append((char)val);
         checksum ^= val;
       }
       if (!packet.hasRemaining()) {
         throw new EndOfBufferException();
       }
     }
-
+    throw new EndOfBufferException();
   }
 }
