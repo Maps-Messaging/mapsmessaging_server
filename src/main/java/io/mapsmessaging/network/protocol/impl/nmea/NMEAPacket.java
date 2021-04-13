@@ -20,10 +20,16 @@ package io.mapsmessaging.network.protocol.impl.nmea;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 public class NMEAPacket {
 
   private final String sentence;
+  private final List<String> entries;
+  private final String name;
 
   public NMEAPacket(Packet packet) throws IOException {
     int pos = packet.position();
@@ -31,18 +37,29 @@ public class NMEAPacket {
     if (startPos != -1) {
       try {
         sentence = parseSentence(packet);
+        entries = new ArrayList<>(Arrays.asList(sentence.split(",")));
+        name = entries.remove(0);
       } catch (EndOfBufferException e) {
         packet.position(pos);
         throw e;
       }
     }
     else{
-      sentence = "";
+      name = "";
+      sentence="";
+      entries = new ArrayList<>();
     }
   }
 
-  public String getSentence(){
-    return sentence;
+  public String getName(){
+    return name;
+  }
+  public String getSentence() {
+    return  sentence;
+  }
+
+  public Iterator<String> getEntries(){
+    return entries.iterator();
   }
 
   private int skipToStart(Packet packet) {
@@ -86,4 +103,5 @@ public class NMEAPacket {
     }
     throw new EndOfBufferException();
   }
+
 }

@@ -2,7 +2,7 @@ NetworkConnectionManager:
   -
     global:
       -
-        selector_pool_size: 10
+        selector_pool_size: 2
 
       # ---------------------------------------------------------------------------------------------------------
       # tcp layer configuration
@@ -17,8 +17,19 @@ NetworkConnectionManager:
       # ---------------------------------------------------------------------------------------------------------
       # Generic protocol configuration
       #
-        serverReadBufferSize:  1M
-        serverWriteBufferSize: 1M
-        selectorThreadCount  : 5
+        serverReadBufferSize:  10240
+        serverWriteBufferSize: 10240
+        selectorThreadCount  : 1
 
     data:
+      -
+        name: gpsd
+        url: tcp://10.140.62.252:2947/
+        protocol: nmea
+
+        links:
+          -
+            direction: pull
+            remote_namespace: '#'
+            local_namespace: '$NMEA/socket'
+

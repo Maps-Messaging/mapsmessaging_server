@@ -41,8 +41,6 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -94,7 +92,6 @@ public class NMEAProtocol extends ProtocolImpl {
     sentenceFactory = new SentenceFactory((ConfigurationProperties) configurationProperties.get("sentences"));
     registeredSentences = new LinkedHashMap<>();
     destinationName = "$NMEA/"+endPoint.getName();
-   // setConnected(true);
   }
 
   @Override
@@ -123,11 +120,9 @@ public class NMEAProtocol extends ProtocolImpl {
       int pos = packet.position();
       try {
         NMEAPacket nmeaPacket = new NMEAPacket(packet);
-        String sentence = nmeaPacket.getSentence();
-        Iterator<String> gpsWords = new ArrayList<>(Arrays.asList(sentence.split(","))).iterator();
-        String sentenceId = gpsWords.next();
+        String sentenceId = nmeaPacket.getName();
         if(sentenceId.length() == 5){
-          prepareSentence(sentence, sentenceId, gpsWords);
+          prepareSentence(nmeaPacket.getSentence(), sentenceId, nmeaPacket.getEntries());
         }
       } catch (EndOfBufferException e) {
         packet.position(pos);
