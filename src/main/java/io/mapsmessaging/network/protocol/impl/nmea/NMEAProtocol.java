@@ -196,13 +196,7 @@ public class NMEAProtocol extends ProtocolImpl {
     }
     return raw;
   }
-
-  private String removeFraming(String sentence) {
-    sentence = sentence.substring(1);
-    sentence = sentence.substring(0, sentence.indexOf("*"));
-    return sentence;
-  }
-
+  
   @Override
   public String getName() {
     return "NMEA";
