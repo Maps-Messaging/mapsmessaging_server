@@ -163,6 +163,8 @@ public class NMEAProtocol extends ProtocolImpl {
     }
   }
 
+  // findDestination throws an IOException, using computeIfAbsent tends to hide or swallow the exceptions
+  @java.lang.SuppressWarnings({"java:S3824"})
   private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) throws IOException {
     String processed = parseSentence(sentence, sentenceId, gpsWords);
     if(publishRecords) {
