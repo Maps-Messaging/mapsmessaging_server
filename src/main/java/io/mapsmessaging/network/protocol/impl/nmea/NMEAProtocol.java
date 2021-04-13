@@ -103,7 +103,7 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException{
+  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable Transformer transformer){
     registeredSentences.put(resource, new SentenceMapping(mappedResource, transformer));
   }
 
@@ -228,7 +228,7 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
 
-  private final class SentenceMapping{
+  private static final class SentenceMapping{
 
     private final String destination;
     private final Transformer transformer;
