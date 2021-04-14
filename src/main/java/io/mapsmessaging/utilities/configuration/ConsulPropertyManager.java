@@ -22,15 +22,15 @@ package io.mapsmessaging.utilities.configuration;
 import com.orbitz.consul.ConsulException;
 import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.model.kv.Value;
+import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import org.json.JSONException;
 import org.json.JSONObject;
-import io.mapsmessaging.logging.LogMessages;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.consul.ConsulManagerFactory;
 
 public class ConsulPropertyManager extends PropertyManager {
 
@@ -69,6 +69,7 @@ public class ConsulPropertyManager extends PropertyManager {
       logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
     }
     catch(JSONException jsonException){
+      jsonException.printStackTrace();
       logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, jsonException);
     }
   }

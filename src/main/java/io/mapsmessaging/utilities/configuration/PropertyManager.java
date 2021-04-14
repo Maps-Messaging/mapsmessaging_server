@@ -19,7 +19,9 @@
 package io.mapsmessaging.utilities.configuration;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -58,21 +60,29 @@ public abstract class PropertyManager {
     return new JSONObject();
   }
 
-  public void loadPropertiesJSON(@NonNull @NotNull String name, @NonNull @NotNull JSONObject config) {
-    properties.remove(name);
-    if(!(config.get(name) instanceof JSONArray)){
-      return; // not all Yaml Configurations are arrays
+  public void loadPropertiesJSON(@NonNull @NotNull String name, @NonNull @NotNull JSONObject root) {
+    ConfigurationProperties entry = new ConfigurationProperties();
+    properties.put(name, entry);
+    JSONObject configEntry = root.getJSONObject(name);
+    if(configEntry.has("data")){
+      JSONArray array = configEntry.getJSONArray("data");
+      List<ConfigurationProperties> list = new ArrayList<>();
+      for(int x=0;x<array.length();x++){
+        ConfigurationProperties item = new ConfigurationProperties();
+        Map<String, Object> configEntries = fromJSON(array.getJSONObject(x));
+        item.putAll(configEntries);
+        list.add(item);
+      }
+      entry.put("data", list);
     }
-    JSONArray array = config.getJSONArray(name);
+    else{
+      entry.putAll(fromJSON(configEntry));
+    }
     Map<String, Object> globalProperties = new LinkedHashMap<>();
-    if(config.has("global")) {
-      globalProperties = fromJSON(config.getJSONObject("global"));
+    if(configEntry.has("global")) {
+      globalProperties = fromJSON(configEntry.getJSONObject("global"));
     }
-    for(int x=0;x<array.length();x++){
-      Map<String, Object> configEntries = fromJSON(array.getJSONObject(x));
-      properties.putAll(configEntries);
-    }
-    properties.setGlobal(new ConfigurationProperties(globalProperties));
+    entry.setGlobal(new ConfigurationProperties(globalProperties));
   }
 
   private Map<String, Object> fromJSON(JSONObject object){

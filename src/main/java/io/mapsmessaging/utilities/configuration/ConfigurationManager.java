@@ -18,15 +18,15 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import io.mapsmessaging.logging.LogMessages;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.consul.ConsulManagerFactory;
 
 public class ConfigurationManager {
 
@@ -52,14 +52,24 @@ public class ConfigurationManager {
   }
 
   public void initialise(@NonNull @NotNull String serverId){
+    ConsulPropertyManager defaultConsulManager = null;
     if(ConsulManagerFactory.getInstance().isStarted()){
       authoritative = new ConsulPropertyManager(serverId);
       authoritative.load();
-      propertyManagers.add(new ConsulPropertyManager("default_"));
+      defaultConsulManager = new ConsulPropertyManager("default_");
+      defaultConsulManager.load();
+      propertyManagers.add(defaultConsulManager);
     }
-    propertyManagers.add(new YamlPropertyManager());
+    YamlPropertyManager yamlPropertyManager = new YamlPropertyManager();
+    propertyManagers.add(yamlPropertyManager);
     for(PropertyManager manager:propertyManagers){
       manager.load();
+    }
+
+    // We have a consul link but there is no config loaded, so load up the configuration into the
+    // consul server to bootstrap the server
+    if(defaultConsulManager != null && defaultConsulManager.properties.size() == 0){
+      defaultConsulManager.copy(yamlPropertyManager);
     }
   }
 
