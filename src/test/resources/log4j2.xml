@@ -20,15 +20,19 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}, %X{category}, %X{endpoint}, %X{protocol}-%X{version}, %X{session}, [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <File name="LogFile" fileName="./target/messaging.log">
+    <RollingFile name="RollingFile" fileName="log/messaging.log" filePattern="log/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
       <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}, %X{category}, %X{endpoint}, %X{protocol}-%X{version}, %X{session}, [%t] %-5level %logger{36} - %msg%n"/>
-    </File>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="100 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="20"/>
+    </RollingFile>
 
   </Appenders>
   <Loggers>
     <Root level="debug">
       <AppenderRef ref="Console" level="warn"/>
-      <appender-ref ref="LogFile" />
+      <appender-ref ref="RollingFile" />
     </Root>
   </Loggers>
 </Configuration>

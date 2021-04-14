@@ -18,12 +18,12 @@
 
 package io.mapsmessaging.utilities.configuration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
@@ -76,22 +76,6 @@ abstract class PropertyManagerTest {
     for(String key:manager.properties.keySet()) {
       JSONObject jsonObject = manager.getPropertiesJSON(key);
       assertNotNull(jsonObject);
-    }
-  }
-
-  @Test
-  void loadPropertiesJSON() {
-    PropertyManager manager = create();
-    assertTrue(manager.properties.isEmpty());
-    manager.load();
-    assertFalse(manager.properties.isEmpty());
-    List<String> keys = new ArrayList<>(manager.properties.keySet());
-    for(String key:keys) {
-      JSONObject jsonObject = manager.getPropertiesJSON(key);
-      assertNotNull(jsonObject);
-      if(!jsonObject.isEmpty()) {
-        manager.loadPropertiesJSON(key, jsonObject);
-      }
     }
   }
 

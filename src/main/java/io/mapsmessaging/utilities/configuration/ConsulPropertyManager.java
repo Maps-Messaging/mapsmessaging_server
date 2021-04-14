@@ -26,9 +26,15 @@ import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -72,6 +78,40 @@ public class ConsulPropertyManager extends PropertyManager {
       jsonException.printStackTrace();
       logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, jsonException);
     }
+  }
+
+  private void loadPropertiesJSON(@NonNull @NotNull String name, @NonNull @NotNull JSONObject root) {
+    ConfigurationProperties entry = new ConfigurationProperties();
+    properties.put(name, entry);
+    JSONObject configEntry = root.getJSONObject(name);
+    if(configEntry.has("data")){
+      JSONArray array = configEntry.getJSONArray("data");
+      List<ConfigurationProperties> list = new ArrayList<>();
+      for(int x=0;x<array.length();x++){
+        ConfigurationProperties item = new ConfigurationProperties();
+        Map<String, Object> configEntries = fromJSON(array.getJSONObject(x));
+        item.putAll(configEntries);
+        list.add(item);
+      }
+      entry.put("data", list);
+    }
+    else{
+      entry.putAll(fromJSON(configEntry));
+    }
+    Map<String, Object> globalProperties = new LinkedHashMap<>();
+    if(configEntry.has("global")) {
+      globalProperties = fromJSON(configEntry.getJSONObject("global"));
+    }
+    entry.setGlobal(new ConfigurationProperties(globalProperties));
+  }
+
+
+  private Map<String, Object> fromJSON(JSONObject object){
+    Map<String, Object> response = new LinkedHashMap<>();
+    for(String key:object.keySet()){
+      response.put(key, object.get(key));
+    }
+    return response;
   }
 
   @Override
