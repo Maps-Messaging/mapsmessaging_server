@@ -93,7 +93,7 @@ class MQTTStoredMessageTest extends BaseTestConfig {
       Assertions.assertEquals(0, ml.getCounter());
     }
     else {
-      WaitForState.waitFor(10, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
+      WaitForState.waitFor(15, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
       Assertions.assertEquals(10, ml.getCounter());
     }
     subscribe.unsubscribe("/topic/test");
