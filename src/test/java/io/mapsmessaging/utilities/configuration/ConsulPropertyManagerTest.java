@@ -18,11 +18,11 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import io.mapsmessaging.consul.ConsulManagerFactory;
 import java.util.UUID;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.consul.ConsulManagerFactory;
 
 class ConsulPropertyManagerTest {
 
@@ -38,7 +38,6 @@ class ConsulPropertyManagerTest {
   @Test
   void load() {
     ConsulPropertyManager propertyManager = new ConsulPropertyManager("storeTest");
-
     propertyManager.load();
     System.err.println(propertyManager.toString());
   }
@@ -58,6 +57,7 @@ class ConsulPropertyManagerTest {
 
   @Test
   void copy() {
+
   }
 
   @Test
