@@ -51,7 +51,7 @@ As part of the architecture design for the server the approach was taken that if
 * [JMS Selector Parser module](https://github.com/Maps-Messaging/jms_selector_parser) 
   Is a standalone JMS Selector 2 pass parser that produces a resultant parser that supports a generic Key/Value object to resolve the selector. It can be used in Java Collection.streams, is thread safe and can be used in parallelStreams or anywhere you need a JMS Selector syntax parser / filter.
 
-* [Non Blocking Task Scheduler](https://github.com/Maps-Messaging/non_block_task_scheduler) 
+* [Non Blocking Task Scheduler](scheduler/overview.md) 
   The MapsMessaging engine is a non locking, non-blocking messaging engine, to achieve this we have implemented a task queue scheduler that facilitates low latency task pass over and internal integrity checks that the task is on the correct queue (Optional).
   
 * [Naturally Ordered Long Collections](https://github.com/Maps-Messaging/naturally_ordered_long_collections) 
