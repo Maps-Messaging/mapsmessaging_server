@@ -25,7 +25,6 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
@@ -119,16 +118,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
       destinationTransformerMap.put(resource, transformer);
     }
     nameMapping.put(resource, mappedResource);
-    SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
-    scb.setAlias(resource);
-    ClientAcknowledgement ackManger = QualityOfService.AT_MOST_ONCE.getClientAcknowledgement();
-    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(resource, ackManger);
-    builder.setQos(QualityOfService.AT_MOST_ONCE);
-    builder.setAllowOverlap(true);
-    builder.setReceiveMaximum(1024);
-    if(selector != null && selector.length() > 0) {
-      builder.setSelector(selector);
-    }
+    SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_LEAST_ONCE, 1024);
     session.addSubscription(builder.build());
     session.resumeState();
     logger.log(LogMessages.LOOP_SUBSCRIBED, resource, mappedResource);

@@ -20,6 +20,9 @@ package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.logging.LogMessages;
@@ -177,4 +180,16 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
     return destinationTransformerMap.get(name);
   }
 
+  protected SubscriptionContextBuilder createSubscriptionContextBuilder(String resource, String selector, QualityOfService qos, int receiveMax){
+    ClientAcknowledgement ackManger = qos.getClientAcknowledgement();
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(resource, ackManger);
+    builder.setAlias(resource);
+    builder.setQos(qos);
+    builder.setAllowOverlap(true);
+    builder.setReceiveMaximum(receiveMax);
+    if(selector != null && selector.length() > 0) {
+      builder.setSelector(selector);
+    }
+    return builder;
+  }
 }

@@ -23,7 +23,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.logging.LogMessages;
@@ -117,12 +117,7 @@ public class StompProtocol extends ProtocolImpl {
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
-
-    SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
-    scb.setAlias(resource);
-    if(selector != null && selector.length() > 0) {
-      scb.setSelector(selector);
-    }
+    SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 10240);
     stateEngine.createSubscription(scb.build());
   }
 
