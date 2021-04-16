@@ -16,7 +16,7 @@ The following is a trivial code snippet that demonstrates how to parse a Selecto
       System.err.println("Currency is either AUD, USD or JPY");
     }
 ```
-The resultant ParserExecutor is a thread safe filter that can be used with any key/value object that implements [IdentifierResolver.java](src/main/java/io/mapsmessaging/selector/IdentifierResolver.java) or a Map<String, Object> map.
+The resultant ParserExecutor is a thread safe filter that can be used with any key/value object that implements [IdentifierResolver.java](https://github.com/Maps-Messaging/jms_selector_parser/blob/main/src/main/java/io/mapsmessaging/selector/IdentifierResolver.java) or a Map<String, Object> map.
 
-If you have a complex object that requires processing to get the value based on a key name then simply extend [IdentifierResolver.java](src/main/java/io/mapsmessaging/selector/IdentifierResolver.java) and add the code to compute the value to return.
+If you have a complex object that requires processing to get the value based on a key name then simply extend [IdentifierResolver.java](https://github.com/Maps-Messaging/jms_selector_parser/blob/main/src/main/java/io/mapsmessaging/selector/IdentifierResolver.java) and add the code to compute the value to return.
 
