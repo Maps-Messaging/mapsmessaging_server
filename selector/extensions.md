@@ -80,4 +80,4 @@ public class Example {
 
 
 
-Examples can be found [here](src/examples/java/io/mapsmessaging/selector)
+Examples can be found [here](https://github.com/Maps-Messaging/jms_selector_parser/tree/main/src/examples)
