@@ -48,7 +48,7 @@ With anything within MapsMessaging there is the ability to provide custom connec
 
 As part of the architecture design for the server the approach was taken that if a module could be reused or would be helpful to the OSS eco-system then it would be pulled out of the Daemon, and a new project created for it. To this end we currently have
 
-* [JMS Selector Parser module](https://github.com/Maps-Messaging/jms_selector_parser) 
+* [JMS Selector Parser module](selector/overview.md) 
   Is a standalone JMS Selector 2 pass parser that produces a resultant parser that supports a generic Key/Value object to resolve the selector. It can be used in Java Collection.streams, is thread safe and can be used in parallelStreams or anywhere you need a JMS Selector syntax parser / filter.
 
 * [Non Blocking Task Scheduler](scheduler/overview.md) 
