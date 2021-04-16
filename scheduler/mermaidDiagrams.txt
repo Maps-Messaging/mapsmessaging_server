@@ -1,0 +1,15 @@
+=============================================
+Diagram A
+---------
+sequenceDiagram
+ThreadA-->>+TaskScheduler: Schedule Task
+ThreadB-->>+TaskScheduler: Schedule Task
+ThreadB --> ThreadB: Wait Task Complete
+TaskScheduler-->>-ThreadB:  Task Queued
+loop Scheduler:Queue:pop()
+    TaskScheduler->>Task: task.run()
+    Task-->Task: Completed
+end
+TaskScheduler-->>-ThreadA:  Tasks Queued
+ThreadA --> ThreadA: Wait Task Complete
+=============================================
