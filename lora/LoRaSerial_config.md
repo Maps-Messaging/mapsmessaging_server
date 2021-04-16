@@ -12,7 +12,7 @@ In these instances the Arduino acts as a LoRa gateway between the server and the
 
 ## Configuration
 
-The configuration for the gateway is done within the [NetworkManager.yaml](NetworkManager_Config.md) file and simply requires the following 
+The configuration for the gateway is done within the [NetworkManager.yaml](config/NetworkManager_Config.md) file and simply requires the following 
 
 ```yaml
      -

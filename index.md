@@ -24,7 +24,7 @@ All these wire protocols can be run over
   * ssl
   * ws
   * wss 
-  * LoRa hardware - [LoRa Device](LoRaDevice_config.md) or by [LoRa serial Gateway](LoRaSerial_config.md)
+  * LoRa hardware - [LoRa Device](lora/LoRaDevice_config.md) or by [LoRa serial Gateway](lora/LoRaSerial_config.md)
   * Serial devices
 
 As well as the standard TCP/UDP connections the server also supports LoRa devices on a raspberryPi enabling direct messaging between a LoRa sensor and the server using MQTT-SN, removing the requirement for another hop between sensor and messaging server.
@@ -34,7 +34,7 @@ The protocol library is extendable and if an organisation has an internal propri
 
 ### Inter-server Connections
 
-MapsMessaging can be configured to ingest events from other remote servers or to publish events to other remote servers. This removes the requirement for additional agents to move messages from 1 server to another. The configuration for these can be found in [NetworkConnectionManager.yaml](InterServerConnection_config.md) file.
+MapsMessaging can be configured to ingest events from other remote servers or to publish events to other remote servers. This removes the requirement for additional agents to move messages from 1 server to another. The configuration for these can be found in [NetworkConnectionManager.yaml](config/InterServerConnection_config.md) file.
 
 #### Native Server Connections
 The server also supports connections to other servers, such that MapsMessaging can connect to other MQTT, AMQP, Stomp servers and pull data from them and publish to local resources or it can be configured to push data from local resources to remote servers removing any need for another application to enable this message flow.

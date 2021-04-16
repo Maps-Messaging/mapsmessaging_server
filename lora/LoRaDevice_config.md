@@ -52,7 +52,7 @@ The server will then load the LoRaDevice library and attempt to connect to the p
 
 ### Mapping the device to a protocol
 
-The next step is to tell the server how you wish to use it, this is done in the [NetworkManager.yaml](NetworkManager_Config.md) file. By adding the following snippet to the file the server will map MQTT-SN to the device and register specific MQTT-SN topics
+The next step is to tell the server how you wish to use it, this is done in the [NetworkManager.yaml](/config/NetworkManager_Config.md) file. By adding the following snippet to the file the server will map MQTT-SN to the device and register specific MQTT-SN topics
 
 ```yaml
       -
