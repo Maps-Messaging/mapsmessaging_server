@@ -75,7 +75,6 @@ public class ConsulPropertyManager extends PropertyManager {
       logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
     }
     catch(JSONException jsonException){
-      jsonException.printStackTrace();
       logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, jsonException);
     }
   }
