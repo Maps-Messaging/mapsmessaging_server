@@ -22,3 +22,14 @@ NetworkConnectionManager:
         selectorThreadCount  : 1
 
     data:
+      -
+        name: gpsd
+        url: tcp://10.140.62.252:2947/
+        protocol: nmea
+
+        links:
+          -
+            direction: pull
+            remote_namespace: '#'
+            local_namespace: '$NMEA/socket'
+
