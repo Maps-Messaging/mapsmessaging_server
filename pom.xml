@@ -311,6 +311,13 @@
       **/*Test.*,**/*IT.*,**/apache_pulsar/*, **.*JMH.*
     </sonar.test.exclusions>
 
+    <!-- The use of the 'var' keyword does not really add anything to the code, rather, it makes it less readable without an IDE, we ignore the code smell across the project -->
+    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
+    <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
+    <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
+      **/*.java
+    </sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
+
     <!-- Sonar-JaCoCo properties -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
