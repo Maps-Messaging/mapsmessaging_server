@@ -129,3 +129,30 @@ For up to date information regarding rhe Adafruit MQTT server please check the [
             remote_namespace: <your adafruit username>/feeds/<feed_name>/json
             local_namespace: <local topic to send events from>
 ```
+
+## The Things Stack MQTT Connection
+
+To connect and receive messages from your LoRaWAN devices that are configured to [The Things Stack](https://www.thethingsindustries.com/) then the configuration is as simple as
+
+```yaml
+    data:
+        -
+            name: The Things Stack
+            url: <url to The Things Stack>
+            protocol: mqtt
+            username: <local user>
+            password: <local password>
+            sessionId: <local session id to use>
+            remote:
+                username: <username>@ttn
+                password: <password token supplied by The Thing Stack>
+                sessionId: <remote session id to use>
+
+            links:
+                -
+                    direction: pull
+                    remote_namespace: '#' // Could be any configured topic 
+                    local_namespace: 'ttn/#' // this is the local topic name map. Here we simply publish data below ttn/
+```
+
+Documentation on the URLs and remote name space can be found at [The Things Stack documentation pages](https://www.thethingsindustries.com/docs/integrations/mqtt/)
