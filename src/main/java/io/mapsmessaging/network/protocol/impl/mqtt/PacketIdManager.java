@@ -32,6 +32,13 @@ public class PacketIdManager {
   }
 
   public synchronized int nextPacketIdentifier(SubscribedEventManager subscription, long messageId) {
+    int retVal = nextPacketIdentifier();
+    PacketIdentifierMap state = new PacketIdentifierMap(retVal, subscription, messageId);
+    outstandingPacketId.put(retVal, state);
+    return retVal;
+  }
+
+  public synchronized int nextPacketIdentifier() {
     int retVal = 0;
     while (retVal == 0) {
       retVal = (packetId++) & 0xffff;
@@ -39,8 +46,6 @@ public class PacketIdManager {
         retVal = 0;
       }
     }
-    PacketIdentifierMap state = new PacketIdentifierMap(retVal, subscription, messageId);
-    outstandingPacketId.put(retVal, state);
     return retVal;
   }
 

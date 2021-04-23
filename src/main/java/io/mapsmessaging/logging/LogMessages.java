@@ -544,7 +544,7 @@ public enum LogMessages {
   END_POINT_CONNECTION_FAILED(LEVEL.WARN, CATEGORY.NETWORK, "Exception raised while connecting to remote server {}"),
   END_POINT_CONNECTION_INITIALISED(LEVEL.INFO, CATEGORY.NETWORK, "Initialised connection"),
   END_POINT_CONNECTION_CLOSED(LEVEL.INFO, CATEGORY.NETWORK, "Closing connection"),
-  END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, CATEGORY.NETWORK, "Changing state from {} to {}"),
+  END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
   END_POINT_CONNECTION_STOPPING(LEVEL.INFO, CATEGORY.NETWORK, "Stopping connection manager"),
   //</editor-fold>
 

@@ -122,6 +122,7 @@ public class MQTTProtocol extends ProtocolImpl {
       destinationTransformerMap.put(resource, transformer);
     }
     Subscribe subscribe = new Subscribe();
+    subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, QualityOfService.AT_MOST_ONCE));
     writeFrame(subscribe);
     completedConnection();
