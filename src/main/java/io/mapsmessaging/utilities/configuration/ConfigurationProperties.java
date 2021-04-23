@@ -192,6 +192,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
     return globalValues;
   }
 
+  @Override
   public boolean equals(Object object){
     if(object instanceof ConfigurationProperties){
       boolean listEquals = super.equals(object);
@@ -203,6 +204,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
     return false;
   }
 
+  @Override
   public int hashCode(){
     if(globalValues != null) {
       return super.hashCode() + globalValues.hashCode();
