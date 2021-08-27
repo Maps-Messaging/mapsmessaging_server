@@ -22,3 +22,4 @@ SecurityManager:
     admin: MessagingAuthConfig
     anon: PublicAuthConfig
     ssl: SSLAuthConfig
+    jwt: JWTAuthConfig

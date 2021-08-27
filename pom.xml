@@ -333,6 +333,17 @@
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>2.16.29</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
 
   <dependencies>
@@ -417,6 +428,45 @@
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <version>20210307</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>java-jwt</artifactId>
+      <version>3.3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>jwks-rsa</artifactId>
+      <version>0.4.0</version>
+    </dependency>
+
+    <!-- Authentication via Amazon Cognito -->
+    <dependency>
+      <scope>test</scope>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>cognitoidentity</artifactId>
+    </dependency>
+
+    <dependency>
+      <scope>test</scope>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>cognitoidentityprovider</artifactId>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-cognitoidp</artifactId>
+      <version>1.12.54</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
+    <dependency>
+      <groupId>com.mashape.unirest</groupId>
+      <artifactId>unirest-java</artifactId>
+      <version>1.4.9</version>
     </dependency>
 
     <!-- Add annotations for not null -->

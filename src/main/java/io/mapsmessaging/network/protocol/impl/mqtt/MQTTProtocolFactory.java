@@ -34,7 +34,7 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
   }
 
   public MQTTProtocolFactory() {
-    super("MQTT", "MQTT version 3.1.1 as per http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html", new MultiByteArrayDetection(PROTOCOL, 4));
+    super("MQTT", "MQTT version 3.1.1 as per http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html", new MultiByteArrayDetection(PROTOCOL, 4, 2));
   }
 
   @Override

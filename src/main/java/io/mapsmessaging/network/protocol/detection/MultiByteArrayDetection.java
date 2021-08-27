@@ -32,6 +32,15 @@ public class MultiByteArrayDetection implements Detection {
     }
   }
 
+  public MultiByteArrayDetection(byte[][] detection, int offset, int range) {
+    individualDetection = new ByteArrayDetection[detection.length];
+    for (int x = 0; x < individualDetection.length; x++) {
+      for(int y=0;y<range;y++) {
+        individualDetection[x] = new ByteArrayDetection(detection[x], offset+y);
+      }
+    }
+  }
+
   @Override
   public int getHeaderSize() {
     int length = 0;

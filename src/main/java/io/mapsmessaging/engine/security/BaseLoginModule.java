@@ -75,22 +75,10 @@ public abstract class BaseLoginModule implements LoginModule {
     return true;
   }
 
-  /**
-   * Logout the user.
-   *
-   * <p>This method removes the <code>SamplePrincipal</code> that was added by the <code>commit
-   * </code> method.
-   *
-   * <p>
-   *
-   * @return true in all cases since this <code>LoginModule</code> should not be ignored.
-   * @throws LoginException if the logout fails.
-   */
   public boolean logout() throws LoginException {
     if (subject != null && userPrincipal != null) {
       subject.getPrincipals().remove(userPrincipal);
     }
-    succeeded = false;
     succeeded = commitSucceeded;
     username = null;
     if (password != null) {

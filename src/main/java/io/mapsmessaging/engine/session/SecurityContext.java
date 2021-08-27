@@ -58,6 +58,7 @@ public class SecurityContext {
       logger.log(LogMessages.SECURITY_MANAGER_LOG_IN, username);
       isLoggedIn = true;
     } catch (LoginException e) {
+      e.printStackTrace();
       logger.log(LogMessages.SECURITY_MANAGER_FAILED_LOG_IN, username, e.getMessage());
       IOException ioException = new IOException(e.getMessage());
       ioException.fillInStackTrace();
