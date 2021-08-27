@@ -22,6 +22,8 @@ import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.network.auth.TokenGenerator;
+import io.mapsmessaging.network.auth.TokenGeneratorManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -58,6 +60,11 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String sessionId = properties.getProperty("sessionId");
       String username = properties.getProperty("username");
       String password = properties.getProperty("password");
+      if(properties.containsKey("tokenGenerator")){
+        String tokenGeneratorName = properties.getProperty("tokenGenerator");
+        TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties);
+        password = tokenGenerator.generate();
+      }
 
       endPointConnection.scheduleState(new Connecting(endPointConnection));
       ProtocolImpl protocolImpl =  protocolImplFactory.connect(endpoint, sessionId, username, password);
