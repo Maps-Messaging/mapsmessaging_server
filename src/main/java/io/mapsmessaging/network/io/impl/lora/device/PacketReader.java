@@ -32,7 +32,7 @@ public class PacketReader implements Runnable {
     isClosed = false;
     Thread reader = new Thread(this);
     reader.setDaemon(true);
-    reader.setName("LoRa_Packet_Reader:"+device.getName());
+    reader.setName("LoRa_Packet_Reader_v2:"+device.getName());
     reader.start();
   }
 
