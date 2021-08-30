@@ -163,12 +163,14 @@ public class LoRaEndPoint extends EndPoint  {
     return loRaDevice.getPacketSize();
   }
 
-  public synchronized void queue(LoRaDatagram datagram) {
-    lastRSSI = datagram.getRssi();
-    incoming.add(datagram);
-    int from = datagram.getFrom();
-    LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
-    stats.update(datagram);
+  public void queue(LoRaDatagram datagram) {
+    synchronized (this) {
+      lastRSSI = datagram.getRssi();
+      incoming.add(datagram);
+      int from = datagram.getFrom();
+      LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
+      stats.update(datagram);
+    }
   }
 
   public class LoRaReader implements Runnable {
