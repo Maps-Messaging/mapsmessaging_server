@@ -23,6 +23,7 @@ import java.util.concurrent.locks.LockSupport;
 
 public class PacketReader implements Runnable {
 
+  private static final long LOG_DELAY = 120000;
   private final LoRaDevice device;
   private boolean isClosed;
 
@@ -43,6 +44,7 @@ public class PacketReader implements Runnable {
   public void run() {
     Thread.currentThread().setPriority(Thread.MAX_PRIORITY); // We go high to ensure we don't drop packets
     byte[] workingBuffer = new byte[256];
+    long lastReported = System.currentTimeMillis()+LOG_DELAY;
     try {
       while(!isClosed){
         try{
@@ -64,9 +66,14 @@ public class PacketReader implements Runnable {
               LoRaDatagram datagram = new LoRaDatagram(to, from, rssi, buffer, id);
               device.handleIncomingPacket(datagram);
               device.logger.log(LogMessages.LORA_DEVICE_RECIEVED_PACKET, to, from, rssi, len, id);
+              lastReported = System.currentTimeMillis()+LOG_DELAY;
             }
           }
           else{
+            if(lastReported<System.currentTimeMillis()){
+              lastReported = System.currentTimeMillis()+LOG_DELAY;
+              device.logger.log(LogMessages.LORA_DEVICE_IDLE);
+            }
             LockSupport.parkNanos(1000000);
           }
         }
