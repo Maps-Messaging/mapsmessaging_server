@@ -93,8 +93,8 @@ NetworkManager:
         name: "MQTT Interface"
         url: tcp://0.0.0.0:1883/
         protocol : mqtt
-        selectorThreadCount : 100
-        auth : public
+        selectorThreadCount : 10
+        auth : jwt
         receiveBufferSize : 1200000
         sendBufferSize    : 1200000
 
@@ -104,6 +104,7 @@ NetworkManager:
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
+        advertiseGateway: true
 
       -
         url: tcp://0.0.0.0:5672/
@@ -122,3 +123,15 @@ NetworkManager:
         url: tcp://0.0.0.0:8888/
         protocol : all
         auth : public
+
+      -
+        name: NMEA GPS port
+        url: serial://com8,9600,8,N,1/
+        protocol: NMEA
+        selectorThreadCount: 1
+
+      -
+        name: NMEA GPS port
+        url: serial://tty.usbserial-016e3398,9600,8,N,1/
+        protocol: NMEA
+        selectorThreadCount: 1

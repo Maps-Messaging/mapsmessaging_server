@@ -17,7 +17,7 @@
 ---
 NetworkConnectionManager:
     global:
-        selector_pool_size: 10
+        selector_pool_size: 1
 
         # ---------------------------------------------------------------------------------------------------------
         # tcp layer configuration
@@ -50,6 +50,24 @@ NetworkConnectionManager:
         ssl_trustStore: JKS
 
     data:
+        -
+            name: The Things Stack
+            url: tcp://au1.cloud.thethings.network:1883/
+            protocol: mqtt
+            username: user1
+            password: password1
+            sessionId: theThingsStack
+            remote:
+                username: homeserver@ttn
+                password: NNSXS.2AQ5WDNNVUFWCULGNSVTYCU7MCLIJ23KLYXHY4I.CVRSPBTCWI5OPI6KXOFT6HMZFCGZIH6CPTUXKWXM4CGHRKSUH2VA
+                sessionId: mapsMessagingServer
+ 
+            links:
+                -
+                    direction: pull
+                    remote_namespace: '#'
+                    local_namespace: 'ttn/#'
+
 
 #        name: Generic name for the connection
 #        url: tcp|ssl|ws|wss://<hostname>:<port>/ This is optional, if left out it is assumed a local connection
