@@ -480,6 +480,9 @@ public enum LogMessages {
   LORA_DEVICE_RECEIVED_PACKET(LEVEL.WARN, CATEGORY.PROTOCOL, "Received LoRa packet destined to {} from {} with signal strength {}, packet size {}, id {}"),
   LORA_DEVICE_PACKET_READER_EXITED(LEVEL.WARN, CATEGORY.PROTOCOL, "Packet Reader thread has exited, no more LoRa packets will be processed"),
   LORA_DEVICE_IDLE(LEVEL.WARN, CATEGORY.PROTOCOL, "Packet Reader is currently idle"),
+  LORA_REGISTER_NETWORK_ACTIVITY(LEVEL.WARN, CATEGORY.PROTOCOL, "LoRa device registering network task for {}"),
+  LORA_QUEUED_EVENT(LEVEL.WARN, CATEGORY.PROTOCOL, "LoRa message queued, {} outstanding events"),
+  LORA_DEVICE_NO_REGISTERED_ENDPOINT(LEVEL.WARN, CATEGORY.PROTOCOL, "LoRa Device has no registered end points for {} address"),
   //</editor-fold>
 
   //<editor-fold desc="File operation log messages">

@@ -88,6 +88,9 @@ public class LoRaDevice {
     if(endPoint != null){
       endPoint.queue(datagram);
     }
+    else{
+      logger.log(LogMessages.LORA_DEVICE_NO_REGISTERED_ENDPOINT, datagram.getTo());
+    }
   }
 
   public synchronized boolean write (byte[] buffer, int length, byte from, byte to){
