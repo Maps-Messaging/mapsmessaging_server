@@ -478,6 +478,7 @@ public enum LogMessages {
   LORA_DEVICE_DRIVER_LOG(LEVEL.INFO, CATEGORY.PROTOCOL, "Driver message for {} on {} received, {}"),
   LORA_DEVICE_READ_THREAD_ERROR(LEVEL.ERROR, CATEGORY.PROTOCOL, "The LoRa read thread on {} failed"),
   LORA_DEVICE_RECIEVED_PACKET(LEVEL.ERROR, CATEGORY.PROTOCOL, "Received LoRa packet destined to {} from {} with signal strength {}, packet size {}, id {}"),
+  LORA_DEVICE_PACKET_READER_EXITED(LEVEL.ERROR, CATEGORY.PROTOCOL, "Packet Reader thread has exited, no more LoRa packets will be processed"),
   //</editor-fold>
 
   //<editor-fold desc="File operation log messages">

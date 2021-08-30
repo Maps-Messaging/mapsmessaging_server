@@ -43,35 +43,40 @@ public class PacketReader implements Runnable {
   public void run() {
     Thread.currentThread().setPriority(Thread.MAX_PRIORITY); // We go high to ensure we don't drop packets
     byte[] workingBuffer = new byte[256];
-    while(!isClosed){
-      try{
-        long flags = device.read(workingBuffer, workingBuffer.length);
-        if(flags != 0){
-          // byte[0] = length of buffer
-          // byte[1] = to host
-          // byte[2] = from host
-          // byte[3] = RSSI value
-          short len  = (short) (flags & 0xff);
-          short from = (short) (flags >> 8 & 0xff);
-          byte rssi = (byte) (flags>> 16 & 0xff);
-          short to   = (short) (flags>> 24 & 0xff);
-          short id   = (short) (flags>>32 & 0xff);
+    try {
+      while(!isClosed){
+        try{
+          long flags = device.read(workingBuffer, workingBuffer.length);
+          if(flags != 0){
+            // byte[0] = length of buffer
+            // byte[1] = to host
+            // byte[2] = from host
+            // byte[3] = RSSI value
+            short len  = (short) (flags & 0xff);
+            short from = (short) (flags >> 8 & 0xff);
+            byte rssi = (byte) (flags>> 16 & 0xff);
+            short to   = (short) (flags>> 24 & 0xff);
+            short id   = (short) (flags>>32 & 0xff);
 
-          if(len > 0){
-            byte[] buffer = new byte[len];
-            System.arraycopy(workingBuffer, 0, buffer, 0, len);
-            LoRaDatagram datagram = new LoRaDatagram(to, from, rssi, buffer, id);
-            device.handleIncomingPacket(datagram);
-            device.logger.log(LogMessages.LORA_DEVICE_RECIEVED_PACKET, to, from, rssi, len, id);
+            if(len > 0){
+              byte[] buffer = new byte[len];
+              System.arraycopy(workingBuffer, 0, buffer, 0, len);
+              LoRaDatagram datagram = new LoRaDatagram(to, from, rssi, buffer, id);
+              device.handleIncomingPacket(datagram);
+              device.logger.log(LogMessages.LORA_DEVICE_RECIEVED_PACKET, to, from, rssi, len, id);
+            }
+          }
+          else{
+            LockSupport.parkNanos(1000000);
           }
         }
-        else{
-          LockSupport.parkNanos(1000000);
+        catch(Exception ex){
+          device.logger.log(LogMessages.LORA_DEVICE_READ_THREAD_ERROR, device.getName(), ex);
         }
       }
-      catch(Exception ex){
-        device.logger.log(LogMessages.LORA_DEVICE_READ_THREAD_ERROR, device.getName(), ex);
-      }
+    } finally {
+      device.logger.log(LogMessages.LORA_DEVICE_PACKET_READER_EXITED);
     }
+
   }
 }
