@@ -20,28 +20,20 @@ package io.mapsmessaging.network.protocol.detection;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.IntStream;
 
 public class MultiByteArrayDetection implements Detection {
 
   private final ByteArrayDetection[] individualDetection;
 
   public MultiByteArrayDetection(byte[][] detection, int offset) {
-    individualDetection = new ByteArrayDetection[detection.length];
-    for (int x = 0; x < individualDetection.length; x++) {
-      individualDetection[x] = new ByteArrayDetection(detection[x], offset);
-    }
+    this(detection, offset, 0);
   }
 
   public MultiByteArrayDetection(byte[][] detection, int offset, int range) {
-    List<ByteArrayDetection> compiledList = new LinkedList<>();
-    for (byte[] bytes : detection) {
-      IntStream.range(0, range).mapToObj(y -> new ByteArrayDetection(bytes, offset + y)).forEach(compiledList::add);
+    individualDetection = new ByteArrayDetection[detection.length];
+    for (int x = 0; x < individualDetection.length; x++) {
+      individualDetection[x] = new ByteArrayDetection(detection[x], offset, range);
     }
-    individualDetection = new ByteArrayDetection[compiledList.size()];
-    compiledList.toArray(individualDetection);
   }
 
   @Override

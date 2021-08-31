@@ -25,10 +25,16 @@ public class ByteArrayDetection implements Detection {
 
   private final byte[] checkArray;
   private final int start;
+  private final int range;
 
   public ByteArrayDetection(byte[] check, int startPos) {
+    this(check, startPos, 0);
+  }
+
+  public ByteArrayDetection(byte[] check, int startPos, int range) {
     checkArray = check;
     start = startPos;
+    this.range = range;
   }
 
   @Override
@@ -43,8 +49,24 @@ public class ByteArrayDetection implements Detection {
     }
 
     byte[] test = new byte[checkArray.length];
-    packet.position(start);
-    packet.get(test, 0, checkArray.length);
+    int originPoint = start;
+    int shifted = 0;
+    boolean found = false;
+    while(!found) {
+      packet.position(originPoint);
+      packet.get(test, 0, checkArray.length);
+      if (test[0] != checkArray[0]) {
+        shifted++;
+        originPoint++;
+        if(shifted == range){
+          return false;
+        }
+      }
+      else{
+        found = true;
+      }
+    }
+
     for (int x = 0; x < checkArray.length; x++) {
       if (test[x] != checkArray[x]) {
         return false;
