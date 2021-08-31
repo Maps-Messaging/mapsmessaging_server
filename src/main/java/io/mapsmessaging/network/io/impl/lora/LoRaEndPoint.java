@@ -45,16 +45,18 @@ import java.util.concurrent.FutureTask;
 
 public class LoRaEndPoint extends EndPoint  {
 
-
+  private volatile  boolean isQueued;
   private final LoRaDevice loRaDevice;
   private final int nodeId;
   private final Queue<LoRaDatagram> incoming;
   private final EndPointJMX mbean;
   private final LinkedHashMap<Integer, LoRaClientStats> clientStats;
+  private Selectable selectable;
   private int lastRSSI;
 
   public LoRaEndPoint(LoRaDevice loRaDevice, long id, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
     super(id, server);
+    isQueued = false;
     this.loRaDevice = loRaDevice;
     nodeId = (int) id;
     clientStats = new LinkedHashMap<>();
@@ -62,6 +64,7 @@ public class LoRaEndPoint extends EndPoint  {
     loRaDevice.registerEndPoint(this);
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
+    selectable = null;
   }
 
   @Override
@@ -132,6 +135,7 @@ public class LoRaEndPoint extends EndPoint  {
   @Override
   public FutureTask<SelectionKey>  register(int selectionKey, Selectable runner) {
     logger.log(LogMessages.LORA_REGISTER_NETWORK_ACTIVITY, selectionKey);
+    selectable = runner;
     if ( (selectionKey & SelectionKey.OP_READ) != 0) {
       SimpleTaskScheduler.getInstance().submit(new LoRaReader(runner));
     }
@@ -174,6 +178,10 @@ public class LoRaEndPoint extends EndPoint  {
       int from = datagram.getFrom();
       LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
       stats.update(datagram);
+      if(!isQueued && selectable != null){
+        isQueued = true;
+        register(SelectionKey.OP_READ, selectable);
+      }
     }
   }
 
@@ -186,17 +194,23 @@ public class LoRaEndPoint extends EndPoint  {
     }
 
     public void run() {
-      synchronized (LoRaEndPoint.this) {
-        while (incoming.isEmpty()) {
-          try {
-            LoRaEndPoint.this.wait(50);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
+      try {
+        synchronized (LoRaEndPoint.this) {
+          if(incoming.isEmpty()){
+            return; // Nothing to do
+          }
+        }
+        runner.selected(runner, null, SelectionKey.OP_READ);
+      } finally {
+        synchronized (LoRaEndPoint.this) {
+          if (!incoming.isEmpty()) {
+            register(SelectionKey.OP_READ, runner);
+          }
+          else {
+            isQueued = false;
           }
         }
       }
-      runner.selected(runner, null, SelectionKey.OP_READ);
     }
   }
 
