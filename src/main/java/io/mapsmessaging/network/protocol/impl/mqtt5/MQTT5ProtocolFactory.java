@@ -39,7 +39,7 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
   }
 
   public MQTT5ProtocolFactory() {
-    super("MQTT", "MQTT version 5.0 as per https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html", new ByteArrayDetection(PROTOCOL, 4));
+    super("MQTT", "MQTT version 5.0 as per https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html", new ByteArrayDetection(PROTOCOL, 4, 2));
   }
 
   @Override
