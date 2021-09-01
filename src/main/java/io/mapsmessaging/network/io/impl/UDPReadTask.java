@@ -26,17 +26,17 @@ import io.mapsmessaging.network.io.Packet;
 import java.io.IOException;
 
 public class UDPReadTask extends ReadTask {
+  private final Packet udpPacket;
 
-  private final int bufferSize;
 
   public UDPReadTask(SelectorCallback selectorCallback, int bufferSize, Logger logger) {
     super(selectorCallback, bufferSize, logger, -1, -1);
-    this.bufferSize = bufferSize;
+    udpPacket = new Packet(bufferSize, false);
   }
 
   @Override
   public void read() throws IOException {
-    Packet udpPacket = new Packet(bufferSize, false);
+    udpPacket.clear();
     int len = endPoint.readPacket(udpPacket);
     logger.log(READ_TASK_COMPLETED, packet.position(), packet.limit(), len);
     if (len > 0) {

@@ -61,11 +61,11 @@ public class PacketReader implements Runnable {
             short id   = (short) (flags>>32 & 0xff);
 
             if(len > 0){
+              device.logger.log(LogMessages.LORA_DEVICE_RECEIVED_PACKET, to, from, rssi, len, id);
               byte[] buffer = new byte[len];
               System.arraycopy(workingBuffer, 0, buffer, 0, len);
               LoRaDatagram datagram = new LoRaDatagram(to, from, rssi, buffer, id);
               device.handleIncomingPacket(datagram);
-              device.logger.log(LogMessages.LORA_DEVICE_RECEIVED_PACKET, to, from, rssi, len, id);
               lastReported = System.currentTimeMillis()+LOG_DELAY;
             }
           }
