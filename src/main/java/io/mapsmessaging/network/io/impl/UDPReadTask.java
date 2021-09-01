@@ -36,7 +36,7 @@ public class UDPReadTask extends ReadTask {
 
   @Override
   public void read() throws IOException {
-    Packet udpPacket = new Packet(bufferSize, true);
+    Packet udpPacket = new Packet(bufferSize, false);
     int len = endPoint.readPacket(udpPacket);
     logger.log(READ_TASK_COMPLETED, packet.position(), packet.limit(), len);
     if (len > 0) {
