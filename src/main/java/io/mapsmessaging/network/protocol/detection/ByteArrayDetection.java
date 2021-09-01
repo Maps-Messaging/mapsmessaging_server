@@ -56,10 +56,13 @@ public class ByteArrayDetection implements Detection {
       packet.position(originPoint);
       packet.get(test, 0, checkArray.length);
       if (test[0] != checkArray[0]) {
-        shifted++;
-        originPoint++;
         if(shifted == range){
           return false;
+        }
+        originPoint++;
+        shifted++;
+        if (packet.limit() - originPoint < checkArray.length) {
+          throw new EndOfBufferException();
         }
       }
       else{
