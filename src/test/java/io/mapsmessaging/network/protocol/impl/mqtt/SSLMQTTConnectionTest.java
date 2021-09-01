@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.test.BaseTestConfig;
+import java.util.UUID;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -25,9 +27,6 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.BaseTestConfig;
-
-import java.util.UUID;
 
 class SSLMQTTConnectionTest extends BaseTestConfig {
 
@@ -40,6 +39,7 @@ class SSLMQTTConnectionTest extends BaseTestConfig {
       options.setUserName("user1");
       options.setPassword("password1".toCharArray());
       options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+      options.setConnectionTimeout(10);
       client.connect(options);
       Assertions.assertTrue(client.isConnected());
       client.disconnect();
@@ -60,6 +60,7 @@ class SSLMQTTConnectionTest extends BaseTestConfig {
     try {
       MqttClient client = new MqttClient("ssl://127.0.0.1:8445", UUID.randomUUID().toString(), new MemoryPersistence());
       MqttConnectOptions options = new MqttConnectOptions();
+      options.setConnectionTimeout(10);
       options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
       client.connect(options);
       Assertions.assertTrue(client.isConnected());
