@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.engine.tasks;
 
-
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.ThreadContext;
@@ -37,7 +36,12 @@ public abstract class EngineTask implements Callable<Response> {
 
   @Override
   public Response call() throws Exception {
-    ThreadContext.putAll(logContext);
+    if(logContext != null) {
+      ThreadContext.putAll(logContext);
+    }
+    else{
+      ThreadContext.clearAll();
+    }
     try{
       return taskCall();
     }

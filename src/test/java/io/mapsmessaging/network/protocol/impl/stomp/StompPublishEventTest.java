@@ -18,19 +18,14 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
-import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.SSLException;
 import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
@@ -46,15 +41,6 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.ClientTransaction;
 import org.projectodd.stilts.stomp.client.StompClient;
-import org.springframework.messaging.converter.SimpleMessageConverter;
-import org.springframework.messaging.simp.stomp.StompCommand;
-import org.springframework.messaging.simp.stomp.StompHeaders;
-import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.messaging.simp.stomp.StompSessionHandler;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.web.socket.client.WebSocketClient;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 class StompPublishEventTest extends StompBaseTest {
 
@@ -360,66 +346,6 @@ class StompPublishEventTest extends StompBaseTest {
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
     Assertions.assertFalse(client.isConnected());
-  }
-
-  @Test
-  @DisplayName("WebSocket Stomp Publish Test")
-  void webSocketPublishTest() throws InterruptedException, ExecutionException, TimeoutException, IOException {
-    WebSocketClient client = new StandardWebSocketClient();
-    WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
-    webSocketStompClient.setMessageConverter(new SimpleMessageConverter());
-    StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8675", handler );
-
-    StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
-    Assertions.assertNotNull(stompSession);
-
-    StompSession.Subscription subscription = stompSession.subscribe("/topic/test", handler);
-    byte[] tmpBuffer = new byte[10];
-    Arrays.fill(tmpBuffer, (byte) 0b01010101);
-    for(int x=0;x<10;x++) {
-      stompSession.send("/topic/test", tmpBuffer);
-    }
-    WaitForState.waitFor(5, TimeUnit.SECONDS, ()->handler.subscriptionCount.get() == 0);
-
-    handler.subscriptionCount.set(10); // Reset it
-    Arrays.fill(tmpBuffer, (byte) 0);
-    for(int x=0;x<10;x++) {
-      stompSession.send("/topic/test", tmpBuffer);
-    }
-    WaitForState.waitFor(5, TimeUnit.SECONDS, ()->handler.subscriptionCount.get() == 0);
-
-    subscription.unsubscribe();
-    WaitForState.wait(100, TimeUnit.MILLISECONDS);
-    stompSession.disconnect();
-    WaitForState.wait(100, TimeUnit.MILLISECONDS);
-  }
-
-  private static final class StompSessionHandlerImpl implements StompSessionHandler {
-    AtomicLong subscriptionCount = new AtomicLong(10);
-    @Override
-    public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
-    }
-
-    @Override
-    public void handleException(StompSession stompSession, StompCommand stompCommand, StompHeaders stompHeaders, byte[] bytes, Throwable throwable) {
-      throwable.printStackTrace(System.err);
-    }
-
-    @Override
-    public void handleTransportError(StompSession stompSession, Throwable throwable) {
-      throwable.printStackTrace(System.err);
-    }
-
-    @Override
-    public Type getPayloadType(StompHeaders stompHeaders) {
-      return byte[].class;
-    }
-
-    @Override
-    public void handleFrame(StompHeaders stompHeaders, Object o) {
-      subscriptionCount.decrementAndGet();
-    }
   }
 
 }
