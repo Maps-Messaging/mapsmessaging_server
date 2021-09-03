@@ -569,7 +569,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>5.2.13.RELEASE</version>
+      <version>5.3.9</version>
       <scope>test</scope>
     </dependency>
 
