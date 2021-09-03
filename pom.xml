@@ -492,7 +492,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>proton-j</artifactId>
-      <version>0.33.8</version>
+      <version>0.33.9</version>
     </dependency>
 
     <!-- Hawtio Dependencies -->
