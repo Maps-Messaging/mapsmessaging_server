@@ -561,7 +561,7 @@
     <dependency>
       <groupId>org.projectodd.stilts</groupId>
       <artifactId>stilts-stomp-client</artifactId>
-      <version>0.1.1</version>
+      <version>0.1.40</version>
       <scope>test</scope>
     </dependency>
 
