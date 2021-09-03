@@ -18,11 +18,19 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.engine.security.TestLoginModule;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URISyntaxException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import javax.net.ssl.SSLException;
+import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.engine.security.TestLoginModule;
 import org.projectodd.stilts.stomp.StompException;
 import org.projectodd.stilts.stomp.client.StompClient;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -34,20 +42,12 @@ import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
-import javax.security.auth.login.LoginException;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.net.URISyntaxException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 class StompConnectionTest extends StompBaseTest {
 
 
   @Test
   @DisplayName("Test anonymous Stomp client connection")
-  void testAnonymous() throws URISyntaxException, StompException, InterruptedException {
+  void testAnonymous() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(20000);
     Assertions.assertTrue(client.isConnected());
@@ -57,7 +57,7 @@ class StompConnectionTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test passing null username and password Stomp client connection")
-  void testNullAuth() throws URISyntaxException, InterruptedException {
+  void testNullAuth() throws URISyntaxException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1:2001/");
     try {
       client.connect(1000);

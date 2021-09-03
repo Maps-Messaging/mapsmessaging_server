@@ -18,10 +18,16 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.test.WaitForState;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.net.ssl.SSLException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.WaitForState;
 import org.projectodd.stilts.stomp.StompException;
 import org.projectodd.stilts.stomp.StompMessage;
 import org.projectodd.stilts.stomp.StompMessages;
@@ -29,16 +35,11 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.StompClient;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 class StompTransactionalSubscriptionImplTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test publish events with priority using block based transactions")
-  void testPriorityPublishTransactionalWithClientCommit() throws InterruptedException, URISyntaxException, StompException {
+  void testPriorityPublishTransactionalWithClientCommit() throws InterruptedException, URISyntaxException, StompException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -84,7 +85,7 @@ class StompTransactionalSubscriptionImplTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test publish events with priority using transactions")
-  void testPriorityPublishTransactionalWithCommit() throws InterruptedException, URISyntaxException, StompException, IOException {
+  void testPriorityPublishTransactionalWithCommit() throws InterruptedException, URISyntaxException, StompException, IOException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());

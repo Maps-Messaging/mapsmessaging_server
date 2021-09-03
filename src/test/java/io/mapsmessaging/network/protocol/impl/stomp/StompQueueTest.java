@@ -18,9 +18,17 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.test.WaitForState;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.LongAdder;
+import javax.net.ssl.SSLException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.WaitForState;
 import org.projectodd.stilts.stomp.Headers;
 import org.projectodd.stilts.stomp.StompException;
 import org.projectodd.stilts.stomp.StompMessage;
@@ -28,13 +36,6 @@ import org.projectodd.stilts.stomp.StompMessages;
 import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.StompClient;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.LongAdder;
 
 class StompQueueTest extends StompBaseTest {
   private static final long MAX_WAIT_SECONDS = 15;
@@ -44,7 +45,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
-  void testBasicQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
+  void testBasicQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
     //
@@ -97,7 +98,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
-  void testBasicUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
+  void testBasicUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
 
     List<StompQueueClient> clients = new ArrayList<>();
@@ -180,7 +181,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
-  void testBasicSubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
+  void testBasicSubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
     //
@@ -258,7 +259,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
-  void testBasicRollingUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException {
+  void testBasicRollingUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
 
     List<StompQueueClient> clients = new ArrayList<>();
@@ -323,7 +324,7 @@ class StompQueueTest extends StompBaseTest {
     private final ClientSubscription subscription;
     private final LongAdder counter = new LongAdder();
 
-    public StompQueueClient(String url, String queueName, boolean ack) throws URISyntaxException, StompException, InterruptedException{
+    public StompQueueClient(String url, String queueName, boolean ack) throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
       client = new StompClient(url);
       client.connect(10000);
       Assertions.assertTrue(client.isConnected());
@@ -342,7 +343,7 @@ class StompQueueTest extends StompBaseTest {
           .start();
     }
 
-    public void close() throws StompException, InterruptedException {
+    public void close() throws StompException, InterruptedException, TimeoutException {
       subscription.unsubscribe();
       client.disconnect(1000);
     }

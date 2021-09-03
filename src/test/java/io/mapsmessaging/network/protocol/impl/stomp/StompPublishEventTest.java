@@ -19,7 +19,20 @@
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.test.WaitForState;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.net.ssl.SSLException;
+import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
@@ -33,9 +46,6 @@ import org.projectodd.stilts.stomp.Subscription.AckMode;
 import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.ClientTransaction;
 import org.projectodd.stilts.stomp.client.StompClient;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.SimpleMessageConverter;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
@@ -46,25 +56,11 @@ import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
-import javax.security.auth.login.LoginException;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test with a STOMP client that passes content length with large content")
-  void testPublishLargeEventsContentLength() throws URISyntaxException, StompException, InterruptedException {
+  void testPublishLargeEventsContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -96,7 +92,7 @@ class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test with a STOMP client that passes content length with small content")
-  void testPublishSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException {
+  void testPublishSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -140,7 +136,7 @@ class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test Transactional publishing with content length")
-  void testTransactionalPublishContentLength() throws URISyntaxException, StompException, InterruptedException {
+  void testTransactionalPublishContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
     client.connect(10000);
     String topicName = getTopicName();
@@ -207,7 +203,7 @@ class StompPublishEventTest extends StompBaseTest {
 
   @Test
   @DisplayName("Test publishing with large content length")
-  void testPublishLargeEvents() throws IOException, LoginException, InterruptedException {
+  void testPublishLargeEvents() throws IOException, LoginException {
     Client client = new Client("127.0.0.1", 8675, null, null);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
