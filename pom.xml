@@ -365,7 +365,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
