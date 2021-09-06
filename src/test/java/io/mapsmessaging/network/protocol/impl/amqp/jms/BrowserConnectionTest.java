@@ -63,9 +63,11 @@ public class BrowserConnectionTest extends BaseConnection {
         producer.send(msg);
       }
 
-      MessageConsumer consumer = session.createConsumer(queue);
+      Session session2 = connection.createSession( Session.AUTO_ACKNOWLEDGE);
+      Queue queue2 = session2.createQueue("queueBrowserTestQueue");
+      MessageConsumer consumer = session2.createConsumer(queue2);
       connection.start();
-      int counter = checkTheBrowser(session, queue, null);
+      int counter = checkTheBrowser(session2, queue2, null);
       Assertions.assertEquals(10, counter, "We pushed 10 messages, we expect the browser to see 10 messages");
 
 
@@ -129,10 +131,14 @@ public class BrowserConnectionTest extends BaseConnection {
     }
     WaitForState.wait(100, TimeUnit.MILLISECONDS);
 
+    long start = System.currentTimeMillis()+2000;
     Enumeration e = browser.getEnumeration();
     while(!e.hasMoreElements()){
       e = browser.getEnumeration();
       WaitForState.wait(100, TimeUnit.MILLISECONDS);
+      if(start < System.currentTimeMillis()){
+        return 0;
+      }
     }
     int counter =0;
     Assertions.assertTrue(e.hasMoreElements());

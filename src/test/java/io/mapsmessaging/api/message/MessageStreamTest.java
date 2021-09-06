@@ -18,13 +18,12 @@
 
 package io.mapsmessaging.api.message;
 
-import io.mapsmessaging.engine.resources.DBResource;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
-
+import io.mapsmessaging.engine.resources.DBResource;
+import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
+import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,6 +31,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class MessageStreamTest {
 
@@ -85,7 +86,9 @@ public class MessageStreamTest {
     File file = new File("./target/data/messageStream");
     Files.createDirectories(file.toPath());
     DBResource dbResource = new DBResource("./target/data/messageStream", "messageStream");
-
+    ThreadStateContext context = new ThreadStateContext();
+    context.add("domain", "ResourceAccessKey");
+    ThreadLocalContext.set(context);
     // Remove any before we start
     if(!dbResource.isEmpty()){
       Iterator<Long> entries = dbResource.getIterator();
