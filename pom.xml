@@ -418,7 +418,7 @@
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-stdlib</artifactId>
-      <version>1.4.10</version>
+      <version>1.5.30</version>
     </dependency>
 
     <!-- Consul client API -->
