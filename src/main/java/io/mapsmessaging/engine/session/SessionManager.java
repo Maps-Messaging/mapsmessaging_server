@@ -257,8 +257,7 @@ public class SessionManager {
         subscriptionController = sessionImpl.getSubscriptionController();
         if (expiry > 0) {
           subscriptionController.hibernateAll();
-          Future<Runnable> schedule =
-              SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
+          Future<Runnable> schedule = SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
           subscriptionController.setTimeout(schedule);
           disconnectedSessions.increment();
         } else {

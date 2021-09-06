@@ -18,10 +18,21 @@
 
 package io.mapsmessaging.api.subscriptions;
 
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageAPITest;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
@@ -29,20 +40,10 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageAPITest;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
-import io.mapsmessaging.test.WaitForState;
 
 class UnsubscribeValidationTest extends MessageAPITest implements MessageListener {
 
-  private static final int EVENT_COUNT = 10000;
+  private static final int EVENT_COUNT = 1000;
 
   void topicUnsubscribeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, true, false);
@@ -67,7 +68,6 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
   void topicResumeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, false, true);
-
   }
 
   @Test
@@ -79,7 +79,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
   public void eventCleanUpTest(String name, String destinationName, boolean isQueue, boolean unsubscribe, boolean resumeSession) throws LoginException, IOException {
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new FakeProtocolImpl(this));
     scb1.setReceiveMaximum(1); // ensure it is low
-    scb1.setSessionExpiry(2); // 2 seconds, more then enough time
+    scb1.setSessionExpiry(2); // 2 seconds, more than enough time
     scb1.setKeepAlive(120); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
 
@@ -87,7 +87,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
     SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new FakeProtocolImpl(this));
     scb2.setReceiveMaximum(1); // ensure it is low
-    scb2.setSessionExpiry(2); // 2 seconds, more then enough time
+    scb2.setSessionExpiry(2); // 2 seconds, more than enough time
     scb2.setKeepAlive(120); // large enough to not worry about
     scb2.setPersistentSession(true); // store the details
     Session delayedSession2 = createSession(scb2, this);
@@ -101,10 +101,8 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     Assertions.assertEquals(destination.getResourceType(), destinationType);
 
     // Subscribe to the topic with individual Ack, this causes the server to stop sending events until the client acks them
-    SubscriptionContextBuilder subContextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.INDIVIDUAL);
-    subContextBuilder.setReceiveMaximum(1);
-    subContextBuilder.setQos(QualityOfService.AT_LEAST_ONCE);
-    SubscribedEventManager subscription = delayedSession1.addSubscription(subContextBuilder.build());
+    SubscriptionContext context = createContext(destinationName, ClientAcknowledgement.INDIVIDUAL, QualityOfService.AT_LEAST_ONCE, 1);
+    SubscribedEventManager subscription = delayedSession1.addSubscription(context);
     Assertions.assertNotNull(subscription);
 
     for(int x=0;x<EVENT_COUNT;x++) {
@@ -116,24 +114,25 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
       // Add a second subscription 1/2 way through
       if(x == EVENT_COUNT/2){
-        SubscriptionContextBuilder subContextBuilder2 = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.INDIVIDUAL);
-        subContextBuilder.setReceiveMaximum(1);
-        subContextBuilder.setQos(QualityOfService.AT_LEAST_ONCE);
-        SubscribedEventManager subscription2 = delayedSession2.addSubscription(subContextBuilder2.build());
-        Assertions.assertNotNull(subscription);
+        context = createContext(destinationName, ClientAcknowledgement.INDIVIDUAL, QualityOfService.AT_LEAST_ONCE, 1);
+        SubscribedEventManager subscription2 = delayedSession2.addSubscription(context);
+        Assertions.assertNotNull(subscription2);
       }
     }
     if(resumeSession){
+      // This should put BOTH sessions into hibernate BUT NOT lose any events
       close(delayedSession1);
       close(delayedSession2);
+
+      //Confirm the events are where they are meant to be
       Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
 
-      // This should put BOTH sessions into hibernate BUT NOT lose any events
+      // Restart the sessions
       delayedSession1 = createSession(scb1, this);
       delayedSession2 = createSession(scb2, this);
     }
 
-    // At this point we should have a large number of events pending for the subscription, so lets unsubscribe and see
+    // At this point we should have a large number of events pending for the subscription, so let's unsubscribe and see
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
     if(unsubscribe) {
       delayedSession1.removeSubscription(destinationName);
@@ -148,10 +147,8 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     if(isQueue) {
       // Since we auto store events on queues, the only way to remove them is to deliver and ack them
       Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
-      subContextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.AUTO);
-      subContextBuilder.setReceiveMaximum(1);
-      subContextBuilder.setQos(QualityOfService.AT_LEAST_ONCE);
-      subscription = publisher.addSubscription(subContextBuilder.build());
+      context = createContext(destinationName, ClientAcknowledgement.AUTO, QualityOfService.AT_LEAST_ONCE, 10);
+      subscription = publisher.addSubscription(context);
       Assertions.assertNotNull(subscription);
       WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     }
@@ -159,6 +156,15 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     Assertions.assertEquals(0, destination.getStoredMessages());
     close(publisher);
+  }
+
+  private SubscriptionContext createContext(String destinationName,ClientAcknowledgement clientAcknowledgement,  QualityOfService qos, int receiveMax){
+    SubscriptionContextBuilder subContextBuilder2 = new SubscriptionContextBuilder(destinationName, clientAcknowledgement);
+    subContextBuilder2.setReceiveMaximum(receiveMax);
+    subContextBuilder2.setQos(qos);
+    return subContextBuilder2.build();
+
+
   }
 
   @Override
