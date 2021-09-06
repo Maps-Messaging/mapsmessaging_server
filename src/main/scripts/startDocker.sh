@@ -21,7 +21,7 @@
 export JAVA_HOME=/opt/jdk-13
 export PATH=$JAVA_HOME/bin:$PATH
 #
-export MAPS_HOME=/message_daemon-1.1-SNAPSHOT
+export MAPS_HOME=/message_daemon-1.1.4
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
 #
@@ -29,7 +29,7 @@ export MAPS_CONF=$MAPS_HOME/conf
 #
 # Note::: The conf directory must be at the start else the configuration is loaded from the jars
 #
-export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-1.1-SNAPSHOT.jar:"$MAPS_LIB/*"
+export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-1.1.4.jar:"$MAPS_LIB/*"
 #
 # Now start the the daemon
 #

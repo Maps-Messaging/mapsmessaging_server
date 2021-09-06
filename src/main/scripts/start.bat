@@ -10,7 +10,7 @@ REM  From there configure all the paths.
 REM 
 REM  Note::: The conf directory must be at the start else the configuration is loaded from the jars
 REM 
-export CLASSPATH=%MAPS_CONF%;%MAPS_LIB%/message_daemon-1.1-SNAPSHOT.jar;"$MAPS_LIB/*"
+export CLASSPATH=%MAPS_CONF%;%MAPS_LIB%/message_daemon-1.1.4.jar;"$MAPS_LIB/*"
 
 REM 
 REM  Now start the the daemon
