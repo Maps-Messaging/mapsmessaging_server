@@ -547,7 +547,7 @@
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-jvm</artifactId>
-      <version>1.6.2</version>
+      <version>1.7.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-core -->
