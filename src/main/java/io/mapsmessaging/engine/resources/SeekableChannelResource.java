@@ -31,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.Iterator;
 
 public class SeekableChannelResource extends MapBasedResource {
   private static final long REPORT_DELAY = 10000;
@@ -78,11 +77,6 @@ public class SeekableChannelResource extends MapBasedResource {
   @Override
   public boolean isEmpty() {
     return false;
-  }
-
-  @Override
-  public Iterator<Long> getIterator() {
-    return null;
   }
 
   private void reload(long eof) throws IOException {
@@ -179,8 +173,8 @@ public class SeekableChannelResource extends MapBasedResource {
   }
 
   @Override
-  public void stop() throws IOException {
-    super.stop();
+  public void close() throws IOException {
+    super.close();
     readChannel.close();
     writeChannel.close();
 

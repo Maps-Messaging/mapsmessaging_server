@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.nio.file.Files;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.mapdb.BTreeMap;
@@ -73,23 +72,11 @@ public class DBResource extends Resource {
     return index.isEmpty();
   }
 
-  @Override
-  public Iterator<Long> getIterator(){
-    return diskMap.getKeys().iterator();
-  }
-
   public synchronized void flush(){
     for(MessageCache messageCache:index.values()){
       messageCache.messageSoftReference.clear();
     }
     index.clear();
-  }
-
-  @Override
-  public synchronized void stop() {
-    dataStore.commit();
-    dataStore.close();
-    flush();
   }
 
   @Override
@@ -100,10 +87,12 @@ public class DBResource extends Resource {
   }
 
   @Override
-  public synchronized void close() {
+  public synchronized void close() throws IOException {
     if (!isClosed) {
       super.close();
+      dataStore.commit();
       dataStore.close();
+      flush();
     }
   }
 

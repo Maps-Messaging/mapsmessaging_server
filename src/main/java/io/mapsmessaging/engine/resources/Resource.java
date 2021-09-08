@@ -21,15 +21,14 @@ package io.mapsmessaging.engine.resources;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
-import java.io.Closeable;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
-public abstract class Resource implements Closeable {
+public abstract class Resource implements BaseResource {
 
   private static final LongAdder totalRetained = new LongAdder();
+
   public static long getTotalRetained(){
     return totalRetained.sum();
   }
@@ -48,23 +47,9 @@ public abstract class Resource implements Closeable {
     retainedIdentifier = -1;
   }
 
-  public abstract boolean isEmpty();
-
-  public abstract Iterator<Long> getIterator();
-
   @Override
-  public void close() {
+  public void close() throws IOException {
     isClosed = true;
-  }
-
-  protected void checkIsClosed() throws IOException {
-    if (isClosed) {
-      throw new IOException("Resource:" + name + " is closed");
-    }
-  }
-
-  protected long getNextIdentifier() {
-    return keyGen.incrementAndGet();
   }
 
   public String getName() {
@@ -75,7 +60,9 @@ public abstract class Resource implements Closeable {
     return mappedName;
   }
 
-  public abstract void delete() throws IOException;
+  public long getRetainedIdentifier() {
+    return retainedIdentifier;
+  }
 
   // While this function doesn't throw an exception, classes that extend it do
   @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
@@ -93,7 +80,15 @@ public abstract class Resource implements Closeable {
     }
   }
 
-  public abstract Message get(long key) throws IOException;
+  protected long getNextIdentifier() {
+    return keyGen.incrementAndGet();
+  }
+
+  protected void checkIsClosed() throws IOException {
+    if (isClosed) {
+      throw new IOException("Resource:" + name + " is closed");
+    }
+  }
 
   // While this function doesn't throw an exception, classes that extend it do
   @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
@@ -104,12 +99,4 @@ public abstract class Resource implements Closeable {
       retainedIdentifier = -1;
     }
   }
-
-  public abstract long size() throws IOException;
-
-  public long getRetainedIdentifier() {
-    return retainedIdentifier;
-  }
-
-  public abstract void stop() throws IOException;
 }

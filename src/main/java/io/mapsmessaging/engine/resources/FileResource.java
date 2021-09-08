@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
-import java.util.Iterator;
 
 public class FileResource extends MapBasedResource {
 
@@ -82,8 +81,8 @@ public class FileResource extends MapBasedResource {
   }
 
   @Override
-  public void stop() throws IOException {
-    super.stop();
+  public void close() throws IOException {
+    super.close();
     try {
       randomAccessWriteFile.close();
       randomAccessReadFile.close();
@@ -145,11 +144,6 @@ public class FileResource extends MapBasedResource {
   @Override
   public boolean isEmpty() {
     return false;
-  }
-
-  @Override
-  public Iterator<Long> getIterator() {
-    return null;
   }
 
 }

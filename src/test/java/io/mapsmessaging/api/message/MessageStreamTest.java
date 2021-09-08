@@ -27,7 +27,6 @@ import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -84,18 +83,15 @@ public class MessageStreamTest {
   @Test
   void messageStream() throws IOException {
     File file = new File("./target/data/messageStream");
+    if(file.exists()){
+      file.delete();
+    }
     Files.createDirectories(file.toPath());
     DBResource dbResource = new DBResource("./target/data/messageStream", "messageStream");
     ThreadStateContext context = new ThreadStateContext();
     context.add("domain", "ResourceAccessKey");
     ThreadLocalContext.set(context);
     // Remove any before we start
-    if(!dbResource.isEmpty()){
-      Iterator<Long> entries = dbResource.getIterator();
-      while(entries.hasNext()){
-        entries.remove();
-      }
-    }
 
     for(int x=0;x<10;x++) {
       Message message = createMessageBuilder(x).build();

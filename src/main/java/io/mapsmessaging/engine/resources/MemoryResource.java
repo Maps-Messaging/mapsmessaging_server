@@ -20,7 +20,6 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -34,12 +33,7 @@ public class MemoryResource extends Resource {
   }
 
   @Override
-  public void stop() {
-    // Nothing to stop
-  }
-
-  @Override
-  public void delete() {
+  public void delete() throws IOException {
     if (!isClosed) {
       close();
     }
@@ -78,12 +72,7 @@ public class MemoryResource extends Resource {
   }
 
   @Override
-  public Iterator<Long> getIterator() {
-    return store.keySet().iterator();
-  }
-
-  @Override
-  public synchronized void close() {
+  public synchronized void close() throws IOException {
     super.close();
     store.clear();
   }

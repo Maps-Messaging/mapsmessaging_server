@@ -28,13 +28,14 @@ public abstract class MapBasedResource extends Resource {
 
   protected final Map<Long, MessageCache> index;
 
-  protected MapBasedResource(String name, String mapped) throws IOException {
+  protected MapBasedResource(String name, String mapped) {
     super(name, mapped);
     index = new LinkedHashMap<>();
   }
 
   @Override
-  public void stop() throws IOException {
+  public void close() throws IOException {
+    super.close();
     index.clear();
   }
 

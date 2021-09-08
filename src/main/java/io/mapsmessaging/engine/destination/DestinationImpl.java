@@ -204,7 +204,7 @@ public class DestinationImpl implements BaseDestination {
   //<editor-fold desc="Shutdown functions">
   public void close() throws IOException {
     closed = true;
-    resource.stop();
+    resource.close();
     if(delayedMessageManager != null) {
       delayedMessageManager.close();
     }
