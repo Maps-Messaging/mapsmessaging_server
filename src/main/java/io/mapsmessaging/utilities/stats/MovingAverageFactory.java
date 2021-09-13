@@ -18,15 +18,15 @@
 
 package io.mapsmessaging.utilities.stats;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.stats.processors.AdderDataProcessor;
 import io.mapsmessaging.utilities.stats.processors.AverageDataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DifferenceDataProcessor;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Creates a MovingAverage instance that manages the data summing based on the ACCUMULATOR allocated to the MovingAverage
@@ -67,7 +67,7 @@ public class MovingAverageFactory {
   }
 
   protected final List<LinkedMovingAverages> movingAverages;
-  private Future<Runnable> scheduledTask;
+  private ScheduledFuture<?> scheduledTask;
 
   public MovingAverageFactory(){
     movingAverages = new ArrayList<>();
@@ -79,7 +79,7 @@ public class MovingAverageFactory {
   public void close(LinkedMovingAverages movingAverage){
     movingAverages.remove(movingAverage);
     if(movingAverages.isEmpty()){
-      scheduledTask.cancel(true);
+      scheduledTask.cancel(false);
     }
   }
 

@@ -38,7 +38,7 @@ import io.mapsmessaging.network.io.connection.state.State;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -57,7 +57,7 @@ public class EndPointConnection extends EndPointServerStatus {
   private final AtomicBoolean running;
   private final AtomicBoolean paused;
 
-  private Future<Runnable> futureTask;
+  private Future<?> futureTask;
   private EndPoint endPoint;
   private ProtocolImpl connection;
   private State state;
@@ -81,7 +81,7 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public void close(){
     if(futureTask != null && !futureTask.isDone()){
-      futureTask.cancel(true);
+      futureTask.cancel(false);
     }
     running.set(false);
     manager.delConnection(this);
@@ -196,7 +196,7 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public synchronized void scheduleState(State newState, long time){
     if(futureTask != null && !futureTask.isDone()){
-      futureTask.cancel(true);
+      futureTask.cancel(false);
     }
     if(state != null) {
       logger.log(LogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());

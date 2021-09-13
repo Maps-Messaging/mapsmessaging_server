@@ -32,7 +32,7 @@ import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +91,7 @@ public class SessionImpl {
     isClosed = true;
     securityContext.logout();
     if (scheduledFuture != null) {
-      scheduledFuture.cancel(true);
+      scheduledFuture.cancel(false);
     }
     closureTaskManager.close();
   }

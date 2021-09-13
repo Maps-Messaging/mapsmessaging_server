@@ -27,7 +27,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Advertise;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -39,7 +39,7 @@ public class AdvertiserTask implements Runnable {
 
   private final DatagramSocket socket;
   private final byte[] advertisePacket;
-  private final Future<Runnable> future;
+  private final Future<?> future;
   private final InterfaceInformation info;
   private final InetAddress bcast;
   private final int datagramPort;

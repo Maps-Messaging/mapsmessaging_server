@@ -58,7 +58,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.NonNull;
@@ -89,8 +88,8 @@ public class DestinationImpl implements BaseDestination {
 
   protected final DestinationJMX destinationJMXBean;
 
-  private final PriorityTaskScheduler<Response> resourceTaskQueue;
-  private final TaskScheduler<Response> subscriptionTaskQueue;
+  private final PriorityTaskScheduler resourceTaskQueue;
+  private final TaskScheduler subscriptionTaskQueue;
 
   private final DelayedMessageManager delayedMessageManager;
   private final TransactionalMessageManager transactionMessageManager;
@@ -116,8 +115,8 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  String path, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = name;
-    resourceTaskQueue = new PriorityConcurrentTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
-    subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
+    resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
+    subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
     resource = ResourceFactory.getInstance().create(path, name, uuid, destinationType);
@@ -143,8 +142,8 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl( @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = resource.getMappedName();
-    resourceTaskQueue = new PriorityConcurrentTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
-    subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
+    resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
+    subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
     this.resource = resource;
@@ -183,8 +182,8 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) {
     this.name = name;
-    resourceTaskQueue = new PriorityConcurrentTaskScheduler<>(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
-    subscriptionTaskQueue = new SingleConcurrentTaskScheduler<>(SUBSCRIPTION_TASK_KEY);
+    resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
+    subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
     resource = new MemoryResource(name);
@@ -214,12 +213,12 @@ public class DestinationImpl implements BaseDestination {
   }
 
   public void stopSubscriptions(){
-    subscriptionTaskQueue.shutdown(true);
+    subscriptionTaskQueue.shutdown();
   }
 
   public void pauseClientRequests(){
     subscriptionManager.pause();
-    resourceTaskQueue.shutdown(true);
+    resourceTaskQueue.shutdown();
   }
 
   public void delete() throws IOException {
@@ -579,10 +578,8 @@ public class DestinationImpl implements BaseDestination {
    * @param task to add on the subscription task queue.
    * @return the future response of the task that has been queued
    */
-  public FutureTask<Response> submit( @NonNull @NotNull Callable<Response> task){
-    FutureTask<Response> future = new FutureTask<>(task);
-    subscriptionTaskQueue.addTask(future);
-    return future;
+  public Future<Response> submit( @NonNull @NotNull Callable<Response> task){
+    return subscriptionTaskQueue.submit(task);
   }
 
   /**
@@ -593,10 +590,8 @@ public class DestinationImpl implements BaseDestination {
    * @param priority the priority to process this task, some tasks can be done before other tasks
    * @return the future response of the task that has been queued
    */
-  public FutureTask<Response> submit( @NonNull @NotNull  Callable<Response> task, int priority){
-    FutureTask<Response> future = new FutureTask<>(task);
-    resourceTaskQueue.addTask(future, priority);
-    return future;
+  public Future<Response> submit( @NonNull @NotNull  Callable<Response> task, int priority){
+    return resourceTaskQueue.submit(task, priority);
   }
 
   /**

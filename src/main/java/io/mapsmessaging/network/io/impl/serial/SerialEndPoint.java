@@ -31,7 +31,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.StreamEndPoint;
 import io.mapsmessaging.network.io.StreamHandler;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

@@ -20,20 +20,20 @@ package io.mapsmessaging.utilities.admin;
 
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
+import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
 import javax.management.ObjectInstance;
-import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
-import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 
 @JMXBean(description = "Task Queue monitor")
 public class TaskQueueJMX implements HealthMonitor {
 
-  private final TaskScheduler<?> taskQueue;
+  private final TaskScheduler taskQueue;
   private final ObjectInstance instance;
 
   //<editor-fold desc="Life cycle functions">
-  public TaskQueueJMX(TaskScheduler<?> taskQueue, List<String> typePath){
+  public TaskQueueJMX(TaskScheduler taskQueue, List<String> typePath){
     this.taskQueue = taskQueue;
     List<String> scheduler = new ArrayList<>(typePath);
     instance = JMXManager.getInstance().register(this, scheduler);

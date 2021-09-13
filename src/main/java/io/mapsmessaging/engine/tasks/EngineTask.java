@@ -30,7 +30,7 @@ public abstract class EngineTask implements Callable<Response> {
     logContext = ThreadContext.getContext();
   }
 
-  // The exception is derived from the Callable interface and we just extent it here
+  // The exception is derived from the Callable interface, and we just extend it here
   @java.lang.SuppressWarnings("squid:S00112")
   public abstract Response taskCall() throws Exception;
 

@@ -19,9 +19,9 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -55,7 +55,7 @@ public class SystemTopicManager implements Runnable, ServiceManager {
         }
       }
     }
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10000, 10000, TimeUnit.MILLISECONDS);
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
   }
 
   @Override

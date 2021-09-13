@@ -39,7 +39,7 @@ import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.qpid.proton.codec.DroppingWritableBuffer;
@@ -63,10 +63,10 @@ public class ProtonEngine {
   private final Connection connection;
   private final EventListenerFactory eventListenerFactory;
   private final Map<String, Sender> subscriptions;
-  private TaskScheduler<Boolean> engineScheduler;
+  private TaskScheduler engineScheduler;
 
   public ProtonEngine(AMQPProtocol protocol){
-    engineScheduler = new SingleConcurrentTaskScheduler<>(PROTON_ENGINE_KEY);
+    engineScheduler = new SingleConcurrentTaskScheduler(PROTON_ENGINE_KEY);
 
     this.protocol = protocol;
     collector = Collector.Factory.create();
@@ -132,7 +132,7 @@ public class ProtonEngine {
   }
 
   public void processPacket(Packet packet) throws IOException {
-    FutureTask<Boolean> future = submit(new PacketTask(packet));
+    Future<Boolean> future = submit(new PacketTask(packet));
     try {
       if(!future.isDone()) {
         future.get(10000, TimeUnit.MILLISECONDS);
@@ -195,10 +195,8 @@ public class ProtonEngine {
     }
   }
 
-  private FutureTask<Boolean> submit(Callable<Boolean> task){
-    FutureTask<Boolean> future = new FutureTask<>(task);
-    engineScheduler.addTask(future);
-    return future;
+  private Future<Boolean> submit(Callable<Boolean> task){
+    return engineScheduler.submit(task);
   }
 
   private class SendMessageTask implements Callable<Boolean> {

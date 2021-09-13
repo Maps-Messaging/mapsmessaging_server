@@ -45,7 +45,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import lombok.NonNull;
@@ -81,7 +80,7 @@ public class SubscriptionController implements DestinationManagerListener {
   // Session represents the remote client
   //
   private SessionImpl sessionImpl;
-  private Future<Runnable> schedule;
+  private Future<?> schedule;
 
   public SubscriptionController(SessionContext sessionContext, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
     this.sessionId = sessionContext.getId();
@@ -193,7 +192,7 @@ public class SubscriptionController implements DestinationManagerListener {
     AtomicLong counter = new AtomicLong(destinationSet.size());
     SubscribedEventManager subscription = null;
     ListResponse responses = new ListResponse();
-    FutureTask<Response> future;
+    Future<Response> future;
     for (DestinationImpl destinationImpl : destinationSet) {
       // Lets queue the subscription requests for each destination
       future = scheduleSubscription(context, destinationImpl, counter);
@@ -360,7 +359,7 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
-  private FutureTask<Response> scheduleSubscription(SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter){
+  private Future<Response> scheduleSubscription(SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter){
     SubscriptionTask task = new SubscriptionTask(this, context, destinationImpl, counter);
     return destinationImpl.submit(task);
   }
@@ -394,11 +393,11 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
-  public Future<Runnable> getTimeout() {
+  public Future<?> getTimeout() {
     return schedule;
   }
 
-  public void setTimeout(Future<Runnable> schedule) {
+  public void setTimeout(Future<?> schedule) {
     this.schedule = schedule;
   }
 

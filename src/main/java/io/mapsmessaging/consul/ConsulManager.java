@@ -27,7 +27,7 @@ import com.orbitz.consul.model.agent.Registration;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class ConsulManager implements Runnable {
   private final Consul client;
   private final AgentClient agentClient;
   private final UUID serviceId;
-  private Future<Runnable> scheduledTask;
+  private Future<?> scheduledTask;
 
   public ConsulManager(UUID id) {
     client = Consul.builder().build();
@@ -75,7 +75,7 @@ public class ConsulManager implements Runnable {
   public void stop(){
     if(scheduledTask != null){
       logger.log(LogMessages.CONSUL_SHUTDOWN);
-      scheduledTask.cancel(true);
+      scheduledTask.cancel(false);
     }
   }
 

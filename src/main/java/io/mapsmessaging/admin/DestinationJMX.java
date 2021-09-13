@@ -24,7 +24,6 @@ import com.udojava.jmx.wrapper.JMXBeanOperation;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationStats;
-import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
@@ -49,7 +48,7 @@ public class DestinationJMX implements HealthMonitor {
   private final TaskQueueJMX publishTaskQueueJMX;
   private final TaskQueueJMX subscriptionTaskQueueJMX;
 
-  public DestinationJMX(DestinationImpl destinationImpl, TaskScheduler<Response> resource, TaskScheduler<Response> subscription) {
+  public DestinationJMX(DestinationImpl destinationImpl, TaskScheduler resource, TaskScheduler subscription) {
     this.destinationImpl = destinationImpl;
     typePath = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
     typePath.add("destinationType=" + destinationImpl.getResourceType().getName());

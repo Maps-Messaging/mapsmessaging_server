@@ -38,7 +38,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import lombok.NonNull;
@@ -194,7 +194,7 @@ public class DestinationManager implements DestinationFactory {
     if (!destinationImpl.getName().startsWith("$SYS")) {
       DestinationImpl delete = destinationList.remove(destinationImpl.getName());
       StoreMessageTask deleteDestinationTask = new ShutdownPhase1Task(delete, destinationManagerListeners, logger);
-      FutureTask<Response> response = destinationImpl.submit(deleteDestinationTask);
+      Future<Response> response = destinationImpl.submit(deleteDestinationTask);
       long timeout = System.currentTimeMillis() + 10000; // ToDo: make configurable
       while(!response.isDone() && timeout > System.currentTimeMillis()){
         LockSupport.parkNanos(10000000);

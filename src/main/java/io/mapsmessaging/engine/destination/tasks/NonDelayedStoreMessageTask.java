@@ -24,7 +24,7 @@ import io.mapsmessaging.engine.destination.subscription.DestinationSubscriptionM
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Future;
 
 public class NonDelayedStoreMessageTask extends StoreMessageTask {
   private final DestinationImpl destination;
@@ -43,7 +43,7 @@ public class NonDelayedStoreMessageTask extends StoreMessageTask {
     if(subscriptionManager.hasSubscriptions()){
       storeMessage(destination, message);
       destination.getStats().messagePublished();
-      FutureTask<Response> response = destination.submit(new SubscriptionUpdateTask(destination, subscriptionManager, message));
+      Future<Response> response = destination.submit(new SubscriptionUpdateTask(destination, subscriptionManager, message));
       return new FutureResponse(response);
     }
     // We are also complete here, no queue required

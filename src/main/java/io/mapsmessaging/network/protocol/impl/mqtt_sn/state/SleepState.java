@@ -27,7 +27,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PingResponse;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
@@ -38,7 +38,7 @@ public class SleepState implements State {
 
   private final MQTT_SNProtocol protocol;
 
-  private Future<Runnable> reaperRunner;
+  private Future<?> reaperRunner;
 
   private int sleepDuration;
 
@@ -92,7 +92,7 @@ public class SleepState implements State {
 
   private void clearReaper() {
     if (!reaperRunner.isDone()) {
-      reaperRunner.cancel(true);
+      reaperRunner.cancel(false);
       if (sleepDuration > 0) {
         reaperRunner = SimpleTaskScheduler.getInstance().schedule(new Reaper(), sleepDuration, TimeUnit.SECONDS);
       }

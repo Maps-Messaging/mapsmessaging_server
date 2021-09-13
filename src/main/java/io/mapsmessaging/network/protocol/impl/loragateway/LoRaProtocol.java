@@ -36,7 +36,7 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.DataHandlerFactory;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -68,7 +68,7 @@ public class LoRaProtocol extends ProtocolImpl {
   private boolean sentConfig = false;
   private boolean started = false;
   private boolean sentVersion = false;
-  private Future<Runnable> rateResetFuture;
+  private Future<?> rateResetFuture;
   private final LinkedHashMap<Integer, LoRaClientStats> clientStats;
 
 

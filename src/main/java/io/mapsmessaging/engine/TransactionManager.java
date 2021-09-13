@@ -22,7 +22,7 @@ import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -65,7 +65,7 @@ public class TransactionManager implements Runnable {
    */
   private final Map<String, Transaction> transactionList;
 
-  private Future<Runnable> schedule;
+  private Future<?> schedule;
 
 
   /**
@@ -113,14 +113,14 @@ public class TransactionManager implements Runnable {
 
   public synchronized void start(){
     if(schedule != null){
-      schedule.cancel(true);
+      schedule.cancel(false);
     }
     schedule = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, timeOutInterval, timeOutInterval, TimeUnit.MILLISECONDS);
   }
 
   public synchronized void stop(){
     if(schedule != null){
-      schedule.cancel(true);
+      schedule.cancel(false);
     }
  }
 

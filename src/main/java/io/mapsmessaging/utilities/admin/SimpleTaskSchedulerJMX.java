@@ -20,9 +20,9 @@ package io.mapsmessaging.utilities.admin;
 
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 @JMXBean(description = "JMX Bean to monitor the internal task scheduler and thread pool")
 public class SimpleTaskSchedulerJMX {

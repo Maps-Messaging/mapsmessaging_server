@@ -30,7 +30,7 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -257,7 +257,7 @@ public class SessionManager {
         subscriptionController = sessionImpl.getSubscriptionController();
         if (expiry > 0) {
           subscriptionController.hibernateAll();
-          Future<Runnable> schedule = SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
+          Future<?> schedule = SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
           subscriptionController.setTimeout(schedule);
           disconnectedSessions.increment();
         } else {
@@ -303,8 +303,9 @@ public class SessionManager {
     } else {
       Future<?> timeout = subscriptionManager.getTimeout();
       if (timeout != null) {
-        timeout.cancel(true);
-        if (timeout.isDone()) {
+        boolean fired = timeout.isDone();
+        timeout.cancel(false);
+        if (fired) {
           closeSubscriptionController(subscriptionManager); // Timeout has been executed
           return loadSubscriptionManager(context, subscriptionManagerFactory);
         }

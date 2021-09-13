@@ -51,7 +51,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.PayloadFor
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ResponseTopic;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.TopicAlias;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;

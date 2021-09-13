@@ -18,17 +18,17 @@
 
 package io.mapsmessaging.engine.tasks;
 
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Future;
 
 public class FutureResponse implements Response {
 
-  private final FutureTask<Response> response;
+  private final Future<Response> response;
 
-  public FutureResponse(FutureTask<Response> value){
+  public FutureResponse(Future<Response> value){
     response = value;
   }
 
-  public FutureTask<Response>  getResponse(){
+  public Future<Response>  getResponse(){
     return response;
   }
 

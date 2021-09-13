@@ -30,7 +30,7 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

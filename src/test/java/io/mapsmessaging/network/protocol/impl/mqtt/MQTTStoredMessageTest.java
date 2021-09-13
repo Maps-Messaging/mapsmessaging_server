@@ -18,17 +18,20 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import org.eclipse.paho.client.mqttv3.*;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
-
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class MQTTStoredMessageTest extends BaseTestConfig {
 
@@ -84,6 +87,10 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     Assertions.assertEquals(0, ml.getCounter());
 
     // OK, so now we either have the events ready for us or not, depending on QoS:0 or above
+    subOption = new MqttConnectOptions();
+    subOption.setUserName("user1");
+    subOption.setPassword("password1".toCharArray());
+    subOption.setCleanSession(false);
     subscribe = new MqttClient("tcp://localhost:2001", subId, new MemoryPersistence());
     subscribe.connect(subOption);
     subscribe.subscribe("/topic/test", QoS, ml);
