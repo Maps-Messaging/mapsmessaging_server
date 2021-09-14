@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttClientPersistence;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -37,24 +38,25 @@ class MQTTStoredMessageTest extends BaseTestConfig {
 
 
   @Test
-  void testQos0() throws MqttException, IOException {
+  void testQos0() throws MqttException, IOException, InterruptedException {
     connectSubscribeDisconnectPublishAndCheck(0);
   }
 
   @Test
-  void testQos1() throws MqttException, IOException {
+  void testQos1() throws MqttException, IOException, InterruptedException {
     connectSubscribeDisconnectPublishAndCheck(1);
   }
 
   @Test
-  void testQos2() throws MqttException, IOException {
+  void testQos2() throws MqttException, IOException, InterruptedException {
     connectSubscribeDisconnectPublishAndCheck(2);
   }
 
-  void connectSubscribeDisconnectPublishAndCheck(int QoS) throws MqttException, IOException {
+  void connectSubscribeDisconnectPublishAndCheck(int QoS) throws MqttException, IOException, InterruptedException {
 
     String subId = UUID.randomUUID().toString();
-    MqttClient subscribe = new MqttClient("tcp://localhost:2001", subId, new MemoryPersistence());
+    MqttClientPersistence persistence = new MemoryPersistence();
+    MqttClient subscribe = new MqttClient("tcp://localhost:2001", subId, persistence);
     MessageListener ml = new MessageListener();
     MqttConnectOptions subOption = new MqttConnectOptions();
     subOption.setUserName("user1");
@@ -65,7 +67,6 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     subscribe.subscribeWithResponse("/topic/test", QoS, ml).waitForCompletion(2000);
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
-    subscribe.close();
 
     MqttClient publish = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
     MqttConnectOptions pubOption = new MqttConnectOptions();
@@ -87,13 +88,8 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     Assertions.assertEquals(0, ml.getCounter());
 
     // OK, so now we either have the events ready for us or not, depending on QoS:0 or above
-    subOption = new MqttConnectOptions();
-    subOption.setUserName("user1");
-    subOption.setPassword("password1".toCharArray());
-    subOption.setCleanSession(false);
-    subscribe = new MqttClient("tcp://localhost:2001", subId, new MemoryPersistence());
-    subscribe.connect(subOption);
-    subscribe.subscribe("/topic/test", QoS, ml);
+    subscribe.reconnect();
+    WaitForState.waitFor(2, TimeUnit.SECONDS, subscribe::isConnected);
     Assertions.assertTrue(subscribe.isConnected());
     if(QoS == 0){
       WaitForState.waitFor(2, TimeUnit.SECONDS,() -> ml.getCounter() != 0 );
