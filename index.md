@@ -5,7 +5,7 @@ With the evolution of various IoT protocols to handle the different requirements
 
 ### Installation
 
-Installation instructions can be found [here](installation.md)
+Installation instructions can be found here at [installation](installation.md).
 
 ### Protocols Supported
 
@@ -69,11 +69,11 @@ To access these via maven simply add the following to your pom.xml file.
 
 The nightly installation builds can be found here
 
-[message_daemon-1.1-SNAPSHOT-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1-SNAPSHOT-install.tar.gz) \
-[message_daemon-1.1-SNAPSHOT-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1-SNAPSHOT-install.zip)
+[message_daemon-1.1.4-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1.4-install.tar.gz) \
+[message_daemon-1.1.4-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1.4-install.zip)
 
 
-The MapsMessaging repository is [here](https://mapsmessaging.jfrog.io/)
+The MapsMessaging repository at [https://mapsmessaging.jfrog.io/](https://mapsmessaging.jfrog.io/)
 
 
 
