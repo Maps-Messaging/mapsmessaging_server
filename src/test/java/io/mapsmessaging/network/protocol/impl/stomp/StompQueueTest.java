@@ -89,6 +89,9 @@ class StompQueueTest extends StompBaseTest {
 
     try {
       client.disconnect(10);
+    }
+    catch(TimeoutException timeout){
+      // We can ignore the timeout here
     } catch (StompException e) { // Ignore network disconnect on closure
       if(!e.getMessage().startsWith("Connection timed out")){
         throw e;
