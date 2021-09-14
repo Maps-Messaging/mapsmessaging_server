@@ -18,8 +18,14 @@
 
 package io.mapsmessaging.api;
 
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.ProtocolMessageListener;
 import io.mapsmessaging.engine.session.SessionManagerTest;
+import io.mapsmessaging.test.WaitForState;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -29,11 +35,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 
 public class SessionTest extends MessageAPITest implements ProtocolMessageListener {
 
@@ -48,6 +49,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
     Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);
     Assertions.assertTrue(SessionManagerTest.getInstance().hasSessions());
     Destination destinationImpl = session.findDestination("topic1", DestinationType.TOPIC);
+    Assertions.assertNotNull(destinationImpl);
     SubscriptionContextBuilder subContextBuilder = new SubscriptionContextBuilder("topic1", ClientAcknowledgement.AUTO);
     SubscribedEventManager subscription = session.addSubscription(subContextBuilder.build());
     Assertions.assertNotNull(subscription);
@@ -120,17 +122,13 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
     receivedKeepAlive.set(0);
     Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 1, true, this);
     Assertions.assertTrue(hasSessions());
-    int count = 0;
-    while(receivedKeepAlive.get() == 0 && count < 600){
-      delay(10);
-      count++;
-    }
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
     Assertions.assertTrue(receivedKeepAlive.get() != 0);
     receivedKeepAlive.set(0);
     close(session);
     Assertions.assertFalse(hasSessions());
     Assertions.assertTrue(SessionManagerTest.getInstance().hasIdleSessions());
-    TimeUnit.SECONDS.sleep(6);
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
     Assertions.assertEquals(receivedKeepAlive.get(), 0);
     Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
   }
@@ -143,9 +141,12 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
     session.resumeState();
 
     Destination destination = session.findDestination("topic1", DestinationType.TOPIC);
+    Assertions.assertNotNull(destination);
     Assertions.assertNotNull(session.deleteDestination(destination));
 
     destination = session.findDestination("topic1", DestinationType.TOPIC);
+    Assertions.assertNotNull(destination);
+
     SubscriptionContextBuilder subContextBuilder = new SubscriptionContextBuilder("topic1", ClientAcknowledgement.AUTO);
     SubscribedEventManager subscription = session.addSubscription(subContextBuilder.build());
     Assertions.assertNotNull(subscription);
