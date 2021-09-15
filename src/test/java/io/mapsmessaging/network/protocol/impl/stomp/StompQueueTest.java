@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import javax.net.ssl.SSLException;
 import org.junit.jupiter.api.Assertions;
@@ -230,20 +231,20 @@ class StompQueueTest extends StompBaseTest {
       return true;
     });
 
-    long total = 0;
+    AtomicLong total = new AtomicLong();
     for(StompQueueClient queueClient:clients){
-      total += queueClient.counter.sum();
+      total.addAndGet(queueClient.counter.sum());
     }
-    if(10L*clients.size() != total){
+    if(10L*clients.size() != total.get()){
       for(StompQueueClient report:clients){
         System.err.println(report.toString());
       }
     }
 
-    Assertions.assertEquals(10L*clients.size(), total);
+    Assertions.assertEquals(10L*clients.size(), total.get());
 
     for(StompQueueClient queueClient:clients) {
-      queueClient.counter.reset();
+      queueClient.clear();
     }
     //
     // Add another 10
@@ -267,19 +268,19 @@ class StompQueueTest extends StompBaseTest {
       return true;
     });
 
-    total = 0;
-    for(StompQueueClient queueClient:clients){
-      queueClient.close();
-      total += queueClient.counter.sum();
+    total.set(0);
+    clients.forEach(c -> total.addAndGet(c.counter.sum()));
+    for (StompQueueClient c : clients) {
+        c.close();
     }
     client.disconnect(100);
-    if(10L*clients.size() != total){
+    if(10L*clients.size() != total.get()){
       for(StompQueueClient report:clients){
         System.err.println(report.toString());
       }
     }
 
-    Assertions.assertEquals(10*clients.size(), total);
+    Assertions.assertEquals(10*clients.size(), total.get());
   }
 
   @Test
