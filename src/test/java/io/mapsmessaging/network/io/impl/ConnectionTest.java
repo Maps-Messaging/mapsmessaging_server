@@ -18,12 +18,6 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.io.EndPoint;
@@ -33,6 +27,12 @@ import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public abstract class ConnectionTest extends BaseTestConfig {
 
@@ -56,7 +56,7 @@ public abstract class ConnectionTest extends BaseTestConfig {
           }
 
           @Override
-          public void handleNewEndPoint(EndPoint endPoint) throws IOException {
+          public void handleNewEndPoint(EndPoint endPoint) {
             connected.set(true);
           }
 
@@ -64,13 +64,13 @@ public abstract class ConnectionTest extends BaseTestConfig {
           public void handleCloseEndPoint(EndPoint endPoint) {
             connected.set(false);
           }
-        }, new ArrayList<String>());
+        }, new ArrayList<>());
 
-    WaitForState.waitFor(1, TimeUnit.SECONDS, connected::get);
+    WaitForState.waitFor(5, TimeUnit.SECONDS, connected::get);
     Assertions.assertTrue(connected.get());
 
     endPoint.close();
-    WaitForState.waitFor(1, TimeUnit.SECONDS, ()->!connected.get());
+    WaitForState.waitFor(5, TimeUnit.SECONDS, ()->!connected.get());
     selectorLoadManager.close();
   }
 
