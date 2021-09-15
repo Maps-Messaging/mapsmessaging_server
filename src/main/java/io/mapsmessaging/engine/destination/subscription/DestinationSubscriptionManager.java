@@ -23,9 +23,9 @@ import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -106,6 +106,7 @@ public class DestinationSubscriptionManager implements Subscribable{
     return response;
   }
 
+  @Override
   public boolean expired(long messageIdentifier) {
     boolean response = false;
     for (Subscribable subscribable : subscriptions.values()) {
@@ -114,6 +115,7 @@ public class DestinationSubscriptionManager implements Subscribable{
     return response;
   }
 
+  @Override
   public int size(){
     int size = subscriptions.size();
     for (Subscribable subscribable : subscriptions.values()) {
@@ -137,12 +139,12 @@ public class DestinationSubscriptionManager implements Subscribable{
 
   @Override
   public Queue<Long> getAll() {
-    return new LinkedList<>();
+    return new ArrayDeque<>();
   }
 
   @Override
   public Queue<Long> getAllAtRest() {
-    return new LinkedList<>();
+    return new ArrayDeque<>();
   }
 
   @Override

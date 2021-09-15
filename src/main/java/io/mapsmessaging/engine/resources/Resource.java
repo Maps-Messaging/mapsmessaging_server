@@ -66,6 +66,7 @@ public abstract class Resource implements BaseResource {
 
   // While this function doesn't throw an exception, classes that extend it do
   @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
+  @Override
   public void add(Message message) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
     message.setIdentifier(getNextIdentifier());
@@ -92,6 +93,7 @@ public abstract class Resource implements BaseResource {
 
   // While this function doesn't throw an exception, classes that extend it do
   @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
+  @Override
   public void remove(long key) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
     if (key == retainedIdentifier) {

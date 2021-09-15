@@ -72,6 +72,7 @@ public abstract class EndPoint implements Closeable {
     totalConnections.increment();
   }
 
+  @Override
   public void close() throws IOException {
     if (closeHandler != null) {
       closeHandler.close();

@@ -37,10 +37,12 @@ public class Destination implements BaseDestination {
     destinationImpl = impl;
   }
 
+  @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
     return destinationImpl.storeMessage(message);
   }
 
+  @Override
   public String getName() {
     return destinationImpl.getName();
   }

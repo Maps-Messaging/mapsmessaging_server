@@ -24,8 +24,10 @@ import io.mapsmessaging.utilities.service.Service;
 
 public interface ProtocolMessageTransformation extends Service {
 
+  @Override
   String getName();
 
+  @Override
   String getDescription();
 
   default void incoming (MessageBuilder messageBuilder){

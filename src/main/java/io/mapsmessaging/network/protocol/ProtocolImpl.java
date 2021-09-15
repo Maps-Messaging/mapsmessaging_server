@@ -91,6 +91,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
     this.transformation = transformation;
   }
 
+  @Override
   public void close() throws IOException {
     if (mbean != null) {
       mbean.close();
@@ -107,6 +108,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
   public void subscribeLocal(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
   }
 
+  @Override
   public EndPoint getEndPoint() {
     return endPoint;
   }

@@ -155,6 +155,7 @@ public class DestinationSubscription extends Subscription {
     return completionTask;
   }
 
+  @Override
   public String getSessionId() {
     return sessionId;
   }
@@ -180,6 +181,7 @@ public class DestinationSubscription extends Subscription {
     return acknowledgementController.size();
   }
 
+  @Override
   public String getAcknowledgementType(){
     return acknowledgementController.getType();
   }
@@ -202,6 +204,7 @@ public class DestinationSubscription extends Subscription {
     return messageStateManager.hasAtRestMessages();
   }
 
+  @Override
   public int getDepth() {
     return messageStateManager.size();
   }
@@ -217,6 +220,7 @@ public class DestinationSubscription extends Subscription {
   }
   // </editor-fold>
 
+  @Override
   public boolean hasMessage(long messageId) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
 
@@ -224,6 +228,7 @@ public class DestinationSubscription extends Subscription {
   }
 
   // <editor-fold desc="Transactional functions">
+  @Override
   public void ackReceived(long messageId) {
     handleTransaction(true, messageId);
   }
@@ -240,6 +245,7 @@ public class DestinationSubscription extends Subscription {
     return !(messageStateManager.hasAtRestMessages()  || messageStateManager.hasMessagesInFlight());
   }
 
+  @Override
   public void rollbackReceived(long messageId) {
     handleTransaction(false, messageId);
   }
@@ -293,6 +299,7 @@ public class DestinationSubscription extends Subscription {
     return true;
   }
 
+  @Override
   public int register(Message message) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
     Map<String, String> metaData = message.getMeta();
@@ -369,6 +376,7 @@ public class DestinationSubscription extends Subscription {
     destinationImpl.complete(messageId);
   }
 
+  @Override
   public void run() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
     try {
@@ -422,10 +430,12 @@ public class DestinationSubscription extends Subscription {
     return isPaused;
   }
 
+  @Override
   public void pause() {
     isPaused = true;
   }
 
+  @Override
   public void resume() {
     isPaused = false;
     schedule();

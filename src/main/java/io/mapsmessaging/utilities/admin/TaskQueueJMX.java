@@ -65,6 +65,7 @@ public class TaskQueueJMX implements HealthMonitor {
     return taskQueue.getOffloadCount();
   }
 
+  @Override
   @JMXBeanAttribute(name = "Health status", description ="Returns the current HealthStatus for this task queue")
   public HealthStatus checkHealth() {
     return new HealthStatus("TaskQueue", LEVEL.INFO, "Task Queue seems ok", instance.getObjectName().toString());

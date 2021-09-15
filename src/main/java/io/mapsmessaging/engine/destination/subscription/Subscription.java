@@ -39,6 +39,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     hibernating = sessionImpl == null;
   }
 
+  @Override
   public @Nullable SubscriptionContext getContext() {
     if(!contextList.isEmpty()) {
       return contextList.get(0);
@@ -50,6 +51,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     contextList.add(context);
   }
 
+  @Override
   public List<SubscriptionContext> getContexts() {
     return new ArrayList<>(contextList);
   }
@@ -76,6 +78,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     hibernating = false;
   }
 
+  @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("Context:");
     for (SubscriptionContext context : contextList) {

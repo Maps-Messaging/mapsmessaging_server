@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.utilities.stats;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +44,7 @@ public class MovingAverage  {
   public MovingAverage(int time, TimeUnit unit){
     this.name = time+"_"+unit.toString();
     timePeriod = unit.toMillis(time);
-    dataPoints = new LinkedList<>();
+    dataPoints = new ArrayList<>();
     expectedEntries = time;
   }
 

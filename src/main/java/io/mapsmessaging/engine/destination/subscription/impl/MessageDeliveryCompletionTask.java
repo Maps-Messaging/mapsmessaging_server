@@ -31,6 +31,7 @@ public class MessageDeliveryCompletionTask implements Runnable {
     this.acknowledgementController = acknowledgementController;
   }
 
+  @Override
   public void run(){
     subscription.getDestinationImpl().submit(new MessageDeliveredListener(subscription, acknowledgementController));
   }

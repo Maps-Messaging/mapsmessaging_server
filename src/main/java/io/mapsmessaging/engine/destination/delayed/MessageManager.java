@@ -22,11 +22,11 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import lombok.NonNull;
@@ -189,7 +189,7 @@ public class MessageManager {
     if(bucket != null){
       return bucket.delayedMessageState;
     }
-    return new LinkedList<>();
+    return new ArrayDeque<>();
   }
 
   /**

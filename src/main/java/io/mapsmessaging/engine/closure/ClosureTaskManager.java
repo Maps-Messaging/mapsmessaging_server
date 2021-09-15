@@ -38,6 +38,7 @@ public class ClosureTaskManager implements Closeable {
     return closureTasks.remove(closureTask);
   }
 
+  @Override
   public void close(){
    for(ClosureTask task:closureTasks){
       task.run();

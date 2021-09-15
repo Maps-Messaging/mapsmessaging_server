@@ -18,12 +18,21 @@
 
 package io.mapsmessaging.api.subscriptions;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageAPITest;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -34,15 +43,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.test.WaitForState;
 
 
 class DelayedPublishTest extends MessageAPITest {
@@ -78,7 +78,7 @@ class DelayedPublishTest extends MessageAPITest {
       map.put("time", new TypedData(System.currentTimeMillis()));
 
       MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(("Here is an event").getBytes())
+      messageBuilder.setOpaqueData("Here is an event".getBytes())
         .storeOffline(true)
         .setDataMap(map)
         .setDelayed(2000)
@@ -93,7 +93,7 @@ class DelayedPublishTest extends MessageAPITest {
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
     Assertions.assertEquals(0, counter.get());
 
-    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> counter.get() == (EVENT_COUNT));
+    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> counter.get() == EVENT_COUNT);
     Assertions.assertEquals(EVENT_COUNT, counter.get());
     close(session);
   }

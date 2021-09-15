@@ -97,6 +97,7 @@ public class ProtocolJMX implements HealthMonitor {
     protocol.close();
   }
 
+  @Override
   @JMXBeanOperation(name = "checkHealth", description ="Returns the current health state")
   public HealthStatus checkHealth() {
     return new HealthStatus(protocol.getName(), LEVEL.WARN, "Protocol seems to have an issue", mbean.getObjectName().toString());

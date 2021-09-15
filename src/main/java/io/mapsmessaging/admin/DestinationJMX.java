@@ -161,6 +161,7 @@ public class DestinationJMX implements HealthMonitor {
     return true;
   }
 
+  @Override
   @JMXBeanOperation(name = "checkHealth", description ="Returns the health status for this destination")
   public HealthStatus checkHealth() {
     return new HealthStatus(destinationImpl.getName(), LEVEL.INFO, "Destination seems ok", mbean.getObjectName().toString());

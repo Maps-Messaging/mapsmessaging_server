@@ -288,6 +288,7 @@ public class DestinationImpl implements BaseDestination {
    *
    * @return String name of the destination
    */
+  @Override
   public String getName() {
     return name;
   }
@@ -475,6 +476,7 @@ public class DestinationImpl implements BaseDestination {
    * @return the number of subscribers that are interested in this message
    * @throws IOException If, at any point, a file I/O exception was raised while storing this message
    */
+  @Override
   public int storeMessage( @NonNull @NotNull Message message) throws IOException {
     Callable<Response> task;
     if(message.getDelayed() > 0 && delayedMessageManager != null){

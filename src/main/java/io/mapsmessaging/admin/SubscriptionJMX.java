@@ -102,6 +102,7 @@ public class SubscriptionJMX implements HealthMonitor {
     return subscription.getMessagesRolledBack();
   }
 
+  @Override
   @JMXBeanOperation(name = "checkHealth", description ="Returns the health status for this subscription")
   public HealthStatus checkHealth() {
     return new HealthStatus(subscription.getName(), LEVEL.INFO, "Subscription seems ok", mbean.getObjectName().toString());

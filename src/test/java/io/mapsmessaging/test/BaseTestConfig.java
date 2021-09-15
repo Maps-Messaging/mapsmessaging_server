@@ -18,6 +18,14 @@
 
 package io.mapsmessaging.test;
 
+import io.mapsmessaging.BaseTest;
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.DestinationManagerListener;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.session.SessionManager;
+import io.mapsmessaging.engine.session.SessionManagerTest;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,14 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import io.mapsmessaging.BaseTest;
-import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationManagerListener;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
-import io.mapsmessaging.engine.session.SessionImpl;
-import io.mapsmessaging.engine.session.SessionManager;
-import io.mapsmessaging.engine.session.SessionManagerTest;
 
 public class BaseTestConfig extends BaseTest {
 
@@ -149,7 +149,6 @@ public class BaseTestConfig extends BaseTest {
       try {
         th.join(2000);
       } catch (InterruptedException e) {
-        e.printStackTrace();
         Thread.currentThread().interrupt();
       }
     }

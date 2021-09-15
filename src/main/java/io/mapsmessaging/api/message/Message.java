@@ -160,6 +160,7 @@ public class Message implements SerializedObject, IdentifierResolver {
   }
 
   // <editor-fold desc="Collection read/write functions">
+  @Override
   public void write(ObjectWriter writer) throws IOException {
     // Read Fixed header - Native data types
     writer.write(id);
@@ -285,6 +286,7 @@ public class Message implements SerializedObject, IdentifierResolver {
     return responseTopic;
   }
 
+  @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("Key:")
