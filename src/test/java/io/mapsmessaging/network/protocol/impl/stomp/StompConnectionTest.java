@@ -19,8 +19,10 @@
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.engine.security.TestLoginModule;
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.net.ssl.SSLException;
 import javax.security.auth.login.LoginException;
@@ -60,6 +62,7 @@ class StompConnectionTest extends StompBaseTest {
   @DisplayName("Test passing valid username and password Stomp client connection")
   void testAuth() throws IOException, LoginException {
     Client client = new Client("127.0.0.1", 2001,  TestLoginModule.getUsernames()[0],  new String(TestLoginModule.getPasswords()[0]));
+    WaitForState.waitFor(2, TimeUnit.SECONDS, client::isConnected);
     Assertions.assertTrue(client.isConnected());
   }
 
@@ -79,6 +82,7 @@ class StompConnectionTest extends StompBaseTest {
   @DisplayName("Test Keep Alive header")
   void testKeepAlive() throws IOException, LoginException  {
     Client client = new Client("127.0.0.1", 2001,  TestLoginModule.getUsernames()[0],  new String(TestLoginModule.getPasswords()[0]));
+    WaitForState.waitFor(2, TimeUnit.SECONDS, client::isConnected);
     Assertions.assertTrue(client.isConnected());
   }
 }
