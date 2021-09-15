@@ -56,7 +56,7 @@ class StompQueueTest extends StompBaseTest {
     }
 
     //
-    // Now connect a new client so we can publish to the queue
+    // Now connect a new client, so we can publish to the queue
     StompClient client = new StompClient("stomp://127.0.0.1");
     client.connect(10000);
     Assertions.assertTrue(client.isConnected());
@@ -64,6 +64,7 @@ class StompQueueTest extends StompBaseTest {
     for (int x = 0; x < buffer.length; x++) {
       buffer[x] = (byte) ((x + 32) % 110);
     }
+    clients.forEach(StompQueueClient::clear);
     String tmp = new String(buffer);
     for(int x=0;x<clients.size()*10;x++){ // Each client should consume 10 events
       StompMessage msg = StompMessages.createStompMessage(queueName, tmp);
@@ -97,6 +98,11 @@ class StompQueueTest extends StompBaseTest {
         throw e;
       }
     }
+    if(10L*clients.size() != total){
+      for(StompQueueClient report:clients){
+        System.err.println(report.toString());
+      }
+    }
     Assertions.assertEquals(10L*clients.size(), total);
   }
 
@@ -121,6 +127,8 @@ class StompQueueTest extends StompBaseTest {
     for (int x = 0; x < buffer.length; x++) {
       buffer[x] = (byte) ((x + 32) % 110);
     }
+    clients.forEach(StompQueueClient::clear);
+
     String tmp = new String(buffer);
     for(int x=0;x<clients.size()*10;x++){ // Each client should consume 10 events
       StompMessage msg = StompMessages.createStompMessage(queueName, tmp);
@@ -203,6 +211,8 @@ class StompQueueTest extends StompBaseTest {
     for (int x = 0; x < buffer.length; x++) {
       buffer[x] = (byte) ((x + 32) % 110);
     }
+    clients.forEach(StompQueueClient::clear);
+
     String tmp = new String(buffer);
     for(int x=0;x<clients.size()*10;x++){ // Each client should consume 10 events
       StompMessage msg = StompMessages.createStompMessage(queueName, tmp);
@@ -282,6 +292,8 @@ class StompQueueTest extends StompBaseTest {
     for (int x = 0; x < buffer.length; x++) {
       buffer[x] = (byte) ((x + 32) % 110);
     }
+    clients.forEach(StompQueueClient::clear);
+
     String tmp = new String(buffer);
     for(int x=0;x<clients.size()*10;x++){ // Each client should consume 10 events
       StompMessage msg = StompMessages.createStompMessage(queueName, tmp);
@@ -303,7 +315,6 @@ class StompQueueTest extends StompBaseTest {
     for(StompQueueClient queueClient:clients){
       total += queueClient.counter.sum();
     }
-
     Assertions.assertEquals(10*clients.size(), total);
 
     //
@@ -326,16 +337,22 @@ class StompQueueTest extends StompBaseTest {
     private final StompClient client;
     private final ClientSubscription subscription;
     private final LongAdder counter = new LongAdder();
+    private final List<String> receivedList;
 
     public StompQueueClient(String url, String queueName, boolean ack) throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
       client = new StompClient(url);
       client.connect(10000);
+      receivedList = new ArrayList<>();
       Assertions.assertTrue(client.isConnected());
       subscription = client.subscribe(queueName)
           .withAckMode(AckMode.CLIENT_INDIVIDUAL)
           .withMessageHandler(stompMessage -> {
             if(ack) {
               try {
+                String msgId = stompMessage.getHeaders().get("message_id");
+                if(msgId != null){
+                  receivedList.add(msgId);
+                }
                 stompMessage.ack();
               } catch (StompException e) {
                 e.printStackTrace();
@@ -346,6 +363,15 @@ class StompQueueTest extends StompBaseTest {
           .start();
     }
 
+    public void clear(){
+      receivedList.clear();
+      counter.reset();
+    }
+    public String toString(){
+      StringBuilder sb = new StringBuilder();
+      receivedList.forEach(s -> sb.append(s).append(","));
+      return sb.toString();
+    }
     public void close() throws StompException, InterruptedException, TimeoutException {
       subscription.unsubscribe();
       client.disconnect(1000);
