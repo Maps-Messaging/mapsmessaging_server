@@ -85,9 +85,12 @@ class StompQueueTest extends StompBaseTest {
 
     long total = 0;
     for(StompQueueClient queueClient:clients){
-      queueClient.close();
       total += queueClient.counter.sum();
     }
+    for(StompQueueClient queueClient:clients){
+      queueClient.close();
+    }
+
 
     try {
       client.disconnect(10);
@@ -184,8 +187,10 @@ class StompQueueTest extends StompBaseTest {
 
     total = 0;
     for(StompQueueClient queueClient:clients){
-      queueClient.close();
       total += queueClient.counter.sum();
+    }
+    for(StompQueueClient queueClient:clients){
+      queueClient.close();
     }
     client.disconnect(100);
 
