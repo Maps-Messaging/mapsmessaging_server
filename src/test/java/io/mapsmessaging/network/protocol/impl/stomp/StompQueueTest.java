@@ -234,6 +234,11 @@ class StompQueueTest extends StompBaseTest {
     for(StompQueueClient queueClient:clients){
       total += queueClient.counter.sum();
     }
+    if(10L*clients.size() != total){
+      for(StompQueueClient report:clients){
+        System.err.println(report.toString());
+      }
+    }
 
     Assertions.assertEquals(10L*clients.size(), total);
 
@@ -268,6 +273,12 @@ class StompQueueTest extends StompBaseTest {
       total += queueClient.counter.sum();
     }
     client.disconnect(100);
+    if(10L*clients.size() != total){
+      for(StompQueueClient report:clients){
+        System.err.println(report.toString());
+      }
+    }
+
     Assertions.assertEquals(10*clients.size(), total);
   }
 
