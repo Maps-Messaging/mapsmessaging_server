@@ -120,7 +120,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
   @DisplayName("Simple session keep alive state")
   public void sessionKeepAlive(TestInfo testInfo) throws Exception {
     receivedKeepAlive.set(0);
-    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 1, true, this);
+    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 12, true, this);
     Assertions.assertTrue(hasSessions());
     WaitForState.waitFor(10, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
     Assertions.assertTrue(receivedKeepAlive.get() != 0);
@@ -128,7 +128,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
     close(session);
     Assertions.assertFalse(hasSessions());
     Assertions.assertTrue(SessionManagerTest.getInstance().hasIdleSessions());
-    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
+    WaitForState.waitFor(12, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
     Assertions.assertEquals(receivedKeepAlive.get(), 0);
     Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
   }
