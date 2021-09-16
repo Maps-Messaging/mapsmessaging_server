@@ -20,11 +20,12 @@ package io.mapsmessaging.engine.system.impl;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.system.SystemTopic;
+import java.io.IOException;
 import java.util.Date;
 
 public class Timestamp extends SystemTopic {
 
-  public Timestamp() {
+  public Timestamp() throws IOException {
     super("$SYS/broker/time");
   }
 

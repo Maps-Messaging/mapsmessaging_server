@@ -18,30 +18,18 @@
 
 package io.mapsmessaging.engine.resources;
 
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.logging.LogMessages;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.utilities.streams.RandomAccessFileObjectReader;
-import io.mapsmessaging.utilities.streams.RandomAccessFileObjectWriter;
+import io.mapsmessaging.storage.StorageFactoryFactory;
+import io.mapsmessaging.storage.impl.layered.weakReference.WeakReferenceCacheStorage;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.file.Files;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class FileResource extends MapBasedResource {
 
-  private static final int REPORT_DELAY = 10000;
-
-  private final Logger logger;
-  private final RandomAccessFile randomAccessWriteFile;
-  private final RandomAccessFile randomAccessReadFile;
-  private final RandomAccessFileObjectWriter writer;
-  private final RandomAccessFileObjectReader reader;
-
   public FileResource(String name, String mapped) throws IOException {
     super(name, mapped);
-    logger = LoggerFactory.getLogger("FileResource:"+name+"_"+mapped);
     String tmpName = name;
     if (File.separatorChar == '/') {
       while (tmpName.indexOf('\\') != -1) {
@@ -53,97 +41,10 @@ public class FileResource extends MapBasedResource {
       }
     }
     tmpName += "data.bin";
-    randomAccessWriteFile = new RandomAccessFile(tmpName, "rw");
-    randomAccessReadFile = new RandomAccessFile(tmpName, "rw");
-    writer = new RandomAccessFileObjectWriter(randomAccessWriteFile);
-    reader = new RandomAccessFileObjectReader(randomAccessReadFile);
-    if (randomAccessReadFile.length() != 0) {
-      reload();
-      randomAccessWriteFile.seek(randomAccessReadFile.getFilePointer());
-    }
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("basePath", tmpName);
+    setStore(new WeakReferenceCacheStorage<>(Objects.requireNonNull(StorageFactoryFactory.getInstance().create("File", properties, new MessageFactory())).create(name)));
   }
 
-  private void reload() throws IOException {
-    long pos = 0;
-    long eof = randomAccessReadFile.length();
-    long report = System.currentTimeMillis() + REPORT_DELAY;
-    while (pos != eof) {
-      Message message = new Message(reader);
-      index.put(message.getIdentifier(), new MessageCache(message, pos));
-      pos = randomAccessReadFile.getFilePointer();
-      if(logger.isInfoEnabled() && report < System.currentTimeMillis()){
-        float percent = (float)eof - pos;
-        percent = percent/eof * 100.0f;
-        logger.log(LogMessages.FILE_RELOAD_PERCENT, percent);
-        report = System.currentTimeMillis() + REPORT_DELAY;
-      }
-    }
-  }
-
-  @Override
-  public void close() throws IOException {
-    super.close();
-    try {
-      randomAccessWriteFile.close();
-      randomAccessReadFile.close();
-    } catch (IOException e) {
-      logger.log(LogMessages.FILE_FAILED_TO_CLOSE, e);
-    }
-  }
-
-  @Override
-  public void delete() throws IOException {
-    super.delete();
-    try {
-      randomAccessWriteFile.close();
-      randomAccessReadFile.close();
-      File file = new File(getName());
-      Files.delete(file.toPath());
-    } catch (IOException e) {
-      logger.log(LogMessages.FILE_FAILED_TO_DELETE, e);
-    }
-  }
-
-  @Override
-  public void add(Message message) throws IOException {
-    super.add(message);
-
-    long pos = randomAccessWriteFile.getFilePointer();
-    index.put(message.getIdentifier(), new MessageCache(message, pos));
-    randomAccessWriteFile.seek(pos);
-    message.write(writer);
-    index.put(message.getIdentifier(), new MessageCache(message, pos));
-  }
-
-  @Override
-  public Message get(long key) throws IOException {
-    Message message = null;
-    if (key >= 0) {
-      MessageCache cache = index.get(key);
-      if (cache != null) {
-        message = cache.getMessageSoftReference().get();
-        if (message == null) {
-          randomAccessReadFile.seek(cache.getFilePosition());
-          message = new Message(reader);
-          cache.update(message);
-        }
-      }
-    }
-    return message;
-  }
-
-  @Override
-  public void remove(long key) throws IOException {
-    MessageCache cache = index.remove(key);
-    if (cache != null) {
-      randomAccessReadFile.seek(cache.getFilePosition());
-      randomAccessReadFile.writeLong(-1);
-      cache.getMessageSoftReference().clear();
-    }
-  }
-  @Override
-  public boolean isEmpty() {
-    return false;
-  }
 
 }

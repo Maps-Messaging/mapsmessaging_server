@@ -21,10 +21,10 @@ package io.mapsmessaging.api.message;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.engine.serializer.SerializedObject;
 import io.mapsmessaging.selector.IdentifierResolver;
-import io.mapsmessaging.utilities.streams.ObjectReader;
-import io.mapsmessaging.utilities.streams.ObjectWriter;
+import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.ObjectReader;
+import io.mapsmessaging.storage.impl.ObjectWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
@@ -34,33 +34,35 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class Message implements SerializedObject, IdentifierResolver {
+public class Message implements IdentifierResolver, Storable {
 
   private static final int RETAIN_BIT = 0;
   private static final int UTF8_BIT = 1;
   private static final int CORRELATION_BYTE_ARRAY_BIT = 2;
 
   // time in milliseconds when this message will expire
-  private final long expiry;
-  private final long creation;
-  private final Priority priority;
-  private final QualityOfService qualityOfService;
-  private final BitSet flags;
-  private final String responseTopic;
-  private final String contentType;
-  private final byte[] correlationData;
-  private final byte[] opaqueData;
-  private final Map<String, String> meta;
-  private final Map<String, TypedData> dataMap;
+  private long expiry;
+  private long creation;
+  private Priority priority;
+  private QualityOfService qualityOfService;
+  private BitSet flags;
+  private String responseTopic;
+  private String contentType;
+  private byte[] correlationData;
+  private byte[] opaqueData;
+  private Map<String, String> meta;
+  private Map<String, TypedData> dataMap;
   private long delayed;
 
   // <editor-fold desc="Transient data">
-  private final boolean storeOffline;
+  private boolean storeOffline;
   private boolean isLastMessage;
   // </editor-fold>
   // <editor-fold desc="Persistent data">
   private long id;
   // </editor-fold>
+
+  public Message(){}
 
   public Message(MessageBuilder builder) {
     flags = new BitSet(8);
@@ -133,7 +135,7 @@ public class Message implements SerializedObject, IdentifierResolver {
     return 0;
   }
 
-  public Message(ObjectReader reader) throws IOException {
+  public void read (ObjectReader reader) throws IOException {
     // Fixed header - 19 bytes - Native data types
     id = reader.readLong();
     expiry = reader.readLong();
@@ -197,6 +199,10 @@ public class Message implements SerializedObject, IdentifierResolver {
   }
 
   public long getIdentifier() {
+    return id;
+  }
+
+  public long getKey(){
     return id;
   }
 

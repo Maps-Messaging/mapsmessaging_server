@@ -34,7 +34,7 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
 
   private final List<SystemTopic> empty;
 
-  protected SystemTopic(String name) {
+  protected SystemTopic(String name) throws IOException {
     super(name, DestinationType.TOPIC);
     empty = new ArrayList<>();
   }

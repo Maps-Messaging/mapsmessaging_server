@@ -18,29 +18,17 @@
 
 package io.mapsmessaging.engine.resources;
 
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.serializer.MapDBSerializer;
+import io.mapsmessaging.storage.StorageFactoryFactory;
+import io.mapsmessaging.storage.impl.layered.weakReference.WeakReferenceCacheStorage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.SoftReference;
-import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.mapdb.BTreeMap;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.Serializer;
 
 public class DBResource extends Resource {
 
-  private final Map<Long, MessageCache> index;
-  private final  BTreeMap<Long, Message> diskMap;
-  private final DB dataStore;
-  private final String fileName;
-
-  public DBResource(String name, String mapped) {
+  public DBResource(String name, String mapped) throws IOException {
     super(name, mapped);
-    index = new LinkedHashMap<>();
     String tmpName = name;
     if (File.separatorChar == '/') {
       while (tmpName.indexOf('\\') != -1) {
@@ -52,108 +40,9 @@ public class DBResource extends Resource {
       }
     }
     tmpName += "data.bin";
-    fileName = tmpName;
-    dataStore = DBMaker.fileDB(fileName)
-        .fileMmapEnable()
-        .closeOnJvmShutdown()
-        .cleanerHackEnable()
-        .checksumHeaderBypass()
-        .make();
-    diskMap = dataStore
-            .treeMap(name, Serializer.LONG, new MapDBSerializer<>(Message.class))
-            .createOrOpen();
-    for(Long value:diskMap.getKeys()){
-      index.put(value, new MessageCache());
-    }
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("basePath", tmpName);
+    setStore(new WeakReferenceCacheStorage<>(StorageFactoryFactory.getInstance().create("MapDB", properties, new MessageFactory()).create(mapped)));
   }
 
-  @Override
-  public boolean isEmpty(){
-    return index.isEmpty();
-  }
-
-  public synchronized void flush(){
-    for(MessageCache messageCache:index.values()){
-      messageCache.messageSoftReference.clear();
-    }
-    index.clear();
-  }
-
-  @Override
-  public synchronized void delete() throws IOException {
-    close();
-    File tmp = new File(fileName);
-    Files.delete(tmp.toPath());
-  }
-
-  @Override
-  public synchronized void close() throws IOException {
-    if (!isClosed) {
-      super.close();
-      dataStore.commit();
-      dataStore.close();
-      flush();
-    }
-  }
-
-  @Override
-  public synchronized void add(Message message) throws IOException {
-    super.add(message);
-    diskMap.put(message.getIdentifier(), message);
-    index.put(message.getIdentifier(), new MessageCache(message));
-  }
-
-  @Override
-  public synchronized Message get(long key) {
-    Message message = null;
-    if (key >= 0) {
-      MessageCache cache = index.get(key);
-      if (cache != null) {
-        message = cache.messageSoftReference.get();
-      }
-      if (message == null) {
-        message = diskMap.get(key);
-        if(message != null) {
-          if (cache == null) {
-            cache = new MessageCache();
-            index.put(key, cache);
-          }
-          cache.update(message);
-        }
-      }
-    }
-    return message;
-  }
-
-  @Override
-  public synchronized void remove(long key) throws IOException {
-    super.remove(key);
-    diskMap.remove(key);
-    MessageCache cache = index.remove(key);
-    if (cache != null) {
-      cache.messageSoftReference.clear();
-    }
-  }
-
-  @Override
-  public synchronized long size() {
-    return diskMap.size();
-  }
-
-  private static final class MessageCache {
-
-    private SoftReference<Message> messageSoftReference;
-
-    MessageCache() {
-      messageSoftReference = new SoftReference<>(null);
-    }
-
-    MessageCache(Message msg) {
-      update(msg);
-    }
-
-    public void update(Message msg) {
-      messageSoftReference = new SoftReference<>(msg);
-    }
-  }
 }

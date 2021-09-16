@@ -180,7 +180,7 @@ public class DestinationImpl implements BaseDestination {
     * @param name of the destination
    * @param destinationType the type of the destination
    */
-  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) {
+  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = name;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);

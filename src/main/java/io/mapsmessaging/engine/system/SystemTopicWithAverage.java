@@ -19,6 +19,7 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.api.message.Message;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,7 @@ public abstract class SystemTopicWithAverage extends SystemTopic implements Data
   private final List<SystemTopic> movingAverageTopics;
   private long lastUpdate;
 
-  protected SystemTopicWithAverage(String name, boolean diff) {
+  protected SystemTopicWithAverage(String name, boolean diff) throws IOException {
     super(name);
     movingAverageTopics = new ArrayList<>();
     movingAverageTopics.add(new MovingAverageTopic(name+"/1", 1, TimeUnit.MINUTES, this, diff));

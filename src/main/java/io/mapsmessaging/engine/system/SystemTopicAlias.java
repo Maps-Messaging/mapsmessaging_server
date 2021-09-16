@@ -19,12 +19,13 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.api.message.Message;
+import java.io.IOException;
 
 public class SystemTopicAlias extends SystemTopic {
 
   private final SystemTopic actual;
 
-  public SystemTopicAlias(String name, SystemTopic topic) {
+  public SystemTopicAlias(String name, SystemTopic topic) throws IOException {
     super(name);
     actual = topic;
   }

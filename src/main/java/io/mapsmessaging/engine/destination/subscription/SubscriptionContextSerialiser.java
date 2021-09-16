@@ -18,10 +18,10 @@
 
 package io.mapsmessaging.engine.destination.subscription;
 
-import io.mapsmessaging.utilities.streams.DataObjectReader;
-import io.mapsmessaging.utilities.streams.ObjectReader;
-import io.mapsmessaging.utilities.streams.ObjectWriter;
-import io.mapsmessaging.utilities.streams.StreamObjectWriter;
+import io.mapsmessaging.storage.impl.DataObjectReader;
+import io.mapsmessaging.storage.impl.ObjectReader;
+import io.mapsmessaging.storage.impl.ObjectWriter;
+import io.mapsmessaging.storage.impl.StreamObjectWriter;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
@@ -41,7 +41,9 @@ public class SubscriptionContextSerialiser extends GroupSerializerObjectArray<Su
 
   public SubscriptionContext deserialize(@NotNull DataInput2 in, int available) throws IOException {
     ObjectReader reader = new DataObjectReader(in);
-    return new SubscriptionContext(reader);
+    SubscriptionContext context = new SubscriptionContext();
+    context.read(reader);
+    return context;
   }
 
   @Override

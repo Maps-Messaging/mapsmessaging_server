@@ -19,17 +19,17 @@
 package io.mapsmessaging.engine.session.will;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.serializer.SerializedObject;
-import io.mapsmessaging.utilities.streams.ObjectReader;
-import io.mapsmessaging.utilities.streams.ObjectWriter;
+import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.ObjectReader;
+import io.mapsmessaging.storage.impl.ObjectWriter;
 import java.io.IOException;
 
-public class WillDetails implements SerializedObject {
+public class WillDetails implements Storable {
 
-  private final long delay;
-  private final String sessionId;
-  private final String protocol;
-  private final String version;
+  private long delay;
+  private String sessionId;
+  private String protocol;
+  private String version;
 
   private String destination;
   private Message msg;
@@ -42,14 +42,23 @@ public class WillDetails implements SerializedObject {
     this.protocol = protocol;
     this.version = version;
   }
-
   public WillDetails(ObjectReader reader) throws IOException {
+    read(reader);
+  }
+
+  @Override
+  public long getKey() {
+    return 0;
+  }
+
+  public void read(ObjectReader reader) throws IOException {
     destination = reader.readString();
     delay = reader.readLong();
     sessionId = reader.readString();
     protocol = reader.readString();
     version = reader.readString();
-    msg = new Message(reader);
+    msg = new Message();
+    msg.read(reader);
   }
 
   public void write(ObjectWriter writer) throws IOException {

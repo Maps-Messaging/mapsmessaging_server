@@ -20,10 +20,11 @@ package io.mapsmessaging.engine.system.impl.messages;
 
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import java.io.IOException;
 
 public class Received  extends SystemTopicWithAverage {
 
-  public Received() {
+  public Received() throws IOException {
     super("$SYS/broker/messages/received", true);
   }
 

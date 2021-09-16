@@ -21,10 +21,11 @@ package io.mapsmessaging.engine.system.impl;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.system.SystemTopic;
+import java.io.IOException;
 
 public class BrokerVersion extends SystemTopic {
 
-  public BrokerVersion() {
+  public BrokerVersion() throws IOException {
     super("$SYS/broker/version");
   }
 

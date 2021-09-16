@@ -20,10 +20,11 @@ package io.mapsmessaging.engine.system.impl.clients;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
+import java.io.IOException;
 
 public class Connected extends SystemTopicWithAverage {
 
-  public Connected() {
+  public Connected() throws IOException {
     super( "$SYS/broker/clients/connected", false);
   }
 

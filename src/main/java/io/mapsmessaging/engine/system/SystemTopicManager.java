@@ -36,7 +36,7 @@ public class SystemTopicManager implements Runnable, ServiceManager {
   private final Future<?> scheduledFuture;
   private final List<SystemTopic> completeList;
 
-  public SystemTopicManager(DestinationManager destinationManager) {
+  public SystemTopicManager(DestinationManager destinationManager) throws IOException {
     systemTopics = ServiceLoader.load(SystemTopic.class);
     completeList = new ArrayList<>();
     for (SystemTopic systemTopic : systemTopics) {

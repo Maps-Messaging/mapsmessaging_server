@@ -20,12 +20,13 @@ package io.mapsmessaging.engine.system.impl;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.system.SystemTopic;
+import java.io.IOException;
 
 public class Uptime extends SystemTopic {
 
   private final long startTime;
 
-  public Uptime() {
+  public Uptime() throws IOException {
     super("$SYS/broker/uptime");
     startTime = System.currentTimeMillis();
   }

@@ -21,12 +21,13 @@ package io.mapsmessaging.engine.system.impl.clients;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.io.EndPoint;
+import java.io.IOException;
 
 public class Maximum extends SystemTopic {
 
   private long max;
 
-  public Maximum() {
+  public Maximum() throws IOException {
     super("$SYS/broker/clients/maximum");
     max = 0;
   }

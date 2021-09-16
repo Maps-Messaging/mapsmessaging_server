@@ -18,14 +18,14 @@
 
 package io.mapsmessaging.api.message;
 
-import io.mapsmessaging.utilities.streams.ObjectReader;
-import io.mapsmessaging.utilities.streams.ObjectWriter;
+import io.mapsmessaging.storage.impl.ObjectReader;
+import io.mapsmessaging.storage.impl.ObjectWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.ToString;
 
-@ToString(callSuper=true, includeFieldNames=true)
+@ToString(callSuper=true)
 
 public class TypedData {
 

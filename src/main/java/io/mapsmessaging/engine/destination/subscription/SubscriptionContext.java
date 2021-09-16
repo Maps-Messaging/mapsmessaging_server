@@ -22,9 +22,9 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
-import io.mapsmessaging.engine.serializer.SerializedObject;
-import io.mapsmessaging.utilities.streams.ObjectReader;
-import io.mapsmessaging.utilities.streams.ObjectWriter;
+import io.mapsmessaging.storage.Storable;
+import io.mapsmessaging.storage.impl.ObjectReader;
+import io.mapsmessaging.storage.impl.ObjectWriter;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Objects;
@@ -32,15 +32,15 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public class SubscriptionContext implements Comparable<SubscriptionContext>, SerializedObject {
+public class SubscriptionContext implements Comparable<SubscriptionContext>, Storable {
 
   private static final int NO_LOCAL_MESSAGES = 0;
   private static final int RETAIN_AS_PUBLISH = 1;
   private static final int ALLOW_OVERLAP = 2;
   private static final int BROWSER_FLAG = 3;
 
-  @Getter private final String destinationName;
-  @Getter private final BitSet flags;
+  @Getter private String destinationName;
+  @Getter private BitSet flags;
   @Getter private String rootPath;
   @Getter private ClientAcknowledgement acknowledgementController;
   @Getter private String sharedName;
@@ -56,6 +56,8 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
   // Server Only flag
   //
   @Getter private boolean replaced;
+
+  public SubscriptionContext(){}
 
   public SubscriptionContext(String destinationName) {
     this.destinationName = destinationName;
@@ -79,6 +81,15 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Ser
   }
 
   public SubscriptionContext(ObjectReader reader) throws IOException {
+    read(reader);
+  }
+
+  @Override
+  public long getKey() {
+    return 0;
+  }
+
+  public void read(ObjectReader reader) throws IOException {
     retainHandler = RetainHandler.getInstance(reader.readByte());
     creditHandler = CreditHandler.getInstance(reader.readByte());
     qualityOfService = QualityOfService.getInstance(reader.readByte());

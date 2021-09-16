@@ -20,10 +20,11 @@ package io.mapsmessaging.engine.system.impl.messages.publish;
 
 import io.mapsmessaging.engine.destination.DestinationStats;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
+import java.io.IOException;
 
 public class Sent extends SystemTopicWithAverage {
 
-  public Sent() {
+  public Sent() throws IOException {
     super("$SYS/broker/publish/messages/sent", true);
   }
 

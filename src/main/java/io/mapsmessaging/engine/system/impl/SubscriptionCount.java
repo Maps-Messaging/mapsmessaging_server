@@ -19,10 +19,11 @@
 package io.mapsmessaging.engine.system.impl;
 
 import io.mapsmessaging.engine.system.SystemTopic;
+import java.io.IOException;
 
 public class SubscriptionCount extends SystemTopic {
 
-  public SubscriptionCount() {
+  public SubscriptionCount() throws IOException {
     super("$SYS/broker/subscriptions/count");
   }
 

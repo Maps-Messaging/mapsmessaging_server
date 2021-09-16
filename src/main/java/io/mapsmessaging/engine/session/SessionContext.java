@@ -20,8 +20,8 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.utilities.streams.ObjectReader;
-import io.mapsmessaging.utilities.streams.ObjectWriter;
+import io.mapsmessaging.storage.impl.ObjectReader;
+import io.mapsmessaging.storage.impl.ObjectWriter;
 import java.io.IOException;
 
 public class SessionContext {
@@ -66,7 +66,8 @@ public class SessionContext {
     if (reader.readByte() != 0) {
       willDelay = reader.readLong();
       willTopic = reader.readString();
-      willMessage = new Message(reader);
+      willMessage = new Message();
+      willMessage.read(reader);
     }
     isRestored = false;
   }

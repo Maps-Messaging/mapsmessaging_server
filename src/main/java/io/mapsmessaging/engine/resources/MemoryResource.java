@@ -18,62 +18,13 @@
 
 package io.mapsmessaging.engine.resources;
 
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.storage.StorageFactoryFactory;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class MemoryResource extends Resource {
 
-  private final Map<Long, Message> store;
-
-  public MemoryResource(String name) {
+  public MemoryResource(String name) throws IOException {
     super(name, name);
-    store = new LinkedHashMap<>();
-  }
-
-  @Override
-  public void delete() throws IOException {
-    if (!isClosed) {
-      close();
-    }
-    store.clear();
-  }
-
-  @Override
-  public synchronized void add(Message message) throws IOException {
-    checkIsClosed();
-    super.add(message);
-    store.put(message.getIdentifier(), message);
-  }
-
-  @Override
-  public synchronized Message get(long key) throws IOException {
-    checkIsClosed();
-    return store.get(key);
-  }
-
-  @Override
-  public synchronized void remove(long key) throws IOException {
-    checkIsClosed();
-    store.remove(key);
-    super.remove(key);
-  }
-
-  @Override
-  public synchronized long size() throws IOException {
-    checkIsClosed();
-    return store.size();
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return store.isEmpty();
-  }
-
-  @Override
-  public synchronized void close() throws IOException {
-    super.close();
-    store.clear();
+    setStore(StorageFactoryFactory.getInstance().create("Memory", null, new MessageFactory()).create("mapped"));
   }
 }

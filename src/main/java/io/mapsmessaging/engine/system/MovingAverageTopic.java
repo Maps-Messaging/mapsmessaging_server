@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.utilities.stats.MovingAverage;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class MovingAverageTopic extends SystemTopic {
@@ -29,7 +30,7 @@ public class MovingAverageTopic extends SystemTopic {
   private final boolean diff;
   private long previous;
 
-  public MovingAverageTopic(String topicName, int time, TimeUnit timeUnit, DataSource source, boolean diff) {
+  public MovingAverageTopic(String topicName, int time, TimeUnit timeUnit, DataSource source, boolean diff) throws IOException {
     super(topicName);
     this.diff = diff;
     dataSource = source;

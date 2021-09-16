@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,6 +39,8 @@ public abstract class Resource implements BaseResource {
   protected boolean isClosed;
   private final AtomicLong keyGen;
   private long retainedIdentifier;
+  private Storage<Message> store;
+
 
   protected Resource(String name, String mappedName) {
     this.name = name;
@@ -47,9 +50,14 @@ public abstract class Resource implements BaseResource {
     retainedIdentifier = -1;
   }
 
+  protected void setStore(Storage<Message> store){
+    this.store = store;
+  }
+
   @Override
   public void close() throws IOException {
     isClosed = true;
+    store.close();
   }
 
   public String getName() {
@@ -64,8 +72,6 @@ public abstract class Resource implements BaseResource {
     return retainedIdentifier;
   }
 
-  // While this function doesn't throw an exception, classes that extend it do
-  @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
   @Override
   public void add(Message message) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
@@ -79,20 +85,13 @@ public abstract class Resource implements BaseResource {
         totalRetained.increment();
       }
     }
+    store.add(message);
   }
 
   protected long getNextIdentifier() {
     return keyGen.incrementAndGet();
   }
 
-  protected void checkIsClosed() throws IOException {
-    if (isClosed) {
-      throw new IOException("Resource:" + name + " is closed");
-    }
-  }
-
-  // While this function doesn't throw an exception, classes that extend it do
-  @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
   @Override
   public void remove(long key) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
@@ -100,5 +99,30 @@ public abstract class Resource implements BaseResource {
       totalRetained.decrement();
       retainedIdentifier = -1;
     }
+    store.remove(key);
+  }
+
+  @Override
+  public boolean isEmpty(){
+    return store.isEmpty();
+  }
+
+  @Override
+  public synchronized void delete() throws IOException {
+    store.delete();
+  }
+
+  @Override
+  public synchronized Message get(long key) throws IOException {
+    Message message = store.get(key);
+    if(message == null){
+      System.err.println("Unable to locate "+key);
+    }
+    return message;
+  }
+
+  @Override
+  public synchronized long size() throws IOException {
+    return store.size();
   }
 }

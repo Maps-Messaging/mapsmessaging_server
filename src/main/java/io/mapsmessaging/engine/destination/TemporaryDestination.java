@@ -44,11 +44,6 @@ public class TemporaryDestination extends DestinationImpl {
     ownerDisconnected = false;
   }
 
-  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) {
-    super(name, destinationType);
-    ownerDisconnected = false;
-  }
-
   public void setOwnerDisconnected(){
     ownerDisconnected = true;
   }

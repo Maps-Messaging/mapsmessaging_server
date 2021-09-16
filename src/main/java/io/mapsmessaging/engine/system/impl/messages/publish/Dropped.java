@@ -19,10 +19,11 @@
 package io.mapsmessaging.engine.system.impl.messages.publish;
 
 import io.mapsmessaging.engine.system.SystemTopic;
+import java.io.IOException;
 
 public class Dropped extends SystemTopic {
 
-  public Dropped() {
+  public Dropped() throws IOException {
     super("$SYS/broker/publish/messages/dropped");
   }
 
