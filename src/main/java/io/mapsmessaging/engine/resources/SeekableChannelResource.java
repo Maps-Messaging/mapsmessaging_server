@@ -20,7 +20,7 @@ package io.mapsmessaging.engine.resources;
 
 
 import io.mapsmessaging.storage.StorageFactoryFactory;
-import io.mapsmessaging.storage.impl.layered.weakReference.WeakReferenceCacheStorage;
+import io.mapsmessaging.storage.impl.layered.weak.WeakReferenceCacheStorage;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
