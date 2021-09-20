@@ -67,7 +67,7 @@ public class ResourceFactory {
 
   public Resource create(String path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
     if (resourceName.toLowerCase().startsWith("$sys")) {
-      return new MemoryResource(resourceName);
+      return new ResourceImpl("", resourceName, "Memory");
     } else {
       createMetaData(path, resourceName, uuid, destinationType);
       return createPersistentResource(path, resourceName, uuid);
@@ -104,17 +104,17 @@ public class ResourceFactory {
     String directoryPath = path + File.separator + uuid.toString() + File.separator;
     switch(type){
       case DATABASE:
-        return new DBResource(directoryPath, resourceName);
+        return new ResourceImpl(directoryPath, resourceName, "MapDB");
 
       case RANDOM_ACCESS_FILE:
-        return new FileResource(directoryPath, resourceName);
+        return new ResourceImpl(directoryPath, resourceName, "File");
 
       case MEMORY:
-        return new MemoryResource(resourceName);
+        return new ResourceImpl("", resourceName, "Memory");
 
       case CHANNEL:
       default:
-        return new SeekableChannelResource(directoryPath, resourceName);
+        return new ResourceImpl(directoryPath, resourceName, "SeekableChannel");
     }
   }
 

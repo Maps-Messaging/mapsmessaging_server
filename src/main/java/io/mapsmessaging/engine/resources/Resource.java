@@ -40,6 +40,7 @@ public abstract class Resource implements BaseResource {
   private final AtomicLong keyGen;
   private long retainedIdentifier;
   private Storage<Message> store;
+  protected boolean persistent;
 
 
   protected Resource(String name, String mappedName) {
@@ -58,6 +59,10 @@ public abstract class Resource implements BaseResource {
   public void close() throws IOException {
     isClosed = true;
     store.close();
+  }
+
+  public boolean isPersistent(){
+    return persistent;
   }
 
   public String getName() {

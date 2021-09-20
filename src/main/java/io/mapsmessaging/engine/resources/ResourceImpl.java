@@ -18,17 +18,16 @@
 
 package io.mapsmessaging.engine.resources;
 
-import io.mapsmessaging.storage.StorageFactoryFactory;
-import io.mapsmessaging.storage.impl.layered.weak.WeakReferenceCacheStorage;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.storage.StorageBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
-public class FileResource extends MapBasedResource {
+public class ResourceImpl extends Resource {
 
-  public FileResource(String name, String mapped) throws IOException {
+  public ResourceImpl(String name, String mapped, String type) throws IOException {
     super(name, mapped);
     String tmpName = name;
     if (File.separatorChar == '/') {
@@ -43,7 +42,16 @@ public class FileResource extends MapBasedResource {
     tmpName += "data.bin";
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("basePath", tmpName);
-    setStore(new WeakReferenceCacheStorage<>(Objects.requireNonNull(StorageFactoryFactory.getInstance().create("File", properties, new MessageFactory())).create(name)));
+    tmpName += "data.bin";
+
+    StorageBuilder<Message> builder = new StorageBuilder<>();
+    builder.setCache()
+        .setProperties(properties)
+        .setName(tmpName)
+        .setFactory(new MessageFactory())
+        .setStorageType(type);
+    setStore(builder.build());
+    persistent = !(type.equals("Memory"));
   }
 
 

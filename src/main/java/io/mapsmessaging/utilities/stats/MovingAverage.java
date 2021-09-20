@@ -87,9 +87,7 @@ public class MovingAverage  {
 
 
   protected void clearData(long now){
-    while(!dataPoints.isEmpty() && dataPoints.get(0).expiry < now ){
-      dataPoints.remove(0);
-    }
+    dataPoints.removeIf(dataPoint -> dataPoint.expiry < now);
   }
 
   protected static class DataPoint {

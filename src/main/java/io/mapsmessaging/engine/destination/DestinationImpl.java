@@ -37,9 +37,9 @@ import io.mapsmessaging.engine.destination.tasks.NonDelayedStoreMessageTask;
 import io.mapsmessaging.engine.destination.tasks.QueueBasedStoreMessageTask;
 import io.mapsmessaging.engine.destination.tasks.RemoveMessageTask;
 import io.mapsmessaging.engine.destination.tasks.TransactionalMessageProcessor;
-import io.mapsmessaging.engine.resources.MemoryResource;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
+import io.mapsmessaging.engine.resources.ResourceImpl;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
@@ -186,7 +186,7 @@ public class DestinationImpl implements BaseDestination {
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    resource = new MemoryResource(name);
+    resource = new ResourceImpl("", name, "Memory");
     stats = new DestinationStats();
     if (MessageDaemon.getInstance() != null) {
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
@@ -280,7 +280,7 @@ public class DestinationImpl implements BaseDestination {
    * @return True if not using the MemoryResource type
    */
   public boolean isPersistent() {
-    return !(resource instanceof MemoryResource);
+    return resource.isPersistent();
   }
 
   /**
