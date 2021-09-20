@@ -102,20 +102,26 @@ public class ResourceFactory {
 
   private Resource createPersistentResource(String path, String resourceName, UUID uuid) throws IOException {
     String directoryPath = path + File.separator + uuid.toString() + File.separator;
+    String typeName = "";
     switch(type){
       case DATABASE:
-        return new ResourceImpl(directoryPath, resourceName, "MapDB");
+        typeName = "MapDB";
+        break;
 
       case RANDOM_ACCESS_FILE:
-        return new ResourceImpl(directoryPath, resourceName, "File");
+        typeName = "File";
+        break;
 
       case MEMORY:
-        return new ResourceImpl("", resourceName, "Memory");
+        typeName = "Memory";
+        break;
 
       case CHANNEL:
       default:
-        return new ResourceImpl(directoryPath, resourceName, "SeekableChannel");
+        typeName = "SeekableChannel";
+        break;
     }
+    return new ResourceImpl(directoryPath, resourceName, typeName);
   }
 
   private void createMetaData(String path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
