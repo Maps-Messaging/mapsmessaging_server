@@ -543,7 +543,7 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-app</artifactId>
-      <version>2.13.6</version>
+      <version>2.14.0</version>
     </dependency>
 
 
