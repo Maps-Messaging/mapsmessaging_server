@@ -24,6 +24,7 @@ import com.udojava.jmx.wrapper.JMXBeanOperation;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationStats;
+import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
@@ -59,6 +60,17 @@ public class DestinationJMX implements HealthMonitor {
       DestinationStats stats = destinationImpl.getStats();
       for(LinkedMovingAverages linkedMovingAverages:stats.getAverageList()){
         movingAveragesJMXList.add(new LinkedMovingAveragesJMX(typePath, linkedMovingAverages));
+      }
+      ResourceStatistics resourceStatistics = destinationImpl.getResourceStatistics();
+      List<String> resourceList = new ArrayList<>(typePath);
+      if(destinationImpl.isPersistent()) {
+        resourceList.add("resource=file");
+      }
+      else{
+        resourceList.add("resource=memory");
+      }
+      for(LinkedMovingAverages linkedMovingAverages:resourceStatistics.getAverageList()){
+        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
       }
     }
 

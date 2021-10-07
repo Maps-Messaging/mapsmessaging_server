@@ -18,11 +18,12 @@
 
 package io.mapsmessaging.utilities.stats;
 
+import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import io.mapsmessaging.utilities.stats.processors.DataProcessor;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 /**
  * Creates a list of moving average with different time periods. Data is pushed through all the moving averages resulting in the ability
@@ -41,6 +42,8 @@ public class LinkedMovingAverages {
   private final String unitName;
   private final long timeSpan;
 
+  private SummaryStatistics currentStatistics;
+  private SummaryStatistics previousStatistics;
   private long previous;
   private long lastUpdate;
 
@@ -50,7 +53,7 @@ public class LinkedMovingAverages {
    * @param dataProcessor  The data processor object to use when adding data to the average
    * @param name The name of this instance
    * @param timeList A List of time intervals to create moving averages for
-   * @param unit The TimeUnit that represents the time units provied in timeList
+   * @param unit The TimeUnit that represents the time units provided in timeList
    * @param unitName The name of the unit being measured
    */
   protected LinkedMovingAverages (DataProcessor dataProcessor, String name, int[] timeList, TimeUnit unit, String unitName){
@@ -69,6 +72,7 @@ public class LinkedMovingAverages {
     previous = 0;
     lastUpdate = 0L;
     timeSpan = unit.toMillis(timeList[0]);
+    currentStatistics = new SummaryStatistics();
   }
 
   /**
@@ -101,6 +105,10 @@ public class LinkedMovingAverages {
     return names;
   }
 
+  public SummaryStatistics getDetailedStatistics(){
+    return previousStatistics;
+  }
+
   /**
    * Increment the current value
    */
@@ -112,15 +120,14 @@ public class LinkedMovingAverages {
    * Decrement the current value
    */
   public void decrement(){
-    add(-1);
+    subtract(1);
   }
 
   /**
    * @param value Add the supplied value to the current average
    */
   public void add(long value){
-    total.add(dataProcessor.add(value, previous));
-    previous = value;
+    updateValue(value);
   }
 
   /**
@@ -128,8 +135,14 @@ public class LinkedMovingAverages {
    * @param value Subtract the supplied value from the current average
    */
   public void subtract(long value){
-    total.add(dataProcessor.add(value *-1, previous));
-    previous = value*-1;
+    updateValue(value* -1);
+  }
+
+  private void updateValue(long value){
+    long corrected = dataProcessor.add(value, previous);
+    total.add(corrected);
+    currentStatistics.addValue(corrected);
+    previous = value;
   }
 
   /**
@@ -181,6 +194,8 @@ public class LinkedMovingAverages {
       for (MovingAverage movingAverage : movingAverages) {
         movingAverage.add(ave);
       }
+      previousStatistics = currentStatistics;
+      currentStatistics = new SummaryStatistics();
     }
   }
 

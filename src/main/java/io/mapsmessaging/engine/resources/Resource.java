@@ -19,14 +19,21 @@
 package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.DestinationPathManager;
 import io.mapsmessaging.storage.Storage;
+import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
+import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.Getter;
 
-public abstract class Resource implements BaseResource {
+public class Resource implements AutoCloseable {
 
   private static final LongAdder totalRetained = new LongAdder();
 
@@ -34,50 +41,72 @@ public abstract class Resource implements BaseResource {
     return totalRetained.sum();
   }
 
-  private final String name;
-  private final String mappedName;
-  protected boolean isClosed;
+  private final @Getter String name;
+  private final @Getter String mappedName;
+  private final @Getter Storage<Message> store;
+  private final @Getter boolean persistent;
   private final AtomicLong keyGen;
-  private long retainedIdentifier;
-  private Storage<Message> store;
-  protected boolean persistent;
 
+  private @Getter long retainedIdentifier;
 
-  protected Resource(String name, String mappedName) {
+  private boolean isClosed;
+
+  public Resource(MessageExpiryHandler messageExpiryHandler, String path, DestinationPathManager pathManager, String name, String type) throws IOException {
     this.name = name;
-    this.mappedName = mappedName;
+    if(pathManager == null){
+      mappedName = "Memory";
+    }
+    else {
+      this.mappedName = name;
+    }
     keyGen = new AtomicLong(0);
     isClosed = false;
     retainedIdentifier = -1;
-  }
+    String tmpName = path;
+    if (File.separatorChar == '/') {
+      while (tmpName.indexOf('\\') != -1) {
+        tmpName = tmpName.replace("\\", File.separator);
+      }
+    } else {
+      while (tmpName.indexOf('/') != -1) {
+        tmpName = tmpName.replace("/", File.separator);
+      }
+    }
+    tmpName += "message.data";
+    Map<String, String> properties = new LinkedHashMap<>();
+    properties.put("basePath", tmpName);
 
-  protected void setStore(Storage<Message> store){
-    this.store = store;
+    Map<String, String> storeProperties = new LinkedHashMap<>();
+    if(pathManager != null) {
+      storeProperties.put("Sync", "" + pathManager.isEnableSync());
+      storeProperties.put("ItemCount", ""+pathManager.getItemCount());
+      storeProperties.put("MaxPartitionSize",""+ pathManager.getPartitionSize());
+      storeProperties.put("ExpiredEventPoll", ""+pathManager.getExpiredEventPoll());
+    }
+    StorageBuilder<Message> builder = new StorageBuilder<>();
+    builder.setProperties(properties)
+        .setName(tmpName)
+        .setFactory(new MessageFactory())
+        .setProperties(storeProperties)
+        .setExpiredHandler(messageExpiryHandler)
+        .setStorageType(type);
+    if(pathManager != null && pathManager.isEnableCache()){
+      builder.setCache(pathManager.getCacheType());
+      builder.enableCacheWriteThrough(pathManager.isWriteThrough());
+    }
+
+    store = builder.build();
+    persistent = !(type.equals("Memory"));
   }
 
   @Override
   public void close() throws IOException {
-    isClosed = true;
-    store.close();
+    if(!isClosed) {
+      isClosed = true;
+      store.close();
+    }
   }
 
-  public boolean isPersistent(){
-    return persistent;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getMappedName() {
-    return mappedName;
-  }
-
-  public long getRetainedIdentifier() {
-    return retainedIdentifier;
-  }
-
-  @Override
   public void add(Message message) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
     message.setIdentifier(getNextIdentifier());
@@ -97,7 +126,6 @@ public abstract class Resource implements BaseResource {
     return keyGen.incrementAndGet();
   }
 
-  @Override
   public void remove(long key) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
     if (key == retainedIdentifier) {
@@ -107,26 +135,18 @@ public abstract class Resource implements BaseResource {
     store.remove(key);
   }
 
-  @Override
   public boolean isEmpty(){
     return store.isEmpty();
   }
 
-  @Override
   public synchronized void delete() throws IOException {
     store.delete();
   }
 
-  @Override
   public synchronized Message get(long key) throws IOException {
-    Message message = store.get(key);
-    if(message == null){
-      System.err.println("Unable to locate "+key);
-    }
-    return message;
+    return store.get(key);
   }
 
-  @Override
   public synchronized long size() throws IOException {
     return store.size();
   }

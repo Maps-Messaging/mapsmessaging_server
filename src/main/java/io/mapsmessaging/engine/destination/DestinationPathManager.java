@@ -19,18 +19,31 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
 
 public class DestinationPathManager {
 
   private static final String OPTIONAL_PATH = "{folder}";
 
-  private final String name;
-  private final String directory;
-  private final String namespace;
-  private final boolean remap;
+  private final @Getter String name;
+  private final @Getter String directory;
+  private final @Getter String namespace;
+  private final @Getter String type;
+  private final @Getter boolean enableSync;
+  private final @Getter boolean remap;
+  private final @Getter int itemCount;
+  private final @Getter int expiredEventPoll;
+  private final @Getter long partitionSize;
+
+  private final @Getter String cacheType;
+  private final @Getter boolean writeThrough;
+  private final @Getter boolean enableCache;
+
 
   public DestinationPathManager(ConfigurationProperties properties){
     name = properties.getProperty("name");
+    type = properties.getProperty("type", "File");
+
     String propertyNamespace = properties.getProperty("namespace" );
     String tmp = properties.getProperty("directory");
     if(tmp == null){
@@ -44,18 +57,23 @@ public class DestinationPathManager {
     else{
       namespace = propertyNamespace;
     }
-  }
+    enableSync = properties.getBooleanProperty("sync", false);
+    itemCount = properties.getIntProperty("itemCount", 524288);
+    partitionSize = properties.getLongProperty("maxPartitionSize", 4_294_967_296L);
 
-  public String getName() {
-    return name;
-  }
+    expiredEventPoll = properties.getIntProperty("expiredEventPoll", 1);
 
-  public boolean isRemap() {
-    return remap;
-  }
-
-  public String getDirectory() {
-    return directory;
+    if(properties.containsKey("cache")){
+      ConfigurationProperties cacheProps = (ConfigurationProperties)properties.get("cache");
+      enableCache = true;
+      cacheType = cacheProps.getProperty("type", "WeakReference");
+      writeThrough = cacheProps.getBooleanProperty("writeThrough", false);
+    }
+    else{
+      cacheType = "";
+      writeThrough = false;
+      enableCache = false;
+    }
   }
 
   public String getRootDirectory(){
@@ -63,10 +81,6 @@ public class DestinationPathManager {
       return directory.substring(0, directory.indexOf(OPTIONAL_PATH));
     }
     return directory;
-  }
-
-  public String getNamespace() {
-    return namespace;
   }
 
   public String calculateDirectory(String destinationPath){
@@ -91,4 +105,5 @@ public class DestinationPathManager {
     }
     return "";
   }
+
 }

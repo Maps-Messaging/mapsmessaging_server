@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.engine.destination.DestinationPathManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -35,28 +36,21 @@ public class ResourceFactory {
 
   private static final ResourceFactory instance = new ResourceFactory();
 
-  private enum RESOURCE_TYPE  {DATABASE, RANDOM_ACCESS_FILE, CHANNEL, MEMORY}
+  private enum RESOURCE_TYPE  {FILE, MEMORY}
 
   private final RESOURCE_TYPE type;
 
 
   private ResourceFactory() {
-    String config = System.getProperty("TYPE", "DATABASE").toLowerCase();
+    String config = System.getProperty("TYPE", "FILE").toLowerCase();
     switch (config) {
-      case "random":
-        type = RESOURCE_TYPE.RANDOM_ACCESS_FILE;
-        break;
-      case "database":
-        type = RESOURCE_TYPE.DATABASE;
-        break;
-
       case "memory":
         type = RESOURCE_TYPE.MEMORY;
         break;
 
-      case "channel":
+      case "file":
       default:
-        type = RESOURCE_TYPE.CHANNEL;
+        type = RESOURCE_TYPE.FILE;
         break;
     }
   }
@@ -65,16 +59,16 @@ public class ResourceFactory {
     return instance;
   }
 
-  public Resource create(String path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
+  public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationPathManager path, UUID uuid, DestinationType destinationType) throws IOException {
     if (resourceName.toLowerCase().startsWith("$sys")) {
-      return new ResourceImpl("", resourceName, "Memory");
+      return new Resource(messageExpiryHandler,"", path, resourceName,"Memory");
     } else {
       createMetaData(path, resourceName, uuid, destinationType);
-      return createPersistentResource(path, resourceName, uuid);
+      return createPersistentResource(messageExpiryHandler, path, resourceName, uuid);
     }
   }
 
-  public Resource scan(String root, File directory) throws IOException {
+  public Resource scan(MessageExpiryHandler messageExpiryHandler, File directory, DestinationPathManager pathManager) throws IOException {
     File props = new File(directory, RESOURCE_FILE_NAME);
     if(!props.exists()){
       return null;
@@ -92,7 +86,7 @@ public class ResourceFactory {
           long least = Long.parseLong(leastString);
           long most = Long.parseLong(mostString);
           UUID uuid = new UUID(most, least);
-          return createPersistentResource(root, name, uuid);
+          return createPersistentResource(messageExpiryHandler, pathManager, name, uuid);
         }
       }
     }
@@ -100,35 +94,27 @@ public class ResourceFactory {
     return null;
   }
 
-  private Resource createPersistentResource(String path, String resourceName, UUID uuid) throws IOException {
-    String directoryPath = path + File.separator + uuid.toString() + File.separator;
-    String typeName = "";
+  private Resource createPersistentResource(MessageExpiryHandler messageExpiryHandler, DestinationPathManager path, String resourceName, UUID uuid) throws IOException {
+    String directoryPath = path.getDirectory() + File.separator + uuid.toString() + File.separator;
+    String typeName;
     switch(type){
-      case DATABASE:
-        typeName = "MapDB";
-        break;
-
-      case RANDOM_ACCESS_FILE:
-        typeName = "File";
-        break;
-
       case MEMORY:
         typeName = "Memory";
         break;
 
-      case CHANNEL:
       default:
-        typeName = "SeekableChannel";
+      case FILE:
+        typeName = "Partition";
         break;
     }
-    return new ResourceImpl(directoryPath, resourceName, typeName);
+    return new Resource(messageExpiryHandler, directoryPath, path, resourceName, typeName);
   }
 
-  private void createMetaData(String path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
-    File directoryPath = new File(path + File.separator + uuid.toString() + File.separator);
+  private void createMetaData(DestinationPathManager path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
+    File directoryPath = new File(path.getDirectory() + File.separator + uuid.toString() + File.separator);
     if (!directoryPath.exists()) {
       if (!directoryPath.mkdirs()) {
-        throw new IOException("Unable to construct directory path " + directoryPath.toString());
+        throw new IOException("Unable to construct directory path " + directoryPath);
       }
       ResourceProperties properties = new ResourceProperties(
           new Date(),

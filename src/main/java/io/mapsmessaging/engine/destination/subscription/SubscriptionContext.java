@@ -22,9 +22,9 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.ObjectReader;
-import io.mapsmessaging.storage.impl.ObjectWriter;
+import io.mapsmessaging.engine.serializer.MapSerializable;
+import io.mapsmessaging.storage.impl.streams.ObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Objects;
@@ -32,7 +32,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public class SubscriptionContext implements Comparable<SubscriptionContext>, Storable {
+public class SubscriptionContext implements Comparable<SubscriptionContext>, MapSerializable {
 
   private static final int NO_LOCAL_MESSAGES = 0;
   private static final int RETAIN_AS_PUBLISH = 1;
@@ -82,11 +82,6 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Sto
 
   public SubscriptionContext(ObjectReader reader) throws IOException {
     read(reader);
-  }
-
-  @Override
-  public long getKey() {
-    return 0;
   }
 
   public void read(ObjectReader reader) throws IOException {

@@ -19,7 +19,6 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.engine.destination.DestinationManager;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.IOException;
@@ -28,12 +27,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public class SystemTopicManager implements Runnable, ServiceManager {
 
   private final ServiceLoader<SystemTopic> systemTopics;
-  private final Future<?> scheduledFuture;
+  private Future<?> scheduledFuture;
   private final List<SystemTopic> completeList;
 
   public SystemTopicManager(DestinationManager destinationManager) throws IOException {
@@ -55,7 +53,7 @@ public class SystemTopicManager implements Runnable, ServiceManager {
         }
       }
     }
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
+   // scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
   }
 
   @Override

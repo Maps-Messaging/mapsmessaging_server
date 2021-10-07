@@ -404,12 +404,13 @@ public class DestinationSubscription extends Subscription {
     } catch (CancelledKeyException ignore) {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getName(), sessionImpl.getName());
+      th.printStackTrace();
+      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getName(), sessionImpl.getName(), th);
     }
   }
 
   //
-  // So we have a message to send but we are not scheduled to run
+  // So we have a message to send, but we are not scheduled to run
   //
   public boolean schedule() {
     if (isReady()){

@@ -10,7 +10,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
 public class SimpleTaskScheduler implements ScheduledExecutorService {
@@ -35,11 +34,6 @@ public class SimpleTaskScheduler implements ScheduledExecutorService {
   @NotNull
   @Override
   public ScheduledFuture<?> schedule(@NotNull Runnable command, long delay, @NotNull TimeUnit unit) {
-    scheduler.getQueue().forEach(new Consumer<Runnable>() {
-      @Override
-      public void accept(Runnable runnable) {
-      }
-    });
     return scheduler.schedule(new InterceptedRunnable(command), delay, unit);
   }
 
@@ -52,13 +46,13 @@ public class SimpleTaskScheduler implements ScheduledExecutorService {
   @NotNull
   @Override
   public ScheduledFuture<?> scheduleAtFixedRate(@NotNull Runnable command, long initialDelay, long period, @NotNull TimeUnit unit) {
-    return scheduler.scheduleAtFixedRate(new InterceptedRunnable(command), initialDelay, period, unit);
+    return scheduler.scheduleAtFixedRate(command, initialDelay, period, unit);
   }
 
   @NotNull
   @Override
-  public ScheduledFuture<?> scheduleWithFixedDelay(@NotNull Runnable command, long initialDelay, long delay, @NotNull TimeUnit unit) {
-    return scheduler.scheduleAtFixedRate(new InterceptedRunnable(command), initialDelay, delay, unit);
+  public ScheduledFuture<?> scheduleWithFixedDelay(@NotNull Runnable command, long initialDelay, long period, @NotNull TimeUnit unit) {
+    return scheduler.scheduleWithFixedDelay(new InterceptedRunnable(command), initialDelay, period, unit);
   }
 
   @Override
@@ -154,7 +148,6 @@ public class SimpleTaskScheduler implements ScheduledExecutorService {
     }
     @Override
     public void run() {
-      Thread.interrupted();
       runnable.run();
     }
   }
@@ -168,7 +161,6 @@ public class SimpleTaskScheduler implements ScheduledExecutorService {
     }
     @Override
     public T call() throws Exception {
-      Thread.interrupted();
       return callable.call();
     }
   }

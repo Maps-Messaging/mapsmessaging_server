@@ -19,10 +19,12 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.storage.impl.ObjectReader;
-import io.mapsmessaging.storage.impl.ObjectWriter;
+import io.mapsmessaging.storage.impl.streams.ObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class SessionContext {
 
@@ -66,8 +68,12 @@ public class SessionContext {
     if (reader.readByte() != 0) {
       willDelay = reader.readLong();
       willTopic = reader.readString();
-      willMessage = new Message();
-      willMessage.read(reader);
+      int bufferCount = reader.readInt();
+      ByteBuffer[] bb = new ByteBuffer[bufferCount];
+      for(int x=0;x<bb.length;x++){
+        bb[x] = ByteBuffer.wrap(reader.readByteArray());
+      }
+      willMessage = MessageFactory.getInstance().unpack(bb);
     }
     isRestored = false;
   }
@@ -79,7 +85,11 @@ public class SessionContext {
       writer.write((byte) 1);
       writer.write(willDelay);
       writer.write(willTopic);
-      willMessage.write(writer);
+      ByteBuffer[] buffers = MessageFactory.getInstance().pack(willMessage);
+      writer.write(buffers.length);
+      for(ByteBuffer buffer:buffers){
+        writer.write(buffer.array());
+      }
     } else {
       writer.write((byte) 0);
     }

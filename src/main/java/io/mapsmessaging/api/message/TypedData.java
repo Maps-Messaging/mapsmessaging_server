@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.api.message;
 
-import io.mapsmessaging.storage.impl.ObjectReader;
-import io.mapsmessaging.storage.impl.ObjectWriter;
+import io.mapsmessaging.storage.impl.streams.ObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

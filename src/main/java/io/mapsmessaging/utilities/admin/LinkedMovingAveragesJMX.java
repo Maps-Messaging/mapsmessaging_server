@@ -36,6 +36,7 @@ public class LinkedMovingAveragesJMX implements DynamicMBean {
 
   private final LinkedMovingAverages movingAverages;
   private final MBeanInfo mBeanInfo;
+  private final DetailedStatisticsJMX detailedStatisticsJMX;
   private final ObjectInstance objectInstance;
 
   public LinkedMovingAveragesJMX(List<String> jmxPath, LinkedMovingAverages movingAverages) {
@@ -44,7 +45,7 @@ public class LinkedMovingAveragesJMX implements DynamicMBean {
     try {
       beanConstructorInfos[0] = new MBeanConstructorInfo(movingAverages.getName(), this.getClass().getConstructor());
     } catch (NoSuchMethodException noSuchMethodException) {
-      // We know it will never be thrown so we can ignore this
+      // We know it will never be thrown, so we can ignore this
     }
 
     String[] names = movingAverages.getNames();
@@ -67,10 +68,12 @@ public class LinkedMovingAveragesJMX implements DynamicMBean {
     List<String> copy = new ArrayList<>(jmxPath);
     copy.add("Average="+movingAverages.getName());
     objectInstance = JMXManager.getInstance().register(this, copy);
+    detailedStatisticsJMX = new DetailedStatisticsJMX(copy, movingAverages);
   }
 
   public void close(){
     JMXManager.getInstance().unregister(objectInstance);
+    detailedStatisticsJMX.close();
   }
 
   @Override

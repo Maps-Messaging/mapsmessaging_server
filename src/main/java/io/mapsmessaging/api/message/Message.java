@@ -23,15 +23,19 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.ObjectReader;
-import io.mapsmessaging.storage.impl.ObjectWriter;
+import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectWriter;
+import io.mapsmessaging.storage.impl.streams.StreamObjectWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 
 public class Message implements IdentifierResolver, Storable {
@@ -40,34 +44,37 @@ public class Message implements IdentifierResolver, Storable {
   private static final int UTF8_BIT = 1;
   private static final int CORRELATION_BYTE_ARRAY_BIT = 2;
 
-  // time in milliseconds when this message will expire
-  private long expiry;
-  private long creation;
-  private Priority priority;
-  private QualityOfService qualityOfService;
-  private BitSet flags;
-  private String responseTopic;
-  private String contentType;
-  private byte[] correlationData;
-  private byte[] opaqueData;
-  private Map<String, String> meta;
-  private Map<String, TypedData> dataMap;
-  private long delayed;
+
+  private final @Getter long expiry;   // time in milliseconds when this message will expire
+  private final @Getter long creation;
+  private final @Getter Priority priority;
+  private final @Getter QualityOfService qualityOfService;
+  private final @Getter String responseTopic;
+  private final @Getter String contentType;
+  private final @Getter byte[] correlationData;
+  private final @Getter byte[] opaqueData;
+  private final @Getter Map<String, String> meta;
+  private final @Getter Map<String, TypedData> dataMap;
+
+  private final @Getter boolean storeOffline; // Not stored to disk
+
+  private final BitSet flags;
+
+
+  private @Getter long delayed; // This is set via the engine on the way through
 
   // <editor-fold desc="Transient data">
-  private boolean storeOffline;
-  private boolean isLastMessage;
+  private @Getter @Setter boolean lastMessage; // This is set via the engine as it is delivered to the client
   // </editor-fold>
   // <editor-fold desc="Persistent data">
-  private long id;
+  private @Getter @Setter long identifier;
   // </editor-fold>
 
-  public Message(){}
 
   public Message(MessageBuilder builder) {
     flags = new BitSet(8);
 
-    id = builder.getId();
+    identifier = builder.getId();
     meta = builder.getMeta();
     Map<String, TypedData> map = builder.getDataMap();
     if(map instanceof DataMap){
@@ -112,20 +119,132 @@ public class Message implements IdentifierResolver, Storable {
     if (builder.isPayloadUTF8()) {
       flags.set(UTF8_BIT);
     }
-    isLastMessage = false;
+    lastMessage = false;
   }
 
+  Message(ByteBuffer[] packed) throws IOException {
+    BufferObjectReader header = new BufferObjectReader(packed[0]);
+    BufferObjectReader optional = new BufferObjectReader(packed[1]);
+
+
+    identifier = header.readLong();
+    expiry = header.readLong();
+    delayed = header.readLong();
+    creation = header.readLong();
+    priority = Priority.getInstance(header.readByte());
+    qualityOfService = QualityOfService.getInstance(header.readByte());
+
+
+    flags = BitSet.valueOf(optional.readByteArray());
+    responseTopic = optional.readString();
+    contentType = optional.readString();
+    correlationData = optional.readByteArray();
+    byte containsBuffers = optional.readByte();
+
+    int idx = 2;
+    if((containsBuffers & 0x1) != 0){
+      BufferObjectReader metaReader = new BufferObjectReader(packed[idx]);
+      meta = loadMeta(metaReader);
+      idx++;
+    }
+    else{
+      meta = null;
+    }
+
+    if((containsBuffers & 0x2) != 0) {
+      BufferObjectReader map = new BufferObjectReader(packed[idx]);
+      dataMap = loadDataMap(map);
+      idx++;
+    }
+    else{
+      dataMap = new DataMap();
+    }
+    if(dataMap != null) {
+      ((DataMap) dataMap).setMessage(this);
+    }
+
+    if((containsBuffers & 0x4) != 0) {
+      opaqueData = packed[idx].array();
+    }
+    else{
+      opaqueData = null;
+    }
+    storeOffline = true;
+    lastMessage = false;
+  }
+
+  ByteBuffer[] pack() throws IOException {
+
+    ByteBuffer header = ByteBuffer.allocate(34);
+    header.putLong(identifier);
+    header.putLong(expiry);
+    header.putLong(delayed);
+    header.putLong(creation);
+    header.put((byte)priority.getValue());
+    header.put((byte)qualityOfService.getLevel());
+    header.flip();
+
+    byte containsBuffers = 0;
+    boolean hasMeta = meta != null && !meta.isEmpty();
+    boolean hasMap = dataMap != null && !dataMap.isEmpty();
+    boolean hasOpaque = opaqueData != null;
+    int bufferCount = 2;
+    if(hasMeta){
+      bufferCount++;
+      containsBuffers = 0x1;
+    }
+    if(hasMap){
+      bufferCount++;
+      containsBuffers = (byte)(containsBuffers | 0x2);
+    }
+    if(hasOpaque){
+      bufferCount++;
+      containsBuffers = (byte)(containsBuffers | 0x4);
+    }
+
+    ByteArrayOutputStream optional = new ByteArrayOutputStream(1024);
+    StreamObjectWriter optionalWriter = new StreamObjectWriter(optional);
+    optionalWriter.write(flags.toByteArray());
+    optionalWriter.write(responseTopic);
+    optionalWriter.write(contentType);
+    optionalWriter.write(correlationData);
+    optionalWriter.write(containsBuffers);
+
+
+    ByteBuffer[] packed = new ByteBuffer[bufferCount];
+    packed[0] = header;
+    packed[1] = ByteBuffer.wrap(optional.toByteArray());
+    int idx = 2;
+    if(hasMeta) {
+      ByteArrayOutputStream metaStream = new ByteArrayOutputStream(1024);
+      StreamObjectWriter metaWriter = new StreamObjectWriter(metaStream);
+      saveMeta(metaWriter);
+      packed[idx] = ByteBuffer.wrap(metaStream.toByteArray());
+      idx++;
+    }
+    if(hasMap) {
+      ByteArrayOutputStream mapStream = new ByteArrayOutputStream(1024);
+      StreamObjectWriter dataMapWriter = new StreamObjectWriter(mapStream);
+      saveDataMap(dataMapWriter);
+      packed[idx] = ByteBuffer.wrap(mapStream.toByteArray());
+      idx++;
+    }
+    if(opaqueData != null){
+      packed[idx] = ByteBuffer.wrap(opaqueData);
+    }
+    return packed;
+  }
+
+
   private long calculateExpiry(long dly, long exp){
+    long calc = 0;
     if (exp > 0) {
-      exp = System.currentTimeMillis() + exp;
+      calc = System.currentTimeMillis() + exp;
       if(dly > 0){
-        return exp + dly; // Do not expire the event until AFTER it has been published
-      }
-      else{
-        return exp;
+        calc = calc + dly; // Do not expire the event until AFTER it has been published
       }
     }
-    return 0;
+    return calc;
   }
 
   private long calculateDelay(long dly){
@@ -135,87 +254,14 @@ public class Message implements IdentifierResolver, Storable {
     return 0;
   }
 
-  public void read (ObjectReader reader) throws IOException {
-    // Fixed header - 19 bytes - Native data types
-    id = reader.readLong();
-    expiry = reader.readLong();
-    delayed = reader.readLong();
-    creation = reader.readLong();
-    priority = Priority.getInstance(reader.readByte());
-    qualityOfService = QualityOfService.getInstance(reader.readByte());
-    flags = BitSet.valueOf(reader.readByteArray());
-
-    // Optional
-    responseTopic = reader.readString();
-    contentType = reader.readString();
-    correlationData = reader.readByteArray();
-
-    // Complex data types
-    meta = loadMeta(reader);
-    dataMap = loadDataMap(reader);
-    if(dataMap != null) {
-      ((DataMap) dataMap).setMessage(this);
-    }
-    opaqueData = reader.readByteArray();
-    storeOffline = false;
-    isLastMessage = false;
-  }
-
-  // <editor-fold desc="Collection read/write functions">
-  @Override
-  public void write(ObjectWriter writer) throws IOException {
-    // Read Fixed header - Native data types
-    writer.write(id);
-    writer.write(expiry);
-    writer.write(delayed);
-    writer.write(creation);
-    writer.write((byte)priority.getValue());
-    writer.write((byte) qualityOfService.getLevel());
-    writer.write(flags.toByteArray());
-
-    // Optional
-    writer.write(responseTopic);
-    writer.write(contentType);
-    writer.write(correlationData);
-
-    // Complex data
-    saveMeta(writer);
-    saveDataMap(writer);
-    writer.write(opaqueData);
-  }
-
-  public long getDelayed() {
-    return delayed;
-  }
-
   public void setDelayed(long delayed) {
     if(delayed >= 0) {
       this.delayed = delayed;
     }
   }
 
-  public long getCreation() {
-    return creation;
-  }
-
-  public long getIdentifier() {
-    return id;
-  }
-
   public long getKey(){
-    return id;
-  }
-
-  public void setIdentifier(long id) {
-    this.id = id;
-  }
-
-  public @Nullable Map<String, String> getMeta() {
-    return meta;
-  }
-
-  public @NotNull Map<String, TypedData> getDataMap() {
-    return dataMap;
+    return identifier;
   }
 
   @Override
@@ -239,64 +285,23 @@ public class Message implements IdentifierResolver, Storable {
     return null;
   }
 
-  @Override
-  public byte[] getOpaqueData() {
-    return opaqueData;
-  }
-
-  public @NonNull @NotNull Priority getPriority() {
-    return priority;
-  }
-
   public boolean isRetain() {
     return flags.get(RETAIN_BIT);
-  }
-
-  public boolean isStoreOffline() {
-    return storeOffline;
-  }
-
-  public byte[] getCorrelationData() {
-    return correlationData;
   }
 
   public boolean isCorrelationDataByteArray(){
     return flags.get(CORRELATION_BYTE_ARRAY_BIT);
   }
 
-  public @Nullable String getContentType() {
-    return contentType;
-  }
-
-  public long getExpiry() {
-    return expiry;
-  }
-
-  public boolean isLastMessage() {
-    return isLastMessage;
-  }
-
-  public void setLastMessage(boolean lastMessage) {
-    isLastMessage = lastMessage;
-  }
-
   public boolean isUTF8() {
     return flags.get(UTF8_BIT);
-  }
-
-  public @NonNull @NotNull QualityOfService getQualityOfService() {
-    return qualityOfService;
-  }
-
-  public @Nullable String getResponseTopic() {
-    return responseTopic;
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("Key:")
-        .append(id)
+        .append(identifier)
         .append(" meta:")
         .append(meta)
         .append(" map:")

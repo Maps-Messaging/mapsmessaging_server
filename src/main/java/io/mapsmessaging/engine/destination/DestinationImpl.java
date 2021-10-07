@@ -37,9 +37,10 @@ import io.mapsmessaging.engine.destination.tasks.NonDelayedStoreMessageTask;
 import io.mapsmessaging.engine.destination.tasks.QueueBasedStoreMessageTask;
 import io.mapsmessaging.engine.destination.tasks.RemoveMessageTask;
 import io.mapsmessaging.engine.destination.tasks.TransactionalMessageProcessor;
+import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
-import io.mapsmessaging.engine.resources.ResourceImpl;
+import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
@@ -60,6 +61,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -88,12 +90,14 @@ public class DestinationImpl implements BaseDestination {
 
   protected final DestinationJMX destinationJMXBean;
 
+
   private final PriorityTaskScheduler resourceTaskQueue;
   private final TaskScheduler subscriptionTaskQueue;
 
   private final DelayedMessageManager delayedMessageManager;
   private final TransactionalMessageManager transactionMessageManager;
   private final DestinationStats stats;
+  private final @Getter ResourceStatistics resourceStatistics;
   private final Resource resource;
   private final DestinationType destinationType;
 
@@ -113,14 +117,15 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of resource that this destination represents
    * @throws IOException if, at anytime, the file system was unable to construct, read or write to the required files
    */
-  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  String path, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  DestinationPathManager path, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.name = name;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    resource = ResourceFactory.getInstance().create(path, name, uuid, destinationType);
+    resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this),name, path,  uuid, destinationType);
     stats = new DestinationStats();
+    resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
@@ -148,6 +153,7 @@ public class DestinationImpl implements BaseDestination {
     subscriptionManager = new DestinationSubscriptionManager(name);
     this.resource = resource;
     stats = new DestinationStats();
+    resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
@@ -164,7 +170,7 @@ public class DestinationImpl implements BaseDestination {
   }
 
   //
-  // We now need to rollback all events found in the transaction manager
+  // We now need to roll back all events found in the transaction manager
   //
   private void rollbackTransactionsOnReload() throws IOException {
     List<Long> transactionIds = transactionMessageManager.getTransactions();
@@ -186,8 +192,9 @@ public class DestinationImpl implements BaseDestination {
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    resource = new ResourceImpl("", name, "Memory");
+    resource = new Resource(new MessageExpiryHandler(this),"", null, name, "Memory");
     stats = new DestinationStats();
+    resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {

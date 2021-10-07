@@ -119,6 +119,12 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
       return (Boolean) value;
     }
     else if(value instanceof String){
+      if(((String) value).equalsIgnoreCase("enable")){
+        return true;
+      }
+      if(((String) value).equalsIgnoreCase("disable")){
+        return false;
+      }
       return Boolean.parseBoolean(((String)value).trim());
     }
     return false;

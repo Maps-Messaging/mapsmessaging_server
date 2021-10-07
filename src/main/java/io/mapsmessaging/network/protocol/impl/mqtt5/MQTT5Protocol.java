@@ -340,9 +340,9 @@ public class MQTT5Protocol extends ProtocolImpl {
     if (message.getCorrelationData() != null) {
       publish.add(new CorrelationData(message.getCorrelationData()));
     }
-    long expiryInMs = (message.getExpiry()-System.currentTimeMillis())/1000;
-    if (expiryInMs > 0) {
-      publish.add(new MessageExpiryInterval(expiryInMs));
+    long expiryInSeconds = (message.getExpiry()-System.currentTimeMillis())/1000;
+    if (expiryInSeconds > 0) {
+      publish.add(new MessageExpiryInterval(expiryInSeconds));
     }
     if (message.isUTF8()) {
       publish.add(new PayloadFormatIndicator(message.isUTF8()));

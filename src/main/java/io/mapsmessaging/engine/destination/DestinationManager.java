@@ -29,6 +29,7 @@ import io.mapsmessaging.engine.destination.subscription.builders.QueueSubscripti
 import io.mapsmessaging.engine.destination.tasks.DelayedMessageProcessor;
 import io.mapsmessaging.engine.destination.tasks.ShutdownPhase1Task;
 import io.mapsmessaging.engine.destination.tasks.StoreMessageTask;
+import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.system.SystemTopic;
@@ -64,13 +65,13 @@ public class DestinationManager implements DestinationFactory {
   private final Map<String, DestinationImpl> destinationList;
   private final List<DestinationManagerListener> destinationManagerListeners;
   private final Logger logger;
-  private final String rootPath;
+  private final DestinationPathManager rootPath;
 
   public DestinationManager(int time) {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
     ConfigurationProperties list = ConfigurationManager.getInstance().getProperties("DestinationManager");
-    String root = ".";
+    DestinationPathManager rootPathLookup = null;
 
     Object rootConf = list.get("data");
 
@@ -79,16 +80,16 @@ public class DestinationManager implements DestinationFactory {
       DestinationPathManager destinationPathManager = new DestinationPathManager(rootCfg);
       properties.put(destinationPathManager.getNamespace(), destinationPathManager);
       if (destinationPathManager.getNamespace().equals("/")) {
-        root = destinationPathManager.getDirectory();
+        rootPathLookup = destinationPathManager;
       }
     }
     else if(rootConf instanceof List) {
-      for (Object configuration : (List) rootConf) {
+      for (Object configuration : (List<?>) rootConf) {
         if (configuration instanceof ConfigurationProperties) {
           DestinationPathManager destinationPathManager = new DestinationPathManager((ConfigurationProperties) configuration);
           properties.put(destinationPathManager.getNamespace(), destinationPathManager);
           if (destinationPathManager.getNamespace().equals("/")) {
-            root = destinationPathManager.getDirectory();
+            rootPathLookup = destinationPathManager;
           }
         } else {
           break;
@@ -96,7 +97,7 @@ public class DestinationManager implements DestinationFactory {
       }
     }
 
-    rootPath = root;
+    rootPath = rootPathLookup;
     destinationManagerListeners = new CopyOnWriteArrayList<>();
     destinationList = new ConcurrentHashMap<>();
     SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, time, TimeUnit.MILLISECONDS);
@@ -145,18 +146,19 @@ public class DestinationManager implements DestinationFactory {
     DestinationImpl destinationImpl = destinationList.get(name);
     if (destinationImpl == null) {
       UUID destinationUUID = UUID.randomUUID();
-      String directoryPath = rootPath;
+      DestinationPathManager pathManager = rootPath;
       for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
         if (name.startsWith(entry.getKey())) {
-          directoryPath = entry.getValue().calculateDirectory(name);
+          pathManager = entry.getValue();
           break;
         }
       }
       if(destinationType.isTemporary()) {
-        destinationImpl = new TemporaryDestination(name, directoryPath, destinationUUID, destinationType);
+        destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType);
       }
       else{
-        destinationImpl = new DestinationImpl(name, directoryPath, destinationUUID, destinationType);
+
+        destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
       }
       destinationList.put(destinationImpl.getName(), destinationImpl);
     }
@@ -217,9 +219,9 @@ public class DestinationManager implements DestinationFactory {
     logger.log(LogMessages.DESTINATION_MANAGER_STARTING);
     for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
       DestinationPathManager mapManager = entry.getValue();
-      DestinationLocator destinationLocator = new DestinationLocator(mapManager.getRootDirectory(), mapManager.getTrailingPath());
+      DestinationLocator destinationLocator = new DestinationLocator(mapManager, mapManager.getTrailingPath());
       destinationLocator.parse();
-      processFileList(destinationLocator.getValid());
+      processFileList(destinationLocator.getValid(), mapManager);
     }
   }
 
@@ -246,12 +248,12 @@ public class DestinationManager implements DestinationFactory {
     return new ArrayList<>(destinationManagerListeners);
   }
 
-  private void processFileList(List<File> directories){
+  private void processFileList(List<File> directories, DestinationPathManager pathManager){
     if (directories != null) {
       long report = System.currentTimeMillis() + 1000;
       int counter = 0;
       for (File directory : directories) {
-        parseDirectoryPath(directory.getParent(), directory);
+        parseDirectoryPath(directory, pathManager);
         counter++;
         if(report <= System.currentTimeMillis()){
           report = System.currentTimeMillis() + 1000;
@@ -261,10 +263,10 @@ public class DestinationManager implements DestinationFactory {
     }
   }
 
-  private void parseDirectoryPath(String path, File directory) {
+  private void parseDirectoryPath(File directory, DestinationPathManager pathManager) {
     if (directory.isDirectory()) {
       try {
-        DestinationImpl destinationImpl = scanDirectory(path, directory);
+        DestinationImpl destinationImpl = scanDirectory(directory, pathManager);
         if (destinationImpl instanceof TemporaryDestination) {
           // Delete all temporary destinations on restart
           logger.log(LogMessages.DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION, destinationImpl.getName());
@@ -280,29 +282,31 @@ public class DestinationManager implements DestinationFactory {
     }
   }
 
-  private DestinationImpl scanDirectory(String root, File directory) throws IOException {
-    Resource resource = ResourceFactory.getInstance().scan(root, directory);
+  private DestinationImpl scanDirectory( File directory, DestinationPathManager pathManager) throws IOException {
+    MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
+    Resource resource = ResourceFactory.getInstance().scan(messageExpiryHandler, directory, pathManager);
     if (resource == null) {
       throw new IOException("Invalid resource found");
     }
     String name = resource.getMappedName();
     DestinationType destinationType = DestinationType.TOPIC;
-
+    DestinationImpl response;
     if(name.toLowerCase().startsWith(TEMPORARY_TOPIC)){
       destinationType = DestinationType.TEMPORARY_TOPIC;
-      return new TemporaryDestination(resource, destinationType);
+      response = new TemporaryDestination(resource, destinationType);
     }
-
-    if(name.toLowerCase().startsWith(TEMPORARY_QUEUE)){
+    else if(name.toLowerCase().startsWith(TEMPORARY_QUEUE)){
       destinationType = DestinationType.TEMPORARY_QUEUE;
-      return new TemporaryDestination(resource, destinationType);
+      response = new TemporaryDestination(resource, destinationType);
     }
-
-    if(name.toLowerCase().startsWith(QUEUE[0]) || name.toLowerCase().startsWith(QUEUE[1])){
-      destinationType = DestinationType.QUEUE;
+    else{
+      if(name.toLowerCase().startsWith(QUEUE[0]) || name.toLowerCase().startsWith(QUEUE[1])){
+        destinationType = DestinationType.QUEUE;
+      }
+      response = new DestinationImpl(resource, destinationType);
     }
-
-    return new DestinationImpl(resource, destinationType);
+    messageExpiryHandler.setDestination(response);
+    return response;
   }
 
   public class DelayProcessor implements Runnable{

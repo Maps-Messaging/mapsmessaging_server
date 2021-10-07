@@ -32,7 +32,17 @@
 #              map to the namespace
 #  namespace:  The start of the namespace path that is used to match for the
 #              mapping
+#  type:       The type of the backing store, support are File or memory backing
+#  sync:       If File backing then enabling sync will flush buffers to the underlying hardware on each write
+#              or update of the data structures. This reduces throughput but also reduces the loss of data on
+#              system failure. ( System failure here means OS failure or catastrophic hardware failure, not application crash )
+#              in most circumstances this can be disabled, unless you really know what you are doing.
 #
+#  cache:      Configures the caching layer, if enabled, for this name space data stores
+#        type: The type of cache to be used, currently only WeakReference or JCS is implemented
+#        writeThrough: If enabled the actual write to the file, potentially, done in the future.
+#                      This option is only recommended for topics or queues where data loss on
+#                      system failure is acceptable
 #  Notes:
 #  ------
 # Substitution is support for the following tokens
@@ -48,4 +58,14 @@ DestinationManager:
          name: root
          directory: ./data
          namespace: /
+         type: File # could be either File or Memory
+         sync: disable # Enable or Disable
+         itemCount: 524288 # Number of messages to be stored inside a partition
+         maxPartitionSize: 536870912  # 1/2 GB
+         expiredEventPoll: 1 # Time in seconds to scan for expired events
+         cache:
+            type: WeakReference # could be WeakReference or JCS for the apache cache implementation
+            writeThrough: enable # Could be either enable or disable
+
+
 

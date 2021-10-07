@@ -30,8 +30,8 @@
 
   </Appenders>
   <Loggers>
-    <Root level="debug">
-      <AppenderRef ref="Console" level="debug"/>
+    <Root level="warn">
+      <AppenderRef ref="Console" level="warn"/>
       <appender-ref ref="RollingFile" />
     </Root>
   </Loggers>

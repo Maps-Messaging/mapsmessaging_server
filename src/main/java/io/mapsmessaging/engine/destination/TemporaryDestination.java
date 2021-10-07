@@ -32,7 +32,7 @@ public class TemporaryDestination extends DestinationImpl {
   private boolean ownerDisconnected;
 
 
-  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull String path, @NonNull @NotNull UUID uuid,
+  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull DestinationPathManager path, @NonNull @NotNull UUID uuid,
       @NonNull @NotNull DestinationType destinationType) throws IOException {
     super(name, path, uuid, destinationType);
     ownerDisconnected = false;

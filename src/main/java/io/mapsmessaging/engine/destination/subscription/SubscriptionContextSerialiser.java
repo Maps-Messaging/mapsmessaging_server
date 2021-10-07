@@ -18,10 +18,10 @@
 
 package io.mapsmessaging.engine.destination.subscription;
 
-import io.mapsmessaging.storage.impl.DataObjectReader;
-import io.mapsmessaging.storage.impl.ObjectReader;
-import io.mapsmessaging.storage.impl.ObjectWriter;
-import io.mapsmessaging.storage.impl.StreamObjectWriter;
+import io.mapsmessaging.engine.serializer.DataObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectWriter;
+import io.mapsmessaging.storage.impl.streams.StreamObjectWriter;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;

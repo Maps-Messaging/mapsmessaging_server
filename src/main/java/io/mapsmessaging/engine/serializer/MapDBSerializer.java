@@ -18,18 +18,16 @@
 
 package io.mapsmessaging.engine.serializer;
 
-import io.mapsmessaging.storage.Storable;
-import io.mapsmessaging.storage.impl.DataObjectReader;
-import io.mapsmessaging.storage.impl.ObjectReader;
-import io.mapsmessaging.storage.impl.ObjectWriter;
-import io.mapsmessaging.storage.impl.StreamObjectWriter;
+import io.mapsmessaging.storage.impl.streams.ObjectReader;
+import io.mapsmessaging.storage.impl.streams.ObjectWriter;
+import io.mapsmessaging.storage.impl.streams.StreamObjectWriter;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.serializer.GroupSerializerObjectArray;
 
-public class MapDBSerializer<P extends Storable> extends GroupSerializerObjectArray<P> {
+public class MapDBSerializer<P extends MapSerializable> extends GroupSerializerObjectArray<P> {
 
   private final Class<P> classDefinition;
 

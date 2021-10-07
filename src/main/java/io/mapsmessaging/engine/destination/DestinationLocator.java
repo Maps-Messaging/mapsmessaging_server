@@ -32,21 +32,21 @@ import lombok.Getter;
  */
 public class DestinationLocator {
 
-  private final String root;
+  private final DestinationPathManager pathManager;
   private final String subDirectory;
 
   @Getter private final List<File> rejected;
   @Getter private final List<File> valid;
 
-  public DestinationLocator(String root, String subdirectory){
-    this.root = root;
+  public DestinationLocator(DestinationPathManager pathManager, String subdirectory){
+    this.pathManager = pathManager;
     this.subDirectory = subdirectory;
     valid = new ArrayList<>();
     rejected = new ArrayList<>();
   }
 
   public void parse(){
-    File path = new File(root);
+    File path = new File(pathManager.getDirectory());
     List<File> rootPaths = new ArrayList<>();
     if(path.exists()) {
       if (subDirectory != null) {
@@ -61,13 +61,17 @@ public class DestinationLocator {
   private List<File> scanForValidDirectories(List<File> rootPaths){
     List<File> validPaths = new ArrayList<>();
     for(File explore:rootPaths){
-      if (confirmPath(explore)) {
-        validPaths.add(explore);
-      }
-      else {
-        for (File potential : explore.listFiles()) {
-          if (confirmPath(potential)) {
-            validPaths.add(potential);
+      if(explore != null) {
+        if (confirmPath(explore)) {
+          validPaths.add(explore);
+        } else {
+          File[] fileList = explore.listFiles();
+          if(fileList != null) {
+            for (File potential : fileList) {
+              if (confirmPath(potential)) {
+                validPaths.add(potential);
+              }
+            }
           }
         }
       }
@@ -76,22 +80,23 @@ public class DestinationLocator {
   }
 
   private void scanSubdirectory( File path,  List<File> rootPaths){
-    for (File sub : path.listFiles()) {
-      if (sub.isDirectory()) {
-        rootPaths.add(new File(root + File.separator + sub.getName() + File.separator + subDirectory));
+    File[] listFiles =  path.listFiles();
+    if(listFiles != null) {
+      for (File sub : listFiles) {
+        if (sub.isDirectory()) {
+          rootPaths.add(new File(pathManager.getDirectory() + File.separator + sub.getName() + File.separator + subDirectory));
+        }
       }
     }
   }
 
   private boolean confirmPath(File directory){
     String name = directory.getAbsolutePath();
-    File data = new File(name+File.separator+"data.bin");
+    File data = new File(name+File.separator+"message.data");
     File resource = new File(name+File.separator+ ResourceFactory.RESOURCE_FILE_NAME);
-    File delayed = new File(name+File.separator+"state"+File.separator+"delayed.bin");
-    File transaction = new File(name+File.separator+"state"+File.separator+"transactions.bin");
 
-    boolean isDestinationDirectory = (data.exists() && resource.exists() && delayed.exists() && transaction.exists());
-    if((data.exists() || resource.exists() || delayed.exists()|| transaction.exists()) && !isDestinationDirectory) {
+    boolean isDestinationDirectory = (data.exists() && resource.exists());
+    if(!isDestinationDirectory) {
       rejected.add(directory);
     }
     return isDestinationDirectory;

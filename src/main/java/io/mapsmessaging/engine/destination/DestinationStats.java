@@ -18,15 +18,12 @@
 
 package io.mapsmessaging.engine.destination;
 
+import io.mapsmessaging.engine.stats.Statistics;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-public class DestinationStats {
+public class DestinationStats extends Statistics {
   private static final String MESSAGES = "Messages";
   private static final String MICRO_SECONDS = "μs";
   
@@ -73,11 +70,9 @@ public class DestinationStats {
   private final LinkedMovingAverages delayedPublishedMessageAverages;
   private final LinkedMovingAverages transactedPublishedMessageAverages;
 
-  private final List<LinkedMovingAverages> averageList;
   //</editor-fold>
 
   DestinationStats(){
-    averageList = new ArrayList<>();
     noInterestMessageAverages = create(ACCUMULATOR.ADD, "No Interest", MESSAGES );
     publishedMessageAverages = create(ACCUMULATOR.ADD, "Published messages",  MESSAGES );
     subscribedMessageAverages = create(ACCUMULATOR.ADD, "Subscribed messages",  MESSAGES );
@@ -91,10 +86,6 @@ public class DestinationStats {
     readTimeAverages = create(ACCUMULATOR.AVE, "Time to read messages from resource",  MICRO_SECONDS);
     writeTimeAverages = create(ACCUMULATOR.AVE, "Time to write messages to resource",  MICRO_SECONDS);
     deleteTimeAverages = create(ACCUMULATOR.AVE, "Time to delete messages from resource",  MICRO_SECONDS);
-  }
-
-  public List<LinkedMovingAverages> getAverageList(){
-    return new ArrayList<>(averageList);
   }
 
   public void subscriptionAdded(){
@@ -198,12 +189,6 @@ public class DestinationStats {
 
   public LinkedMovingAverages getTransactedPublishedMessageAverages() {
     return transactedPublishedMessageAverages;
-  }
-
-  private LinkedMovingAverages create(ACCUMULATOR accumulator, String name, String units){
-    LinkedMovingAverages linkedMovingAverages = MovingAverageFactory.getInstance().createLinked(accumulator, name, 1, 5, 4, TimeUnit.MINUTES, units);
-    averageList.add(linkedMovingAverages);
-    return linkedMovingAverages;
   }
 
 }
