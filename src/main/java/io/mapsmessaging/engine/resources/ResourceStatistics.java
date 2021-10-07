@@ -25,7 +25,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     cacheStats = new ArrayList<>();
     storage = resource.getStore();
     future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
-    storeStats.add(new ReadStats(create(ACCUMULATOR.ADD,"Disk Read Operations", "Disk Reads/second" )));
+    storeStats.add(new ReadStats(create(ACCUMULATOR.ADD, "Disk Read Operations", "Disk Reads/second")));
     storeStats.add(new WriteStats(create(ACCUMULATOR.ADD,"Disk Write Operations", "Disk Writes/second" )));
     storeStats.add(new IOPSStats(create(ACCUMULATOR.ADD,"Disk IOPS", "Disk IO/second" )));
     storeStats.add(new DeleteStats(create(ACCUMULATOR.ADD,"Removal Operations", "Removals/second" )));
@@ -37,9 +37,9 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     storeStats.add(new TotalEmptySpaceStats(create(ACCUMULATOR.ADD,"Empty Space", "Bytes" )));
     storeStats.add(new PartitionCountStats(create(ACCUMULATOR.ADD,"Partition Count", "Partitions" )));
     if(resource.getStore().getStatistics() instanceof CacheStatistics){
-      cacheStats.add(new CacheHitStats(create(ACCUMULATOR.ADD,"Cache Hits", "Hits/second" )));
-      cacheStats.add(new CacheMissStats(create(ACCUMULATOR.ADD,"Cache Miss", "Hits/second" )));
-      cacheStats.add(new CacheSizeStats(create(ACCUMULATOR.ADD,"Cache Size", "Entries" )));
+      cacheStats.add(new CacheHitStats(create(ACCUMULATOR.ADD, "Cache Hits", "Hits/second")));
+      cacheStats.add(new CacheMissStats(create(ACCUMULATOR.ADD, "Cache Miss", "Hits/second")));
+      cacheStats.add(new CacheSizeStats(create(ACCUMULATOR.ADD, "Cache Size", "Entries")));
     }
 
   }
@@ -52,14 +52,14 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   @Override
   public void run() {
-    io.mapsmessaging.storage.Statistics storeStats = storage.getStatistics();
-    if(storeStats instanceof CacheStatistics){
-      CacheStatistics cacheStatistics = (CacheStatistics)storeStats;
+    io.mapsmessaging.storage.Statistics actualStats = storage.getStatistics();
+    if(actualStats instanceof CacheStatistics){
+      CacheStatistics cacheStatistics = (CacheStatistics)actualStats;
       processCacheStatistics(cacheStatistics);
       processStoreStatistics((StorageStatistics) cacheStatistics.getStorageStatistics());
     }
     else{
-      processStoreStatistics((StorageStatistics) storeStats);
+      processStoreStatistics((StorageStatistics) actualStats);
     }
   }
 
@@ -76,7 +76,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private abstract class CacheStats{
+  private static abstract class CacheStats{
     private final LinkedMovingAverages movingAverage;
 
     public CacheStats(LinkedMovingAverages movingAverage){
@@ -91,7 +91,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   }
 
-  public class CacheMissStats extends CacheStats{
+  public static class CacheMissStats extends CacheStats{
 
     public CacheMissStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -102,7 +102,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  public class CacheHitStats extends CacheStats{
+  public static class CacheHitStats extends CacheStats{
 
     public CacheHitStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -113,7 +113,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  public class CacheSizeStats extends CacheStats{
+  public static class CacheSizeStats extends CacheStats{
 
     public CacheSizeStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -124,7 +124,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private abstract class StorageStats{
+  private abstract static class StorageStats{
     private final LinkedMovingAverages movingAverage;
 
     public StorageStats(LinkedMovingAverages movingAverage){
@@ -139,7 +139,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   }
 
-  private final class ReadStats extends StorageStats {
+  private static final class ReadStats extends StorageStats {
 
     public ReadStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -150,7 +150,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class WriteStats extends StorageStats {
+  private static final class WriteStats extends StorageStats {
 
     public WriteStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -161,7 +161,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class IOPSStats extends StorageStats {
+  private static final class IOPSStats extends StorageStats {
 
     public IOPSStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -172,7 +172,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class DeleteStats extends StorageStats {
+  private static final class DeleteStats extends StorageStats {
 
     public DeleteStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -183,7 +183,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class TotalSizeStats extends StorageStats {
+  private static final class TotalSizeStats extends StorageStats {
 
     public TotalSizeStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -194,7 +194,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class TotalEmptySpaceStats extends StorageStats {
+  private static final class TotalEmptySpaceStats extends StorageStats {
 
     public TotalEmptySpaceStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -205,7 +205,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class PartitionCountStats extends StorageStats {
+  private static final class PartitionCountStats extends StorageStats {
 
     public PartitionCountStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -216,7 +216,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class BytesWrittenStats extends StorageStats {
+  private static final class BytesWrittenStats extends StorageStats {
 
     public BytesWrittenStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -227,7 +227,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class BytesReadStats extends StorageStats {
+  private static final class BytesReadStats extends StorageStats {
 
     public BytesReadStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -238,7 +238,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private final class ReadLatencyStats extends StorageStats {
+  private static final class ReadLatencyStats extends StorageStats {
 
     public ReadLatencyStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
@@ -248,7 +248,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
       super.update(statistics.getReadLatency());
     }
   }
-  private final class WriteLatencyStats extends StorageStats {
+  private static final class WriteLatencyStats extends StorageStats {
 
     public WriteLatencyStats(LinkedMovingAverages movingAverage){
       super(movingAverage);
