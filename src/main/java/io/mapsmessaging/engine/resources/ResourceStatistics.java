@@ -33,9 +33,9 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     storeStats.add(new WriteLatencyStats(create(ACCUMULATOR.ADD,"Write Latency", "ms" )));
     storeStats.add(new BytesReadStats(create(ACCUMULATOR.ADD,"Bytes Read", "Bytes/second" )));
     storeStats.add(new BytesWrittenStats(create(ACCUMULATOR.ADD,"Bytes Written", "Bytes/second" )));
-    storeStats.add(new TotalSizeStats(create(ACCUMULATOR.ADD,"Total Size", "Bytes" )));
-    storeStats.add(new TotalEmptySpaceStats(create(ACCUMULATOR.ADD,"Empty Space", "Bytes" )));
-    storeStats.add(new PartitionCountStats(create(ACCUMULATOR.ADD,"Partition Count", "Partitions" )));
+    storeStats.add(new TotalSizeStats(create(ACCUMULATOR.DIFF,"Total Size", "Bytes" )));
+    storeStats.add(new TotalEmptySpaceStats(create(ACCUMULATOR.DIFF,"Empty Space", "Bytes" )));
+    storeStats.add(new PartitionCountStats(create(ACCUMULATOR.DIFF,"Partition Count", "Partitions" )));
     if(resource.getStore().getStatistics() instanceof CacheStatistics){
       cacheStats.add(new CacheHitStats(create(ACCUMULATOR.ADD, "Cache Hits", "Hits/second")));
       cacheStats.add(new CacheMissStats(create(ACCUMULATOR.ADD, "Cache Miss", "Hits/second")));

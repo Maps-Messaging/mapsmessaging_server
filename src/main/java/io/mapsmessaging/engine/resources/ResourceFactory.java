@@ -46,7 +46,7 @@ public class ResourceFactory {
 
   public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationPathManager pathManager, String fullyQualifiedPath, UUID uuid, DestinationType destinationType) throws IOException {
     if (resourceName.toLowerCase().startsWith("$sys")) {
-      return new Resource(messageExpiryHandler, null, fullyQualifiedPath);
+      return new Resource();
     } else {
       createMetaData(pathManager, resourceName, uuid, destinationType);
       return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath);

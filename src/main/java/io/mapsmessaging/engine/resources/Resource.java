@@ -42,6 +42,8 @@ public class Resource implements AutoCloseable {
     return totalRetained.sum();
   }
 
+  private static final AtomicLong INTERNAL_RESOURCE_COUNTER = new AtomicLong(0);
+
   private final @Getter String name;
   private final @Getter Storage<Message> store;
   private final @Getter boolean persistent;
@@ -50,6 +52,10 @@ public class Resource implements AutoCloseable {
   private @Getter long retainedIdentifier;
 
   private boolean isClosed;
+
+  public Resource() throws IOException {
+    this(null, null, "Internal-Resource:"+INTERNAL_RESOURCE_COUNTER.incrementAndGet());
+  }
 
   public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName) throws IOException {
     keyGen = new AtomicLong(0);

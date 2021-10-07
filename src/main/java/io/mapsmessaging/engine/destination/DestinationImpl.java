@@ -187,7 +187,7 @@ public class DestinationImpl implements BaseDestination {
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    resource = new Resource(null,null, name);
+    resource = new Resource();
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
