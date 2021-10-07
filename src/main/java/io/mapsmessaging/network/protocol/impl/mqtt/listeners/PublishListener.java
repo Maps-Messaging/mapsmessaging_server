@@ -110,7 +110,7 @@ public class PublishListener extends PacketListener {
   }
 
   private void processMessage(Publish publish, ProtocolImpl protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
-    Transformer transformer = protocol.destinationTransformationLookup(destination.getName() );
+    Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace() );
     Message message = createMessage(publish.getPayload(), publish.getPriority(), publish.isRetain(), publish.getQos(), protocol.getTransformation(), transformer);
     if(response != null){
       Transaction transaction = null;

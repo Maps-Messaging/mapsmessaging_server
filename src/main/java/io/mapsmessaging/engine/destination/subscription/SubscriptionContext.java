@@ -120,6 +120,9 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
 
   public SubscriptionContext setRootPath(String rootPath) {
     this.rootPath = Objects.requireNonNullElse(rootPath, "");
+    if(rootPath.length()>1 && !rootPath.endsWith("/")){
+      this.rootPath = this.rootPath+"/";
+    }
     return this;
   }
 

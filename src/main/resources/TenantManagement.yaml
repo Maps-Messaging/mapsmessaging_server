@@ -28,11 +28,10 @@
 #
 # Supported Tokens are
 # {user} == the username being used for the connection
-#
+# {protocol} == the protocol being used
 #-----------------------------------------------------------------------------
 
 ---
 TenantManagement:
   -
-#    default: /            # Used for all connections, unless explicitly found within the configuration
-#    user1:   /home/{user}    # Maps the user1 to /home/{user} path
+ #   default: /{user}/{protocol}            # Used for all connections, unless explicitly found within the configuration

@@ -83,6 +83,9 @@ public class SessionTenantManager {
     mappingValue = replaceToken(mappingValue, USER_TOKEN, username);
     mappingValue = replaceToken(mappingValue, PROTOCOL_TOKEN, protocol.getName());
     logger.log(LogMessages.NAMESPACE_MAPPING, username, mappingValue);
+    if(mappingValue.length() > 1 && !mappingValue.endsWith("/")){
+      mappingValue = mappingValue+"/";
+    }
     return mappingValue;
   }
 

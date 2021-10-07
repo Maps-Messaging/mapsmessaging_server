@@ -38,9 +38,8 @@ public class TemporaryDestination extends DestinationImpl {
     ownerDisconnected = false;
   }
 
-  public TemporaryDestination(@NonNull @NotNull Resource resource,
-      @NonNull @NotNull DestinationType destinationType) throws IOException {
-    super(resource, destinationType);
+  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
+    super(name, directory, resource, destinationType);
     ownerDisconnected = false;
   }
 

@@ -53,10 +53,10 @@ public class DestinationJMX implements HealthMonitor {
     this.destinationImpl = destinationImpl;
     typePath = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
     typePath.add("destinationType=" + destinationImpl.getResourceType().getName());
-    parseName(destinationImpl.getName());
+    parseName(destinationImpl.getFullyQualifiedNamespace());
     mbean = JMXManager.getInstance().register(this, typePath);
     movingAveragesJMXList = new ArrayList<>();
-    if(!destinationImpl.getName().startsWith("$SYS")) {
+    if(!destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
       DestinationStats stats = destinationImpl.getStats();
       for(LinkedMovingAverages linkedMovingAverages:stats.getAverageList()){
         movingAveragesJMXList.add(new LinkedMovingAveragesJMX(typePath, linkedMovingAverages));
@@ -176,7 +176,7 @@ public class DestinationJMX implements HealthMonitor {
   @Override
   @JMXBeanOperation(name = "checkHealth", description ="Returns the health status for this destination")
   public HealthStatus checkHealth() {
-    return new HealthStatus(destinationImpl.getName(), LEVEL.INFO, "Destination seems ok", mbean.getObjectName().toString());
+    return new HealthStatus(destinationImpl.getFullyQualifiedNamespace(), LEVEL.INFO, "Destination seems ok", mbean.getObjectName().toString());
   }
 
 

@@ -49,7 +49,7 @@ public class SessionDestinationManager implements DestinationFactory {
     List<DestinationImpl> response = manager.getDestinations();
     List<DestinationImpl> filteredResponse = new ArrayList<>();
     for(DestinationImpl destination:response){
-      if(destination.getName().startsWith(sessionTenantManager.getMapping())){
+      if(destination.getFullyQualifiedNamespace().startsWith(sessionTenantManager.getMapping())){
         filteredResponse.add(destination);
       }
     }

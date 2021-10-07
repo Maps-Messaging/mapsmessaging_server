@@ -52,10 +52,10 @@ public class SharedSubscription extends DestinationSubscription {
   public void close() {
     super.close();
     subscriptions.close();
-    SharedSubscriptionManager register = destinationImpl.findShareRegister(destinationImpl.getName());
+    SharedSubscriptionManager register = destinationImpl.findShareRegister(destinationImpl.getFullyQualifiedNamespace());
     register.delete(shareName);
     if(register.isEmpty()) {
-      destinationImpl.delShareRegistry(destinationImpl.getName());
+      destinationImpl.delShareRegistry(destinationImpl.getFullyQualifiedNamespace());
     }
   }
 

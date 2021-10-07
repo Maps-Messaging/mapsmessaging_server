@@ -18,13 +18,24 @@
 
 package io.mapsmessaging.api.transactions;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageAPITest;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.Transaction;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.CreditHandler;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.features.RetainHandler;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,17 +44,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.api.features.CreditHandler;
-import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.features.RetainHandler;
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.test.WaitForState;
 
 class SimpleTransactionalTest extends MessageAPITest implements MessageListener {
   private static final int MESSAGE_COUNT = 10;
@@ -90,7 +90,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
 
     WaitForState.waitFor(1, TimeUnit.SECONDS, () -> counter.get() != 0);
     Assertions.assertEquals(0, counter.get());
-    SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(destination.getName(), ClientAcknowledgement.AUTO);
+    SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(destination.getFullyQualifiedNamespace(), ClientAcknowledgement.AUTO);
     subscriptionContextBuilder.setReceiveMaximum(MESSAGE_COUNT)
         .setCreditHandler(CreditHandler.AUTO)
         .setRetainHandler(RetainHandler.SEND_ALWAYS);

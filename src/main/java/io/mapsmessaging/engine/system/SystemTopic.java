@@ -40,6 +40,11 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   }
 
   @Override
+  public String getName(){
+    return getFullyQualifiedNamespace();
+  }
+
+  @Override
   public String getDescription(){
     return "";
   }

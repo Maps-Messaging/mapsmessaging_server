@@ -136,8 +136,8 @@ public class DestinationSet implements Set<DestinationImpl> {
 
   @Override
   public boolean add(DestinationImpl destination) {
-    if (matches(context, destination.getName())) {
-      matching.put(destination.getName(), destination);
+    if (matches(context, destination.getFullyQualifiedNamespace())) {
+      matching.put(destination.getFullyQualifiedNamespace(), destination);
       return true;
     }
     return false;
@@ -148,7 +148,7 @@ public class DestinationSet implements Set<DestinationImpl> {
     if (o instanceof String) {
       return matching.remove(o) != null;
     } else if (o instanceof DestinationImpl) {
-      return matching.remove(((DestinationImpl) o).getName()) != null;
+      return matching.remove(((DestinationImpl) o).getFullyQualifiedNamespace()) != null;
     }
     return false;
   }

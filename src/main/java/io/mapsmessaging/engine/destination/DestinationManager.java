@@ -32,8 +32,10 @@ import io.mapsmessaging.engine.destination.tasks.StoreMessageTask;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
+import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.engine.tasks.Response;
+import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -104,8 +106,8 @@ public class DestinationManager implements DestinationFactory {
   }
 
   public void addSystemTopic(SystemTopic systemTopic) {
-    logger.log(LogMessages.DESTINATION_MANAGER_ADD_SYSTEM_TOPIC, systemTopic.getName());
-    destinationList.put(systemTopic.getName(), systemTopic);
+    logger.log(LogMessages.DESTINATION_MANAGER_ADD_SYSTEM_TOPIC, systemTopic.getFullyQualifiedNamespace());
+    destinationList.put(systemTopic.getFullyQualifiedNamespace(), systemTopic);
   }
 
   @Override
@@ -160,7 +162,7 @@ public class DestinationManager implements DestinationFactory {
 
         destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
       }
-      destinationList.put(destinationImpl.getName(), destinationImpl);
+      destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
     }
 
     //
@@ -193,8 +195,8 @@ public class DestinationManager implements DestinationFactory {
 
   @Override
   public synchronized DestinationImpl delete(DestinationImpl destinationImpl) {
-    if (!destinationImpl.getName().startsWith("$SYS")) {
-      DestinationImpl delete = destinationList.remove(destinationImpl.getName());
+    if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
+      DestinationImpl delete = destinationList.remove(destinationImpl.getFullyQualifiedNamespace());
       StoreMessageTask deleteDestinationTask = new ShutdownPhase1Task(delete, destinationManagerListeners, logger);
       Future<Response> response = destinationImpl.submit(deleteDestinationTask);
       long timeout = System.currentTimeMillis() + 10000; // ToDo: make configurable
@@ -269,11 +271,11 @@ public class DestinationManager implements DestinationFactory {
         DestinationImpl destinationImpl = scanDirectory(directory, pathManager);
         if (destinationImpl instanceof TemporaryDestination) {
           // Delete all temporary destinations on restart
-          logger.log(LogMessages.DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION, destinationImpl.getName());
+          logger.log(LogMessages.DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION, destinationImpl.getFullyQualifiedNamespace());
           destinationImpl.delete();
         } else {
-          destinationList.put(destinationImpl.getName(), destinationImpl);
-          logger.log(LogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getName());
+          destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
+          logger.log(LogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
         }
       }
       catch(IOException error){
@@ -284,26 +286,32 @@ public class DestinationManager implements DestinationFactory {
 
   private DestinationImpl scanDirectory( File directory, DestinationPathManager pathManager) throws IOException {
     MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
-    Resource resource = ResourceFactory.getInstance().scan(messageExpiryHandler, directory, pathManager);
+    ResourceProperties properties = ResourceFactory.getInstance().scanForProperties(directory);
+    Resource resource = null;
+    if(properties != null){
+      resource = ResourceFactory.getInstance().scan(messageExpiryHandler, directory, pathManager, properties);
+
+    }
     if (resource == null) {
       throw new IOException("Invalid resource found");
     }
-    String name = resource.getMappedName();
+    String name = properties.getResourceName();
+    String directoryPath = FilePathHelper.cleanPath(directory.toString()+ File.separator);
     DestinationType destinationType = DestinationType.TOPIC;
     DestinationImpl response;
     if(name.toLowerCase().startsWith(TEMPORARY_TOPIC)){
       destinationType = DestinationType.TEMPORARY_TOPIC;
-      response = new TemporaryDestination(resource, destinationType);
+      response = new TemporaryDestination(name, directoryPath, resource, destinationType);
     }
     else if(name.toLowerCase().startsWith(TEMPORARY_QUEUE)){
       destinationType = DestinationType.TEMPORARY_QUEUE;
-      response = new TemporaryDestination(resource, destinationType);
+      response = new TemporaryDestination(name, directoryPath, resource, destinationType);
     }
     else{
       if(name.toLowerCase().startsWith(QUEUE[0]) || name.toLowerCase().startsWith(QUEUE[1])){
         destinationType = DestinationType.QUEUE;
       }
-      response = new DestinationImpl(resource, destinationType);
+      response = new DestinationImpl(name, directoryPath, resource, destinationType);
     }
     messageExpiryHandler.setDestination(response);
     return response;

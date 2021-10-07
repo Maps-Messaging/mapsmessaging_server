@@ -112,7 +112,7 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public void hibernate() {
-    logger.log(LogMessages.DESTINATION_SUBSCRIPTION_HIBERNATE, destinationImpl.getName(), sessionId);
+    logger.log(LogMessages.DESTINATION_SUBSCRIPTION_HIBERNATE, destinationImpl.getFullyQualifiedNamespace(), sessionId);
     acknowledgementController.clear();
     messageStateManager.rollbackInFlightMessages();
     //
@@ -125,7 +125,7 @@ public class DestinationSubscription extends Subscription {
   public void wakeUp(SessionImpl sessionImpl) {
     if (this.sessionImpl == null && hibernating && sessionImpl != null) {
       super.wakeUp(sessionImpl);
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_WAKEUP, destinationImpl.getName(), sessionImpl.getName());
+      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_WAKEUP, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
       schedule();
     }
   }
@@ -162,7 +162,7 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public String getName() {
-    return destinationImpl.getName();
+    return destinationImpl.getFullyQualifiedNamespace();
   }
 
   public long getMessagesSent() {
@@ -288,7 +288,7 @@ public class DestinationSubscription extends Subscription {
     acknowledgementController.sent(message);
     eventStateManager.setSubscription(activeSubscription);
     callback.sendMessage(destinationImpl, eventStateManager, message, completionTask);
-    logger.log(LogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getName(), sessionId, message.getIdentifier());
+    logger.log(LogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
     ThreadContext.clearMap();
   }
 
@@ -339,13 +339,13 @@ public class DestinationSubscription extends Subscription {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
 
     if (isAck) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_ACK, messageId, destinationImpl.getName(), sessionId);
+      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_ACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
       acknowledgementController.ack(messageId);
       messageStateManager.commit(messageId);
       messagesAcked++;
       destinationImpl.complete(messageId);
     } else {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_ROLLBACK, messageId, destinationImpl.getName(), sessionId);
+      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_ROLLBACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
       acknowledgementController.rollback(messageId);
       messageStateManager.rollback(messageId);
       messagesRolledBack++;
@@ -400,11 +400,11 @@ public class DestinationSubscription extends Subscription {
         }
       }
     } catch (IOException e) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, e, destinationImpl.getName(), sessionImpl.getName());
+      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, e, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
     } catch (CancelledKeyException ignore) {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getName(), sessionImpl.getName(), th);
+      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
     }
   }
 
@@ -446,7 +446,7 @@ public class DestinationSubscription extends Subscription {
   public String toString() {
     return "SessionID:" + sessionId
         + " Ack Controller:" + acknowledgementController.toString()
-        + " Destination:" + destinationImpl.getName()
+        + " Destination:" + destinationImpl.getFullyQualifiedNamespace()
         + " MessageState:" + messageStateManager.toString()
         + " Paused:" + isPaused
         + " Sent:" + messagesSent

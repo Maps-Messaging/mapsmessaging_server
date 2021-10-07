@@ -32,6 +32,6 @@ public class QueueSubscriptionBuilder extends CommonSubscriptionBuilder {
 
   @Override
   public Subscription construct(SessionImpl session, String sessionId) throws IOException {
-    return construct(destination.getName(), session, sessionId);
+    return construct(destination.getFullyQualifiedNamespace(), session, sessionId);
   }
 }

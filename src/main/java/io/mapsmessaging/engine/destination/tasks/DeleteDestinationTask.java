@@ -45,12 +45,12 @@ public class DeleteDestinationTask extends StoreMessageTask {
     try {
       destination.delete();
     } catch (IOException e) {
-      logger.log(LogMessages.DESTINATION_MANAGER_DELETED_TOPIC,  destination.getName(), e);
+      logger.log(LogMessages.DESTINATION_MANAGER_DELETED_TOPIC,  destination.getFullyQualifiedNamespace(), e);
     }
     for (DestinationManagerListener listener : listeners) {
       listener.deleted(destination);
     }
-    logger.log(LogMessages.DESTINATION_MANAGER_DELETED_TOPIC, destination.getName());
+    logger.log(LogMessages.DESTINATION_MANAGER_DELETED_TOPIC, destination.getFullyQualifiedNamespace());
     return new BooleanResponse(true);
   }
 

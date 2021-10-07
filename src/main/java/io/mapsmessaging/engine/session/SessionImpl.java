@@ -199,7 +199,7 @@ public class SessionImpl {
   }
 
   public String absoluteToNormalised(Destination destination) {
-    return destination.getName().substring(destinationManager.getRoot().length());
+    return destination.getFullyQualifiedNamespace().substring(destinationManager.getRoot().length());
   }
 
   //</editor-fold>

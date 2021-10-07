@@ -44,6 +44,7 @@ import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
+import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
@@ -101,7 +102,8 @@ public class DestinationImpl implements BaseDestination {
   private final Resource resource;
   private final DestinationType destinationType;
 
-  private final String name;
+  private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
+  private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
   private volatile boolean closed;
   //</editor-fold>
@@ -112,18 +114,19 @@ public class DestinationImpl implements BaseDestination {
    * running destination
    *
    * @param name a client unique name to use for the destination, typically supplied via an API
-   * @param path the physical location to store the files for this destination
+   * @param pathManager the physical location to store the files for this destination
    * @param uuid a UUID that makes this destination a very unique entity
    * @param destinationType the type of resource that this destination represents
    * @throws IOException if, at anytime, the file system was unable to construct, read or write to the required files
    */
-  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  DestinationPathManager path, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    this.name = name;
+  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  DestinationPathManager pathManager, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
+    this.fullyQualifiedNamespace = name;
+    fullyQualifiedDirectoryRoot = computePath(pathManager, uuid);
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this),name, path,  uuid, destinationType);
+    resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType);
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
@@ -145,8 +148,9 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the resource type detected during the reload
    * @throws IOException if, at any point, the underlying file structures are corrupt or unable to be used
    */
-  public DestinationImpl( @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    this.name = resource.getMappedName();
+  public DestinationImpl( @NonNull @NotNull String name,@NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
+    this.fullyQualifiedNamespace = name;
+    fullyQualifiedDirectoryRoot = directory;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
@@ -169,16 +173,6 @@ public class DestinationImpl implements BaseDestination {
     closed = false;
   }
 
-  //
-  // We now need to roll back all events found in the transaction manager
-  //
-  private void rollbackTransactionsOnReload() throws IOException {
-    List<Long> transactionIds = transactionMessageManager.getTransactions();
-    for(Long transaction:transactionIds){
-      abort(transaction);
-    }
-  }
-
   /**
    * This constructor is only used for internal topics, typically $SYS topics and as such have a limited feature set, like no delayed publishing, no transactional publishing
    * and things like that, they are simply in memory resources that manage the system statistics
@@ -187,12 +181,13 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of the destination
    */
   public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    this.name = name;
+    this.fullyQualifiedNamespace = name;
+    fullyQualifiedDirectoryRoot = "";
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    resource = new Resource(new MessageExpiryHandler(this),"", null, name, "Memory");
+    resource = new Resource(null,null, name);
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
@@ -216,6 +211,19 @@ public class DestinationImpl implements BaseDestination {
     }
     if(transactionMessageManager != null) {
       transactionMessageManager.close();
+    }
+  }
+
+  private static String computePath(@NonNull @NotNull  DestinationPathManager pathManager, UUID uuid){
+    return FilePathHelper.cleanPath(pathManager.getDirectory() + File.separator + uuid.toString() + File.separator);
+  }
+  //
+  // We now need to roll back all events found in the transaction manager
+  //
+  private void rollbackTransactionsOnReload() throws IOException {
+    List<Long> transactionIds = transactionMessageManager.getTransactions();
+    for(Long transaction:transactionIds){
+      abort(transaction);
     }
   }
 
@@ -295,9 +303,8 @@ public class DestinationImpl implements BaseDestination {
    *
    * @return String name of the destination
    */
-  @Override
-  public String getName() {
-    return name;
+  public String getFullyQualifiedNamespace() {
+    return fullyQualifiedNamespace;
   }
 
   /**
@@ -315,7 +322,7 @@ public class DestinationImpl implements BaseDestination {
    * @return File path for this destination
    */
   public String getPhysicalLocation() {
-    return resource.getName();
+    return fullyQualifiedDirectoryRoot;
   }
 
   /**
@@ -561,10 +568,6 @@ public class DestinationImpl implements BaseDestination {
   //<editor-fold desc="Pre-delivery functions for messages that we have but can not be distributed to clients yet">
   public DelayedMessageManager getDelayedStatus() {
     return delayedMessageManager;
-  }
-
-  public TransactionalMessageManager getTransactionManager() {
-    return transactionMessageManager;
   }
   //</editor-fold>
 

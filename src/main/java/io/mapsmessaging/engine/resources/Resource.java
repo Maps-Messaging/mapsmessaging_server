@@ -25,13 +25,14 @@ import io.mapsmessaging.engine.destination.DestinationPathManager;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
-import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class Resource implements AutoCloseable {
 
@@ -42,7 +43,6 @@ public class Resource implements AutoCloseable {
   }
 
   private final @Getter String name;
-  private final @Getter String mappedName;
   private final @Getter Storage<Message> store;
   private final @Getter boolean persistent;
   private final AtomicLong keyGen;
@@ -51,52 +51,42 @@ public class Resource implements AutoCloseable {
 
   private boolean isClosed;
 
-  public Resource(MessageExpiryHandler messageExpiryHandler, String path, DestinationPathManager pathManager, String name, String type) throws IOException {
-    this.name = path+name;
-    if(pathManager == null){
-      mappedName = "Memory";
-    }
-    else {
-      this.mappedName = name;
-    }
+  public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName) throws IOException {
     keyGen = new AtomicLong(0);
     isClosed = false;
     retainedIdentifier = -1;
-    String tmpName = path;
-    if (File.separatorChar == '/') {
-      while (tmpName.indexOf('\\') != -1) {
-        tmpName = tmpName.replace("\\", File.separator);
-      }
-    } else {
-      while (tmpName.indexOf('/') != -1) {
-        tmpName = tmpName.replace("/", File.separator);
-      }
-    }
-    tmpName += "message.data";
+    name = fileName+"message.data";
     Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("basePath", tmpName);
+    properties.put("basePath", fileName);
+    StorageBuilder<Message> builder = new StorageBuilder<>();
 
+    String type = "Memory";
     Map<String, String> storeProperties = new LinkedHashMap<>();
     if(pathManager != null) {
       storeProperties.put("Sync", "" + pathManager.isEnableSync());
       storeProperties.put("ItemCount", ""+pathManager.getItemCount());
       storeProperties.put("MaxPartitionSize",""+ pathManager.getPartitionSize());
       storeProperties.put("ExpiredEventPoll", ""+pathManager.getExpiredEventPoll());
+      type = pathManager.getType();
+      if(type.equalsIgnoreCase("file")){
+        type = "Partition";
+      }
+      if(pathManager.isEnableCache()){
+        builder.setCache(pathManager.getCacheType());
+        builder.enableCacheWriteThrough(pathManager.isWriteThrough());
+      }
     }
-    StorageBuilder<Message> builder = new StorageBuilder<>();
     builder.setProperties(properties)
-        .setName(tmpName)
+        .setName(name)
         .setFactory(new MessageFactory())
         .setProperties(storeProperties)
-        .setExpiredHandler(messageExpiryHandler)
         .setStorageType(type);
-    if(pathManager != null && pathManager.isEnableCache()){
-      builder.setCache(pathManager.getCacheType());
-      builder.enableCacheWriteThrough(pathManager.isWriteThrough());
+    if(messageExpiryHandler != null){
+      builder.setExpiredHandler(messageExpiryHandler);
     }
 
     store = builder.build();
-    persistent = !(type.equals("Memory"));
+    persistent = !(type.equalsIgnoreCase("Memory"));
   }
 
   @Override

@@ -22,6 +22,7 @@ import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
 import io.mapsmessaging.engine.destination.subscription.state.MessageStateManagerImpl;
+import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.FileBitSetFactoryImpl;
@@ -54,22 +55,12 @@ public class DestinationStateManagerFactory {
 
   private BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name ) throws IOException {
     if (persistent && destinationImpl.isPersistent()) {
-      String tmpName = destinationImpl.getPhysicalLocation();
-      if (File.separatorChar == '/') {
-        while (tmpName.indexOf('\\') != -1) {
-          tmpName = tmpName.replace("\\", File.separator);
-        }
-      } else {
-        while (tmpName.indexOf('/') != -1) {
-          tmpName = tmpName.replace("/", File.separator);
-        }
-      }
-      // Find the path to the resource,
-      tmpName += "state";
-      File directory = new File(tmpName);
+      String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
+      fullyQualifiedPath += "state";
+      File directory = new File(fullyQualifiedPath);
       Files.createDirectories(directory.toPath());
-      tmpName += File.separator + name + ".bin";
-      return new FileBitSetFactoryImpl(tmpName, Constants.BITSET_BLOCK_SIZE);
+      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath+File.separator + name + ".bin");
+      return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
     } else {
       return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
     }

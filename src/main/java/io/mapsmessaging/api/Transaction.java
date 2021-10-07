@@ -147,8 +147,8 @@ public class Transaction {
     if(delayed > 0){
       message.setDelayed(delayed - System.currentTimeMillis());
     }
-    if(!list.containsKey(destination.getName())){
-      list.put(destination.getName(), destination);
+    if(!list.containsKey(destination.getFullyQualifiedNamespace())){
+      list.put(destination.getFullyQualifiedNamespace(), destination);
     }
     destination.destinationImpl.storeTransactionalMessage(internalId, message);
   }

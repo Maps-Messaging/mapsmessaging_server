@@ -36,7 +36,7 @@ public class SessionSubscriptionJMX {
 
   public SessionSubscriptionJMX(List<String> parent, DestinationImpl destination, DestinationSubscription subscription){
     List<String> local = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
-    local.add("destination="+destination.getName());
+    local.add("destination="+destination.getFullyQualifiedNamespace());
     this.subscription = subscription;
     mbean = JMXManager.getInstance().register(this, local);
   }

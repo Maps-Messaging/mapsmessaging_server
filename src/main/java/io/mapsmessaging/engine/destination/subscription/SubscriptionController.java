@@ -325,7 +325,7 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public SubscribedEventManager wake(SessionImpl sessionImpl, DestinationImpl destination){
     for (Subscription subscription : activeSubscriptions.values()) {
-      if(subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getName())){
+      if(subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getFullyQualifiedNamespace())){
         subscription.wakeUp(sessionImpl);
         if (subscription instanceof DestinationSubscription && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
           queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
@@ -416,7 +416,7 @@ public class SubscriptionController implements DestinationManagerListener {
   public void hibernateSubscription(String subscriptionId) {
     //ToDo this needs to be queued via the task queue
     for(Entry<DestinationImpl, Subscription> entry:activeSubscriptions.entrySet()){
-      if(entry.getKey().getName().equals(subscriptionId)){
+      if(entry.getKey().getFullyQualifiedNamespace().equals(subscriptionId)){
         entry.getValue().hibernate();
       }
     }

@@ -68,7 +68,7 @@ public class Session {
       if(destination != null) {
         if (destination.getResourceType().equals(DestinationType.TOPIC)) {
           result = new Topic(destination);
-          destinations.put(result.getName(), result);
+          destinations.put(result.getFullyQualifiedNamespace(), result);
         } else {
           throw new IOException("Expected topic but destination is a "+destination.getResourceType().getName());
         }
@@ -84,7 +84,7 @@ public class Session {
       if(destination != null) {
         if (destination.getResourceType().equals(DestinationType.QUEUE)) {
           result = new Queue(destination);
-          destinations.put(result.getName(), result);
+          destinations.put(result.getFullyQualifiedNamespace(), result);
         } else {
           throw new IOException("Expected a queue but destination is a "+destination.getResourceType().getName());
         }
@@ -96,7 +96,7 @@ public class Session {
   public DestinationImpl deleteDestination(Destination destination) {
     DestinationImpl deleted = sessionImpl.deleteDestination(destination.destinationImpl);
     if(deleted != null) {
-      destinations.remove(deleted.getName());
+      destinations.remove(deleted.getFullyQualifiedNamespace());
     }
     return deleted;
   }
@@ -120,7 +120,7 @@ public class Session {
           TemporaryDestinationDeletionTask deletionTask = new TemporaryDestinationDeletionTask((TemporaryDestination) destination);
           sessionImpl.addClosureTask(deletionTask);
         }
-        destinations.put(result.getName(), result);
+        destinations.put(result.getFullyQualifiedNamespace(), result);
       }
     }
     return result;
@@ -212,10 +212,10 @@ public class Session {
 
     @Override
     public void sendMessage(@NonNull @NotNull DestinationImpl destinationImpl, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
-      Destination destination = destinations.get(destinationImpl.getName());
+      Destination destination = destinations.get(destinationImpl.getFullyQualifiedNamespace());
       if (destination == null) {
         destination = new Destination(destinationImpl);
-        destinations.put(destination.getName(), destination);
+        destinations.put(destination.getFullyQualifiedNamespace(), destination);
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
       listener.sendMessage(destination, normalisedName, subscription, message, completionTask);

@@ -43,8 +43,8 @@ public class Destination implements BaseDestination {
   }
 
   @Override
-  public String getName() {
-    return destinationImpl.getName();
+  public String getFullyQualifiedNamespace() {
+    return destinationImpl.getFullyQualifiedNamespace();
   }
 
   public long getStoredMessages() throws IOException {

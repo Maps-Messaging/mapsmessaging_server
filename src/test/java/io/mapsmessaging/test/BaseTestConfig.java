@@ -50,7 +50,7 @@ public class BaseTestConfig extends BaseTest {
     List<DestinationImpl> destinations = md.getDestinationManager().getDestinations();
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations){
-      if(!destination.getName().startsWith("$")){
+      if(!destination.getFullyQualifiedNamespace().startsWith("$")){
         toDelete.add(destination);
       }
     }
@@ -124,7 +124,7 @@ public class BaseTestConfig extends BaseTest {
 
       List<DestinationImpl> destinationImpls = md.getDestinationManager().getDestinations();
       for (DestinationImpl destinationImpl : destinationImpls) {
-        if (!destinationImpl.getName().startsWith("$")) {
+        if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$")) {
           md.getDestinationManager().delete(destinationImpl);
         }
       }
