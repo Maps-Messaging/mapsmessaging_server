@@ -62,21 +62,23 @@ public class DestinationLocator {
     List<File> validPaths = new ArrayList<>();
     for(File explore:rootPaths){
       if(explore != null) {
-        if (confirmPath(explore)) {
-          validPaths.add(explore);
-        } else {
-          File[] fileList = explore.listFiles();
-          if(fileList != null) {
-            for (File potential : fileList) {
-              if (confirmPath(potential)) {
-                validPaths.add(potential);
-              }
-            }
-          }
-        }
+        testFile(explore, validPaths);
       }
     }
     return validPaths;
+  }
+
+  private void testFile(File explore, List<File> validPaths){
+    if (confirmPath(explore)) {
+      validPaths.add(explore);
+    } else {
+      File[] fileList = explore.listFiles();
+      if(fileList != null) {
+        for (File potential : fileList) {
+          testFile(potential, validPaths);
+        }
+      }
+    }
   }
 
   private void scanSubdirectory( File path,  List<File> rootPaths){
