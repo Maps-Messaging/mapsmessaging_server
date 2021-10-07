@@ -124,7 +124,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  private static abstract class StorageStats{
+  private abstract static class StorageStats{
     private final LinkedMovingAverages movingAverage;
 
     public StorageStats(LinkedMovingAverages movingAverage){
