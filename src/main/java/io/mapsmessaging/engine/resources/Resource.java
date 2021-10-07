@@ -52,7 +52,7 @@ public class Resource implements AutoCloseable {
   private boolean isClosed;
 
   public Resource(MessageExpiryHandler messageExpiryHandler, String path, DestinationPathManager pathManager, String name, String type) throws IOException {
-    this.name = name;
+    this.name = path+name;
     if(pathManager == null){
       mappedName = "Memory";
     }
