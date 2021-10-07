@@ -116,14 +116,5 @@ public class DetailedStatisticsJMX {
     return statistics.getSecondMoment();
   }
 
-  @JMXBeanAttribute(name = "Sum of logs", description ="Returns the current som of logs within the current range")
-  public double getSumOfLogs() {
-    SummaryStatistics statistics = movingAverages.getDetailedStatistics();
-    if(statistics == null){
-      return 0.0;
-    }
-    return statistics.getSumOfLogs();
-  }
-
   //</editor-fold>
 }
