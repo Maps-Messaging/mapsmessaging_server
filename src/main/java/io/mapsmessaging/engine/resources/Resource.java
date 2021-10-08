@@ -92,6 +92,7 @@ public class Resource implements AutoCloseable {
     }
 
     store = builder.build();
+    keyGen.set(store.getLastKey());
     persistent = !(type.equalsIgnoreCase("Memory"));
   }
 
