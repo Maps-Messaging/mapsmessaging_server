@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +29,6 @@ import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.WaitForState;
 
 class StompSelectorTest extends StompBaseTest implements Listener {
 
@@ -47,8 +47,33 @@ class StompSelectorTest extends StompBaseTest implements Listener {
     client.subscribeW(topicName, this, map);
     for(int x=0;x<EVENT_COUNT;x++){
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
+      map = new HashMap<>();
+      map.put("receipt","message"+x);
+      client.sendW(topicName, json, map);
+    }
+    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> adder.sum() == EVENT_COUNT/2);
+    client.disconnect();
+    Assertions.assertEquals(EVENT_COUNT/2, adder.sum());
+  }
+
+  @Test
+  void simpleSelectorTest2() throws IOException, LoginException, InterruptedException {
+    adder.reset();
+    Client client = new Client("127.0.0.1", 8675, null, null);
+    Assertions.assertTrue(client.isConnected());
+    Map<String, String> map = new HashMap<>();
+    map.put("id", "subscribe1");
+    map.put("selector", "extension('json', 'odd') = 0");
+    String topicName = getTopicName();
+    client.subscribeW(topicName, this, map);
+    for(int x=0;x<EVENT_COUNT;x++){
+      String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
       client.send(topicName, json);
     }
+    map = new HashMap<>();
+    map.put("receipt","message");
+
+    client.sendW("flush", "This is a simple flush of the network", map);
     WaitForState.waitFor(4, TimeUnit.SECONDS, () -> adder.sum() == EVENT_COUNT/2);
     client.disconnect();
     Assertions.assertEquals(EVENT_COUNT/2, adder.sum());
