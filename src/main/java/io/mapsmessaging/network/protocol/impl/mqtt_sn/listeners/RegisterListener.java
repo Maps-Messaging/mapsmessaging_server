@@ -25,6 +25,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Register;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.RegisterAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
+import java.io.IOException;
 
 public class RegisterListener extends PacketListener {
 
@@ -35,6 +36,12 @@ public class RegisterListener extends PacketListener {
     short topicId = stateEngine.getTopicAlias(topic);
     if (topicId == -1) {
       // Exceeded the maximum number of registered topics
+      return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.NOT_SUPPORTED);
+    }
+    try {
+      session.findDestination(topic);
+      // We don't need to do anything with this destination at present
+    } catch (IOException e) {
       return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.NOT_SUPPORTED);
     }
     return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.ACCEPTED);
