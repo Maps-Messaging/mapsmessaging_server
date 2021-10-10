@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import io.mapsmessaging.test.BaseTestConfig;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,7 +26,6 @@ import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
 import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.BaseTestConfig;
 
 public class mqttSNSubscriptionTest extends BaseTestConfig {
 
@@ -296,7 +296,7 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
     if(qos != 0) {
       Assertions.assertTrue(published.await(TIMEOUT, TimeUnit.MILLISECONDS));
     }
-    Assertions.assertTrue(subscribed.await(TIMEOUT, TimeUnit.MILLISECONDS));
+    Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
     client.unSubscribe(registeredTopicId.get());
     Assertions.assertTrue(unsubscribed.await(TIMEOUT, TimeUnit.MILLISECONDS));
