@@ -96,7 +96,7 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
     client.connect("simpleConnection", true, (short)50);
     Assertions.assertTrue(connected.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
-    client.register("test");
+    client.register("/mqttsn/test");
     Assertions.assertTrue(registered.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
     Assertions.assertNotEquals(registeredTopicId.get(), 0);
@@ -177,7 +177,7 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
     //
     // Test Registered Topics
     //
-    client.subscribe("test", 1, 0);
+    client.subscribe("/mqttsn/test", 1, 0);
     Assertions.assertTrue(subscribed.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
     client.disconnect();
@@ -271,7 +271,7 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
     client.connect("simpleConnection", true, (short)50);
     Assertions.assertTrue(connected.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
-    client.register("test");
+    client.register("/mqttsn/test");
     Assertions.assertTrue(registered.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
     Assertions.assertNotEquals(registeredTopicId.get(), -1);
@@ -391,7 +391,7 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
 
     for(int x=0;x<registeredTopics.length;x++){
       long count = registered.getCount();
-      publisher.register("/test/wild/topic"+x);
+      publisher.register("/mqttsn/test/wild/topic"+x);
       long timeout = System.currentTimeMillis() + TIMEOUT;
       while(registered.getCount() != 0 &&
           registered.getCount() == count){
@@ -469,7 +469,7 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
     //
     // Test Registered Topics
     //
-    client.subscribe("/test/wild/+", qos, 0);
+    client.subscribe("/mqttsn/test/wild/+", qos, 0);
     Assertions.assertTrue(subscribed.await(TIMEOUT, TimeUnit.MILLISECONDS));
     long count = published.getCount();
     for(int x=0;x<PUBLISH_COUNT;x++){

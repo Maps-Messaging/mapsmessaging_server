@@ -1,7 +1,24 @@
+
+---
 DestinationManager:
-   -
-      data:
-         -
-            name: root
-            directory: ./target/dataDirectory
-            namespace: /
+   data:
+      -
+         name: root
+         directory: ./target/dataDirectory
+         namespace: /
+         type: File # could be either File or Memory
+         sync: disable # Enable or Disable
+         itemCount: 20000 # Number of messages to be stored inside a partition
+         maxPartitionSize: 536870912  # 1/2 GB
+         expiredEventPoll: 10 # Time in seconds to scan for expired events
+         cache:
+            type: WeakReference # could be WeakReference or JCS for the apache cache implementation
+            writeThrough: enable # Could be either enable or disable
+
+      -
+         name: mqtt-sn
+         directory: ./target/dataMqttSn
+         namespace: /mqttsn/
+         type: Memory # Specifying Memory for MQTT-SN to test for slow disk I/O on performance of MQTT-SN
+
+

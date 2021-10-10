@@ -40,10 +40,10 @@ public class mqttSNSleepTest extends BaseTestConfig {
     MqttsClientManager sleepy = new MqttsClientManager("localhost", 1884);
     MqttsClientManager hyper = new MqttsClientManager("localhost", 1884);
 
-    sleepy.subscribe("test");
+    sleepy.subscribe("/mqttsn/test");
     sleepy.client.sleep(30); // We sleep for 30 seconds
     for(int x=0;x<PUBLISH_COUNT;x++) {
-      Assertions.assertTrue(hyper.publish("test", "These should be waiting for sleepy".getBytes()));
+      Assertions.assertTrue(hyper.publish("/mqttsn/test", "These should be waiting for sleepy".getBytes()));
     }
     //
     // At this point sleepy should have 0 publish events
@@ -70,7 +70,7 @@ public class mqttSNSleepTest extends BaseTestConfig {
     //
     sleepy.receivedEvents.set(0);
     for(int x=0;x<PUBLISH_COUNT;x++) {
-      Assertions.assertTrue(hyper.publish("test", "These should be waiting for sleepy".getBytes()));
+      Assertions.assertTrue(hyper.publish("/mqttsn/test", "These should be waiting for sleepy".getBytes()));
     }
     //
     // At this point sleepy should have 0 publish events
@@ -97,7 +97,7 @@ public class mqttSNSleepTest extends BaseTestConfig {
     //
     sleepy.receivedEvents.set(0);
     for(int x=0;x<PUBLISH_COUNT;x++) {
-      Assertions.assertTrue(hyper.publish("test", "These should be waiting for sleepy".getBytes()));
+      Assertions.assertTrue(hyper.publish("/mqttsn/test", "These should be waiting for sleepy".getBytes()));
     }
 
 

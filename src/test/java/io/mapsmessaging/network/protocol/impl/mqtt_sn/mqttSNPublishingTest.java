@@ -119,7 +119,7 @@ public class mqttSNPublishingTest extends BaseTestConfig {
     client.connect("simpleConnection", true, (short)50);
     Assertions.assertTrue(connected.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
-    client.register("test");
+    client.register("/mqttsn/test");
     Assertions.assertTrue(registered.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
     Assertions.assertNotEquals(registeredTopicId.get(), -1);
