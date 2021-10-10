@@ -18,29 +18,33 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
+
+import io.mapsmessaging.test.BaseTestConfig;
+import io.mapsmessaging.test.WaitForState;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
 import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.BaseTestConfig;
 
 public class mqttSNSleepTest extends BaseTestConfig {
-
-  private final static long TIMEOUT = 5000;
-  private final static int PUBLISH_COUNT = 5;
 
   private int connectionCounter = 0;
 
   @Test
-  public void sleepingClientTest(){
+  public void sleepingClientTest() throws IOException {
     MqttsClientManager sleepy = new MqttsClientManager("localhost", 1884);
     MqttsClientManager hyper = new MqttsClientManager("localhost", 1884);
 
     sleepy.subscribe("/mqttsn/test");
+    delay(1000);
     sleepy.client.sleep(30); // We sleep for 30 seconds
     for(int x=0;x<PUBLISH_COUNT;x++) {
       Assertions.assertTrue(hyper.publish("/mqttsn/test", "These should be waiting for sleepy".getBytes()));
@@ -58,12 +62,8 @@ public class mqttSNSleepTest extends BaseTestConfig {
     sleepy.client.wakeupForNewMessages();
 
     // We should ask the server to send any outstanding events and then go back to sleep
-    long timeout = System.currentTimeMillis() + TIMEOUT;
-    while(sleepy.receivedEvents.get() != PUBLISH_COUNT && timeout > System.currentTimeMillis()){
-      delay(1);
-    }
-
-    Assertions.assertEquals(sleepy.receivedEvents.get(), PUBLISH_COUNT);
+    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(sleepy.receivedEvents.get() == PUBLISH_COUNT));
+    Assertions.assertEquals(PUBLISH_COUNT, sleepy.receivedEvents.get());
 
     //
     // So far so good, but is sleepy asleep again
@@ -85,10 +85,7 @@ public class mqttSNSleepTest extends BaseTestConfig {
     // final task, lets wake up, and stay awake...
     sleepy.client.connect("sleepTest", false, (short)50);
 
-    timeout = System.currentTimeMillis() + TIMEOUT;
-    while(sleepy.receivedEvents.get() != PUBLISH_COUNT && timeout > System.currentTimeMillis()){
-      delay(1);
-    }
+    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(sleepy.receivedEvents.get() == PUBLISH_COUNT));
 
     Assertions.assertEquals(sleepy.receivedEvents.get(), PUBLISH_COUNT);
 
@@ -101,10 +98,7 @@ public class mqttSNSleepTest extends BaseTestConfig {
     }
 
 
-    timeout = System.currentTimeMillis() + TIMEOUT;
-    while(sleepy.receivedEvents.get() != PUBLISH_COUNT && timeout > System.currentTimeMillis()){
-      delay(1);
-    }
+    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(sleepy.receivedEvents.get() == PUBLISH_COUNT));
     sleepy.close();
     hyper.close();
   }

@@ -18,6 +18,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
+
+import io.mapsmessaging.test.BaseTestConfig;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,12 +29,8 @@ import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
 import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.BaseTestConfig;
 
 public class mqttSNPublishingTest extends BaseTestConfig {
-
-  private final static long TIMEOUT = 5000;
-  private final static int PUBLISH_COUNT = 20;
 
   @Test
   public void  subscribeTopicAndPublishQoS0() throws InterruptedException {

@@ -18,7 +18,12 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
+
 import io.mapsmessaging.test.BaseTestConfig;
+import io.mapsmessaging.test.WaitForState;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,9 +33,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class mqttSNSubscriptionTest extends BaseTestConfig {
-
-  private final static long TIMEOUT = 5000;
-  private final static int PUBLISH_COUNT = 20;
 
   @Test
   public void registerAndSubscribeTopic() throws InterruptedException {
@@ -306,21 +308,21 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
 
 
   @Test
-  public void subscribeWildcardQoS0TopicAndPublish() throws InterruptedException {
+  public void subscribeWildcardQoS0TopicAndPublish() throws InterruptedException, IOException {
     subscribeWildcardQoSnTopicAndPublish(0);
   }
 
   @Test
-  public void subscribeWildcardQoS1TopicAndPublish() throws InterruptedException {
+  public void subscribeWildcardQoS1TopicAndPublish() throws InterruptedException, IOException {
     subscribeWildcardQoSnTopicAndPublish(1);
   }
 
   @Test
-  public void subscribeWildcardQoS2TopicAndPublish() throws InterruptedException {
+  public void subscribeWildcardQoS2TopicAndPublish() throws InterruptedException, IOException {
     subscribeWildcardQoSnTopicAndPublish(2);
   }
 
-  public void subscribeWildcardQoSnTopicAndPublish(int qos) throws InterruptedException {
+  public void subscribeWildcardQoSnTopicAndPublish(int qos) throws InterruptedException, IOException {
 
     MqttsClient publisher = new MqttsClient("localhost",1884 );
 
@@ -390,14 +392,9 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
     Assertions.assertTrue(pubConnected.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
     for(int x=0;x<registeredTopics.length;x++){
-      long count = registered.getCount();
+      long count = registered.getCount()-1;
       publisher.register("/mqttsn/test/wild/topic"+x);
-      long timeout = System.currentTimeMillis() + TIMEOUT;
-      while(registered.getCount() != 0 &&
-          registered.getCount() == count){
-        delay(1);
-        Assertions.assertFalse(timeout < System.currentTimeMillis());
-      }
+      WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->registered.getCount() == count);
     }
     Assertions.assertTrue(registered.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
@@ -486,7 +483,256 @@ public class mqttSNSubscriptionTest extends BaseTestConfig {
     if(qos != 0) {
       Assertions.assertTrue(published.await(TIMEOUT, TimeUnit.MILLISECONDS));
     }
-    Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS));
+    Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS), "Expected "+PUBLISH_COUNT+" received count down at "+received.getCount()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    );
     Assertions.assertTrue(registerRequests.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
     client.unSubscribe(registeredTopicId.get());
