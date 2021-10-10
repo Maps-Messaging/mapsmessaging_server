@@ -22,7 +22,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>message_daemon</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -351,27 +351,27 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Extensible_JMS_Selector_Parser</artifactId>
-      <version>1.0.6</version>
+      <version>1.0.7</version>
     </dependency>
 
     <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>2.0.1</version>
+      <version>2.0.2</version>
     </dependency>
 
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>DynamicStorage</artifactId>
-      <version>2.0.7</version>
+      <version>2.0.8</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
