@@ -25,20 +25,20 @@ public class DestinationPathManager {
 
   private static final String OPTIONAL_PATH = "{folder}";
 
+  private final @Getter long partitionSize;
+  private final @Getter int itemCount;
+  private final @Getter int expiredEventPoll;
+
+  private final @Getter boolean enableSync;
+  private final @Getter boolean remap;
+  private final @Getter boolean writeThrough;
+  private final @Getter boolean enableCache;
+
   private final @Getter String name;
   private final @Getter String directory;
   private final @Getter String namespace;
   private final @Getter String type;
-  private final @Getter boolean enableSync;
-  private final @Getter boolean remap;
-  private final @Getter int itemCount;
-  private final @Getter int expiredEventPoll;
-  private final @Getter long partitionSize;
-
   private final @Getter String cacheType;
-  private final @Getter boolean writeThrough;
-  private final @Getter boolean enableCache;
-
 
   public DestinationPathManager(ConfigurationProperties properties){
     name = properties.getProperty("name");
@@ -58,7 +58,7 @@ public class DestinationPathManager {
       namespace = propertyNamespace;
     }
     enableSync = properties.getBooleanProperty("sync", false);
-    itemCount = properties.getIntProperty("itemCount", 524288);
+    itemCount = properties.getIntProperty("itemCount", 524_288);
     partitionSize = properties.getLongProperty("maxPartitionSize", 4_294_967_296L);
 
     expiredEventPoll = properties.getIntProperty("expiredEventPoll", 1);
@@ -74,29 +74,6 @@ public class DestinationPathManager {
       writeThrough = false;
       enableCache = false;
     }
-  }
-
-  public String getRootDirectory(){
-    if(remap){
-      return directory.substring(0, directory.indexOf(OPTIONAL_PATH));
-    }
-    return directory;
-  }
-
-  public String calculateDirectory(String destinationPath){
-    if(remap){
-      String response;
-      String tmp = destinationPath.substring(namespace.length());
-      if(tmp.contains("/")){
-        String sub = tmp.substring(0, tmp.indexOf("/"));
-        response = directory.replace(OPTIONAL_PATH, sub);
-      }
-      else {
-        response = directory.replace(OPTIONAL_PATH, tmp);
-      }
-      return response;
-    }
-    return directory;
   }
 
   public String getTrailingPath() {

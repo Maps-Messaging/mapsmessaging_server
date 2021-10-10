@@ -149,10 +149,13 @@ public class DestinationManager implements DestinationFactory {
     if (destinationImpl == null) {
       UUID destinationUUID = UUID.randomUUID();
       DestinationPathManager pathManager = rootPath;
+      String namespace="";
       for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
         if (name.startsWith(entry.getKey())) {
-          pathManager = entry.getValue();
-          break;
+          if(namespace.length() < entry.getKey().length()){
+            pathManager = entry.getValue();
+            namespace = entry.getKey();
+          }
         }
       }
       if(destinationType.isTemporary()) {
