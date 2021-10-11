@@ -69,8 +69,8 @@ To access these via maven simply add the following to your pom.xml file.
 
 The nightly installation builds can be found here
 
-[message_daemon-1.1.4-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1.4-install.tar.gz) \
-[message_daemon-1.1.4-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.1.4-install.zip)
+[message_daemon-1.2.1-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.tar.gz) \
+[message_daemon-1.2.1-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.zip)
 
 
 The MapsMessaging repository at [https://mapsmessaging.jfrog.io/](https://mapsmessaging.jfrog.io/)
