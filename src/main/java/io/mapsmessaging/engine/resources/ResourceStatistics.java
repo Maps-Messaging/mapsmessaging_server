@@ -1,8 +1,6 @@
 package io.mapsmessaging.engine.resources;
 
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.stats.Statistics;
-import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.cache.CacheStatistics;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
@@ -16,14 +14,14 @@ import java.util.concurrent.TimeUnit;
 public class ResourceStatistics extends Statistics implements AutoCloseable, Runnable {
 
   private final Future<?> future;
-  private final Storage<Message> storage;
+  private final Resource resource;
   private final List<StorageStats> storeStats;
   private final List<CacheStats> cacheStats;
 
   public ResourceStatistics(Resource resource){
     storeStats = new ArrayList<>();
     cacheStats = new ArrayList<>();
-    storage = resource.getStore();
+    this.resource = resource;
     future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
     storeStats.add(new ReadStats(create(ACCUMULATOR.ADD, "Disk Read Operations", "Disk Reads/second")));
     storeStats.add(new WriteStats(create(ACCUMULATOR.ADD,"Disk Write Operations", "Disk Writes/second" )));
@@ -36,12 +34,12 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     storeStats.add(new TotalSizeStats(create(ACCUMULATOR.DIFF,"Total Size", "Bytes" )));
     storeStats.add(new TotalEmptySpaceStats(create(ACCUMULATOR.DIFF,"Empty Space", "Bytes" )));
     storeStats.add(new PartitionCountStats(create(ACCUMULATOR.DIFF,"Partition Count", "Partitions" )));
-    if(resource.getStore().getStatistics() instanceof CacheStatistics){
+
+    if(resource.getStatistics() instanceof CacheStatistics){
       cacheStats.add(new CacheHitStats(create(ACCUMULATOR.ADD, "Cache Hits", "Hits/second")));
       cacheStats.add(new CacheMissStats(create(ACCUMULATOR.ADD, "Cache Miss", "Hits/second")));
       cacheStats.add(new CacheSizeStats(create(ACCUMULATOR.ADD, "Cache Size", "Entries")));
     }
-
   }
 
   @Override
@@ -52,14 +50,15 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   @Override
   public void run() {
-    io.mapsmessaging.storage.Statistics actualStats = storage.getStatistics();
-    if(actualStats instanceof CacheStatistics){
-      CacheStatistics cacheStatistics = (CacheStatistics)actualStats;
-      processCacheStatistics(cacheStatistics);
-      processStoreStatistics((StorageStatistics) cacheStatistics.getStorageStatistics());
-    }
-    else{
-      processStoreStatistics((StorageStatistics) actualStats);
+    io.mapsmessaging.storage.Statistics actualStats = resource.getStatistics();
+    if(actualStats != null) {
+      if (actualStats instanceof CacheStatistics) {
+        CacheStatistics cacheStatistics = (CacheStatistics) actualStats;
+        processCacheStatistics(cacheStatistics);
+        processStoreStatistics((StorageStatistics) cacheStatistics.getStorageStatistics());
+      } else {
+        processStoreStatistics((StorageStatistics) actualStats);
+      }
     }
   }
 

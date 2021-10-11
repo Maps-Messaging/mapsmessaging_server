@@ -22,6 +22,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationPathManager;
+import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
@@ -148,5 +149,9 @@ public class Resource implements AutoCloseable {
 
   public synchronized long size() throws IOException {
     return store.size();
+  }
+
+  public @Nullable Statistics getStatistics() {
+    return store.getStatistics();
   }
 }
