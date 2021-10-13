@@ -80,8 +80,8 @@ public class DestinationManager implements DestinationFactory {
     if(rootConf instanceof ConfigurationProperties){
       ConfigurationProperties rootCfg = (ConfigurationProperties)rootConf;
       DestinationPathManager destinationPathManager = new DestinationPathManager(rootCfg);
-      properties.put(destinationPathManager.getNamespace(), destinationPathManager);
-      if (destinationPathManager.getNamespace().equals("/")) {
+      properties.put(destinationPathManager.getNamespaceMapping(), destinationPathManager);
+      if (destinationPathManager.getNamespaceMapping().equals("/")) {
         rootPathLookup = destinationPathManager;
       }
     }
@@ -89,8 +89,8 @@ public class DestinationManager implements DestinationFactory {
       for (Object configuration : (List<?>) rootConf) {
         if (configuration instanceof ConfigurationProperties) {
           DestinationPathManager destinationPathManager = new DestinationPathManager((ConfigurationProperties) configuration);
-          properties.put(destinationPathManager.getNamespace(), destinationPathManager);
-          if (destinationPathManager.getNamespace().equals("/")) {
+          properties.put(destinationPathManager.getNamespaceMapping(), destinationPathManager);
+          if (destinationPathManager.getNamespaceMapping().equals("/")) {
             rootPathLookup = destinationPathManager;
           }
         } else {
@@ -123,10 +123,6 @@ public class DestinationManager implements DestinationFactory {
   @Override
   public synchronized DestinationImpl findOrCreate(String name) throws IOException {
     return findOrCreate(name, DestinationType.TOPIC);
-  }
-
-  public String getRoot(){
-    return "";
   }
 
   @Override

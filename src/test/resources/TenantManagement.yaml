@@ -8,7 +8,20 @@
 # {user} == the username being used for the connection
 #
 
+---
 TenantManagement:
-  -
-#    default: /            # Used for all connections, unless explicitly found within the configuration
-#    user1:   /home/{user}    # Maps the user1 to /home/{user} path
+  data:
+    -
+      name: default                                  # Either a specific username or {user} all users
+      namespaceRoot: /{user}/{protocol}              # Used for all connections, unless explicitly found within the configuration
+      scope: user                                    # Applies to a single user
+
+    -
+      name: global                                # Name of the global config
+      namespaceRoot: /common/                     # Pathname to use for the global common paths
+      scope: global                               # Scope of this ( Global / Group )
+
+    -
+      name: anonymous                              # For testing, especially MQTT, we need to have all tests access the root namespace
+      namespaceRoot:                               # Indicates, access to ALL topics/queues
+      scope: user                                  # Must match username anonymous

@@ -30,6 +30,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -200,10 +201,10 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
-    MessageDetails md = new MessageDetails(destination, subscription, message);
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    MessageDetails md = new MessageDetails(messageEvent.getSubscription(), messageEvent.getMessage());
     messageList.add(md);
-    completionTask.run();
+    messageEvent.getCompletionTask().run();
   }
 
   @Override
@@ -213,11 +214,9 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
 
   private final static class MessageDetails{
     Message message;
-    Destination destination;
     SubscribedEventManager subscription;
 
-    public MessageDetails(Destination destination, SubscribedEventManager subscription, Message message) {
-      this.destination = destination;
+    public MessageDetails(SubscribedEventManager subscription, Message message) {
       this.message = message;
       this.subscription = subscription;
     }

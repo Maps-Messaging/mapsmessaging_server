@@ -404,6 +404,7 @@ public class DestinationSubscription extends Subscription {
     } catch (CancelledKeyException ignore) {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
+      th.printStackTrace();
       logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
     }
   }

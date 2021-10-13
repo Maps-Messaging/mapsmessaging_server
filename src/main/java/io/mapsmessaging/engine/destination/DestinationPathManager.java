@@ -36,7 +36,7 @@ public class DestinationPathManager {
 
   private final @Getter String name;
   private final @Getter String directory;
-  private final @Getter String namespace;
+  private final @Getter String namespaceMapping;
   private final @Getter String type;
   private final @Getter String cacheType;
 
@@ -52,10 +52,10 @@ public class DestinationPathManager {
     directory = tmp;
     remap = (propertyNamespace.endsWith(OPTIONAL_PATH) && directory.contains(OPTIONAL_PATH));
     if(remap){
-      namespace = propertyNamespace.substring(0, propertyNamespace.indexOf(OPTIONAL_PATH));
+      namespaceMapping = propertyNamespace.substring(0, propertyNamespace.indexOf(OPTIONAL_PATH));
     }
     else{
-      namespace = propertyNamespace;
+      namespaceMapping = propertyNamespace;
     }
     enableSync = properties.getBooleanProperty("sync", false);
     itemCount = properties.getIntProperty("itemCount", 524_288);

@@ -32,16 +32,23 @@ import org.jetbrains.annotations.NotNull;
 
 public class SessionDestinationManager implements DestinationFactory {
 
-  private final SessionTenantManager sessionTenantManager;
+  private SessionTenantConfig sessionTenantConfig = new SessionTenantConfig("", null);
   private final DestinationManager manager;
 
-  public SessionDestinationManager(DestinationManager manager, SessionTenantManager sessionTenantManager){
-    this.sessionTenantManager = sessionTenantManager;
+  public SessionDestinationManager(DestinationManager manager){
     this.manager = manager;
   }
 
-  public String getRoot(){
-    return sessionTenantManager.getMapping();
+  public String calculateNamespace(String destinationName){
+    return sessionTenantConfig.calculateDestinationName(destinationName);
+  }
+  public String calculateOriginalNamespace(String fqn){
+    return sessionTenantConfig.calculateOriginalName(fqn);
+  }
+
+
+  public void setSessionTenantConfig(SessionTenantConfig config){
+    sessionTenantConfig = config;
   }
 
   @Override
@@ -49,7 +56,7 @@ public class SessionDestinationManager implements DestinationFactory {
     List<DestinationImpl> response = manager.getDestinations();
     List<DestinationImpl> filteredResponse = new ArrayList<>();
     for(DestinationImpl destination:response){
-      if(destination.getFullyQualifiedNamespace().startsWith(sessionTenantManager.getMapping())){
+      if(destination.getFullyQualifiedNamespace().startsWith(sessionTenantConfig.getTenantPath())){
         filteredResponse.add(destination);
       }
     }
@@ -58,22 +65,22 @@ public class SessionDestinationManager implements DestinationFactory {
 
   @Override
   public DestinationImpl find(String name) {
-    return manager.find(adjustName(name));
+    return manager.find(name);
   }
 
   @Override
   public DestinationImpl findOrCreate(String name) throws IOException {
-    return manager.findOrCreate(adjustName(name));
+    return manager.findOrCreate(name);
   }
 
   @Override
   public DestinationImpl findOrCreate(String name, DestinationType destinationType) throws IOException {
-    return manager.findOrCreate(adjustName(name), destinationType);
+    return manager.findOrCreate(name, destinationType);
   }
 
   @Override
   public DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    return manager.create(adjustName(name), destinationType);
+    return manager.create(name, destinationType);
   }
 
   @Override
@@ -96,7 +103,4 @@ public class SessionDestinationManager implements DestinationFactory {
     manager.removeListener(listener);
   }
 
-  private String adjustName(String name){
-    return sessionTenantManager.getAbsoluteName(name);
-  }
 }

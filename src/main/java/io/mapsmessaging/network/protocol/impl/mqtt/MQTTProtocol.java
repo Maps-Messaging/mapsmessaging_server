@@ -18,10 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -238,15 +237,15 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String  normalisedName, @NonNull @NotNull SubscribedEventManager subscription,
-                          @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
-    SubscriptionContext subInfo = subscription.getContext();
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     QualityOfService qos = subInfo.getQualityOfService();
+    String destinationName = messageEvent.getDestinationName();
     int packetId = 0;
     if (qos.isSendPacketId()) {
-      packetId = packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
+      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier());
     }
-    message = processTransformer(normalisedName, message);
+    Message message = processTransformer(destinationName, messageEvent.getMessage());
 
     byte[] payload;
     if(transformation != null){
@@ -256,13 +255,13 @@ public class MQTTProtocol extends ProtocolImpl {
       payload = message.getOpaqueData();
     }
     if(topicNameMapping != null){
-      String tmp = topicNameMapping.get(normalisedName);
+      String tmp = topicNameMapping.get(destinationName);
       if(tmp != null){
-        normalisedName = tmp;
+        destinationName = tmp;
       }
     }
-    Publish publish = new Publish(message.isRetain(), payload, qos, packetId, normalisedName);
-    publish.setCallback(completionTask);
+    Publish publish = new Publish(message.isRetain(), payload, qos, packetId, destinationName);
+    publish.setCallback(messageEvent.getCompletionTask());
     writeFrame(publish);
   }
 

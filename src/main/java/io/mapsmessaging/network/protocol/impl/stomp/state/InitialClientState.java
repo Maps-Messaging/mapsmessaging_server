@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.state;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
@@ -40,7 +39,7 @@ public class InitialClientState implements State {
   }
 
   @Override
-  public boolean sendMessage(StateEngine engine, Destination destination, String normalisedName, SubscriptionContext info, Message message, Runnable completionTask) {
+  public boolean sendMessage(StateEngine engine, String destinationName, SubscriptionContext info, Message message, Runnable completionTask) {
     return false;
   }
 }

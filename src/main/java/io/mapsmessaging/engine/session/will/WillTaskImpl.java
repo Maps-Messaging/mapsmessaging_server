@@ -74,7 +74,6 @@ public class WillTaskImpl implements Runnable {
         ThreadContext.put("session", details.getSessionId());
         ThreadContext.put("protocol", details.getProtocol());
         ThreadContext.put("version", details.getVersion());
-
         logger.log(LogMessages.WILL_TASK_SENDING, details.getMsg());
         DestinationImpl dest = MessageDaemon.getInstance().getDestinationManager().find(details.getDestination());
         if (dest != null) {

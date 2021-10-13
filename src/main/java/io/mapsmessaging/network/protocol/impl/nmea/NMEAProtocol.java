@@ -19,12 +19,11 @@ package io.mapsmessaging.network.protocol.impl.nmea;
 
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.network.io.EndPoint;
@@ -105,7 +104,7 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // This protocol is read only
   }
 

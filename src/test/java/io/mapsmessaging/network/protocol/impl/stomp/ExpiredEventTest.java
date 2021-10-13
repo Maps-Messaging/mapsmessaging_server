@@ -34,8 +34,6 @@ public class ExpiredEventTest extends StompBaseTest implements Listener{
       client.send(topicName, json, publishMap);
     }
     WaitForState.waitFor(4, TimeUnit.SECONDS, () -> adder.sum() == EVENT_COUNT);
-
-    Thread.sleep(10000);
     client.disconnect();
     Assertions.assertEquals(EVENT_COUNT, adder.sum());
   }

@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.state;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
@@ -28,5 +27,5 @@ public interface State {
 
   void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException;
 
-  boolean sendMessage(StateEngine engine, Destination destination, String normalisedName, SubscriptionContext context, Message message, Runnable completionTask);
+  boolean sendMessage(StateEngine engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask);
 }

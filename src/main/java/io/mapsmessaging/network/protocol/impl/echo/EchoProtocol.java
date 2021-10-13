@@ -18,9 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.echo;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.SubscribedEventManager;
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -76,7 +74,7 @@ public class EchoProtocol extends io.mapsmessaging.network.protocol.ProtocolImpl
   // Yes this is duplicate, but for the sake of clarity in the classes it can stay
   @java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // There is nothing to do
   }
 

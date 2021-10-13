@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.admin.SessionManagerJMX;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -178,36 +177,11 @@ public class SessionManager {
       }
 
       //
-      // Setup the Will message
-      //
-      WillTaskImpl willTaskImpl = null;
-      if (sessionContext.getWillTopic() != null) {
-        MessageDaemon.getInstance()
-            .getDestinationManager()
-            .findOrCreate(sessionContext.getWillTopic());
-        WillDetails willDetails =
-            new WillDetails(
-                sessionContext.getWillMessage(),
-                sessionContext.getWillTopic(),
-                sessionContext.getWillDelay(),
-                sessionContext.getId(),
-                sessionContext.getProtocol().getName(),
-                sessionContext.getProtocol().getVersion());
-        logger.log(LogMessages.SESSION_MANAGER_WILL_TASK, sessionContext.getId(), willDetails.toString());
-        WillTaskImpl old = willTaskManager.remove(sessionContext.getId());
-        if (old != null) {
-          old.cancel();
-        }
-        willTaskImpl = willTaskManager.put(sessionContext.getId(), willDetails);
-      }
-
-      //
       // Create the session
       //
-      SessionTenantManager sessionTenantManager = new SessionTenantManager(sessionContext.getProtocol(), securityContext);
       SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext, lockPipeline[lockIndex].subscriptionManagerFactory);
-      SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager, sessionTenantManager);
-      sessionImpl = new SessionImpl(sessionContext, securityContext, sessionDestinationManager, subscriptionManager, willTaskImpl);
+      SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);
+      sessionImpl = new SessionImpl(sessionContext, securityContext, sessionDestinationManager, subscriptionManager);
 
       //
       // Either reload or create a new subscription manager
@@ -379,6 +353,7 @@ public class SessionManager {
   public long getTotalExpired(){
     return expiredSessions.sum();
   }
+
 
   //
   // This class locks the specific hashed pipeline for Session creation and deletion

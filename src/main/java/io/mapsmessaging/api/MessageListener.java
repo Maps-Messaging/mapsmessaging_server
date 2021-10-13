@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.api;
 
-import io.mapsmessaging.api.message.Message;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,16 +32,8 @@ import org.jetbrains.annotations.NotNull;
 public interface MessageListener {
 
   /**
-   *
-   * @param destination The Destination that the message was from
-   * @param subscription The subscribedEventManager to use to acknowledge and integrate path of the message
-   * @param message The message that was sent
-   * @param completionTask This task needs to be called once all delivery action is done
+   * @param messageEvent
    */
-  void sendMessage( @NonNull @NotNull Destination destination,
-                    @NonNull @NotNull String normalisedName,
-                    @NonNull @NotNull SubscribedEventManager subscription,
-                    @NonNull @NotNull Message message,
-                    @NonNull @NotNull Runnable completionTask);
+  void sendMessage(@NotNull @NonNull MessageEvent messageEvent);
 
 }

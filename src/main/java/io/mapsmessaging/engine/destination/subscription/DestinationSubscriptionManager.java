@@ -74,6 +74,7 @@ public class DestinationSubscriptionManager implements Subscribable{
   }
 
   public Subscribable remove(String name) {
+
     Subscribable subscribable = subscriptions.remove(name);
     if (subscribable != null) {
       logger.log(LogMessages.SUBSCRIPTION_MGR_REMOVED, name, subscribable.getName());

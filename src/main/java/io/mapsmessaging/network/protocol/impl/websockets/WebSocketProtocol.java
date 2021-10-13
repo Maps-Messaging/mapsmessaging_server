@@ -18,9 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.websockets;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.SubscribedEventManager;
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -41,7 +39,7 @@ public class WebSocketProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // This is an in-line protocol and does not actively receive events to send from the messaging engine
   }
 

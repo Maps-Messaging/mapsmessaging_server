@@ -21,11 +21,11 @@ package io.mapsmessaging.api.transactions;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageAPITest;
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
@@ -33,13 +33,13 @@ import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.FakeProtocolImpl;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -105,9 +105,8 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination,  @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message,
-      @NotNull Runnable completionTask) {
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     counter.incrementAndGet();
-    completionTask.run();
+    messageEvent.getCompletionTask().run();
   }
 }

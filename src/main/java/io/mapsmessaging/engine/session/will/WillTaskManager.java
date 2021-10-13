@@ -50,6 +50,16 @@ public class WillTaskManager {
     return willActiveTasks.remove(id);
   }
 
+  public WillTaskImpl replace(String id, WillDetails willDetails) {
+    willTaskMap.remove(id);
+    WillTaskImpl old = willActiveTasks.remove(id);
+    if(old != null){
+      old.cancel();
+    }
+    return put(id, willDetails);
+  }
+
+
   public WillTaskImpl put(String id, WillDetails willDetails) {
     WillTaskImpl task = new WillTaskImpl(willDetails);
     willTaskMap.put(id, willDetails);

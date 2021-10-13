@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.state;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
@@ -131,8 +130,8 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     return protocolImpl;
   }
 
-  public void sendMessage(Destination destination, String normalisedName, SubscriptionContext context, Message message, Runnable completionTask) {
-    currentState.sendMessage(this, destination, getMapping(normalisedName), context, message, completionTask);
+  public void sendMessage(String normalisedName, SubscriptionContext context, Message message, Runnable completionTask) {
+    currentState.sendMessage(this, getMapping(normalisedName), context, message, completionTask);
   }
 
   public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {

@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.state;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
@@ -52,9 +51,9 @@ public class ConnectedState implements State {
   }
 
   @Override
-  public boolean sendMessage(StateEngine engine, Destination destination,String normalisedName,  SubscriptionContext context, Message message, Runnable completionTask) {
+  public boolean sendMessage(StateEngine engine, String destinationName,  SubscriptionContext context, Message message, Runnable completionTask) {
     io.mapsmessaging.network.protocol.impl.stomp.frames.Message msg = new io.mapsmessaging.network.protocol.impl.stomp.frames.Message(1024);
-    msg.packMessage(destination.getFullyQualifiedNamespace(), context.getAlias(), message);
+    msg.packMessage(destinationName, context.getAlias(), message);
     msg.setCallback(new MessageCompletionHandler(completionTask));
     return engine.send(msg);
   }

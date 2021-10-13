@@ -18,12 +18,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
@@ -156,14 +154,14 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
-    SubscriptionContext subInfo = subscription.getContext();
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     QualityOfService qos = subInfo.getQualityOfService();
     int packetId = 0;
     if (qos.isSendPacketId()) {
-      packetId = packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
+      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier());
     }
-    short alias = stateEngine.findTopicAlias(normalisedName);
+    short alias = stateEngine.findTopicAlias(messageEvent.getDestinationName());
     //
     // If this event is from a wild card then the client would not have registered it, so lets do that now
     //
@@ -171,14 +169,14 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       //
       // Updating the client with the new topic id for the destination
       //
-      alias = stateEngine.getTopicAlias(normalisedName);
-      Register register = new Register(alias, (short) 0, normalisedName);
+      alias = stateEngine.getTopicAlias(messageEvent.getDestinationName());
+      Register register = new Register(alias, (short) 0, messageEvent.getDestinationName());
       writeFrame(register);
     }
-    Publish publish = new Publish(alias, packetId, message.getOpaqueData());
+    Publish publish = new Publish(alias, packetId,  messageEvent.getMessage().getOpaqueData());
     publish.setQoS(qos);
-    publish.setCallback(completionTask);
-    stateEngine.sendPublish(this, normalisedName, publish);
+    publish.setCallback(messageEvent.getCompletionTask());
+    stateEngine.sendPublish(this, messageEvent.getDestinationName(), publish);
   }
 
   public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {

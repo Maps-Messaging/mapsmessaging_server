@@ -18,10 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp;
 
-import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SubscribedEventManager;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
@@ -113,9 +111,9 @@ public class AMQPProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription,@NonNull @NotNull Message message,@NonNull @NotNull Runnable completionTask) {
-    protonEngine.sendMessage(message, subscription);
-    completionTask.run();
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    protonEngine.sendMessage(messageEvent.getMessage(), messageEvent.getSubscription());
+    messageEvent.getCompletionTask().run();
   }
 
   @Override

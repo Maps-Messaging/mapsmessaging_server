@@ -18,14 +18,13 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
-import io.mapsmessaging.api.SubscribedEventManager;
-import java.util.concurrent.atomic.AtomicLong;
-import org.jetbrains.annotations.NotNull;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import java.util.concurrent.atomic.AtomicLong;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class FakeProtocolImpl extends ProtocolImpl  {
 
@@ -44,8 +43,8 @@ public class FakeProtocolImpl extends ProtocolImpl  {
   }
 
   @Override
-  public void sendMessage(Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
-    listener.sendMessage(destination, normalisedName, subscription, message, completionTask);
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    listener.sendMessage(messageEvent);
   }
 
   @Override

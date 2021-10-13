@@ -218,7 +218,8 @@ public class Session {
         destinations.put(destination.getFullyQualifiedNamespace(), destination);
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
-      listener.sendMessage(destination, normalisedName, subscription, message, completionTask);
+      MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);
+      listener.sendMessage(event);
     }
   }
   //</editor-fold>

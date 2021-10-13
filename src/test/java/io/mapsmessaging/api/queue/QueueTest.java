@@ -18,26 +18,27 @@
 
 package io.mapsmessaging.api.queue;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageAPITest;
+import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
-import java.io.IOException;
-import javax.security.auth.login.LoginException;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.session.FakeProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import java.io.IOException;
+import javax.security.auth.login.LoginException;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class QueueTest extends MessageAPITest implements MessageListener {
 
@@ -77,9 +78,9 @@ public class QueueTest extends MessageAPITest implements MessageListener {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription,@NotNull Message message,@NotNull Runnable completionTask) {
-    completionTask.run();
-    subscription.ackReceived(message.getIdentifier());
-    System.err.println("Received event ::"+message);
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    messageEvent.getCompletionTask().run();
+    messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
+    System.err.println("Received event ::"+messageEvent.getMessage());
   }
 }

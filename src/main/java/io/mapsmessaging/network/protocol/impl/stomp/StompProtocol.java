@@ -20,8 +20,7 @@ package io.mapsmessaging.network.protocol.impl.stomp;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -148,9 +147,9 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
-    message = processTransformer(normalisedName, message);
-    stateEngine.sendMessage(destination, normalisedName, subscription.getContext(), message, completionTask);
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    Message message = processTransformer(messageEvent.getDestinationName(), messageEvent.getMessage());
+    stateEngine.sendMessage(messageEvent.getDestinationName(), messageEvent.getSubscription().getContext(), message, messageEvent.getCompletionTask());
   }
 
   // <editor-fold desc="Read Frame functions">

@@ -33,5 +33,18 @@
 
 ---
 TenantManagement:
-  -
- #   default: /{user}/{protocol}            # Used for all connections, unless explicitly found within the configuration
+  data:
+    -
+      name: default                                  # Either a specific username or {user} all users
+      namespaceRoot: /{user}/{protocol}              # Used for all connections, unless explicitly found within the configuration
+      scope: user                                    # Applies to a single user
+
+    -
+      name: global                                  # Name of the global config
+      namespaceRoot: /common/                     # Pathname to use for the global common paths
+      scope: global                               # Scope of this ( Global / Group )
+
+    -
+      name: matthew                                 # Specific username
+      namespaceRoot: /                              # Indicates, access to ALL topics/queues
+      scope: user                                   # Must match username matthew

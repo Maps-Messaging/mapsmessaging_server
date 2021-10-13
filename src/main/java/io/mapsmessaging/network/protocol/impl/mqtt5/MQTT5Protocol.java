@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
@@ -275,12 +275,13 @@ public class MQTT5Protocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination destination,@NonNull @NotNull String normalisedName, @NonNull @NotNull  SubscribedEventManager subscription,@NonNull @NotNull  Message message,@NonNull @NotNull  Runnable completionTask) {
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    Message message = messageEvent.getMessage();
     if (maxBufferSize > 0 && message.getOpaqueData().length >= maxBufferSize) {
-      completionTask.run();
+      messageEvent.getCompletionTask().run();
       logger.log(LogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
-      sendPublishFrame(normalisedName, subscription, message, completionTask);
+      sendPublishFrame(messageEvent.getDestinationName(), messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
     }
   }
 

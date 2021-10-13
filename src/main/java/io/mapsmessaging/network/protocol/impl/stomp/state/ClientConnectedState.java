@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.state;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Send;
@@ -26,9 +25,9 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Send;
 public class ClientConnectedState extends ConnectedState {
 
   @Override
-  public boolean sendMessage(StateEngine engine, Destination destination,String normalisedName,  SubscriptionContext context, Message message, Runnable completionTask) {
+  public boolean sendMessage(StateEngine engine, String destinationName,  SubscriptionContext context, Message message, Runnable completionTask) {
     Send msg = new Send(1024);
-    msg.packMessage(normalisedName, message);
+    msg.packMessage(destinationName, message);
     msg.setCallback(new MessageCompletionHandler(completionTask));
     return engine.send(msg);
   }

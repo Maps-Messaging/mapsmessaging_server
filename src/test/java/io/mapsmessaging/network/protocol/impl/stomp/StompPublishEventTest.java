@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -222,9 +223,7 @@ class StompPublishEventTest extends StompBaseTest {
     map1.put("packet_id","END");
     client.send(topicName, tmp, map1);
     long timeout = System.currentTimeMillis()+60000;
-    while(!end.get() && timeout > System.currentTimeMillis()){
-      delay(1);
-    }
+    WaitForState.waitFor(1, TimeUnit.MINUTES, ()->end.get());
     Assertions.assertTrue(timeout> System.currentTimeMillis());
     Assertions.assertTrue(client.isConnected());
     client.unsubscribe(topicName,map);

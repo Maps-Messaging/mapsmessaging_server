@@ -21,6 +21,7 @@ package io.mapsmessaging.api.subscriptions;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageAPITest;
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
@@ -29,7 +30,6 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.session.FakeProtocolImpl;
 import io.mapsmessaging.test.WaitForState;
@@ -38,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -304,7 +305,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination, @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
-    System.err.println("Received from "+destination.getFullyQualifiedNamespace()+" for "+subscription.getContext().getAlias());
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    System.err.println("Received from "+messageEvent.getDestinationName()+" for "+messageEvent.getSubscription().getContext().getAlias());
   }
 }

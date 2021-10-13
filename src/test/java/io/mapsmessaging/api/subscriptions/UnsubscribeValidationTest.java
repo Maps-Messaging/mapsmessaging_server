@@ -21,6 +21,7 @@ package io.mapsmessaging.api.subscriptions;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageAPITest;
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
@@ -29,13 +30,13 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.FakeProtocolImpl;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -168,7 +169,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
   }
 
   @Override
-  public void sendMessage(@NotNull Destination destination,  @NotNull String normalisedName, @NotNull SubscribedEventManager subscription, @NotNull Message message, @NotNull Runnable completionTask) {
-    completionTask.run();
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    messageEvent.getCompletionTask().run();
   }
 }

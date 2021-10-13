@@ -126,6 +126,14 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     return this;
   }
 
+  public SubscriptionContext setDestinationName(String destinationName){
+    if(alias.equals(destinationName)){
+      alias = destinationName;
+    }
+    this.destinationName = destinationName;
+    return this;
+  }
+
   public SubscriptionContext setQualityOfService(QualityOfService qos) {
     this.qualityOfService = qos;
     return this;

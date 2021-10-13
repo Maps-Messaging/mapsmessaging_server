@@ -27,7 +27,13 @@ import org.jetbrains.annotations.NotNull;
 
 public interface DestinationFactory {
 
-  String getRoot();
+  default String calculateNamespace(String destinationName){
+    return destinationName;
+  }
+
+  default String calculateOriginalNamespace(String destinationName){
+    return destinationName;
+  }
 
   List<DestinationImpl> getDestinations();
 

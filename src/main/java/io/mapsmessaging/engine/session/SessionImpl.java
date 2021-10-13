@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationType;
@@ -27,13 +28,17 @@ import io.mapsmessaging.engine.destination.DestinationFactory;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.engine.session.will.WillTaskImpl;
+import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.Nullable;
@@ -45,25 +50,25 @@ public class SessionImpl {
   private final Future<?> scheduledFuture;
   private final SubscriptionController subscriptionManager;
   private final DestinationFactory destinationManager;
-  private final WillTaskImpl willTaskImpl;
+  private WillTaskImpl willTaskImpl;
   private final ClosureTaskManager closureTaskManager;
   private MessageCallback messageCallback;
   private boolean isClosed;
   private long expiry;
+  private final NamespaceMap namespaceMapping;
 
   //<editor-fold desc="Life cycle API">
   SessionImpl(SessionContext context,
       SecurityContext securityContext,
       DestinationFactory destinationManager,
-      SubscriptionController subscriptionManager,
-      WillTaskImpl willTaskImpl) {
+      SubscriptionController subscriptionManager) {
     logger = LoggerFactory.getLogger(SessionImpl.class);
     this.securityContext = securityContext;
     this.context = context;
     this.subscriptionManager = subscriptionManager;
     this.destinationManager = destinationManager;
-    this.willTaskImpl = willTaskImpl;
     closureTaskManager = new ClosureTaskManager();
+    namespaceMapping = new NamespaceMap();
     isClosed = false;
     if (context.getSessionExpiry() == -1) {
       expiry = 24L * 60L * 60L; // One Day
@@ -94,6 +99,7 @@ public class SessionImpl {
       scheduledFuture.cancel(false);
     }
     closureTaskManager.close();
+    namespaceMapping.clear();
   }
 
   public void resumeState() {
@@ -110,6 +116,9 @@ public class SessionImpl {
 
   public void login() throws IOException {
     securityContext.login();
+    ((SessionDestinationManager)destinationManager).setSessionTenantConfig(TenantManagement.build(context.getProtocol(), securityContext));
+    // Only do this once the connection has be authenticated
+    this.willTaskImpl = createWill(context);
   }
 
   public SecurityContext getSecurityContext(){
@@ -123,9 +132,14 @@ public class SessionImpl {
     if(isClosed){
       throw new IOException("Session is closed");
     }
-    DestinationImpl destinationImpl = destinationManager.find(destinationName);
+    String mapped = namespaceMapping.getMapped(destinationName);
+    if(mapped == null){
+      mapped = destinationManager.calculateNamespace(destinationName);
+      namespaceMapping.addMapped(destinationName, mapped);
+    }
+    DestinationImpl destinationImpl = destinationManager.find(mapped);
     if (destinationImpl == null && destinationType != null) {
-      destinationImpl = destinationManager.create(destinationName, destinationType);
+      destinationImpl = destinationManager.create(mapped, destinationType);
     }
     return destinationImpl;
   }
@@ -139,6 +153,7 @@ public class SessionImpl {
   }
 
   public DestinationImpl deleteDestination(DestinationImpl destinationImpl) {
+    namespaceMapping.removeByMapped(destinationImpl.getFullyQualifiedNamespace());
     return destinationManager.delete(destinationImpl);
   }
   //</editor-fold>
@@ -182,7 +197,10 @@ public class SessionImpl {
     if(isClosed){
       throw new IOException("Session is closed");
     }
-    context.setRootPath(destinationManager.getRoot());
+    String originalName = context.getDestinationName();
+    String namespace = destinationManager.calculateNamespace(originalName);
+    namespaceMapping.addMapped(originalName, namespace);
+    context.setDestinationName(namespace);
     return subscriptionManager.addSubscription(context);
   }
 
@@ -199,9 +217,74 @@ public class SessionImpl {
   }
 
   public String absoluteToNormalised(Destination destination) {
-    return destination.getFullyQualifiedNamespace().substring(destinationManager.getRoot().length());
+    String fqn = destination.getFullyQualifiedNamespace();
+    String lookup = namespaceMapping.getOriginal(fqn);
+    if(lookup == null){
+      return fqn;
+    }
+    else{
+      return lookup;
+    }
   }
 
   //</editor-fold>
+
+  private final class NamespaceMap{
+    private final Map<String, String> originalToMapped;
+    private final Map<String, String> mappedToOriginal;
+
+    public NamespaceMap(){
+      originalToMapped = new LinkedHashMap<>();
+      mappedToOriginal = new LinkedHashMap<>();
+    }
+
+    public void clear(){
+      originalToMapped.clear();
+      mappedToOriginal.clear();
+    }
+
+    public void addMapped(String original, String mapped){
+      originalToMapped.put(original, mapped);
+      mappedToOriginal.put(mapped, original);
+    }
+
+    public String getMapped(String original){
+      return originalToMapped.get(original);
+    }
+
+    public String getOriginal(String mapped){
+      String located = mappedToOriginal.get(mapped);
+      if(located == null){
+        located = destinationManager.calculateOriginalNamespace(mapped);
+        addMapped(located, mapped);
+      }
+      return located;
+    }
+
+    public void removeByMapped(String fullyQualifiedNamespace) {
+      String found = mappedToOriginal.remove(fullyQualifiedNamespace);
+      if(found != null){
+        originalToMapped.remove(found);
+      }
+    }
+  }
+
+  private WillTaskImpl createWill(SessionContext sessionContext) throws IOException {
+    if (sessionContext.getWillTopic() != null) {
+      String willTopicName = destinationManager.calculateNamespace(context.getWillTopic());
+      MessageDaemon.getInstance().getDestinationManager().findOrCreate(willTopicName);
+      WillDetails willDetails =
+          new WillDetails(
+              sessionContext.getWillMessage(),
+              willTopicName,
+              sessionContext.getWillDelay(),
+              sessionContext.getId(),
+              sessionContext.getProtocol().getName(),
+              sessionContext.getProtocol().getVersion());
+      logger.log(LogMessages.SESSION_MANAGER_WILL_TASK, sessionContext.getId(), willDetails.toString());
+      return WillTaskManager.getInstance().replace(sessionContext.getId(), willDetails);
+    }
+    return null;
+  }
 
 }

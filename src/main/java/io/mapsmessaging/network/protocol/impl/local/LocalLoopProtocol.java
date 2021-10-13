@@ -20,13 +20,12 @@ package io.mapsmessaging.network.protocol.impl.local;
 
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
@@ -70,18 +69,17 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void sendMessage(@NonNull @NotNull Destination source, @NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
-      @NonNull @NotNull Runnable completionTask) {
-    String lookup = nameMapping.get(normalisedName);
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    String lookup = nameMapping.get(messageEvent.getDestinationName());
     if(lookup != null){
       try {
         Destination destination = session.findDestination(lookup);
         if(destination != null) {
-          MessageBuilder messageBuilder = new MessageBuilder(message);
-          messageBuilder.setDestinationTransformer(destinationTransformationLookup(normalisedName));
+          MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
+          messageBuilder.setDestinationTransformer(destinationTransformationLookup(messageEvent.getDestinationName()));
           destination.storeMessage(messageBuilder.build());
         }
-        completionTask.run();
+        messageEvent.getCompletionTask().run();
         logger.log(LogMessages.LOOP_SENT_MESSAGE);
       } catch (IOException ioException) {
         logger.log(LogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
