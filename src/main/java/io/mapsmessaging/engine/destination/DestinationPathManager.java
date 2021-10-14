@@ -26,6 +26,8 @@ public class DestinationPathManager {
   private static final String OPTIONAL_PATH = "{folder}";
 
   private final @Getter long partitionSize;
+  private final @Getter long idleTime;
+
   private final @Getter int itemCount;
   private final @Getter int expiredEventPoll;
 
@@ -60,7 +62,7 @@ public class DestinationPathManager {
     enableSync = properties.getBooleanProperty("sync", false);
     itemCount = properties.getIntProperty("itemCount", 524_288);
     partitionSize = properties.getLongProperty("maxPartitionSize", 4_294_967_296L);
-
+    idleTime = properties.getLongProperty("autoPauseTimeout", 0L);
     expiredEventPoll = properties.getIntProperty("expiredEventPoll", 1);
 
     if(properties.containsKey("cache")){

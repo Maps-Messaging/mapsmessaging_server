@@ -22,6 +22,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationPathManager;
+import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
@@ -29,9 +30,11 @@ import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,13 +48,14 @@ public class Resource implements AutoCloseable {
 
   private static final AtomicLong INTERNAL_RESOURCE_COUNTER = new AtomicLong(0);
 
+
   private final @Getter String name;
-  private final @Getter Storage<Message> store;
   private final @Getter boolean persistent;
+
   private final AtomicLong keyGen;
+  private final AsyncStorage<Message> store;
 
   private @Getter long retainedIdentifier;
-
   private boolean isClosed;
 
   public Resource() throws IOException {
@@ -66,7 +70,7 @@ public class Resource implements AutoCloseable {
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("basePath", fileName);
     StorageBuilder<Message> builder = new StorageBuilder<>();
-
+    long idleTime = 0;
     String type = "Memory";
     Map<String, String> storeProperties = new LinkedHashMap<>();
     if(pathManager != null) {
@@ -74,6 +78,7 @@ public class Resource implements AutoCloseable {
       storeProperties.put("ItemCount", ""+pathManager.getItemCount());
       storeProperties.put("MaxPartitionSize",""+ pathManager.getPartitionSize());
       storeProperties.put("ExpiredEventPoll", ""+pathManager.getExpiredEventPoll());
+      idleTime = pathManager.getIdleTime();
       type = pathManager.getType();
       if(type.equalsIgnoreCase("file")){
         type = "Partition";
@@ -92,10 +97,14 @@ public class Resource implements AutoCloseable {
       builder.setExpiredHandler(messageExpiryHandler);
     }
 
-    store = builder.build();
+    Storage<Message> s = builder.build();
     persistent = !(type.equalsIgnoreCase("Memory"));
     if(persistent){
-      keyGen.set(store.getLastKey());
+      keyGen.set(s.getLastKey());
+    }
+    store = new AsyncStorage<>(s);
+    if(idleTime > 0){
+      store.enableAutoPause(pathManager.getIdleTime() * 1000L); // Convert to milliseconds
     }
   }
 
@@ -132,26 +141,32 @@ public class Resource implements AutoCloseable {
       totalRetained.decrement();
       retainedIdentifier = -1;
     }
-    store.remove(key);
+    getFromFuture(store.remove(key));
   }
 
-  public boolean isEmpty(){
-    return store.isEmpty();
-  }
-
-  public synchronized void delete() throws IOException {
+  public void delete() throws IOException {
     store.delete();
   }
 
-  public synchronized Message get(long key) throws IOException {
-    return store.get(key);
+  public boolean isEmpty(){
+    return getFromFuture(store.isEmpty());
   }
 
-  public synchronized long size() throws IOException {
-    return store.size();
+
+  public Message get(long key) throws IOException {
+    return getFromFuture(store.get(key));
+  }
+
+  public long size() throws IOException {
+    return getFromFuture(store.size());
   }
 
   public @Nullable Statistics getStatistics() {
-    return store.getStatistics();
+    return getFromFuture(store.getStatistics());
+  }
+
+  @SneakyThrows
+  private <T> T getFromFuture(Future<T> future){
+    return future.get();
   }
 }
