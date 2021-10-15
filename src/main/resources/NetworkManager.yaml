@@ -84,10 +84,10 @@ NetworkManager:
         url: tcp://0.0.0.0:1882/
         name: "MQTT WebSocket Interface"
         protocol : mqtt,ws
-        selectorThreadCount : 2
+        selectorThreadCount : 40
         auth : public
-        receiveBufferSize : 1200000
-        sendBufferSize    : 1200000
+        receiveBufferSize : 12000000
+        sendBufferSize    : 12000000
 
       -
         name: "MQTT Interface"

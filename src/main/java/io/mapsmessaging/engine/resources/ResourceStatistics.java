@@ -3,6 +3,7 @@ package io.mapsmessaging.engine.resources;
 import io.mapsmessaging.engine.stats.Statistics;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.cache.CacheStatistics;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
@@ -17,12 +18,31 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
   private final Resource resource;
   private final List<StorageStats> storeStats;
   private final List<CacheStats> cacheStats;
+  private final List<TierStats> tierStats;
 
   public ResourceStatistics(Resource resource){
     storeStats = new ArrayList<>();
     cacheStats = new ArrayList<>();
+    tierStats = new ArrayList<>();
     this.resource = resource;
     future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
+
+
+    io.mapsmessaging.storage.Statistics statistics = resource.getStatistics();
+    if(statistics instanceof CacheStatistics){
+      cacheStats.add(new CacheHitStats(create(ACCUMULATOR.DIFF, "Cache Hits", "Hits/second")));
+      cacheStats.add(new CacheMissStats(create(ACCUMULATOR.DIFF, "Cache Miss", "Hits/second")));
+      cacheStats.add(new CacheSizeStats(create(ACCUMULATOR.DIFF, "Cache Size", "Entries")));
+      statistics = ((CacheStatistics)statistics).getStorageStatistics();
+    }
+
+    if(statistics instanceof MemoryTierStatistics){
+      tierStats.add(new TierSizeStats(create(ACCUMULATOR.ADD, "Top Tier Entries", "Entries")));
+      tierStats.add(new TierReadStats(create(ACCUMULATOR.ADD, "Top Tier Read Operations", "Reads/second")));
+      tierStats.add(new TierWriteStats(create(ACCUMULATOR.ADD,"Top Tier Write Operations", "Writes/second" )));
+      tierStats.add(new TierDeleteStats(create(ACCUMULATOR.ADD,"Top Tier Delete Operations", "Removals/second" )));
+      tierStats.add(new TierMigrationStats(create(ACCUMULATOR.ADD, "Tier Migrations Operations", "Object moves/second")));
+    }
     storeStats.add(new ReadStats(create(ACCUMULATOR.ADD, "Disk Read Operations", "Disk Reads/second")));
     storeStats.add(new WriteStats(create(ACCUMULATOR.ADD,"Disk Write Operations", "Disk Writes/second" )));
     storeStats.add(new IOPSStats(create(ACCUMULATOR.ADD,"Disk IOPS", "Disk IO/second" )));
@@ -35,11 +55,6 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     storeStats.add(new TotalEmptySpaceStats(create(ACCUMULATOR.DIFF,"Empty Space", "Bytes" )));
     storeStats.add(new PartitionCountStats(create(ACCUMULATOR.DIFF,"Partition Count", "Partitions" )));
 
-    if(resource.getStatistics() instanceof CacheStatistics){
-      cacheStats.add(new CacheHitStats(create(ACCUMULATOR.ADD, "Cache Hits", "Hits/second")));
-      cacheStats.add(new CacheMissStats(create(ACCUMULATOR.ADD, "Cache Miss", "Hits/second")));
-      cacheStats.add(new CacheSizeStats(create(ACCUMULATOR.ADD, "Cache Size", "Entries")));
-    }
   }
 
   @Override
@@ -55,10 +70,13 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
       if (actualStats instanceof CacheStatistics) {
         CacheStatistics cacheStatistics = (CacheStatistics) actualStats;
         processCacheStatistics(cacheStatistics);
-        processStoreStatistics((StorageStatistics) cacheStatistics.getStorageStatistics());
-      } else {
-        processStoreStatistics((StorageStatistics) actualStats);
+        actualStats = cacheStatistics.getStorageStatistics();
       }
+      if(actualStats instanceof MemoryTierStatistics){
+        processTierStatistics((MemoryTierStatistics) actualStats);
+        actualStats = ((MemoryTierStatistics)actualStats).getFileStatistics();
+      }
+      processStoreStatistics((StorageStatistics) actualStats);
     }
   }
 
@@ -66,12 +84,92 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     for(CacheStats stats:cacheStats){
       stats.update(cacheStatistics);
     }
-
   }
 
   private void processStoreStatistics(StorageStatistics storageStatistics){
     for(StorageStats stats:storeStats){
       stats.update(storageStatistics);
+    }
+  }
+
+  private void processTierStatistics(MemoryTierStatistics memoryTierStatistics){
+    for(TierStats stats:tierStats){
+      stats.update(memoryTierStatistics);
+    }
+  }
+
+  private abstract static class TierStats{
+    private final LinkedMovingAverages movingAverage;
+
+    public TierStats(LinkedMovingAverages movingAverage){
+      this.movingAverage = movingAverage;
+    }
+
+    protected void update(long value){
+      movingAverage.add(value);
+    }
+
+    public abstract void update(MemoryTierStatistics statistics);
+  }
+
+  public static class TierReadStats extends TierStats{
+
+    public TierReadStats(LinkedMovingAverages movingAverage) {
+      super(movingAverage);
+    }
+
+    @Override
+    public void update(MemoryTierStatistics statistics) {
+      super.update( ((StorageStatistics) statistics.getMemoryStatistics()).getReads());
+    }
+  }
+
+  public static class TierWriteStats extends TierStats{
+
+    public TierWriteStats(LinkedMovingAverages movingAverage) {
+      super(movingAverage);
+    }
+
+    @Override
+    public void update(MemoryTierStatistics statistics) {
+      super.update( ((StorageStatistics) statistics.getMemoryStatistics()).getWrites());
+    }
+  }
+
+  public static class TierDeleteStats extends TierStats{
+
+    public TierDeleteStats(LinkedMovingAverages movingAverage) {
+      super(movingAverage);
+    }
+
+    @Override
+    public void update(MemoryTierStatistics statistics) {
+      super.update( ((StorageStatistics) statistics.getMemoryStatistics()).getDeletes());
+    }
+  }
+
+  public static class TierMigrationStats extends TierStats{
+
+    public TierMigrationStats(LinkedMovingAverages movingAverage) {
+      super(movingAverage);
+    }
+
+    @Override
+    public void update(MemoryTierStatistics statistics) {
+      super.update(statistics.getMigratedCount());
+    }
+  }
+
+
+  public static class TierSizeStats extends TierStats{
+
+    public TierSizeStats(LinkedMovingAverages movingAverage) {
+      super(movingAverage);
+    }
+
+    @Override
+    public void update(MemoryTierStatistics statistics) {
+      super.update( ((StorageStatistics) statistics.getMemoryStatistics()).getTotalSize());
     }
   }
 

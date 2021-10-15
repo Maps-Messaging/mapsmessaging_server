@@ -18,7 +18,7 @@ public class Statistics {
     return new ArrayList<>(averageList);
   }
 
-  protected LinkedMovingAverages create(ACCUMULATOR accumulator, String name, String units){
+  public LinkedMovingAverages create(ACCUMULATOR accumulator, String name, String units){
     LinkedMovingAverages linkedMovingAverages = MovingAverageFactory.getInstance().createLinked(accumulator, name, 1, 5, 4, TimeUnit.MINUTES, units);
     averageList.add(linkedMovingAverages);
     return linkedMovingAverages;

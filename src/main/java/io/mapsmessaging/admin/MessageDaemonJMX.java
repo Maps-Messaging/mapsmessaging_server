@@ -31,6 +31,8 @@ import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
+import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
+import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,8 @@ public class MessageDaemonJMX implements HealthMonitor {
   private final ObjectInstance mbean;
   private final HealthMonitorJMX healthMonitor;
   private final MessageDaemonEntryJMX entryJMX;
+  private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
+
 
   public MessageDaemonJMX(MessageDaemon daemon) {
     this.daemon = daemon;
@@ -53,6 +57,12 @@ public class MessageDaemonJMX implements HealthMonitor {
     mbean = JMXManager.getInstance().register(this, typePath);
     healthMonitor = new HealthMonitorJMX(typePath);
     entryJMX = new MessageDaemonEntryJMX(daemon);
+    List<String> resourceList = new ArrayList<>(typePath);
+    movingAveragesJMXList = new ArrayList<>();
+    for(LinkedMovingAverages linkedMovingAverages:DestinationStats.getGlobalAverages()){
+      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
+    }
+
   }
 
   @JMXBeanOperation(name="shutdown",description = "Initiates a server shutdown")

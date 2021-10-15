@@ -46,7 +46,7 @@ public class MessageDaemonEntryJMX {
 
   //<editor-fold desc="Destination based statistics">
   @JMXBeanAttribute(name = "getName", description = "Returns message daemons name")
-  public String getTotalNoInterest() {
+  public String getName() {
     return daemon.getId();
   }
 

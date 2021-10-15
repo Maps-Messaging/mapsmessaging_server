@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.engine.stats.Statistics;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
 
 public class DestinationStats extends Statistics {
@@ -28,6 +29,27 @@ public class DestinationStats extends Statistics {
   private static final String MICRO_SECONDS = "μs";
   
   //<editor-fold desc="Global Statistic fields">
+  public static List<LinkedMovingAverages> getGlobalAverages(){
+    return globalAverageStatistics.getAverageList();
+  }
+  private static final LinkedMovingAverages totalPublishedMessagesAverages;
+  private static final LinkedMovingAverages totalSubscribedMessagesAverages;
+  private static final LinkedMovingAverages totalNoInterestMessagesAverages;
+  private static final LinkedMovingAverages totalRetrievedMessagesAverages;
+  private static final LinkedMovingAverages totalExpiredMessagesAverages;
+  private static final LinkedMovingAverages totalDeliveredMessagesAverages;
+  private static final Statistics globalAverageStatistics;
+  static{
+    globalAverageStatistics = new Statistics();
+    totalPublishedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "No Interest", MESSAGES);
+    totalSubscribedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Published messages", MESSAGES);
+    totalNoInterestMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Subscribed messages", MESSAGES);
+    totalRetrievedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Retrieved messages", MESSAGES);
+    totalExpiredMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Expired messages", MESSAGES);
+    totalDeliveredMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Delivered messages", MESSAGES);
+  }
+
+
   private static final LongAdder totalPublishedMessages = new LongAdder();
   private static final LongAdder totalSubscribedMessages = new LongAdder();
   private static final LongAdder totalNoInterestMessages = new LongAdder();
@@ -99,27 +121,32 @@ public class DestinationStats extends Statistics {
   public void messagePublished(){
     publishedMessageAverages.increment();
     totalPublishedMessages.increment();
+    totalPublishedMessagesAverages.increment();
   }
 
   public void messageSubscribed(int counter){
     storedMessageAverages.increment();
-    totalSubscribedMessages.add(counter);
     subscribedMessageAverages.add(counter);
+    totalSubscribedMessages.add(counter);
+    totalSubscribedMessagesAverages.add(counter);
   }
 
   public void noInterest(){
     noInterestMessageAverages.increment();
     totalNoInterestMessages.increment();
+    totalNoInterestMessagesAverages.increment();
   }
 
   public void expiredMessage(){
-    totalExpiredMessages.increment();
     expiredMessagesAverages.add(1);
+    totalExpiredMessages.increment();
+    totalExpiredMessagesAverages.increment();
   }
 
   public void retrievedMessage(){
     retrievedMessagesAverages.increment();
     totalRetrievedMessages.increment();
+    totalRetrievedMessagesAverages.increment();
   }
 
   public void removedMessage(){
@@ -127,8 +154,9 @@ public class DestinationStats extends Statistics {
   }
 
   public void deliveredMessage(){
-    totalDeliveredMessages.increment();
     deliveredMessagesAverages.increment();
+    totalDeliveredMessages.increment();
+    totalDeliveredMessagesAverages.increment();
   }
 
   public void messageWriteTime(long write){

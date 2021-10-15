@@ -36,7 +36,7 @@ TenantManagement:
   data:
     -
       name: default                                  # Either a specific username or {user} all users
-      namespaceRoot: /{user}/{protocol}              # Used for all connections, unless explicitly found within the configuration
+      namespaceRoot: /            # Used for all connections, unless explicitly found within the configuration
       scope: user                                    # Applies to a single user
 
     -
