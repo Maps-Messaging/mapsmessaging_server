@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.engine.security;
 
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.util.stream.IntStream;
 import javax.security.auth.callback.Callback;
@@ -65,8 +65,8 @@ public class AnonymousLoginModule extends BaseLoginModule {
 
     // print debugging information
     if (debug) {
-      logger.log(LogMessages.ANON_LOGIN_MODULE_USERNAME, username);
-      logger.log(LogMessages.ANON_LOGIN_MODULE_USERNAME, new String(password));
+      logger.log(ServerLogMessages.ANON_LOGIN_MODULE_USERNAME, username);
+      logger.log(ServerLogMessages.ANON_LOGIN_MODULE_USERNAME, new String(password));
     }
     succeeded = true;
     return true;
@@ -80,7 +80,7 @@ public class AnonymousLoginModule extends BaseLoginModule {
       userPrincipal = new AnonymousPrincipal(username);
       subject.getPrincipals().add(userPrincipal);
       if (debug) {
-        logger.log(LogMessages.ANON_LOGIN_MODULE_PASSWORD, "");
+        logger.log(ServerLogMessages.ANON_LOGIN_MODULE_PASSWORD, "");
       }
       // in any case, clean out state
       username = null;
@@ -94,7 +94,7 @@ public class AnonymousLoginModule extends BaseLoginModule {
 
   @Override
   public boolean logout() throws LoginException {
-    logger.log(LogMessages.ANON_LOGIN_MODULE_SUBJECT);
+    logger.log(ServerLogMessages.ANON_LOGIN_MODULE_SUBJECT);
     return super.logout();
   }
 

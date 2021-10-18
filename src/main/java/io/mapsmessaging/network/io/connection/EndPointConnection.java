@@ -20,9 +20,9 @@ package io.mapsmessaging.network.io.connection;
 
 import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
@@ -76,7 +76,7 @@ public class EndPointConnection extends EndPointServerStatus {
     paused = new AtomicBoolean(false);
     logger = LoggerFactory.getLogger("EndPointConnectionStateManager_"+url.toString()+"_"+ properties.getProperty("protocol"));
     manager.addConnection(this);
-    logger.log(LogMessages.END_POINT_CONNECTION_INITIALISED);
+    logger.log(ServerLogMessages.END_POINT_CONNECTION_INITIALISED);
   }
 
   public void close(){
@@ -92,7 +92,7 @@ public class EndPointConnection extends EndPointServerStatus {
         // we are closing the connection here, typically a shutdown
       }
     }
-    logger.log(LogMessages.END_POINT_CONNECTION_CLOSED);
+    logger.log(ServerLogMessages.END_POINT_CONNECTION_CLOSED);
   }
 
   public ConfigurationProperties getProperties() {
@@ -163,12 +163,12 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public void start(){
     setRunState(true, new Disconnected(this));
-    logger.log(LogMessages.END_POINT_CONNECTION_STARTING);
+    logger.log(ServerLogMessages.END_POINT_CONNECTION_STARTING);
   }
 
   public void stop(){
     setRunState(false, new Shutdown(this));
-    logger.log(LogMessages.END_POINT_CONNECTION_STOPPING);
+    logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
   }
 
   public void pause() {
@@ -199,7 +199,7 @@ public class EndPointConnection extends EndPointServerStatus {
       futureTask.cancel(false);
     }
     if(state != null) {
-      logger.log(LogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
+      logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
     }
     setState(newState);
     futureTask = SimpleTaskScheduler.getInstance().schedule(newState, time, TimeUnit.MILLISECONDS);

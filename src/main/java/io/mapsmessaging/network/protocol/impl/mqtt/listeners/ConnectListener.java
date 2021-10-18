@@ -22,7 +22,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
@@ -40,11 +40,11 @@ public class ConnectListener extends BaseConnectionListener {
 
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session shouldBeNull, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     if (shouldBeNull != null) {
-      logger.log(LogMessages.MQTT_CONNECT_LISTENER_SECOND_CONNECT);
+      logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SECOND_CONNECT);
       try {
         protocol.close();
       } catch (IOException e) {
-        logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
       throw new MalformedException("[MQTT-3.1.0-2] Received a second CONNECT packet");
     }
@@ -65,7 +65,7 @@ public class ConnectListener extends BaseConnectionListener {
         try {
           protocol.close();
         } catch (IOException e) {
-          logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
         }
       }, 100, TimeUnit.MILLISECONDS));
     }
@@ -85,7 +85,7 @@ public class ConnectListener extends BaseConnectionListener {
       connAck.setRestoredFlag(session.isRestored());
       connAck.setCallback(session::resumeState);
     } catch (IOException e) {
-      logger.log(LogMessages.MQTT_BAD_USERNAME_PASSWORD, e);
+      logger.log(ServerLogMessages.MQTT_BAD_USERNAME_PASSWORD, e);
       connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
     }
   }

@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Selectable;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -41,7 +41,7 @@ public class Selector implements SelectorInt {
 
   public Selector() throws IOException {
     logger = LoggerFactory.getLogger(Selector.class);
-    logger.log(LogMessages.SELECTOR_OPEN);
+    logger.log(ServerLogMessages.SELECTOR_OPEN);
     channelSelector = java.nio.channels.Selector.open();
     isOpen = new AtomicBoolean(true);
   }
@@ -65,7 +65,7 @@ public class Selector implements SelectorInt {
         //
         processRegistryQueue();
       } catch (IOException e) {
-        logger.log(LogMessages.SELECTOR_FAILED_ON_CALL);
+        logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL);
         isOpen.set(false);
       }
     }
@@ -77,17 +77,17 @@ public class Selector implements SelectorInt {
       SelectionKey key = iter.next();
       try {
         if (key.attachment() instanceof Selectable) {
-          logger.log(LogMessages.SELECTOR_FIRED, key.interestOps());
+          logger.log(ServerLogMessages.SELECTOR_FIRED, key.interestOps());
           Selectable selectable = ((Selectable) key.attachment());
           selectable.selected(selectable, this, key.interestOps());
         }
       } catch (CancelledKeyException cancelled) {
-        logger.log(LogMessages.SELECTOR_CONNECTION_CLOSE);
+        logger.log(ServerLogMessages.SELECTOR_CONNECTION_CLOSE);
       } catch (Exception e) {
         if (logger.isDebugEnabled()) {
-          logger.log(LogMessages.SELECTOR_TASK_FAILED, e, key.toString());
+          logger.log(ServerLogMessages.SELECTOR_TASK_FAILED, e, key.toString());
         } else {
-          logger.log(LogMessages.SELECTOR_TASK_FAILED_1, key.toString());
+          logger.log(ServerLogMessages.SELECTOR_TASK_FAILED_1, key.toString());
         }
       } finally {
         iter.remove();

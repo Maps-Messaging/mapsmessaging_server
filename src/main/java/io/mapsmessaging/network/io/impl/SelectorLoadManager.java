@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -54,7 +54,7 @@ public class SelectorLoadManager {
 
   private Selector create() throws IOException {
     Selector selector = new Selector();
-    logger.log(LogMessages.END_POINT_MANAGER_NEW_SELECTOR);
+    logger.log(ServerLogMessages.END_POINT_MANAGER_NEW_SELECTOR);
     selectorExecutor.execute(selector);
     return selector;
   }

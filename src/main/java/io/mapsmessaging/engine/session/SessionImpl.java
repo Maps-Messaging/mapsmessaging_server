@@ -31,9 +31,9 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.engine.session.will.WillTaskImpl;
 import io.mapsmessaging.engine.session.will.WillTaskManager;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
@@ -81,7 +81,7 @@ public class SessionImpl {
     if (context.getProtocol().getKeepAlive() != 0) {
       long ka = context.getProtocol().getKeepAlive() + 5000L; // allow 5 seconds more
       scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new KeepAliveTask(context.getProtocol()), ka, ka, TimeUnit.MILLISECONDS);
-      logger.log(LogMessages.SESSION_MANAGER_KEEP_ALIVE_TASK);
+      logger.log(ServerLogMessages.SESSION_MANAGER_KEEP_ALIVE_TASK);
     } else {
       scheduledFuture = null;
     }
@@ -92,7 +92,7 @@ public class SessionImpl {
   }
 
   void close() {
-    logger.log(LogMessages.SESSION_MANAGER_CLOSING_SESSION, context.getId());
+    logger.log(ServerLogMessages.SESSION_MANAGER_CLOSING_SESSION, context.getId());
     isClosed = true;
     securityContext.logout();
     if (scheduledFuture != null) {
@@ -281,7 +281,7 @@ public class SessionImpl {
               sessionContext.getId(),
               sessionContext.getProtocol().getName(),
               sessionContext.getProtocol().getVersion());
-      logger.log(LogMessages.SESSION_MANAGER_WILL_TASK, sessionContext.getId(), willDetails.toString());
+      logger.log(ServerLogMessages.SESSION_MANAGER_WILL_TASK, sessionContext.getId(), willDetails.toString());
       return WillTaskManager.getInstance().replace(sessionContext.getId(), willDetails);
     }
     return null;

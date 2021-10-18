@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.LogMessages.UDP_WRITE_TASK_SEND_PACKET_ERROR;
-import static io.mapsmessaging.logging.LogMessages.UDP_WRITE_TASK_SENT_PACKET;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SEND_PACKET_ERROR;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SENT_PACKET;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.Packet;

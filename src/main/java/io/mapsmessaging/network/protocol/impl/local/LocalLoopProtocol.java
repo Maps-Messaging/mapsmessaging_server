@@ -27,9 +27,9 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
@@ -55,7 +55,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
     logger = LoggerFactory.getLogger(LocalLoopProtocol.class);
     closed = false;
     nameMapping = new ConcurrentHashMap<>();
-    logger.log(LogMessages.LOOP_CREATED);
+    logger.log(ServerLogMessages.LOOP_CREATED);
   }
 
   @Override
@@ -64,7 +64,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
       closed = true;
       SessionManager.getInstance().close(session);
       super.close();
-      logger.log(LogMessages.LOOP_CLOSED);
+      logger.log(ServerLogMessages.LOOP_CLOSED);
     }
   }
 
@@ -80,9 +80,9 @@ public class LocalLoopProtocol extends ProtocolImpl {
           destination.storeMessage(messageBuilder.build());
         }
         messageEvent.getCompletionTask().run();
-        logger.log(LogMessages.LOOP_SENT_MESSAGE);
+        logger.log(ServerLogMessages.LOOP_SENT_MESSAGE);
       } catch (IOException ioException) {
-        logger.log(LogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
+        logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
       }
     }
   }
@@ -96,7 +96,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
     try {
       session = SessionManager.getInstance().create(scb.build(), this);
     } catch (LoginException e) {
-      logger.log(LogMessages.LOOP_SEND_CONNECT_FAILED, e);
+      logger.log(ServerLogMessages.LOOP_SEND_CONNECT_FAILED, e);
       IOException ioException = new IOException();
       e.initCause(e);
       throw ioException;
@@ -119,7 +119,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_LEAST_ONCE, 1024);
     session.addSubscription(builder.build());
     session.resumeState();
-    logger.log(LogMessages.LOOP_SUBSCRIBED, resource, mappedResource);
+    logger.log(ServerLogMessages.LOOP_SUBSCRIBED, resource, mappedResource);
   }
 
   @Override

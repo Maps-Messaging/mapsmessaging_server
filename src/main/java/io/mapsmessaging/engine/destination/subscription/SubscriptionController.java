@@ -33,9 +33,9 @@ import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.tasks.ListResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.tasks.SubscriptionResponse;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -107,16 +107,16 @@ public class SubscriptionController implements DestinationManagerListener {
       try {
         addSubscription(context, true);
         counter++;
-        logger.log(LogMessages.SUBSCRIPTION_MGR_RELOAD, sessionId, context.getFilter(), counter, total);
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_RELOAD, sessionId, context.getFilter(), counter, total);
       } catch (IOException e) {
-        logger.log(LogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
       }
     }
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
   }
 
   public void close() {
-    logger.log(LogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
+    logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
     List<Subscription> closeList = new ArrayList<>(activeSubscriptions.values());
     subscriptions.clear();
@@ -125,7 +125,7 @@ public class SubscriptionController implements DestinationManagerListener {
       try {
         subscription.close();
       } catch (IOException e) {
-        logger.log(LogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
       }
     }
     contextMap.clear();

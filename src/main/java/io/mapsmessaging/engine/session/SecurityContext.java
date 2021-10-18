@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -55,10 +55,10 @@ public class SecurityContext {
   public void login() throws IOException {
     try {
       loginContext.login();
-      logger.log(LogMessages.SECURITY_MANAGER_LOG_IN, username);
+      logger.log(ServerLogMessages.SECURITY_MANAGER_LOG_IN, username);
       isLoggedIn = true;
     } catch (LoginException e) {
-      logger.log(LogMessages.SECURITY_MANAGER_FAILED_LOG_IN, username, e.getMessage());
+      logger.log(ServerLogMessages.SECURITY_MANAGER_FAILED_LOG_IN, username, e.getMessage());
       IOException ioException = new IOException(e.getMessage());
       ioException.fillInStackTrace();
       throw ioException;
@@ -70,10 +70,10 @@ public class SecurityContext {
       if (isLoggedIn) {
         isLoggedIn = false;
         loginContext.logout();
-        logger.log(LogMessages.SECURITY_MANAGER_LOG_OFF, username);
+        logger.log(ServerLogMessages.SECURITY_MANAGER_LOG_OFF, username);
       }
     } catch (LoginException e) {
-      logger.log(LogMessages.SECURITY_MANAGER_FAILED_LOG_OFF, username, e.getMessage());
+      logger.log(ServerLogMessages.SECURITY_MANAGER_FAILED_LOG_OFF, username, e.getMessage());
     }
   }
 }

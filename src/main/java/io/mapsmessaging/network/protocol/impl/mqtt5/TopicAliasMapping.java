@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.TopicAlias;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -53,22 +53,22 @@ public class TopicAliasMapping {
 
   public synchronized boolean add(String name, TopicAlias topicAlias) {
     if (keyByInteger.size() >= aliasMaximum) {
-      logger.log(LogMessages.MQTT5_TOPIC_ALIAS_EXCEEDED_MAXIMUM);
+      logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_EXCEEDED_MAXIMUM);
       return false;
     }
     if (topicAlias.getTopicAlias() == 0) {
-      logger.log(LogMessages.MQTT5_TOPIC_ALIAS_INVALID_VALUE, topicAlias.getTopicAlias());
+      logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_INVALID_VALUE, topicAlias.getTopicAlias());
       return false;
     }
     if (keyByString.containsKey(name)) {
-      logger.log(LogMessages.MQTT5_TOPIC_ALIAS_ALREADY_EXISTS, name);
+      logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_ALREADY_EXISTS, name);
       return false;
     }
     Alias alias = new Alias(name, topicAlias);
     available.set(topicAlias.getTopicAlias());
     keyByString.put(name, alias);
     keyByInteger.put(alias.getTopicAlias(), alias);
-    logger.log(LogMessages.MQTT5_TOPIC_ALIAS_ADD, name, alias.topicAlias);
+    logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_ADD, name, alias.topicAlias);
     return true;
   }
 
@@ -101,7 +101,7 @@ public class TopicAliasMapping {
   public void setMaximum(int topicAliasMaximum) {
     if (topicAliasMaximum <= DefaultConstants.SERVER_TOPIC_ALIAS_MAX) {
       aliasMaximum = topicAliasMaximum;
-      logger.log(LogMessages.MQTT5_TOPIC_ALIAS_SET_MAXIMUM, aliasName, topicAliasMaximum);
+      logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_SET_MAXIMUM, aliasName, topicAliasMaximum);
     }
   }
 

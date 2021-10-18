@@ -19,7 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
 import io.mapsmessaging.api.Transaction;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Abort;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
@@ -36,7 +36,7 @@ public class AbortListener implements FrameListener {
       transaction.abort();
       engine.getSession().closeTransaction(transaction);
     } catch (IOException e) {
-      engine.getProtocol().getLogger().log(LogMessages.TRANSACTION_EXCEPTION, transaction,  e);
+      engine.getProtocol().getLogger().log(ServerLogMessages.TRANSACTION_EXCEPTION, transaction,  e);
     }
   }
 }

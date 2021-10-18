@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.tcp;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
@@ -71,17 +71,17 @@ public class TCPEndPointServer extends EndPointServer {
     serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
     serverSocket.bind(bindAddress, backLog);
     selectable = serverSocket.configureBlocking(false);
-    logger.log(LogMessages.TCP_SERVER_ENDPOINT_CREATE, bindAddress.getPort(), backLog, bindAddress.getHostName());
+    logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_CREATE, bindAddress.getPort(), backLog, bindAddress.getHostName());
   }
 
   public void close() throws IOException {
-    logger.log(LogMessages.TCP_SERVER_ENDPOINT_CLOSE);
+    logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_CLOSE);
     deregister();
     serverSocket.close();
   }
 
   public void register() throws IOException {
-    logger.log(LogMessages.TCP_SERVER_ENDPOINT_REGISTER);
+    logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_REGISTER);
     FutureTask<SelectionKey> task = selector.register(selectable, SelectionKey.OP_ACCEPT, this);
     try {
       selectionKey = task.get(selectorTaskWait, TimeUnit.SECONDS);
@@ -96,7 +96,7 @@ public class TCPEndPointServer extends EndPointServer {
   }
 
   public void deregister() {
-    logger.log(LogMessages.TCP_SERVER_ENDPOINT_DEREGISTER);
+    logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_DEREGISTER);
     if (selectionKey != null) {
       selectionKey.cancel();
     }
@@ -113,7 +113,7 @@ public class TCPEndPointServer extends EndPointServer {
           this,
           managerMBean));
     } catch (IOException e) {
-      logger.log(LogMessages.TCP_SERVER_ENDPOINT_ACCEPT);
+      logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_ACCEPT);
     }
   }
 

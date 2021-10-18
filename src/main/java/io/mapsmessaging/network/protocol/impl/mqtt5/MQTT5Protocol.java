@@ -26,9 +26,9 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -102,7 +102,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
 
-    logger.log(LogMessages.MQTT5_INITIALISATION);
+    logger.log(ServerLogMessages.MQTT5_INITIALISATION);
     clientTopicAliasMapping = new TopicAliasMapping("Client");
     serverTopicAliasMapping = new TopicAliasMapping("Server");
     ConfigurationProperties props = endPoint.getConfig().getProperties();
@@ -180,7 +180,7 @@ public class MQTT5Protocol extends ProtocolImpl {
         packet.compact();
         packet.flip();
       } catch (MalformedException malformed) {
-        logger.log(LogMessages.MALFORMED, malformed, malformed.getMessage());
+        logger.log(ServerLogMessages.MALFORMED, malformed, malformed.getMessage());
         endPoint.close();
       } catch (EndOfBufferException eobe) {
         packet.position(pos);
@@ -189,7 +189,7 @@ public class MQTT5Protocol extends ProtocolImpl {
       } catch (ClosedChannelException closeException) {
         endPoint.close();
       } catch (IOException e) {
-        logger.log(LogMessages.MQTT5_HANDLE_EVENT_IO_EXCEPTION, e);
+        logger.log(ServerLogMessages.MQTT5_HANDLE_EVENT_IO_EXCEPTION, e);
         endPoint.close();
       }
     }
@@ -199,7 +199,7 @@ public class MQTT5Protocol extends ProtocolImpl {
   protected void handleMQTTEvent(Packet packet) throws MalformedException, EndOfBufferException {
     MQTTPacket5 mqtt = packetFactory.parseFrame(packet);
     if (mqtt != null) {
-      logger.log(LogMessages.RECEIVE_PACKET, mqtt);
+      logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
       receivedMessageAverages.increment();
 
       boolean initialAuth = false;
@@ -225,7 +225,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     if (response != null) {
       sentMessageAverages.increment();
       if (logger.isInfoEnabled()) {
-        logger.log(LogMessages.RESPONSE_PACKET, response);
+        logger.log(ServerLogMessages.RESPONSE_PACKET, response);
       }
       if (sendProblemInformation && response instanceof StatusPacket && !(response instanceof ConnAck5)) {
         StatusPacket statusPacket = (StatusPacket) response;
@@ -253,14 +253,14 @@ public class MQTT5Protocol extends ProtocolImpl {
     ThreadContext.put("protocol", getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("version", getVersion());
-    logger.log(LogMessages.MQTT5_KEEP_ALIVE_CHECK, keepAlive);
+    logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_CHECK, keepAlive);
     long timeout = System.currentTimeMillis() - (keepAlive);
     if (endPoint.getLastRead() < timeout && endPoint.getLastWrite() < timeout) {
-      logger.log(LogMessages.MQTT5_KEEP_ALIVE_DISCONNECT);
+      logger.log(ServerLogMessages.MQTT5_KEEP_ALIVE_DISCONNECT);
       try {
         close();
       } catch (IOException e) {
-        logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
     }
     ThreadContext.clearMap();
@@ -279,7 +279,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     Message message = messageEvent.getMessage();
     if (maxBufferSize > 0 && message.getOpaqueData().length >= maxBufferSize) {
       messageEvent.getCompletionTask().run();
-      logger.log(LogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
+      logger.log(ServerLogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
       sendPublishFrame(messageEvent.getDestinationName(), messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
     }
@@ -361,7 +361,7 @@ public class MQTT5Protocol extends ProtocolImpl {
   public void writeFrame(ServerPacket frame) {
     sentMessage();
     selectorTask.push(frame);
-    logger.log(LogMessages.PUSH_WRITE, frame);
+    logger.log(ServerLogMessages.PUSH_WRITE, frame);
   }
 
   public PacketIdManager getPacketIdManager() {

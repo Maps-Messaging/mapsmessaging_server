@@ -18,18 +18,18 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_COMPACT;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_COMPLETED;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_EXCEPTION;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_NEGATIVE_CLOSE;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_PACKET_EXCEPTION;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_POSITION;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_POST_PROCESSING;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_READ_PROCESSING;
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_ZERO_BYTE;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_COMPACT;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_COMPLETED;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_EXCEPTION;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_NEGATIVE_CLOSE;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_PACKET_EXCEPTION;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_POSITION;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_POST_PROCESSING;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_READ_PROCESSING;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_ZERO_BYTE;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
@@ -69,7 +69,7 @@ public class ReadTask implements Selectable {
     try {
       selectorCallback.close();
     } catch (IOException e) {
-      logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+      logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }
   }
 

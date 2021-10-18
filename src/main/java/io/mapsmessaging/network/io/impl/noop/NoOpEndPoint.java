@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.noop;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
@@ -37,13 +37,13 @@ public class NoOpEndPoint extends EndPoint {
   public NoOpEndPoint(long id, EndPointServerStatus server, List<String> jmxPath) {
     super(id, server);
     jmxParentPath = new ArrayList<>(jmxPath);
-    logger.log(LogMessages.NOOP_END_POINT_CREATE, id);
+    logger.log(ServerLogMessages.NOOP_END_POINT_CREATE, id);
   }
 
   @Override
   public void close() throws IOException {
     super.close();
-    logger.log(LogMessages.NOOP_END_POINT_CLOSE, getId());
+    logger.log(ServerLogMessages.NOOP_END_POINT_CLOSE, getId());
   }
 
   @Override

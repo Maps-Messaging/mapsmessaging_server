@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class SSLHelper {
       String sslKeyManagerFactory = configurationProperties.getProperty("ssl_keyManagerFactory");
       KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(sslKeyManagerFactory);
       keyManagerFactory.init(keyStore, configurationProperties.getProperty("ssl_keyStorePassphrase").toCharArray());
-      logger.log(LogMessages.SSL_SERVER_INITIALISE, sslKeyManagerFactory);
+      logger.log(ServerLogMessages.SSL_SERVER_INITIALISE, sslKeyManagerFactory);
       // </editor-fold>
 
       // <editor-fold desc="Load and initialise the Trust Store">
@@ -88,19 +88,19 @@ public class SSLHelper {
       String trustStoreManagerFactory = configurationProperties.getProperty("ssl_trustManagerFactory");
       TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustStoreManagerFactory);
       trustManagerFactory.init(trustStore);
-      logger.log(LogMessages.SSL_SERVER_TRUST_MANAGER, trustStoreManagerFactory);
+      logger.log(ServerLogMessages.SSL_SERVER_TRUST_MANAGER, trustStoreManagerFactory);
       // </editor-fold>
 
       // <editor-fold desc="Create the SSL Context">
       //
       // Put it all together and create the SSL Context to generate SSL Engines
-      logger.log(LogMessages.SSL_SERVER_CONTEXT_CONSTRUCT);
+      logger.log(ServerLogMessages.SSL_SERVER_CONTEXT_CONSTRUCT);
       sslContext = SSLContext.getInstance(configurationProperties.getProperty("ssl_SSLContext"));
       sslContext.init(
           keyManagerFactory.getKeyManagers(),
           trustManagerFactory.getTrustManagers(),
           new SecureRandom());
-      logger.log(LogMessages.SSL_SERVER_SSL_CONTEXT_COMPLETE);
+      logger.log(ServerLogMessages.SSL_SERVER_SSL_CONTEXT_COMPLETE);
       // </editor-fold>
 
     } catch (KeyStoreException
@@ -118,10 +118,10 @@ public class SSLHelper {
 
   private KeyStore loadKeyStore(String type, String fileName, char[] passphrase, Logger logger)
       throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-    logger.log(LogMessages.SSL_SERVER_LOAD_KEY_STORE, fileName, type);
+    logger.log(ServerLogMessages.SSL_SERVER_LOAD_KEY_STORE, fileName, type);
     KeyStore keyStore = KeyStore.getInstance(type);
     keyStore.load(new FileInputStream(fileName), passphrase);
-    logger.log(LogMessages.SSL_SERVER_LOADED_KEY_STORE, fileName, type);
+    logger.log(ServerLogMessages.SSL_SERVER_LOADED_KEY_STORE, fileName, type);
     return keyStore;
   }
 }

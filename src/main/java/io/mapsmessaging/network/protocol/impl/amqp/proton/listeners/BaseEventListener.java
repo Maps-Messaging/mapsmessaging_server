@@ -22,7 +22,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import java.io.IOException;
@@ -90,7 +90,7 @@ public abstract class BaseEventListener implements EventListener {
       session.start();
       session.login();
       sessionManager = protocol.addSession(sessionId, session);
-      protocol.getLogger().log(LogMessages.AMQP_CREATED_SESSION, sessionId);
+      protocol.getLogger().log(ServerLogMessages.AMQP_CREATED_SESSION, sessionId);
     }
     else{
       sessionManager.increment();

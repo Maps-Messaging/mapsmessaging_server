@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.loragateway.handler;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
 
@@ -27,7 +27,7 @@ public class UnknownHandler implements PacketHandler {
 
   @Override
   public boolean processPacket(LoRaProtocol loRaProtocol, Packet packet, int len, Logger logger) {
-    logger.log(LogMessages.LORA_GATEWAY_UNEXPECTED);
+    logger.log(ServerLogMessages.LORA_GATEWAY_UNEXPECTED);
     return true;
   }
 }

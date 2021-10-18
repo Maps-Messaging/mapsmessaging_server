@@ -20,7 +20,7 @@ package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.engine.transformers.TransformerManager;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
@@ -50,11 +50,11 @@ public class Connected extends State {
         } else if (direction.equalsIgnoreCase("push")) {
           endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer);
         }
-        endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       }
       catch(IOException ioException) {
         failed = true;
-        endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, local, remote, ioException);
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, local, remote, ioException);
       }
     }
     if(!failed) {
@@ -64,7 +64,7 @@ public class Connected extends State {
       try {
         endPointConnection.getConnection().close();
       } catch (IOException ioException) {
-        endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
       }
       endPointConnection.scheduleState(new Disconnected(endPointConnection));
     }

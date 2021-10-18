@@ -22,8 +22,8 @@ import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.PING;
 import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.START;
 import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class PingHandler implements PacketHandler {
   @Override
   public boolean processPacket(LoRaProtocol loRaProtocol, Packet packet, int len, Logger logger) throws IOException {
     int state = packet.get();
-    logger.log(LogMessages.LORA_GATEWAY_PING, state);
+    logger.log(ServerLogMessages.LORA_GATEWAY_PING, state);
     if (!loRaProtocol.isSentVersion()) {
       loRaProtocol.sendCommand(VERSION); // Request version of gateway
     } else if (loRaProtocol.isSentConfig() && !loRaProtocol.isStarted()) {

@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
@@ -31,18 +31,18 @@ public class DisconnectListener extends PacketListener {
 
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
-    logger.log(LogMessages.MQTT_DISCONNECT_CLOSE);
+    logger.log(ServerLogMessages.MQTT_DISCONNECT_CLOSE);
     if (session != null) {
       try {
         SessionManager.getInstance().close(session, true);
       } catch (IOException e) {
-        logger.log(LogMessages.SESSION_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.SESSION_CLOSE_EXCEPTION, e);
       }
     }
     try {
       endPoint.close();
     } catch (IOException e) {
-      logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+      logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }
     return null;
   }

@@ -18,15 +18,22 @@
 
 package io.mapsmessaging.utilities.configuration;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.ResourceList;
-import org.yaml.snakeyaml.Yaml;
-
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
+import org.yaml.snakeyaml.Yaml;
 
 public class YamlPropertyManager extends PropertyManager {
   private static final String GLOBAL = "global";
@@ -41,7 +48,7 @@ public class YamlPropertyManager extends PropertyManager {
         loadProperty(propertyName);
       }
     } catch (IOException e) {
-      logger.log(LogMessages.PROPERTY_MANAGER_SCAN_FAILED, e);
+      logger.log(ServerLogMessages.PROPERTY_MANAGER_SCAN_FAILED, e);
     }
   }
 
@@ -67,9 +74,9 @@ public class YamlPropertyManager extends PropertyManager {
       }
 
       properties.putAll(map);
-      logger.log(LogMessages.PROPERTY_MANAGER_FOUND, propertyName);
+      logger.log(ServerLogMessages.PROPERTY_MANAGER_FOUND, propertyName);
     } catch (IOException e) {
-      logger.log(LogMessages.PROPERTY_MANAGER_LOAD_FAILED, e, propertyName);
+      logger.log(ServerLogMessages.PROPERTY_MANAGER_LOAD_FAILED, e, propertyName);
     }
   }
 

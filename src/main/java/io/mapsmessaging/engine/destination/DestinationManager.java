@@ -36,9 +36,9 @@ import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
@@ -106,7 +106,7 @@ public class DestinationManager implements DestinationFactory {
   }
 
   public void addSystemTopic(SystemTopic systemTopic) {
-    logger.log(LogMessages.DESTINATION_MANAGER_ADD_SYSTEM_TOPIC, systemTopic.getFullyQualifiedNamespace());
+    logger.log(ServerLogMessages.DESTINATION_MANAGER_ADD_SYSTEM_TOPIC, systemTopic.getFullyQualifiedNamespace());
     destinationList.put(systemTopic.getFullyQualifiedNamespace(), systemTopic);
   }
 
@@ -138,7 +138,7 @@ public class DestinationManager implements DestinationFactory {
   public synchronized DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     if (name.startsWith("$SYS")) {
       // can not create these
-      logger.log(LogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
+      logger.log(ServerLogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
       return null;
     }
     DestinationImpl destinationImpl = destinationList.get(name);
@@ -170,7 +170,7 @@ public class DestinationManager implements DestinationFactory {
     for (DestinationManagerListener listener : destinationManagerListeners) {
       listener.created(destinationImpl);
     }
-    logger.log(LogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
+    logger.log(ServerLogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
 
     //-------------------------------------------------------------------------------------
     // We have a divergence here, if we have a Queue then we need to start storing messages
@@ -217,7 +217,7 @@ public class DestinationManager implements DestinationFactory {
   }
 
   public void start() {
-    logger.log(LogMessages.DESTINATION_MANAGER_STARTING);
+    logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
     for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
       DestinationPathManager mapManager = entry.getValue();
       DestinationLocator destinationLocator = new DestinationLocator(mapManager, mapManager.getTrailingPath());
@@ -227,12 +227,12 @@ public class DestinationManager implements DestinationFactory {
   }
 
   public void stop() {
-    logger.log(LogMessages.DESTINATION_MANAGER_STOPPING);
+    logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
     for (DestinationImpl destinationImpl : destinationList.values()) {
       try {
         destinationImpl.close();
       } catch (IOException e) {
-        logger.log(LogMessages.DESTINATION_MANAGER_STOPPING,e);
+        logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING,e);
       }
     }
   }
@@ -258,7 +258,7 @@ public class DestinationManager implements DestinationFactory {
         counter++;
         if(report <= System.currentTimeMillis()){
           report = System.currentTimeMillis() + 1000;
-          logger.log(LogMessages.DESTINATION_MANAGER_RELOADED, counter, directories.size());
+          logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOADED, counter, directories.size());
         }
       }
     }
@@ -270,15 +270,15 @@ public class DestinationManager implements DestinationFactory {
         DestinationImpl destinationImpl = scanDirectory(directory, pathManager);
         if (destinationImpl instanceof TemporaryDestination) {
           // Delete all temporary destinations on restart
-          logger.log(LogMessages.DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION, destinationImpl.getFullyQualifiedNamespace());
+          logger.log(ServerLogMessages.DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION, destinationImpl.getFullyQualifiedNamespace());
           destinationImpl.delete();
         } else {
           destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
-          logger.log(LogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
+          logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
         }
       }
       catch(IOException error){
-        logger.log(LogMessages.DESTINATION_MANAGER_EXCEPTION_ON_START, error);
+        logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEPTION_ON_START, error);
       }
     }
   }

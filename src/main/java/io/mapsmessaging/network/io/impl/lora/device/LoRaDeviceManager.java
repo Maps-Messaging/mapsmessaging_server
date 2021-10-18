@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -71,7 +71,7 @@ public class LoRaDeviceManager {
           }
         }
       } catch (UnsatisfiedLinkError e) {
-        logger.log(LogMessages.LORA_DEVICE_LIBRARY_NOT_LOADED, e.getMessage());
+        logger.log(ServerLogMessages.LORA_DEVICE_LIBRARY_NOT_LOADED, e.getMessage());
       }
     }
   }

@@ -22,9 +22,9 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -74,7 +74,7 @@ public class WillTaskImpl implements Runnable {
         ThreadContext.put("session", details.getSessionId());
         ThreadContext.put("protocol", details.getProtocol());
         ThreadContext.put("version", details.getVersion());
-        logger.log(LogMessages.WILL_TASK_SENDING, details.getMsg());
+        logger.log(ServerLogMessages.WILL_TASK_SENDING, details.getMsg());
         DestinationImpl dest = MessageDaemon.getInstance().getDestinationManager().find(details.getDestination());
         if (dest != null) {
           dest.storeMessage(details.getMsg());
@@ -82,7 +82,7 @@ public class WillTaskImpl implements Runnable {
       }
       WillTaskManager.getInstance().remove(details.getSessionId());
     } catch (IOException e) {
-      logger.log(LogMessages.WILL_TASK_EXCEPTION, e, details.getMsg().toString());
+      logger.log(ServerLogMessages.WILL_TASK_EXCEPTION, e, details.getMsg().toString());
     } finally {
       ThreadContext.clearMap();
     }

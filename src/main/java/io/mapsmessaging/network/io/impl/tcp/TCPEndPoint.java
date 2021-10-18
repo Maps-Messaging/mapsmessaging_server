@@ -18,14 +18,14 @@
 
 package io.mapsmessaging.network.io.impl.tcp;
 
-import static io.mapsmessaging.logging.LogMessages.TCP_ACCEPT_START;
-import static io.mapsmessaging.logging.LogMessages.TCP_CONFIGURED_PARAMETER;
-import static io.mapsmessaging.logging.LogMessages.TCP_READ_BUFFER;
-import static io.mapsmessaging.logging.LogMessages.TCP_SEND_BUFFER;
+import static io.mapsmessaging.logging.ServerLogMessages.TCP_ACCEPT_START;
+import static io.mapsmessaging.logging.ServerLogMessages.TCP_CONFIGURED_PARAMETER;
+import static io.mapsmessaging.logging.ServerLogMessages.TCP_READ_BUFFER;
+import static io.mapsmessaging.logging.ServerLogMessages.TCP_SEND_BUFFER;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPoint;
@@ -72,7 +72,7 @@ public class TCPEndPoint extends EndPoint {
       }
       configure(endPointServerStatus.getConfig().getProperties());
     } catch (IOException e) {
-      logger.log(LogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
+      logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
     }
     mbean = new EndPointJMX(jmxParent, this);
@@ -91,7 +91,7 @@ public class TCPEndPoint extends EndPoint {
       name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
       configure(server.getConfig().getProperties());
     } catch (IOException e) {
-      logger.log(LogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
+      logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
     }
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
@@ -102,7 +102,7 @@ public class TCPEndPoint extends EndPoint {
   @Override
   public void close() {
     if (!isClosed.getAndSet(true)) {
-      logger.log(LogMessages.TCP_CONNECTION_CLOSE, name);
+      logger.log(ServerLogMessages.TCP_CONNECTION_CLOSE, name);
       try {
         super.close();
         deregister(-1);
@@ -111,9 +111,9 @@ public class TCPEndPoint extends EndPoint {
         socket.shutdownOutput();
         socketChannel.close();
         socket.close();
-        logger.log(LogMessages.TCP_CLOSE_SUCCESS, name);
+        logger.log(ServerLogMessages.TCP_CLOSE_SUCCESS, name);
       } catch (IOException e) {
-        logger.log(LogMessages.TCP_CLOSE_EXCEPTION, e, name);
+        logger.log(ServerLogMessages.TCP_CLOSE_EXCEPTION, e, name);
       } finally {
         mbean.close();
         if(server != null) {

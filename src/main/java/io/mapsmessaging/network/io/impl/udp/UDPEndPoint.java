@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.udp;
 
-import static io.mapsmessaging.logging.LogMessages.UDP_CREATED;
-import static io.mapsmessaging.logging.LogMessages.UDP_READ_BYTES;
-import static io.mapsmessaging.logging.LogMessages.UDP_SENT_BYTES;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_CREATED;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_READ_BYTES;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_SENT_BYTES;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;

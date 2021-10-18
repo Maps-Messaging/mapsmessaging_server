@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.consul;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.util.UUID;
 import java.util.concurrent.locks.LockSupport;
 
@@ -38,7 +38,7 @@ public class ConsulManagerFactory {
 
   public synchronized void start(UUID id) {
     stop(); // just to be sure
-    logger.log(LogMessages.CONSUL_MANAGER_START, id.toString());
+    logger.log(ServerLogMessages.CONSUL_MANAGER_START, id.toString());
     boolean retry = true;
     int counter = 0;
     while(retry && counter < Constants.RETRY_COUNT) {
@@ -49,17 +49,17 @@ public class ConsulManagerFactory {
         LockSupport.parkNanos(1000000000L);
         counter++;
         if(!forceWait){
-          logger.log(LogMessages.CONSUL_MANAGER_START_ABORTED, id.toString(), e);
+          logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, id.toString(), e);
           return;
         }
-        logger.log(LogMessages.CONSUL_MANAGER_START_DELAYED, id.toString(), e);
+        logger.log(ServerLogMessages.CONSUL_MANAGER_START_DELAYED, id.toString(), e);
       }
     }
   }
 
   public synchronized void stop(){
     if(manager != null){
-      logger.log(LogMessages.CONSUL_MANAGER_STOP);
+      logger.log(ServerLogMessages.CONSUL_MANAGER_STOP);
       manager.stop();
     }
   }

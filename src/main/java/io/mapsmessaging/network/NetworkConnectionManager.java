@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -49,7 +49,7 @@ public class NetworkConnectionManager implements ServiceManager {
   private final List<String> jmxParent;
 
   public NetworkConnectionManager(List<String> parent) throws IOException {
-    logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     jmxParent = parent;
     ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
     connectionConfiguration = new ArrayList<>();
@@ -60,7 +60,7 @@ public class NetworkConnectionManager implements ServiceManager {
       connectionConfiguration.add((ConfigurationProperties) rootObj);
     }
     endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
-    logger.log(LogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
     selectorLoadManager = new SelectorLoadManager(10);
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
@@ -99,7 +99,7 @@ public class NetworkConnectionManager implements ServiceManager {
   }
 
   public void start() {
-    logger.log(LogMessages.NETWORK_MANAGER_START_ALL);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
     for(EndPointConnection endPointConnection : endPointConnectionList){
       endPointConnection.start();
     }

@@ -1,8 +1,8 @@
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -64,7 +64,7 @@ public class TenantManagement {
     for(NamespaceMapper mapper:mappers){
       tenantPath = mapper.reMap(tenantPath, protocol, securityContext);
     }
-    logger.log(LogMessages.NAMESPACE_MAPPING, username, tenantPath);
+    logger.log(ServerLogMessages.NAMESPACE_MAPPING, username, tenantPath);
     if(tenantPath.length() > 1 && !tenantPath.endsWith("/")){
       tenantPath = tenantPath+"/";
     }
@@ -79,7 +79,7 @@ public class TenantManagement {
     }
     else {
       conf = userConfig.getProperty("namespaceRoot", "");
-      logger.log(LogMessages.NAMESPACE_MAPPING_FOUND, username, conf);
+      logger.log(ServerLogMessages.NAMESPACE_MAPPING_FOUND, username, conf);
     }
     return conf;
   }

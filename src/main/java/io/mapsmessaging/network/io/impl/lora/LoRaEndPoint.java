@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.lora;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPoint;
@@ -134,7 +134,7 @@ public class LoRaEndPoint extends EndPoint  {
 
   @Override
   public FutureTask<SelectionKey>  register(int selectionKey, Selectable runner) {
-    logger.log(LogMessages.LORA_REGISTER_NETWORK_ACTIVITY, selectionKey);
+    logger.log(ServerLogMessages.LORA_REGISTER_NETWORK_ACTIVITY, selectionKey);
     selectable = runner;
     if ( (selectionKey & SelectionKey.OP_READ) != 0) {
       SimpleTaskScheduler.getInstance().submit(new LoRaReader(runner));
@@ -173,7 +173,7 @@ public class LoRaEndPoint extends EndPoint  {
     synchronized (this) {
       lastRSSI = datagram.getRssi();
       incoming.add(datagram);
-      logger.log(LogMessages.LORA_QUEUED_EVENT, incoming.size());
+      logger.log(ServerLogMessages.LORA_QUEUED_EVENT, incoming.size());
 
       int from = datagram.getFrom();
       LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));

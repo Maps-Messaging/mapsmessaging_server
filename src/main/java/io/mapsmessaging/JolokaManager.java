@@ -18,16 +18,16 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import org.jolokia.jvmagent.JolokiaServer;
 import org.jolokia.jvmagent.JolokiaServerConfig;
-import io.mapsmessaging.logging.LogMessages;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 public class JolokaManager {
   private final Logger logger = LoggerFactory.getLogger(JolokaManager.class);
@@ -80,7 +80,7 @@ public class JolokaManager {
         jolokiaServer = new JolokiaServer(config, true);
         jolokiaServer.start();
       } catch (IOException e) {
-        logger.log(LogMessages.JOLOKIA_STARTUP_FAILURE, e);
+        logger.log(ServerLogMessages.JOLOKIA_STARTUP_FAILURE, e);
       }
     }
   }

@@ -1,5 +1,5 @@
 jolokia:
   -
-    enable: true # Flag to indicate if the jolokia plugin should be started
+    enable: false # Flag to indicate if the jolokia plugin should be started
     port: 8778   # The port that jolokia should use
     host: 0.0.0.0 # The host that jolokia should bind to

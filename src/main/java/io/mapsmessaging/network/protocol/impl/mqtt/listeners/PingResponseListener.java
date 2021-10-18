@@ -19,7 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
@@ -28,7 +28,7 @@ public class PingResponseListener extends PacketListener {
 
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
-    logger.log(LogMessages.MQTT_PING);
+    logger.log(ServerLogMessages.MQTT_PING);
     return null;
   }
 }

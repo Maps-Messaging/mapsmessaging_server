@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
@@ -49,19 +49,19 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
       if (handshakeStatus == HandshakeStatus.NEED_TASK) {
         runDelegatedTasks();
       } else if (handshakeStatus == HandshakeStatus.NEED_UNWRAP) {
-        logger.log(LogMessages.SSL_HANDSHAKE_NEED_UNWRAP);
+        logger.log(ServerLogMessages.SSL_HANDSHAKE_NEED_UNWRAP);
         handshakeBufferIn.clear();
         if (sslEndPointImpl.readBuffer(handshakeBufferIn) == 0) {
           return true; // Wait for more data
         }
       } else if (handshakeStatus == HandshakeStatus.NEED_WRAP) {
-        logger.log(LogMessages.SSL_HANDSHAKE_NEED_WRAP);
+        logger.log(ServerLogMessages.SSL_HANDSHAKE_NEED_WRAP);
         sslEndPointImpl.sendBuffer(handshakeBufferOut);
       }
       handshakeStatus = sslEndPointImpl.sslEngine.getHandshakeStatus();
     }
-    logger.log(LogMessages.SSL_HANDSHAKE_FINISHED);
-    logger.log(LogMessages.SSL_HANDSHAKE_ENCRYPTED, handshakeBufferIn.position(), handshakeBufferIn.limit());
+    logger.log(ServerLogMessages.SSL_HANDSHAKE_FINISHED);
+    logger.log(ServerLogMessages.SSL_HANDSHAKE_ENCRYPTED, handshakeBufferIn.position(), handshakeBufferIn.limit());
     sslEndPointImpl.handshakeManager = new SSLHandshakeManagerFinished(); // All done, no longer required
     if(callback != null){
       callback.connected(sslEndPointImpl);
@@ -71,7 +71,7 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
 
   protected void runDelegatedTasks() {
     Logger logger = sslEndPointImpl.getLogger();
-    logger.log(LogMessages.SSL_HANDSHAKE_NEED_TASK);
+    logger.log(ServerLogMessages.SSL_HANDSHAKE_NEED_TASK);
     Runnable runnable;
     while ((runnable = sslEndPointImpl.sslEngine.getDelegatedTask()) != null) {
       runnable.run();
@@ -84,7 +84,7 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
       handleSSLHandshakeStatus();
     } catch (IOException ioException) {
       Logger logger = sslEndPointImpl.getLogger();
-      logger.log(LogMessages.SSL_HANDSHAKE_EXCEPTION, ioException);
+      logger.log(ServerLogMessages.SSL_HANDSHAKE_EXCEPTION, ioException);
       sslEndPointImpl.close();
     }
   }

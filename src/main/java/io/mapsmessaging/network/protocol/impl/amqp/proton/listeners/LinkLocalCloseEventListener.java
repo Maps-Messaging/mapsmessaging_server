@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.engine.Event;
@@ -45,7 +45,7 @@ public class LinkLocalCloseEventListener extends BaseEventListener {
           String alias = eventManager.getContext().getAlias();
           session.removeSubscription(alias);
           engine.removeSubscription(alias);
-          protocol.getLogger().log(LogMessages.AMQP_DELETED_SUBSCRIPTION, alias);
+          protocol.getLogger().log(ServerLogMessages.AMQP_DELETED_SUBSCRIPTION, alias);
         }
         link.setContext(null);
         return true;

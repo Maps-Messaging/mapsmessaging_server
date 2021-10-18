@@ -19,9 +19,9 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.engine.security.PrincipalCallback;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -39,9 +39,9 @@ public class SecurityManager {
   private final ConfigurationProperties properties;
 
   public SecurityManager() {
-    logger.log(LogMessages.SECURITY_MANAGER_STARTUP);
+    logger.log(ServerLogMessages.SECURITY_MANAGER_STARTUP);
     ConfigurationProperties props = ConfigurationManager.getInstance().getProperties("SecurityManager");
-    logger.log(LogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
+    logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
     properties = props;
   }
 

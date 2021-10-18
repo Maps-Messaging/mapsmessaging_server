@@ -26,9 +26,9 @@ import io.mapsmessaging.engine.serializer.MapDBSerializer;
 import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.engine.session.will.WillTaskImpl;
 import io.mapsmessaging.engine.session.will.WillTaskManager;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ public class SessionManager {
   //<editor-fold desc="Manager startup and shutdown functions">
   public void start() {
     if (logger.isInfoEnabled()) {
-      logger.log(LogMessages.SESSION_MANAGER_STARTUP);
+      logger.log(ServerLogMessages.SESSION_MANAGER_STARTUP);
     }
     //
     // Reload any persistent subscriptions from the file backing
@@ -94,7 +94,7 @@ public class SessionManager {
         String sessionId = name.substring(SUBSCRIPTION.length());
         Map<String, SubscriptionContext> map = getSubscriptionContextMap(sessionId, true);
         if (logger.isInfoEnabled()) {
-          logger.log(LogMessages.SESSION_MANAGER_LOADING_SESSION, sessionId, map.size());
+          logger.log(ServerLogMessages.SESSION_MANAGER_LOADING_SESSION, sessionId, map.size());
         }
         //
         // Register the subscription info with the specific pipeline
@@ -112,7 +112,7 @@ public class SessionManager {
 
   public void stop() {
     if (logger.isInfoEnabled()) {
-      logger.log(LogMessages.SESSION_MANAGER_STOPPING);
+      logger.log(ServerLogMessages.SESSION_MANAGER_STOPPING);
     }
     for (SessionImpl sessionImpl : sessions.values()) {
       sessionImpl.close();
@@ -155,13 +155,13 @@ public class SessionManager {
   // get corruption as to which will or session was what.
   //
   public SessionImpl create(SessionContext sessionContext) throws LoginException, IOException {
-    logger.log(LogMessages.SESSION_MANAGER_CREATE, sessionContext.toString());
+    logger.log(ServerLogMessages.SESSION_MANAGER_CREATE, sessionContext.toString());
 
     //
     // Check to see if they can actually log in first
     //
     SecurityContext securityContext = securityManager.getSecurityContext(sessionContext);
-    logger.log(LogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
+    logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
     SessionImpl sessionImpl;
     int lockIndex = getPipeLineIndex(sessionContext.getId());
     synchronized (lockPipeline[lockIndex]) {
@@ -172,7 +172,7 @@ public class SessionManager {
         SessionImpl oldSessionImpl = sessions.get(sessionContext.getId());
         if (oldSessionImpl != null) {
           oldSessionImpl.close();
-          logger.log(LogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionContext.getId());
+          logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_CLOSED, sessionContext.getId());
         }
       }
 
@@ -187,7 +187,7 @@ public class SessionManager {
       // Either reload or create a new subscription manager
       //
       ThreadContext.put("session", sessionContext.getId());
-      logger.log(LogMessages.SESSION_MANAGER_LOADED_SUBSCRIPTION, sessionContext.getId(), subscriptionManager.toString());
+      logger.log(ServerLogMessages.SESSION_MANAGER_LOADED_SUBSCRIPTION, sessionContext.getId(), subscriptionManager.toString());
 
       //
       // Now record the session
@@ -267,11 +267,11 @@ public class SessionManager {
     context.setRestored(false);
     SubscriptionController subscriptionManager = subscriptionManagerFactory.get(context.getId());
     if (subscriptionManager == null) {
-      logger.log(LogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
+      logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
       Map<String, SubscriptionContext> contextMap = getSubscriptionContextMap(context.getId(), context.isPersistentSession());
       subscriptionManager = new SubscriptionController(context, destinationManager, contextMap);
       if (context.isPersistentSession()) {
-        logger.log(LogMessages.SESSION_MANAGER_ADDING_SUBSCRIPTION, context.getId());
+        logger.log(ServerLogMessages.SESSION_MANAGER_ADDING_SUBSCRIPTION, context.getId());
         subscriptionManagerFactory.put(context.getId(), subscriptionManager);
       }
     } else {
@@ -286,7 +286,7 @@ public class SessionManager {
       }
       if (context.isResetState()) {
         disconnectedSessions.decrement(); // No longer stored
-        logger.log(LogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
+        logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
         subscriptionManagerFactory.remove(context.getId());
         subscriptionManager.close();
         Map<String, SubscriptionContext> contextMap = getSubscriptionContextMap(context.getId(), context.isPersistentSession());

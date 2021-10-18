@@ -24,9 +24,9 @@ import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.NotRegisteredException;
 import com.orbitz.consul.model.agent.ImmutableRegistration;
 import com.orbitz.consul.model.agent.Registration;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +47,7 @@ public class ConsulManager implements Runnable {
     client = Consul.builder().build();
     agentClient = client.agentClient();
     serviceId = id;
-    logger.log(LogMessages.CONSUL_STARTUP);
+    logger.log(ServerLogMessages.CONSUL_STARTUP);
   }
 
   public KeyValueClient getKeyValueManager(){
@@ -57,7 +57,7 @@ public class ConsulManager implements Runnable {
   public void register(Map<String,String> meta){
     List<String> propertyNames = new ArrayList<>();
     meta.put("version", Constants.VERSION);
-    logger.log(LogMessages.CONSUL_REGISTER);
+    logger.log(ServerLogMessages.CONSUL_REGISTER);
 
     Registration service = ImmutableRegistration.builder()
         .id(serviceId.toString())
@@ -74,7 +74,7 @@ public class ConsulManager implements Runnable {
 
   public void stop(){
     if(scheduledTask != null){
-      logger.log(LogMessages.CONSUL_SHUTDOWN);
+      logger.log(ServerLogMessages.CONSUL_SHUTDOWN);
       scheduledTask.cancel(false);
     }
   }
@@ -84,7 +84,7 @@ public class ConsulManager implements Runnable {
     try {
       agentClient.pass(serviceId.toString());
     } catch (NotRegisteredException e) {
-      logger.log(LogMessages.CONSUL_PING_EXCEPTION, e);
+      logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
     }
   }
 }

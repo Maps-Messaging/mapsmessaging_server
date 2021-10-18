@@ -21,9 +21,9 @@ package io.mapsmessaging.engine.destination.subscription.state;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.Constants;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.PriorityCollection;
 import io.mapsmessaging.utilities.collections.PriorityQueue;
@@ -94,13 +94,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   @Override
   public synchronized void register(Message message) {
     messagesAtRest.add(message.getIdentifier(), message.getPriority().getValue());
-    logger.log(LogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, message.getIdentifier());
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, message.getIdentifier());
   }
 
   @Override
   public synchronized void register(long messageId) {
     messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
-    logger.log(LogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
   }
 
   @Override
@@ -109,18 +109,18 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     if (!messagesAtRest.remove(message.getIdentifier())) {
       messagesInFlight.remove(message.getIdentifier());
     }
-    logger.log(LogMessages.MESSAGE_STATE_MANAGER_ALLOCATE, name, message.getIdentifier());
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_ALLOCATE, name, message.getIdentifier());
   }
 
   @Override
   public synchronized void commit(long messageId) {
     messagesInFlight.remove(messageId);
-    logger.log(LogMessages.MESSAGE_STATE_MANAGER_COMMIT, name, messageId);
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_COMMIT, name, messageId);
   }
 
   @Override
   public synchronized boolean rollback(long messageId) {
-    logger.log(LogMessages.MESSAGE_STATE_MANAGER_ROLLBACK, name, messageId);
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_ROLLBACK, name, messageId);
     List<Queue<Long>> priorityList = messagesInFlight.getPriorityStructure();
     for (Queue<Long> queue : priorityList) {
       NaturalOrderedLongQueue naturalOrderedLongQueue = (NaturalOrderedLongQueue) queue;
@@ -140,17 +140,17 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     if (response == null) {
       response = -1L;
     }
-    logger.log(LogMessages.MESSAGE_STATE_MANAGER_NEXT, name, response);
+    logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_NEXT, name, response);
     return response;
   }
 
   @Override
   public synchronized void rollbackInFlightMessages() {
     if (!messagesInFlight.isEmpty()) {
-      logger.log(LogMessages.MESSAGE_STATE_MANAGER_ROLLBACK_INFLIGHT, name, messagesInFlight);
+      logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_ROLLBACK_INFLIGHT, name, messagesInFlight);
       messagesAtRest.addAll(messagesInFlight);
       messagesInFlight.clear();
-      logger.log(LogMessages.MESSAGE_STATE_MANAGER_ROLLED_BACK_INFLIGHT, name);
+      logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_ROLLED_BACK_INFLIGHT, name);
     }
   }
 

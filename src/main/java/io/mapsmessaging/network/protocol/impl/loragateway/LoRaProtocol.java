@@ -22,9 +22,9 @@ import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.DATA;
 import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
 
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
@@ -135,7 +135,7 @@ public class LoRaProtocol extends ProtocolImpl {
     out.flip();
     selectorTask.register(SelectionKey.OP_READ);
     if (transmitCount.decrementAndGet() == 0) {
-      logger.log(LogMessages.LORA_GATEWAY_EXCEED_RATE, transmissionRate);
+      logger.log(ServerLogMessages.LORA_GATEWAY_EXCEED_RATE, transmissionRate);
     }
     return loraProtocolEndPoint.sendPackedPacket(out);
   }
@@ -151,7 +151,7 @@ public class LoRaProtocol extends ProtocolImpl {
         endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
       }
     } catch (IOException e) {
-      logger.log(LogMessages.LORA_GATEWAY_EXCEPTION, e);
+      logger.log(ServerLogMessages.LORA_GATEWAY_EXCEPTION, e);
       throw e;
     }
     return true;

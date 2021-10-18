@@ -19,9 +19,9 @@
 package io.mapsmessaging.utilities.configuration;
 
 import io.mapsmessaging.consul.ConsulManagerFactory;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +42,7 @@ public class ConfigurationManager {
   private PropertyManager authoritative;
 
   private ConfigurationManager() {
-    logger.log(LogMessages.PROPERTY_MANAGER_START);
+    logger.log(ServerLogMessages.PROPERTY_MANAGER_START);
     propertyManagers = new ArrayList<>();
     authoritative = null;
   }

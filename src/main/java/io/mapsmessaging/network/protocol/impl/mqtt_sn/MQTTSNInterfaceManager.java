@@ -21,9 +21,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -149,18 +149,18 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     if (publish.getQoS().equals(QualityOfService.MQTT_SN_REGISTERED)) {
       String topic = registeredTopicConfiguration.getTopic(packet.getFromAddress(), publish.getTopicId());
       if (topic != null) {
-        logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT, topic);
+        logger.log(ServerLogMessages.MQTT_SN_REGISTERED_EVENT, topic);
         publishRegisteredTopic(topic, publish);
       } else {
-        logger.log(LogMessages.MQTT_SN_REGISTERED_EVENT_NOT_FOUND, packet.getFromAddress(), publish.getTopicId());
+        logger.log(ServerLogMessages.MQTT_SN_REGISTERED_EVENT_NOT_FOUND, packet.getFromAddress(), publish.getTopicId());
       }
     } else {
-      logger.log(LogMessages.MQTT_SN_INVALID_QOS_PACKET_DETECTED, packet.getFromAddress(), publish.getQoS());
+      logger.log(ServerLogMessages.MQTT_SN_INVALID_QOS_PACKET_DETECTED, packet.getFromAddress(), publish.getQoS());
     }
   }
 
   private void handleAdvertise(Packet packet, Advertise advertise ){
-    logger.log(LogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getId(), packet.getFromAddress().toString());
+    logger.log(ServerLogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getId(), packet.getFromAddress().toString());
   }
 
   private void publishRegisteredTopic(String topic, Publish publish) throws IOException {

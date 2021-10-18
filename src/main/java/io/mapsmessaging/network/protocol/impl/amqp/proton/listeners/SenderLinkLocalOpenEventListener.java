@@ -27,7 +27,7 @@ import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
@@ -113,7 +113,7 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
         engine.addSubscription(context.getAlias(), sender);
         link.setContext(eventManager);
       }
-      protocol.getLogger().log(LogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
+      protocol.getLogger().log(ServerLogMessages.AMQP_CREATED_SUBSCRIPTION, destinationName, context.getAlias());
     } catch (IOException e) {
       ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
       Throwable throwable = e.getCause();

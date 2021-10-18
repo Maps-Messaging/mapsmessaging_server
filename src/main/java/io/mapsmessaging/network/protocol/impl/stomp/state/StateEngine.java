@@ -24,8 +24,8 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.CloseHandler;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocol;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
@@ -78,7 +78,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
       requestCounter++;
       currentState.handleFrame(this, frame, endOfBuffer);
     } catch (IOException e) {
-      logger.log(LogMessages.STOMP_FRAME_HANDLE_EXCEPTION, e, frame);
+      logger.log(ServerLogMessages.STOMP_FRAME_HANDLE_EXCEPTION, e, frame);
       try {
         protocolImpl.getEndPoint().close();
       } catch (IOException ioException) {
@@ -158,7 +158,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     try {
       frameComplete();
     } catch (IOException e) {
-      logger.log(LogMessages.STOMP_STATE_ENGINE_FAILED_COMPLETION);
+      logger.log(ServerLogMessages.STOMP_STATE_ENGINE_FAILED_COMPLETION);
     }
   }
 

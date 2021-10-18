@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
@@ -70,7 +70,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
     if (state != STATE.CLOSED) {
       throw new IOException("End Point not closed, unable to open an already open End Point");
     }
-    logger.log(LogMessages.END_POINT_MANAGER_START, endPointURL);
+    logger.log(ServerLogMessages.END_POINT_MANAGER_START, endPointURL);
     state = STATE.OPEN;
     endPointServer.start();
     endPointServer.register();
@@ -80,7 +80,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
     if (state == STATE.CLOSED) {
       throw new IOException("End Point already closed");
     }
-    logger.log(LogMessages.END_POINT_MANAGER_CLOSE, endPointURL);
+    logger.log(ServerLogMessages.END_POINT_MANAGER_CLOSE, endPointURL);
     state = STATE.CLOSED;
     endPointServer.deregister();
     endPointServer.close();
@@ -94,7 +94,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
       throw new IOException("End Point is already paused");
     }
 
-    logger.log(LogMessages.END_POINT_MANAGER_PAUSE, endPointURL);
+    logger.log(ServerLogMessages.END_POINT_MANAGER_PAUSE, endPointURL);
     endPointServer.deregister();
     state = STATE.PAUSED;
   }
@@ -106,7 +106,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
     if (state != STATE.PAUSED) {
       throw new IOException("End Point is not paused");
     }
-    logger.log(LogMessages.END_POINT_MANAGER_RESUME, endPointURL);
+    logger.log(ServerLogMessages.END_POINT_MANAGER_RESUME, endPointURL);
     endPointServer.register();
     state = STATE.OPEN;
   }
@@ -118,11 +118,11 @@ public class EndPointManager implements Closeable, AcceptHandler {
       try {
         new ProtocolAcceptRunner(endpoint, protocols);
       } catch (IOException e) {
-        logger.log(LogMessages.END_POINT_MANAGER_ACCEPT_EXCEPTION);
+        logger.log(ServerLogMessages.END_POINT_MANAGER_ACCEPT_EXCEPTION);
         endpoint.close();
       }
     } else {
-      logger.log(LogMessages.END_POINT_MANAGER_CLOSE_SERVER);
+      logger.log(ServerLogMessages.END_POINT_MANAGER_CLOSE_SERVER);
       endpoint.close();
     }
   }

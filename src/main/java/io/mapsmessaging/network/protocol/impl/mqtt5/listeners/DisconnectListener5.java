@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Disconnect5;
@@ -46,7 +46,7 @@ public class DisconnectListener5 extends PacketListener5 {
 
         case MessagePropertyFactory.REASON_STRING:
           logger.log(
-              LogMessages.MQTT5_DISCONNECT_REASON, ((ReasonString) property).getReasonString());
+              ServerLogMessages.MQTT5_DISCONNECT_REASON, ((ReasonString) property).getReasonString());
           break;
 
         default:
@@ -54,18 +54,18 @@ public class DisconnectListener5 extends PacketListener5 {
       }
     }
     if (session != null) {
-      logger.log(LogMessages.MQTT5_DISCONNECTING_SESSION, session.getName());
+      logger.log(ServerLogMessages.MQTT5_DISCONNECTING_SESSION, session.getName());
       try {
         SessionManager.getInstance().close(session, disconnect.getDisconnectReason().equals(StatusCode.SUCCESS));
       } catch (IOException e) {
-        logger.log(LogMessages.SESSION_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.SESSION_CLOSE_EXCEPTION, e);
       }
     }
     try {
       protocol.close();
       endPoint.close();
     } catch (IOException e) {
-      logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+      logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }
     return null;
   }

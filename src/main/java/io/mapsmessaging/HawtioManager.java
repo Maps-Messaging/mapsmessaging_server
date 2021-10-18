@@ -18,18 +18,18 @@
 
 package io.mapsmessaging;
 
-import static io.mapsmessaging.logging.LogMessages.HAWTIO_INITIALISATION;
-import static io.mapsmessaging.logging.LogMessages.HAWTIO_NOT_CONFIGURED_TO_RUN;
-import static io.mapsmessaging.logging.LogMessages.HAWTIO_STARTUP;
-import static io.mapsmessaging.logging.LogMessages.HAWTIO_STARTUP_FAILURE;
-import static io.mapsmessaging.logging.LogMessages.HAWTIO_WAR_FILE_NOT_FOUND;
+import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_INITIALISATION;
+import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_NOT_CONFIGURED_TO_RUN;
+import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_STARTUP;
+import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_STARTUP_FAILURE;
+import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_WAR_FILE_NOT_FOUND;
 
-import java.io.File;
-import java.lang.reflect.Method;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import java.io.File;
+import java.lang.reflect.Method;
 
 public class HawtioManager {
 

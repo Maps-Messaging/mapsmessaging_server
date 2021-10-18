@@ -28,7 +28,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
@@ -97,7 +97,7 @@ public class PublishListener extends PacketListener {
           processMessage(publish, protocol, session, response, destination);
         }
       } catch (IOException e) {
-        logger.log(LogMessages.MQTT_PUBLISH_STORE_FAILED, e);
+        logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
         try {
           endPoint.close();
         } catch (IOException ioException) {
@@ -117,7 +117,7 @@ public class PublishListener extends PacketListener {
       try {
         transaction = session.startTransaction(session.getName()+"_"+publish.getPacketId());
       } catch (TransactionException e) {
-        logger.log(LogMessages.MQTT_DUPLICATE_EVENT_RECEIVED, publish.getPacketId());
+        logger.log(ServerLogMessages.MQTT_DUPLICATE_EVENT_RECEIVED, publish.getPacketId());
       }
       if(transaction != null) {
         transaction.add(destination, message);

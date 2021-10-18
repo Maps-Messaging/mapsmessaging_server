@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.util.concurrent.locks.LockSupport;
 
 public class PacketReader implements Runnable {
@@ -61,7 +61,7 @@ public class PacketReader implements Runnable {
             short id   = (short) (flags>>32 & 0xff);
 
             if(len > 0){
-              device.logger.log(LogMessages.LORA_DEVICE_RECEIVED_PACKET, to, from, rssi, len, id);
+              device.logger.log(ServerLogMessages.LORA_DEVICE_RECEIVED_PACKET, to, from, rssi, len, id);
               byte[] buffer = new byte[len];
               System.arraycopy(workingBuffer, 0, buffer, 0, len);
               LoRaDatagram datagram = new LoRaDatagram(to, from, rssi, buffer, id);
@@ -72,17 +72,17 @@ public class PacketReader implements Runnable {
           else{
             if(lastReported<System.currentTimeMillis()){
               lastReported = System.currentTimeMillis()+LOG_DELAY;
-              device.logger.log(LogMessages.LORA_DEVICE_IDLE);
+              device.logger.log(ServerLogMessages.LORA_DEVICE_IDLE);
             }
             LockSupport.parkNanos(1000000);
           }
         }
         catch(Exception ex){
-          device.logger.log(LogMessages.LORA_DEVICE_READ_THREAD_ERROR, device.getName(), ex);
+          device.logger.log(ServerLogMessages.LORA_DEVICE_READ_THREAD_ERROR, device.getName(), ex);
         }
       }
     } finally {
-      device.logger.log(LogMessages.LORA_DEVICE_PACKET_READER_EXITED);
+      device.logger.log(ServerLogMessages.LORA_DEVICE_PACKET_READER_EXITED);
     }
 
   }

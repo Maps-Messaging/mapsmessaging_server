@@ -28,9 +28,9 @@ import io.mapsmessaging.engine.destination.subscription.state.MessageStateManage
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
 import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import java.io.IOException;
@@ -98,7 +98,7 @@ public class DestinationSubscription extends Subscription {
     try {
       destinationImpl.removeSubscription(sessionId);
     } catch (IOException ioException) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_ON_CLOSE, ioException);
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_ON_CLOSE, ioException);
     }
 
     // We need to see if any other subscriptions have interest in these events, and if not then simply
@@ -106,13 +106,13 @@ public class DestinationSubscription extends Subscription {
     try {
       messageStateManager.delete();
     } catch (IOException e) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_ON_CLOSE, e);
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_ON_CLOSE, e);
     }
   }
 
   @Override
   public void hibernate() {
-    logger.log(LogMessages.DESTINATION_SUBSCRIPTION_HIBERNATE, destinationImpl.getFullyQualifiedNamespace(), sessionId);
+    logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_HIBERNATE, destinationImpl.getFullyQualifiedNamespace(), sessionId);
     acknowledgementController.clear();
     messageStateManager.rollbackInFlightMessages();
     //
@@ -125,7 +125,7 @@ public class DestinationSubscription extends Subscription {
   public void wakeUp(SessionImpl sessionImpl) {
     if (this.sessionImpl == null && hibernating && sessionImpl != null) {
       super.wakeUp(sessionImpl);
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_WAKEUP, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_WAKEUP, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
       schedule();
     }
   }
@@ -288,7 +288,7 @@ public class DestinationSubscription extends Subscription {
     acknowledgementController.sent(message);
     eventStateManager.setSubscription(activeSubscription);
     callback.sendMessage(destinationImpl, eventStateManager, message, completionTask);
-    logger.log(LogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
+    logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
     ThreadContext.clearMap();
   }
 
@@ -339,13 +339,13 @@ public class DestinationSubscription extends Subscription {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
 
     if (isAck) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_ACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_ACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
       acknowledgementController.ack(messageId);
       messageStateManager.commit(messageId);
       messagesAcked++;
       destinationImpl.complete(messageId);
     } else {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_ROLLBACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_ROLLBACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
       acknowledgementController.rollback(messageId);
       messageStateManager.rollback(messageId);
       messagesRolledBack++;
@@ -400,12 +400,12 @@ public class DestinationSubscription extends Subscription {
         }
       }
     } catch (IOException e) {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, e, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, e, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
     } catch (CancelledKeyException ignore) {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
       th.printStackTrace();
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
     }
   }
 

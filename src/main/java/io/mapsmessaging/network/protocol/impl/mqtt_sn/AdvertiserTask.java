@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import static io.mapsmessaging.logging.LogMessages.MQTT_SN_ADVERTISER_SENT_PACKET;
-import static io.mapsmessaging.logging.LogMessages.MQTT_SN_ADVERTISE_PACKET_EXCEPTION;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_ADVERTISER_SENT_PACKET;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_ADVERTISE_PACKET_EXCEPTION;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;

@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class ConnectionRemoteCloseEventListener extends BaseEventListener {
       try {
         protocol.close();
       } catch (IOException e) {
-        protocol.getLogger().log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        protocol.getLogger().log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
     }
     return true;

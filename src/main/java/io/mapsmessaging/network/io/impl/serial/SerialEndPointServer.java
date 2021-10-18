@@ -19,9 +19,9 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.SerialEndPointURL;
@@ -73,7 +73,7 @@ public class SerialEndPointServer extends EndPointServer {
         packet.flip();
         factory.create(endPoint, packet);
       } catch (IOException e) {
-        logger.log(LogMessages.SERIAL_SERVER_CREATE_EXCEPTION, e);
+        logger.log(ServerLogMessages.SERIAL_SERVER_CREATE_EXCEPTION, e);
       }
     }
   }
@@ -102,7 +102,7 @@ public class SerialEndPointServer extends EndPointServer {
       try {
         start();
       } catch (IOException e) {
-        logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
     }, 5, TimeUnit.SECONDS);
   }
@@ -127,7 +127,7 @@ public class SerialEndPointServer extends EndPointServer {
       try {
         serialEndPoint.close();
       } catch (IOException e) {
-        logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
     }
   }
@@ -152,7 +152,7 @@ public class SerialEndPointServer extends EndPointServer {
         try {
           start();
         } catch (IOException e) {
-          logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
         }
       }, 2, TimeUnit.SECONDS);
     }

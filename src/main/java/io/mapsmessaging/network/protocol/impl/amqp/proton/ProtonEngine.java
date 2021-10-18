@@ -21,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.listeners.EventListenerFactory;
@@ -235,7 +235,7 @@ public class ProtonEngine {
             sender.drained();
           }
         } catch (Exception e) {
-          protocol.getLogger().log(LogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, e);
+          protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, e);
         }
       }
       processOutput();
@@ -284,7 +284,7 @@ public class ProtonEngine {
         TransportResult result = transport.processInput();
         if (!result.isOk()) {
           if (result.getException() != null) {
-            protocol.getLogger().log(LogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());
+            protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());
           }
         } else {
           handleEvents();

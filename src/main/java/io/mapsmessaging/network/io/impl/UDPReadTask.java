@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.LogMessages.READ_TASK_COMPLETED;
-import static io.mapsmessaging.logging.LogMessages.UDP_READ_TASK_READ_PACKET;
+import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_COMPLETED;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_READ_TASK_READ_PACKET;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.Packet;

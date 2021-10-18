@@ -21,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -54,7 +54,7 @@ public class LinkRemoteDetachEventListener extends BaseEventListener {
         link.detach();
         ErrorCondition errorCondition = link.getRemoteCondition();
         if(errorCondition != null){
-          protocol.getLogger().log(LogMessages.AMQP_REMOTE_LINK_ERROR, errorCondition);
+          protocol.getLogger().log(ServerLogMessages.AMQP_REMOTE_LINK_ERROR, errorCondition);
         }
       }
       return true;

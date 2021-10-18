@@ -24,8 +24,8 @@ import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.START
 import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.SUCCESSFUL;
 
 import com.fazecast.jSerialComm.SerialPortTimeoutException;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.StreamHandler;
 import java.io.IOException;
@@ -84,12 +84,12 @@ public class LoRaStreamHandler implements StreamHandler {
         }
         if (input.read() != Constants.END_FRAME) {
           packet.flip();
-          logger.log(LogMessages.LORA_GATEWAY_FRAMING_ERROR, packet);
+          logger.log(ServerLogMessages.LORA_GATEWAY_FRAMING_ERROR, packet);
           return parseInput(input, packet);
         }
         return len + 2;
       } else {
-        logger.log(LogMessages.LORA_GATEWAY_INVALID_COMMAND, command);
+        logger.log(ServerLogMessages.LORA_GATEWAY_INVALID_COMMAND, command);
         return parseInput(input, packet);
       }
     }

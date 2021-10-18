@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.protocol;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
@@ -56,7 +56,7 @@ public class ProtocolAcceptRunner implements Selectable {
     protocolFactory = new ProtocolFactory(protocols);
     packet = new Packet(BUFFER_SIZE, true);
     endPoint.register(SelectionKey.OP_READ, this);
-    logger.log(LogMessages.PROTOCOL_ACCEPT_REGISTER);
+    logger.log(ServerLogMessages.PROTOCOL_ACCEPT_REGISTER);
   }
 
   /**
@@ -64,44 +64,44 @@ public class ProtocolAcceptRunner implements Selectable {
    */
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
-    logger.log(LogMessages.PROTOCOL_ACCEPT_SELECTOR_FIRED);
+    logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SELECTOR_FIRED);
     try {
-      logger.log(LogMessages.PROTOCOL_ACCEPT_FIRING, packet.position(), packet.limit());
+      logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRING, packet.position(), packet.limit());
       int read = endPoint.readPacket(packet);
       int pos = packet.position();
       if (logger.isDebugEnabled()) {
-        logger.log(LogMessages.PROTOCOL_ACCEPT_FIRED, read, pos, packet.limit());
+        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRED, read, pos, packet.limit());
       }
       try {
         if (read > 0) {
           packet.flip();
           packet.position(0);
-          logger.log(LogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
+          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
           ProtocolImplFactory protocolImplFactory = protocolFactory.detect(packet);
           if (protocolImplFactory != null) {
             endPoint.deregister(SelectionKey.OP_READ);
             packet.position(pos);
             packet.limit(packet.capacity());
             packet.flip();
-            logger.log(LogMessages.PROTOCOL_ACCEPT_CREATED, protocolImplFactory.getName());
+            logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CREATED, protocolImplFactory.getName());
             protocolImplFactory.create(endPoint, packet);
           } else {
             packet.position(pos);
             packet.limit(packet.capacity());
           }
         } else if (read < 0) {
-          logger.log(LogMessages.PROTOCOL_ACCEPT_CLOSED);
+          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
           endPoint.close();
         }
       } finally {
-        logger.log(LogMessages.PROTOCOL_ACCEPT_COMPLETE);
+        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_COMPLETE);
       }
     } catch (IOException e) {
-      logger.log(LogMessages.PROTOCOL_ACCEPT_FAILED_DETECT, e, endPoint.toString());
+      logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FAILED_DETECT, e, endPoint.toString());
       try {
         endPoint.close();
       } catch (IOException ioException) {
-        logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, ioException);
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, ioException);
       }
     }
   }

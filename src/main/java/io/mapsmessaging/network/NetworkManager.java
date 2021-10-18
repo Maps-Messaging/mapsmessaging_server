@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
 import io.mapsmessaging.network.io.EndPointServerFactory;
@@ -46,7 +46,7 @@ public class NetworkManager implements ServiceManager {
   private final List<ConfigurationProperties> adapters;
 
   public NetworkManager(List<String> parent) {
-    logger.log(LogMessages.NETWORK_MANAGER_STARTUP);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
 
     properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
@@ -58,9 +58,9 @@ public class NetworkManager implements ServiceManager {
     else if(obj instanceof ConfigurationProperties){
       adapters.add((ConfigurationProperties) obj);
     }
-    logger.log(LogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
     endPointServers = ServiceLoader.load(EndPointServerFactory.class);
-    logger.log(LogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
 
     bean = new NetworkManagerJMX(parent, this);
   }
@@ -81,18 +81,18 @@ public class NetworkManager implements ServiceManager {
             EndPointManager endPointManager = new EndPointManager(endPointURL, endPointServerFactory, networkConfig, bean);
             endPointManagers.put(endPointURL.toString(), endPointManager);
           } catch (IOException iox) {
-            logger.log(LogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());
+            logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());
           }
         }
         else{
-          logger.log(LogMessages.NETWORK_MANAGER_DEVICE_NOT_LOADED, endPointServerFactory.getName());
+          logger.log(ServerLogMessages.NETWORK_MANAGER_DEVICE_NOT_LOADED, endPointServerFactory.getName());
         }
       }
     }
   }
 
   public void startAll() {
-    logger.log(LogMessages.NETWORK_MANAGER_START_ALL);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
@@ -100,13 +100,13 @@ public class NetworkManager implements ServiceManager {
           entry.getValue().start();
         }
       } catch (IOException e) {
-        logger.log(LogMessages.NETWORK_MANAGER_START_FAILED, e, entry.getKey());
+        logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILED, e, entry.getKey());
       }
     }
   }
 
   public void stopAll() {
-    logger.log(LogMessages.NETWORK_MANAGER_STOP_ALL);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_STOP_ALL);
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
@@ -114,13 +114,13 @@ public class NetworkManager implements ServiceManager {
           endPointManager.close();
         }
       } catch (IOException e) {
-        logger.log(LogMessages.NETWORK_MANAGER_STOP_FAILED, e, entry.getKey());
+        logger.log(ServerLogMessages.NETWORK_MANAGER_STOP_FAILED, e, entry.getKey());
       }
     }
   }
 
   public void pauseAll() {
-    logger.log(LogMessages.NETWORK_MANAGER_PAUSE_ALL);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_PAUSE_ALL);
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
@@ -129,13 +129,13 @@ public class NetworkManager implements ServiceManager {
           endPointManager.pause();
         }
       } catch (IOException e) {
-        logger.log(LogMessages.NETWORK_MANAGER_PAUSE_FAILED, e, entry.getKey());
+        logger.log(ServerLogMessages.NETWORK_MANAGER_PAUSE_FAILED, e, entry.getKey());
       }
     }
   }
 
   public void resumeAll() {
-    logger.log(LogMessages.NETWORK_MANAGER_RESUME_ALL);
+    logger.log(ServerLogMessages.NETWORK_MANAGER_RESUME_ALL);
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
@@ -144,7 +144,7 @@ public class NetworkManager implements ServiceManager {
           endPointManager.resume();
         }
       } catch (IOException e) {
-        logger.log(LogMessages.NETWORK_MANAGER_RESUME_FAILED, e, entry.getKey());
+        logger.log(ServerLogMessages.NETWORK_MANAGER_RESUME_FAILED, e, entry.getKey());
       }
     }
   }

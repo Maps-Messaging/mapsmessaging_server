@@ -23,7 +23,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -61,7 +61,7 @@ public class ConnectListener5 extends PacketListener5 {
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session shouldBeNull, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     if (shouldBeNull != null) {
-      logger.log(LogMessages.MQTT5_SECOND_CONNECT);
+      logger.log(ServerLogMessages.MQTT5_SECOND_CONNECT);
       try {
         protocol.close();
       } catch (IOException e) {
@@ -94,10 +94,10 @@ public class ConnectListener5 extends PacketListener5 {
         try {
           endPoint.close();
         } catch (IOException e) {
-          logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
         }
       });
-      logger.log(LogMessages.MQTT5_CONNECTION_FAILED, connAck.toString());
+      logger.log(ServerLogMessages.MQTT5_CONNECTION_FAILED, connAck.toString());
     }
     if (sendResponseInfo) {
       connAck.add(new ResponseInformation(connAck.getStatusCode().getDescription()));
@@ -112,7 +112,7 @@ public class ConnectListener5 extends PacketListener5 {
       ((MQTT5Protocol) protocol).setSession(session);
       protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
     } catch (LoginException e) {
-      logger.log(LogMessages.MQTT5_FAILED_CONSTRUCTION, e, connect.getSessionId());
+      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, connect.getSessionId());
       try {
         endPoint.close();
       } catch (IOException ioException) {
@@ -120,7 +120,7 @@ public class ConnectListener5 extends PacketListener5 {
       }
       throw new MalformedException("The Server MUST process a second CONNECT packet sent from a Client as a Protocol Error and close the Network Connection [MQTT-3.1.0-2]");
     } catch (IOException ioe) {
-      logger.log(LogMessages.MQTT5_FAILED_CONSTRUCTION, ioe, connect.getSessionId());
+      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, ioe, connect.getSessionId());
       connAck.setStatusCode(StatusCode.TOPIC_NAME_INVALID);
     }
 
@@ -198,7 +198,7 @@ public class ConnectListener5 extends PacketListener5 {
     }
     String duplicateReport = connect.getProperties().getDuplicateReport();
     if (duplicateReport.length() > 0) {
-      logger.log(LogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
+      logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
     }
     return SessionManager.getInstance().create(scb.build(), protocol);
   }
@@ -246,7 +246,7 @@ public class ConnectListener5 extends PacketListener5 {
           break;
 
         default:
-          logger.log(LogMessages.MQTT5_UNHANDLED_PROPERTY, property.toString());
+          logger.log(ServerLogMessages.MQTT5_UNHANDLED_PROPERTY, property.toString());
       }
     }
     return sendResponseInfo;

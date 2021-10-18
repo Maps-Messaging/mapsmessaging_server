@@ -21,9 +21,9 @@ package io.mapsmessaging.network.io.impl;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -76,7 +76,7 @@ public class SelectorTask implements Selectable {
     this.endPoint = selectorCallback.getEndPoint();
     isOpen = true;
     selectionOps = 0;
-    logger.log(LogMessages.SELECTOR_NEW_TASK);
+    logger.log(ServerLogMessages.SELECTOR_NEW_TASK);
   }
 
   private static String selectorOpToString(int op) {
@@ -103,19 +103,19 @@ public class SelectorTask implements Selectable {
   public synchronized void close() {
     isOpen = false;
     selectionKey.cancel();
-    logger.log(LogMessages.SELECTOR_CLOSE_TASK);
+    logger.log(ServerLogMessages.SELECTOR_CLOSE_TASK);
   }
 
   public void push(ServerPacket frame) {
     writeTask.push(frame);
     if(logger.isInfoEnabled()) {
-      logger.log(LogMessages.SELECTOR_PUSH_WRITE, frame.getClass(), writeTask.size());
+      logger.log(ServerLogMessages.SELECTOR_PUSH_WRITE, frame.getClass(), writeTask.size());
     }
   }
 
   public synchronized void register(int selection) throws IOException {
     if (isOpen) {
-      logger.log(LogMessages.SELECTOR_REGISTERING, selectorOpToString(selection));
+      logger.log(ServerLogMessages.SELECTOR_REGISTERING, selectorOpToString(selection));
       selectionOps = selection | selectionOps;
       future = endPoint.register(selectionOps, this);
       if (future != null && future.isDone()) {
@@ -131,10 +131,10 @@ public class SelectorTask implements Selectable {
           }
           Thread.currentThread().interrupt();
         }
-        logger.log(LogMessages.SELECTOR_REGISTER_RESULT, selectorOpToString(selectionKey.interestOps()));
+        logger.log(ServerLogMessages.SELECTOR_REGISTER_RESULT, selectorOpToString(selectionKey.interestOps()));
       }
     } else {
-      logger.log(LogMessages.SELECTOR_REGISTER_CLOSED_TASK, selectorOpToString(selection));
+      logger.log(ServerLogMessages.SELECTOR_REGISTER_CLOSED_TASK, selectorOpToString(selection));
     }
   }
 
@@ -153,7 +153,7 @@ public class SelectorTask implements Selectable {
       }
     }
     if (selectionKey != null && isOpen) {
-      logger.log(LogMessages.SELECTOR_CANCELLING, selectorOpToString(selection), selectorOpToString(selectionOps));
+      logger.log(ServerLogMessages.SELECTOR_CANCELLING, selectorOpToString(selection), selectorOpToString(selectionOps));
       future = endPoint.register(selectionOps, this);
     }
   }
@@ -161,13 +161,13 @@ public class SelectorTask implements Selectable {
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
     if (isOpen) {
-      logger.log(LogMessages.SELECTOR_CALLED_BACK, selectorOpToString(selection));
+      logger.log(ServerLogMessages.SELECTOR_CALLED_BACK, selectorOpToString(selection));
       if ((selection & OP_READ) != 0) {
-        logger.log(LogMessages.SELECTOR_READ_TASK);
+        logger.log(ServerLogMessages.SELECTOR_READ_TASK);
         readTask.selected(selectable, selector, OP_READ);
       }
       if ((selection & OP_WRITE) != 0) {
-        logger.log(LogMessages.SELECTOR_WRITE_TASK);
+        logger.log(ServerLogMessages.SELECTOR_WRITE_TASK);
         writeTask.selected(selectable,selector, OP_WRITE);
       }
     }

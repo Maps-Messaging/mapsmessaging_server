@@ -25,9 +25,9 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
@@ -57,7 +57,7 @@ public class StompProtocol extends ProtocolImpl {
   public StompProtocol(EndPoint endPoint) {
     super(endPoint);
     logger = LoggerFactory.getLogger("STOMP Protocol on " + endPoint.getName());
-    logger.log(LogMessages.STOMP_STARTING, endPoint.toString());
+    logger.log(ServerLogMessages.STOMP_STARTING, endPoint.toString());
     ConfigurationProperties properties = endPoint.getConfig().getProperties();
     int maxBufferSize = DefaultConstants.MAXIMUM_BUFFER_SIZE;
     maxBufferSize = properties.getIntProperty("maximumBufferSize",  maxBufferSize);
@@ -76,12 +76,12 @@ public class StompProtocol extends ProtocolImpl {
 
   @Override
   public void close() {
-    logger.log(LogMessages.STOMP_CLOSING, endPoint.toString());
+    logger.log(ServerLogMessages.STOMP_CLOSING, endPoint.toString());
     try {
       super.close();
       endPoint.close();
     } catch (IOException e) {
-      logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+      logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }
     selectorTask.close();
   }
@@ -143,7 +143,7 @@ public class StompProtocol extends ProtocolImpl {
   public void writeFrame(Frame frame) {
     sentMessage();
     selectorTask.push(frame);
-    logger.log(LogMessages.STOMP_PUSHED_WRITE, frame);
+    logger.log(ServerLogMessages.STOMP_PUSHED_WRITE, frame);
   }
 
   @Override
@@ -166,7 +166,7 @@ public class StompProtocol extends ProtocolImpl {
     } catch (EndOfBufferException eobe) {
       throw eobe; // Do not close on an End Of Buffer Exception
     } catch (IOException e) {
-      logger.log(LogMessages.STOMP_PROCESSING_FRAME_EXCEPTION);
+      logger.log(ServerLogMessages.STOMP_PROCESSING_FRAME_EXCEPTION);
       endPoint.close();
       throw e;
     }
@@ -201,11 +201,11 @@ public class StompProtocol extends ProtocolImpl {
 
     int remaining = packet.available();
     if (activeFrame.isValid()) {
-      logger.log(LogMessages.STOMP_PROCESSING_FRAME, activeFrame);
+      logger.log(ServerLogMessages.STOMP_PROCESSING_FRAME, activeFrame);
       selectorTask.cancel(OP_READ); // Disable read until this frame is complete
       stateEngine.handleFrame(activeFrame, remaining == 0);
     } else {
-      logger.log(LogMessages.STOMP_INVALID_FRAME, frame.toString());
+      logger.log(ServerLogMessages.STOMP_INVALID_FRAME, frame.toString());
       throw new IOException("Invalid STOMP frame received.. Unable to process" + frame.toString());
     }
 

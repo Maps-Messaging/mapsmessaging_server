@@ -20,9 +20,9 @@ package io.mapsmessaging.utilities.admin;
 
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanWrapper;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.Constants;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class JMXManager {
 
   public ObjectInstance register(Object obj, List<String> nameList) {
     String objectId = JMXHelper.buildObjectName(Constants.JMX_DOMAIN, nameList);
-    logger.log(LogMessages.JMX_MANAGER_REGISTER, objectId);
+    logger.log(ServerLogMessages.JMX_MANAGER_REGISTER, objectId);
     try {
       ObjectName objectName = new ObjectName(objectId);
       if(obj instanceof HealthMonitor){
@@ -63,7 +63,7 @@ public class JMXManager {
         return mbs.registerMBean(new JMXBeanWrapper(obj), objectName);
       }
     } catch (Exception e) {
-      logger.log(LogMessages.JMX_MANAGER_REGISTER_FAIL, e, objectId);
+      logger.log(ServerLogMessages.JMX_MANAGER_REGISTER_FAIL, e, objectId);
     }
     return null;
   }
@@ -71,11 +71,11 @@ public class JMXManager {
   public void unregister(ObjectInstance instance) {
     if (instance != null && instance.getObjectName() != null) {
       try {
-        logger.log(LogMessages.JMX_MANAGER_UNREGISTER, instance.getObjectName().toString());
+        logger.log(ServerLogMessages.JMX_MANAGER_UNREGISTER, instance.getObjectName().toString());
         healthMonitorMap.remove(instance.getObjectName());
         mbs.unregisterMBean(instance.getObjectName());
       } catch (Exception e) {
-        logger.log(LogMessages.JMX_MANAGER_UNREGISTER_FAIL, instance.getObjectName());
+        logger.log(ServerLogMessages.JMX_MANAGER_UNREGISTER_FAIL, instance.getObjectName());
       }
     }
   }

@@ -21,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
@@ -39,11 +39,11 @@ public abstract class BaseConnectionListener extends PacketListener {
       session = SessionManager.getInstance().create(scb.build(), protocol);
       ((MQTTProtocol) protocol).setSession(session);
     } catch (LoginException e) {
-      logger.log(LogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, e, sessionId);
+      logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, e, sessionId);
       endPoint.close();
       throw new MalformedException("[MQTT-3.1.0-2] Failed to create the session for the MQTT session");
     } catch (IOException ioe) {
-      logger.log(LogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
+      logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
       endPoint.close();
       throw new MalformedException("Unable to construct the required Will Topic");
     }

@@ -25,7 +25,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
@@ -154,7 +154,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener 
           endPoint.getServer().handleCloseEndPoint(endPoint);
         }
       } catch (IOException ioException) {
-        endPoint.getLogger().log(LogMessages.END_POINT_CONNECTION_FAILED, ioException);
+        endPoint.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, ioException);
         try {
           endPoint.close();
         } catch (IOException e) {

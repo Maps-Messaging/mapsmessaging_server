@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import java.util.List;
@@ -54,9 +54,9 @@ public class ConnectionRemoteOpenEventListener extends BaseEventListener {
           String value = val.toString();
           if (value.toLowerCase().contains("qpidjms")) {
             protocol.setJMS(true);
-            protocol.getLogger().log(LogMessages.AMQP_DETECTED_JMS_CLIENT);
+            protocol.getLogger().log(ServerLogMessages.AMQP_DETECTED_JMS_CLIENT);
           }
-          protocol.getLogger().log(LogMessages.AMQP_REMOTE_CLIENT_PROPERTIES, symbol.toString(), val.toString());
+          protocol.getLogger().log(ServerLogMessages.AMQP_REMOTE_CLIENT_PROPERTIES, symbol.toString(), val.toString());
         }
       });
       protocol.setSessionId(conn.getRemoteContainer());

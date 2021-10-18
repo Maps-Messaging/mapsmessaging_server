@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.engine.security;
 
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Arrays;
@@ -83,8 +83,8 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
 
     // print debugging information
     if (debug) {
-      logger.log(LogMessages.SSL_CERTIFICATE_SECURITY_USERNAME, username);
-      logger.log(LogMessages.SSL_CERTIFICATE_SECURITY_PASSWORD, new String(password));
+      logger.log(ServerLogMessages.SSL_CERTIFICATE_SECURITY_USERNAME, username);
+      logger.log(ServerLogMessages.SSL_CERTIFICATE_SECURITY_PASSWORD, new String(password));
     }
     succeeded = true;
     return true;
@@ -97,7 +97,7 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
     } else {
       subject.getPrincipals().add(sslPrincipal);
       if (debug) {
-        logger.log(LogMessages.SSL_CERTIFICATE_SECURITY_PASSWORD);
+        logger.log(ServerLogMessages.SSL_CERTIFICATE_SECURITY_PASSWORD);
       }
       // in any case, clean out state
       username = null;
@@ -130,7 +130,7 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
    */
   @Override
   public boolean logout() throws LoginException {
-    logger.log(LogMessages.SSL_CERTIFICATE_SECURITY_SUBJECT_LOG_IN);
+    logger.log(ServerLogMessages.SSL_CERTIFICATE_SECURITY_SUBJECT_LOG_IN);
     return super.logout();
   }
 }

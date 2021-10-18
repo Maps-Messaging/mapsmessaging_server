@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.EndPointServer;
@@ -54,9 +54,9 @@ public class SSLEndPoint extends TCPEndPoint {
   public SSLEndPoint(long id, SSLEngine engine, SocketChannel accepted, Selector select, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
     super(id, accepted, select, endPointServerStatus, jmxParent);
     sslEngine = engine;
-    logger.log(LogMessages.SSL_CREATE_ENGINE);
+    logger.log(ServerLogMessages.SSL_CREATE_ENGINE);
     int sessionSize = sslEngine.getSession().getPacketBufferSize();
-    logger.log(LogMessages.SSL_ENCRYPTION_BUFFERS, sessionSize);
+    logger.log(ServerLogMessages.SSL_ENCRYPTION_BUFFERS, sessionSize);
     encryptedOut = ByteBuffer.allocateDirect(sessionSize);
     encryptedIn = ByteBuffer.allocateDirect(sessionSize);
     init(engine, callback);
@@ -69,10 +69,10 @@ public class SSLEndPoint extends TCPEndPoint {
       throws IOException {
     super(id, socket, select, authConfig, server, managerMBean);
     sslEngine = engine;
-    logger.log(LogMessages.SSL_CREATE_ENGINE);
+    logger.log(ServerLogMessages.SSL_CREATE_ENGINE);
 
     int sessionSize = sslEngine.getSession().getPacketBufferSize();
-    logger.log(LogMessages.SSL_ENCRYPTION_BUFFERS, sessionSize);
+    logger.log(ServerLogMessages.SSL_ENCRYPTION_BUFFERS, sessionSize);
     encryptedOut = ByteBuffer.allocateDirect(sessionSize);
     encryptedIn = ByteBuffer.allocateDirect(sessionSize);
 
@@ -84,10 +84,10 @@ public class SSLEndPoint extends TCPEndPoint {
     sslEngine.setUseClientMode(callback != null);
 
 
-    logger.log(LogMessages.SSL_HANDSHAKE_START);
+    logger.log(ServerLogMessages.SSL_HANDSHAKE_START);
     handshakeManager = new SSLHandShakeManagerImpl(this, callback);
 
-    logger.log(LogMessages.SSL_HANDSHAKE_READY);
+    logger.log(ServerLogMessages.SSL_HANDSHAKE_READY);
     sslEngine.beginHandshake();
   }
 
@@ -96,7 +96,7 @@ public class SSLEndPoint extends TCPEndPoint {
     handshakeManager.handleSSLHandshakeStatus();
     int original = packet.position();
     sendBuffer(packet.getRawBuffer());
-    logger.log(LogMessages.SSL_SENT, (packet.position() - original));
+    logger.log(ServerLogMessages.SSL_SENT, (packet.position() - original));
     return packet.position() - original;
   }
 
@@ -104,7 +104,7 @@ public class SSLEndPoint extends TCPEndPoint {
   public int readPacket(Packet packet) throws IOException {
     if (!handshakeManager.handleSSLHandshakeStatus()) {
       int len = readBuffer(packet.getRawBuffer());
-      logger.log(LogMessages.SSL_READ, len);
+      logger.log(ServerLogMessages.SSL_READ, len);
       return len;
     }
     return 0;
@@ -120,7 +120,7 @@ public class SSLEndPoint extends TCPEndPoint {
       len += super.sendBuffer(encryptedOut);
       encryptedOut.clear(); // Will need to deal with limited writes
     } while (result.getStatus() == Status.BUFFER_OVERFLOW);
-    logger.log(LogMessages.SSL_SEND_ENCRYPTED, len);
+    logger.log(ServerLogMessages.SSL_SEND_ENCRYPTED, len);
 
     return len;
   }
@@ -128,13 +128,13 @@ public class SSLEndPoint extends TCPEndPoint {
   @Override
   protected int readBuffer(ByteBuffer applicationIn) throws IOException {
     int response = super.readBuffer(encryptedIn);
-    logger.log(LogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
+    logger.log(ServerLogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
     if (response > 0 || encryptedIn.position() != 0) {
       if (encryptedIn.limit() == encryptedIn.capacity()) {
         encryptedIn.flip();
         response = encryptedIn.limit();
       }
-      logger.log(LogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
+      logger.log(ServerLogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
       handleSSLEngineResult(sslEngine.unwrap(encryptedIn, applicationIn));
       if (encryptedIn.position() == encryptedIn.limit()) {
         encryptedIn.clear();
@@ -149,7 +149,7 @@ public class SSLEndPoint extends TCPEndPoint {
     if (result.getStatus() == Status.CLOSED) {
       throw new IOException("Session closed");
     } else {
-      logger.log(LogMessages.SSL_ENGINE_RESULT, result.getStatus());
+      logger.log(ServerLogMessages.SSL_ENGINE_RESULT, result.getStatus());
     }
     return result;
   }
@@ -160,7 +160,7 @@ public class SSLEndPoint extends TCPEndPoint {
       try {
         return sslEngine.getSession().getPeerPrincipal();
       } catch (SSLPeerUnverifiedException e) {
-        logger.log(LogMessages.SSL_ENGINE_CLIENT_AUTH);
+        logger.log(ServerLogMessages.SSL_ENGINE_CLIENT_AUTH);
       }
     }
     return null;

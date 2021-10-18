@@ -19,9 +19,9 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -78,14 +78,14 @@ public class SerialEndPortScanner implements Runnable {
         knownPorts.put(key, port);
         SerialEndPointServer server = serverEndPoints.get(key);
         if (server != null) {
-          logger.log(LogMessages.SERIAL_PORT_SCANNER_BINDING, server.getName(), key);
+          logger.log(ServerLogMessages.SERIAL_PORT_SCANNER_BINDING, server.getName(), key);
           try {
             server.bind(port);
           } catch (IOException e) {
-            logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+            logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
           }
         } else {
-          logger.log(LogMessages.SERIAL_PORT_SCANNER_UNUSED, key);
+          logger.log(ServerLogMessages.SERIAL_PORT_SCANNER_UNUSED, key);
         }
       }
     }
@@ -113,14 +113,14 @@ public class SerialEndPortScanner implements Runnable {
     SerialPort port = knownPorts.remove(current);
     if (server != null &&
         port != null) {
-      logger.log(LogMessages.SERIAL_PORT_SCANNER_UNBINDING, server.getName(), current);
+      logger.log(ServerLogMessages.SERIAL_PORT_SCANNER_UNBINDING, server.getName(), current);
       try {
         server.unbind(port);
       } catch (IOException e) {
-        logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
     } else {
-      logger.log(LogMessages.SERIAL_PORT_SCANNER_LOST, current);
+      logger.log(ServerLogMessages.SERIAL_PORT_SCANNER_LOST, current);
     }
   }
 

@@ -28,9 +28,9 @@ import io.mapsmessaging.engine.destination.subscription.transaction.CreditManage
 import io.mapsmessaging.engine.destination.subscription.transaction.FixedCreditManager;
 import io.mapsmessaging.engine.destination.subscription.transaction.IndividualAcknowledgementController;
 import io.mapsmessaging.engine.session.SessionImpl;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -108,7 +108,7 @@ public abstract class SubscriptionBuilder {
       try {
         parser = SelectorParser.compile(selector);
       } catch (ParseException e) {
-        logger.log(LogMessages.SUBSCRIPTION_MGR_SELECTOR_EXCEPTION, context.getSelector(), e);
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_SELECTOR_EXCEPTION, context.getSelector(), e);
         throw new IOException("Failed to parse selector", e);
       }
     }

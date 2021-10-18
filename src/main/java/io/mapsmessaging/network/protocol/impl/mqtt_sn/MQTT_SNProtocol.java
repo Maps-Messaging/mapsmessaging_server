@@ -23,9 +23,9 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
@@ -70,7 +70,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     this.factory = factory;
     packetIdManager = new PacketIdManager();
     sleepManager = new SleepManager(endPoint.getConfig().getProperties().getIntProperty("eventsPerTopicDuringSleep", DefaultConstants.MAX_SLEEP_EVENTS));
-    logger.log(LogMessages.MQTT_SN_INSTANCE);
+    logger.log(ServerLogMessages.MQTT_SN_INSTANCE);
     packetFactory = new PacketFactory();
     closed = false;
     stateEngine = new StateEngine(new InitialConnectionState());
@@ -118,7 +118,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   private void handleMQTTEvent(@NonNull @NotNull MQTT_SNPacket mqtt) {
     if (logger.isInfoEnabled()) {
-      logger.log(LogMessages.RECEIVE_PACKET, mqtt.toString());
+      logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt.toString());
     }
     receivedMessageAverages.increment();
     try {
@@ -127,7 +127,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
         writeFrame(response);
       }
     } catch (Exception e) {
-      logger.log(LogMessages.MQTT_SN_PACKET_EXCEPTION, e, mqtt);
+      logger.log(ServerLogMessages.MQTT_SN_PACKET_EXCEPTION, e, mqtt);
       try {
         close();
       } catch (IOException ioException) {
@@ -144,7 +144,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       try {
         close();
       } catch (IOException e) {
-        logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
       }
     }
   }
@@ -183,7 +183,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     frame.setFromAddress(remoteClient);
     sentMessageAverages.increment();
     selectorTask.push(frame);
-    logger.log(LogMessages.PUSH_WRITE, frame);
+    logger.log(ServerLogMessages.PUSH_WRITE, frame);
     if (frame.getCallback() != null) {
       frame.getCallback().run();
     }

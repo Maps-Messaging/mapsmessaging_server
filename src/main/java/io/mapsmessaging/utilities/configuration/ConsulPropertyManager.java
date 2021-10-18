@@ -23,9 +23,9 @@ import com.orbitz.consul.ConsulException;
 import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.model.kv.Value;
 import io.mapsmessaging.consul.ConsulManagerFactory;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -55,7 +55,7 @@ public class ConsulPropertyManager extends PropertyManager {
         processKey(keyValueClient, key);
       }
     } catch (ConsulException e) {
-      logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES, serverPrefix);
+      logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES, serverPrefix);
     }
   }
 
@@ -72,10 +72,10 @@ public class ConsulPropertyManager extends PropertyManager {
       }
     }
     catch(ConsulException consulException){
-      logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
+      logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
     }
     catch(JSONException jsonException){
-      logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, jsonException);
+      logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, jsonException);
     }
   }
 
@@ -115,7 +115,7 @@ public class ConsulPropertyManager extends PropertyManager {
 
   @Override
   protected void store(String name) {
-    logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_STORE, serverPrefix, name);
+    logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_STORE, serverPrefix, name);
     KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     keyValueClient.putValue(serverPrefix+name, getPropertiesJSON(name).toString(2));
   }
@@ -136,7 +136,7 @@ public class ConsulPropertyManager extends PropertyManager {
   }
 
   public void save(){
-    logger.log(LogMessages.CONSUL_PROPERTY_MANAGER_SAVE_ALL, serverPrefix);
+    logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_SAVE_ALL, serverPrefix);
 
     KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     // Now lets Store it in key value pairs in consul

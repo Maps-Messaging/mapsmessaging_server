@@ -19,9 +19,9 @@
 package io.mapsmessaging.engine;
 
 import io.mapsmessaging.api.Transaction;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,16 +96,16 @@ public class TransactionManager implements Runnable {
    */
   @Override
   public synchronized void run() {
-    logger.log(LogMessages.TRANSACTION_MANAGER_SCANNING);
+    logger.log(ServerLogMessages.TRANSACTION_MANAGER_SCANNING);
     long now = System.currentTimeMillis();
     List<Transaction> currentList = new ArrayList<>(transactionList.values());
     for(Transaction transaction:currentList){
       if(transaction.getExpiryTime() < now){
-        logger.log(LogMessages.TRANSACTION_MANAGER_TIMEOUT_DETECTED, transaction.getTransactionId());
+        logger.log(ServerLogMessages.TRANSACTION_MANAGER_TIMEOUT_DETECTED, transaction.getTransactionId());
         try {
           transaction.close();
         } catch (IOException e) {
-          logger.log(LogMessages.TRANSACTION_MANAGER_CLOSE_FAILED, e, transaction.getTransactionId());
+          logger.log(ServerLogMessages.TRANSACTION_MANAGER_CLOSE_FAILED, e, transaction.getTransactionId());
         }
       }
     }

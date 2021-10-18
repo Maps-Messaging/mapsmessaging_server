@@ -27,7 +27,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
@@ -128,7 +128,7 @@ public class PublishListener5 extends PacketListener5 {
       long id = publish.getPacketId();
       List<Long> outstanding = ((MQTT5Protocol) protocol).getClientOutstanding();
       if (outstanding.size() >= ((MQTT5Protocol) protocol).getServerReceiveMaximum()) {
-        logger.log(LogMessages.MQTT5_EXCEED_MAXIMUM, outstanding.size(), ((MQTT5Protocol) protocol).getServerReceiveMaximum());
+        logger.log(ServerLogMessages.MQTT5_EXCEED_MAXIMUM, outstanding.size(), ((MQTT5Protocol) protocol).getServerReceiveMaximum());
         ((MQTT5Protocol) protocol).setClosing(true);
         Disconnect5 disconnect5 = new Disconnect5(StatusCode.RECEIVE_MAXIMUM_EXCEEDED);
         disconnect5.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
@@ -191,7 +191,7 @@ public class PublishListener5 extends PacketListener5 {
 
       String duplicateReport = publish.getProperties().getDuplicateReport();
       if (duplicateReport.length() > 0) {
-        logger.log(LogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
+        logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
       }
 
       try {
@@ -241,7 +241,7 @@ public class PublishListener5 extends PacketListener5 {
 
         transaction = session.startTransaction(session.getName()+"_"+publish.getPacketId());
       } catch (TransactionException e) {
-        logger.log(LogMessages.MQTT_DUPLICATE_EVENT_RECEIVED, publish.getPacketId());
+        logger.log(ServerLogMessages.MQTT_DUPLICATE_EVENT_RECEIVED, publish.getPacketId());
         return -1;
       }
       transaction.add(destination, message);

@@ -26,9 +26,9 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -76,7 +76,7 @@ public class MQTTProtocol extends ProtocolImpl {
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
     topicNameMapping = new ConcurrentHashMap<>();
-    logger.log(LogMessages.MQTT_START);
+    logger.log(ServerLogMessages.MQTT_START);
     maxBufferSize = endPoint.getConfig().getProperties().getLongProperty("maximumBufferSize", DefaultConstants.MAXIMUM_BUFFER_SIZE);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
     packetListenerFactory = new PacketListenerFactory();
@@ -179,7 +179,7 @@ public class MQTTProtocol extends ProtocolImpl {
       registerRead();
       return false;
     } catch (MalformedException | IOException e) {
-      logger.log(LogMessages.MALFORMED, e, e.getMessage());
+      logger.log(ServerLogMessages.MALFORMED, e, e.getMessage());
       endPoint.close();
     }
     return true;
@@ -189,7 +189,7 @@ public class MQTTProtocol extends ProtocolImpl {
     MQTTPacket mqtt = packetFactory.parseFrame(packet);
     if (mqtt != null) {
       if (logger.isInfoEnabled()) {
-        logger.log(LogMessages.RECEIVE_PACKET, mqtt.toString());
+        logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt.toString());
       }
       receivedMessageAverages.increment();
       MQTTPacket response =
@@ -199,7 +199,7 @@ public class MQTTProtocol extends ProtocolImpl {
       if (response != null) {
         sentMessageAverages.increment();
         if (logger.isInfoEnabled()) {
-          logger.log(LogMessages.RESPONSE_PACKET, response.toString());
+          logger.log(ServerLogMessages.RESPONSE_PACKET, response.toString());
         }
         selectorTask.push(response);
       }
@@ -212,7 +212,7 @@ public class MQTTProtocol extends ProtocolImpl {
     ThreadContext.put("protocol", getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("version", getVersion());
-    logger.log(LogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
+    logger.log(ServerLogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
     long timeout = System.currentTimeMillis() - (keepAlive + 1000);
     if(endPoint.isClient()) {
       writeFrame( new PingReq());
@@ -222,7 +222,7 @@ public class MQTTProtocol extends ProtocolImpl {
     boolean readTimeOut = endPoint.getLastRead() < timeout;
     boolean writeTimeOut = endPoint.getLastWrite() < timeout;
     if (readTimeOut && writeTimeOut) {
-      logger.log(LogMessages.MQTT_DISCONNECT_TIMEOUT);
+      logger.log(ServerLogMessages.MQTT_DISCONNECT_TIMEOUT);
       try {
         close();
       } catch (IOException e) {
@@ -269,7 +269,7 @@ public class MQTTProtocol extends ProtocolImpl {
   public void writeFrame(ServerPacket frame) {
     sentMessage();
     selectorTask.push(frame);
-    logger.log(LogMessages.PUSH_WRITE, frame);
+    logger.log(ServerLogMessages.PUSH_WRITE, frame);
   }
 
   public PacketIdManager getPacketIdManager() {

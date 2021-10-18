@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
@@ -48,13 +48,13 @@ public class SSLEndPointServer extends TCPEndPointServer {
       EndPointManagerJMX managerMBean)
       throws IOException {
     super(bindAddr, sel, accept, config, url, managerMBean);
-    logger.log(LogMessages.SSL_SERVER_START);
+    logger.log(ServerLogMessages.SSL_SERVER_START);
     requiresClientAuth = Boolean.parseBoolean(config.getProperties().getProperty("ssl_clientCertificateRequired", "false"));
 
     try{
       sslContext = SSLHelper.getInstance().createContext(config.getProperties(), logger);
     } finally {
-      logger.log(LogMessages.SSL_SERVER_COMPLETED);
+      logger.log(ServerLogMessages.SSL_SERVER_COMPLETED);
     }
   }
 
@@ -75,7 +75,7 @@ public class SSLEndPointServer extends TCPEndPointServer {
               managerMBean);
       handleNewEndPoint(sslEndPoint);
     } catch (IOException e) {
-      logger.log(LogMessages.SSL_SERVER_ACCEPT_FAILED);
+      logger.log(ServerLogMessages.SSL_SERVER_ACCEPT_FAILED);
     }
   }
 

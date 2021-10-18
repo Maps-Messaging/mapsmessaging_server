@@ -20,7 +20,7 @@ package io.mapsmessaging.network.io.connection.state;
 
 import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
-import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.auth.TokenGenerator;
 import io.mapsmessaging.network.auth.TokenGeneratorManager;
@@ -70,7 +70,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       ProtocolImpl protocolImpl =  protocolImplFactory.connect(endpoint, sessionId, username, password);
       endPointConnection.setConnection(protocolImpl);
     } catch (IOException ioException) {
-      endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
+      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
   }
@@ -83,7 +83,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       List<String> jmxPath = endPointConnection.getJMXPath();
       activeEndPoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
     } catch (Exception ioException) {
-      endPointConnection.getLogger().log(LogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
+      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
       endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
     }
   }

@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -45,13 +45,13 @@ public class LoRaDevice {
 
   public synchronized void registerEndPoint(LoRaEndPoint endPoint) throws IOException {
     if (!isInitialised && !init((int)endPoint.getId())) {
-      logger.log(LogMessages.LORA_DEVICE_NOT_INITIALISED, config.getName(), config.getRadio());
+      logger.log(ServerLogMessages.LORA_DEVICE_NOT_INITIALISED, config.getName(), config.getRadio());
     } else if (radioHandle < 0) {
-      logger.log(LogMessages.LORA_DEVICE_INIT_FAILED, config.getName(), config.getRadio());
+      logger.log(ServerLogMessages.LORA_DEVICE_INIT_FAILED, config.getName(), config.getRadio());
     } else {
       if (!registeredEndPoint.containsKey((int) endPoint.getId())) {
         registeredEndPoint.put((int) endPoint.getId(), endPoint);
-        logger.log(LogMessages.LORA_DEVICE_REGISTERED, endPoint.getName(), config.getName());
+        logger.log(ServerLogMessages.LORA_DEVICE_REGISTERED, endPoint.getName(), config.getName());
       }
     }
   }
@@ -80,7 +80,7 @@ public class LoRaDevice {
   }
 
   public void log(String message){
-    logger.log(LogMessages.LORA_DEVICE_DRIVER_LOG, config.getName(), config.getRadio(), message);
+    logger.log(ServerLogMessages.LORA_DEVICE_DRIVER_LOG, config.getName(), config.getRadio(), message);
   }
 
   void handleIncomingPacket(LoRaDatagram datagram){
@@ -89,7 +89,7 @@ public class LoRaDevice {
       endPoint.queue(datagram);
     }
     else{
-      logger.log(LogMessages.LORA_DEVICE_NO_REGISTERED_ENDPOINT, datagram.getTo());
+      logger.log(ServerLogMessages.LORA_DEVICE_NO_REGISTERED_ENDPOINT, datagram.getTo());
     }
   }
 

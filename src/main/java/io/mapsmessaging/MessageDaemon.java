@@ -25,6 +25,18 @@ import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
+import io.mapsmessaging.engine.transformers.TransformerManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.NetworkConnectionManager;
+import io.mapsmessaging.network.NetworkManager;
+import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.service.Service;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,18 +54,6 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
-import io.mapsmessaging.logging.LogMessages;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.engine.transformers.TransformerManager;
-import io.mapsmessaging.network.NetworkConnectionManager;
-import io.mapsmessaging.network.NetworkManager;
-import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.service.Service;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -86,7 +86,7 @@ public class MessageDaemon implements WrapperListener {
     String tmpHome = System.getProperty("MAPS_HOME", ".");
     File testHome = new File(tmpHome);
     if (!testHome.exists()) {
-      logger.log(LogMessages.MESSAGE_DAEMON_NO_HOME_DIRECTORY, testHome);
+      logger.log(ServerLogMessages.MESSAGE_DAEMON_NO_HOME_DIRECTORY, testHome);
       tmpHome = ".";
     }
     if (tmpHome.endsWith(File.separator)) {
@@ -157,18 +157,18 @@ public class MessageDaemon implements WrapperListener {
 
   private void logServiceManagers(){
 
-    logger.log(LogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Network Manager");
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Network Manager");
     logServices(networkManager.getServices());
 
-    logger.log(LogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "System Topics Manager");
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "System Topics Manager");
     logServices(systemTopicManager.getServices());
 
-    logger.log(LogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Transformation Manager");
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Transformation Manager");
     logServices(TransformationManager.getInstance().getServices());
 
     logServices(networkConnectionManager.getServices());
 
-    logger.log(LogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
     ServiceLoader<ProtocolImplFactory> protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
     List<Service> service = new ArrayList<>();
     for(ProtocolImplFactory parser:protocolServiceLoader){
@@ -182,7 +182,7 @@ public class MessageDaemon implements WrapperListener {
   private void logServices(Iterator<Service> services){
     while(services.hasNext()){
       Service service = services.next();
-      logger.log(LogMessages.MESSAGE_DAEMON_SERVICE, service.getName(), service.getDescription());
+      logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE, service.getName(), service.getDescription());
     }
   }
 
@@ -233,7 +233,7 @@ public class MessageDaemon implements WrapperListener {
 
   @Override
   public Integer start(String[] strings) {
-    logger.log(LogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
     if(ConsulManagerFactory.getInstance().isStarted()){
       ConfigurationProperties  map = ConfigurationManager.getInstance().getProperties("NetworkManager");
       List<ConfigurationProperties> list = (List<ConfigurationProperties>) map.get("data");

@@ -19,9 +19,9 @@
 package io.mapsmessaging.network.protocol.impl.echo;
 
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
@@ -57,7 +57,7 @@ public class EchoProtocol extends io.mapsmessaging.network.protocol.ProtocolImpl
     try {
       endPoint.deregister(SelectionKey.OP_READ);
     } catch (ClosedChannelException e) {
-      logger.log(LogMessages.ECHO_EXCEPTION);
+      logger.log(ServerLogMessages.ECHO_EXCEPTION);
     }
     executor.execute(new Task());
   }
@@ -112,11 +112,11 @@ public class EchoProtocol extends io.mapsmessaging.network.protocol.ProtocolImpl
         } while (read > 0);
         endPoint.register(SelectionKey.OP_READ, EchoProtocol.this);
       } catch (Exception e) {
-        logger.log(LogMessages.ECHO_CLOSED);
+        logger.log(ServerLogMessages.ECHO_CLOSED);
         try {
           endPoint.close();
         } catch (IOException ioException) {
-          logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
         }
       }
     }

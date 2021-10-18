@@ -18,15 +18,15 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.LogMessages.WRITE_TASK_BLOCKED;
-import static io.mapsmessaging.logging.LogMessages.WRITE_TASK_SEND_FAILED;
-import static io.mapsmessaging.logging.LogMessages.WRITE_TASK_UNABLE_TO_ADD_WRITE;
-import static io.mapsmessaging.logging.LogMessages.WRITE_TASK_WRITE;
-import static io.mapsmessaging.logging.LogMessages.WRITE_TASK_WRITE_CANCEL;
+import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_BLOCKED;
+import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_SEND_FAILED;
+import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_UNABLE_TO_ADD_WRITE;
+import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_WRITE;
+import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_WRITE_CANCEL;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -161,7 +161,7 @@ public class WriteTask implements Selectable {
 
     private boolean writeBuffer() {
       try {
-        logger.log(LogMessages.WRITE_TASK_WRITE_PACKET, packet);
+        logger.log(ServerLogMessages.WRITE_TASK_WRITE_PACKET, packet);
         if (selectorCallback.getEndPoint().sendPacket(packet) == 0) {
           logger.log(WRITE_TASK_BLOCKED);
           return false;
@@ -170,7 +170,7 @@ public class WriteTask implements Selectable {
         try {
           selectorCallback.close();
         } catch (IOException ioException) {
-          logger.log(LogMessages.END_POINT_CLOSE_EXCEPTION, e);
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
         }
         logger.log(WRITE_TASK_SEND_FAILED, e);
       }

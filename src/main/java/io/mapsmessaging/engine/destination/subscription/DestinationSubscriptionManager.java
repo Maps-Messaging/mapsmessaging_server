@@ -19,9 +19,9 @@
 package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ public class DestinationSubscriptionManager implements Subscribable{
 
   public void put(String name, Subscription subscription) {
     subscriptions.computeIfAbsent(name, k -> {
-      logger.log(LogMessages.DESTINATION_SUBSCRIPTION_PUT, subscription.getSessionId(), name, subscription.getName());
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_PUT, subscription.getSessionId(), name, subscription.getName());
       return subscription;
     });
   }
@@ -77,7 +77,7 @@ public class DestinationSubscriptionManager implements Subscribable{
 
     Subscribable subscribable = subscriptions.remove(name);
     if (subscribable != null) {
-      logger.log(LogMessages.SUBSCRIPTION_MGR_REMOVED, name, subscribable.getName());
+      logger.log(ServerLogMessages.SUBSCRIPTION_MGR_REMOVED, name, subscribable.getName());
     }
     return subscribable;
   }
