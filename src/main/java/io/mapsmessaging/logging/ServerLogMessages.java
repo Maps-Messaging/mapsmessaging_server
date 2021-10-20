@@ -583,6 +583,10 @@ public enum ServerLogMessages implements LogMessage {
 
     private final @Getter String description;
 
+    public String getDivision(){
+      return "Messaging";
+    }
+
     SERVER_CATEGORY(String description) {
       this.description = description;
     }
