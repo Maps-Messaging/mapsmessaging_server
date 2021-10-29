@@ -393,7 +393,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Simple_Logging</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.3</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
     <dependency>
@@ -492,7 +492,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.92</version>
+      <version>1.12.98</version>
       <scope>test</scope>
     </dependency>
 
