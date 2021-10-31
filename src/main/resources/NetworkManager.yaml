@@ -94,7 +94,7 @@ NetworkManager:
         url: tcp://0.0.0.0:1883/
         protocol : mqtt
         selectorThreadCount : 10
-        auth : jwt
+        auth : public
         receiveBufferSize : 1200000
         sendBufferSize    : 1200000
 

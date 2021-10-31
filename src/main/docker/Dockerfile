@@ -22,12 +22,18 @@ RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
 
 #----------------------------------------------------------------------------------------------
 # Expose the protocol ports
+# MQTT      1882, 1883
+# MQTT-SN   1884
+# AMQP      5672
+# Stomp     8675
+# Admin     8080
 #----------------------------------------------------------------------------------------------
 EXPOSE 1882/tcp
 EXPOSE 1883/tcp
 EXPOSE 1884/udp
 EXPOSE 5672/tcp
 EXPOSE 8675/tcp
+EXPOSE 8080/tcp
 
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
@@ -35,18 +41,16 @@ EXPOSE 8675/tcp
 
 #----------------------------------------------------------------------------------------------
 # Get the lastest build and install locally
-#----------------------------------------------------------------------------------------------
-COPY message_daemon-1.1-SNAPSHOT-install.tar.gz .
-
-#----------------------------------------------------------------------------------------------
 # Expand the tar image and remove the tar ball
 #----------------------------------------------------------------------------------------------
-RUN tar -xf message_daemon-1.1-SNAPSHOT-install.tar.gz
-RUN rm message_daemon-1.1-SNAPSHOT-install.tar.gz
+RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.tar.gz && \
+    tar -xf message_daemon-1.2.1-install.tar.gz  && \
+    rm message_daemon-1.1-SNAPSHOT-install.tar.gz
+#----------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------------
 # Now configure them and start it
 #----------------------------------------------------------------------------------------------
-RUN chmod +x message_daemon-1.1-SNAPSHOT/bin/startDocker.sh
-RUN dos2unix message_daemon-1.1-SNAPSHOT/bin/startDocker.sh
-RUN message_daemon-1.1-SNAPSHOT/bin/startDocker.sh
+RUN chmod +x message_daemon-1.2.1/bin/startDocker.sh && \
+    dos2unix message_daemon-1.2.1/bin/startDocker.sh && \
+    message_daemon-1.1-SNAPSHOT/bin/startDocker.sh
