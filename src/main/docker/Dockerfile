@@ -38,19 +38,19 @@ EXPOSE 8080/tcp
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
 #----------------------------------------------------------------------------------------------
-
 #----------------------------------------------------------------------------------------------
 # Get the lastest build and install locally
 # Expand the tar image and remove the tar ball
 #----------------------------------------------------------------------------------------------
 RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.tar.gz && \
     tar -xf message_daemon-1.2.1-install.tar.gz  && \
-    rm message_daemon-1.1-SNAPSHOT-install.tar.gz
+    rm  message_daemon-1.2.1-install.tar.gz
 #----------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------------
 # Now configure them and start it
 #----------------------------------------------------------------------------------------------
-RUN chmod +x message_daemon-1.2.1/bin/startDocker.sh && \
+RUN export MAPS_HOME=./message_daemon-1.2.1/  && \
+    chmod +x message_daemon-1.2.1/bin/startDocker.sh && \
     dos2unix message_daemon-1.2.1/bin/startDocker.sh && \
-    message_daemon-1.1-SNAPSHOT/bin/startDocker.sh
+    message_daemon-1.2.1/bin/startDocker.sh
