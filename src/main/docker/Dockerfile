@@ -66,6 +66,8 @@ RUN  cd ./message_daemon-1.2.1 &&  \
 
 #----------------------------------------------------------------------------------------------
 # We can now simply start the server
+# Increase the file descriptor count
 #----------------------------------------------------------------------------------------------
 CMD export MAPS_HOME=./message_daemon-1.2.1/  && \
+    ulimit -n 100000 && \
     message_daemon-1.2.1/bin/startDocker.sh
