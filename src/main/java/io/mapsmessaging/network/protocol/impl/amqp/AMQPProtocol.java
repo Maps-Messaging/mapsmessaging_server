@@ -69,8 +69,8 @@ public class AMQPProtocol extends ProtocolImpl {
   public void close() throws IOException {
     closed = true;
     protonEngine.close();
-    endPoint.close();
     selectorTask.close();
+    super.close();
     for(SessionManager sessionManager:activeSessions.values()){
       sessionManager.close();
     }
@@ -87,13 +87,12 @@ public class AMQPProtocol extends ProtocolImpl {
     return sessionManager;
   }
 
-  public boolean delSession(String sessionId){
+  public void delSession(String sessionId) throws IOException {
     SessionManager manager = activeSessions.get(sessionId);
     if (manager != null && manager.decrement() == 0) {
       activeSessions.remove(sessionId);
-      return true;
+      manager.close();
     }
-    return false;
   }
 
   public void registerRead() throws IOException {

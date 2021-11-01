@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
@@ -42,12 +41,10 @@ public class SessionRemoteCloseEventListener extends BaseEventListener {
       io.mapsmessaging.api.Session session = (io.mapsmessaging.api.Session)ssn.getContext();
       if(session != null){
         protocol.getLogger().log(ServerLogMessages.AMQP_CLOSED_SESSION, session.getName());
-        if(protocol.delSession(session.getName())) {
-          try {
-            SessionManager.getInstance().close(session);
-          } catch (IOException e) {
-            protocol.getLogger().log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-          }
+        try {
+          protocol.delSession(session.getName());
+        } catch (IOException e) {
+          protocol.getLogger().log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
         }
         ssn.setContext(null); // remove from the context, to ensure no links
       }
