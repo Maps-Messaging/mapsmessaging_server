@@ -66,12 +66,14 @@ To access these via maven simply add the following to your pom.xml file.
       <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
     </repository>
 ```
-
+### Install images and Docker Images
 The nightly installation builds can be found here
 
 [message_daemon-1.2.1-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.tar.gz) \
 [message_daemon-1.2.1-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.zip)
 
+
+Docker Image name is  mapsmessaging.jfrog.io/mapsmessaging-docker-prod/mapsmessaging/1.2.1/mapsmessaging_daemon
 
 The MapsMessaging repository at [https://mapsmessaging.jfrog.io/](https://mapsmessaging.jfrog.io/)
 
