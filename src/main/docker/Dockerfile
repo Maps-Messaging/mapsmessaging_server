@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 #----------------------------------------------------------------------------------------------
 # Get Alpine linux image and add the Zulu JDK 13, as per
 # https://github.com/zulu-openjdk/zulu-openjdk/blob/master/alpine/13.0.1-13.28/Dockerfile
@@ -38,6 +39,7 @@ EXPOSE 8080/tcp
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
 #----------------------------------------------------------------------------------------------
+
 #----------------------------------------------------------------------------------------------
 # Get the lastest build and install locally
 # Expand the tar image and remove the tar ball
@@ -52,5 +54,9 @@ RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod
 #----------------------------------------------------------------------------------------------
 RUN export MAPS_HOME=./message_daemon-1.2.1/  && \
     chmod +x message_daemon-1.2.1/bin/startDocker.sh && \
-    dos2unix message_daemon-1.2.1/bin/startDocker.sh && \
-    message_daemon-1.2.1/bin/startDocker.sh
+    dos2unix message_daemon-1.2.1/bin/startDocker.sh \
+
+#----------------------------------------------------------------------------------------------
+# We can now simply start the server
+#----------------------------------------------------------------------------------------------
+RUN message_daemon-1.2.1/bin/startDocker.sh
