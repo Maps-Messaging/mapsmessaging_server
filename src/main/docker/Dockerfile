@@ -62,7 +62,6 @@ RUN  cd ./message_daemon-1.2.1 &&  \
     mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
     sed 's|C:/Users/matthew/Downloads/hawtio-default-2.10.1.war|./message_daemon-1.2.1/hawtio-default-2.10.1.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
-    more conf/hawtio.yaml && \
     wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.10.1/hawtio-default-2.10.1.war
 
 #----------------------------------------------------------------------------------------------
