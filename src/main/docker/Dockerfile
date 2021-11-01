@@ -47,16 +47,26 @@ EXPOSE 8080/tcp
 RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.tar.gz && \
     tar -xf message_daemon-1.2.1-install.tar.gz  && \
     rm  message_daemon-1.2.1-install.tar.gz
-#----------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------------
 # Now configure them and start it
 #----------------------------------------------------------------------------------------------
-RUN export MAPS_HOME=./message_daemon-1.2.1/  && \
-    chmod +x message_daemon-1.2.1/bin/startDocker.sh && \
-    dos2unix message_daemon-1.2.1/bin/startDocker.sh \
+RUN chmod +x message_daemon-1.2.1/bin/startDocker.sh && \
+    dos2unix message_daemon-1.2.1/bin/startDocker.sh
+
+
+#----------------------------------------------------------------------------------------------
+# Now configure and download hawtio for web/JMX/Rest administration
+#----------------------------------------------------------------------------------------------
+RUN  cd ./message_daemon-1.2.1 &&  \
+    mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
+    sed 's|C:/Users/matthew/Downloads/hawtio-default-2.10.1.war|./message_daemon-1.2.1/hawtio-default-2.10.1.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
+    rm conf/hawtio.yaml_old && \
+    more conf/hawtio.yaml && \
+    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.10.1/hawtio-default-2.10.1.war
 
 #----------------------------------------------------------------------------------------------
 # We can now simply start the server
 #----------------------------------------------------------------------------------------------
-RUN message_daemon-1.2.1/bin/startDocker.sh
+CMD export MAPS_HOME=./message_daemon-1.2.1/  && \
+    message_daemon-1.2.1/bin/startDocker.sh
