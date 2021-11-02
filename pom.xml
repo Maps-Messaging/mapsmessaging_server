@@ -367,7 +367,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Extensible_JMS_Selector_Parser</artifactId>
-      <version>1.0.7</version>
+      <version>1.0.8</version>
     </dependency>
 
     <!-- Naturally order long collection -->
