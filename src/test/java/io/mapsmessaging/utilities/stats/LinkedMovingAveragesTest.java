@@ -18,13 +18,13 @@
 
 package io.mapsmessaging.utilities.stats;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.mapsmessaging.test.WaitForState;
+import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.WaitForState;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 
 class LinkedMovingAveragesTest {
 
@@ -41,7 +41,7 @@ class LinkedMovingAveragesTest {
 
   @Test
   void basicFunctions(){
-    // We have create a list of moving average buckets starting with 1 second, incrementing by 10 seconds for a total of 6 buckets
+    // We have created a list of moving average buckets starting with 1 second, incrementing by 10 seconds for a total of 6 buckets
     LinkedMovingAverages linked = create();
     long epoch = System.currentTimeMillis() + 500;
     long count=0;

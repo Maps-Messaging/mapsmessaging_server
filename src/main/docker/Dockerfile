@@ -44,23 +44,23 @@ EXPOSE 8080/tcp
 # Get the lastest build and install locally
 # Expand the tar image and remove the tar ball
 #----------------------------------------------------------------------------------------------
-RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.tar.gz && \
-    tar -xf message_daemon-1.2.1-install.tar.gz  && \
-    rm  message_daemon-1.2.1-install.tar.gz
+RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-%%MAPS_VERSION%%-install.tar.gz && \
+    tar -xf message_daemon-%%MAPS_VERSION%%-install.tar.gz  && \
+    rm  message_daemon-%%MAPS_VERSION%%-install.tar.gz
 
 #----------------------------------------------------------------------------------------------
 # Now configure them and start it
 #----------------------------------------------------------------------------------------------
-RUN chmod +x message_daemon-1.2.1/bin/startDocker.sh && \
-    dos2unix message_daemon-1.2.1/bin/startDocker.sh
+RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
+    dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
 
 
 #----------------------------------------------------------------------------------------------
 # Now configure and download hawtio for web/JMX/Rest administration
 #----------------------------------------------------------------------------------------------
-RUN  cd ./message_daemon-1.2.1 &&  \
+RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
     mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
-    sed 's|C:/Users/matthew/Downloads/hawtio-default-2.10.1.war|./message_daemon-1.2.1/hawtio-default-2.10.1.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
+    sed 's|C:/Users/matthew/Downloads/hawtio-default-2.10.1.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.10.1.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
     wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.10.1/hawtio-default-2.10.1.war
 
@@ -68,6 +68,6 @@ RUN  cd ./message_daemon-1.2.1 &&  \
 # We can now simply start the server
 # Increase the file descriptor count
 #----------------------------------------------------------------------------------------------
-CMD export MAPS_HOME=./message_daemon-1.2.1/  && \
+CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
-    message_daemon-1.2.1/bin/startDocker.sh
+    message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh

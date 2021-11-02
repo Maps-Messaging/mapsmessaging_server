@@ -54,16 +54,20 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     }
     return false;
   }
-
   private void handleDynamicTarget(Event event, Link link, org.apache.qpid.proton.amqp.messaging.Target messagingTarget){
     if (messagingTarget.getDynamic()) {
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
+      UUID uuid = UUID.randomUUID();
+      String address = "/dynamic/temporary/";
       if(!scanForQueue(messagingTarget)){
-        type = DestinationType.QUEUE;
+        type = DestinationType.TEMPORARY_QUEUE;
+        address+="queue/";
       }
+      else{
+        address +="topic/";
+      }
+      address+=uuid;
       try {
-        UUID uuid = UUID.randomUUID();
-        String address = "/dynamic/" + type.getName() + "/" + uuid.toString();
         String sessionId = parseSessionId(event.getConnection().getRemoteContainer());
         SessionManager sessionManager = super.protocol.getSession(sessionId);
         sessionManager.getSession().findDestination(address, type);

@@ -76,7 +76,7 @@ import org.jetbrains.annotations.Nullable;
 public class DestinationImpl implements BaseDestination {
 
   //<editor-fold desc="Global static final fields used by all destinations">
-  private static final int TASK_QUEUE_PRIORITY_SIZE = 2;
+  public static final int TASK_QUEUE_PRIORITY_SIZE = 2;
 
   public static final String RESOURCE_TASK_KEY = "ResourceAccessKey";
   public static final String SUBSCRIPTION_TASK_KEY = "SubscriptionAccessKey";

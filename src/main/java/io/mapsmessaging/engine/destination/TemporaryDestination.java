@@ -59,5 +59,8 @@ public class TemporaryDestination extends DestinationImpl {
     if(!super.subscriptionManager.hasSubscriptions() && ownerDisconnected){
       MessageDaemon.getInstance().getDestinationManager().delete(this);
     }
+    else if(ownerDisconnected && super.getResourceType().isTemporary() && super.getResourceType().isQueue()){
+      MessageDaemon.getInstance().getDestinationManager().delete(this);
+    }
   }
 }

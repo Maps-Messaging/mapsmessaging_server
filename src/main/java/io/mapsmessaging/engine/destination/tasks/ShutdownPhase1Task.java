@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.engine.destination.tasks;
 
+import static io.mapsmessaging.engine.destination.DestinationImpl.TASK_QUEUE_PRIORITY_SIZE;
+
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.tasks.BooleanResponse;
@@ -41,7 +43,8 @@ public class ShutdownPhase1Task extends StoreMessageTask {
   public Response taskCall() {
     destination.pauseClientRequests();
     DeleteDestinationTask deleteDestinationTask = new DeleteDestinationTask(destination, listener, logger);
-    destination.submit(deleteDestinationTask);
+    deleteDestinationTask.taskCall();
+    destination.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE-1 );
     return new BooleanResponse(true);
   }
 

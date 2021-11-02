@@ -1,7 +1,7 @@
 #
 # Define the home directory for the messaging daemon
 #
-export VERSION=1.2.1
+export VERSION=%%MAPS_VERSION%%
 
 if [ -z ${MAPS_HOME+x} ];
   then export MAPS_HOME=/opt/message_daemon-$VERSION;
