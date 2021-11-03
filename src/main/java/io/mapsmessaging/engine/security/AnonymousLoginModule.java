@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.engine.security;
 
+import io.mapsmessaging.engine.audit.AuditEvent;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.util.stream.IntStream;
@@ -28,6 +31,8 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
 public class AnonymousLoginModule extends BaseLoginModule {
+
+  private final Logger logger = LoggerFactory.getLogger(AnonymousLoginModule.class);
 
   @Override
   public boolean login() throws LoginException {
@@ -52,7 +57,7 @@ public class AnonymousLoginModule extends BaseLoginModule {
       password = new char[tmpPassword.length];
       System.arraycopy(tmpPassword, 0, password, 0, tmpPassword.length);
       ((PasswordCallback) callbacks[1]).clearPassword();
-
+      logger.log(AuditEvent.SUCCESSFUL_LOGIN, username, this.getClass());
     } catch (IOException ioe) {
       throw new LoginException(ioe.toString());
     } catch (UnsupportedCallbackException uce) {
@@ -83,7 +88,6 @@ public class AnonymousLoginModule extends BaseLoginModule {
         logger.log(ServerLogMessages.ANON_LOGIN_MODULE_PASSWORD, "");
       }
       // in any case, clean out state
-      username = null;
       IntStream.range(0, password.length).forEach(i -> password[i] = ' ');
       password = null;
 
@@ -94,7 +98,7 @@ public class AnonymousLoginModule extends BaseLoginModule {
 
   @Override
   public boolean logout() throws LoginException {
-    logger.log(ServerLogMessages.ANON_LOGIN_MODULE_SUBJECT);
+    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
     return super.logout();
   }
 

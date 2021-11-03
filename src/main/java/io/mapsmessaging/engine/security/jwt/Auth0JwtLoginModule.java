@@ -25,7 +25,10 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.engine.security.BaseLoginModule;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import java.io.IOException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
@@ -39,6 +42,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
 public class Auth0JwtLoginModule extends BaseLoginModule {
+  private final Logger logger = LoggerFactory.getLogger(Auth0JwtLoginModule.class);
 
   private String domain;
 
@@ -87,6 +91,7 @@ public class Auth0JwtLoginModule extends BaseLoginModule {
 
       verifier.verify(token);
       succeeded = true;
+      logger.log(AuditEvent.SUCCESSFUL_LOGIN, username, this.getClass());
     } catch (JwkException | IOException ioe) {
       throw new LoginException(ioe.toString());
     } catch (UnsupportedCallbackException uce) {
@@ -104,7 +109,6 @@ public class Auth0JwtLoginModule extends BaseLoginModule {
     if (!succeeded) {
       return succeeded;
     } else {
-      username = null;
       if (password != null) {
         Arrays.fill(password, ' ');
         password = null;
@@ -113,4 +117,11 @@ public class Auth0JwtLoginModule extends BaseLoginModule {
       return true;
     }
   }
+
+  @Override
+  public boolean logout() throws LoginException {
+    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
+    return super.logout();
+  }
+
 }

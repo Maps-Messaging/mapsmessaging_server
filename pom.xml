@@ -347,6 +347,7 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
+
   </properties>
 
   <dependencyManagement>
@@ -367,7 +368,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Extensible_JMS_Selector_Parser</artifactId>
-      <version>1.0.7</version>
+      <version>1.0.8</version>
     </dependency>
 
     <!-- Naturally order long collection -->
@@ -393,7 +394,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Simple_Logging</artifactId>
-      <version>1.0.3</version>
+      <version>1.0.4</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/javax.jms/javax.jms-api -->
     <dependency>

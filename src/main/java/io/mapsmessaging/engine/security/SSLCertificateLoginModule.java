@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.engine.security;
 
+import io.mapsmessaging.engine.audit.AuditEvent;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.security.Principal;
@@ -32,6 +35,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
 public class SSLCertificateLoginModule extends BaseLoginModule {
+  protected final Logger logger = LoggerFactory.getLogger(SSLCertificateLoginModule.class);
 
   private Principal sslPrincipal;
 
@@ -71,7 +75,7 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
       password = new char[tmpPassword.length];
       System.arraycopy(tmpPassword, 0, password, 0, tmpPassword.length);
       ((PasswordCallback) callbacks[2]).clearPassword();
-
+      logger.log(AuditEvent.SUCCESSFUL_LOGIN, username, this.getClass());
     } catch (IOException ioe) {
       throw new LoginException(ioe.toString());
     } catch (UnsupportedCallbackException uce) {
@@ -100,7 +104,6 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
         logger.log(ServerLogMessages.SSL_CERTIFICATE_SECURITY_PASSWORD);
       }
       // in any case, clean out state
-      username = null;
       if (password != null) {
         Arrays.fill(password, ' ');
         password = null;
@@ -130,7 +133,7 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
    */
   @Override
   public boolean logout() throws LoginException {
-    logger.log(ServerLogMessages.SSL_CERTIFICATE_SECURITY_SUBJECT_LOG_IN);
+    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
     return super.logout();
   }
 }
