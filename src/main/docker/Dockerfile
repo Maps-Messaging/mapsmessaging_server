@@ -24,10 +24,11 @@ RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
 #----------------------------------------------------------------------------------------------
 # We now have a JDK and Linux image. Now to
 #   a) Expose all network ports the server may need
-#   b) Install the latest image from jFrog deployments
+#   b) Install the latest image from deployments
 #   c) Configure the scripts specific for docker
 #   d) Configure Hawtio for JMX / Rest / Web management
-#   e) Register the command to start the server
+#   e) Define a volume mount for the data directory
+#   f) Register the command to start the server
 #----------------------------------------------------------------------------------------------
 # Expose the protocol ports
 # MQTT      1882, 1883
@@ -67,6 +68,11 @@ RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
     sed 's|C:/Users/matthew/Downloads/hawtio-default-2.10.1.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.10.1.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
     wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.10.1/hawtio-default-2.10.1.war
+
+#----------------------------------------------------------------------------------------------
+# Define the data directory in the install as a volume so destination data is stored external
+#----------------------------------------------------------------------------------------------
+VOLUME /data
 
 #----------------------------------------------------------------------------------------------
 # We can now simply start the server
