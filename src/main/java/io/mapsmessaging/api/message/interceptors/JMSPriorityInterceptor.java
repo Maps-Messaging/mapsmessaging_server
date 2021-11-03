@@ -18,13 +18,18 @@
 
 package io.mapsmessaging.api.message.interceptors;
 
+import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
 
 public class JMSPriorityInterceptor implements Interceptor {
 
   @Override
   public Object get(Message message) {
-    return message.getPriority();
+    Priority priority = message.getPriority();
+    if(priority == null){
+      return 0;
+    }
+    return priority.getValue();
   }
 }
 
