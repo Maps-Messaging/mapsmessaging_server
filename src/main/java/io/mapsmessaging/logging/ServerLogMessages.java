@@ -202,8 +202,6 @@ public enum ServerLogMessages implements LogMessage {
 
   // <editor-fold desc="Security Manager based log messages">
   SECURITY_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Security Manager"),
-  SECURITY_MANAGER_LOG_IN(LEVEL.AUTH, SERVER_CATEGORY.ENGINE, "User {} successfully logged in"),
-  SECURITY_MANAGER_LOG_OFF(LEVEL.AUTH, SERVER_CATEGORY.ENGINE, "User {} successfully logged off"),
   SECURITY_MANAGER_FAILED_LOG_IN(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "User {} failed to logged in, {}"),
   SECURITY_MANAGER_FAILED_LOG_OFF(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "User {} failed to logged off, {}"),
   SECURITY_MANAGER_LOADING(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Security Manager properties"),
@@ -217,10 +215,6 @@ public enum ServerLogMessages implements LogMessage {
   ANON_LOGIN_MODULE_LOG_OUT(LEVEL.DEBUG, SERVER_CATEGORY.AUTHENTICATION, "\t\t[AnonymousLoginModule] logged out Subject"),
   // </editor-fold>
 
-  // <editor-fold desc="Anonymous Security log messages">
-  ANONYMOUS_SECURITY_LOG_IN(LEVEL.AUTH, SERVER_CATEGORY.AUTHENTICATION, "User {} successfully logged in"),
-  ANONYMOUS_SECURITY_LOG_OFF(LEVEL.AUTH, SERVER_CATEGORY.AUTHENTICATION, "User {} successfully logged off"),
-  // </editor-fold>
 
   // <editor-fold desc="SSL Certificate security log messages">
   SSL_CERTIFICATE_SECURITY_USERNAME(LEVEL.DEBUG, SERVER_CATEGORY.AUTHENTICATION, "\t\t[SSLCertificateLoginModule] user entered user name: {}"),

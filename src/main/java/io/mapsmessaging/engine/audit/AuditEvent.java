@@ -8,13 +8,13 @@ import lombok.Getter;
 public enum AuditEvent implements LogMessage {
 
   // User state changes
-  SUCCESSFUL_LOGIN("{} successfully logged in using {}", AUDIT_CATEGORY.AUTHENTICATION),
+  SUCCESSFUL_LOGIN("{} successfully logged in", AUDIT_CATEGORY.AUTHENTICATION),
   SUCCESSFUL_LOGOUT("{} successfully logged off", AUDIT_CATEGORY.AUTHENTICATION),
 
 
   // Destination
-  DESTINATION_CREATED("Destination {} created by {} ", AUDIT_CATEGORY.CREATION),
-  DESTINATION_DELETED("Destination {} deleted by {} ", AUDIT_CATEGORY.DELETION),
+  DESTINATION_CREATED("Destination {} created", AUDIT_CATEGORY.CREATION),
+  DESTINATION_DELETED("Destination {} deleted", AUDIT_CATEGORY.DELETION),
 
   ;
 

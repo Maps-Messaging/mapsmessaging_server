@@ -24,6 +24,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
@@ -160,9 +161,10 @@ public class DestinationManager implements DestinationFactory {
         destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType);
       }
       else{
-
         destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
       }
+      logger.log(AuditEvent.DESTINATION_CREATED, destinationImpl.getFullyQualifiedNamespace());
+
       destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
     }
 
@@ -204,6 +206,7 @@ public class DestinationManager implements DestinationFactory {
       while(!response.isDone() && timeout > System.currentTimeMillis()){
         LockSupport.parkNanos(10000000);
       }
+      logger.log(AuditEvent.DESTINATION_DELETED, delete.getFullyQualifiedNamespace());
       return delete;
     }
     return null;

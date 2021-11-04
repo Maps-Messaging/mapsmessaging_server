@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.engine.audit.AuditEvent;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,13 +49,13 @@ public class AnonymousSecurityContext extends SecurityContext {
 
   @Override
   public void login() {
-    logger.log(ServerLogMessages.ANONYMOUS_SECURITY_LOG_IN, username);
+    logger.log(AuditEvent.SUCCESSFUL_LOGIN, username);
     isLoggedIn = true;
   }
 
   @Override
   public void logout() {
-    logger.log(ServerLogMessages.ANONYMOUS_SECURITY_LOG_OFF, username);
+    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
     isLoggedIn = false;
   }
 }

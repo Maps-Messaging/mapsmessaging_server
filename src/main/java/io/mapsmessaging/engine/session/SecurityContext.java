@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -55,7 +56,7 @@ public class SecurityContext {
   public void login() throws IOException {
     try {
       loginContext.login();
-      logger.log(ServerLogMessages.SECURITY_MANAGER_LOG_IN, username);
+      logger.log(AuditEvent.SUCCESSFUL_LOGIN, username);
       isLoggedIn = true;
     } catch (LoginException e) {
       logger.log(ServerLogMessages.SECURITY_MANAGER_FAILED_LOG_IN, username, e.getMessage());
@@ -70,7 +71,7 @@ public class SecurityContext {
       if (isLoggedIn) {
         isLoggedIn = false;
         loginContext.logout();
-        logger.log(ServerLogMessages.SECURITY_MANAGER_LOG_OFF, username);
+        logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
       }
     } catch (LoginException e) {
       logger.log(ServerLogMessages.SECURITY_MANAGER_FAILED_LOG_OFF, username, e.getMessage());

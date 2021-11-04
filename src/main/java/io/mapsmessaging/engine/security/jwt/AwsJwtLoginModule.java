@@ -21,10 +21,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.RSAKeyProvider;
-import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.engine.security.BaseLoginModule;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 import javax.security.auth.Subject;
@@ -36,8 +33,6 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
 public class AwsJwtLoginModule extends BaseLoginModule {
-
-  private final Logger logger = LoggerFactory.getLogger(AwsJwtLoginModule.class);
 
   private String region;
   private String poolId;
@@ -83,7 +78,6 @@ public class AwsJwtLoginModule extends BaseLoginModule {
           .withAudience(clientId)
           .build();
       jwtVerifier.verify(token);
-      logger.log(AuditEvent.SUCCESSFUL_LOGIN, username, this.getClass());
       return true;
     } catch (IOException ioe) {
       throw new LoginException(ioe.toString());
@@ -103,7 +97,6 @@ public class AwsJwtLoginModule extends BaseLoginModule {
 
   @Override
   public boolean logout() throws LoginException {
-    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
     return super.logout();
   }
 
