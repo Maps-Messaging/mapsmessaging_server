@@ -59,7 +59,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
       UUID uuid = UUID.randomUUID();
       String address = "/dynamic/temporary/";
-      if(!scanForQueue(messagingTarget)){
+      if(scanForQueue(messagingTarget)){
         type = DestinationType.TEMPORARY_QUEUE;
         address+="queue/";
       }
