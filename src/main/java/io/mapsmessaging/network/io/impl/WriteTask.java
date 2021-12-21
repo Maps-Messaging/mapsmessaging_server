@@ -27,6 +27,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
@@ -35,7 +36,6 @@ import java.nio.BufferOverflowException;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import org.apache.logging.log4j.ThreadContext;
 
 public class WriteTask implements Selectable {
 

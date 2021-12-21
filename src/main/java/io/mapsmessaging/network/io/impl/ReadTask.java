@@ -30,6 +30,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.READ_TASK_ZERO_BYTE;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
@@ -37,7 +38,6 @@ import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.TimeUnit;
-import org.apache.logging.log4j.ThreadContext;
 
 public class ReadTask implements Selectable {
 

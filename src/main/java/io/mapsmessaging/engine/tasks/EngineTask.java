@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.engine.tasks;
 
+import io.mapsmessaging.logging.ThreadContext;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import org.apache.logging.log4j.ThreadContext;
 
 public abstract class EngineTask implements Callable<Response> {
 

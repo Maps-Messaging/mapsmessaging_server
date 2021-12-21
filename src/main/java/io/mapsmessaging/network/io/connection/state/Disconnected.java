@@ -21,6 +21,7 @@ package io.mapsmessaging.network.io.connection.state;
 import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.auth.TokenGenerator;
 import io.mapsmessaging.network.auth.TokenGeneratorManager;
@@ -34,7 +35,6 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import java.util.List;
-import org.apache.logging.log4j.ThreadContext;
 
 public class Disconnected extends State implements EndPointConnectedCallback {
 

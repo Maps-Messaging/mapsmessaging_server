@@ -21,6 +21,7 @@ package io.mapsmessaging.network;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
@@ -31,7 +32,6 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolAcceptRunner;
 import java.io.Closeable;
 import java.io.IOException;
-import org.apache.logging.log4j.ThreadContext;
 
 public class EndPointManager implements Closeable, AcceptHandler {
 
