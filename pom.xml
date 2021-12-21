@@ -304,7 +304,6 @@
   </build>
 
   <repositories>
-    <!-- Repo for java stomp client used for testing Artifactory server -->
     <repository>
       <id>mapsmessaging.io</id>
       <name>artifactory-releases</name>
@@ -644,12 +643,11 @@
       <scope>test</scope>
     </dependency>
 
-
-    <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-client -->
+    <!-- https://mvnrepository.com/artifact/com.gitee.l0km/stilts-stomp-client -->
     <dependency>
-      <groupId>org.projectodd.stilts</groupId>
+      <groupId>com.gitee.l0km</groupId>
       <artifactId>stilts-stomp-client</artifactId>
-      <version>0.1.40</version>
+      <version>0.1.44</version>
       <scope>test</scope>
     </dependency>
 
@@ -719,7 +717,6 @@
       <version>5.8.2</version>
       <scope>test</scope>
     </dependency>
-
 
     <dependency>
       <groupId>org.openjdk.jmh</groupId>
