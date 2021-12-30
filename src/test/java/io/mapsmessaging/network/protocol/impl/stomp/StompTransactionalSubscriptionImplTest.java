@@ -26,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.projectodd.stilts.stomp.StompException;
@@ -38,6 +39,7 @@ import org.projectodd.stilts.stomp.client.StompClient;
 class StompTransactionalSubscriptionImplTest extends StompBaseTest {
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test publish events with priority using block based transactions")
   void testPriorityPublishTransactionalWithClientCommit() throws InterruptedException, URISyntaxException, StompException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
@@ -84,6 +86,7 @@ class StompTransactionalSubscriptionImplTest extends StompBaseTest {
 
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test publish events with priority using transactions")
   void testPriorityPublishTransactionalWithCommit() throws InterruptedException, URISyntaxException, StompException, IOException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");

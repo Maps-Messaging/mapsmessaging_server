@@ -18,9 +18,11 @@
 
 package io.mapsmessaging.consul;
 
+import com.orbitz.consul.ConsulException;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import java.net.ConnectException;
 import java.util.UUID;
 import java.util.concurrent.locks.LockSupport;
 
@@ -49,10 +51,17 @@ public class ConsulManagerFactory {
         LockSupport.parkNanos(1000000000L);
         counter++;
         if(!forceWait){
-          logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, id.toString(), e);
-          return;
+          if(e instanceof ConsulException) {
+            Exception actual = (Exception) e.getCause();
+            if(actual instanceof ConnectException){
+              logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, id.toString());
+            }else {
+              logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, id.toString(), e);
+            }
+            return;
+          }
         }
-        logger.log(ServerLogMessages.CONSUL_MANAGER_START_DELAYED, id.toString(), e);
+        logger.log(ServerLogMessages.CONSUL_MANAGER_START_DELAYED, id.toString());
       }
     }
   }

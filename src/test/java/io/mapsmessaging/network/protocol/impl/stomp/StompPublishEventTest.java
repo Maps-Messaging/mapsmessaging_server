@@ -32,6 +32,7 @@ import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.projectodd.stilts.stomp.Headers;
@@ -46,6 +47,7 @@ import org.projectodd.stilts.stomp.client.StompClient;
 class StompPublishEventTest extends StompBaseTest {
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test with a STOMP client that passes content length with large content")
   void testPublishLargeEventsContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
@@ -78,6 +80,7 @@ class StompPublishEventTest extends StompBaseTest {
   }
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test with a STOMP client that passes content length with small content")
   void testPublishSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
@@ -122,6 +125,7 @@ class StompPublishEventTest extends StompBaseTest {
   }
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test Transactional publishing with content length")
   void testTransactionalPublishContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");

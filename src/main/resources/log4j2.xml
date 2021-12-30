@@ -17,15 +17,10 @@
 
 <Configuration status="WARN">
   <CustomLevels>
-    <CustomLevel name="AUTH" intLevel="50" />
     <CustomLevel name="AUDIT" intLevel="45" />
   </CustomLevels>
 
   <Appenders>
-    <Console name="Console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}, [%X{division}-%X{category}], %X{endpoint}, %X{protocol}-%X{version}, %X{session}, [%t] %-5level %logger{36} - %msg%n"/>
-    </Console>
-
     <RollingFile name="RollingFile" fileName="log/messaging.log" filePattern="log/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
       <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}, [%X{division}-%X{category}], %X{endpoint}, %X{protocol}-%X{version}, %X{session}, [%t] %-5level %logger{36} - %msg%n"/>
       <Policies>
@@ -47,7 +42,6 @@
   </Appenders>
   <Loggers>
     <Root level="info">
-      <AppenderRef ref="Console" level="warn"/>
       <appender-ref ref="RollingFile" level="info"/>
       <appender-ref ref="RollingAuditFile" level="AUDIT"/>
     </Root>

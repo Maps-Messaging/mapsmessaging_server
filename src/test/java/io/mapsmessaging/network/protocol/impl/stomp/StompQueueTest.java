@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import javax.net.ssl.SSLException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.projectodd.stilts.stomp.Headers;
 import org.projectodd.stilts.stomp.StompException;
@@ -46,6 +47,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
+  @Disabled("Old log implementation in the client")
   void testBasicQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
@@ -111,6 +113,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
+  @Disabled("Old log implementation in the client")
   void testBasicUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
 
@@ -198,6 +201,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
+  @Disabled("Old log implementation in the client")
   void testBasicSubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
     List<StompQueueClient> clients = new ArrayList<>();
@@ -289,6 +293,7 @@ class StompQueueTest extends StompBaseTest {
   }
 
   @Test
+  @Disabled("Old log implementation in the client")
   void testBasicRollingUnsubscribeQueueLogic() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     String queueName = getQueue();
 

@@ -233,7 +233,6 @@ public class DestinationImpl implements BaseDestination {
 
   public void pauseClientRequests(){
     subscriptionManager.pause();
-    resourceTaskQueue.shutdown();
   }
 
   public void delete() throws IOException {

@@ -28,6 +28,7 @@ import javax.net.ssl.SSLException;
 import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.projectodd.stilts.stomp.StompException;
@@ -37,6 +38,7 @@ class StompConnectionTest extends StompBaseTest {
 
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test anonymous Stomp client connection")
   void testAnonymous() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
@@ -47,6 +49,7 @@ class StompConnectionTest extends StompBaseTest {
   }
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test passing null username and password Stomp client connection")
   void testNullAuth() throws URISyntaxException, InterruptedException, SSLException {
     StompClient client = new StompClient("stomp://127.0.0.1:2001/");
