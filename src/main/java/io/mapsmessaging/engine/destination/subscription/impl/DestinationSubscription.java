@@ -31,13 +31,13 @@ import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
-import org.apache.logging.log4j.ThreadContext;
 
 /**
  * Note: This is a complex class that maintains the state of events for a specific subscription to a specific destination.
@@ -289,7 +289,7 @@ public class DestinationSubscription extends Subscription {
     eventStateManager.setSubscription(activeSubscription);
     callback.sendMessage(destinationImpl, eventStateManager, message, completionTask);
     logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
-    ThreadContext.clearMap();
+    ThreadContext.clear();
   }
 
   @Override

@@ -22,6 +22,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
@@ -32,7 +33,6 @@ import java.nio.channels.SelectionKey;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.NonNull;
-import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 
 public class AMQPProtocol extends ProtocolImpl {

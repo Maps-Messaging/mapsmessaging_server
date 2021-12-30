@@ -26,12 +26,12 @@ import io.mapsmessaging.engine.destination.subscription.impl.MessageDeliveryComp
 import io.mapsmessaging.engine.destination.subscription.tasks.SharedSubscriptionTask;
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import org.apache.logging.log4j.ThreadContext;
 
 public class SessionSharedSubscription extends Subscription {
 
