@@ -214,7 +214,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>3.3.2</version>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -356,7 +356,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.17.148</version>
+        <version>2.17.149</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -498,7 +498,7 @@
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>jwks-rsa</artifactId>
-      <version>0.20.1</version>
+      <version>0.21.0</version>
     </dependency>
 
     <!-- Authentication via Amazon Cognito -->
@@ -569,7 +569,7 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-embedded</artifactId>
-      <version>2.14.4</version>
+      <version>2.14.5</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -597,7 +597,7 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-app</artifactId>
-      <version>2.14.4</version>
+      <version>2.14.5</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -655,7 +655,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>5.3.15</version>
+      <version>5.3.16</version>
       <scope>test</scope>
     </dependency>
 
