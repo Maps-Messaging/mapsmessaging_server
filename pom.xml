@@ -469,6 +469,13 @@
       <version>1.5.31</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
+    <dependency>
+      <groupId>org.projectodd.stilts</groupId>
+      <artifactId>stilts-stomp-client</artifactId>
+      <version>0.1.40</version>
+    </dependency>
+
     <!-- Consul client API -->
     <dependency>
       <groupId>com.orbitz.consul</groupId>
@@ -640,14 +647,6 @@
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>
       <version>1.5.0</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.gitee.l0km/stilts-stomp-client -->
-    <dependency>
-      <groupId>com.gitee.l0km</groupId>
-      <artifactId>stilts-stomp-client</artifactId>
-      <version>0.1.44</version>
       <scope>test</scope>
     </dependency>
 
