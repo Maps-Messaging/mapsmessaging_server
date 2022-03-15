@@ -494,7 +494,7 @@
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
-      <version>3.18.3</version>
+      <version>3.19.0</version>
     </dependency>
     <dependency>
       <groupId>com.auth0</groupId>
@@ -519,7 +519,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.142</version>
+      <version>1.12.177</version>
       <scope>test</scope>
     </dependency>
 
