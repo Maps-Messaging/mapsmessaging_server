@@ -355,13 +355,13 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_SN_ADVERTISER_SENT_PACKET(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Sent advertise packet {}"),
   MQTT_SN_ADVERTISE_PACKET_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "An exception occurred while send an advertise packet"),
   MQTT_SN_PACKET_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised processing frame {}"),
-  MQTT_SN_GATEWAY_DETECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Detected MQTT-SN service advertise packet for Gateway Id {}, from {}" ),
+  MQTT_SN_GATEWAY_DETECTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Detected MQTT-SN service advertise packet for Gateway Id {}, from {}" ),
   MQTT_SN_REGISTERED_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Registered Event processed for {}"),
   MQTT_SN_REGISTERED_EVENT_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Registered Event packet detected but no configuration found for host:{} topic Id:{}"),
   MQTT_SN_INVALID_QOS_PACKET_DETECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Publish packet received from {}, but incorrect QoS should be 3 but found {}"),
   // </editor-fold>
 
-  // <editor-fold desc="MQTT-SN log messages">
+  // <editor-fold desc="Loop connection log messages">
   LOOP_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection created"),
   LOOP_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection closed"),
   LOOP_SUBSCRIBED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol subscribing to {} and delivering to {}"),
@@ -516,6 +516,7 @@ public enum ServerLogMessages implements LogMessage {
   CONSUL_MANAGER_STOP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Manager shutting down"),
   CONSUL_MANAGER_START_ABORTED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted due to configuration, id {}"),
   CONSUL_MANAGER_START_DELAYED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup delaying server startup due to configuration for id {}"),
+  CONSUL_MANAGER_START_SERVER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted since Consol Server is not responding, id {}"),
   //</editor-fold>
 
 

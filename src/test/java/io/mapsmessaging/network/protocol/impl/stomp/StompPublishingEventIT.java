@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.projectodd.stilts.stomp.StompException;
@@ -37,6 +38,7 @@ import org.projectodd.stilts.stomp.client.StompClient;
 class StompPublishingEventIT extends StompBaseTest {
 
   @Test
+  @Disabled("Old log implementation in the client")
   @DisplayName("Test with a STOMP client that doesn't pass content length with small content")
   void testPublishPerformanceSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException, IOException, TimeoutException {
     StompClient client = new StompClient("stomp://127.0.0.1/");
