@@ -125,7 +125,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.7</version>
+        <version>0.8.8</version>
         <configuration>
           <excludes>
             <!-- test code, lets not track the testing -->
@@ -646,7 +646,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>
-      <version>1.5.0</version>
+      <version>1.6.0</version>
       <scope>test</scope>
     </dependency>
 
