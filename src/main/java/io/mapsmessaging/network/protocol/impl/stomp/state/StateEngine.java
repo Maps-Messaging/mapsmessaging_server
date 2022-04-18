@@ -34,7 +34,9 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class StateEngine implements CloseHandler, CompletionHandler {
 
@@ -119,7 +121,12 @@ public class StateEngine implements CloseHandler, CompletionHandler {
 
   public void close() throws IOException {
     isValid = false;
-    SessionManager.getInstance().close(session);
+    CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
+    try {
+      future.get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new IOException(e);
+    }
   }
 
   public void shutdown() {

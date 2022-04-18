@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.location.LocationManager;
@@ -160,7 +161,7 @@ public class NMEAProtocol extends ProtocolImpl {
     if(publishRecords) {
       Destination destination = sentenceMap.get(sentenceId);
       if (destination == null) {
-        destination = session.findDestination(destinationName);
+        destination = session.findDestination(destinationName, DestinationType.TOPIC);
         sentenceMap.put(sentenceId, destination);
       }
       if (destination != null) {

@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.TransactionException;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -195,7 +196,7 @@ public class PublishListener5 extends PacketListener5 {
       }
 
       try {
-        Destination destination = session.findDestination(destinationName);
+        Destination destination = session.findDestination(destinationName, DestinationType.TOPIC);
         int sent = 0;
         if(destination != null) {
           Message message =

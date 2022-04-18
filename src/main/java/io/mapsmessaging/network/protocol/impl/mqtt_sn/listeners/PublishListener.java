@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.listeners;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
@@ -56,7 +57,7 @@ public class PublishListener extends PacketListener {
           .setTransformation(protocol.getTransformation())
           .setOpaqueData(publish.getMessage());
       try {
-        Destination destination = session.findDestination(topicName);
+        Destination destination = session.findDestination(topicName, DestinationType.TOPIC);
         if(destination != null) {
           destination.storeMessage(messageBuilder.build());
           if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {

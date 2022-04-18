@@ -60,49 +60,12 @@ public class Session {
     }
   }
 
-  //<editor-fold desc="Resource Control API">
-  public @Nullable Destination findTopic(@NonNull @NotNull String destinationName) throws IOException {
-    Destination result = destinations.get(destinationName);
-    if (result == null) {
-      DestinationImpl destination = sessionImpl.findDestination(destinationName, DestinationType.TOPIC);
-      if(destination != null) {
-        if (destination.getResourceType().equals(DestinationType.TOPIC)) {
-          result = new Topic(destination);
-          destinations.put(result.getFullyQualifiedNamespace(), result);
-        } else {
-          throw new IOException("Expected topic but destination is a "+destination.getResourceType().getName());
-        }
-      }
-    }
-    return result;
-  }
-
-  public @Nullable Destination findQueue(@NonNull @NotNull String destinationName) throws IOException {
-    Destination result = destinations.get(destinationName);
-    if (result == null) {
-      DestinationImpl destination = sessionImpl.findDestination(destinationName, DestinationType.QUEUE);
-      if(destination != null) {
-        if (destination.getResourceType().equals(DestinationType.QUEUE)) {
-          result = new Queue(destination);
-          destinations.put(result.getFullyQualifiedNamespace(), result);
-        } else {
-          throw new IOException("Expected a queue but destination is a "+destination.getResourceType().getName());
-        }
-      }
-    }
-    return result;
-  }
-
   public DestinationImpl deleteDestination(Destination destination) {
     DestinationImpl deleted = sessionImpl.deleteDestination(destination.destinationImpl);
     if(deleted != null) {
       destinations.remove(deleted.getFullyQualifiedNamespace());
     }
     return deleted;
-  }
-
-  public @Nullable Destination findDestination(@NonNull @NotNull String destinationName) throws IOException {
-    return findDestination(destinationName, DestinationType.TOPIC);
   }
 
   public @Nullable Destination findDestination(@NonNull @NotNull String destinationName, DestinationType type) throws IOException {
@@ -124,10 +87,6 @@ public class Session {
       }
     }
     return result;
-  }
-
-  public void deleteResource(@NonNull @NotNull Destination destination) {
-    sessionImpl.deleteDestination(destination.destinationImpl);
   }
   //</editor-fold>
 

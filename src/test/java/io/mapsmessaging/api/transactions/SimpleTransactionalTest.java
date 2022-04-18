@@ -100,7 +100,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
     WaitForState.waitFor(1, TimeUnit.SECONDS, () -> counter.get() == MESSAGE_COUNT);
     Assertions.assertEquals(MESSAGE_COUNT, counter.get());
 
-    SessionManager.getInstance().close(session);
+    SessionManager.getInstance().close(session, false);
 
   }
 

@@ -44,6 +44,7 @@ import java.net.SocketException;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.concurrent.ExecutionException;
 
 // The protocol is MQTT_SN so it makes sense
 @java.lang.SuppressWarnings("squid:S00101")
@@ -177,7 +178,11 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
           .setQoS(QualityOfService.AT_MOST_ONCE); // Always for these events
     }
     messageBuilder.setOpaqueData(publish.getMessage());
-    SessionManager.getInstance().publish(topic, messageBuilder.build());
+    try {
+      SessionManager.getInstance().publish(topic, messageBuilder.build()).get();
+    } catch (ExecutionException|InterruptedException e) {
+      throw new IOException(e);
+    }
   }
 
   @Override

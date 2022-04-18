@@ -55,7 +55,7 @@ public class BaseTestConfig extends BaseTest {
       }
     }
     for(DestinationImpl destination:toDelete){
-      md.getDestinationManager().delete(destination);
+     // md.getDestinationManager().delete(destination);
     }
   }
 

@@ -81,7 +81,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   public void close() throws IOException {
     if (!closed) {
       closed = true;
-      SessionManager.getInstance().close(session);
+      SessionManager.getInstance().close(session, false);
       factory.close(remoteClient);
       super.close();
     }

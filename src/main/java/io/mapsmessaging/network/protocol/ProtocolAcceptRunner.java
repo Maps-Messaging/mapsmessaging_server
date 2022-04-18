@@ -93,6 +93,9 @@ public class ProtocolAcceptRunner implements Selectable {
           logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
           endPoint.close();
         }
+      }
+      catch (Throwable th){
+        th.printStackTrace();
       } finally {
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_COMPLETE);
       }

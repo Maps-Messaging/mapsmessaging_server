@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.listeners;
 
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
@@ -39,7 +40,7 @@ public class RegisterListener extends PacketListener {
       return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.NOT_SUPPORTED);
     }
     try {
-      session.findDestination(topic);
+      session.findDestination(topic, DestinationType.TOPIC);
       // We don't need to do anything with this destination at present
     } catch (IOException e) {
       return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.NOT_SUPPORTED);

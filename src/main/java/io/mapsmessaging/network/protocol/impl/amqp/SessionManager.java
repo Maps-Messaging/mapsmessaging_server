@@ -47,6 +47,6 @@ public class SessionManager {
 
   public void close() throws IOException {
     interestCount = 0;
-    io.mapsmessaging.api.SessionManager.getInstance().close(session);
+    io.mapsmessaging.api.SessionManager.getInstance().close(session, false);
   }
 }

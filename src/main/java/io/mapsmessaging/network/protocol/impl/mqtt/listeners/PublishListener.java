@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.TransactionException;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -92,7 +93,7 @@ public class PublishListener extends PacketListener {
 
     if (!lookup.startsWith("$")) {
       try {
-        Destination destination = session.findDestination(lookup);
+        Destination destination = session.findDestination(lookup, DestinationType.TOPIC);
         if(destination != null) {
           processMessage(publish, protocol, session, response, destination);
         }

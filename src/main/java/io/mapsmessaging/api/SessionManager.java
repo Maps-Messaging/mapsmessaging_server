@@ -23,9 +23,15 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
+import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -45,6 +51,9 @@ public class SessionManager {
     return instance;
   }
 
+  private final TaskScheduler taskScheduler;
+
+
   /**
    * Creates a new Session using the supplied context and the message listener to deliver events
    * that match any future subscriptions
@@ -55,19 +64,24 @@ public class SessionManager {
    * @throws LoginException Thrown if, during, the authentication phase the challenge fails
    * @throws IOException Thrown if unable to either restore the subscriptions or store the new session context
    */
+  @SneakyThrows
   public @NonNull @NotNull Session create(@NonNull @NotNull SessionContext sessionContext, @NonNull @NotNull MessageListener listener) throws LoginException, IOException {
-    SessionImpl session = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
-    return new Session(session, listener);
+    return createAsync(sessionContext, listener).get();
   }
 
-  /**
-   * Closes the supplied session, clears all resources and, if, the session is persistent marks all subscriptions as hibernated
-   * @param session The session to close
-   * @throws IOException Thrown if the underlying file system raises exception during the close phases
-   */
-  public void close(@NonNull @NotNull Session session) throws IOException {
-    MessageDaemon.getInstance().getSessionManager().close(session.getSession());
-    session.close();
+  public @NonNull @NotNull CompletableFuture<Session> createAsync(@NonNull @NotNull SessionContext sessionContext, @NonNull @NotNull MessageListener listener) throws LoginException, IOException {
+    CompletableFuture<Session> completableFuture = new CompletableFuture<>();
+    Callable<Void> task = () -> {
+      try {
+        SessionImpl sessionImpl = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
+        completableFuture.complete( new Session(sessionImpl, listener));
+      } catch (LoginException | IOException e) {
+        completableFuture.completeExceptionally(e);
+      }
+      return null;
+    };
+    taskScheduler.submit(task);
+    return completableFuture;
   }
 
   /**
@@ -79,9 +93,29 @@ public class SessionManager {
    * @throws IOException Thrown if the underlying file system raises exception during the close phases
    */
   public void close(@NonNull @NotNull Session session, boolean clearWillTask) throws IOException {
-    MessageDaemon.getInstance().getSessionManager().close(session.getSession(), clearWillTask);
-    session.close();
+    try {
+      closeAsync(session, clearWillTask).get();
+    } catch (ExecutionException|InterruptedException e) {
+      throw new IOException(e);
+    }
   }
+
+  public @NonNull @NotNull CompletableFuture<Session> closeAsync(@NonNull @NotNull Session session, boolean clearWillTask) {
+    CompletableFuture<Session> completableFuture = new CompletableFuture<>();
+    Callable<Void> task = () -> {
+      try {
+        MessageDaemon.getInstance().getSessionManager().close(session.getSession(), clearWillTask);
+        session.close();
+        completableFuture.complete(session);
+      } catch (IOException e) {
+        completableFuture.completeExceptionally(e);
+      }
+      return null;
+    };
+    taskScheduler.submit(task);
+    return completableFuture;
+  }
+
 
   /**
    * The function requires a simple path to inject a message onto a destination without the requirement of
@@ -93,16 +127,20 @@ public class SessionManager {
    *
    * @throws IOException Thrown if the message write failed, typically due to file system errors
    */
-  public boolean publish(@NonNull @NotNull String destination,@NonNull @NotNull  Message message) throws IOException {
-    DestinationImpl destinationImpl =
-        MessageDaemon.getInstance().getDestinationManager().find(destination);
-    if(destinationImpl != null) {
-      destinationImpl.storeMessage(message);
-      return true;
-    }
-    return false;
+  public CompletableFuture<Integer> publish(@NonNull @NotNull String destination,@NonNull @NotNull  Message message) throws IOException {
+    CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
+    Callable<Integer> task = () -> {
+      DestinationImpl destinationImpl = MessageDaemon.getInstance().getDestinationManager().find(destination);
+      if (destinationImpl != null) {
+        return destinationImpl.storeMessage(message);
+      }
+      return -1;
+    };
+    taskScheduler.submit(task);
+    return completableFuture;
   }
 
   private SessionManager(){
+    taskScheduler = new SingleConcurrentTaskScheduler("SessionManager");
   }
 }

@@ -31,10 +31,11 @@ import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import javax.security.auth.login.LoginException;
 
 public class ConnectListener extends BaseConnectListener {
-
 
   @Override
   public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
@@ -48,27 +49,36 @@ public class ConnectListener extends BaseConnectListener {
     }
     HeartBeat hb = connect.getHeartBeat();
     try {
-
-      Session session = createSession(engine, connect, hb);
-      session.login();
-      engine.setSession(session);
-      engine.getProtocol().setTransformation(TransformationManager.getInstance().getTransformation(engine.getProtocol().getName(), session.getSecurityContext().getUsername()));
-      Connected connected = new Connected();
-      connected.setServer("MESSAGING/STOMP");
-      connected.setVersion("" + version);
-      connected.setSession(session.getName());
-      if (hb.getPreferred() != 0) {
-        connected.setHeartBeat(new HeartBeat(hb.getPreferred(), hb.getPreferred()));
+      CompletableFuture<Session> future = createSession(engine, connect, hb).thenApply(session -> {
+        try {
+          session.login();
+          engine.setSession(session);
+          engine.getProtocol().setTransformation(TransformationManager.getInstance().getTransformation(engine.getProtocol().getName(), session.getSecurityContext().getUsername()));
+          Connected connected = new Connected();
+          connected.setServer("MESSAGING/STOMP");
+          connected.setVersion("" + version);
+          connected.setSession(session.getName());
+          if (hb.getPreferred() != 0) {
+            connected.setHeartBeat(new HeartBeat(hb.getPreferred(), hb.getPreferred()));
+          }
+          engine.send(connected);
+          engine.changeState(new ConnectedState());
+          session.resumeState();
+          return session;
+        } catch (Exception failedAuth) {
+          handleFailedAuth(failedAuth, engine);
+        }
+        return null;
+      });
+      if(future.isCompletedExceptionally()) {
+        future.get();
       }
-      engine.send(connected);
-      engine.changeState(new ConnectedState());
-      session.resumeState();
     } catch (Exception failedAuth) {
       handleFailedAuth(failedAuth, engine);
     }
   }
 
-  private Session createSession( StateEngine engine, Connect connect, HeartBeat hb) throws LoginException, IOException {
+  private CompletableFuture<Session> createSession( StateEngine engine, Connect connect, HeartBeat hb) throws LoginException, IOException {
     SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), engine.getProtocol());
     String username = connect.getLogin();
     if (username == null) {
@@ -84,6 +94,6 @@ public class ConnectListener extends BaseConnectListener {
     }
     scb.setReceiveMaximum(inFlight);
     scb.setSessionExpiry(0); // There is no idle Stomp sessions, so once disconnected the state is thrown away
-    return SessionManager.getInstance().create(scb.build(), engine.getProtocol());
+    return SessionManager.getInstance().createAsync(scb.build(), engine.getProtocol());
   }
 }

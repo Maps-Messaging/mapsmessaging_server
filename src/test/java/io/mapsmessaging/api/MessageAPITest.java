@@ -67,7 +67,7 @@ public class MessageAPITest extends BaseTestConfig {
   }
 
   public void close(Session session) throws IOException {
-    SessionManager.getInstance().close(session);
+    SessionManager.getInstance().close(session, false);
   }
 
   public boolean hasSessions(){

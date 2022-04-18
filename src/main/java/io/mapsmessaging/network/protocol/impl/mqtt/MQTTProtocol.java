@@ -96,7 +96,7 @@ public class MQTTProtocol extends ProtocolImpl {
     if (!closed) {
       closed = true;
       selectorTask.close();
-      SessionManager.getInstance().close(session);
+      SessionManager.getInstance().close(session, false);
       super.close();
     }
   }

@@ -74,7 +74,7 @@ public class QueueTest extends MessageAPITest implements MessageListener {
       queue.storeMessage(messageBuilder.build());
     }
 
-    SessionManager.getInstance().close(session);
+    SessionManager.getInstance().close(session, false);
   }
 
   @Override

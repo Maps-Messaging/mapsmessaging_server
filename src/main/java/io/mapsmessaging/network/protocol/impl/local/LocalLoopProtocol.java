@@ -25,6 +25,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.logging.Logger;
@@ -62,7 +63,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
   public void close() throws IOException {
     if (!closed) {
       closed = true;
-      SessionManager.getInstance().close(session);
+      SessionManager.getInstance().close(session, false);
       super.close();
       logger.log(ServerLogMessages.LOOP_CLOSED);
     }
@@ -73,7 +74,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
     String lookup = nameMapping.get(messageEvent.getDestinationName());
     if(lookup != null){
       try {
-        Destination destination = session.findDestination(lookup);
+        Destination destination = session.findDestination(lookup, DestinationType.TOPIC);
         if(destination != null) {
           MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
           messageBuilder.setDestinationTransformer(destinationTransformationLookup(messageEvent.getDestinationName()));

@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
 import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Event;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
@@ -28,7 +29,7 @@ public class MessageListener extends EventListener {
 
   protected void processEvent( StateEngine engine, Event event, Message message) throws IOException {
     String lookup = engine.getMapping(event.getDestination());
-    Destination destination = engine.getSession().findDestination(lookup);
+    Destination destination = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
     handleMessageStoreToDestination(destination, engine, event, message);
   }
 }
