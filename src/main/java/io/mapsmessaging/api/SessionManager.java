@@ -23,19 +23,24 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Session life time management class. This class handles the life cycle of a Session, as well as the ability to
+ * Session lifetime management class. This class handles the life cycle of a Session, as well as the ability to
  * perform anonymous publishes, if configured and allowed.
  */
 public class SessionManager {
@@ -52,6 +57,7 @@ public class SessionManager {
   }
 
   private final ExecutorService taskScheduler;
+  private final ExecutorService publisherScheduler;
 
 
   /**
@@ -136,11 +142,26 @@ public class SessionManager {
       }
       return -1;
     };
-    taskScheduler.submit(task);
+    publisherScheduler.submit(task);
     return completableFuture;
   }
 
   private SessionManager(){
-    taskScheduler = Executors.newFixedThreadPool(1);
+    taskScheduler = new SingleConcurrentTaskScheduler("SessionManager");
+    publisherScheduler =  new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors()*2,
+        30L, TimeUnit.SECONDS,
+        new SynchronousQueue<Runnable>(),
+        new ThreadFactory() {
+      final AtomicLong counter = new AtomicLong(0);
+      final ThreadGroup  threadGroup = new ThreadGroup("SessionManager");
+      @Override
+      public Thread newThread(@NotNull Runnable r) {
+        Thread t = new Thread(threadGroup, r);
+        t.setDaemon(true);
+        t.setName("Publisher-Thread:"+counter.incrementAndGet());
+        return t;
+      }
+    });
+
   }
 }
