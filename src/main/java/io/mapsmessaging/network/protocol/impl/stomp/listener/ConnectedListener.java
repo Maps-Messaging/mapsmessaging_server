@@ -27,9 +27,9 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ClientConnectedState;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import java.io.IOException;
 import java.util.UUID;
-import javax.security.auth.login.LoginException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class ConnectedListener extends BaseConnectListener {
 
@@ -44,24 +44,33 @@ public class ConnectedListener extends BaseConnectListener {
       return; // Unable to process the versioning
     }
 
+    CompletableFuture<Session> future = createSession(engine).thenApply(session -> {
+      try{
+        session.login();
+        engine.setSession(session);
+        engine.getProtocol().setTransformation(TransformationManager.getInstance().getTransformation(engine.getProtocol().getName(), session.getSecurityContext().getUsername()));
+        engine.changeState(new ClientConnectedState());
+        session.resumeState();
+      }
+      catch (Exception failedAuth) {
+        handleFailedAuth(failedAuth, engine);
+      }
+      return null;
+    });
+
     try {
-      Session session = createSession(engine);
-      session.login();
-      engine.setSession(session);
-      engine.getProtocol().setTransformation(TransformationManager.getInstance().getTransformation(engine.getProtocol().getName(), session.getSecurityContext().getUsername()));
-      engine.changeState(new ClientConnectedState());
-      session.resumeState();
-    } catch (Exception failedAuth) {
-      handleFailedAuth(failedAuth, engine);
+      future.get();
+    } catch (InterruptedException|ExecutionException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  private Session createSession( StateEngine engine) throws LoginException, IOException {
+  private CompletableFuture<Session> createSession( StateEngine engine) {
     SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), engine.getProtocol());
     scb.setPersistentSession(false);
     scb.setKeepAlive(120);
     scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
     scb.setSessionExpiry(0); // There is no idle Stomp sessions, so once disconnected the state is thrown away
-    return SessionManager.getInstance().create(scb.build(), engine.getProtocol());
+    return SessionManager.getInstance().createAsync(scb.build(), engine.getProtocol());
   }
 }

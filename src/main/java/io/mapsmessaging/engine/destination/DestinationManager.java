@@ -51,8 +51,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -256,16 +258,8 @@ public class DestinationManager implements DestinationFactory {
 
   private void processFileList(List<File> directories, DestinationPathManager pathManager){
     if (directories != null) {
-      long report = System.currentTimeMillis() + 1000;
-      int counter = 0;
-      for (File directory : directories) {
-        parseDirectoryPath(directory, pathManager);
-        counter++;
-        if(report <= System.currentTimeMillis()){
-          report = System.currentTimeMillis() + 1000;
-          logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOADED, counter, directories.size());
-        }
-      }
+      ResourceLoaderManagement resourceLoaderManagement = new ResourceLoaderManagement(directories, pathManager);
+      resourceLoaderManagement.start();
     }
   }
 
@@ -339,5 +333,80 @@ public class DestinationManager implements DestinationFactory {
         }
       }
     }
+  }
+
+  public class ResourceLoaderManagement {
+
+    private final Queue<File> fileList;
+    private final DestinationPathManager pathManager;
+    private final int initialSize;
+
+    public ResourceLoaderManagement(List<File> list, DestinationPathManager pathManager){
+      this.fileList = new ConcurrentLinkedQueue<>(list);
+      this.pathManager = pathManager;
+      initialSize = list.size();
+    }
+
+    public void start(){
+      if(fileList.isEmpty()) return;
+      // We need to ensure the underlying storage component has loaded and warmed up
+      File file = fileList.poll();
+      if(file != null) {
+        parseDirectoryPath(file, pathManager);
+      }
+
+      long report = System.currentTimeMillis() + 1000;
+      ResourceLoader[] loaders = new ResourceLoader[Runtime.getRuntime().availableProcessors()*2];
+      for(int x=0;x<loaders.length;x++){
+        loaders[x] = new ResourceLoader(fileList, pathManager);
+        loaders[x].start();
+      }
+      boolean complete = false;
+      while(!complete) {
+        for (ResourceLoader loader : loaders) {
+          complete = true;
+          if (!loader.complete) {
+            complete = false;
+            try {
+              loader.join(10);
+            } catch (InterruptedException e) {
+              // Hmm, we are interrupted, could mean that the load is taking too long and a shutdown is requested
+              if (Thread.currentThread().isInterrupted()) {
+                logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOAD_INTERRUPTED);
+                return;
+              }
+            }
+          }
+        }
+        if(report <= System.currentTimeMillis()){
+          report = System.currentTimeMillis() + 1000;
+          logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOADED, (initialSize-fileList.size()), initialSize);
+        }
+      }
+    }
+  }
+
+  public class ResourceLoader extends Thread{
+
+    private final Queue<File> fileList;
+    private final DestinationPathManager pathManager;
+    private transient boolean complete;
+
+    public ResourceLoader (Queue<File> fileList,DestinationPathManager pathManager){
+      this.fileList = fileList;
+      this.pathManager = pathManager;
+      complete = false;
+      setName("Resource Loader Thread");
+    }
+
+    public void run(){
+      File file = fileList.poll();
+      while(file != null){
+        parseDirectoryPath(file, pathManager);
+        file = fileList.poll();
+      }
+      complete = true;
+    }
+
   }
 }

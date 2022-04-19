@@ -72,32 +72,25 @@ public class ProtocolAcceptRunner implements Selectable {
       if (logger.isDebugEnabled()) {
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRED, read, pos, packet.limit());
       }
-      try {
-        if (read > 0) {
+      if (read > 0) {
+        packet.flip();
+        packet.position(0);
+        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
+        ProtocolImplFactory protocolImplFactory = protocolFactory.detect(packet);
+        if (protocolImplFactory != null) {
+          endPoint.deregister(SelectionKey.OP_READ);
+          packet.position(pos);
+          packet.limit(packet.capacity());
           packet.flip();
-          packet.position(0);
-          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
-          ProtocolImplFactory protocolImplFactory = protocolFactory.detect(packet);
-          if (protocolImplFactory != null) {
-            endPoint.deregister(SelectionKey.OP_READ);
-            packet.position(pos);
-            packet.limit(packet.capacity());
-            packet.flip();
-            logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CREATED, protocolImplFactory.getName());
-            protocolImplFactory.create(endPoint, packet);
-          } else {
-            packet.position(pos);
-            packet.limit(packet.capacity());
-          }
-        } else if (read < 0) {
-          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
-          endPoint.close();
+          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CREATED, protocolImplFactory.getName());
+          protocolImplFactory.create(endPoint, packet);
+        } else {
+          packet.position(pos);
+          packet.limit(packet.capacity());
         }
-      }
-      catch (Throwable th){
-        th.printStackTrace();
-      } finally {
-        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_COMPLETE);
+      } else if (read < 0) {
+        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
+        endPoint.close();
       }
     } catch (IOException e) {
       logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FAILED_DETECT, e, endPoint.toString());

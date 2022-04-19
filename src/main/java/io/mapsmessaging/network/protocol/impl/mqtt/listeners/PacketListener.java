@@ -30,11 +30,14 @@ public abstract class PacketListener {
 
   protected Logger logger = LoggerFactory.getLogger("MQTT_Packet_Listener");
 
+  public boolean resumeRead() {
+    return true;
+  }
+
   void checkState(Session session) throws MalformedException {
     if(session == null){
       throw new MalformedException("Connection has not yet been established");
     }
-
   }
 
   public abstract MQTTPacket handlePacket(

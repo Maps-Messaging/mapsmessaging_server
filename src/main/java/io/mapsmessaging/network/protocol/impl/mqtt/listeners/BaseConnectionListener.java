@@ -29,27 +29,30 @@ import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
-import javax.security.auth.login.LoginException;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class BaseConnectionListener extends PacketListener {
 
-  protected Session createSession(EndPoint endPoint, ProtocolImpl protocol, SessionContextBuilder scb, String sessionId) throws MalformedException, IOException {
-    Session session;
-    try {
-      session = SessionManager.getInstance().create(scb.build(), protocol);
-      ((MQTTProtocol) protocol).setSession(session);
-    } catch (LoginException e) {
-      logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, e, sessionId);
-      endPoint.close();
-      throw new MalformedException("[MQTT-3.1.0-2] Failed to create the session for the MQTT session");
-    } catch (IOException ioe) {
-      logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
-      endPoint.close();
-      throw new MalformedException("Unable to construct the required Will Topic");
-    }
-    session.login();
-    protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
-    return session;
+  protected CompletableFuture<Session> createSession(EndPoint endPoint, ProtocolImpl protocol, SessionContextBuilder scb, String sessionId) {
+    CompletableFuture<Session> future = SessionManager.getInstance().createAsync(scb.build(), protocol);
+    future.thenApply(session ->{
+      try{
+        ((MQTTProtocol) protocol).setSession(session);
+        session.login();
+        protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+        return session;
+      } catch (IOException ioe) {
+        logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
+        future.completeExceptionally(new MalformedException("Unable to construct the required Will Topic"));
+      }
+      try {
+        endPoint.close();
+      } catch (IOException e) {
+        // Ignore
+      }
+      return null;
+    });
+    return future;
   }
 
   protected SessionContextBuilder getBuilder(EndPoint endPoint, ProtocolImpl protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass){

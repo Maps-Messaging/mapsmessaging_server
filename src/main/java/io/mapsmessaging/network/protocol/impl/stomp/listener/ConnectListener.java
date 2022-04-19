@@ -29,11 +29,8 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.HeartBeat;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ConnectedState;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import javax.security.auth.login.LoginException;
 
 public class ConnectListener extends BaseConnectListener {
 
@@ -48,37 +45,36 @@ public class ConnectListener extends BaseConnectListener {
       return; // Unable to process the versioning
     }
     HeartBeat hb = connect.getHeartBeat();
-    try {
-      CompletableFuture<Session> future = createSession(engine, connect, hb).thenApply(session -> {
-        try {
-          session.login();
-          engine.setSession(session);
-          engine.getProtocol().setTransformation(TransformationManager.getInstance().getTransformation(engine.getProtocol().getName(), session.getSecurityContext().getUsername()));
-          Connected connected = new Connected();
-          connected.setServer("MESSAGING/STOMP");
-          connected.setVersion("" + version);
-          connected.setSession(session.getName());
-          if (hb.getPreferred() != 0) {
-            connected.setHeartBeat(new HeartBeat(hb.getPreferred(), hb.getPreferred()));
-          }
-          engine.send(connected);
-          engine.changeState(new ConnectedState());
-          session.resumeState();
-          return session;
-        } catch (Exception failedAuth) {
-          handleFailedAuth(failedAuth, engine);
+    CompletableFuture<Session> future = createSession(engine, connect, hb).thenApply(session -> {
+      try {
+        session.login();
+        engine.setSession(session);
+        engine.getProtocol().setTransformation(TransformationManager.getInstance().getTransformation(engine.getProtocol().getName(), session.getSecurityContext().getUsername()));
+        Connected connected = new Connected();
+        connected.setServer("MESSAGING/STOMP");
+        connected.setVersion("" + version);
+        connected.setSession(session.getName());
+        if (hb.getPreferred() != 0) {
+          connected.setHeartBeat(new HeartBeat(hb.getPreferred(), hb.getPreferred()));
         }
-        return null;
-      });
-      if(future.isCompletedExceptionally()) {
-        future.get();
+        engine.send(connected);
+        engine.changeState(new ConnectedState());
+        session.resumeState();
+        return session;
+      } catch (Exception failedAuth) {
+        handleFailedAuth(failedAuth, engine);
       }
+      return null;
+    });
+
+    try{
+      future.get();
     } catch (Exception failedAuth) {
-      handleFailedAuth(failedAuth, engine);
+//      handleFailedAuth(failedAuth, engine);
     }
   }
 
-  private CompletableFuture<Session> createSession( StateEngine engine, Connect connect, HeartBeat hb) throws LoginException, IOException {
+  private CompletableFuture<Session> createSession( StateEngine engine, Connect connect, HeartBeat hb) {
     SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), engine.getProtocol());
     String username = connect.getLogin();
     if (username == null) {

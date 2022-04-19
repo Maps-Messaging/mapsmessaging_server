@@ -23,12 +23,12 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
-import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
-import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -51,7 +51,7 @@ public class SessionManager {
     return instance;
   }
 
-  private final TaskScheduler taskScheduler;
+  private final ExecutorService taskScheduler;
 
 
   /**
@@ -69,7 +69,7 @@ public class SessionManager {
     return createAsync(sessionContext, listener).get();
   }
 
-  public @NonNull @NotNull CompletableFuture<Session> createAsync(@NonNull @NotNull SessionContext sessionContext, @NonNull @NotNull MessageListener listener) throws LoginException, IOException {
+  public @NonNull @NotNull CompletableFuture<Session> createAsync(@NonNull @NotNull SessionContext sessionContext, @NonNull @NotNull MessageListener listener) {
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
     Callable<Void> task = () -> {
       try {
@@ -141,6 +141,6 @@ public class SessionManager {
   }
 
   private SessionManager(){
-    taskScheduler = new SingleConcurrentTaskScheduler("SessionManager");
+    taskScheduler = Executors.newFixedThreadPool(1);
   }
 }

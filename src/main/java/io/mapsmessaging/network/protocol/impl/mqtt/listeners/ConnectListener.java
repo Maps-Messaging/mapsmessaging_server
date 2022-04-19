@@ -25,13 +25,17 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.login.LoginException;
 
 public class ConnectListener extends BaseConnectionListener {
 
@@ -72,6 +76,10 @@ public class ConnectListener extends BaseConnectionListener {
     return connAck;
   }
 
+  public boolean resumeRead() {
+    return false;
+  }
+
   void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
@@ -79,14 +87,41 @@ public class ConnectListener extends BaseConnectionListener {
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }
     protocol.setKeepAlive(connect.getKeepAlive());
-    try {
-      Session session = createSession(endPoint, protocol, scb, sessionId);
+    CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sessionId);
+    sessionFuture.thenApply(session ->{
       connAck.setResponseCode(ConnAck.SUCCESS);
       connAck.setRestoredFlag(session.isRestored());
       connAck.setCallback(session::resumeState);
-    } catch (IOException e) {
-      logger.log(ServerLogMessages.MQTT_BAD_USERNAME_PASSWORD, e);
+      try {
+        ((MQTTProtocol)protocol).registerRead();
+      } catch (IOException e) {
+        sessionFuture.completeExceptionally(e);
+      }
+      return session;
+    });
+
+    try{
+      sessionFuture.get();
+    } catch (ExecutionException e) {
       connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
+      Throwable cause = e.getCause();
+      if(cause instanceof LoginException){
+        logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, e, sessionId);
+      }
+      try {
+        endPoint.close();
+      } catch (IOException ex) {
+        // Ignore
+      }
+    } catch (InterruptedException e) {
+
+      if(Thread.currentThread().isInterrupted()){
+        try {
+          endPoint.close();
+        } catch (IOException ex) {
+          // Ignore
+        }
+      }
     }
   }
 

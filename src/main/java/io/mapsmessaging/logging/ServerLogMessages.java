@@ -398,8 +398,13 @@ public enum ServerLogMessages implements LogMessage {
   PROPERTY_MANAGER_COMPLETED_INDEX(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed indexed property with {} for index {}"),
   PROPERTY_MANAGER_SCAN_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to scan for property files"),
   PROPERTY_MANAGER_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load property {}"),
-  DESTINATION_MANAGER_RELOADED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Reloaded {} out of {}"),
   // </editor-fold>
+
+
+  //<editor-fold desc="Destination Manager log messages">
+  DESTINATION_MANAGER_RELOADED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Reloaded {} out of {}"),
+  DESTINATION_MANAGER_RELOAD_INTERRUPTED(LEVEL.WARN,SERVER_CATEGORY.ENGINE, "The reloading of server resources was interrupted during reload" ),
+  //</editor-fold>
 
   //<editor-fold desc="Destination Subscription log messages">
   DESTINATION_SUBSCRIPTION_PUT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Adding subscription {} to destination {} for session {}"),
@@ -544,10 +549,9 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_INITIALISED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Initialised connection"),
   END_POINT_CONNECTION_CLOSED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Closing connection"),
   END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
-  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager");
   //</editor-fold>
 
-  ;
 
 
   private final @Getter String message;

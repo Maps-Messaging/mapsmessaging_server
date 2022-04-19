@@ -25,6 +25,7 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class ConnAckListener extends BaseConnectionListener {
 
@@ -37,11 +38,16 @@ public class ConnAckListener extends BaseConnectionListener {
 
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sess, false, 30000, user, pass.toCharArray());
     protocol.setKeepAlive(30000);
-    try {
-      Session session1 = createSession(endPoint, protocol, scb, sess);
+    CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
+    sessionFuture.thenApply(session1 ->{
       session1.resumeState();
       protocol.setConnected(true);
-    } catch (IOException ioException) {
+      return session1;
+    });
+
+    try {
+      sessionFuture.get();
+    } catch (Exception ioException) {
       try {
         endPoint.close();
         protocol.setConnected(false);

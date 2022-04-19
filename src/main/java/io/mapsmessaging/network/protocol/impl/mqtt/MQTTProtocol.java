@@ -36,6 +36,7 @@ import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
@@ -169,11 +170,14 @@ public class MQTTProtocol extends ProtocolImpl {
   public boolean processPacket(Packet packet) throws IOException {
     int pos = packet.position();
     try {
+      boolean resume = false;
       while (packet.hasRemaining()) {
-        handleMQTTEvent(packet);
+        resume = handleMQTTEvent(packet);
         pos = packet.position();
       }
-      registerRead();
+      if(resume) {
+        registerRead();
+      }
     } catch (EndOfBufferException eobe) {
       packet.position(pos);
       registerRead();
@@ -185,17 +189,15 @@ public class MQTTProtocol extends ProtocolImpl {
     return true;
   }
 
-  protected void handleMQTTEvent(Packet packet) throws MalformedException, EndOfBufferException {
+  protected boolean handleMQTTEvent(Packet packet) throws MalformedException, EndOfBufferException {
     MQTTPacket mqtt = packetFactory.parseFrame(packet);
     if (mqtt != null) {
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt.toString());
       }
       receivedMessageAverages.increment();
-      MQTTPacket response =
-          packetListenerFactory
-              .getListener(mqtt.getControlPacketId())
-              .handlePacket(mqtt, session, endPoint, this);
+      PacketListener packetListener = packetListenerFactory.getListener(mqtt.getControlPacketId());
+      MQTTPacket response = packetListener.handlePacket(mqtt, session, endPoint, this);
       if (response != null) {
         sentMessageAverages.increment();
         if (logger.isInfoEnabled()) {
@@ -203,7 +205,9 @@ public class MQTTProtocol extends ProtocolImpl {
         }
         selectorTask.push(response);
       }
+      return packetListener.resumeRead();
     }
+    return true;
   }
 
   @Override

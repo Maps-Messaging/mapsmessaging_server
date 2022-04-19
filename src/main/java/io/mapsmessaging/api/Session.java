@@ -50,6 +50,14 @@ public class Session {
     destinations = new ConcurrentHashMap<>();
   }
 
+  public void login() throws IOException {
+    sessionImpl.login();
+  }
+
+  public void start() {
+    sessionImpl.start();
+  }
+
   @NonNull @NotNull SessionImpl getSession() {
     return sessionImpl;
   }
@@ -58,14 +66,6 @@ public class Session {
     for (Transaction transaction : clientTransactions.values()) {
       transaction.close();
     }
-  }
-
-  public DestinationImpl deleteDestination(Destination destination) {
-    DestinationImpl deleted = sessionImpl.deleteDestination(destination.destinationImpl);
-    if(deleted != null) {
-      destinations.remove(deleted.getFullyQualifiedNamespace());
-    }
-    return deleted;
   }
 
   public @Nullable Destination findDestination(@NonNull @NotNull String destinationName, DestinationType type) throws IOException {
@@ -88,11 +88,16 @@ public class Session {
     }
     return result;
   }
-  //</editor-fold>
 
-  public void login() throws IOException {
-    sessionImpl.login();
+  public DestinationImpl deleteDestination(Destination destination) {
+    DestinationImpl deleted = sessionImpl.deleteDestination(destination.destinationImpl);
+    if(deleted != null) {
+      destinations.remove(deleted.getFullyQualifiedNamespace());
+    }
+    return deleted;
   }
+
+  //</editor-fold>
 
   public @NonNull @NotNull SecurityContext getSecurityContext(){
     return sessionImpl.getSecurityContext();
@@ -108,10 +113,6 @@ public class Session {
 
   public SubscribedEventManager resume(Destination destination) {
     return sessionImpl.resume(destination.destinationImpl);
-  }
-
-  public void start() {
-    sessionImpl.start();
   }
 
   public SubscribedEventManager addSubscription(@NonNull @NotNull SubscriptionContext context) throws IOException {

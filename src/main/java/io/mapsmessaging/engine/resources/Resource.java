@@ -30,6 +30,7 @@ import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -53,6 +54,7 @@ public class Resource implements AutoCloseable {
   private final @Getter boolean persistent;
 
   private final AtomicLong keyGen;
+  private volatile boolean loaded;
   private final AsyncStorage<Message> store;
 
   private @Getter long retainedIdentifier;
@@ -64,6 +66,7 @@ public class Resource implements AutoCloseable {
 
   public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName) throws IOException {
     keyGen = new AtomicLong(0);
+    loaded = false;
     isClosed = false;
     retainedIdentifier = -1;
     name = fileName+"message.data";
@@ -99,9 +102,6 @@ public class Resource implements AutoCloseable {
 
     Storage<Message> s = builder.build();
     persistent = !(type.equalsIgnoreCase("Memory"));
-    if(persistent){
-      keyGen.set(s.getLastKey());
-    }
     store = new AsyncStorage<>(s);
     if(idleTime > 0){
       store.enableAutoPause(pathManager.getIdleTime() * 1000L); // Convert to milliseconds
@@ -132,6 +132,20 @@ public class Resource implements AutoCloseable {
   }
 
   protected long getNextIdentifier() {
+    if(!loaded){
+      if(persistent){
+        try {
+          keyGen.set(store.getLastKey().get());
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+      loaded = true;
+    }
     return keyGen.incrementAndGet();
   }
 
