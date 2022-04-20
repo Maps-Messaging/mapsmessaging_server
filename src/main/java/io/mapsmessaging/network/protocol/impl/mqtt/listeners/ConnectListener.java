@@ -33,9 +33,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.login.LoginException;
 
 public class ConnectListener extends BaseConnectionListener {
 
@@ -62,16 +60,7 @@ public class ConnectListener extends BaseConnectionListener {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
     } else {
       createSession(sessionId, connect, connAck, endPoint, protocol);
-    }
-
-    if (connAck.getResponseCode() != ConnAck.SUCCESS) {
-      connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
-        try {
-          protocol.close();
-        } catch (IOException e) {
-          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-        }
-      }, 100, TimeUnit.MILLISECONDS));
+      return null; // Delayed response
     }
     return connAck;
   }
@@ -96,33 +85,27 @@ public class ConnectListener extends BaseConnectionListener {
         ((MQTTProtocol)protocol).registerRead();
       } catch (IOException e) {
         sessionFuture.completeExceptionally(e);
+        connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
+        connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
+          try {
+            protocol.close();
+          } catch (IOException e1) {
+            logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e1);
+          }
+        }, 100, TimeUnit.MILLISECONDS));
       }
+      ((MQTTProtocol)protocol).writeFrame(connAck);
       return session;
     });
-
-    try{
-      sessionFuture.get();
-    } catch (ExecutionException e) {
-      connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
-      Throwable cause = e.getCause();
-      if(cause instanceof LoginException){
-        logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, e, sessionId);
-      }
+    sessionFuture.exceptionally(throwable -> {
       try {
-        endPoint.close();
-      } catch (IOException ex) {
-        // Ignore
+        protocol.close();
+      } catch (IOException e1) {
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e1);
       }
-    } catch (InterruptedException e) {
+      return null;
+    });
 
-      if(Thread.currentThread().isInterrupted()){
-        try {
-          endPoint.close();
-        } catch (IOException ex) {
-          // Ignore
-        }
-      }
-    }
   }
 
   boolean checkStrict(Connect connect,ProtocolImpl protocol){

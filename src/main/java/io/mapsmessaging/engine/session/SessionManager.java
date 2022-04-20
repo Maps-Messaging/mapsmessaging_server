@@ -115,8 +115,8 @@ public class SessionManager {
   }
 
   int getPipeLineIndex(String name) {
-    int hashCode = name.hashCode() % sessionPipeLines.length; // Reduce its size before we get the ABS
-    return Math.abs(hashCode);
+    int hashCode = Math.abs(name.hashCode()) % sessionPipeLines.length; // Reduce its size before we get the ABS
+    return hashCode;
   }
   //</editor-fold>
 

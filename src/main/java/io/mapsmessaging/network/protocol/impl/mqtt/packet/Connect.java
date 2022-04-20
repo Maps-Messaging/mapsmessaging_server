@@ -143,10 +143,7 @@ public class Connect extends MQTTPacket {
     //
     // BYTE 9, 10 ( Keep Alive )
     //
-    int tmp1 = packet.get() << 8;
-    tmp1 = tmp1 + packet.get();
-    keepAlive = tmp1 * 1000; // convert to ms
-
+    keepAlive = readShort(packet) * 1000; // convert to ms
     String id = readUTF8(packet);
 
     if (id.length() == 0 && cleanSession) {
