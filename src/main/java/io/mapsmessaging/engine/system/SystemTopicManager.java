@@ -62,14 +62,11 @@ public class SystemTopicManager implements Runnable, ServiceManager {
   public void run() {
     for (SystemTopic systemTopic : completeList) {
       if (systemTopic.hasUpdates()) {
-/*
         try {
           systemTopic.sendUpdate();
         } catch (IOException e) {
           // We can ignore this, since it would be temp on the connection
         }
-
- */
       }
     }
   }
