@@ -48,6 +48,7 @@ import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,12 +75,15 @@ public class DestinationManager implements DestinationFactory {
   private final Logger logger;
   private final DestinationPathManager rootPath;
 
+  private final DestinationCreatorPipeline[] creatorPipelines;
+
   public DestinationManager(int time) {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
     ConfigurationProperties list = ConfigurationManager.getInstance().getProperties("DestinationManager");
     DestinationPathManager rootPathLookup = null;
-
+    creatorPipelines = new DestinationCreatorPipeline[Runtime.getRuntime().availableProcessors()*2];
+    Arrays.setAll(creatorPipelines, x -> new DestinationCreatorPipeline());
     Object rootConf = list.get("data");
 
     if(rootConf instanceof ConfigurationProperties){
@@ -140,62 +144,13 @@ public class DestinationManager implements DestinationFactory {
   }
 
   @Override
-  public synchronized DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     if (name.startsWith("$SYS")) {
       // can not create these
       logger.log(ServerLogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
       return null;
     }
-    DestinationImpl destinationImpl = destinationList.get(name);
-    if (destinationImpl == null) {
-      UUID destinationUUID = UUID.randomUUID();
-      DestinationPathManager pathManager = rootPath;
-      String namespace="";
-      for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
-        if (name.startsWith(entry.getKey())) {
-          if(namespace.length() < entry.getKey().length()){
-            pathManager = entry.getValue();
-            namespace = entry.getKey();
-          }
-        }
-      }
-      if(destinationType.isTemporary()) {
-        destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType);
-      }
-      else{
-        destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
-      }
-      logger.log(AuditEvent.DESTINATION_CREATED, destinationImpl.getFullyQualifiedNamespace());
-
-      destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
-    }
-
-    //
-    // let the listeners know there is a new destination
-    //
-    for (DestinationManagerListener listener : destinationManagerListeners) {
-      listener.created(destinationImpl);
-    }
-    logger.log(ServerLogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
-
-    //-------------------------------------------------------------------------------------
-    // We have a divergence here, if we have a Queue then we need to start storing messages
-    // even if we have no subscriptions. This is different to Topics since we only store
-    // messages when we have subscriptions.
-    //-------------------------------------------------------------------------------------
-    if(destinationType.isQueue()){
-      SubscriptionContext context = new SubscriptionContext(name);
-      context.setAcknowledgementController(ClientAcknowledgement.INDIVIDUAL);
-      context.setCreditHandler(CreditHandler.CLIENT);
-      context.setAlias(name);
-      context.setAllowOverlap(false);
-      context.setReceiveMaximum(0);
-      context.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
-      context.setSharedName(name);
-      CommonSubscriptionBuilder builder = new QueueSubscriptionBuilder(destinationImpl, context);
-      builder.construct(null, name);
-    }
-    return destinationImpl;
+    return creatorPipelines[Math.abs(name.hashCode())%creatorPipelines.length].create(name, destinationType);
   }
 
   @Override
@@ -407,6 +362,61 @@ public class DestinationManager implements DestinationFactory {
       }
       complete = true;
     }
+  }
 
+  class DestinationCreatorPipeline {
+
+    synchronized public DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+      DestinationImpl destinationImpl = destinationList.get(name);
+      if (destinationImpl == null) {
+        UUID destinationUUID = UUID.randomUUID();
+        DestinationPathManager pathManager = rootPath;
+        String namespace="";
+        for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
+          if (name.startsWith(entry.getKey())) {
+            if(namespace.length() < entry.getKey().length()){
+              pathManager = entry.getValue();
+              namespace = entry.getKey();
+            }
+          }
+        }
+        if(destinationType.isTemporary()) {
+          destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType);
+        }
+        else{
+          destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
+        }
+        logger.log(AuditEvent.DESTINATION_CREATED, destinationImpl.getFullyQualifiedNamespace());
+
+        destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
+      }
+
+      //
+      // let the listeners know there is a new destination
+      //
+      for (DestinationManagerListener listener : destinationManagerListeners) {
+        listener.created(destinationImpl);
+      }
+      logger.log(ServerLogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
+
+      //-------------------------------------------------------------------------------------
+      // We have a divergence here, if we have a Queue then we need to start storing messages
+      // even if we have no subscriptions. This is different to Topics since we only store
+      // messages when we have subscriptions.
+      //-------------------------------------------------------------------------------------
+      if(destinationType.isQueue()){
+        SubscriptionContext context = new SubscriptionContext(name);
+        context.setAcknowledgementController(ClientAcknowledgement.INDIVIDUAL);
+        context.setCreditHandler(CreditHandler.CLIENT);
+        context.setAlias(name);
+        context.setAllowOverlap(false);
+        context.setReceiveMaximum(0);
+        context.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
+        context.setSharedName(name);
+        CommonSubscriptionBuilder builder = new QueueSubscriptionBuilder(destinationImpl, context);
+        builder.construct(null, name);
+      }
+      return destinationImpl;
+    }
   }
 }
