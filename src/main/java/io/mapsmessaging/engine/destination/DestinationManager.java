@@ -18,26 +18,12 @@
 
 package io.mapsmessaging.engine.destination;
 
-import static io.mapsmessaging.engine.destination.DestinationImpl.TASK_QUEUE_PRIORITY_SIZE;
-
-import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.engine.audit.AuditEvent;
-import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
-import io.mapsmessaging.engine.destination.subscription.builders.QueueSubscriptionBuilder;
-import io.mapsmessaging.engine.destination.tasks.DelayedMessageProcessor;
-import io.mapsmessaging.engine.destination.tasks.ShutdownPhase1Task;
-import io.mapsmessaging.engine.destination.tasks.StoreMessageTask;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.system.SystemTopic;
-import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -53,13 +39,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -70,20 +52,16 @@ public class DestinationManager implements DestinationFactory {
   private static final String TEMPORARY_TOPIC = "/dynamic/temporary/topic";
 
   private final Map<String, DestinationPathManager> properties;
-  private final Map<String, DestinationImpl> destinationList;
   private final List<DestinationManagerListener> destinationManagerListeners;
   private final Logger logger;
   private final DestinationPathManager rootPath;
-
-  private final DestinationCreatorPipeline[] creatorPipelines;
+  private final DestinationManagerPipeline[] creatorPipelines;
 
   public DestinationManager(int time) {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
     ConfigurationProperties list = ConfigurationManager.getInstance().getProperties("DestinationManager");
     DestinationPathManager rootPathLookup = null;
-    creatorPipelines = new DestinationCreatorPipeline[Runtime.getRuntime().availableProcessors()*2];
-    Arrays.setAll(creatorPipelines, x -> new DestinationCreatorPipeline());
     Object rootConf = list.get("data");
 
     if(rootConf instanceof ConfigurationProperties){
@@ -108,34 +86,37 @@ public class DestinationManager implements DestinationFactory {
       }
     }
 
-    rootPath = rootPathLookup;
     destinationManagerListeners = new CopyOnWriteArrayList<>();
-    destinationList = new ConcurrentHashMap<>();
+    rootPath = rootPathLookup;
+    creatorPipelines = new DestinationManagerPipeline[Runtime.getRuntime().availableProcessors()*2];
+    Arrays.setAll(creatorPipelines, x -> new DestinationManagerPipeline(rootPath, properties, destinationManagerListeners));
+
     SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, time, TimeUnit.MILLISECONDS);
+  }
+
+  int getIndex(String name){
+    int idx = Math.abs(name.hashCode())%creatorPipelines.length;
+    System.err.println(name+" -> Index:"+idx);
+    return idx;
   }
 
   public void addSystemTopic(SystemTopic systemTopic) {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_ADD_SYSTEM_TOPIC, systemTopic.getFullyQualifiedNamespace());
-    destinationList.put(systemTopic.getFullyQualifiedNamespace(), systemTopic);
+    creatorPipelines[getIndex(systemTopic.getFullyQualifiedNamespace())].put(systemTopic);
   }
 
   @Override
-  public synchronized List<DestinationImpl> getDestinations() {
-    return new ArrayList<>(destinationList.values());
+  public DestinationImpl find(String name) {
+    return creatorPipelines[getIndex(name)].find(name);
   }
 
   @Override
-  public synchronized DestinationImpl find(String name) {
-    return destinationList.get(name);
-  }
-
-  @Override
-  public synchronized DestinationImpl findOrCreate(String name) throws IOException {
+  public DestinationImpl findOrCreate(String name) throws IOException {
     return findOrCreate(name, DestinationType.TOPIC);
   }
 
   @Override
-  public synchronized DestinationImpl findOrCreate(String name, DestinationType destinationType) throws IOException {
+  public DestinationImpl findOrCreate(String name, DestinationType destinationType) throws IOException {
     DestinationImpl destinationImpl = find(name);
     if (destinationImpl == null) {
       destinationImpl = create(name, destinationType);
@@ -150,32 +131,32 @@ public class DestinationManager implements DestinationFactory {
       logger.log(ServerLogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
       return null;
     }
-    return creatorPipelines[Math.abs(name.hashCode())%creatorPipelines.length].create(name, destinationType);
+    return creatorPipelines[getIndex(name)].create(name, destinationType);
   }
 
   @Override
-  public synchronized DestinationImpl delete(DestinationImpl destinationImpl) {
+  public DestinationImpl delete(DestinationImpl destinationImpl) {
     if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
-      DestinationImpl delete = destinationList.remove(destinationImpl.getFullyQualifiedNamespace());
-      StoreMessageTask deleteDestinationTask = new ShutdownPhase1Task(delete, destinationManagerListeners, logger);
-      Future<Response> response = destinationImpl.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE-1);
-      long timeout = System.currentTimeMillis() + 10000; // ToDo: make configurable
-      while(!response.isDone() && timeout > System.currentTimeMillis()){
-        LockSupport.parkNanos(10000000);
-      }
-      logger.log(AuditEvent.DESTINATION_DELETED, delete.getFullyQualifiedNamespace());
-      return delete;
+      return creatorPipelines[getIndex(destinationImpl.getFullyQualifiedNamespace())].delete(destinationImpl);
     }
     return null;
   }
 
   @Override
   public Map<String, DestinationImpl> get() {
-    return destinationList;
+    Map<String, DestinationImpl> response = new LinkedHashMap<>();
+    for(DestinationManagerPipeline pipeline:creatorPipelines){
+      pipeline.copy(response);
+    }
+    return response;
   }
 
   public int size() {
-    return destinationList.size();
+    int size = 0;
+    for(DestinationManagerPipeline pipeline:creatorPipelines){
+      size += pipeline.size();
+    }
+    return size;
   }
 
   public void start() {
@@ -190,12 +171,8 @@ public class DestinationManager implements DestinationFactory {
 
   public void stop() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
-    for (DestinationImpl destinationImpl : destinationList.values()) {
-      try {
-        destinationImpl.close();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING,e);
-      }
+    for(DestinationManagerPipeline pipeline:creatorPipelines){
+      pipeline.stop();
     }
   }
 
@@ -227,7 +204,7 @@ public class DestinationManager implements DestinationFactory {
           logger.log(ServerLogMessages.DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION, destinationImpl.getFullyQualifiedNamespace());
           destinationImpl.delete();
         } else {
-          destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
+          creatorPipelines[getIndex(destinationImpl.getFullyQualifiedNamespace())].put(destinationImpl);
           logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
         }
       }
@@ -273,25 +250,13 @@ public class DestinationManager implements DestinationFactory {
   public class DelayProcessor implements Runnable{
     @Override
     public void run() {
-      for(DestinationImpl destination:destinationList.values()) {
-        DelayedMessageManager messageProcessor = destination.getDelayedStatus();
-        if (messageProcessor != null && !messageProcessor.isEmpty() ){
-          List<Long> waiting = messageProcessor.getBucketIds();
-          for(Long expiry:waiting){
-            if(expiry < System.currentTimeMillis()){
-              destination.submit(new DelayedMessageProcessor(destination, destination.subscriptionManager,messageProcessor, expiry));
-            }
-            else{
-              break;
-            }
-          }
-        }
+      for(DestinationManagerPipeline pipeline:creatorPipelines){
+        pipeline.scan();
       }
     }
   }
 
   public class ResourceLoaderManagement {
-
     private final Queue<File> fileList;
     private final DestinationPathManager pathManager;
     private final int initialSize;
@@ -361,62 +326,6 @@ public class DestinationManager implements DestinationFactory {
         file = fileList.poll();
       }
       complete = true;
-    }
-  }
-
-  class DestinationCreatorPipeline {
-
-    synchronized public DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
-      DestinationImpl destinationImpl = destinationList.get(name);
-      if (destinationImpl == null) {
-        UUID destinationUUID = UUID.randomUUID();
-        DestinationPathManager pathManager = rootPath;
-        String namespace="";
-        for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
-          if (name.startsWith(entry.getKey())) {
-            if(namespace.length() < entry.getKey().length()){
-              pathManager = entry.getValue();
-              namespace = entry.getKey();
-            }
-          }
-        }
-        if(destinationType.isTemporary()) {
-          destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType);
-        }
-        else{
-          destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
-        }
-        logger.log(AuditEvent.DESTINATION_CREATED, destinationImpl.getFullyQualifiedNamespace());
-
-        destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
-      }
-
-      //
-      // let the listeners know there is a new destination
-      //
-      for (DestinationManagerListener listener : destinationManagerListeners) {
-        listener.created(destinationImpl);
-      }
-      logger.log(ServerLogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
-
-      //-------------------------------------------------------------------------------------
-      // We have a divergence here, if we have a Queue then we need to start storing messages
-      // even if we have no subscriptions. This is different to Topics since we only store
-      // messages when we have subscriptions.
-      //-------------------------------------------------------------------------------------
-      if(destinationType.isQueue()){
-        SubscriptionContext context = new SubscriptionContext(name);
-        context.setAcknowledgementController(ClientAcknowledgement.INDIVIDUAL);
-        context.setCreditHandler(CreditHandler.CLIENT);
-        context.setAlias(name);
-        context.setAllowOverlap(false);
-        context.setReceiveMaximum(0);
-        context.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
-        context.setSharedName(name);
-        CommonSubscriptionBuilder builder = new QueueSubscriptionBuilder(destinationImpl, context);
-        builder.construct(null, name);
-      }
-      return destinationImpl;
     }
   }
 }

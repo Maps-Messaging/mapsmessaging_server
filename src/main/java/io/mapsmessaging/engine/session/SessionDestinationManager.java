@@ -52,18 +52,6 @@ public class SessionDestinationManager implements DestinationFactory {
   }
 
   @Override
-  public List<DestinationImpl> getDestinations() {
-    List<DestinationImpl> response = manager.getDestinations();
-    List<DestinationImpl> filteredResponse = new ArrayList<>();
-    for(DestinationImpl destination:response){
-      if(destination.getFullyQualifiedNamespace().startsWith(sessionTenantConfig.getTenantPath())){
-        filteredResponse.add(destination);
-      }
-    }
-    return filteredResponse;
-  }
-
-  @Override
   public DestinationImpl find(String name) {
     return manager.find(name);
   }

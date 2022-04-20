@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
@@ -47,9 +48,9 @@ public class BaseTestConfig extends BaseTest {
 
   @AfterEach
   public void clear(){
-    List<DestinationImpl> destinations = md.getDestinationManager().getDestinations();
+    Map<String, DestinationImpl> destinations = md.getDestinationManager().get();
     List<DestinationImpl> toDelete = new ArrayList<>();
-    for(DestinationImpl destination:destinations){
+    for(DestinationImpl destination:destinations.values()){
       if(!destination.getFullyQualifiedNamespace().startsWith("$")){
         toDelete.add(destination);
       }
@@ -122,8 +123,8 @@ public class BaseTestConfig extends BaseTest {
         }
       }
 
-      List<DestinationImpl> destinationImpls = md.getDestinationManager().getDestinations();
-      for (DestinationImpl destinationImpl : destinationImpls) {
+      Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get();
+      for (DestinationImpl destinationImpl : destinationImpls.values()) {
         if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$")) {
           md.getDestinationManager().delete(destinationImpl);
         }

@@ -35,8 +35,6 @@ public interface DestinationFactory {
     return destinationName;
   }
 
-  List<DestinationImpl> getDestinations();
-
   DestinationImpl find(String name);
 
   DestinationImpl findOrCreate(String name) throws IOException;
