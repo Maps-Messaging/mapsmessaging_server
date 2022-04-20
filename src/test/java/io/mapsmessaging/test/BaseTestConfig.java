@@ -105,7 +105,7 @@ public class BaseTestConfig extends BaseTest {
       for (SessionImpl sessionImpl : sessionImpls) {
         System.err.println("Session still active::" + sessionImpl.getName());
         sessionImpl.setExpiryTime(1);
-        manager.close(sessionImpl);
+        manager.close(sessionImpl, false);
       }
       int counter =0;
       while(!sessionImpls.isEmpty() && counter < 20) {

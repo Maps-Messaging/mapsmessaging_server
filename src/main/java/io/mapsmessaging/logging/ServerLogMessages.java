@@ -226,6 +226,7 @@ public enum ServerLogMessages implements LogMessage {
   // <editor-fold desc="Session Manager log messages">
   SESSION_MANAGER_STARTUP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Session Manager is starting up"),
   SESSION_MANAGER_CREATE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Creating new Session with Context {}"),
+  SESSION_MANAGER_CLOSE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Closing Session {}"),
   SESSION_MANAGER_CREATE_SECURITY_CONTEXT(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created Security Context"),
   SESSION_MANAGER_FOUND_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Found and closed existing session that matched {}"),
   SESSION_MANAGER_KEEP_ALIVE_TASK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created new Keep Alive scheduler task"),

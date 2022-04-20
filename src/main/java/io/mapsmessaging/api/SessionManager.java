@@ -23,7 +23,6 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
-import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -56,7 +55,6 @@ public class SessionManager {
     return instance;
   }
 
-  private final ExecutorService taskScheduler;
   private final ExecutorService publisherScheduler;
 
 
@@ -77,16 +75,17 @@ public class SessionManager {
 
   public @NonNull @NotNull CompletableFuture<Session> createAsync(@NonNull @NotNull SessionContext sessionContext, @NonNull @NotNull MessageListener listener) {
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
-    Callable<Void> task = () -> {
+    Callable<SessionImpl> task = () -> {
+      SessionImpl sessionImpl = null;
       try {
-        SessionImpl sessionImpl = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
+        sessionImpl = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
         completableFuture.complete( new Session(sessionImpl, listener));
       } catch (LoginException | IOException e) {
         completableFuture.completeExceptionally(e);
       }
-      return null;
+      return sessionImpl;
     };
-    taskScheduler.submit(task);
+    MessageDaemon.getInstance().getSessionManager().submit(sessionContext.getId(), task);
     return completableFuture;
   }
 
@@ -118,7 +117,7 @@ public class SessionManager {
       }
       return null;
     };
-    taskScheduler.submit(task);
+    MessageDaemon.getInstance().getSessionManager().submit(session.getName(), task);
     return completableFuture;
   }
 
@@ -147,10 +146,9 @@ public class SessionManager {
   }
 
   private SessionManager(){
-    taskScheduler = new SingleConcurrentTaskScheduler("SessionManager");
     publisherScheduler =  new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors()*2,
         30L, TimeUnit.SECONDS,
-        new SynchronousQueue<Runnable>(),
+        new SynchronousQueue<>(),
         new ThreadFactory() {
       final AtomicLong counter = new AtomicLong(0);
       final ThreadGroup  threadGroup = new ThreadGroup("SessionManager");
