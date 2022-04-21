@@ -38,7 +38,7 @@ public class DestinationSet implements Set<DestinationImpl> {
   public DestinationSet(SubscriptionContext context, Map<String, DestinationImpl> destinationMap) {
     this.context = context;
     matching = new LinkedHashMap<>();
-    addAll(destinationMap.values());
+    matching.putAll(destinationMap);
   }
 
   // The wildcard loop has 3 break statements, but it is clearer to leave it here

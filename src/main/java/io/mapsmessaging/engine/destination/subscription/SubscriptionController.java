@@ -22,6 +22,7 @@ import io.mapsmessaging.admin.SubscriptionControllerJMX;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.engine.destination.DestinationFactory;
+import io.mapsmessaging.engine.destination.DestinationFilter;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
@@ -167,7 +168,8 @@ public class SubscriptionController implements DestinationManagerListener {
       if (!context.containsWildcard()) {
         destinationManager.findOrCreate(context.getFilter());
       }
-      DestinationSet destinationSet = new DestinationSet(context, destinationManager.get());
+      DestinationFilter destinationFilter = name -> DestinationSet.matches(context.getAlias(), name);
+      DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
       subscriptions.put(context.getAlias(), destinationSet);
       //
       // Now compare the active subscription destinations with the ones in this new subscriptionSet

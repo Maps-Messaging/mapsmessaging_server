@@ -20,12 +20,11 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.DestinationFactory;
+import io.mapsmessaging.engine.destination.DestinationFilter;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -77,8 +76,8 @@ public class SessionDestinationManager implements DestinationFactory {
   }
 
   @Override
-  public Map<String, DestinationImpl> get() {
-    return manager.get();
+  public Map<String, DestinationImpl> get(DestinationFilter filter) {
+    return manager.get(filter);
   }
 
   @Override

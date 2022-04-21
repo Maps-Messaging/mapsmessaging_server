@@ -48,7 +48,7 @@ public class BaseTestConfig extends BaseTest {
 
   @AfterEach
   public void clear(){
-    Map<String, DestinationImpl> destinations = md.getDestinationManager().get();
+    Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
       if(!destination.getFullyQualifiedNamespace().startsWith("$")){
@@ -123,7 +123,7 @@ public class BaseTestConfig extends BaseTest {
         }
       }
 
-      Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get();
+      Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get(null);
       for (DestinationImpl destinationImpl : destinationImpls.values()) {
         if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$")) {
           md.getDestinationManager().delete(destinationImpl);

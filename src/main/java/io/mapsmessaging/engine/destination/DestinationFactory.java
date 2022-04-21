@@ -20,7 +20,6 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.features.DestinationType;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +44,7 @@ public interface DestinationFactory {
 
   DestinationImpl delete(DestinationImpl destinationImpl);
 
-  Map<String, DestinationImpl> get();
+  Map<String, DestinationImpl> get(DestinationFilter filter);
 
   void addListener(DestinationManagerListener subscriptionController);
 

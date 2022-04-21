@@ -129,8 +129,17 @@ public class DestinationManagerPipeline {
     }
   }
 
-  public synchronized void copy(Map<String, DestinationImpl> response) {
-    response.putAll(destinationList);
+  public synchronized void copy(DestinationFilter filter, Map<String, DestinationImpl> response) {
+    if(filter == null){
+      response.putAll(destinationList);
+    }
+    else {
+      destinationList.forEach((s, destination) -> {
+        if (filter.matches(s)) {
+          response.put(s, destination);
+        }
+      });
+    }
   }
 
   public void scan(){
