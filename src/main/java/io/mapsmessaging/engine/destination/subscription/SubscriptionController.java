@@ -243,16 +243,6 @@ public class SubscriptionController implements DestinationManagerListener {
     return false;
   }
 
-  @Override
-  public boolean isInterested(String destinationName) {
-    for (DestinationSet subscription : subscriptions.values()) {
-      if (subscription.interest(destinationName)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   /**
    * Called when a new destination is created, we see if any wildcards match the new destination
    *

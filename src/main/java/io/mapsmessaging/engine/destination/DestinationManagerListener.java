@@ -22,8 +22,6 @@ import java.io.IOException;
 
 public interface DestinationManagerListener {
 
-  boolean isInterested(String destinationName);
-
   void created(DestinationImpl destination) throws IOException;
 
   void deleted(DestinationImpl destination);
