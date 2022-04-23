@@ -39,8 +39,12 @@ import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.Nullable;
 
 public class SessionImpl {
@@ -128,7 +132,8 @@ public class SessionImpl {
   //</editor-fold>
 
   //<editor-fold desc="Destination Control API">
-  public DestinationImpl findDestination(String destinationName, @Nullable DestinationType destinationType) throws IOException {
+  @SneakyThrows
+  public CompletableFuture<DestinationImpl> findDestination(String destinationName, @Nullable DestinationType destinationType) throws IOException {
     if(isClosed){
       throw new IOException("Session is closed");
     }
@@ -137,11 +142,34 @@ public class SessionImpl {
       mapped = destinationManager.calculateNamespace(destinationName);
       namespaceMapping.addMapped(destinationName, mapped);
     }
-    DestinationImpl destinationImpl = destinationManager.find(mapped);
-    if (destinationImpl == null && destinationType != null) {
-      destinationImpl = destinationManager.create(mapped, destinationType);
+    String finalMapped = mapped;
+
+    CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
+    DestinationImpl existing = destinationManager.find(mapped).get();
+    if(existing != null){
+      future.complete(existing);
     }
-    return destinationImpl;
+    else {
+      Callable<DestinationImpl> callable = () -> {
+        DestinationImpl created =  null;
+        try {
+          CompletableFuture<DestinationImpl> creationFuture = destinationManager.create(finalMapped, destinationType);
+          created = creationFuture.get();
+          future.complete(created);
+        } catch (IOException | ExecutionException | InterruptedException e) {
+          future.completeExceptionally(e);
+        }
+        return created;
+      };
+      future.completeAsync(() -> {
+        try {
+          return callable.call();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      });
+    }
+    return future;
   }
 
   public MessageCallback getMessageCallback() {
@@ -152,7 +180,7 @@ public class SessionImpl {
     this.messageCallback = messageCallback;
   }
 
-  public DestinationImpl deleteDestination(DestinationImpl destinationImpl) {
+  public CompletableFuture<DestinationImpl>  deleteDestination(DestinationImpl destinationImpl) {
     namespaceMapping.removeByMapped(destinationImpl.getFullyQualifiedNamespace());
     return destinationManager.delete(destinationImpl);
   }

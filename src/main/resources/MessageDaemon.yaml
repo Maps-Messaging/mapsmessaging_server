@@ -26,7 +26,7 @@ MessageDaemon:
     #
     # The number of simultaneous pipelines to use for Session creation and deletion
     #
-    SessionPipeLines: 10
+    SessionPipeLines: 48
 
     #
     # Incomplete transaction life time that the server will hold onto the transaction before aborting it

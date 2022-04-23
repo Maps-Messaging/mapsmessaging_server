@@ -18,11 +18,9 @@
 
 package io.mapsmessaging.engine.destination;
 
-import java.io.IOException;
-
 public interface DestinationManagerListener {
 
-  void created(DestinationImpl destination) throws IOException;
+  void created(DestinationImpl destination);
 
   void deleted(DestinationImpl destination);
 }

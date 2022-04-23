@@ -33,6 +33,7 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTr
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -212,6 +213,7 @@ public class DeliveryEventListener extends BaseEventListener {
   }
 
   // Process the incoming message and either push to the transaction or the destination
+  @SneakyThrows
   private void processIncomingMessage(Event evt, Delivery delivery, Receiver receiver, String destinationName) {
 
     // Lets parse the data into a Proton Message so we can then create the appropriate internal message
@@ -237,7 +239,7 @@ public class DeliveryEventListener extends BaseEventListener {
     Session session = (Session) evt.getSession().getContext();
     try {
       DestinationType type = getDestinationType(receiver);
-      Destination destination = session.findDestination(destinationName, type);
+      Destination destination = session.findDestination(destinationName, type).get();
       if (destination != null) {
         if (transaction != null) {
           transaction.add(destination, message);

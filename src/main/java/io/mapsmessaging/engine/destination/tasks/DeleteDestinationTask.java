@@ -19,20 +19,19 @@
 package io.mapsmessaging.engine.destination.tasks;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationManagerListener;
+import io.mapsmessaging.engine.destination.DestinationUpdateManager;
 import io.mapsmessaging.engine.tasks.BooleanResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
-import java.util.List;
 
 public class DeleteDestinationTask extends StoreMessageTask {
   private final DestinationImpl destination;
   private final Logger logger;
-  private final List<DestinationManagerListener> listeners;
+  private final DestinationUpdateManager listeners;
 
-  public DeleteDestinationTask(DestinationImpl destination, List<DestinationManagerListener> listeners, Logger logger){
+  public DeleteDestinationTask(DestinationImpl destination, DestinationUpdateManager listeners, Logger logger){
     super();
     this.destination = destination;
     this.logger = logger;
@@ -47,9 +46,7 @@ public class DeleteDestinationTask extends StoreMessageTask {
     } catch (IOException e) {
       logger.log(ServerLogMessages.DESTINATION_MANAGER_DELETED_TOPIC,  destination.getFullyQualifiedNamespace(), e);
     }
-    for (DestinationManagerListener listener : listeners) {
-      listener.deleted(destination);
-    }
+    listeners.deleted(destination);
     logger.log(ServerLogMessages.DESTINATION_MANAGER_DELETED_TOPIC, destination.getFullyQualifiedNamespace());
     return new BooleanResponse(true);
   }

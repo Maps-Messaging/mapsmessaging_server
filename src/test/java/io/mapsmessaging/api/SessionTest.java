@@ -49,7 +49,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
   public void sessionConstructionTest(TestInfo testInfo) throws Exception {
     Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);
     Assertions.assertTrue(SessionManagerTest.getInstance().hasSessions());
-    Destination destinationImpl = session.findDestination("topic1", DestinationType.TOPIC);
+    Destination destinationImpl = session.findDestination("topic1", DestinationType.TOPIC).get();
     Assertions.assertNotNull(destinationImpl);
     SubscriptionContextBuilder subContextBuilder = new SubscriptionContextBuilder("topic1", ClientAcknowledgement.AUTO);
     SubscribedEventManager subscription = session.addSubscription(subContextBuilder.build());
@@ -141,11 +141,11 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
     Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 10000, true, this);
     session.resumeState();
 
-    Destination destination = session.findDestination("topic1", DestinationType.TOPIC);
+    Destination destination = session.findDestination("topic1", DestinationType.TOPIC).get();
     Assertions.assertNotNull(destination);
     Assertions.assertNotNull(session.deleteDestination(destination));
 
-    destination = session.findDestination("topic1", DestinationType.TOPIC);
+    destination = session.findDestination("topic1", DestinationType.TOPIC).get();
     Assertions.assertNotNull(destination);
 
     SubscriptionContextBuilder subContextBuilder = new SubscriptionContextBuilder("topic1", ClientAcknowledgement.AUTO);

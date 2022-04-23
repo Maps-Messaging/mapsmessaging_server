@@ -25,12 +25,14 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PubRec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class PublishListener extends PacketListener {
 
@@ -57,18 +59,26 @@ public class PublishListener extends PacketListener {
           .setTransformation(protocol.getTransformation())
           .setOpaqueData(publish.getMessage());
       try {
-        Destination destination = session.findDestination(topicName, DestinationType.TOPIC);
-        if(destination != null) {
-          destination.storeMessage(messageBuilder.build());
-          if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
-            return new PubAck(publish.getTopicId(), publish.getMessageId(), 0);
-          } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
-            return new PubRec(publish.getMessageId());
+        CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
+        future.thenApply(destination -> {
+          if(destination != null) {
+            try {
+            destination.storeMessage(messageBuilder.build());
+            } catch (IOException e) {
+              ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), MQTT_SNPacket.INVALID_TOPIC));
+            }
+            if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
+              ((MQTT_SNProtocol)protocol).writeFrame( new PubAck(publish.getTopicId(), publish.getMessageId(), 0));
+            } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
+              ((MQTT_SNProtocol)protocol).writeFrame( new PubRec(publish.getMessageId()));
+            }
           }
-        }
-        else{
-          return new PubAck(publish.getTopicId(), publish.getMessageId(), MQTT_SNPacket.INVALID_TOPIC);
-        }
+          else{
+            ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), MQTT_SNPacket.INVALID_TOPIC));
+          }
+          return destination;
+        });
+
       } catch (IOException e) {
         return new PubAck(publish.getTopicId(), publish.getMessageId(), MQTT_SNPacket.INVALID_TOPIC);
       }

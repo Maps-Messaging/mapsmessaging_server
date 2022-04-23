@@ -34,6 +34,7 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.selector.TokenMgrError;
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
+import lombok.SneakyThrows;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -100,11 +101,12 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     return true;
   }
 
+  @SneakyThrows
   private void handleSubscription(Link link, Sender sender, boolean browser, SubscriptionContextBuilder contextBuilder, Session session, String destinationName, DestinationType destinationType)
       throws IOException {
     SubscriptionContext context = contextBuilder.build();
     try {
-      Destination destination = session.findDestination(destinationName, destinationType);
+      Destination destination = session.findDestination(destinationName, destinationType).get();
       if (destination != null) {
         SubscribedEventManager eventManager = session.resume(destination);
         if (eventManager == null || browser) {

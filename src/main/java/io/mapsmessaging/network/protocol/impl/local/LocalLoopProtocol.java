@@ -36,6 +36,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
@@ -72,16 +73,23 @@ public class LocalLoopProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     String lookup = nameMapping.get(messageEvent.getDestinationName());
-    if(lookup != null){
-      try {
-        Destination destination = session.findDestination(lookup, DestinationType.TOPIC);
-        if(destination != null) {
-          MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
-          messageBuilder.setDestinationTransformer(destinationTransformationLookup(messageEvent.getDestinationName()));
-          destination.storeMessage(messageBuilder.build());
+    if(lookup != null) {
+      try{
+      CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
+      future.thenApply(destination -> {
+        try {
+          if (destination != null) {
+            MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
+            messageBuilder.setDestinationTransformer(destinationTransformationLookup(messageEvent.getDestinationName()));
+            destination.storeMessage(messageBuilder.build());
+          }
+          messageEvent.getCompletionTask().run();
+          logger.log(ServerLogMessages.LOOP_SENT_MESSAGE);
+        } catch (IOException ioException) {
+          logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
         }
-        messageEvent.getCompletionTask().run();
-        logger.log(ServerLogMessages.LOOP_SENT_MESSAGE);
+        return destination;
+      });
       } catch (IOException ioException) {
         logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
       }

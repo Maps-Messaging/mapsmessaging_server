@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
   }
 
 
+  @SneakyThrows
   public void eventCleanUpTest(String name, String destinationName, boolean isQueue, boolean unsubscribe, boolean resumeSession) throws LoginException, IOException {
     SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new FakeProtocolImpl(this));
     scb1.setReceiveMaximum(1); // ensure it is low
@@ -98,7 +100,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     if(isQueue){
       destinationType = DestinationType.QUEUE;
     }
-    Destination destination = publisher.findDestination(destinationName, destinationType);
+    Destination destination = publisher.findDestination(destinationName, destinationType).get();
     Assertions.assertEquals(destination.getResourceType(), destinationType);
 
     // Subscribe to the topic with individual Ack, this causes the server to stop sending events until the client acks them

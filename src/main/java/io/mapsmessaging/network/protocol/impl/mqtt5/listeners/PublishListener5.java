@@ -59,6 +59,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 
 public class PublishListener5 extends PacketListener5 {
 
@@ -117,6 +118,7 @@ public class PublishListener5 extends PacketListener5 {
   }
 
   // unfortunately MQTT publishing has a large number of permutations and exceeds the base limit
+  @SneakyThrows
   @java.lang.SuppressWarnings("squid:S3776")
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
@@ -196,7 +198,7 @@ public class PublishListener5 extends PacketListener5 {
       }
 
       try {
-        Destination destination = session.findDestination(destinationName, DestinationType.TOPIC);
+        Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).get();
         int sent = 0;
         if(destination != null) {
           Message message =

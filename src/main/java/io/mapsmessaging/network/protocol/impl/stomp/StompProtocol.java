@@ -164,6 +164,7 @@ public class StompProtocol extends ProtocolImpl {
         result = processEvent(packet);
       }
     } catch (EndOfBufferException eobe) {
+      registerRead();
       throw eobe; // Do not close on an End Of Buffer Exception
     } catch (IOException e) {
       logger.log(ServerLogMessages.STOMP_PROCESSING_FRAME_EXCEPTION);
@@ -208,7 +209,6 @@ public class StompProtocol extends ProtocolImpl {
       logger.log(ServerLogMessages.STOMP_INVALID_FRAME, frame.toString());
       throw new IOException("Invalid STOMP frame received.. Unable to process" + frame.toString());
     }
-
     activeFrame = null;
     return remaining != 0;
   }

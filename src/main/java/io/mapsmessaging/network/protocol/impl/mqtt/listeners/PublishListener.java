@@ -43,6 +43,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import lombok.SneakyThrows;
 
 public class PublishListener extends PacketListener {
 
@@ -67,6 +69,7 @@ public class PublishListener extends PacketListener {
     return mb.build();
   }
 
+  @SneakyThrows
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     checkState(session);
@@ -93,10 +96,28 @@ public class PublishListener extends PacketListener {
 
     if (!lookup.startsWith("$")) {
       try {
-        Destination destination = session.findDestination(lookup, DestinationType.TOPIC);
-        if(destination != null) {
-          processMessage(publish, protocol, session, response, destination);
-        }
+        MQTTPacket finalResponse = response;
+        CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
+        future.thenApply(destination -> {
+          if (destination != null) {
+            try {
+              processMessage(publish, protocol, session, finalResponse, destination);
+              if (finalResponse != null) {
+                ((MQTTProtocol) protocol).writeFrame(finalResponse);
+              }
+            } catch (IOException e) {
+              logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
+              try {
+                endPoint.close();
+              } catch (IOException ioException) {
+                // Ignore we are in an error state
+              }
+              future.completeExceptionally(new MalformedException("[MQTT-3.3.5-2]"));
+            }
+          }
+          return destination;
+        });
+        Destination destination = future.get();
       } catch (IOException e) {
         logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
         try {
@@ -107,7 +128,7 @@ public class PublishListener extends PacketListener {
         throw new MalformedException("[MQTT-3.3.5-2]");
       }
     }
-    return response;
+    return null;
   }
 
   private void processMessage(Publish publish, ProtocolImpl protocol, Session session, MQTTPacket response, Destination destination) throws IOException {

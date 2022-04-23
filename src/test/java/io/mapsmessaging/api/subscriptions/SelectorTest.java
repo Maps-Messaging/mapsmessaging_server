@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
 
   private static final int EVENT_COUNT = 1000;
 
+  @SneakyThrows
   @Test
   void topicTrueSelectorTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
@@ -83,7 +85,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertNotNull(subscription2);
 
     Session publisher = createSession(name, 60, 60, false,this);
-    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC);
+    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC).get();
     for(int x=0;x<EVENT_COUNT;x++) {
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(("Hi There "+x).getBytes());
@@ -114,6 +116,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertEquals(0, destination.getStoredMessages());
   }
 
+  @SneakyThrows
   @Test
   public void topicSelectorDisconnectTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
@@ -149,7 +152,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertNotNull(subscription);
 
     Session publisher = createSession(name, 60, 60, false, this);
-    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC);
+    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC).get();
     for(int x=0;x<EVENT_COUNT;x++) {
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(("Hi There "+x).getBytes());
@@ -180,6 +183,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertEquals(0, destination.getStoredMessages());
   }
 
+  @SneakyThrows
   @Test
   public void topicSelectorUnsubscribeTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
@@ -215,7 +219,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertNotNull(subscription2);
 
     Session publisher = createSession(name, 60, 60, false, this);
-    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC);
+    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC).get();
     for(int x=0;x<EVENT_COUNT;x++) {
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(("Hi There "+x).getBytes());
@@ -241,6 +245,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertEquals(0, destination.getStoredMessages());
   }
 
+  @SneakyThrows
   @Test
   public void topicSelectorOverlappedUnsubscribeTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
@@ -276,7 +281,7 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     Assertions.assertNotNull(subscription2);
 
     Session publisher = createSession(name, 60, 60, false, this);
-    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC);
+    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC).get();
     int roundOut = EVENT_COUNT/3;
     roundOut = roundOut *3;
     for(int x=0;x<roundOut;x++) {

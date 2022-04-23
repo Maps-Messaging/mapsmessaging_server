@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.api.features.DestinationType;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,15 +35,15 @@ public interface DestinationFactory {
     return destinationName;
   }
 
-  DestinationImpl find(String name);
+  CompletableFuture<DestinationImpl> find(String name);
 
-  DestinationImpl findOrCreate(String name) throws IOException;
+  CompletableFuture<DestinationImpl> findOrCreate(String name) throws IOException;
 
-  DestinationImpl findOrCreate(String name, DestinationType destinationType) throws IOException;
+  CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType) throws IOException;
 
-  DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException;
+  CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException;
 
-  DestinationImpl delete(DestinationImpl destinationImpl);
+  CompletableFuture<DestinationImpl> delete(DestinationImpl destinationImpl);
 
   Map<String, DestinationImpl> get(DestinationFilter filter);
 

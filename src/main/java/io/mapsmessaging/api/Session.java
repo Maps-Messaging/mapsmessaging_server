@@ -30,6 +30,8 @@ import io.mapsmessaging.engine.session.SessionImpl;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -68,33 +70,54 @@ public class Session {
     }
   }
 
-  public @Nullable Destination findDestination(@NonNull @NotNull String destinationName, DestinationType type) throws IOException {
+  public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, DestinationType type) throws IOException {
+    CompletableFuture<Destination> future = new CompletableFuture<>();
     Destination result = destinations.get(destinationName);
     if (result == null) {
-      DestinationImpl destination = sessionImpl.findDestination(destinationName, type);
-      if(destination != null) {
-        if(destination.getResourceType().isTopic()) {
-          result = new Topic(destination);
+      Callable<Destination> lookupTask = () -> {
+        CompletableFuture<DestinationImpl> destinationCompletableFuture = sessionImpl.findDestination(destinationName, type);
+        DestinationImpl destination = destinationCompletableFuture.get();
+        Destination end = null;
+        if (destination != null) {
+          if (destination.getResourceType().isTopic()) {
+            end = new Topic(destination);
+          } else {
+            end = new Queue(destination);
+          }
+          if (destination.getResourceType().isTemporary()) {
+            TemporaryDestinationDeletionTask deletionTask = new TemporaryDestinationDeletionTask((TemporaryDestination) destination);
+            sessionImpl.addClosureTask(deletionTask);
+          }
+          destinations.put(end.getFullyQualifiedNamespace(), end);
         }
-        else{
-          result = new Queue(destination);
+        future.complete(end);
+        return end;
+      };
+      future.completeAsync(() -> {
+        try {
+          return lookupTask.call();
+        } catch (Exception e) {
+          throw new RuntimeException(e);
         }
-        if(destination.getResourceType().isTemporary()){
-          TemporaryDestinationDeletionTask deletionTask = new TemporaryDestinationDeletionTask((TemporaryDestination) destination);
-          sessionImpl.addClosureTask(deletionTask);
-        }
-        destinations.put(result.getFullyQualifiedNamespace(), result);
-      }
+      });
     }
-    return result;
+    else{
+      future.complete(result);
+    }
+    return future;
   }
 
-  public DestinationImpl deleteDestination(Destination destination) {
-    DestinationImpl deleted = sessionImpl.deleteDestination(destination.destinationImpl);
-    if(deleted != null) {
-      destinations.remove(deleted.getFullyQualifiedNamespace());
-    }
-    return deleted;
+  public CompletableFuture<Void> deleteDestination(Destination destination) {
+    CompletableFuture<Void> result = new CompletableFuture<>();
+    CompletableFuture<DestinationImpl> future = sessionImpl.deleteDestination(destination.destinationImpl);
+    future.thenApply(deleted ->{
+      if(deleted != null) {
+        destinations.remove(deleted.getFullyQualifiedNamespace());
+      }
+      result.complete(null);
+      return deleted;
+    });
+    return result;
   }
 
   //</editor-fold>

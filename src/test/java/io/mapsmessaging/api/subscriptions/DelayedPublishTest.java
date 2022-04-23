@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,7 @@ import org.junit.jupiter.api.TestInfo;
 class DelayedPublishTest extends MessageAPITest {
   private static final int EVENT_COUNT = 10;
 
+  @SneakyThrows
   @Test
   void delayedPublishTest(TestInfo testInfo) throws LoginException, IOException {
     String destinationName = "topic/delayTest";
@@ -72,7 +74,7 @@ class DelayedPublishTest extends MessageAPITest {
     Assertions.assertNotNull(subscription);
 
     Session publisher = createSession(name, 60, 60, false, new DropMessageReceiver());
-    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC);
+    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC).get();
     Assertions.assertNotNull(destination);
     for(int x=0;x<EVENT_COUNT;x++) {
       Map<String, TypedData> map = new LinkedHashMap<>();

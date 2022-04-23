@@ -34,6 +34,7 @@ import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 
 public class ConnectListener extends BaseConnectionListener {
 
@@ -69,6 +70,7 @@ public class ConnectListener extends BaseConnectionListener {
     return false;
   }
 
+  @SneakyThrows
   void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
@@ -105,7 +107,6 @@ public class ConnectListener extends BaseConnectionListener {
       }
       return null;
     });
-
   }
 
   boolean checkStrict(Connect connect,ProtocolImpl protocol){

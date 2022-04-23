@@ -24,12 +24,25 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Event;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class MessageListener extends EventListener {
 
   protected void processEvent( StateEngine engine, Event event, Message message) throws IOException {
     String lookup = engine.getMapping(event.getDestination());
-    Destination destination = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
-    handleMessageStoreToDestination(destination, engine, event, message);
+    CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
+    if(future != null) {
+      future.thenApply(destination -> {
+        try {
+          if(destination != null) {
+            handleMessageStoreToDestination(destination, engine, event, message);
+          }
+        } catch (IOException e) {
+          future.completeExceptionally(e);
+          throw new RuntimeException(e);
+        }
+        return destination;
+      });
+    }
   }
 }

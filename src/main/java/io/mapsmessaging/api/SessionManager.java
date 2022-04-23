@@ -134,13 +134,20 @@ public class SessionManager {
    */
   public CompletableFuture<Integer> publish(@NonNull @NotNull String destination,@NonNull @NotNull  Message message) throws IOException {
     CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
-    Callable<Integer> task = () -> {
-      DestinationImpl destinationImpl = MessageDaemon.getInstance().getDestinationManager().find(destination);
-      if (destinationImpl != null) {
-        return destinationImpl.storeMessage(message);
-      }
-      return -1;
-    };
+    Callable< CompletableFuture<DestinationImpl>> task = (() -> {
+      CompletableFuture<DestinationImpl> future = MessageDaemon.getInstance().getDestinationManager().find(destination);
+      future.thenApply(destinationImpl ->{
+        if (destinationImpl != null) {
+          try {
+            return destinationImpl.storeMessage(message);
+          } catch (IOException e) {
+            future.completeExceptionally(e);
+          }
+        }
+        return -1;
+      });
+      return future;
+    });
     publisherScheduler.submit(task);
     return completableFuture;
   }

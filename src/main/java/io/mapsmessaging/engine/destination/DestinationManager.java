@@ -33,16 +33,16 @@ import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 public class DestinationManager implements DestinationFactory {
@@ -52,7 +52,7 @@ public class DestinationManager implements DestinationFactory {
   private static final String TEMPORARY_TOPIC = "/dynamic/temporary/topic";
 
   private final Map<String, DestinationPathManager> properties;
-  private final List<DestinationManagerListener> destinationManagerListeners;
+  private final DestinationUpdateManager destinationManagerListeners;
   private final Logger logger;
   private final DestinationPathManager rootPath;
   private final DestinationManagerPipeline[] creatorPipelines;
@@ -86,7 +86,7 @@ public class DestinationManager implements DestinationFactory {
       }
     }
 
-    destinationManagerListeners = new CopyOnWriteArrayList<>();
+    destinationManagerListeners = new DestinationUpdateManager();
     rootPath = rootPathLookup;
     creatorPipelines = new DestinationManagerPipeline[Runtime.getRuntime().availableProcessors()*2];
     Arrays.setAll(creatorPipelines, x -> new DestinationManagerPipeline(rootPath, properties, destinationManagerListeners));
@@ -104,26 +104,31 @@ public class DestinationManager implements DestinationFactory {
   }
 
   @Override
-  public DestinationImpl find(String name) {
+  public CompletableFuture<DestinationImpl> find(String name) {
     return creatorPipelines[getIndex(name)].find(name);
   }
 
   @Override
-  public DestinationImpl findOrCreate(String name) throws IOException {
+  public CompletableFuture<DestinationImpl> findOrCreate(String name) {
     return findOrCreate(name, DestinationType.TOPIC);
   }
 
+  @SneakyThrows
   @Override
-  public DestinationImpl findOrCreate(String name, DestinationType destinationType) throws IOException {
-    DestinationImpl destinationImpl = find(name);
-    if (destinationImpl == null) {
-      destinationImpl = create(name, destinationType);
+  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType){
+    DestinationImpl destination = find(name).get();
+    if(destination != null){
+      CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
+      future.complete(destination);
+      return future;
     }
-    return destinationImpl;
+    else{
+      return create(name, destinationType);
+    }
   }
 
   @Override
-  public DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public  CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     if (name.startsWith("$SYS")) {
       // can not create these
       logger.log(ServerLogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
@@ -133,7 +138,7 @@ public class DestinationManager implements DestinationFactory {
   }
 
   @Override
-  public DestinationImpl delete(DestinationImpl destinationImpl) {
+  public  CompletableFuture<DestinationImpl> delete(DestinationImpl destinationImpl) {
     if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
       return creatorPipelines[getIndex(destinationImpl.getFullyQualifiedNamespace())].delete(destinationImpl);
     }
@@ -149,10 +154,11 @@ public class DestinationManager implements DestinationFactory {
     return response;
   }
 
+  @SneakyThrows
   public int size() {
     int size = 0;
     for(DestinationManagerPipeline pipeline:creatorPipelines){
-      size += pipeline.size();
+      size += pipeline.size().get();
     }
     return size;
   }
@@ -183,7 +189,7 @@ public class DestinationManager implements DestinationFactory {
   }
 
   public List<DestinationManagerListener> getListeners() {
-    return new ArrayList<>(destinationManagerListeners);
+    return destinationManagerListeners.get();
   }
 
   private void processFileList(List<File> directories, DestinationPathManager pathManager){

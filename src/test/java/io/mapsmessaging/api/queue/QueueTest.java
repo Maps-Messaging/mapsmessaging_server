@@ -36,6 +36,7 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.Test;
 public class QueueTest extends MessageAPITest implements MessageListener {
 
 
+  @SneakyThrows
   @Test
   void createQueueAndSendEvents() throws IOException, LoginException {
     ProtocolImpl protocol = new FakeProtocolImpl(this);
@@ -55,7 +57,7 @@ public class QueueTest extends MessageAPITest implements MessageListener {
     Session session = SessionManager.getInstance().create(scb.build(), protocol);
     Assertions.assertNotNull(session);
     session.resumeState();
-    Destination queue = session.findDestination("aSimpleQueue", DestinationType.QUEUE);
+    Destination queue = session.findDestination("aSimpleQueue", DestinationType.QUEUE).get();
 
     Assertions.assertNotNull(queue);
 

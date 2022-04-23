@@ -250,7 +250,7 @@ public class SubscriptionController implements DestinationManagerListener {
    *
    */
   @Override
-  public void created(DestinationImpl destinationImpl) throws IOException {
+  public void created(DestinationImpl destinationImpl) {
     List<SubscriptionContext> interested = new ArrayList<>();
     List<DestinationSet> subscribeList = new ArrayList<>(subscriptions.values());
     for (DestinationSet subscription : subscribeList) {
@@ -260,11 +260,15 @@ public class SubscriptionController implements DestinationManagerListener {
     }
 
     //
-    // OK we have interest and it maybe more than one, lucky that the SubscriptionContext is sorted
+    // OK we have interest and maybe more than one, lucky that the SubscriptionContext is sorted
     // by QoS
     //
     if (!interested.isEmpty()) {
-      createSubscription(interested.get(0), destinationImpl);
+      try {
+        createSubscription(interested.get(0), destinationImpl);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 

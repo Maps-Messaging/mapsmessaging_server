@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
 
   private final AtomicLong counter = new AtomicLong(0);
 
+  @SneakyThrows
   @Test
   void transactionalProcessing(TestInfo testInfo) throws LoginException, IOException {
     String name = "unknown";
@@ -65,7 +67,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
     Session session = SessionManager.getInstance().create(scb.build(), this);
     session.login();
     session.resumeState();
-    Destination destination = session.findDestination("transaction", DestinationType.TOPIC);
+    Destination destination = session.findDestination("transaction", DestinationType.TOPIC).get();
     Assertions.assertNotNull(destination);
     Transaction transaction = session.startTransaction("testTransaction");
     Assertions.assertNotNull(transaction);

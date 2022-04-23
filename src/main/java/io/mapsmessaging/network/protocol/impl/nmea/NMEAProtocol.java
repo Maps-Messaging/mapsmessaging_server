@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -155,13 +156,14 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
   // findDestination throws an IOException, using computeIfAbsent tends to hide or swallow the exceptions
+  @SneakyThrows
   @java.lang.SuppressWarnings({"java:S3824"})
   private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) throws IOException {
     String processed = parseSentence(sentence, sentenceId, gpsWords);
     if(publishRecords) {
       Destination destination = sentenceMap.get(sentenceId);
       if (destination == null) {
-        destination = session.findDestination(destinationName, DestinationType.TOPIC);
+        destination = session.findDestination(destinationName, DestinationType.TOPIC).get();
         sentenceMap.put(sentenceId, destination);
       }
       if (destination != null) {

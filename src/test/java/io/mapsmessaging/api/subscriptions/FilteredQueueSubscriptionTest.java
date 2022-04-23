@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
   private final AtomicInteger[] counters = new AtomicInteger[selector.length];
 
 
+  @SneakyThrows
   @Test
   void filteredQueueSubscription(TestInfo testInfo) throws LoginException, IOException {
     for(int x=0;x<counters.length;x++){
@@ -89,7 +91,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
     }
 
     Session publisher = createSession(name, 60, 10, false, this);
-    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC);
+    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC).get();
     Assertions.assertNotNull(destination);
 
     for(int x=0;x<EVENT_COUNT;x++) {
@@ -121,6 +123,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
     }
   }
 
+  @SneakyThrows
   @Test
   void multipleFilteredQueueSubscription(TestInfo testInfo) throws LoginException, IOException {
     for(int x=0;x<counters.length;x++){
@@ -160,7 +163,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
     Destination[] destinations = new Destination[destinationName.length];
     for(int x=0;x< publishers.length;x++) {
       publishers[x] = createSession(name+"_pub_"+x, 60, 0, false, this);
-      destinations[x] = publishers[x].findDestination(destinationName[x], DestinationType.TOPIC);
+      destinations[x] = publishers[x].findDestination(destinationName[x], DestinationType.TOPIC).get();
     }
 
     for(int x=0;x<EVENT_COUNT;x++) {

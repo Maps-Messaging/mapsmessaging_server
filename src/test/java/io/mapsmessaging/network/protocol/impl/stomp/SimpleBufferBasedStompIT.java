@@ -18,12 +18,11 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import io.mapsmessaging.test.SimpleBufferBasedTest;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
 
@@ -97,7 +96,7 @@ class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
   }
 
   private void slowSubscriberTest(int delay)throws IOException, URISyntaxException {
-    super.slowSubscriberTest("/subscribeLargeEvents.txt", "localhost", 8675, 72, 0x0, delay);
+    super.slowSubscriberTest("/subscribeLargeEvents.txt", "localhost", 8675, 37, 0x0, delay);
   }
 
 }

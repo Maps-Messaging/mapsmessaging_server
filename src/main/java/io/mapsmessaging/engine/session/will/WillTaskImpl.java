@@ -28,8 +28,10 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 
 public class WillTaskImpl implements Runnable {
 
@@ -67,6 +69,7 @@ public class WillTaskImpl implements Runnable {
     }
   }
 
+  @SneakyThrows
   @Override
   public void run() {
     try {
@@ -75,7 +78,8 @@ public class WillTaskImpl implements Runnable {
         ThreadContext.put("protocol", details.getProtocol());
         ThreadContext.put("version", details.getVersion());
         logger.log(ServerLogMessages.WILL_TASK_SENDING, details.getMsg());
-        DestinationImpl dest = MessageDaemon.getInstance().getDestinationManager().find(details.getDestination());
+        CompletableFuture<DestinationImpl> future = MessageDaemon.getInstance().getDestinationManager().find(details.getDestination());
+        DestinationImpl dest = future.get();
         if (dest != null) {
           dest.storeMessage(details.getMsg());
         }

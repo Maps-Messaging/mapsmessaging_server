@@ -26,6 +26,7 @@ import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,27 +52,27 @@ public class SessionDestinationManager implements DestinationFactory {
   }
 
   @Override
-  public DestinationImpl find(String name) {
+  public CompletableFuture<DestinationImpl> find(String name) {
     return manager.find(name);
   }
 
   @Override
-  public DestinationImpl findOrCreate(String name) throws IOException {
+  public CompletableFuture<DestinationImpl> findOrCreate(String name) throws IOException {
     return manager.findOrCreate(name);
   }
 
   @Override
-  public DestinationImpl findOrCreate(String name, DestinationType destinationType) throws IOException {
+  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType) throws IOException {
     return manager.findOrCreate(name, destinationType);
   }
 
   @Override
-  public DestinationImpl create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     return manager.create(name, destinationType);
   }
 
   @Override
-  public DestinationImpl delete(DestinationImpl destinationImpl) {
+  public CompletableFuture<DestinationImpl> delete(DestinationImpl destinationImpl) {
     return manager.delete(destinationImpl);
   }
 

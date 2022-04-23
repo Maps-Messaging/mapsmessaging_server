@@ -190,6 +190,7 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   protected boolean handleMQTTEvent(Packet packet) throws MalformedException, EndOfBufferException {
+
     MQTTPacket mqtt = packetFactory.parseFrame(packet);
     if (mqtt != null) {
       if (logger.isInfoEnabled()) {

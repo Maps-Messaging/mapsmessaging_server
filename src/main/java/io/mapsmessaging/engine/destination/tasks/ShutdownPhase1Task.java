@@ -21,18 +21,17 @@ package io.mapsmessaging.engine.destination.tasks;
 import static io.mapsmessaging.engine.destination.DestinationImpl.TASK_QUEUE_PRIORITY_SIZE;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationManagerListener;
+import io.mapsmessaging.engine.destination.DestinationUpdateManager;
 import io.mapsmessaging.engine.tasks.BooleanResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
-import java.util.List;
 
 public class ShutdownPhase1Task extends StoreMessageTask {
   private final DestinationImpl destination;
   private final Logger logger;
-  private final List<DestinationManagerListener> listener;
+  private final DestinationUpdateManager listener;
 
-  public ShutdownPhase1Task(DestinationImpl destination, List<DestinationManagerListener> listeners, Logger logger){
+  public ShutdownPhase1Task(DestinationImpl destination, DestinationUpdateManager listeners, Logger logger){
     super();
     this.destination = destination;
     this.logger = logger;
