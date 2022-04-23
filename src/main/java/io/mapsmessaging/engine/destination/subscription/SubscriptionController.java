@@ -49,6 +49,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -158,6 +159,7 @@ public class SubscriptionController implements DestinationManagerListener {
     return addSubscription(context, false);
   }
 
+  @SneakyThrows
   private SubscribedEventManager addSubscription(SubscriptionContext context, boolean isReload) throws IOException {
     SubscribedEventManager subscription = null;
     String filter = context.getFilter();
@@ -166,9 +168,9 @@ public class SubscriptionController implements DestinationManagerListener {
     }
     if (!subscriptions.containsKey(filter)) {
       if (!context.containsWildcard()) {
-        destinationManager.findOrCreate(context.getFilter());
+        destinationManager.findOrCreate(context.getFilter()).get();
       }
-      DestinationFilter destinationFilter = name -> DestinationSet.matches(context.getAlias(), name);
+      DestinationFilter destinationFilter = name -> DestinationSet.matches(context.getFilter(), name);
       DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
       subscriptions.put(context.getAlias(), destinationSet);
       //
