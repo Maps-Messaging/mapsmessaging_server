@@ -148,7 +148,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
         scb.setKeepAlive(60); // large enough to not worry about
         scb.setPersistentSession(false); // store the details
         sessions[index] = createSession(scb, listener);
-        sessions[index].findDestination(s, DestinationType.QUEUE);
+        sessions[index].findDestination(s, DestinationType.QUEUE).get();
 
         SubscriptionContextBuilder subContextBuilder = new SubscriptionContextBuilder(s, ClientAcknowledgement.INDIVIDUAL);
         subContextBuilder.setReceiveMaximum(10);

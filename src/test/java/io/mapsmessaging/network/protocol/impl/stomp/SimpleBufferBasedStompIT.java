@@ -96,7 +96,7 @@ class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
   }
 
   private void slowSubscriberTest(int delay)throws IOException, URISyntaxException {
-    super.slowSubscriberTest("/subscribeLargeEvents.txt", "localhost", 8675, 37, 0x0, delay);
+    super.slowSubscriberTest("/subscribeLargeEvents.txt", "localhost", 8675, 72, 0x0, delay);
   }
 
 }
