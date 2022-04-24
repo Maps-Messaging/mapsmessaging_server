@@ -40,7 +40,7 @@ public class MQTT_SN_2_Packet implements ServerPacket {
   public static final int ADVERTISE = 0x0;
   public static final int SEARCHGW = 0x1;
   public static final int GWINFO = 0x2;
-  // 0x3 - Reserved
+  public static final int AUTH = 0x3;
   public static final int CONNECT = 0x4;
   public static final int CONNACK = 0x5;
 

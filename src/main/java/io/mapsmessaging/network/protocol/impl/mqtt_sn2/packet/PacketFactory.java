@@ -91,6 +91,10 @@ public class PacketFactory {
       case MQTT_SN_2_Packet.WILLMSGUPD:
         return new WillMessageUpdate(packet, length);
 
+      case MQTT_SN_2_Packet.AUTH:
+        return new Auth(packet, length);
+
+
       default:
     }
 
