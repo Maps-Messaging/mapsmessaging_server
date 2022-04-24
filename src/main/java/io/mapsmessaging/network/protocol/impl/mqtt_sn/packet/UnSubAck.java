@@ -20,9 +20,13 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class UnSubAck extends MQTT_SNPacket {
 
+  @Getter
   private final int msgId;
 
   public UnSubAck(int msgId) {
@@ -37,10 +41,4 @@ public class UnSubAck extends MQTT_SNPacket {
     MQTTPacket.writeShort(packet, msgId);
     return 4;
   }
-
-  @Override
-  public String toString() {
-    return "UnSubAck:MessageId:" + msgId;
-  }
-
 }

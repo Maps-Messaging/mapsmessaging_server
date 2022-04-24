@@ -21,11 +21,17 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import java.io.IOException;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class RegisterAck extends MQTT_SNPacket {
 
+  @Getter
   private final int topicId;
+  @Getter
   private final int messageId;
+  @Getter
   private final short status;
 
   public RegisterAck(int topicId, int messageId, short status) {
@@ -45,18 +51,6 @@ public class RegisterAck extends MQTT_SNPacket {
     status = packet.get();
   }
 
-  public int getTopicId() {
-    return topicId;
-  }
-
-  public int getMessageId() {
-    return messageId;
-  }
-
-  public short getStatus() {
-    return status;
-  }
-
   @Override
   public int packFrame(Packet packet) {
     packet.put((byte) 7);
@@ -65,10 +59,5 @@ public class RegisterAck extends MQTT_SNPacket {
     MQTTPacket.writeShort(packet, messageId);
     packet.put((byte) status);
     return 7;
-  }
-
-  @Override
-  public String toString() {
-    return "RegisterAck:TopicId:" + topicId + " MessageId:" + messageId + " Status:" + status;
   }
 }

@@ -19,9 +19,13 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class SearchGateway extends MQTT_SNPacket {
 
+  @Getter
   private final short radius;
 
   public SearchGateway(short radius) {
@@ -41,10 +45,4 @@ public class SearchGateway extends MQTT_SNPacket {
     packet.put((byte) radius);
     return 3;
   }
-
-  @Override
-  public String toString() {
-    return "SearchGw:Radius:" + radius;
-  }
-
 }

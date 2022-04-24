@@ -19,7 +19,9 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import lombok.ToString;
 
+@ToString
 public class WillMessageRequest extends MQTT_SNPacket {
 
   public WillMessageRequest() {
@@ -32,10 +34,4 @@ public class WillMessageRequest extends MQTT_SNPacket {
     packet.put((byte) WILLMSGREQ);
     return 2;
   }
-
-  @Override
-  public String toString() {
-    return "WillMessageRequest";
-  }
-
 }

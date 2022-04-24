@@ -20,11 +20,17 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class Subscribe extends MQTT_SNPacket {
 
+  @Getter
   private final int msgId;
+  @Getter
   private String topicName;
+  @Getter
   private short topicId;
 
   public Subscribe(Packet packet) {
@@ -38,22 +44,5 @@ public class Subscribe extends MQTT_SNPacket {
     } else {
       topicId = (short) MQTTPacket.readShort(packet);
     }
-  }
-
-  public int getMsgId() {
-    return msgId;
-  }
-
-  public short getTopicId() {
-    return topicId;
-  }
-
-  public String getTopicName() {
-    return topicName;
-  }
-
-  @Override
-  public String toString() {
-    return "Subscribe:TopicName:" + topicName + " TopicId:" + topicId + " MessageId:" + msgId + " " + super.toString();
   }
 }

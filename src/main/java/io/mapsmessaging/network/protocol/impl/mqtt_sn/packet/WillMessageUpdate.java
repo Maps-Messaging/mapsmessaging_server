@@ -19,23 +19,18 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class WillMessageUpdate extends MQTT_SNPacket {
 
+  @Getter
   private final byte[] message;
 
   public WillMessageUpdate(Packet packet, int length) {
     super(WILLMSGUPD);
     message = new byte[length - 2];
     packet.get(message, 0, message.length);
-  }
-
-  public byte[] getMessage() {
-    return message;
-  }
-
-  @Override
-  public String toString() {
-    return "WillMessageUpdate:Length:" + message.length;
   }
 }

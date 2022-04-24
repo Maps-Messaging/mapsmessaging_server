@@ -20,11 +20,17 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class Register extends MQTT_SNPacket {
 
+  @Getter
   private final int topicId;
+  @Getter
   private final int messageId;
+  @Getter
   private final String topic;
 
   public Register(short topicId, short messageId, String topic) {
@@ -43,18 +49,6 @@ public class Register extends MQTT_SNPacket {
     topic = new String(topicBuffer);
   }
 
-  public short getTopicId() {
-    return (short) topicId;
-  }
-
-  public int getMessageId() {
-    return messageId;
-  }
-
-  public String getTopic() {
-    return topic;
-  }
-
   @Override
   public int packFrame(Packet packet) {
     int len = 6 + topic.length();
@@ -64,10 +58,5 @@ public class Register extends MQTT_SNPacket {
     MQTTPacket.writeShort(packet, messageId);
     packet.put(topic.getBytes());
     return len;
-  }
-
-  @Override
-  public String toString() {
-    return "Register:TopicId:" + topicId + " MessageId:" + messageId + " Topic:" + topic;
   }
 }

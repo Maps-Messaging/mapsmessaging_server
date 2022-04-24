@@ -39,6 +39,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.SearchGateway;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SelectionKey;
@@ -121,7 +122,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   private void processIncomingPacket(Packet packet, MQTT_SNPacket mqttSn) throws IOException {
     if (mqttSn instanceof Connect) {
-      // Cool, so we have a new connect, so lets create a new protocol Impl and add it into our list
+      // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       MQTT_SNProtocol impl = new MQTT_SNProtocol(this, endPoint, packet.getFromAddress(), selectorTask, (Connect) mqttSn);
       currentSessions.put(packet.getFromAddress(), impl);
@@ -161,7 +162,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   private void handleAdvertise(Packet packet, Advertise advertise ){
-    logger.log(ServerLogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getId(), packet.getFromAddress().toString());
+    logger.log(ServerLogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getGatewayId(), packet.getFromAddress().toString());
   }
 
   private void publishRegisteredTopic(String topic, Publish publish) throws IOException {

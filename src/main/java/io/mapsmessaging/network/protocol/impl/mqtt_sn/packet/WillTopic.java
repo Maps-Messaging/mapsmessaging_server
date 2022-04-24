@@ -19,9 +19,13 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class WillTopic extends MQTT_SNPacket {
 
+  @Getter
   private final String topic;
 
   public WillTopic(Packet packet, int length) {
@@ -32,10 +36,6 @@ public class WillTopic extends MQTT_SNPacket {
     topic = new String(topicBuffer);
   }
 
-  public String getTopic() {
-    return topic;
-  }
-
   @Override
   public int packFrame(Packet packet) {
     int len = 3 + topic.length();
@@ -44,10 +44,5 @@ public class WillTopic extends MQTT_SNPacket {
     packet.put(flags);
     packet.put(topic.getBytes());
     return 3 + topic.length();
-  }
-
-  @Override
-  public String toString() {
-    return "WillTopic:Topic:" + topic + " " + super.toString();
   }
 }

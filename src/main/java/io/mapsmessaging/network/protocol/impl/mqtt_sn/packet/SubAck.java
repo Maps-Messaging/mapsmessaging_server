@@ -20,11 +20,17 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class SubAck extends MQTT_SNPacket {
 
+  @Getter
   private final int msgId;
+  @Getter
   private final int topicId;
+  @Getter
   private final byte status;
 
   public SubAck(short topicId, int msgId, byte status) {
@@ -45,10 +51,4 @@ public class SubAck extends MQTT_SNPacket {
     packet.put(status);
     return 8;
   }
-
-  @Override
-  public String toString() {
-    return "SubAck:TopicId:" + topicId + " MessageId:" + msgId + " " + super.toString() + " Status:" + status;
-  }
-
 }

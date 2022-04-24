@@ -21,11 +21,17 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import java.io.IOException;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class Publish extends MQTT_SNPacket {
 
+  @Getter
   private final int topicId;
+  @Getter
   private final int messageId;
+  @Getter
   private final byte[] message;
 
   public Publish(short topicId, int messageId, byte[] message) {
@@ -47,18 +53,6 @@ public class Publish extends MQTT_SNPacket {
     packet.get(message, 0, message.length);
   }
 
-  public int getTopicId() {
-    return topicId;
-  }
-
-  public int getMessageId() {
-    return messageId;
-  }
-
-  public byte[] getMessage() {
-    return message;
-  }
-
   @Override
   public int packFrame(Packet packet) {
     int len = 7 + message.length;
@@ -74,10 +68,5 @@ public class Publish extends MQTT_SNPacket {
     MQTTPacket.writeShort(packet, messageId);
     packet.put(message);
     return len;
-  }
-
-  @Override
-  public String toString() {
-    return "Publish:TopicId:" + topicId + " MessageId:" + messageId + " " + super.toString() + " OpaqueLength:" + message.length;
   }
 }

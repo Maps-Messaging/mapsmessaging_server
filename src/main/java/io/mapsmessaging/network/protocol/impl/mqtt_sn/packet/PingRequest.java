@@ -20,9 +20,13 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class PingRequest extends MQTT_SNPacket {
 
+  @Getter
   private int clientId;
 
   public PingRequest() {
@@ -41,10 +45,5 @@ public class PingRequest extends MQTT_SNPacket {
     packet.put((byte) 2);
     packet.put((byte) PINGREQ);
     return 2;
-  }
-
-  @Override
-  public String toString() {
-    return "PingRequest:ClientId:" + clientId;
   }
 }

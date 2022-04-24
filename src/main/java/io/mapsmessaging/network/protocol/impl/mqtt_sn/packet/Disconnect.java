@@ -20,9 +20,12 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class Disconnect extends MQTT_SNPacket {
-
+  @Getter
   private final int duration;
 
   public Disconnect(Packet packet, int length) {
@@ -34,20 +37,10 @@ public class Disconnect extends MQTT_SNPacket {
     }
   }
 
-  public int getDuration() {
-    return duration;
-  }
-
   @Override
   public int packFrame(Packet packet) {
     packet.put((byte) 2);
     packet.put((byte) DISCONNECT);
     return 2;
   }
-
-  @Override
-  public String toString() {
-    return "Disconnect:Duration:" + duration;
-  }
-
 }

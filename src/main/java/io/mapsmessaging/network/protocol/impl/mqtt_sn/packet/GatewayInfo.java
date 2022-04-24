@@ -19,9 +19,13 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class GatewayInfo extends MQTT_SNPacket {
 
+  @Getter
   private final short gatewayId;
 
   public GatewayInfo(short gatewayId) {
@@ -34,20 +38,11 @@ public class GatewayInfo extends MQTT_SNPacket {
     gatewayId = packet.get();
   }
 
-  public short getGatewayId() {
-    return gatewayId;
-  }
-
   @Override
   public int packFrame(Packet packet) {
     packet.put((byte) 3);
     packet.put((byte) GWINFO);
     packet.put((byte) gatewayId);
     return 3;
-  }
-
-  @Override
-  public String toString() {
-    return "GatewayInfo:GatewayId:" + gatewayId;
   }
 }

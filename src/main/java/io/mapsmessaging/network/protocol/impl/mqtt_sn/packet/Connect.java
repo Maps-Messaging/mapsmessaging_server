@@ -20,12 +20,15 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class Connect extends MQTT_SNPacket {
 
-  private final short protocolId;
-  private final int duration;
-  private final String clientId;
+  @Getter private final short protocolId;
+  @Getter private final int duration;
+  @Getter private final String clientId;
 
   public Connect(Packet packet, int length) {
     super(CONNECT);
@@ -35,22 +38,5 @@ public class Connect extends MQTT_SNPacket {
     byte[] tmp = new byte[length - 6];
     packet.get(tmp, 0, tmp.length);
     clientId = new String(tmp);
-  }
-
-  public short getProtocolId() {
-    return protocolId;
-  }
-
-  public int getDuration() {
-    return duration;
-  }
-
-  public String getClientId() {
-    return clientId;
-  }
-
-  @Override
-  public String toString() {
-    return "Connect: Id:" + clientId + " ProtocolId:" + protocolId + " Duration:" + duration + " " + super.toString();
   }
 }

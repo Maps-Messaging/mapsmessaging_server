@@ -20,9 +20,13 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class ConnAck extends MQTT_SNPacket {
 
+  @Getter
   private final int status;
 
   public ConnAck(int status) {
@@ -36,10 +40,5 @@ public class ConnAck extends MQTT_SNPacket {
     packet.put((byte) CONNACK);
     MQTTPacket.writeShort(packet, status);
     return 4;
-  }
-
-  @Override
-  public String toString() {
-    return "ConAck:Status:" + status;
   }
 }

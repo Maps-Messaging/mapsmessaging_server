@@ -20,11 +20,17 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class Unsubscribe extends MQTT_SNPacket {
 
+  @Getter
   private final int msgId;
+  @Getter
   private int topicId;
+  @Getter
   private String topicName;
 
   public Unsubscribe(Packet packet) {
@@ -38,22 +44,5 @@ public class Unsubscribe extends MQTT_SNPacket {
     } else {
       topicId = MQTTPacket.readShort(packet);
     }
-  }
-
-  public int getMsgId() {
-    return msgId;
-  }
-
-  public int getTopicId() {
-    return topicId;
-  }
-
-  public String getTopicName() {
-    return topicName;
-  }
-
-  @Override
-  public String toString() {
-    return "Unsubscribe:TopicName:" + topicName + " TopicId:" + topicId + " MessageId:" + msgId + " " + super.toString();
   }
 }

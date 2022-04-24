@@ -22,9 +22,13 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import java.net.SocketAddress;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 // http://www.mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v1.2.pdf
 @java.lang.SuppressWarnings("squid:S00101")
+@ToString
 public class MQTT_SNPacket implements ServerPacket {
 
   public static final int TOPIC_NAME = 0;
@@ -78,13 +82,22 @@ public class MQTT_SNPacket implements ServerPacket {
   public static final int WILLMSGRESP = 0x1D;
 
   public static final int ENCAPSULATED = 0xFE;
-  protected int id;
+
   protected byte flags;
+  @Getter
+  @Setter
+  protected int controlPacketId;
+
+  @Getter
+  @Setter
   private SocketAddress fromAddress;
-  private Runnable completionHandler;
+
+  @Getter
+  @Setter
+  private Runnable callback;
 
   public MQTT_SNPacket(int id) {
-    this.id = id;
+    this.controlPacketId = id;
   }
 
   @Override
@@ -96,8 +109,8 @@ public class MQTT_SNPacket implements ServerPacket {
   public void complete() {
     Runnable tmp;
     synchronized (this) {
-      tmp = completionHandler;
-      completionHandler = null;
+      tmp = callback;
+      callback = null;
     }
     if (tmp != null) {
       tmp.run();
@@ -136,28 +149,5 @@ public class MQTT_SNPacket implements ServerPacket {
     flags = (byte) (flags | (type & 0b11));
   }
 
-  public Runnable getCallback() {
-    return completionHandler;
-  }
 
-  public void setCallback(Runnable completion) {
-    completionHandler = completion;
-  }
-
-  public int getControlPacketId() {
-    return id;
-  }
-
-  public SocketAddress getFromAddress() {
-    return fromAddress;
-  }
-
-  public void setFromAddress(SocketAddress fromAddress) {
-    this.fromAddress = fromAddress;
-  }
-
-  @Override
-  public String toString() {
-    return "Qos:" + getQoS() + " Retain:" + retain() + " Duplicate:" + dup() + " Will:" + will() + " Clean:" + clean() + " TopicIdType:" + topicIdType();
-  }
 }

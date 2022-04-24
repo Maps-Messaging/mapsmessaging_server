@@ -20,18 +20,18 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class PubRel extends MQTT_SNPacket {
 
+  @Getter
   private final int messageId;
 
   public PubRel(Packet packet) {
     super(PUBREL);
     messageId = MQTTPacket.readShort(packet);
-  }
-
-  public int getMessageId() {
-    return messageId;
   }
 
   @Override
@@ -41,10 +41,4 @@ public class PubRel extends MQTT_SNPacket {
     MQTTPacket.writeShort(packet, messageId);
     return 4;
   }
-
-  @Override
-  public String toString() {
-    return "PubRel:MessageId:" + messageId;
-  }
-
 }

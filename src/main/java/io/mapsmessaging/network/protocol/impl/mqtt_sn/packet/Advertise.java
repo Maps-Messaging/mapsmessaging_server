@@ -21,10 +21,15 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import java.io.IOException;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class Advertise extends MQTT_SNPacket {
 
+  @Getter
   private final short gatewayId;
+  @Getter
   private final int duration;
 
   public Advertise(byte id, short duration) {
@@ -42,10 +47,6 @@ public class Advertise extends MQTT_SNPacket {
     duration = MQTTPacket.readShort(packet);
   }
 
-  public int getId(){
-    return gatewayId;
-  }
-
   @Override
   public int packFrame(Packet packet) {
     packet.put((byte) 5);
@@ -53,10 +54,5 @@ public class Advertise extends MQTT_SNPacket {
     packet.put((byte) gatewayId);
     MQTTPacket.writeShort(packet, duration);
     return 5;
-  }
-
-  @Override
-  public String toString() {
-    return "Advertise: GatewayId:" + gatewayId + " Interval:" + duration;
   }
 }
