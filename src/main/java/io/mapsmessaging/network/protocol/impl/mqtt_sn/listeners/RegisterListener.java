@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Register;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.RegisterAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
@@ -37,14 +38,14 @@ public class RegisterListener extends PacketListener {
     short topicId = stateEngine.getTopicAlias(topic);
     if (topicId == -1) {
       // Exceeded the maximum number of registered topics
-      return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.NOT_SUPPORTED);
+      return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.NotSupported);
     }
     try {
       session.findDestination(topic, DestinationType.TOPIC);
       // We don't need to do anything with this destination at present
     } catch (IOException e) {
-      return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.NOT_SUPPORTED);
+      return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.NotSupported);
     }
-    return new RegisterAck(topicId, register.getMessageId(), MQTT_SNPacket.ACCEPTED);
+    return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.Success);
   }
 }

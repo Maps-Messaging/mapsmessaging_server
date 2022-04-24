@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import java.io.IOException;
@@ -33,6 +34,8 @@ public class Publish extends MQTT_SNPacket {
   private final int messageId;
   @Getter
   private final byte[] message;
+
+  private byte flags;
 
   public Publish(short topicId, int messageId, byte[] message) {
     super(PUBLISH);
@@ -68,5 +71,29 @@ public class Publish extends MQTT_SNPacket {
     MQTTPacket.writeShort(packet, messageId);
     packet.put(message);
     return len;
+  }
+
+  public boolean dup() {
+    return (flags & 0b10000000) != 0;
+  }
+
+  public QualityOfService getQoS() {
+    return QualityOfService.getInstance((flags & 0b01100000) >> 5);
+  }
+
+  public void setQoS(QualityOfService qos) {
+    flags = (byte) (flags | (byte) ((qos.getLevel() & 0b11) << 5));
+  }
+
+  public boolean retain() {
+    return (flags & 0b00010000) != 0;
+  }
+
+  public int topicIdType() {
+    return (flags & 0b00000011);
+  }
+
+  public void setTopicIdType(int type) {
+    flags = (byte) (flags | (type & 0b11));
   }
 }

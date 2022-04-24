@@ -27,8 +27,8 @@ import lombok.ToString;
 public class Subscribe extends MQTT_SN_2_Packet {
 
   @Getter private final int msgId;
-  @Getter private String topicName;
-  @Getter private short topicId;
+  @Getter private final String topicName;
+  @Getter private final short topicId;
   @Getter private final boolean noLocal;
   @Getter private final int QoS;
   @Getter private final boolean retain;
@@ -47,12 +47,14 @@ public class Subscribe extends MQTT_SN_2_Packet {
     msgId = MQTTPacket.readShort(packet);
 
     //ToDo: implement the different topic name types
-    if (topicIdType == TOPIC_NAME_ALIAS) {
+    if (topicIdType == TOPIC_LONG_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
       topicName = new String(tmp);
+      topicId = -1;
     } else {
       topicId = (short) MQTTPacket.readShort(packet);
+      topicName = null;
     }
   }
 }

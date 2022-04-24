@@ -34,7 +34,7 @@ public class PacketFactory {
     return create(type, packetLength, packet);
   }
 
-  private MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {
+  protected MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {
     switch (type) {
       case MQTT_SNPacket.CONNECT:
         return new Connect(packet, length);

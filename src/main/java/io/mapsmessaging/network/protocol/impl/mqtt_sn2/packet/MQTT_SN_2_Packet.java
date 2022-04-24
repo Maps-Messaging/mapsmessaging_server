@@ -21,118 +21,21 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn2.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import java.net.SocketAddress;
 
 // http://www.mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v2.0.pdf
 @SuppressWarnings("squid:S00101")
-public class MQTT_SN_2_Packet implements ServerPacket {
+public class MQTT_SN_2_Packet extends MQTT_SNPacket {
 
   public static final int TOPIC_NAME_ALIAS = 0;
-  public static final int PRE_DEFINED_ID = 1;
-  public static final int SHORT_NAME = 2;
-  public static final int LONG_NAME = 3;
+  public static final int TOPIC_PRE_DEFINED_ID = 1;
+  public static final int TOPIC_SHORT_NAME = 2;
+  public static final int TOPIC_LONG_NAME = 3;
 
-  public static final short ACCEPTED = 0;
-  public static final short CONGESTION = 1;
-  public static final short INVALID_TOPIC = 2;
-  public static final short NOT_SUPPORTED = 3;
-
-  public static final int ADVERTISE = 0x0;
-  public static final int SEARCHGW = 0x1;
-  public static final int GWINFO = 0x2;
   public static final int AUTH = 0x3;
-  public static final int CONNECT = 0x4;
-  public static final int CONNACK = 0x5;
-
-  public static final int WILLTOPICREQ = 0x6;
-  public static final int WILLTOPIC = 0x7;
-
-  public static final int WILLMSGREQ = 0x8;
-  public static final int WILLMSG = 0x9;
-
-  public static final int REGISTER = 0xA;
-  public static final int REGACK = 0xB;
-
-  public static final int PUBLISH = 0xC;
-  public static final int PUBACK = 0xD;
-
-  public static final int PUBCOMP = 0xE;
-  public static final int PUBREC = 0xF;
-
-  public static final int PUBREL = 0x10;
-  // 0x11 reserved
-  public static final int SUBSCRIBE = 0x12;
-  public static final int SUBACK = 0x13;
-
-  public static final int UNSUBSCRIBE = 0x14;
-  public static final int UNSUBACK = 0x15;
-
-  public static final int PINGREQ = 0x16;
-  public static final int PINGRESP = 0x17;
-
-  public static final int DISCONNECT = 0x18;
-  // 0x19 reserved
-  public static final int WILLTOPICUPD = 0x1A;
-  public static final int WILLTOPICRESP = 0x1B;
-
-  public static final int WILLMSGUPD = 0x1C;
-  public static final int WILLMSGRESP = 0x1D;
-
-  public static final int ENCAPSULATED = 0xFE;
-  protected int id;
-  private SocketAddress fromAddress;
-  private Runnable completionHandler;
 
   public MQTT_SN_2_Packet(int id) {
-    this.id = id;
-  }
-
-  @Override
-  public int packFrame(Packet packet) {
-    return 0;
-  }
-
-  @Override
-  public void complete() {
-    Runnable tmp;
-    synchronized (this) {
-      tmp = completionHandler;
-      completionHandler = null;
-    }
-    if (tmp != null) {
-      tmp.run();
-    }
-  }
-
-  public Runnable getCallback() {
-    return completionHandler;
-  }
-
-  public void setCallback(Runnable completion) {
-    completionHandler = completion;
-  }
-
-  public int getControlPacketId() {
-    return id;
-  }
-
-  public SocketAddress getFromAddress() {
-    return fromAddress;
-  }
-
-  public void setFromAddress(SocketAddress fromAddress) {
-    this.fromAddress = fromAddress;
-  }
-
-  public static int readLength(Packet packet) {
-    int val = packet.get();
-    if(val == 1){
-      val = MQTTPacket.readShort(packet);
-    }
-    return val;
-  }
-
-  public String getTopic(int type, Packet packet){
-    return "";
+    super(id);
   }
 }

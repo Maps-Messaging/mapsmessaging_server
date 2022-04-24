@@ -27,9 +27,9 @@ import lombok.ToString;
 public class ConnAck extends MQTT_SNPacket {
 
   @Getter
-  private final int status;
+  private final ReasonCodes status;
 
-  public ConnAck(int status) {
+  public ConnAck(ReasonCodes status) {
     super(CONNACK);
     this.status = status;
   }
@@ -38,7 +38,7 @@ public class ConnAck extends MQTT_SNPacket {
   public int packFrame(Packet packet) {
     packet.put((byte) 4);
     packet.put((byte) CONNACK);
-    MQTTPacket.writeShort(packet, status);
+    MQTTPacket.writeShort(packet, status.getValue());
     return 4;
   }
 }

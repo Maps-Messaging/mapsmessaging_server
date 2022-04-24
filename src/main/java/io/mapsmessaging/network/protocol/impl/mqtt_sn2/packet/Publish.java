@@ -66,15 +66,14 @@ public class Publish extends MQTT_SN_2_Packet {
       throw new IOException("Truncated packet received");
     }
 
-    if(topicIdType < 3){
-      topicId = MQTTPacket.readShort(packet);
-      topicName = null;
-    }
-    else{
-      topicId = -1;
+    if (topicIdType == TOPIC_LONG_NAME) {
       byte[] tmp = new byte[topicLength];
       packet.get(tmp, 0, topicLength);
       topicName = new String(tmp);
+      topicId = -1;
+    } else {
+      topicId = (short) MQTTPacket.readShort(packet);
+      topicName = null;
     }
     message = new byte[packet.available()];
     packet.get(message, 0, message.length);

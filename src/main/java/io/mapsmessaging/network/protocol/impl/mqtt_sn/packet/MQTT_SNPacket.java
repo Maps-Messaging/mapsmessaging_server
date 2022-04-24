@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
-import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import java.net.SocketAddress;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,14 +31,9 @@ import lombok.ToString;
 @ToString
 public class MQTT_SNPacket implements ServerPacket {
 
-  public static final int TOPIC_NAME = 0;
-  public static final int PRE_DEFINED_ID = 1;
-  public static final int SHORT_NAME = 2;
-
-  public static final short ACCEPTED = 0;
-  public static final short CONGESTION = 1;
-  public static final short INVALID_TOPIC = 2;
-  public static final short NOT_SUPPORTED = 3;
+  public static final int TOPIC_LONG_NAME = 0;
+  public static final int TOPIC_PRE_DEFINED_ID = 1;
+  public static final int TOPIC_SHORT_NAME = 2;
 
   public static final int ADVERTISE = 0x0;
   public static final int SEARCHGW = 0x1;
@@ -83,7 +78,6 @@ public class MQTT_SNPacket implements ServerPacket {
 
   public static final int ENCAPSULATED = 0xFE;
 
-  protected byte flags;
   @Getter
   @Setter
   protected int controlPacketId;
@@ -117,37 +111,11 @@ public class MQTT_SNPacket implements ServerPacket {
     }
   }
 
-  public boolean dup() {
-    return (flags & 0b10000000) != 0;
+  public static int readLength(Packet packet) {
+    int val = packet.get();
+    if(val == 1){
+      val = MQTTPacket.readShort(packet);
+    }
+    return val;
   }
-
-  public QualityOfService getQoS() {
-    return QualityOfService.getInstance((flags & 0b01100000) >> 5);
-  }
-
-  public void setQoS(QualityOfService qos) {
-    flags = (byte) (flags | (byte) ((qos.getLevel() & 0b11) << 5));
-  }
-
-  public boolean retain() {
-    return (flags & 0b00010000) != 0;
-  }
-
-  public boolean will() {
-    return (flags & 0b00001000) != 0;
-  }
-
-  public boolean clean() {
-    return (flags & 0b00000100) != 0;
-  }
-
-  public int topicIdType() {
-    return (flags & 0b00000011);
-  }
-
-  public void setTopicIdType(int type) {
-    flags = (byte) (flags | (type & 0b11));
-  }
-
-
 }

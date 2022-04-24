@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import lombok.Getter;
@@ -32,12 +33,22 @@ public class Subscribe extends MQTT_SNPacket {
   private String topicName;
   @Getter
   private short topicId;
+  @Getter private final boolean dup;
+  private final int QoS;
+  @Getter private final int topicIdType;
+
+  private byte flags;
 
   public Subscribe(Packet packet) {
     super(SUBSCRIBE);
     flags = packet.get();
+
+    dup = (flags & 0b10000000) != 0;
+    QoS = (flags & 0b01100000) >> 5;
+    topicIdType = (flags & 0b11);
+
     msgId = MQTTPacket.readShort(packet);
-    if (topicIdType() == TOPIC_NAME) {
+    if (topicIdType == TOPIC_LONG_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
       topicName = new String(tmp);
@@ -45,4 +56,31 @@ public class Subscribe extends MQTT_SNPacket {
       topicId = (short) MQTTPacket.readShort(packet);
     }
   }
+
+  public boolean dup() {
+    return (flags & 0b10000000) != 0;
+  }
+
+  public void setDup(boolean set){
+    if(set){
+      flags = (byte)(flags | 0b10000000);
+    }
+  }
+
+  public QualityOfService getQoS() {
+    return QualityOfService.getInstance((flags & 0b01100000) >> 5);
+  }
+
+  public void setQoS(QualityOfService qos) {
+    flags = (byte) (flags | (byte) ((qos.getLevel() & 0b11) << 5));
+  }
+
+  public int topicIdType() {
+    return (flags & 0b00000011);
+  }
+
+  public void setTopicIdType(int type) {
+    flags = (byte) (flags | (type & 0b11));
+  }
+
 }

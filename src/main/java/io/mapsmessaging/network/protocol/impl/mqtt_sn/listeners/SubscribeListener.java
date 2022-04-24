@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.SubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Subscribe;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
@@ -39,7 +40,7 @@ public class SubscribeListener extends PacketListener {
     Subscribe subscribe = (Subscribe) mqttPacket;
 
     String topicName;
-    if (subscribe.topicIdType() == MQTT_SNPacket.TOPIC_NAME) {
+    if (subscribe.topicIdType() == MQTT_SNPacket.TOPIC_LONG_NAME) {
       topicName = subscribe.getTopicName();
     } else {
       topicName = stateEngine.getTopic(subscribe.getTopicId());
@@ -71,17 +72,17 @@ public class SubscribeListener extends PacketListener {
       try {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
-        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), (byte) MQTT_SNPacket.ACCEPTED);
+        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), ReasonCodes.Success);
         subAck.setQoS(subscribe.getQoS());
         stateEngine.addSubscribeResponse(topicName, subAck);
         return subAck;
       } catch (IOException e) {
-        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), (byte) MQTT_SNPacket.INVALID_TOPIC);
+        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), ReasonCodes.InvalidTopicAlias);
         subAck.setQoS(subscribe.getQoS());
         return subAck;
       }
     } else {
-      SubAck subAck = new SubAck((short) 0, subscribe.getMsgId(), (byte) MQTT_SNPacket.INVALID_TOPIC);
+      SubAck subAck = new SubAck((short) 0, subscribe.getMsgId(), ReasonCodes.InvalidTopicAlias);
       subAck.setQoS(subscribe.getQoS());
       return subAck;
     }

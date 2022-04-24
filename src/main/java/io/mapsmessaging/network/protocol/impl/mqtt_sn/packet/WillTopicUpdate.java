@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import lombok.Getter;
 import lombok.ToString;
@@ -28,11 +29,31 @@ public class WillTopicUpdate extends MQTT_SNPacket {
   @Getter
   private final String topic;
 
+  private byte flags;
+
   public WillTopicUpdate(Packet packet, int length) {
     super(WILLTOPICUPD);
     flags = packet.get();
     byte[] topicBuffer = new byte[length - 3];
     packet.get(topicBuffer, 0, topicBuffer.length);
     topic = new String(topicBuffer);
+  }
+
+  public boolean dup() {
+    return (flags & 0b10000000) != 0;
+  }
+
+  public void setDup(boolean set){
+    if(set){
+      flags = (byte)(flags | 0b10000000);
+    }
+  }
+
+  public QualityOfService getQoS() {
+    return QualityOfService.getInstance((flags & 0b01100000) >> 5);
+  }
+
+  public void setQoS(QualityOfService qos) {
+    flags = (byte) (flags | (byte) ((qos.getLevel() & 0b11) << 5));
   }
 }

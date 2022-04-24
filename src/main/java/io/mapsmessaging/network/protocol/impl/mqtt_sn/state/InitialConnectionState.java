@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.WillTopicRequest;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
@@ -55,13 +56,13 @@ public class InitialConnectionState implements State {
         return topicRequest;
       } else {
         try {
-          MQTT_SNPacket response = new ConnAck(MQTT_SNPacket.ACCEPTED);
+          MQTT_SNPacket response = new ConnAck(ReasonCodes.Success);
           Session session = stateEngine.createSession(scb, protocol, response);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
           session.login();
           return response;
         } catch (LoginException | IOException e) {
-          ConnAck response = new ConnAck(MQTT_SNPacket.NOT_SUPPORTED);
+          ConnAck response = new ConnAck(ReasonCodes.NotSupported);
           response.setCallback(() -> {
             try {
               protocol.close();

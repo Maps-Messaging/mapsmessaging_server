@@ -18,13 +18,12 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.listeners;
 
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket.NOT_SUPPORTED;
-
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.WillTask;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.WillMessageResponse;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.WillMessageUpdate;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
@@ -35,12 +34,12 @@ public class WillMessageUpdateListener extends PacketListener {
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
     WillMessageUpdate willMessageUpdate = (WillMessageUpdate) mqttPacket;
     WillTask task = session.getWillTask();
-    int status = 0;
+    ReasonCodes status = ReasonCodes.Success;
     if (task != null) {
       byte[] payload = willMessageUpdate.getMessage();
       task.updateMessage(payload);
     } else {
-      status = NOT_SUPPORTED;
+      status = ReasonCodes.NotSupported;
     }
     return new WillMessageResponse(status);
   }

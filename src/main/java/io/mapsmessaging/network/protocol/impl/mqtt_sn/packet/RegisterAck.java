@@ -32,9 +32,9 @@ public class RegisterAck extends MQTT_SNPacket {
   @Getter
   private final int messageId;
   @Getter
-  private final short status;
+  private final ReasonCodes status;
 
-  public RegisterAck(int topicId, int messageId, short status) {
+  public RegisterAck(int topicId, int messageId, ReasonCodes status) {
     super(REGACK);
     this.topicId = topicId;
     this.messageId = messageId;
@@ -48,7 +48,7 @@ public class RegisterAck extends MQTT_SNPacket {
     }
     topicId = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
-    status = packet.get();
+    status = ReasonCodes.lookup(packet.get());
   }
 
   @Override
@@ -57,7 +57,7 @@ public class RegisterAck extends MQTT_SNPacket {
     packet.put((byte) REGACK);
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, messageId);
-    packet.put((byte) status);
+    packet.put((byte) status.getValue());
     return 7;
   }
 }

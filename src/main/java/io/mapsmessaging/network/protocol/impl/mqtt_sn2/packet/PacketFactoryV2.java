@@ -19,84 +19,58 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn2.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PacketFactory;
 import java.io.IOException;
 
-public class PacketFactory {
+public class PacketFactoryV2 extends PacketFactory {
 
-  public MQTT_SN_2_Packet parseFrame(Packet packet) throws IOException {
-    int packetLength = MQTT_SN_2_Packet.readLength(packet);
+  public MQTT_SNPacket parseFrame(Packet packet) throws IOException {
+    int packetLength = MQTT_SNPacket.readLength(packet);
     int type = packet.get();
     return create(type, packetLength, packet);
   }
 
-  private MQTT_SN_2_Packet create(int type, int length, Packet packet) throws IOException {
+  protected MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {
     switch (type) {
-      case MQTT_SN_2_Packet.CONNECT:
+      case MQTT_SNPacket.CONNECT:
         return new Connect(packet, length);
 
-      case MQTT_SN_2_Packet.DISCONNECT:
+      case MQTT_SNPacket.DISCONNECT:
         return new Disconnect(packet, length);
 
-      case MQTT_SN_2_Packet.SUBSCRIBE:
+      case MQTT_SNPacket.SUBSCRIBE:
         return new Subscribe(packet);
 
-      case MQTT_SN_2_Packet.UNSUBSCRIBE:
+      case MQTT_SNPacket.UNSUBSCRIBE:
         return new Unsubscribe(packet);
 
-      case MQTT_SN_2_Packet.PINGREQ:
+      case MQTT_SNPacket.PINGREQ:
         return new PingRequest(packet, length);
 
-      case MQTT_SN_2_Packet.PINGRESP:
+      case MQTT_SNPacket.PINGRESP:
         return new PingResponse();
 
-      case MQTT_SN_2_Packet.ADVERTISE:
-        return new Advertise(packet, length);
-
-      case MQTT_SN_2_Packet.GWINFO:
+      case MQTT_SNPacket.GWINFO:
         return new GatewayInfo(packet, length);
 
-      case MQTT_SN_2_Packet.SEARCHGW:
-        return new SearchGateway(packet);
-
-      case MQTT_SN_2_Packet.WILLTOPIC:
-        return new WillTopic(packet, length);
-
-      case MQTT_SN_2_Packet.WILLMSG:
-        return new WillMessage(packet, length);
-
-      case MQTT_SN_2_Packet.REGISTER:
+      case MQTT_SNPacket.REGISTER:
         return new Register(packet, length);
 
-      case MQTT_SN_2_Packet.REGACK:
+      case MQTT_SNPacket.REGACK:
         return new RegisterAck(packet, length);
 
-      case MQTT_SN_2_Packet.PUBLISH:
+      case MQTT_SNPacket.PUBLISH:
         return new Publish(packet, length);
 
-      case MQTT_SN_2_Packet.PUBACK:
+      case MQTT_SNPacket.PUBACK:
         return new PubAck(packet);
-
-      case MQTT_SN_2_Packet.PUBREC:
-        return new PubRec(packet);
-
-      case MQTT_SN_2_Packet.PUBCOMP:
-        return new PubComp(packet);
-
-      case MQTT_SN_2_Packet.PUBREL:
-        return new PubRel(packet);
-
-      case MQTT_SN_2_Packet.WILLTOPICUPD:
-        return new WillTopicUpdate(packet, length);
-
-      case MQTT_SN_2_Packet.WILLMSGUPD:
-        return new WillMessageUpdate(packet, length);
 
       case MQTT_SN_2_Packet.AUTH:
         return new Auth(packet, length);
 
       default:
+        return super.create( type,  length,  packet);
     }
-
-    return null;
   }
 }

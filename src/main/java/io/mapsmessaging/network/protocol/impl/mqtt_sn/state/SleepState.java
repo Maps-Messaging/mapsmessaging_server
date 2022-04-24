@@ -27,6 +27,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PingResponse;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.Iterator;
@@ -54,7 +55,7 @@ public class SleepState implements State {
 
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.CONNECT:
-        MQTT_SNPacket response = new ConnAck(MQTT_SNPacket.ACCEPTED);
+        MQTT_SNPacket response = new ConnAck(ReasonCodes.Success);
         sleepDuration = 0;
         clearReaper();
         sendMessages();

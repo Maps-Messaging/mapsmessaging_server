@@ -21,40 +21,47 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.state;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.WillMessage;
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class InitialWillMessageState implements State {
 
   private final MQTT_SNPacket lastResponse;
+  private final QualityOfService qualityOfService;
+  private final boolean retain;
 
-  public InitialWillMessageState(MQTT_SNPacket response) {
+  public InitialWillMessageState(MQTT_SNPacket response, @NonNull @NotNull QualityOfService qualityOfService, boolean retain) {
     lastResponse = response;
+    this.retain = retain;
+    this.qualityOfService = qualityOfService;
   }
 
   @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLMSG && oldSession == null) {
       WillMessage willMessage = (WillMessage) mqtt;
-      willMessage.getMessage();
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(willMessage.getMessage())
           .setTransformation(protocol.getTransformation())
-          .setQoS(willMessage.getQoS())
-          .setRetain(willMessage.retain());
+          .setQoS(qualityOfService)
+          .setRetain(retain);
       SessionContextBuilder scb = stateEngine.getSessionContextBuilder();
       scb.setWillMessage(messageBuilder.build());
       try {
-        MQTT_SNPacket response = new ConnAck(MQTT_SNPacket.ACCEPTED);
+        MQTT_SNPacket response = new ConnAck(ReasonCodes.Success);
         stateEngine.createSession(scb, protocol, response);
         return response;
       } catch (LoginException | IOException e) {
-        ConnAck response = new ConnAck(MQTT_SNPacket.NOT_SUPPORTED);
+        ConnAck response = new ConnAck(ReasonCodes.NotSupported);
         response.setCallback(() -> {
           try {
             protocol.close();

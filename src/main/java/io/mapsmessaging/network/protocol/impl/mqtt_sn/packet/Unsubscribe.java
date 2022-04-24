@@ -33,11 +33,13 @@ public class Unsubscribe extends MQTT_SNPacket {
   @Getter
   private String topicName;
 
+  private byte flags;
+
   public Unsubscribe(Packet packet) {
     super(UNSUBSCRIBE);
     flags = packet.get();
     msgId = MQTTPacket.readShort(packet);
-    if (topicIdType() == TOPIC_NAME) {
+    if (topicIdType() == TOPIC_LONG_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
       topicName = new String(tmp);
@@ -45,4 +47,13 @@ public class Unsubscribe extends MQTT_SNPacket {
       topicId = MQTTPacket.readShort(packet);
     }
   }
+
+  public int topicIdType() {
+    return (flags & 0b00000011);
+  }
+
+  public void setTopicIdType(int type) {
+    flags = (byte) (flags | (type & 0b11));
+  }
+
 }

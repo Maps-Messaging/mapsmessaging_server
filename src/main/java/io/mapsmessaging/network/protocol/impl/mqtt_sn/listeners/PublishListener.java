@@ -30,6 +30,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PubRec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -65,22 +66,22 @@ public class PublishListener extends PacketListener {
             try {
             destination.storeMessage(messageBuilder.build());
             } catch (IOException e) {
-              ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), MQTT_SNPacket.INVALID_TOPIC));
+              ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
             }
             if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
-              ((MQTT_SNProtocol)protocol).writeFrame( new PubAck(publish.getTopicId(), publish.getMessageId(), 0));
+              ((MQTT_SNProtocol)protocol).writeFrame( new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.Success));
             } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
               ((MQTT_SNProtocol)protocol).writeFrame( new PubRec(publish.getMessageId()));
             }
           }
           else{
-            ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), MQTT_SNPacket.INVALID_TOPIC));
+            ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
           }
           return destination;
         });
 
       } catch (IOException e) {
-        return new PubAck(publish.getTopicId(), publish.getMessageId(), MQTT_SNPacket.INVALID_TOPIC);
+        return new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.InvalidTopicAlias);
       }
     }
     return null;

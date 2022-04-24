@@ -50,7 +50,7 @@ public class InitialWillTopicState implements State {
         scb.setWillTopic(willTopic.getTopic());
       }
       WillMessageRequest request = new WillMessageRequest();
-      stateEngine.setState(new InitialWillMessageState(request));
+      stateEngine.setState(new InitialWillMessageState(request, willTopic.getQoS(), willTopic.getRetain()));
       return request;
     }
     return null;

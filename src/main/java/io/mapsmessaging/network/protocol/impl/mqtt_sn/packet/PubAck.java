@@ -27,13 +27,13 @@ import lombok.ToString;
 public class PubAck extends MQTT_SNPacket {
 
   @Getter
-  private final int status;
+  private final ReasonCodes status;
   @Getter
   private final int topicId;
   @Getter
   private final int messageId;
 
-  public PubAck(int topicId, int messageId, int status) {
+  public PubAck(int topicId, int messageId, ReasonCodes status) {
     super(PUBACK);
     this.topicId = topicId;
     this.messageId = messageId;
@@ -44,7 +44,7 @@ public class PubAck extends MQTT_SNPacket {
     super(PUBACK);
     topicId = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
-    status = packet.get();
+    status = ReasonCodes.lookup(packet.get());
   }
 
   @Override
@@ -53,7 +53,7 @@ public class PubAck extends MQTT_SNPacket {
     packet.put((byte) PUBACK);
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, messageId);
-    packet.put((byte) status);
+    packet.put((byte) status.getValue());
     return 7;
   }
 }

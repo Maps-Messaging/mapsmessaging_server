@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import lombok.Getter;
@@ -30,6 +31,8 @@ public class Connect extends MQTT_SNPacket {
   @Getter private final int duration;
   @Getter private final String clientId;
 
+  private final byte flags;
+
   public Connect(Packet packet, int length) {
     super(CONNECT);
     flags = packet.get();
@@ -38,5 +41,17 @@ public class Connect extends MQTT_SNPacket {
     byte[] tmp = new byte[length - 6];
     packet.get(tmp, 0, tmp.length);
     clientId = new String(tmp);
+  }
+
+  public boolean dup() {
+    return (flags & 0b10000000) != 0;
+  }
+
+  public boolean will() {
+    return (flags & 0b00001000) != 0;
+  }
+
+  public boolean clean() {
+    return (flags & 0b00000100) != 0;
   }
 }

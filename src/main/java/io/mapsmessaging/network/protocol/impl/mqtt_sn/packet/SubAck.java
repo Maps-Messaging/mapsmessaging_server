@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import lombok.Getter;
@@ -31,9 +32,11 @@ public class SubAck extends MQTT_SNPacket {
   @Getter
   private final int topicId;
   @Getter
-  private final byte status;
+  private final ReasonCodes status;
 
-  public SubAck(short topicId, int msgId, byte status) {
+  private byte flags;
+
+  public SubAck(short topicId, int msgId, ReasonCodes status) {
     super(SUBACK);
     this.msgId = msgId;
     this.topicId = topicId;
@@ -48,7 +51,16 @@ public class SubAck extends MQTT_SNPacket {
     packet.put(flags); // Only QOS counts
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, msgId);
-    packet.put(status);
+    packet.put((byte)status.getValue());
     return 8;
   }
+
+  public QualityOfService getQoS() {
+    return QualityOfService.getInstance((flags & 0b01100000) >> 5);
+  }
+
+  public void setQoS(QualityOfService qos) {
+    flags = (byte) (flags | (byte) ((qos.getLevel() & 0b11) << 5));
+  }
+
 }

@@ -27,18 +27,18 @@ import lombok.ToString;
 public class WillMessageResponse extends MQTT_SNPacket {
 
   @Getter
-  private final int status;
+  private final ReasonCodes status;
 
-  public WillMessageResponse(int status) {
+  public WillMessageResponse(ReasonCodes status) {
     super(WILLMSGRESP);
     this.status = status;
   }
 
   @Override
   public int packFrame(Packet packet) {
-    packet.put((byte) 4);
+    packet.put((byte) 3);
     packet.put((byte) WILLMSGRESP);
-    MQTTPacket.writeShort(packet, status);
-    return 4;
+    packet.put((byte)status.getValue());
+    return 3;
   }
 }
