@@ -107,6 +107,16 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       // OK we have an existing protocol, so simply hand over the packet for processing
       protocol.processPacket(packet);
     } else {
+      int offset = 0;
+      if(packet.get(0) == 1){
+        offset = 2;
+      }
+      boolean isConnect = packet.get(1+offset) == MQTT_SNPacket.CONNECT;
+      if(isConnect && (packet.get(2+offset) &0b11111000) == 0){
+        int version = packet.get(3+offset);
+        // ToDo - Switch to either version 1 or 2 depending on connect packet
+      }
+
       //
       // OK so this is either a new connection request or an admin request
       //
