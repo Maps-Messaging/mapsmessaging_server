@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn2.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.ReasonCodes;
 import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.ToString;

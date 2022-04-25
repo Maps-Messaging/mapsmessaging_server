@@ -44,36 +44,45 @@ import java.net.SocketAddress;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-// The protocol is MQTT_SN so it makes sense, ignoring the Camel Case rule in class names
+// The protocol is MQTT_SN, so it makes sense, ignoring the Camel Case rule in class names
 @java.lang.SuppressWarnings("squid:S00101")
 public class MQTT_SNProtocol extends ProtocolImpl {
 
-  private final Logger logger;
-  private final PacketFactory packetFactory;
-  private final SocketAddress remoteClient;
-  private final SelectorTask selectorTask;
-  private final MQTTSNInterfaceManager factory;
-  private final StateEngine stateEngine;
-  private final PacketIdManager packetIdManager;
-  private final SleepManager sleepManager;
+  protected final Logger logger;
+  protected final PacketFactory packetFactory;
+  protected final SocketAddress remoteClient;
+  protected final SelectorTask selectorTask;
+  protected final MQTTSNInterfaceManager factory;
+  protected final StateEngine stateEngine;
+  protected final PacketIdManager packetIdManager;
+  protected final SleepManager sleepManager;
 
-  private volatile boolean closed;
-  private Session session;
+  protected volatile boolean closed;
+  protected Session session;
 
-  public MQTT_SNProtocol(@NonNull @NotNull MQTTSNInterfaceManager factory, @NonNull @NotNull EndPoint endPoint,
-      @NonNull @NotNull SocketAddress remoteClient, @NonNull @NotNull SelectorTask selectorTask, @NonNull @NotNull Connect connect) {
+  public MQTT_SNProtocol(@NonNull @NotNull MQTTSNInterfaceManager factory,
+      @NonNull @NotNull EndPoint endPoint,
+      @NonNull @NotNull SocketAddress remoteClient,
+      @NonNull @NotNull SelectorTask selectorTask,
+      @NonNull @NotNull String loggerName,
+      @NonNull @NotNull PacketFactory packetFactory){
     super(endPoint);
-    logger = LoggerFactory.getLogger("MQTT-SN 1.2 Protocol on " + endPoint.getName());
-
+    this.logger = LoggerFactory.getLogger(loggerName);
     this.remoteClient = remoteClient;
     this.selectorTask = selectorTask;
     this.factory = factory;
     packetIdManager = new PacketIdManager();
     sleepManager = new SleepManager(endPoint.getConfig().getProperties().getIntProperty("eventsPerTopicDuringSleep", DefaultConstants.MAX_SLEEP_EVENTS));
     logger.log(ServerLogMessages.MQTT_SN_INSTANCE);
-    packetFactory = new PacketFactory();
+    this.packetFactory = packetFactory;
     closed = false;
-    stateEngine = new StateEngine(new InitialConnectionState());
+    stateEngine = new StateEngine();
+  }
+
+  public MQTT_SNProtocol(@NonNull @NotNull MQTTSNInterfaceManager factory, @NonNull @NotNull EndPoint endPoint,
+      @NonNull @NotNull SocketAddress remoteClient, @NonNull @NotNull SelectorTask selectorTask, @NonNull @NotNull Connect connect) {
+    this(factory, endPoint, remoteClient, selectorTask, "MQTT-SN 1.2 Protocol on " + endPoint.getName(), new PacketFactory());
+    stateEngine.setState(new InitialConnectionState());
     handleMQTTEvent(connect);
   }
 
@@ -116,7 +125,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     return true;
   }
 
-  private void handleMQTTEvent(@NonNull @NotNull MQTT_SNPacket mqtt) {
+  protected void handleMQTTEvent(@NonNull @NotNull MQTT_SNPacket mqtt) {
     if (logger.isInfoEnabled()) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt.toString());
     }
@@ -150,7 +159,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   public String getName() {
-    return "MQTT_SN";
+    return "MQTT_SN 1.2";
   }
 
   @Override
@@ -173,9 +182,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       Register register = new Register(alias, (short) 0, messageEvent.getDestinationName());
       writeFrame(register);
     }
-    Publish publish = new Publish(alias, packetId,  messageEvent.getMessage().getOpaqueData());
-    publish.setQoS(qos);
-    publish.setCallback(messageEvent.getCompletionTask());
+    MQTT_SNPacket publish = buildPublish(alias, packetId,  messageEvent, qos);
     stateEngine.sendPublish(this, messageEvent.getDestinationName(), publish);
   }
 
@@ -188,6 +195,13 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       frame.getCallback().run();
     }
     sentMessage();
+  }
+
+  protected MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos){
+    Publish publish = new Publish(alias, packetId,  messageEvent.getMessage().getOpaqueData());
+    publish.setQoS(qos);
+    publish.setCallback(messageEvent.getCompletionTask());
+    return publish;
   }
 
   public PacketIdManager getPacketIdManager() {

@@ -16,7 +16,7 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.mqtt_sn.state;
+package io.mapsmessaging.network.protocol.impl.mqtt_sn2.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
@@ -24,10 +24,11 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.listeners.PacketListenerFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PingResponse;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.State;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn2.packet.Disconnect;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn2.packet.PingResponse;
 import java.io.IOException;
 
 /**
@@ -49,8 +50,8 @@ public class ConnectedState implements State {
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.DISCONNECT:
         Disconnect disconnect = (Disconnect) mqtt;
-        if (disconnect.getDuration() > 0) {
-          stateEngine.setState(new SleepState(disconnect.getDuration(), protocol));
+        if (disconnect.getExpiry() > 0) {
+          stateEngine.setState(new SleepState((int)disconnect.getExpiry(), protocol));
         } else {
           mqtt.setCallback(() -> {
             try {

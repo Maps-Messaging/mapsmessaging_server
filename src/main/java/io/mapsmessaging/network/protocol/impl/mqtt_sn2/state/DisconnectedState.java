@@ -16,22 +16,29 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.mqtt_sn.state;
+package io.mapsmessaging.network.protocol.impl.mqtt_sn2.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
-import java.io.IOException;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.State;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.state.StateEngine;
 
-public interface State {
+public class DisconnectedState implements State {
 
-  MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws IOException, MalformedException;
+  private final MQTT_SNPacket lastResponse;
 
-  default void sendPublish(MQTT_SNProtocol protocol, String destination, MQTT_SNPacket publish){
-    // nothing to do
+  public DisconnectedState(MQTT_SNPacket response) {
+    lastResponse = response;
+  }
+
+  @Override
+  public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
+    if (mqtt.getControlPacketId() == MQTT_SNPacket.DISCONNECT) {
+      return lastResponse;
+    }
+    return null;
   }
 
 }

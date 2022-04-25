@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn2.packet;
 
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import java.io.IOException;
@@ -39,16 +40,16 @@ public class Publish extends MQTT_SN_2_Packet {
   @Getter
   private boolean dup;
   @Getter @Setter
-  private int QoS;
+  private QualityOfService QoS;
   @Getter @Setter
   private boolean retain;
 
-  public Publish(short topicId, String topicName, int messageId, byte[] message) {
+  public Publish(short topicId, int messageId, byte[] message) {
     super(PUBLISH);
     this.topicId = topicId;
     this.messageId = messageId;
     this.message = message;
-    this.topicName = topicName;
+    this.topicName = null;
   }
 
   public Publish(Packet packet, int length) throws IOException {
@@ -56,7 +57,7 @@ public class Publish extends MQTT_SN_2_Packet {
     byte flags = packet.get();
     int topicLength = MQTTPacket.readShort(packet);
     dup = (flags & 0b10000000) != 0;
-    QoS =(flags & 0b01100000) >> 5;
+    QoS = QualityOfService.getInstance((flags & 0b01100000) >> 5);
     retain = (flags & 0b00010000) != 0;
 
     int topicIdType = flags & 0b11;
@@ -89,10 +90,20 @@ public class Publish extends MQTT_SN_2_Packet {
       MQTTPacket.writeShort(packet, len);
     }
     packet.put((byte) PUBLISH);
-    //packet.put(flags);
+    packet.put(packFlag());
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, messageId);
     packet.put(message);
     return len;
+  }
+
+  byte packFlag(){
+      byte f = (byte) ( (byte) ((QoS.getLevel() & 0b11) << 5));
+      int type = MQTT_SN_2_Packet.TOPIC_LONG_NAME;
+      if(topicName == null){
+        type = MQTT_SN_2_Packet.TOPIC_NAME_ALIAS;
+      }
+      f = (byte) (f | (type & 0b11));
+      return f;
   }
 }

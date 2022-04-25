@@ -22,7 +22,7 @@ public enum ReasonCodes {
     value = val;
   }
 
-  static ReasonCodes lookup(int val){
+  public static ReasonCodes lookup(int val){
     switch(val){
       case 0x0:
         return Success;
