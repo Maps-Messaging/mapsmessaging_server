@@ -1,0 +1,37 @@
+/*
+ *
+ *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
+
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
+
+// http://www.mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v2.0.pdf
+@SuppressWarnings("squid:S00101")
+public class MQTT_SN_2_Packet extends MQTT_SNPacket {
+
+  public static final int TOPIC_NAME_ALIAS = 0;
+  public static final int TOPIC_PRE_DEFINED_ID = 1;
+  public static final int TOPIC_SHORT_NAME = 2;
+  public static final int TOPIC_LONG_NAME = 3;
+
+  public static final int AUTH = 0x3;
+
+  public MQTT_SN_2_Packet(int id) {
+    super(id);
+  }
+}

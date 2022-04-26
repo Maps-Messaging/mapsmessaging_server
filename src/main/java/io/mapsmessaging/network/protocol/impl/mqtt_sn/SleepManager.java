@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;

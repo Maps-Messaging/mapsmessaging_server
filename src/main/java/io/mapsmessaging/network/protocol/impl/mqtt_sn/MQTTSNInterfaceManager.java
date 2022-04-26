@@ -30,16 +30,18 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Advertise;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Connect;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.GatewayInfo;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.MQTT_SNPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.PacketFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Publish;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.SearchGateway;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Advertise;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.GatewayInfo;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PacketFactory;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.SearchGateway;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MQTT_SNProtocolV2;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PacketFactoryV2;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SelectionKey;
@@ -55,30 +57,34 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final HashMap<SocketAddress, MQTT_SNProtocol> currentSessions;
-  private final PacketFactory packetFactory;
+  private final PacketFactory[] packetFactory;
   private final AdvertiserTask advertiserTask;
   private final byte gatewayId;
   private final RegisteredTopicConfiguration registeredTopicConfiguration;
   private final ProtocolMessageTransformation transformation;
 
   public MQTTSNInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
-    logger = LoggerFactory.getLogger("MQTT-SN 1.2 Protocol on " + endPoint.getName());
+    logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.gatewayId = gatewayId;
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
     currentSessions = new LinkedHashMap<>();
-    packetFactory = new PacketFactory();
+    packetFactory = new PacketFactory[2];
+    packetFactory[0] = new PacketFactory();
+    packetFactory[1] = new PacketFactoryV2();
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
     registeredTopicConfiguration = new RegisteredTopicConfiguration(endPoint.getConfig().getProperties());
   }
 
   public MQTTSNInterfaceManager(InterfaceInformation info, EndPoint endPoint, byte gatewayId) throws IOException {
-    logger = LoggerFactory.getLogger("MQTT-SN 1.2 Protocol on " + endPoint.getName());
+    logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
     currentSessions = new LinkedHashMap<>();
-    packetFactory = new PacketFactory();
+    packetFactory = new PacketFactory[2];
+    packetFactory[0] = new PacketFactory();
+    packetFactory[1] = new PacketFactoryV2();
 
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
@@ -111,17 +117,17 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       if(packet.get(0) == 1){
         offset = 2;
       }
+      int version = -1;
       boolean isConnect = packet.get(1+offset) == MQTT_SNPacket.CONNECT;
       if(isConnect && (packet.get(2+offset) &0b11111000) == 0){
-        int version = packet.get(3+offset);
-        // ToDo - Switch to either version 1 or 2 depending on connect packet
+        version = packet.get(3+offset);
       }
 
       //
       // OK so this is either a new connection request or an admin request
       //
       try {
-        processIncomingPacket(packet, packetFactory.parseFrame(packet));
+        processIncomingPacket(packet, version);
       } catch (IOException ioException) {
         return true;
       }
@@ -130,13 +136,26 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     return true;
   }
 
-  private void processIncomingPacket(Packet packet, MQTT_SNPacket mqttSn) throws IOException {
+  private void processIncomingPacket(Packet packet, int version) throws IOException {
+    PacketFactory factory = packetFactory[0];
+    if(version == 2){
+      factory = packetFactory[1];
+    }
+    MQTT_SNPacket mqttSn = factory.parseFrame(packet);
+
     if (mqttSn instanceof Connect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       MQTT_SNProtocol impl = new MQTT_SNProtocol(this, endPoint, packet.getFromAddress(), selectorTask, (Connect) mqttSn);
       currentSessions.put(packet.getFromAddress(), impl);
-    } else if (mqttSn instanceof SearchGateway) {
+    }
+    else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
+      // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
+      // of current sessions
+      io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect)mqttSn;
+      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, endPoint, packet.getFromAddress(), selectorTask, connectV2);
+      currentSessions.put(packet.getFromAddress(), impl);
+    }else if (mqttSn instanceof SearchGateway) {
       handleSearch(packet);
     } else if (mqttSn instanceof Publish) {
       handlePublish(packet, (Publish) mqttSn);
@@ -213,7 +232,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   @Override
   public String getVersion() {
-    return "1.0";
+    return "2.0";
   }
 
   @Override

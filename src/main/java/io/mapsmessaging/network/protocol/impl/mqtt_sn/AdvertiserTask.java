@@ -26,7 +26,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.packet.Advertise;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Advertise;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.DatagramPacket;
