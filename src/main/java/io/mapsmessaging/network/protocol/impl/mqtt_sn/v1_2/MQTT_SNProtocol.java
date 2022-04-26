@@ -121,8 +121,10 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
+    System.err.println(packet);
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
     if(mqtt != null) {
+      System.err.println(mqtt);
       handleMQTTEvent(mqtt);
     }
     return true;
@@ -134,6 +136,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     }
     receivedMessageAverages.increment();
     try {
+      System.err.println(mqtt);
       MQTT_SNPacket response = stateEngine.handleMQTTEvent(mqtt, session, endPoint, this);
       if (response != null) {
         writeFrame(response);

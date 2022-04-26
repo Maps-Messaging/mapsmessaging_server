@@ -49,8 +49,12 @@ public class ConnAck extends MQTT_SN_2_Packet {
     packet.put((byte) CONNACK);
     packet.put((byte) reasonCode);
     MQTTPacket.writeInt(packet, sessionExpiry);
-    packet.put(tmp);
-    return 7 + tmp.length;
+    if(clientId != null){
+      MQTTPacket.writeShort(packet, clientId.length());
+      packet.put(tmp);
+      return 9 + tmp.length;
+    }
+    return 7;
   }
 
 }

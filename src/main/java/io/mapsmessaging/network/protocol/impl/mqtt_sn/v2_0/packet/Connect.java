@@ -57,9 +57,14 @@ public class Connect extends MQTT_SN_2_Packet {
     keepAlive = MQTTPacket.readShort(packet);
     sessionExpiry = MQTTPacket.readInt(packet);
     maxPacketSize = MQTTPacket.readShort(packet);
-
-    byte[] tmp = new byte[packet.available()];
-    packet.get(tmp, 0, tmp.length);
-    clientId = new String(tmp);
+    int size = MQTTPacket.readShort(packet);
+    if(size > 0) {
+      byte[] tmp = new byte[size];
+      packet.get(tmp, 0, tmp.length);
+      clientId = new String(tmp);
+    }
+    else{
+      clientId = null;
+    }
   }
 }
