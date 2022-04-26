@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import java.io.IOException;
 import lombok.Getter;
 import lombok.ToString;
@@ -57,14 +58,10 @@ public class Connect extends MQTT_SN_2_Packet {
     keepAlive = MQTTPacket.readShort(packet);
     sessionExpiry = MQTTPacket.readInt(packet);
     maxPacketSize = MQTTPacket.readShort(packet);
-    int size = MQTTPacket.readShort(packet);
-    if(size > 0) {
-      byte[] tmp = new byte[size];
-      packet.get(tmp, 0, tmp.length);
-      clientId = new String(tmp);
-    }
-    else{
-      clientId = null;
+    try {
+      clientId = MQTTPacket.readUTF8(packet);
+    } catch (MalformedException e) {
+      throw new IOException(e);
     }
   }
 }

@@ -85,12 +85,19 @@ public abstract class MQTTPacket implements ServerPacket {
   }
 
   public static String readUTF8(Packet packet) throws MalformedException {
-    int len = readShort(packet);
-    byte[] str = new byte[len];
-    packet.get(str, 0, len);
-    String result = new String(str, StandardCharsets.UTF_8);
-    if(result.chars().anyMatch(c -> c==0)){
-      throw new MalformedException("UTF-8 String must not contain U+0000 characters [MQTT-1.5.3-2]");
+    String result = null;
+    if(packet.available()>2) {
+      int len = readShort(packet);
+      if (packet.available() >= len) {
+        byte[] str = new byte[len];
+        packet.get(str, 0, len);
+        result = new String(str, StandardCharsets.UTF_8);
+        if (result.chars().anyMatch(c -> c == 0)) {
+          throw new MalformedException("UTF-8 String must not contain U+0000 characters [MQTT-1.5.3-2]");
+        }
+      } else {
+        throw new MalformedException("Packet truncated");
+      }
     }
     return result;
   }

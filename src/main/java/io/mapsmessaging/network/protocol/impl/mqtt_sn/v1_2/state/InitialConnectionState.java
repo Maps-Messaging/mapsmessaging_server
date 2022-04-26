@@ -60,6 +60,7 @@ public class InitialConnectionState implements State {
           Session session = stateEngine.createSession(scb, protocol, response);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
           session.login();
+          stateEngine.setState(new ConnectedState(response));
           return response;
         } catch (LoginException | IOException e) {
           ConnAck response = new ConnAck(ReasonCodes.NotSupported);

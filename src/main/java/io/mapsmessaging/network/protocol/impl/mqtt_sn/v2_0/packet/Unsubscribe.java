@@ -20,6 +20,8 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import java.io.IOException;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -33,17 +35,19 @@ public class Unsubscribe extends MQTT_SN_2_Packet {
   @Getter
   private String topicName;
 
-  public Unsubscribe(Packet packet) {
+  public Unsubscribe(Packet packet) throws IOException {
     super(UNSUBSCRIBE);
     byte flags = packet.get();
     msgId = MQTTPacket.readShort(packet);
     int topicNameType = flags & 0b11;
 
     //ToDo: implement the different topic name types
-    if (topicNameType == TOPIC_NAME_ALIAS) {
-      byte[] tmp = new byte[packet.available()];
-      packet.get(tmp, 0, tmp.length);
-      topicName = new String(tmp);
+    if (topicNameType == TOPIC_SHORT_NAME) {
+      try {
+        topicName = MQTTPacket.readUTF8(packet);
+      } catch (MalformedException e) {
+        throw new IOException(e);
+      }
     } else {
       topicId = MQTTPacket.readShort(packet);
     }

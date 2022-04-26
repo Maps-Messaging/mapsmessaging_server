@@ -44,17 +44,18 @@ public class ConnAck extends MQTT_SN_2_Packet {
 
   @Override
   public int packFrame(Packet packet) {
-    byte[] tmp = clientId.getBytes(StandardCharsets.UTF_8);
-    packet.put((byte) (7 + tmp.length));
+    int len = 7;
+    if(clientId != null){
+      len  += clientId.length()+2;
+    }
+    packet.put((byte) len);
     packet.put((byte) CONNACK);
     packet.put((byte) reasonCode);
     MQTTPacket.writeInt(packet, sessionExpiry);
     if(clientId != null){
-      MQTTPacket.writeShort(packet, clientId.length());
-      packet.put(tmp);
-      return 9 + tmp.length;
+      MQTTPacket.writeUTF8(packet, clientId);
     }
-    return 7;
+    return len;
   }
 
 }

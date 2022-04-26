@@ -119,7 +119,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       }
       int version = -1;
       boolean isConnect = packet.get(1+offset) == MQTT_SNPacket.CONNECT;
-      if(isConnect && (packet.get(2+offset) &0b11111000) == 0){
+      if(isConnect && (packet.get(2+offset) & 0b11111000) == 0){
         version = packet.get(3+offset);
       }
 

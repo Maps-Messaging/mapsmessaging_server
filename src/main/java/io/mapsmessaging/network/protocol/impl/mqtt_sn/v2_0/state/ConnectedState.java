@@ -27,6 +27,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListe
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners.PacketListenerFactoryV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingResponse;
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class ConnectedState implements State {
   private final MQTT_SNPacket lastResponse;
 
   public ConnectedState(MQTT_SNPacket response) {
-    packetListenerFactory = new PacketListenerFactory();
+    packetListenerFactory = new PacketListenerFactoryV2();
     lastResponse = response;
   }
 

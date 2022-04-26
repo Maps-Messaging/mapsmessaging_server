@@ -108,7 +108,6 @@ public class StateEngine {
     Session session = SessionManager.getInstance().create(scb.build(), protocol);
     protocol.setSession(session);
     response.setCallback(session::resumeState);
-    setState(new ConnectedState(response));
     return session;
   }
 

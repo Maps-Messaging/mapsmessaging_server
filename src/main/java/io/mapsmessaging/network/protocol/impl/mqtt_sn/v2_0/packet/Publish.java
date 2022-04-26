@@ -101,7 +101,7 @@ public class Publish extends MQTT_SN_2_Packet {
       byte f = (byte) ( (byte) ((QoS.getLevel() & 0b11) << 5));
       int type = MQTT_SN_2_Packet.TOPIC_LONG_NAME;
       if(topicName == null){
-        type = MQTT_SN_2_Packet.TOPIC_NAME_ALIAS;
+        type = MQTT_SN_2_Packet.TOPIC_SHORT_NAME;
       }
       f = (byte) (f | (type & 0b11));
       return f;
