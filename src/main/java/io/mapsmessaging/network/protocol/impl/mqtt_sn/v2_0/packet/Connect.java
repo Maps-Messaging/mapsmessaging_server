@@ -30,7 +30,7 @@ public class Connect extends MQTT_SN_2_Packet {
   @Getter
   private final short protocolId;
   @Getter
-  private final int duration;
+  private final int keepAlive;
   @Getter
   private final int maxPacketSize;
   @Getter
@@ -54,11 +54,11 @@ public class Connect extends MQTT_SN_2_Packet {
       throw new IOException("3.1.4.2 - Malformed Packet received");
     }
     protocolId = packet.get();
-    duration = MQTTPacket.readShort(packet);
+    keepAlive = MQTTPacket.readShort(packet);
     sessionExpiry = MQTTPacket.readInt(packet);
     maxPacketSize = MQTTPacket.readShort(packet);
 
-    byte[] tmp = new byte[length - 13];
+    byte[] tmp = new byte[packet.available()];
     packet.get(tmp, 0, tmp.length);
     clientId = new String(tmp);
   }

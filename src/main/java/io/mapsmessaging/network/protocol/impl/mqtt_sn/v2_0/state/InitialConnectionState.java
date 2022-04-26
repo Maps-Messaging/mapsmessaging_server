@@ -47,7 +47,7 @@ public class InitialConnectionState implements State {
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), protocol);
       scb.setPersistentSession(true);
       scb.setResetState(connect.isCleanStart());
-      scb.setKeepAlive(connect.getDuration());
+      scb.setKeepAlive(connect.getKeepAlive());
       scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
       scb.setSessionExpiry(endPoint.getConfig().getProperties().getIntProperty("maximumSessionExpiry", DefaultConstants.SESSION_TIME_OUT));
       if (connect.isWill()) {
@@ -58,7 +58,7 @@ public class InitialConnectionState implements State {
         return topicRequest;
       } else {
         try {
-          MQTT_SNPacket response = new ConnAck(ReasonCodes.Success, (int)0xffff, scb.getId());
+          MQTT_SNPacket response = new ConnAck(ReasonCodes.Success, 0, scb.getId());
           Session session = stateEngine.createSession(scb, protocol, response);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
           session.login();
