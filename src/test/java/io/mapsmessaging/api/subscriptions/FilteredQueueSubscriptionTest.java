@@ -72,16 +72,19 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
     SubscribedEventManager[] subscribedEventManagers = new SubscribedEventManager[sessions.length];
     String destinationName = "queue/selectorTest";
 
+    Session publisher = createSession(name, 60, 10, false, this);
+    Destination destination = publisher.findDestination(destinationName, DestinationType.QUEUE).get();
+    Assertions.assertNotNull(destination);
 
     for (int x = 0; x < sessions.length; x++) {
       MessageListener listener = new SelectorProtocolListener(expected[x % selector.length]);
       SessionContextBuilder scb = new SessionContextBuilder(name + "_"+x, new FakeProtocolImpl(listener));
       scb.setReceiveMaximum(1); // ensure it is low
-      scb.setSessionExpiry(2); // 2 seconds, more then enough time
+      scb.setSessionExpiry(2); // 2 seconds, more than enough time
       scb.setKeepAlive(60); // large enough to not worry about
       scb.setPersistentSession(false); // store the details
       sessions[x] = createSession(scb, listener);
-      sessions[x].findDestination(destinationName, DestinationType.QUEUE);
+      sessions[x].findDestination(destinationName, DestinationType.QUEUE).get();
       SubscriptionContextBuilder subContextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.INDIVIDUAL);
       subContextBuilder.setReceiveMaximum(10);
       subContextBuilder.setQos(QualityOfService.AT_LEAST_ONCE);
@@ -90,9 +93,6 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
       Assertions.assertNotNull(subscribedEventManagers[x]);
     }
 
-    Session publisher = createSession(name, 60, 10, false, this);
-    Destination destination = publisher.findDestination(destinationName, DestinationType.TOPIC).get();
-    Assertions.assertNotNull(destination);
 
     for(int x=0;x<EVENT_COUNT;x++) {
       MessageBuilder messageBuilder = new MessageBuilder();
@@ -163,7 +163,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
     Destination[] destinations = new Destination[destinationName.length];
     for(int x=0;x< publishers.length;x++) {
       publishers[x] = createSession(name+"_pub_"+x, 60, 0, false, this);
-      destinations[x] = publishers[x].findDestination(destinationName[x], DestinationType.TOPIC).get();
+      destinations[x] = publishers[x].findDestination(destinationName[x], DestinationType.QUEUE).get();
     }
 
     for(int x=0;x<EVENT_COUNT;x++) {

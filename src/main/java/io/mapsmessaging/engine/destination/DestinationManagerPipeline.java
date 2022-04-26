@@ -173,12 +173,6 @@ public class DestinationManagerPipeline {
       destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
     }
 
-    //
-    // let the listeners know there is a new destination
-    //
-    destinationManagerListeners.created(destinationImpl);
-    logger.log(ServerLogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
-
     //-------------------------------------------------------------------------------------
     // We have a divergence here, if we have a Queue then we need to start storing messages
     // even if we have no subscriptions. This is different to Topics since we only store
@@ -196,6 +190,12 @@ public class DestinationManagerPipeline {
       CommonSubscriptionBuilder builder = new QueueSubscriptionBuilder(destinationImpl, context);
       builder.construct(null, name);
     }
+
+    //
+    // let the listeners know there is a new destination
+    //
+    destinationManagerListeners.created(destinationImpl);
+    logger.log(ServerLogMessages.DESTINATION_MANAGER_CREATED_TOPIC, name);
     return destinationImpl;
   }
 
