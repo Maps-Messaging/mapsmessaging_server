@@ -128,6 +128,9 @@ public class PublishListener extends PacketListener {
         throw new MalformedException("[MQTT-3.3.5-2]");
       }
     }
+    else{
+      return response;
+    }
     return null;
   }
 
