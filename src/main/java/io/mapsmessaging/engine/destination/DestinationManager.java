@@ -145,11 +145,12 @@ public class DestinationManager implements DestinationFactory {
     return null;
   }
 
+  @SneakyThrows
   @Override
   public Map<String, DestinationImpl> get(DestinationFilter filter){
     Map<String, DestinationImpl> response = new LinkedHashMap<>();
     for(DestinationManagerPipeline pipeline:creatorPipelines){
-      pipeline.copy(filter, response);
+      pipeline.copy(filter, response).get();
     }
     return response;
   }
