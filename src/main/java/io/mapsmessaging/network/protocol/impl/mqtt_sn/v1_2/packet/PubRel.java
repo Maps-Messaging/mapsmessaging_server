@@ -29,6 +29,11 @@ public class PubRel extends MQTT_SNPacket {
   @Getter
   private final int messageId;
 
+  public PubRel(int messageId){
+    super(PUBREL);
+    this.messageId = messageId;
+  }
+
   public PubRel(Packet packet) {
     super(PUBREL);
     messageId = MQTTPacket.readShort(packet);

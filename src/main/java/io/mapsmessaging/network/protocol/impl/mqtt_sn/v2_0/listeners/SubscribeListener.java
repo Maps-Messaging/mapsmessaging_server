@@ -28,8 +28,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.SubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.SubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Subscribe;
 import java.io.IOException;
 
@@ -40,12 +40,7 @@ public class SubscribeListener extends PacketListener {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
 
-    String topicName;
-    if (subscribe.getTopicIdType() == MQTT_SNPacket.TOPIC_LONG_NAME) {
-      topicName = subscribe.getTopicName();
-    } else {
-      topicName = stateEngine.getTopic(subscribe.getTopicId());
-    }
+    String topicName = subscribe.getTopicName();
     if (topicName != null) {
       //
       // Handle packet retransmit on a subscribe
@@ -68,6 +63,8 @@ public class SubscribeListener extends PacketListener {
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
       builder.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
+      builder.setNoLocalMessages(subscribe.isNoLocal());
+      builder.setRetainHandler(subscribe.getRetainHandler());
       builder.setQos(subscribe.getQoS());
 
       try {

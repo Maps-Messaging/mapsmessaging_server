@@ -19,9 +19,9 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import java.io.IOException;
 import lombok.Getter;
 import lombok.ToString;
@@ -31,33 +31,24 @@ public class Subscribe extends MQTT_SN_2_Packet {
 
   @Getter private final int msgId;
   @Getter private final String topicName;
-  @Getter private final short topicId;
   @Getter private final boolean noLocal;
   @Getter private final QualityOfService QoS;
   @Getter private final boolean retain;
-  @Getter private final int retainHandler;
+  @Getter private final RetainHandler retainHandler;
   @Getter private final int topicIdType;
 
   public Subscribe(Packet packet) throws IOException {
     super(SUBSCRIBE);
     byte flags = packet.get();
 
-    noLocal = (flags & 0b1000000) != 0;
+    noLocal = (flags & 0b10000000) != 0;
     QoS = QualityOfService.getInstance((flags & 0b01100000) >> 5);
     retain = (flags & 0b00010000) != 0;
-    retainHandler = (flags & 0b01100) >> 2;
+    retainHandler = RetainHandler.getInstance((flags & 0b00001100) >> 2);
     topicIdType = (flags & 0b11);
     msgId = MQTTPacket.readShort(packet);
-
-    //ToDo: implement the different topic name types
-    if (topicIdType == TOPIC_LONG_NAME) {
-      byte[] tmp = new byte[packet.available()];
-      packet.get(tmp);
-      topicName = new String(tmp);
-      topicId = -1;
-    } else {
-      topicId = (short) MQTTPacket.readShort(packet);
-      topicName = null;
-    }
+    byte[] tmp = new byte[packet.available()];
+    packet.get(tmp);
+    topicName = new String(tmp);
   }
 }

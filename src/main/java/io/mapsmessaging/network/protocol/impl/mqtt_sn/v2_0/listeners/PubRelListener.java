@@ -18,16 +18,26 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners;
 
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListenerFactory;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubComp;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubRel;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 
-public class PacketListenerFactoryV2 extends PacketListenerFactory {
+public class PubRelListener extends PacketListener {
 
-  public PacketListenerFactoryV2() {
-    super();
-    listeners[MQTT_SNPacket.SUBSCRIBE] = new SubscribeListener();
-    listeners[MQTT_SNPacket.PUBLISH] = new PublishListener();
-    listeners[MQTT_SNPacket.PUBACK] = new PubAckListener();
-    listeners[MQTT_SNPacket.PUBREL] = new PubRelListener();
+  @Override
+  public MQTT_SNPacket handlePacket(
+      MQTT_SNPacket mqttPacket,
+      Session session,
+      EndPoint endPoint,
+      ProtocolImpl protocol,
+      StateEngine stateEngine) {
+
+    PubRel pubRel = (PubRel) mqttPacket;
+    return new PubComp(pubRel.getMessageId());
   }
 }

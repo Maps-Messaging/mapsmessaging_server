@@ -35,7 +35,7 @@ public class PingResponse extends MQTT_SN_2_Packet {
 
   @Override
   public int packFrame(Packet packet) {
-    packet.put((byte) 2);
+    packet.put((byte) 3);
     packet.put((byte) PINGRESP);
     packet.put((byte)messagesRemaining);
     return 3;

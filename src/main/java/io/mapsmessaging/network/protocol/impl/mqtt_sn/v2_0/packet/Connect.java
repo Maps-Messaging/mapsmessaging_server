@@ -48,12 +48,14 @@ public class Connect extends MQTT_SN_2_Packet {
   public Connect(Packet packet, int length) throws IOException {
     super(CONNECT);
     byte val = packet.get();
+
     cleanStart = (val & 0b00000001) != 0;
     will = (val & 0b00000010) != 0;
     authentication =(val & 0b00000100) != 0;
-    if( val>>3 != 0){
+    if( val >> 3 != 0){
       throw new IOException("3.1.4.2 - Malformed Packet received");
     }
+
     protocolId = packet.get();
     keepAlive = MQTTPacket.readShort(packet);
     sessionExpiry = MQTTPacket.readInt(packet);

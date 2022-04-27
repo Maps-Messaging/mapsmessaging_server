@@ -48,7 +48,7 @@ public class DestinationSet implements Set<DestinationImpl> {
     if (wildcard == null || destinationName == null) {
       return false;
     }
-    if (!wildcard.toLowerCase().startsWith("$") && destinationName.toLowerCase().startsWith("$")) {
+    if (!wildcard.startsWith("$") && destinationName.startsWith("$")) {
       return false; // Can not match $ topics with a wildcard
     }
     String[] nameList = destinationName.split("/");

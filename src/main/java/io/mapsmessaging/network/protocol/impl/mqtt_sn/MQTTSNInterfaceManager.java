@@ -122,7 +122,6 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       if(isConnect && (packet.get(2+offset) & 0b11111000) == 0){
         version = packet.get(3+offset);
       }
-
       //
       // OK so this is either a new connection request or an admin request
       //

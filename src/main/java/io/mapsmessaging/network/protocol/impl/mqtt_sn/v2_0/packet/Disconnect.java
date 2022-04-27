@@ -34,6 +34,13 @@ public class Disconnect extends MQTT_SN_2_Packet {
   @Getter
   private final String reasonString;
 
+  public Disconnect(ReasonCodes reasonCode, String reasonString, long expiry){
+    super(DISCONNECT);
+    this.expiry = expiry;
+    this.reasonCode = reasonCode;
+    this.reasonString = reasonString;
+  }
+
   public Disconnect(Packet packet, int length) {
     super(DISCONNECT);
     if (length > 2) {
@@ -51,8 +58,13 @@ public class Disconnect extends MQTT_SN_2_Packet {
 
   @Override
   public int packFrame(Packet packet) {
-    packet.put((byte) 2);
+    packet.put((byte) (7 + reasonString.length()));
     packet.put((byte) DISCONNECT);
-    return 2;
+    packet.put((byte)reasonCode.getValue());
+    MQTTPacket.writeInt(packet, expiry);
+    if(reasonString !=null){
+      MQTTPacket.writeUTF8(packet, reasonString);
+    }
+    return (7 + reasonString.length());
   }
 }

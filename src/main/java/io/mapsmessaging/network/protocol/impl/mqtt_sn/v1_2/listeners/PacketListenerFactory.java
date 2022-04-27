@@ -41,6 +41,8 @@ public class PacketListenerFactory {
     listeners[MQTT_SNPacket.PUBACK] = new PubAckListener();
     listeners[MQTT_SNPacket.WILLMSGUPD] = new WillMessageUpdateListener();
     listeners[MQTT_SNPacket.WILLTOPICUPD] = new WillTopicUpdateListener();
+    listeners[MQTT_SNPacket.PUBREC] = new PubRecListener();
+
   }
 
   public PacketListener getListener(int mqttPacketId) {

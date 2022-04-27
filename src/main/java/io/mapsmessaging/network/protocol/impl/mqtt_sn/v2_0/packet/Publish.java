@@ -55,17 +55,13 @@ public class Publish extends MQTT_SN_2_Packet {
   public Publish(Packet packet, int length) throws IOException {
     super(PUBLISH);
     byte flags = packet.get();
-    int topicLength = MQTTPacket.readShort(packet);
     dup = (flags & 0b10000000) != 0;
     QoS = QualityOfService.getInstance((flags & 0b01100000) >> 5);
     retain = (flags & 0b00010000) != 0;
-
     int topicIdType = flags & 0b11;
 
+    int topicLength = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
-    if (length - 7 > packet.available()) {
-      throw new IOException("Truncated packet received");
-    }
 
     if (topicIdType == TOPIC_LONG_NAME) {
       byte[] tmp = new byte[topicLength];
@@ -82,17 +78,18 @@ public class Publish extends MQTT_SN_2_Packet {
 
   @Override
   public int packFrame(Packet packet) {
-    int len = 7 + message.length;
+    int len = 9 + message.length;
     if (len < 256) {
       packet.put((byte) len);
     } else {
       packet.put((byte) 1);
-      MQTTPacket.writeShort(packet, len);
+      MQTTPacket.writeShort(packet, len+2);
     }
     packet.put((byte) PUBLISH);
     packet.put(packFlag());
-    MQTTPacket.writeShort(packet, topicId);
+    MQTTPacket.writeShort(packet, 2);
     MQTTPacket.writeShort(packet, messageId);
+    MQTTPacket.writeShort(packet, topicId);
     packet.put(message);
     return len;
   }
@@ -101,7 +98,7 @@ public class Publish extends MQTT_SN_2_Packet {
       byte f = (byte) ( (byte) ((QoS.getLevel() & 0b11) << 5));
       int type = MQTT_SN_2_Packet.TOPIC_LONG_NAME;
       if(topicName == null){
-        type = MQTT_SN_2_Packet.TOPIC_SHORT_NAME;
+        type = MQTT_SN_2_Packet.TOPIC_ALIAS;
       }
       f = (byte) (f | (type & 0b11));
       return f;

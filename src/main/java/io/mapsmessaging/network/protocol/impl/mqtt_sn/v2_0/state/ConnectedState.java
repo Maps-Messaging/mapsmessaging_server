@@ -25,6 +25,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners.PacketListenerFactoryV2;
@@ -63,7 +64,11 @@ public class ConnectedState implements State {
           });
           stateEngine.setState(new DisconnectedState(mqtt));
         }
-        return mqtt;
+        String reason = "Disconnected";
+        if(disconnect.getExpiry() > 0){
+          reason = "Sleeping";
+        }
+        return new Disconnect(ReasonCodes.Success, reason, disconnect.getExpiry());
 
       case MQTT_SNPacket.CONNACK:
         break;
