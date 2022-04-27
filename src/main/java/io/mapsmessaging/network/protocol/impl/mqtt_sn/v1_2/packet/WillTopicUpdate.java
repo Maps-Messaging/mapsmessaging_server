@@ -39,13 +39,13 @@ public class WillTopicUpdate extends MQTT_SNPacket {
     topic = new String(topicBuffer);
   }
 
-  public boolean dup() {
-    return (flags & 0b10000000) != 0;
+  public boolean isRetain() {
+    return (flags & 0b10000) != 0;
   }
 
-  public void setDup(boolean set){
+  public void setRetain(boolean set){
     if(set){
-      flags = (byte)(flags | 0b10000000);
+      flags = (byte)(flags | 0b10000);
     }
   }
 
