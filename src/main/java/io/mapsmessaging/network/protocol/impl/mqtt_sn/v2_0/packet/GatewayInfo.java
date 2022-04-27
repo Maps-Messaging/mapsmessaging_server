@@ -30,12 +30,6 @@ public class GatewayInfo extends MQTT_SN_2_Packet {
   @Getter
   private final byte[] gatewayAddress;
 
-  public GatewayInfo(short gatewayId, byte[] gatewayAddress) {
-    super(GWINFO);
-    this.gatewayId = gatewayId;
-    this.gatewayAddress = gatewayAddress;
-  }
-
   public GatewayInfo(Packet packet, int length) {
     super(GWINFO);
     gatewayId = packet.get();

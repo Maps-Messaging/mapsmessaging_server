@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
+import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -58,13 +59,17 @@ public class Disconnect extends MQTT_SN_2_Packet {
 
   @Override
   public int packFrame(Packet packet) {
-    packet.put((byte) (7 + reasonString.length()));
+    int len = 7;
+    if(reasonString != null){
+      len = len + reasonString.length();
+    }
+    packet.put((byte) len);
     packet.put((byte) DISCONNECT);
     packet.put((byte)reasonCode.getValue());
     MQTTPacket.writeInt(packet, expiry);
     if(reasonString !=null){
-      MQTTPacket.writeUTF8(packet, reasonString);
+      packet.put(reasonString.getBytes(StandardCharsets.UTF_8));
     }
-    return (7 + reasonString.length());
+    return (len);
   }
 }

@@ -32,6 +32,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.login.LoginException;
+import lombok.Getter;
+import lombok.Setter;
 
 public class StateEngine {
 
@@ -40,6 +42,7 @@ public class StateEngine {
   private final HashMap<String, Short> topicAlias;
   private final AtomicInteger aliasGenerator;
 
+  private @Getter @Setter int maxBufferSize = 0;
   private State currentState;
   private SessionContextBuilder sessionContextBuilder;
 

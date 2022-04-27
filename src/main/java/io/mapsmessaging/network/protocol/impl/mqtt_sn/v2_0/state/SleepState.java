@@ -22,14 +22,16 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.SleepManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PingResponse;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Disconnect;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequest;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingResponse;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.Iterator;
@@ -57,17 +59,18 @@ public class SleepState implements State {
 
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.CONNECT:
-        MQTT_SNPacket response = new ConnAck(ReasonCodes.Success);
+        Connect connect = (Connect)mqtt;
+        MQTT_SNPacket response = new ConnAck(ReasonCodes.Success, connect.getSessionExpiry(), session.getName());
         sleepDuration = 0;
         clearReaper();
-        sendMessages();
+        sendMessages(0);
         stateEngine.setState(new ConnectedState(response));
         return response;
 
       case MQTT_SNPacket.DISCONNECT:
         Disconnect disconnect = (Disconnect) mqtt;
-        if (disconnect.getDuration() > 0) {
-          sleepDuration = disconnect.getDuration();
+        if (disconnect.getExpiry() > 0) {
+          sleepDuration = (int)disconnect.getExpiry();
           clearReaper();
         } else {
           mqtt.setCallback(() -> {
@@ -85,8 +88,10 @@ public class SleepState implements State {
         if (!reaperRunner.isDone()) {
           clearReaper();
         }
-        sendMessages();
-        return new PingResponse();
+        PingRequest ping = (PingRequest)mqtt;
+        int maxMessages = ping.getMaxMessages();
+        sendMessages(maxMessages);
+        return new PingResponse(protocol.getSleepManager().size());
 
       default:
         return null;
@@ -107,15 +112,22 @@ public class SleepState implements State {
     protocol.getSleepManager().storeEvent(destination,(Publish) publish);
   }
 
-  private void sendMessages() {
-    SleepManager manager = protocol.getSleepManager();
+  private void sendMessages(int maxMessages) {
+    if(maxMessages == 0){
+      maxMessages = Integer.MAX_VALUE;
+    }
+    SleepManager<MQTT_SNPacket> manager = protocol.getSleepManager();
     if (manager.hasEvents()) {
       Set<String> toSend = manager.getDestinationList();
       for (String destination : toSend) {
-        Iterator<Publish> iterator = manager.getMessages(destination);
+        Iterator<MQTT_SNPacket> iterator = manager.getMessages(destination);
         while (iterator.hasNext()) {
-          Publish publish = iterator.next();
+          Publish publish = (Publish) iterator.next();
           protocol.writeFrame(publish);
+          maxMessages--;
+          if(maxMessages == 0){
+            return;
+          }
         }
       }
     }

@@ -29,8 +29,14 @@ public class PingResponse extends MQTT_SN_2_Packet {
   @Getter
   @Setter
   private int messagesRemaining;
+
   public PingResponse() {
     super(PINGRESP);
+  }
+
+  public PingResponse(int messagesRemaining) {
+    super(PINGRESP);
+    this.messagesRemaining = messagesRemaining;
   }
 
   @Override

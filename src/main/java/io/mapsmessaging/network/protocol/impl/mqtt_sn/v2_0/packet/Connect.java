@@ -22,6 +22,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import java.io.IOException;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -60,10 +61,18 @@ public class Connect extends MQTT_SN_2_Packet {
     keepAlive = MQTTPacket.readShort(packet);
     sessionExpiry = MQTTPacket.readInt(packet);
     maxPacketSize = MQTTPacket.readShort(packet);
-    try {
-      clientId = MQTTPacket.readUTF8(packet);
-    } catch (MalformedException e) {
-      throw new IOException(e);
+    if(packet.hasRemaining()) {
+      try {
+        clientId = MQTTPacket.readUTF8(packet);
+      } catch (MalformedException e) {
+        throw new IOException(e);
+      }
+    }
+    else if(cleanStart){
+      clientId = UUID.randomUUID().toString();
+    }
+    else{
+      throw new IOException("Must supply a client Id");
     }
   }
 }

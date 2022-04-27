@@ -41,6 +41,10 @@ public class PingRequest extends MQTT_SN_2_Packet {
       maxMessages = packet.get();
       clientId = MQTTPacket.readShort(packet);
     }
+    else{
+      maxMessages = 0;
+      clientId = 0;
+    }
   }
 
   @Override

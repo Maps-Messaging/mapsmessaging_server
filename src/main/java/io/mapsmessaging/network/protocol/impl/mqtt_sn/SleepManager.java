@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -27,10 +28,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
-public class SleepManager {
+public class SleepManager<T extends MQTT_SNPacket> {
 
   private final int maxEvents;
-  private final TreeMap<String, Queue<Publish>> sleepingMessages;
+  private final TreeMap<String, Queue<T>> sleepingMessages;
 
   public SleepManager(int maxEvents) {
     this.maxEvents = maxEvents;
@@ -47,22 +48,22 @@ public class SleepManager {
 
   public int size() {
     int count = 0;
-    for (Queue<Publish> queue : sleepingMessages.values()) {
+    for (Queue<T> queue : sleepingMessages.values()) {
       count += queue.size();
     }
     return count;
   }
 
-  public Iterator<Publish> getMessages(String destination) {
-    Queue<Publish> queue = sleepingMessages.get(destination);
+  public Iterator<T> getMessages(String destination) {
+    Queue<T> queue = sleepingMessages.get(destination);
     if (queue == null) {
       queue = new LinkedList<>();
     }
     return new MessageIterator(destination, queue);
   }
 
-  public boolean storeEvent(String destinationName, Publish message) {
-    Queue<Publish> currentList = sleepingMessages.computeIfAbsent(destinationName, k -> new LinkedList<>());
+  public boolean storeEvent(String destinationName, T message) {
+    Queue<T> currentList = sleepingMessages.computeIfAbsent(destinationName, k -> new LinkedList<>());
     currentList.add(message);
     if (currentList.size() > maxEvents) {
       currentList.poll(); // Pop the oldest
@@ -71,12 +72,12 @@ public class SleepManager {
     return true;
   }
 
-  private final class MessageIterator implements Iterator<Publish> {
+  private final class MessageIterator implements Iterator<T> {
 
-    private final Queue<Publish> messageQueue;
+    private final Queue<T> messageQueue;
     private final String destination;
 
-    public MessageIterator(String destination, Queue<Publish> queue) {
+    public MessageIterator(String destination, Queue<T> queue) {
       messageQueue = queue;
       this.destination = destination;
     }
@@ -89,11 +90,11 @@ public class SleepManager {
     // We are matching the Iterator javadocs which says Next can throw a NoSuchElementException
     @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
     @Override
-    public Publish next() throws NoSuchElementException {
+    public T next() throws NoSuchElementException {
       if (messageQueue.isEmpty()) {
         throw new NoSuchElementException();
       }
-      Publish message = messageQueue.poll();
+      T message = messageQueue.poll();
       if (messageQueue.isEmpty()) {
         sleepingMessages.remove(destination);
       }
@@ -109,7 +110,7 @@ public class SleepManager {
     }
 
     @Override
-    public void forEachRemaining(Consumer<? super Publish> action) {
+    public void forEachRemaining(Consumer<? super T> action) {
       while (!messageQueue.isEmpty()) {
         action.accept(messageQueue.poll());
       }

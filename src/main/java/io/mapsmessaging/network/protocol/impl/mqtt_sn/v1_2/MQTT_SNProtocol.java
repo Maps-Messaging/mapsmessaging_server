@@ -58,7 +58,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   protected final MQTTSNInterfaceManager factory;
   protected final StateEngine stateEngine;
   protected final PacketIdManager packetIdManager;
-  protected final SleepManager sleepManager;
+  protected final SleepManager<MQTT_SNPacket> sleepManager;
 
   protected volatile boolean closed;
   protected Session session;
@@ -75,11 +75,11 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     this.selectorTask = selectorTask;
     this.factory = factory;
     packetIdManager = new PacketIdManager();
-    sleepManager = new SleepManager(endPoint.getConfig().getProperties().getIntProperty("eventsPerTopicDuringSleep", DefaultConstants.MAX_SLEEP_EVENTS));
     logger.log(ServerLogMessages.MQTT_SN_INSTANCE);
     this.packetFactory = packetFactory;
     closed = false;
     stateEngine = new StateEngine();
+    sleepManager = new SleepManager<>(endPoint.getConfig().getProperties().getIntProperty("eventsPerTopicDuringSleep", DefaultConstants.MAX_SLEEP_EVENTS));
   }
 
   public MQTT_SNProtocol(@NonNull @NotNull MQTTSNInterfaceManager factory, @NonNull @NotNull EndPoint endPoint,
@@ -167,6 +167,12 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    if(stateEngine.getMaxBufferSize() > 0 &&
+        stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9 ) {
+      messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
+      return; // exceeded buffer size
+    }
+
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     QualityOfService qos = subInfo.getQualityOfService();
     int packetId = 0;
@@ -211,7 +217,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     return packetIdManager;
   }
 
-  public SleepManager getSleepManager() {
+  public SleepManager<MQTT_SNPacket> getSleepManager() {
     return sleepManager;
   }
 }

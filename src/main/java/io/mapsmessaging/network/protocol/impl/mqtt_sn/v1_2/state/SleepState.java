@@ -106,13 +106,13 @@ public class SleepState implements State {
   }
 
   private void sendMessages() {
-    SleepManager manager = protocol.getSleepManager();
+    SleepManager<MQTT_SNPacket> manager = protocol.getSleepManager();
     if (manager.hasEvents()) {
       Set<String> toSend = manager.getDestinationList();
       for (String destination : toSend) {
-        Iterator<Publish> iterator = manager.getMessages(destination);
+        Iterator<MQTT_SNPacket> iterator = manager.getMessages(destination);
         while (iterator.hasNext()) {
-          Publish publish = iterator.next();
+          Publish publish = (Publish) iterator.next();
           protocol.writeFrame(publish);
         }
       }
