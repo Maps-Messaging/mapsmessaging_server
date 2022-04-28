@@ -18,109 +18,51 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
-import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import io.mapsmessaging.test.BaseTestConfig;
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.slj.mqtt.sn.client.MqttsnClientConnectException;
+import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class mqttSNConnectionTest extends BaseTestConfig implements MqttsCallback  {
+public class mqttSNConnectionTest extends BaseTestConfig {
 
-  private volatile boolean connected;
 
-  @Test
-  public void connectWithOutFlags() {
-    connected = false;
-    MqttsClient client = new MqttsClient("localhost",1884 );
-    client.registerHandler(this);
-    client.connect("simpleConnection", true, (short)50);
-    int loop = 20;
-    while(!connected && loop > 0){
-      loop--;
-      delay(100);
-    }
-    Assertions.assertTrue(connected);
+
+  @ParameterizedTest
+  @ValueSource(ints = {2,1})
+  public void connectWithOutFlags(int version) throws MqttsnException, MqttsnClientConnectException {
+    MqttSnClient client = new MqttSnClient("connectWithOutFlags", "localhost", 1884, version);
+    client.connect(50, true);
+    Assertions.assertTrue(client.isConnected());
     client.disconnect();
     delay(500);
   }
 
-  @Test
-  public void connectWithFlags() {
-    connected = false;
-    MqttsClient client = new MqttsClient("localhost",1884 );
-    client.registerHandler(this);
-    client.connect("simpleConnection", true, (short)50, "willTopic", 0, "This is my last will and stuff", false);
-    int loop = 20;
-    while(!connected && loop > 0){
-      loop--;
-      delay(100);
-    }
-    Assertions.assertTrue(connected);
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2})
+  public void connectWithFlags(int version) throws MqttsnClientConnectException, MqttsnException {
+
+    MqttSnClient client = new MqttSnClient("connectWithFlags", "localhost", 1884, version);
+    client.connect(50, true);
+    Assertions.assertTrue(client.isConnected());
+    client.disconnect();
+    delay(500);
+
+//    client.connect("simpleConnection", true, (short)50, "willTopic", 0, "This is my last will and stuff", false);
+
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2})
+  public void connectWaitForKeepalive(int version) throws MqttsnException, MqttsnClientConnectException, InterruptedException {
+    MqttSnClient client = new MqttSnClient("connectWaitForKeepalive", "localhost", 1884, version);
+    client.connect(10, true);
+    Assertions.assertTrue(client.isConnected());
+    TimeUnit.SECONDS.sleep(15);
+    Assertions.assertTrue(client.isConnected());
     client.disconnect();
     delay(500);
   }
-
-  @Test
-  public void connectWaitForKeepalive() {
-    connected = false;
-    MqttsClient client = new MqttsClient("localhost",1884 );
-    client.registerHandler(this);
-    client.connect("simpleConnection", true, (short)10);
-    int loop = 20;
-    while(!connected && loop > 0){
-      loop--;
-      delay(100);
-    }
-    Assertions.assertTrue(connected);
-    //
-    // OK we have a connection, lets wait for a Ping
-    //
-    delay(15000);
-
-    client.disconnect();
-    delay(500);
-  }
-
-  @Override
-  public int publishArrived(boolean b, int i, int i1, byte[] bytes) {
-    return 0;
-  }
-
-  @Override
-  public void connected() {
-    connected = true;
-  }
-
-  @Override
-  public void disconnected(int i) {
-    connected = false;
-  }
-
-  @Override
-  public void unsubackReceived() {
-  }
-
-  @Override
-  public void subackReceived(int i, int i1, int i2) {
-  }
-
-  @Override
-  public void pubCompReceived() {
-  }
-
-  @Override
-  public void pubAckReceived(int i, int i1) {
-  }
-
-  @Override
-  public void regAckReceived(int topicId, int i1) {
-  }
-
-  @Override
-  public void registerReceived(int i, String s) {
-  }
-
-  @Override
-  public void connectSent() {
- }
 }

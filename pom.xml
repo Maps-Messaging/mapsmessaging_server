@@ -709,6 +709,20 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.slj</groupId>
+      <artifactId>mqtt-sn-client</artifactId>
+      <version>1.0.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>5.8.2</version>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Junit5 -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
