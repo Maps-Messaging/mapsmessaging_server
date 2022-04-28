@@ -29,5 +29,6 @@ public class PacketListenerFactoryV2 extends PacketListenerFactory {
     listeners[MQTT_SNPacket.PUBLISH] = new PublishListener();
     listeners[MQTT_SNPacket.PUBACK] = new PubAckListener();
     listeners[MQTT_SNPacket.PUBREL] = new PubRelListener();
+    listeners[MQTT_SNPacket.UNSUBSCRIBE] = new UnsubscribeListener();
   }
 }

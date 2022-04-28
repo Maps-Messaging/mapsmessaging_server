@@ -20,35 +20,30 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
-import java.io.IOException;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public class Unsubscribe extends MQTT_SN_2_Packet {
+public class UnSubAck extends MQTT_SNPacket {
 
   @Getter
   private final int msgId;
-  @Getter
-  private int topicId;
-  @Getter
-  private String topicName;
+  private final ReasonCodes reasonCode;
 
-  public Unsubscribe(Packet packet) throws IOException {
-    super(UNSUBSCRIBE);
-    byte flags = packet.get();
-    msgId = MQTTPacket.readShort(packet);
-    int topicNameType = flags & 0b11;
+  public UnSubAck(int msgId, ReasonCodes reasonCode) {
+    super(UNSUBACK);
+    this.msgId = msgId;
+    this.reasonCode = reasonCode;
+  }
 
-    //ToDo: implement the different topic name types
-    if (topicNameType == TOPIC_ALIAS) {
-      byte[] tmp = new byte[packet.available()];
-      packet.get(tmp);
-      topicName = new String(tmp);
-      topicId = -1;
-    } else {
-      topicId = MQTTPacket.readShort(packet);
-      topicName = null;
-    }
+  @Override
+  public int packFrame(Packet packet) {
+    packet.put((byte) 5);
+    packet.put((byte) UNSUBACK);
+    MQTTPacket.writeShort(packet, msgId);
+    packet.put((byte)reasonCode.getValue());
+    return 5;
   }
 }
