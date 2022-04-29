@@ -23,27 +23,16 @@ import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEO
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import io.mapsmessaging.test.BaseTestConfig;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
-import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
-import org.slj.mqtt.sn.model.IMqttsnContext;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.spi.IMqttsnMessage;
-import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
-import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
 import org.slj.mqtt.sn.spi.MqttsnException;
-import org.slj.mqtt.sn.utils.TopicPath;
 
 public class mqttSNPublishingTest extends BaseTestConfig {
 

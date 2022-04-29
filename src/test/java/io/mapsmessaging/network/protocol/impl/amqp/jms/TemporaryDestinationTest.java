@@ -18,13 +18,22 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.jms;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import javax.jms.*;
+import io.mapsmessaging.engine.session.SessionManagerTest;
+import java.io.IOException;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
+import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.io.IOException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class TemporaryDestinationTest extends BaseConnection {
 
@@ -70,6 +79,11 @@ class TemporaryDestinationTest extends BaseConnection {
     topic.delete();
     session.close();
     connection.close();
+    count = 0;
+    while(SessionManagerTest.getInstance().hasIdleSessions() && count < 100){
+      delay(1);
+      count++;
+    }
   }
 
   @Test
@@ -114,6 +128,11 @@ class TemporaryDestinationTest extends BaseConnection {
     queue.delete();
     session.close();
     connection.close();
+    count = 0;
+    while(SessionManagerTest.getInstance().hasIdleSessions() && count < 100){
+      delay(1);
+      count++;
+    }
   }
 
 }
