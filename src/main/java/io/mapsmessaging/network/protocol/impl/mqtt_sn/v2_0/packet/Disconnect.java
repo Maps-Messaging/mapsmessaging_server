@@ -47,7 +47,7 @@ public class Disconnect extends MQTT_SN_2_Packet {
     if (length > 2) {
       reasonCode = ReasonCodes.lookup(packet.get());
       expiry = MQTTPacket.readInt(packet);
-      byte[] tmp = new byte[length - 8];
+      byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
       reasonString = new String(tmp);
     } else {

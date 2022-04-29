@@ -21,13 +21,14 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
 import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 @ToString
-public class Publish extends MQTT_SN_2_Packet {
+public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
   @Getter
   private final int topicId;

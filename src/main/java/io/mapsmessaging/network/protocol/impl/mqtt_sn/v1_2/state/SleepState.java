@@ -22,12 +22,14 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.SleepManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PingResponse;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Register;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.Iterator;
@@ -58,7 +60,7 @@ public class SleepState implements State {
         MQTT_SNPacket response = new ConnAck(ReasonCodes.Success);
         sleepDuration = 0;
         clearReaper();
-        sendMessages();
+        sendMessages(stateEngine);
         stateEngine.setState(new ConnectedState(response));
         return response;
 
@@ -83,7 +85,7 @@ public class SleepState implements State {
         if (!reaperRunner.isDone()) {
           clearReaper();
         }
-        sendMessages();
+        sendMessages(stateEngine);
         return new PingResponse();
 
       default:
@@ -105,12 +107,17 @@ public class SleepState implements State {
     protocol.getSleepManager().storeEvent(destination, (Publish)publish);
   }
 
-  private void sendMessages() {
-    SleepManager<MQTT_SNPacket> manager = protocol.getSleepManager();
+  private void sendMessages(StateEngine stateEngine) {
+    SleepManager<BasePublish> manager = protocol.getSleepManager();
     if (manager.hasEvents()) {
       Set<String> toSend = manager.getDestinationList();
       for (String destination : toSend) {
-        Iterator<MQTT_SNPacket> iterator = manager.getMessages(destination);
+        if(manager.sendRegister(destination)){
+          short alias = stateEngine.findTopicAlias(destination);
+          Register register = new Register(alias, (short) 0, destination);
+          protocol.writeFrame(register);
+        }
+        Iterator<BasePublish> iterator = manager.getMessages(destination);
         while (iterator.hasNext()) {
           Publish publish = (Publish) iterator.next();
           protocol.writeFrame(publish);

@@ -18,24 +18,28 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import lombok.Getter;
 
-public class SleepManager<T extends MQTT_SNPacket> {
+public class SleepManager<T extends BasePublish> {
 
   private final int maxEvents;
   private final TreeMap<String, Queue<T>> sleepingMessages;
+  private final Map<String, TopicRegister> registerMap;
 
   public SleepManager(int maxEvents) {
     this.maxEvents = maxEvents;
     sleepingMessages = new TreeMap<>();
+    registerMap = new LinkedHashMap<>();
   }
 
   public boolean hasEvents() {
@@ -54,6 +58,16 @@ public class SleepManager<T extends MQTT_SNPacket> {
     return count;
   }
 
+  public boolean sendRegister(String destination){
+    TopicRegister register = registerMap.get(destination);
+    if(register != null){
+      boolean res = register.send;
+      register.send = false;
+      return res;
+    }
+    return false;
+  }
+
   public Iterator<T> getMessages(String destination) {
     Queue<T> queue = sleepingMessages.get(destination);
     if (queue == null) {
@@ -68,6 +82,9 @@ public class SleepManager<T extends MQTT_SNPacket> {
     if (currentList.size() > maxEvents) {
       currentList.poll(); // Pop the oldest
       return false;
+    }
+    if(!registerMap.containsKey(destinationName)){
+      registerMap.put(destinationName, new TopicRegister(message.getTopicId()));
     }
     return true;
   }
@@ -114,6 +131,18 @@ public class SleepManager<T extends MQTT_SNPacket> {
       while (!messageQueue.isEmpty()) {
         action.accept(messageQueue.poll());
       }
+    }
+  }
+
+  private class TopicRegister{
+    @Getter
+    private int id;
+    @Getter
+    private boolean send;
+
+    public TopicRegister(int id){
+      this.id = id;
+      send = true;
     }
   }
 }

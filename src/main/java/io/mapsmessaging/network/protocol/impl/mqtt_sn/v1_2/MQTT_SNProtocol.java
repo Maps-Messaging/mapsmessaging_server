@@ -34,6 +34,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.SleepManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PacketFactory;
@@ -58,7 +59,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   protected final MQTTSNInterfaceManager factory;
   protected final StateEngine stateEngine;
   protected final PacketIdManager packetIdManager;
-  protected final SleepManager<MQTT_SNPacket> sleepManager;
+  protected final SleepManager<BasePublish> sleepManager;
 
   protected volatile boolean closed;
   protected Session session;
@@ -217,7 +218,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     return packetIdManager;
   }
 
-  public SleepManager<MQTT_SNPacket> getSleepManager() {
+  public SleepManager<BasePublish> getSleepManager() {
     return sleepManager;
   }
 }

@@ -22,6 +22,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.SleepManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
@@ -32,6 +33,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequest;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingResponse;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Register;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.Iterator;
@@ -63,7 +65,7 @@ public class SleepState implements State {
         MQTT_SNPacket response = new ConnAck(ReasonCodes.Success, connect.getSessionExpiry(), session.getName());
         sleepDuration = 0;
         clearReaper();
-        sendMessages(0);
+        sendMessages(0, stateEngine);
         stateEngine.setState(new ConnectedState(response));
         return response;
 
@@ -90,7 +92,7 @@ public class SleepState implements State {
         }
         PingRequest ping = (PingRequest)mqtt;
         int maxMessages = ping.getMaxMessages();
-        sendMessages(maxMessages);
+        sendMessages(maxMessages, stateEngine);
         return new PingResponse(protocol.getSleepManager().size());
 
       default:
@@ -112,15 +114,20 @@ public class SleepState implements State {
     protocol.getSleepManager().storeEvent(destination,(Publish) publish);
   }
 
-  private void sendMessages(int maxMessages) {
+  private void sendMessages(int maxMessages, StateEngine stateEngine) {
     if(maxMessages == 0){
       maxMessages = Integer.MAX_VALUE;
     }
-    SleepManager<MQTT_SNPacket> manager = protocol.getSleepManager();
+    SleepManager<BasePublish> manager = protocol.getSleepManager();
     if (manager.hasEvents()) {
       Set<String> toSend = manager.getDestinationList();
       for (String destination : toSend) {
-        Iterator<MQTT_SNPacket> iterator = manager.getMessages(destination);
+        Iterator<BasePublish> iterator = manager.getMessages(destination);
+        if(manager.sendRegister(destination)){
+          short alias = stateEngine.findTopicAlias(destination);
+          Register register = new Register(alias, (short) 0, destination);
+          protocol.writeFrame(register);
+        }
         while (iterator.hasNext()) {
           Publish publish = (Publish) iterator.next();
           protocol.writeFrame(publish);
