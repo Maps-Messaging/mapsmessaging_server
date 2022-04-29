@@ -31,7 +31,7 @@ public class mqttSNConnectionTest extends BaseTestConfig {
 
 
   @ParameterizedTest
-  @ValueSource(ints = {2,1})
+  @ValueSource(ints = {1,2})
   public void connectWithOutFlags(int version) throws MqttsnException, MqttsnClientConnectException {
     MqttSnClient client = new MqttSnClient("connectWithOutFlags", "localhost", 1884, version);
     client.connect(50, true);
@@ -43,7 +43,6 @@ public class mqttSNConnectionTest extends BaseTestConfig {
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
   public void connectWithFlags(int version) throws MqttsnClientConnectException, MqttsnException {
-
     MqttSnClient client = new MqttSnClient("connectWithFlags", "localhost", 1884, version);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());

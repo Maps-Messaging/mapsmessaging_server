@@ -15,6 +15,8 @@ import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
 import org.slj.mqtt.sn.spi.IMqttsnCodec;
+import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
+import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
 import org.slj.mqtt.sn.spi.IMqttsnRuntimeRegistry;
 import org.slj.mqtt.sn.spi.IMqttsnWillRegistry;
 import org.slj.mqtt.sn.spi.MqttsnException;
@@ -44,55 +46,10 @@ public class MqttSnClient {
       codecs = MqttsnCodecs.MQTTSN_CODEC_VERSION_2_0;
     }
 
-    IMqttsnWillRegistry willRegistry = new IMqttsnWillRegistry(){
-
-      private LinkedHashMap<IMqttsnContext, MqttsnWillData> data = new LinkedHashMap<>();
-
-      @Override
-      public void start(IMqttsnRuntimeRegistry iMqttsnRuntimeRegistry) throws MqttsnException {
-
-      }
-
-      @Override
-      public void stop() throws MqttsnException {
-
-      }
-
-      @Override
-      public boolean running() {
-        return true;
-      }
-
-      @Override
-      public void setWillMessage(IMqttsnContext iMqttsnContext, MqttsnWillData mqttsnWillData) {
-        data.put(iMqttsnContext, mqttsnWillData);
-      }
-
-      @Override
-      public MqttsnWillData getWillMessage(IMqttsnContext iMqttsnContext) {
-        return data.get(iMqttsnContext);
-      }
-
-      @Override
-      public boolean hasWillMessage(IMqttsnContext iMqttsnContext) {
-        return data.containsKey(iMqttsnContext);
-      }
-
-      @Override
-      public void clear(IMqttsnContext iMqttsnContext) throws MqttsnException {
-        data.remove(iMqttsnContext);
-      }
-
-      @Override
-      public void clearAll() throws MqttsnException {
-        data.clear();
-      }
-    };
     AbstractMqttsnRuntimeRegistry registry = MqttsnClientRuntimeRegistry.defaultConfiguration(options).
         withTransport(new MqttsnUdpTransport(udpOptions)).
         //-- select the codec you wish to use, support for SN 1.2 is standard or you can nominate your own
-            withCodec(codecs)
-        .withWillRegistry(willRegistry);
+            withCodec(codecs);
 
 
     //-- the client is Closeable and so use a try with resource
@@ -109,6 +66,13 @@ public class MqttSnClient {
     client.connect(keepAlive, cleanSession);
   }
 
+  public void registerPublishListener(IMqttsnPublishReceivedListener listener){
+    client.registerPublishReceivedListener(listener);
+  }
+
+  public void registerSentListener(IMqttsnPublishSentListener listener){
+    client.registerPublishSentListener(listener);
+  }
 
   public boolean isConnected(){
     return client.isConnected();
@@ -120,6 +84,14 @@ public class MqttSnClient {
 
   public void sleep(long expiry) throws MqttsnException {
     client.sleep(expiry);
+  }
+
+  public void subscribe(String topic, int qos) throws MqttsnException {
+    client.subscribe(topic, qos);
+  }
+
+  public void unsubscribe(String topic) throws MqttsnException {
+    client.unsubscribe(topic);
   }
 
   public void wake() throws MqttsnException {
