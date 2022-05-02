@@ -65,6 +65,10 @@ public class MqttSnClient {
     return topicRegistry.lookup(client.getSessionState().getContext(), topicName);
   }
 
+  public void registerTopic(String topicName, short val) throws MqttsnException {
+    topicRegistry.register(client.getSessionState().getContext(), topicName, val);
+  }
+
   public void connect(int keepAlive, boolean cleanSession) throws MqttsnClientConnectException, MqttsnException {
     client.connect(keepAlive, cleanSession);
   }

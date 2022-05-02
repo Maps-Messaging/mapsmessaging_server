@@ -32,7 +32,7 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class mqttSNPublishingTest extends BaseMqttSnConfig {
+public class MqttSNPublishingTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
@@ -55,12 +55,10 @@ public class mqttSNPublishingTest extends BaseMqttSnConfig {
 
     client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> {
       received.countDown();
-      System.err.println("Publish listener");
     });
 
     client.registerSentListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage) -> {
       published.countDown();
-      System.err.println("Send listener");
     });
 
     client.registerPublishFailedListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage, i) -> System.err.println("Failed to send message!!!!!!!!!!!!!!!!!!!"));

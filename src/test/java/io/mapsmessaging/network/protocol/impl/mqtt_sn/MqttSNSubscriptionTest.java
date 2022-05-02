@@ -37,7 +37,7 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class mqttSNSubscriptionTest extends BaseMqttSnConfig {
+public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
   @Test
   public void registerAndSubscribeTopic() throws InterruptedException {
@@ -326,7 +326,6 @@ public class mqttSNSubscriptionTest extends BaseMqttSnConfig {
     MqttSnClient publisher = new MqttSnClient("subscribeWildcardQoSnTopicAndPublish"+qos+"_"+version, "localhost",1884, version );
     publisher.connect(120, true);
     publisher.registerSentListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage) -> published.countDown());
-
 
     MqttSnClient client = new MqttSnClient("subscribeWildcardQoSnTopicAndPublish", "localhost",1884, version );
     client.connect(120, true);
