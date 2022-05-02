@@ -26,13 +26,6 @@ import java.io.IOException;
 public class PacketFactoryV2 extends PacketFactory {
 
   @Override
-  public MQTT_SNPacket parseFrame(Packet packet) throws IOException {
-    int packetLength = MQTT_SNPacket.readLength(packet);
-    int type = packet.get();
-    return create(type, packetLength, packet);
-  }
-
-  @Override
   protected MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {
     switch (type) {
       case MQTT_SNPacket.CONNECT:

@@ -26,9 +26,21 @@ public class PacketFactory {
 
   public MQTT_SNPacket parseFrame(Packet packet) throws IOException {
     int packetLength = packet.get();
+    long dif;
     if (packetLength == 1) { // Special case so the next 2 bytes indicates the length
       packetLength = MQTTPacket.readShort(packet);
+      dif = packet.available() -(packetLength-3);
     }
+    else{
+      dif = packet.available() - (packetLength-1);
+    }
+    if(dif < 0){
+      throw new IOException("Truncated Packet received");
+    }
+    else if(dif > 0){
+      throw new IOException("Extended Packet received");
+    }
+
     int type = packet.get();
 
     return create(type, packetLength, packet);
