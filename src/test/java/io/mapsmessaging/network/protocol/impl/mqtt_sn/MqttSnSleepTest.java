@@ -25,8 +25,6 @@ import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,7 +40,7 @@ public class MqttSnSleepTest extends BaseTestConfig {
 
   @ParameterizedTest
   @ValueSource(ints = {1,2})
-  public void sleepingClientTest(int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+  public void sleepingClientTest(int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException {
     AtomicLong publishCount = new AtomicLong(0);
 
     MqttSnClient client = new MqttSnClient("sleepingClientTest", "localhost", 1884, version);
@@ -50,7 +48,7 @@ public class MqttSnSleepTest extends BaseTestConfig {
 
     MqttSnClient hyper = new MqttSnClient("sleepingClientTest-hyper", "localhost", 1884, version);
     hyper.connect(120, true);
-    hyper.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
+    hyper.registerSentListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
 
     AtomicLong receiveCounter = new AtomicLong(0);
     client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
@@ -58,9 +56,13 @@ public class MqttSnSleepTest extends BaseTestConfig {
 
 
     delay(1000);
-    client.sleep(30);// We sleep for 30 seconds
+    client.sleep(120);// We sleep for 30 seconds
     for(int x=0;x<PUBLISH_COUNT;x++) {
       hyper.publish("/mqttsn/test",1, "These should be waiting for sleepy".getBytes());
+    }
+    long timer = System.currentTimeMillis() + 30000;
+    while(publishCount.get() != PUBLISH_COUNT && timer > System.currentTimeMillis()){
+      TimeUnit.MILLISECONDS.sleep(10);
     }
     //
     // At this point sleepy should have 0 publish events
@@ -82,8 +84,14 @@ public class MqttSnSleepTest extends BaseTestConfig {
     // So far so good, but is sleepy asleep again
     //
     receiveCounter.set(0);
+    publishCount.set(0);
     for(int x=0;x<PUBLISH_COUNT;x++) {
       hyper.publish("/mqttsn/test", 1, "These should be waiting for sleepy".getBytes());
+    }
+
+    timer = System.currentTimeMillis() + 30000;
+    while(publishCount.get() != PUBLISH_COUNT && timer > System.currentTimeMillis()){
+      TimeUnit.MILLISECONDS.sleep(10);
     }
     //
     // At this point sleepy should have 0 publish events
@@ -110,6 +118,10 @@ public class MqttSnSleepTest extends BaseTestConfig {
       hyper.publish("/mqttsn/test", 1, "These should be waiting for sleepy".getBytes());
     }
 
+    timer = System.currentTimeMillis() + 30000;
+    while(publishCount.get() != PUBLISH_COUNT && timer > System.currentTimeMillis()){
+      TimeUnit.MILLISECONDS.sleep(10);
+    }
 
     WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(receiveCounter.get() == PUBLISH_COUNT));
     hyper.disconnect();

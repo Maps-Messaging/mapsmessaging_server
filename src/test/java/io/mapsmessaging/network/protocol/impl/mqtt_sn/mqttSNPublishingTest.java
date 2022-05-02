@@ -20,11 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import io.mapsmessaging.test.BaseTestConfig;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -67,6 +63,7 @@ public class mqttSNPublishingTest extends BaseMqttSnConfig {
       System.err.println("Send listener");
     });
 
+    client.registerPublishFailedListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage, i) -> System.err.println("Failed to send message!!!!!!!!!!!!!!!!!!!"));
     //
     // Test Registered Topics
     //
@@ -81,11 +78,9 @@ public class mqttSNPublishingTest extends BaseMqttSnConfig {
           delay(1);
           Assertions.assertFalse(timeout < System.currentTimeMillis());
         }
-        count = published.getCount();
       }
     }
     Assertions.assertTrue(received.await(30, TimeUnit.SECONDS));
-    client.unsubscribe("mqttsn/test");
     client.disconnect();
   }
 }

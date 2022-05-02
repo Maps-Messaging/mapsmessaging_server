@@ -7,9 +7,11 @@ import org.slj.mqtt.sn.client.impl.MqttsnClientRuntimeRegistry;
 import org.slj.mqtt.sn.client.impl.MqttsnClientUdpOptions;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
 import org.slj.mqtt.sn.impl.AbstractMqttsnRuntimeRegistry;
+import org.slj.mqtt.sn.impl.AbstractTopicRegistry;
+import org.slj.mqtt.sn.impl.ram.MqttsnInMemoryTopicRegistry;
 import org.slj.mqtt.sn.model.MqttsnOptions;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.model.MqttsnWaitToken;
+import org.slj.mqtt.sn.model.TopicInfo;
 import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
@@ -22,18 +24,21 @@ import org.slj.mqtt.sn.spi.MqttsnException;
 public class MqttSnClient {
 
   private final MqttsnClient client;
+  private final AbstractTopicRegistry topicRegistry;
 
   public MqttSnClient(String contextId, String host, int port, int version) throws MqttsnException {
     MqttsnUdpOptions udpOptions = new MqttsnClientUdpOptions().
         withHost(host).
         withPort(0);
 
+    topicRegistry = new MqttsnInMemoryTopicRegistry();
 
 
     //-- runtimes options can be used to tune the behaviour of the client
     MqttsnOptions options = new MqttsnOptions().
         //-- specify the address of any static gateway nominating a context id for it
             withNetworkAddressEntry(contextId, NetworkAddress.localhost(port)).
+            withMaxMessagesInflight(10).
         //-- configure your clientId
             withContextId(contextId);
 
@@ -46,14 +51,18 @@ public class MqttSnClient {
 
     AbstractMqttsnRuntimeRegistry registry = MqttsnClientRuntimeRegistry.defaultConfiguration(options).
         withTransport(new MqttsnUdpTransport(udpOptions)).
-        //-- select the codec you wish to use, support for SN 1.2 is standard or you can nominate your own
-            withCodec(codecs);
+        withTopicRegistry(topicRegistry).
+        withCodec(codecs);
 
 
     //-- the client is Closeable and so use a try with resource
     client = new MqttsnClient();
     //-- the client needs to be started using the configuration you constructed above
     client.start(registry);
+  }
+
+  public TopicInfo lookupRegistry(String topicName) throws MqttsnException {
+    return topicRegistry.lookup(client.getSessionState().getContext(), topicName);
   }
 
   public void connect(int keepAlive, boolean cleanSession) throws MqttsnClientConnectException, MqttsnException {

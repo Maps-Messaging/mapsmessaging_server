@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import io.mapsmessaging.test.BaseTestConfig;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;

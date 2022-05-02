@@ -10,13 +10,13 @@ import org.junit.jupiter.params.provider.Arguments;
 
 public class BaseMqttSnConfig extends BaseTestConfig {
 
-  public static final int[] QOS_LIST = {0,1,2};
-  public static final int[] VERSIONS = {1,2};
+  public static final int[] QOS_LIST = {0, 1, 2};
+  public static final int[] VERSIONS = {1, 2};
 
   public static Stream<Arguments> createQoSVersionStream() {
     List<Arguments> args = new ArrayList<>();
-    for(int qos:QOS_LIST){
-      for(int verion:VERSIONS){
+    for (int qos : QOS_LIST) {
+      for (int verion : VERSIONS) {
         args.add(arguments(qos, verion));
       }
     }
