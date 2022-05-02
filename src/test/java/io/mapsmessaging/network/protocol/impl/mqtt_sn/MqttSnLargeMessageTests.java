@@ -57,7 +57,9 @@ public class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     });
 
     AtomicLong receiveCount = new AtomicLong(0);
-    client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> receiveCount.incrementAndGet());
+    client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> {
+      if(bytes.length == 512) receiveCount.incrementAndGet();
+    });
 
     String topicName = "/largeMessageTest";
     byte[] msg = new byte[512];
