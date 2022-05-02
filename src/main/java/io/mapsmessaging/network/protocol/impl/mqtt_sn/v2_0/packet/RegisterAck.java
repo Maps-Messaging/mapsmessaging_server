@@ -34,15 +34,16 @@ public class RegisterAck extends MQTT_SN_2_Packet {
   private final int messageId;
   @Getter
   private final ReasonCodes status;
-  @Getter
-  private final int packetType;
 
-  public RegisterAck(int packetType, int topicId, int messageId, ReasonCodes status) {
+  @Getter
+  private final int aliasType;
+
+  public RegisterAck(int topicId, int aliasType, int messageId, ReasonCodes status) {
     super(REGACK);
     this.topicId = topicId;
     this.messageId = messageId;
     this.status = status;
-    this.packetType = packetType;
+    this.aliasType = aliasType;
   }
 
   public RegisterAck(Packet packet, int length) throws IOException {
@@ -51,7 +52,7 @@ public class RegisterAck extends MQTT_SN_2_Packet {
       throw new IOException("Truncated packet received");
     }
     byte flag = packet.get();
-    packetType = flag & 0b11;
+    aliasType = flag & 0b11;
     topicId = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
     status = ReasonCodes.lookup(packet.get());
@@ -61,7 +62,7 @@ public class RegisterAck extends MQTT_SN_2_Packet {
   public int packFrame(Packet packet) {
     packet.put((byte) 8);
     packet.put((byte) REGACK);
-    packet.put((byte)packetType);
+    packet.put((byte)(aliasType & 0b11));
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, messageId);
     packet.put((byte) status.getValue());

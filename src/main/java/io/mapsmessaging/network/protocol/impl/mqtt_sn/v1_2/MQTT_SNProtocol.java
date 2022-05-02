@@ -122,8 +122,10 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
+    System.err.println("Pkt>>>> "+packet);
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
     if(mqtt != null) {
+      System.err.println("Evt>>>>> "+mqtt);
       handleMQTTEvent(mqtt);
     }
     return true;
@@ -194,6 +196,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     }
     MQTT_SNPacket publish = buildPublish(alias, packetId,  messageEvent, qos);
     stateEngine.sendPublish(this, messageEvent.getDestinationName(), publish);
+    System.err.println("Sending "+publish);
   }
 
   public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {

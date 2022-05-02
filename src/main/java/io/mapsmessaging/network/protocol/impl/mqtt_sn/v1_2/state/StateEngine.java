@@ -55,6 +55,7 @@ public class StateEngine {
 
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol)
       throws IOException, MalformedException {
+    System.err.println("Received "+mqtt);
     return currentState.handleMQTTEvent(mqtt, session, endPoint, protocol, this);
   }
 
