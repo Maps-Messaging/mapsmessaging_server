@@ -23,6 +23,8 @@ import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEO
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import io.mapsmessaging.test.BaseTestConfig;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -34,7 +36,7 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class mqttSNPublishingTest extends BaseTestConfig {
+public class mqttSNPublishingTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
@@ -44,14 +46,7 @@ public class mqttSNPublishingTest extends BaseTestConfig {
   }
 
   private static Stream<Arguments> subscribeTopicAndPublish() {
-    return Stream.of(
-        arguments(0, 1),
-        arguments(1, 1),
-        arguments(2, 1),
-        arguments(0, 2),
-        arguments(1, 2),
-        arguments(2, 2)
-    );
+    return createQoSVersionStream();
   }
 
 
@@ -66,6 +61,7 @@ public class mqttSNPublishingTest extends BaseTestConfig {
       received.countDown();
       System.err.println("Publish listener");
     });
+
     client.registerSentListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage) -> {
       published.countDown();
       System.err.println("Send listener");
@@ -88,8 +84,7 @@ public class mqttSNPublishingTest extends BaseTestConfig {
         count = published.getCount();
       }
     }
-    received.await(30, TimeUnit.SECONDS);
-    Assertions.assertEquals(received.getCount(), 0);
+    Assertions.assertTrue(received.await(30, TimeUnit.SECONDS));
     client.unsubscribe("mqttsn/test");
     client.disconnect();
   }

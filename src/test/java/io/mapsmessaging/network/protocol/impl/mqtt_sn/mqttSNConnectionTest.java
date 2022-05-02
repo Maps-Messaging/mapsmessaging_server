@@ -26,7 +26,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class mqttSNConnectionTest extends BaseTestConfig {
+public class mqttSNConnectionTest extends BaseMqttSnConfig {
 
 
 

@@ -24,32 +24,33 @@ import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEO
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
-import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
+import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class mqttSNSleepTest extends BaseTestConfig {
+public class MqttSnSleepTest extends BaseTestConfig {
 
   private int connectionCounter = 0;
 
 
   @ParameterizedTest
   @ValueSource(ints = {1,2})
-  public void sleepingClientTest(int version) throws IOException, MqttsnException, MqttsnClientConnectException {
+  public void sleepingClientTest(int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+    AtomicLong publishCount = new AtomicLong(0);
+
     MqttSnClient client = new MqttSnClient("sleepingClientTest", "localhost", 1884, version);
     client.connect(120, true);
 
-    MqttsClientManager hyper = new MqttsClientManager("localhost", 1884);
+    MqttSnClient hyper = new MqttSnClient("sleepingClientTest-hyper", "localhost", 1884, version);
+    hyper.connect(120, true);
+    hyper.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
 
     AtomicLong receiveCounter = new AtomicLong(0);
     client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
@@ -59,7 +60,7 @@ public class mqttSNSleepTest extends BaseTestConfig {
     delay(1000);
     client.sleep(30);// We sleep for 30 seconds
     for(int x=0;x<PUBLISH_COUNT;x++) {
-      Assertions.assertTrue(hyper.publish("/mqttsn/test", "These should be waiting for sleepy".getBytes()));
+      hyper.publish("/mqttsn/test",1, "These should be waiting for sleepy".getBytes());
     }
     //
     // At this point sleepy should have 0 publish events
@@ -82,7 +83,7 @@ public class mqttSNSleepTest extends BaseTestConfig {
     //
     receiveCounter.set(0);
     for(int x=0;x<PUBLISH_COUNT;x++) {
-      Assertions.assertTrue(hyper.publish("/mqttsn/test", "These should be waiting for sleepy".getBytes()));
+      hyper.publish("/mqttsn/test", 1, "These should be waiting for sleepy".getBytes());
     }
     //
     // At this point sleepy should have 0 publish events
@@ -106,120 +107,12 @@ public class mqttSNSleepTest extends BaseTestConfig {
     //
     receiveCounter.set(0);
     for(int x=0;x<PUBLISH_COUNT;x++) {
-      Assertions.assertTrue(hyper.publish("/mqttsn/test", "These should be waiting for sleepy".getBytes()));
+      hyper.publish("/mqttsn/test", 1, "These should be waiting for sleepy".getBytes());
     }
 
 
     WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(receiveCounter.get() == PUBLISH_COUNT));
-    hyper.close();
+    hyper.disconnect();
     client.disconnect();
-  }
-
-
-  private final class MqttsClientManager {
-
-    private MqttsClient client;
-    private Map<String, Integer> topicMap;
-    AtomicInteger topicIdResponse = new AtomicInteger(0);
-    AtomicInteger receivedEvents = new AtomicInteger(0);
-    AtomicBoolean connected = new AtomicBoolean(false);
-    AtomicBoolean published = new AtomicBoolean(false);
-
-
-    public MqttsClientManager(String address, int port){
-      topicMap = new LinkedHashMap<>();
-      connectClient(address, port);
-    }
-
-    public void close(){
-      client.disconnect();
-    }
-
-    public boolean publish(String topic, byte[] msg){
-      if(topicMap.containsKey(topic)){
-        int topicId = topicMap.get(topic);
-        published.set(false);
-        client.publish(topicId, msg, 1, false);
-        long timeout = System.currentTimeMillis() + TIMEOUT;
-        while(!published.get() && timeout > System.currentTimeMillis()){
-          delay(1);
-        }
-        return published.get();
-      }
-      else{
-        topicIdResponse.set(0);
-        client.register(topic);
-        long timeout = System.currentTimeMillis() + TIMEOUT;
-        while(topicIdResponse.get() == 0 && timeout > System.currentTimeMillis()){
-          delay(1);
-        }
-
-        if(topicIdResponse.get() == 0 ){
-          return false;
-        }
-        topicMap.put(topic, topicIdResponse.get());
-        return publish(topic, msg);
-      }
-    }
-    private void connectClient(String address, int port) {
-      client = new MqttsClient(address, port);
-      client.registerHandler(new MqttsCallback() {
-        @Override
-        public int publishArrived(boolean b, int i, int i1, byte[] bytes) {
-          receivedEvents.incrementAndGet();
-          return 0;
-        }
-
-        @Override
-        public void connected() {
-          connected.set(true);
-        }
-
-        @Override
-        public void disconnected(int i) {
-          connected.set(false);
-        }
-
-        @Override
-        public void unsubackReceived() {
-        }
-
-        @Override
-        public void subackReceived(int i, int i1, int i2) {
-        }
-
-        @Override
-        public void pubCompReceived() {
-        }
-
-        @Override
-        public void pubAckReceived(int i, int i1) {
-          published.set(true);
-        }
-
-        @Override
-        public void regAckReceived(int topicId, int messageId) {
-          topicIdResponse.set(topicId);
-        }
-
-        @Override
-        public void registerReceived(int i, String s) {
-        }
-
-        @Override
-        public void connectSent() {
-
-        }
-      });
-      client.connect("sleepTest"+connectionCounter++, true, (short)50);
-      long timeout = System.currentTimeMillis()+TIMEOUT;
-      while(!connected.get() && timeout > System.currentTimeMillis()){
-        delay(1);
-      }
-    }
-
-    public void subscribe(String test) {
-      client.subscribe(test, 1, 0);
-    }
   }
 }

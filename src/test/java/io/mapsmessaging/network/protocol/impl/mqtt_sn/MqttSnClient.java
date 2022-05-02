@@ -1,24 +1,22 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import java.util.LinkedHashMap;
+import lombok.SneakyThrows;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.client.impl.MqttsnClient;
 import org.slj.mqtt.sn.client.impl.MqttsnClientRuntimeRegistry;
 import org.slj.mqtt.sn.client.impl.MqttsnClientUdpOptions;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
 import org.slj.mqtt.sn.impl.AbstractMqttsnRuntimeRegistry;
-import org.slj.mqtt.sn.model.IMqttsnContext;
 import org.slj.mqtt.sn.model.MqttsnOptions;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.model.MqttsnWillData;
+import org.slj.mqtt.sn.model.MqttsnWaitToken;
 import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
 import org.slj.mqtt.sn.spi.IMqttsnCodec;
+import org.slj.mqtt.sn.spi.IMqttsnPublishFailureListener;
 import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
 import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
-import org.slj.mqtt.sn.spi.IMqttsnRuntimeRegistry;
-import org.slj.mqtt.sn.spi.IMqttsnWillRegistry;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
 public class MqttSnClient {
@@ -74,10 +72,15 @@ public class MqttSnClient {
     client.registerPublishSentListener(listener);
   }
 
+  public void registerPublishFailedListener(IMqttsnPublishFailureListener listener){
+    client.registerPublishFailedListener(listener);
+  }
+
   public boolean isConnected(){
     return client.isConnected();
   }
 
+  @SneakyThrows
   public void publish(String topicName, int QoS, byte[] msg) throws MqttsnQueueAcceptException, MqttsnException {
     client.publish(topicName, QoS, msg);
   }
