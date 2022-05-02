@@ -49,10 +49,8 @@ public class Publish extends MQTT_SNPacket implements BasePublish{
     flags = packet.get();
     topicId = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
-    if (length - 7 > packet.available()) {
-      throw new IOException("Truncated packet received");
-    }
     message = new byte[packet.available()];
+
     packet.get(message, 0, message.length);
   }
 

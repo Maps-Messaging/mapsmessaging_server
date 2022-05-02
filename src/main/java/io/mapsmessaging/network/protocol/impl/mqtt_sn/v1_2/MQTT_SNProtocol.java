@@ -122,10 +122,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    System.err.println("Pkt>>>> "+packet);
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
     if(mqtt != null) {
-      System.err.println("Evt>>>>> "+mqtt);
       handleMQTTEvent(mqtt);
     }
     return true;
