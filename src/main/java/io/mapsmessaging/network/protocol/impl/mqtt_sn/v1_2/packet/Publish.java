@@ -61,7 +61,7 @@ public class Publish extends MQTT_SNPacket implements BasePublish{
       packet.put((byte) len);
     } else {
       packet.put((byte) 1);
-      MQTTPacket.writeShort(packet, len);
+      MQTTPacket.writeShort(packet, len+2);
     }
     packet.put((byte) PUBLISH);
     packet.put(flags);
