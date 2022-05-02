@@ -196,7 +196,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     }
     MQTT_SNPacket publish = buildPublish(alias, packetId,  messageEvent, qos);
     stateEngine.sendPublish(this, messageEvent.getDestinationName(), publish);
-    System.err.println("Sending "+publish);
   }
 
   public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {

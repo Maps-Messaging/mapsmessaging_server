@@ -76,17 +76,15 @@ public class SleepManager<T extends BasePublish> {
     return new MessageIterator(destination, queue);
   }
 
-  public boolean storeEvent(String destinationName, T message) {
+  public void storeEvent(String destinationName, T message) {
     Queue<T> currentList = sleepingMessages.computeIfAbsent(destinationName, k -> new LinkedList<>());
     currentList.add(message);
     if (currentList.size() > maxEvents) {
       currentList.poll(); // Pop the oldest
-      return false;
     }
     if(!registerMap.containsKey(destinationName)){
       registerMap.put(destinationName, new TopicRegister(message.getTopicId()));
     }
-    return true;
   }
 
   private final class MessageIterator implements Iterator<T> {
@@ -134,9 +132,9 @@ public class SleepManager<T extends BasePublish> {
     }
   }
 
-  private class TopicRegister{
+  private static class TopicRegister{
     @Getter
-    private int id;
+    private final int id;
     @Getter
     private boolean send;
 
