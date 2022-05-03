@@ -112,7 +112,7 @@ public class ConnectListener5 extends PacketListener5 {
       ((MQTT5Protocol) protocol).setSession(session);
       protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
     } catch (LoginException e) {
-      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, connect.getSessionId());
+      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, sessionId);
       try {
         endPoint.close();
       } catch (IOException ioException) {
@@ -120,7 +120,7 @@ public class ConnectListener5 extends PacketListener5 {
       }
       throw new MalformedException("The Server MUST process a second CONNECT packet sent from a Client as a Protocol Error and close the Network Connection [MQTT-3.1.0-2]");
     } catch (IOException ioe) {
-      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, ioe, connect.getSessionId());
+      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, ioe, sessionId);
       connAck.setStatusCode(StatusCode.TOPIC_NAME_INVALID);
     }
 

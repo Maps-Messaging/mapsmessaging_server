@@ -37,6 +37,6 @@ public abstract class StatusPacket extends MQTTPacket5 {
 
   @Override
   public String toString() {
-    return "Response:" + statusCode.toString();
+    return "Response:" + statusCode.toString()+" "+super.toString();
   }
 }

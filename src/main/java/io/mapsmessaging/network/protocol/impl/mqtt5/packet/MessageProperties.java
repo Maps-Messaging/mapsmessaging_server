@@ -84,4 +84,13 @@ public class MessageProperties {
     }
     return duplicateReport.toString();
   }
+
+  @Override
+  public String toString(){
+    StringBuilder sb = new StringBuilder("Properties > ");
+    for(MessageProperty property:properties){
+      sb.append(property.toString()).append(", ");
+    }
+    return sb.toString();
+  }
 }

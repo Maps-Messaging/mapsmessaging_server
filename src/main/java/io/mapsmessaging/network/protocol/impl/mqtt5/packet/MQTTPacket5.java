@@ -99,4 +99,9 @@ public abstract class MQTTPacket5 extends MQTTPacket {
       return 4;
     }
   }
+
+  @Override
+  public String toString(){
+    return properties.toString();
+  }
 }
