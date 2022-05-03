@@ -79,13 +79,7 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
   @Override
   public int packFrame(Packet packet) {
-    int len = 9 + message.length;
-    if (len < 256) {
-      packet.put((byte) len);
-    } else {
-      packet.put((byte) 1);
-      MQTTPacket.writeShort(packet, len+2);
-    }
+    int len = packLength(packet, 9 +  message.length);
     packet.put((byte) PUBLISH);
     packet.put(packFlag());
     MQTTPacket.writeShort(packet, 2);

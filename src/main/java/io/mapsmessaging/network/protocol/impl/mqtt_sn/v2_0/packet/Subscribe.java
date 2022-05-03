@@ -40,7 +40,6 @@ public class Subscribe extends MQTT_SN_2_Packet {
   public Subscribe(Packet packet) throws IOException {
     super(SUBSCRIBE);
     byte flags = packet.get();
-
     noLocal = (flags & 0b10000000) != 0;
     QoS = QualityOfService.getInstance((flags & 0b01100000) >> 5);
     retain = (flags & 0b00010000) != 0;

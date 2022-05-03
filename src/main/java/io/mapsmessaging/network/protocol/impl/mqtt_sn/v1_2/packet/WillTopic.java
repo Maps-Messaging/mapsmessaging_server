@@ -40,12 +40,11 @@ public class WillTopic extends MQTT_SNPacket {
 
   @Override
   public int packFrame(Packet packet) {
-    int len = 3 + topic.length();
-    packet.put((byte) len);
+    int len = packLength(packet,3 + topic.length());
     packet.put((byte) WILLTOPIC);
     packet.put(flags);
     packet.put(topic.getBytes());
-    return 3 + topic.length();
+    return len;
   }
 
   public boolean getRetain() {

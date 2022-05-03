@@ -22,6 +22,7 @@ import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -34,7 +35,11 @@ public class BaseTest {
   private long start;
 
   public void delay(long time_ms){
-    java.util.concurrent.locks.LockSupport.parkNanos(time_ms * 1000000);
+    try {
+      TimeUnit.MILLISECONDS.sleep(time_ms);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 

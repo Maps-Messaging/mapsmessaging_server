@@ -63,7 +63,7 @@ public class Disconnect extends MQTT_SN_2_Packet {
     if(reasonString != null){
       len = len + reasonString.length();
     }
-    packet.put((byte) len);
+    len = packLength(packet, len);
     packet.put((byte) DISCONNECT);
     packet.put((byte)reasonCode.getValue());
     MQTTPacket.writeInt(packet, expiry);

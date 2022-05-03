@@ -51,8 +51,7 @@ public class Register extends MQTT_SN_2_Packet {
 
   @Override
   public int packFrame(Packet packet) {
-    int len = 6 + topic.length();
-    packet.put((byte) len);
+    int len = packLength(packet, 6 + topic.length());
     packet.put((byte) REGISTER);
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, messageId);

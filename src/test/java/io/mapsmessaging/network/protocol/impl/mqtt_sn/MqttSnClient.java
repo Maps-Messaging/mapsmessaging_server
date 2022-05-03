@@ -33,7 +33,6 @@ public class MqttSnClient {
 
     topicRegistry = new MqttsnInMemoryTopicRegistry();
 
-
     //-- runtimes options can be used to tune the behaviour of the client
     MqttsnOptions options = new MqttsnOptions().
         //-- specify the address of any static gateway nominating a context id for it
@@ -63,10 +62,6 @@ public class MqttSnClient {
 
   public TopicInfo lookupRegistry(String topicName) throws MqttsnException {
     return topicRegistry.lookup(client.getSessionState().getContext(), topicName);
-  }
-
-  public void registerTopic(String topicName, short val) throws MqttsnException {
-    topicRegistry.register(client.getSessionState().getContext(), topicName, val);
   }
 
   public void connect(int keepAlive, boolean cleanSession) throws MqttsnClientConnectException, MqttsnException {

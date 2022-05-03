@@ -36,8 +36,7 @@ public class WillMessage extends MQTT_SNPacket {
 
   @Override
   public int packFrame(Packet packet) {
-    int len = 2 + message.length;
-    packet.put((byte) len);
+    int len = packLength(packet,2 + message.length);
     packet.put((byte) WILLMSG);
     packet.put(message);
     return len;
