@@ -69,8 +69,8 @@ To access these via maven simply add the following to your pom.xml file.
 ### Install images and Docker Images
 The nightly installation builds can be found here
 
-[message_daemon-1.2.2-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.2-install.tar.gz) \
-[message_daemon-1.2.2-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.2-install.zip)
+[message_daemon-2.0.0-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-2.0.0-install.tar.gz) \
+[message_daemon-2.0.0-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-2.0.0-install.zip)
 
 
 Docker Image name can be found at [mapsmessaging.jfrog.io](https://mapsmessaging.jfrog.io/ui/repos/tree/General/mapsmessaging-docker-prod%2Fmapsmessaging)
