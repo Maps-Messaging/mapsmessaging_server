@@ -5,10 +5,10 @@ Firstly download from our nightly builds server
 ## Prerequisites 
 
 * JDK 13 or higher - We use and develop with [Zulu-13](https://www.azul.com/downloads/zulu-community/?package=jdk)
-* Installation package from the following links
+  * Installation package from the following links
 
-  [message_daemon-1.2.1-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.tar.gz) \
-  [message_daemon-1.2.1-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-1.2.1-install.zip)
+    [message_daemon-2.0.0-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-2.0.0-install.tar.gz) \
+    [message_daemon-2.0.0-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-2.0.0-install.zip)
 
 ## Linux / OS-X
 
