@@ -12,7 +12,7 @@ Installation instructions can be found here at [installation](installation.md).
 With the MapsMessaging Daemon it natively supports the following protocols 
 
 * MQTT (v3.1, v3.1.1, v5)
-* MQTT-SN (1.2)
+* MQTT-SN (1.2, 2.0)
 * AMQP 1.0 - (JMS over AMQP)
 * Stomp (1.1, 1.2)
 
