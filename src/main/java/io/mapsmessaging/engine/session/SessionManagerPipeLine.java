@@ -106,7 +106,7 @@ public class SessionManagerPipeLine {
     //
     // Create the session
     //
-    SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext, subscriptionManagerFactory);
+    SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
     SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);
     sessionImpl = new SessionImpl(sessionContext, securityContext, sessionDestinationManager, subscriptionManager);
 
@@ -181,7 +181,7 @@ public class SessionManagerPipeLine {
   //
   // Find any existing Subscription Manager for the incoming session ID
   //
-  private SubscriptionController loadSubscriptionManager(SessionContext context, Map<String, SubscriptionController> subscriptionManagerFactory) {
+  private SubscriptionController loadSubscriptionManager(SessionContext context) {
     context.setRestored(false);
     SubscriptionController subscriptionManager = subscriptionManagerFactory.get(context.getId());
     if (subscriptionManager == null) {
@@ -193,15 +193,10 @@ public class SessionManagerPipeLine {
         subscriptionManagerFactory.put(context.getId(), subscriptionManager);
       }
     } else {
-      Future<?> timeout = subscriptionManager.getTimeout();
-      if (timeout != null) {
-        boolean fired = timeout.isDone();
-        timeout.cancel(false);
-        if (fired) {
-          closeSubscriptionController(subscriptionManager); // Timeout has been executed
-          return loadSubscriptionManager(context, subscriptionManagerFactory);
-        }
+      if(clearAndIsTimeOut(subscriptionManager)){
+        return loadSubscriptionManager(context);
       }
+
       if (context.isResetState()) {
         disconnectedSessions.decrement(); // No longer stored
         logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
@@ -219,5 +214,19 @@ public class SessionManagerPipeLine {
       }
     }
     return subscriptionManager;
+  }
+
+  private boolean clearAndIsTimeOut(SubscriptionController subscriptionManager){
+    Future<?> timeout = subscriptionManager.getTimeout();
+    if (timeout != null) {
+      boolean fired = timeout.isDone();
+      timeout.cancel(true);
+      if (fired) {
+        closeSubscriptionController(subscriptionManager); // Timeout has been executed
+        return true;
+      }
+    }
+    subscriptionManager.setTimeout(null);
+    return false;
   }
 }

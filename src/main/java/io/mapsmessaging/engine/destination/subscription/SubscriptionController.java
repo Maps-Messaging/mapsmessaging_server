@@ -396,6 +396,9 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   public void setTimeout(Future<?> schedule) {
+    if(this.schedule != null && !this.schedule.isCancelled()) {
+      this.schedule.cancel(true);
+    }
     this.schedule = schedule;
   }
 
