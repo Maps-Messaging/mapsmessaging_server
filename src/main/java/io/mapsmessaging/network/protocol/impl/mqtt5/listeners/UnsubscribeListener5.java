@@ -29,8 +29,7 @@ import java.util.List;
 public class UnsubscribeListener5 extends PacketListener5 {
 
   @Override
-  public MQTTPacket5 handlePacket(
-      MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
     Unsubscribe5 unsubscribe = (Unsubscribe5) mqttPacket;
     List<String> unsubscribeList = unsubscribe.getUnsubscribeList();
     for (String info : unsubscribeList) {
