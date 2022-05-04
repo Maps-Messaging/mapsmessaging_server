@@ -208,7 +208,7 @@ public class DestinationSet implements Set<DestinationImpl> {
     matching.clear();
   }
 
-  private boolean matches(SubscriptionContext context, String destinationName) {
+  public static boolean matches(SubscriptionContext context, String destinationName) {
     if (context.containsWildcard()) {
       return matches(context.getFilter(), destinationName);
     } else {

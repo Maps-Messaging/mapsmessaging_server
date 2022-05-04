@@ -170,7 +170,7 @@ public class SubscriptionController implements DestinationManagerListener {
       if (!context.containsWildcard()) {
         destinationManager.findOrCreate(context.getFilter()).get();
       }
-      DestinationFilter destinationFilter = name -> DestinationSet.matches(context.getFilter(), name);
+      DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
       DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
       subscriptions.put(context.getAlias(), destinationSet);
       //
