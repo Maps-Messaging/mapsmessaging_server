@@ -18,13 +18,13 @@ Once you have downloaded the install image simply
 
 ```shell
 cd /opt
-tar -xvzf message_daemon-1.1-SNAPSHOT-install.tar.gz
+tar -xvzf message_daemon-2.0.0-SNAPSHOT-install.tar.gz
 ```
 
 ### Starting
 This will create a directory under /opt with the installation, then to start the server
 ```shell
-cd  message_daemon-1.1-SNAPSHOT
+cd  message_daemon-2.0.0-SNAPSHOT
 chmod +x bin/start.sh
 nohup ./bin/start.sh &
 ```
@@ -58,7 +58,7 @@ To
 #
 # Define the home directory for the messaging daemon
 #
-export MAPS_HOME=/opt/message_daemon-1.1-SNAPSHOT
+export MAPS_HOME=/opt/message_daemon-2.0.0-SNAPSHOT
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
 ```
@@ -70,6 +70,6 @@ Then start as previously shown.
 To stop the server simply remove the pid file in the home directory
 
 ```shell
-rm /opt/message_daemon-1.1-SNAPSHOT/pid
+rm /opt/message_daemon-2.0.0-SNAPSHOT/pid
 ```
 The server will then perform a graceful shutdown
