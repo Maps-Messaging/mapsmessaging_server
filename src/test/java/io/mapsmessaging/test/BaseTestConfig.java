@@ -130,6 +130,10 @@ public class BaseTestConfig extends BaseTest {
         }
       }
       Assertions.assertFalse(md.getSessionManager().hasSessions());
+      long timeout = System.currentTimeMillis()+ 2000;
+      while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
+        delay(100);
+      }
       Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
 
       List<DestinationManagerListener> listeners = md.getDestinationManager().getListeners();

@@ -18,18 +18,23 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import org.eclipse.paho.client.mqttv3.*;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import io.mapsmessaging.engine.session.SessionManagerTest;
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
-
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 class SimpleOverlapTest extends BaseTestConfig  {
 
@@ -88,6 +93,7 @@ class SimpleOverlapTest extends BaseTestConfig  {
     MqttConnectOptions options = new MqttConnectOptions();
     options.setCleanSession(true);
     options.setUserName("user1");
+    options.setKeepAliveInterval(30);
     options.setPassword("password1".toCharArray());
     client.connect(options);
     client.subscribe("$SYS/#"); // ALL System topics
@@ -98,6 +104,10 @@ class SimpleOverlapTest extends BaseTestConfig  {
     Assertions.assertTrue(counter.get() != 0);
     client.disconnect();
     client.close();
+    endTime = System.currentTimeMillis() + 20000;
+    while(SessionManagerTest.getInstance().hasIdleSessions() && endTime > System.currentTimeMillis()){
+      delay(100);
+    }
 
   }
 

@@ -195,8 +195,8 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
     Assertions.assertFalse(hasSessions());
     Assertions.assertTrue(SessionManagerTest.getInstance().hasIdleSessions());
     count = 0;
-    while(SessionManagerTest.getInstance().hasIdleSessions() && count < 100){
-      delay(1);
+    while(SessionManagerTest.getInstance().hasIdleSessions() && count < 110){
+      delay(100);
       count++;
     }
     Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
