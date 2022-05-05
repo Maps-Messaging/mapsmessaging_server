@@ -24,14 +24,16 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillMessage;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.ConnectedState;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
-import javax.security.auth.login.LoginException;
+import java.util.concurrent.CompletableFuture;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,26 +60,41 @@ public class InitialWillMessageState implements State {
           .setRetain(retain);
       SessionContextBuilder scb = stateEngine.getSessionContextBuilder();
       scb.setWillMessage(messageBuilder.build());
-      try {
-        MQTT_SNPacket response = new ConnAck(ReasonCodes.Success);
-        stateEngine.createSession(scb, protocol, response);
-        return response;
-      } catch (LoginException | IOException e) {
-        ConnAck response = new ConnAck(ReasonCodes.NotSupported);
-        response.setCallback(() -> {
-          try {
-            protocol.close();
-          } catch (IOException ioException) {
-            // we can ignore this since we are pulling the pin
-          }
-        });
-        return response;
-      }
+      CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
+      sessionFuture.thenApply(session -> {
+        protocol.setSession(session);
+        ConnAck response = new ConnAck(ReasonCodes.Success, 0, session.getName());
+        response.setCallback(session::resumeState);
+        protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+        try {
+          session.login();
+          stateEngine.setState(new ConnectedState(response));
+        } catch (IOException e) {
+          sendErrorResponse(protocol);
+          return null;
+        }
+        protocol.writeFrame(response);
+        return session;
+      }).exceptionally(exception -> {
+        sendErrorResponse(protocol);
+        return null;
+      });
     } else if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLTOPIC) { // Retransmit received
       return lastResponse;
     }
 
     return null;
+  }
+
+  private void sendErrorResponse(MQTT_SNProtocol protocol){
+    ConnAck response = new ConnAck(ReasonCodes.NotSupported, 0, "");
+    response.setCallback(() -> {
+      try {
+        protocol.close();
+      } catch (IOException ioException) {
+        // we can ignore this, we are about to close it since we have no idea what it is
+      }
+    });
   }
 
 }

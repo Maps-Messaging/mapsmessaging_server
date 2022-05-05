@@ -32,7 +32,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
-import javax.security.auth.login.LoginException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Protocol dictates that we need to a) Receive a Connect packet b) Respond with a Will Topic Request c) Receive a Will Topic Response d) Respond with a Will Message Request e)
@@ -57,24 +57,29 @@ public class InitialConnectionState implements State {
         InitialWillTopicState nextState = new InitialWillTopicState(topicRequest);
         stateEngine.setState(nextState);
         return topicRequest;
-      } else {
-        try {
-          MQTT_SNPacket response = new ConnAck(ReasonCodes.Success, 0, scb.getId());
-          Session session = stateEngine.createSession(scb, protocol, response);
+      } else{
+        CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
+        sessionFuture.thenApply(session ->{
+          protocol.setSession(session);
+          ConnAck response = new ConnAck(ReasonCodes.Success, 0, scb.getId());
+          response.setCallback(session::resumeState);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
-          session.login();
-          stateEngine.setState(new ConnectedState(response));
-          return response;
-        } catch (LoginException | IOException e) {
-          ConnAck response = new ConnAck(ReasonCodes.NotSupported, 0, "");
-          response.setCallback(() -> {
-            try {
-              protocol.close();
-            } catch (IOException ioException) {
-              // we can ignore this, we are about to close it since we have no idea what it is
-            }
-          });
-        }
+          try {
+            session.login();
+            stateEngine.setState(new ConnectedState(response));
+          } catch (IOException e) {
+            response = new ConnAck(ReasonCodes.NotSupported, 0, "");
+            response.setCallback(() -> {
+              try {
+                protocol.close();
+              } catch (IOException ioException) {
+                // we can ignore this, we are about to close it since we have no idea what it is
+              }
+            });
+          }
+          protocol.writeFrame(response);
+          return session;
+        });
       }
     }
     return null;

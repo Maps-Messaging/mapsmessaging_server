@@ -30,8 +30,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.security.auth.login.LoginException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -107,11 +107,8 @@ public class StateEngine {
     return null;
   }
 
-  public Session createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol, MQTT_SNPacket response) throws LoginException, IOException {
-    Session session = SessionManager.getInstance().create(scb.build(), protocol);
-    protocol.setSession(session);
-    response.setCallback(session::resumeState);
-    return session;
+  public CompletableFuture<Session> createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol){
+    return SessionManager.getInstance().createAsync(scb.build(), protocol);
   }
 
   public void sendPublish(MQTT_SNProtocol protocol, String destination, MQTT_SNPacket publish) {
