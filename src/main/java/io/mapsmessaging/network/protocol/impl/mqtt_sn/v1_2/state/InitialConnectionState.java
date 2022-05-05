@@ -65,21 +65,28 @@ public class InitialConnectionState implements State {
             session.login();
             stateEngine.setState(new ConnectedState(response));
           } catch (IOException e) {
-            response = new ConnAck(ReasonCodes.NotSupported);
-            response.setCallback(() -> {
-              try {
-                protocol.close();
-              } catch (IOException ioException) {
-                // we can ignore this, we are about to close it since we have no idea what it is
-              }
-            });
+            sendErrorResponse(protocol);
+            return null;
           }
           protocol.writeFrame(response);
           return session;
+        }).exceptionally(exception -> {
+          sendErrorResponse(protocol);
+          return null;
         });
       }
     }
     return null;
   }
 
+  private void sendErrorResponse(MQTT_SNProtocol protocol){
+    ConnAck response = new ConnAck(ReasonCodes.NotSupported);
+    response.setCallback(() -> {
+      try {
+        protocol.close();
+      } catch (IOException ioException) {
+        // we can ignore this, we are about to close it since we have no idea what it is
+      }
+    });
+  }
 }

@@ -24,10 +24,10 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillMessage;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillMessageResponse;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -60,31 +60,39 @@ public class InitialWillMessageState implements State {
       CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
       sessionFuture.thenApply(session -> {
         protocol.setSession(session);
-        ConnAck response = new ConnAck(ReasonCodes.Success);
+        WillMessageResponse response = new WillMessageResponse(ReasonCodes.Success);
         response.setCallback(session::resumeState);
         protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
         try {
           session.login();
           stateEngine.setState(new ConnectedState(response));
         } catch (IOException e) {
-          response = new ConnAck(ReasonCodes.NotSupported);
-          response.setCallback(() -> {
-            try {
-              protocol.close();
-            } catch (IOException ioException) {
-              // we can ignore this, we are about to close it since we have no idea what it is
-            }
-          });
+          sendErrorResponse(protocol);
+          return null;
         }
         protocol.writeFrame(response);
         return session;
+      }).exceptionally(exception -> {
+        sendErrorResponse(protocol);
+        return null;
       });
       return null;
     } else if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLTOPIC) { // Retransmit received
       return lastResponse;
     }
-
     return null;
+  }
+
+
+  private void sendErrorResponse(MQTT_SNProtocol protocol){
+    WillMessageResponse response = new WillMessageResponse(ReasonCodes.NotSupported);
+    response.setCallback(() -> {
+      try {
+        protocol.close();
+      } catch (IOException ioException) {
+        // we can ignore this, we are about to close it since we have no idea what it is
+      }
+    });
   }
 
 }

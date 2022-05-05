@@ -67,22 +67,29 @@ public class InitialConnectionState implements State {
           try {
             session.login();
             stateEngine.setState(new ConnectedState(response));
+            protocol.writeFrame(response);
+            return session;
           } catch (IOException e) {
-            response = new ConnAck(ReasonCodes.NotSupported, 0, "");
-            response.setCallback(() -> {
-              try {
-                protocol.close();
-              } catch (IOException ioException) {
-                // we can ignore this, we are about to close it since we have no idea what it is
-              }
-            });
+            sendErrorResponse(protocol);
+            return null;
           }
-          protocol.writeFrame(response);
-          return session;
+        }).exceptionally(exception -> {
+          sendErrorResponse(protocol);
+          return null;
         });
       }
     }
     return null;
   }
 
+  private void sendErrorResponse(MQTT_SNProtocol protocol){
+    io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck response = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck(ReasonCodes.NotSupported);
+    response.setCallback(() -> {
+      try {
+        protocol.close();
+      } catch (IOException ioException) {
+        // we can ignore this, we are about to close it since we have no idea what it is
+      }
+    });
+  }
 }
