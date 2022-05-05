@@ -18,13 +18,17 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.jms;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import javax.jms.*;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
+import java.io.IOException;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.io.IOException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class SimpleTransactionConnectionTest extends BaseConnection {
 

@@ -18,18 +18,18 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.jms.jmscts;
 
+import io.mapsmessaging.utilities.ResourceList;
+import jakarta.jms.JMSException;
+import jakarta.jms.XATopicConnectionFactory;
 import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import javax.jms.JMSException;
-import javax.jms.XATopicConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
-import io.mapsmessaging.utilities.ResourceList;
 
 
 public class JmsAdministrator {//implements Administrator {

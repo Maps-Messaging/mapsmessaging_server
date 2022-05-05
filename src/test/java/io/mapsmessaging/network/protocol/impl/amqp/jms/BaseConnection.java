@@ -18,26 +18,26 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.jms;
 
+import io.mapsmessaging.test.BaseTestConfig;
+import io.mapsmessaging.utilities.ResourceList;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
+import jakarta.jms.Topic;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
-import io.mapsmessaging.test.BaseTestConfig;
-import io.mapsmessaging.utilities.ResourceList;
 
 public class BaseConnection extends BaseTestConfig {
 
