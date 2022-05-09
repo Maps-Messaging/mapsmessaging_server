@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PacketFactory;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import java.io.IOException;
 
 public class PacketFactoryV2 extends PacketFactory {
@@ -29,7 +30,11 @@ public class PacketFactoryV2 extends PacketFactory {
   protected MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {
     switch (type) {
       case MQTT_SNPacket.CONNECT:
-        return new Connect(packet, length);
+        try {
+          return new Connect(packet, length);
+        } catch (Exception e) {
+          return getConnectError(ReasonCodes.NotSupported);
+        }
 
       case MQTT_SNPacket.DISCONNECT:
         return new Disconnect(packet, length);
@@ -67,5 +72,11 @@ public class PacketFactoryV2 extends PacketFactory {
       default:
         return super.create( type,  length,  packet);
     }
+  }
+
+
+  @Override
+  public MQTT_SNPacket getConnectError(ReasonCodes reasonCode){
+    return new ConnAck(reasonCode, 0, "");
   }
 }

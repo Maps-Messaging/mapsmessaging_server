@@ -24,10 +24,10 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillMessage;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillMessageResponse;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -60,7 +60,7 @@ public class InitialWillMessageState implements State {
       CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
       sessionFuture.thenApply(session -> {
         protocol.setSession(session);
-        WillMessageResponse response = new WillMessageResponse(ReasonCodes.Success);
+        ConnAck response = new ConnAck(ReasonCodes.Success);
         response.setCallback(session::resumeState);
         protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
         try {
@@ -85,7 +85,7 @@ public class InitialWillMessageState implements State {
 
 
   private void sendErrorResponse(MQTT_SNProtocol protocol){
-    WillMessageResponse response = new WillMessageResponse(ReasonCodes.NotSupported);
+    ConnAck response = new ConnAck(ReasonCodes.NotSupported);
     response.setCallback(() -> {
       try {
         protocol.close();

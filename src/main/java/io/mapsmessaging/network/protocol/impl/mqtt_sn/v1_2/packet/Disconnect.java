@@ -37,6 +37,11 @@ public class Disconnect extends MQTT_SNPacket {
     }
   }
 
+  public Disconnect() {
+    super(DISCONNECT);
+    duration = 0;
+  }
+
   @Override
   public int packFrame(Packet packet) {
     packet.put((byte) 2);

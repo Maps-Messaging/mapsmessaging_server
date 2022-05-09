@@ -52,23 +52,24 @@ public class ConnectedState implements State {
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.DISCONNECT:
         Disconnect disconnect = (Disconnect) mqtt;
+        String reason = "Disconnected";
+        if(disconnect.getExpiry() > 0){
+          reason = "Sleeping";
+        }
+        MQTT_SNPacket response = new Disconnect(ReasonCodes.Success, disconnect.getExpiry(), reason);
         if (disconnect.getExpiry() > 0) {
           stateEngine.setState(new SleepState((int)disconnect.getExpiry(), protocol));
         } else {
-          mqtt.setCallback(() -> {
+          response.setCallback(() -> {
             try {
               protocol.close();
             } catch (IOException e) {
               // Ignore this, we are closing
             }
           });
-          stateEngine.setState(new DisconnectedState(mqtt));
+          stateEngine.setState(new DisconnectedState(response));
         }
-        String reason = "Disconnected";
-        if(disconnect.getExpiry() > 0){
-          reason = "Sleeping";
-        }
-        return new Disconnect(ReasonCodes.Success, reason, disconnect.getExpiry());
+        return response;
 
       case MQTT_SNPacket.CONNACK:
         break;

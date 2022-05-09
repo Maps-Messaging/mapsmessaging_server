@@ -32,6 +32,7 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Advertise;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
@@ -125,21 +126,22 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       //
       // OK so this is either a new connection request or an admin request
       //
+      PacketFactory factory = packetFactory[0];
+      if(version == 2){
+        factory = packetFactory[1];
+      }
+
       try {
-        processIncomingPacket(packet, version);
+        processIncomingPacket(packet, factory);
       } catch (IOException ioException) {
-        return true;
+
       }
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
   }
 
-  private void processIncomingPacket(Packet packet, int version) throws IOException {
-    PacketFactory factory = packetFactory[0];
-    if(version == 2){
-      factory = packetFactory[1];
-    }
+  private void processIncomingPacket(Packet packet, PacketFactory factory) throws IOException {
     MQTT_SNPacket mqttSn = factory.parseFrame(packet);
 
     if (mqttSn instanceof Connect) {
@@ -161,7 +163,14 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     }
     else if(mqttSn instanceof Advertise){
       handleAdvertise(packet, (Advertise) mqttSn);
-    } else {
+    }
+    else if(mqttSn instanceof ConnAck || mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck){
+      Packet error = new Packet(32, false);
+      mqttSn.packFrame(error);
+      error.setFromAddress(packet.getFromAddress());
+      error.flip();
+      endPoint.sendPacket(error);
+    }else {
       packet.flip();
     }
   }

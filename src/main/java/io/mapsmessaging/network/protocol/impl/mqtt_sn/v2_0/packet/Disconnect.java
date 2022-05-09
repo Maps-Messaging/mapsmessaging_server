@@ -57,6 +57,14 @@ public class Disconnect extends MQTT_SN_2_Packet {
     }
   }
 
+  public Disconnect(ReasonCodes reasonCode, long expiry, String reasonString) {
+    super(DISCONNECT);
+    this.reasonCode = reasonCode;
+    this.expiry = expiry;
+    this.reasonString = reasonString;
+
+  }
+
   @Override
   public int packFrame(Packet packet) {
     int len = 7;

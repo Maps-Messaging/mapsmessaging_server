@@ -49,7 +49,11 @@ public class PacketFactory {
   protected MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {
     switch (type) {
       case MQTT_SNPacket.CONNECT:
-        return new Connect(packet, length);
+        try {
+          return new Connect(packet, length);
+        } catch (Exception e) {
+          return getConnectError(ReasonCodes.NotSupported);
+        }
 
       case MQTT_SNPacket.DISCONNECT:
         return new Disconnect(packet, length);
@@ -112,5 +116,9 @@ public class PacketFactory {
     }
 
     return null;
+  }
+
+  public MQTT_SNPacket getConnectError(ReasonCodes reasonCode){
+    return new ConnAck(reasonCode);
   }
 }

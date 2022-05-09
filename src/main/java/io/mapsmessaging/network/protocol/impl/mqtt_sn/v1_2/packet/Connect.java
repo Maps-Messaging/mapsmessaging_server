@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import java.io.IOException;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -32,9 +33,12 @@ public class Connect extends MQTT_SNPacket {
 
   private final byte flags;
 
-  public Connect(Packet packet, int length) {
+  public Connect(Packet packet, int length) throws IOException {
     super(CONNECT);
     flags = packet.get();
+    if((flags & 0b11110011) != 0){
+      throw new IOException("Malformed flags");
+    }
     protocolId = packet.get();
     duration = MQTTPacket.readShort(packet);
     byte[] tmp = new byte[length - 6];
