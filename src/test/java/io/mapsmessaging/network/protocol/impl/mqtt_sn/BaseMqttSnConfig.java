@@ -22,4 +22,13 @@ public class BaseMqttSnConfig extends BaseTestConfig {
     }
     return args.stream();
   }
+
+  public static Stream<Arguments> createVersionStream() {
+    List<Arguments> args = new ArrayList<>();
+    for (int verion : VERSIONS) {
+      args.add(arguments(verion));
+    }
+    return args.stream();
+  }
+
 }
