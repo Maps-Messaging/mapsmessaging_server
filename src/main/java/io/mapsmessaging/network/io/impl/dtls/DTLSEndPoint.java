@@ -6,6 +6,8 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.admin.EndPointJMX;
+import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
@@ -32,17 +34,20 @@ public class DTLSEndPoint extends EndPoint {
   private final SocketAddress clientId;
   private final SSLEngine sslEngine;
   private final Queue<Packet> inboundQueue;
+  private final EndPointJMX mbean;
 
   private volatile Selectable selectableTask;
+  private volatile Selectable writeTask;
 
-  public DTLSEndPoint(DTLSSessionManager manager, long id, SocketAddress clientId, EndPointServer server, SSLEngine sslEngine) throws IOException {
+  public DTLSEndPoint(DTLSSessionManager manager, long id, SocketAddress clientId, EndPointServer server, SSLEngine sslEngine, EndPointManagerJMX managerMBean) throws IOException {
     super(id, server);
     this.sslEngine = sslEngine;
     this.manager = manager;
     this.clientId = clientId;
     inboundQueue = new ConcurrentLinkedQueue<>();
+    mbean = new EndPointJMX(managerMBean.getTypePath(), this);
+    jmxParentPath = mbean.getTypePath();
     sslEngine.setUseClientMode(false);
-
     sslEngine.beginHandshake();
   }
 
@@ -61,8 +66,13 @@ public class DTLSEndPoint extends EndPoint {
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
+    ByteBuffer appNet = ByteBuffer.allocate(32768);
+    SSLEngineResult r = sslEngine.wrap(packet.getRawBuffer(), appNet);
+    appNet.flip();
     packet.setFromAddress(clientId);
-    return manager.sendPacket(packet);
+    Packet p = new Packet(appNet);
+    p.setFromAddress(packet.getFromAddress());
+    return manager.sendPacket(p);
   }
 
   @Override
@@ -84,7 +94,7 @@ public class DTLSEndPoint extends EndPoint {
         networkOut.flip();
         networkOut.setFromAddress(packet.getFromAddress());
         inboundQueue.add(networkOut);
-        selectableTask.selected(selectableTask, null, 1);
+        selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
       }
       return packet.position();
     }
@@ -102,7 +112,13 @@ public class DTLSEndPoint extends EndPoint {
 
   @Override
   public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) throws IOException {
-    if((selectionKey & SelectionKey.OP_READ) != 0) selectableTask = runner;
+    if((selectionKey & SelectionKey.OP_READ) != 0) {
+      selectableTask = runner;
+    }
+    if((selectionKey & SelectionKey.OP_WRITE) != 0) {
+      writeTask = runner;
+      writeTask.selected(selectableTask, null, SelectionKey.OP_WRITE);
+    }
     return null;
   }
 

@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.io.impl.dtls;
 
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
@@ -34,8 +35,15 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   private final SSLContext sslContext;
   private final AcceptHandler acceptHandler;
   private final UDPInterfaceInformation inetAddress;
+  private final EndPointManagerJMX managerMBean;
 
-  public DTLSSessionManager(UDPEndPoint udpEndPoint, NetworkInterface inetAddress, EndPointServer server, ProtocolImplFactory protocolImplFactory, SSLContext sslContext, AcceptHandler acceptHandler)
+  public DTLSSessionManager(UDPEndPoint udpEndPoint,
+      NetworkInterface inetAddress,
+      EndPointServer server,
+      ProtocolImplFactory protocolImplFactory,
+      SSLContext sslContext,
+      AcceptHandler acceptHandler,
+      EndPointManagerJMX managerMBean)
       throws IOException {
     this.udpEndPoint = udpEndPoint;
     this.sslContext = sslContext;
@@ -43,6 +51,7 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     this.acceptHandler = acceptHandler;
     this.protocolImplFactory = protocolImplFactory;
     this.inetAddress = new UDPInterfaceInformation(inetAddress);
+    this.managerMBean = managerMBean;
     selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getProperties(), udpEndPoint.isUDP());
     sessionMapping = new ConcurrentHashMap<>();
     udpEndPoint.register(SelectionKey.OP_READ, selectorTask);
@@ -57,7 +66,7 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
         SSLParameters paras = sslEngine.getSSLParameters();
         paras.setMaximumPacketSize(1024);
         sslEngine.setSSLParameters(paras);
-        endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, sslEngine);
+        endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, sslEngine, managerMBean );
         acceptHandler.accept(endPoint);
         protocolImplFactory.create(endPoint, inetAddress);
       } catch (IOException e) {
@@ -101,8 +110,6 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   }
 
   public int sendPacket(Packet packet) throws IOException {
-    int val = udpEndPoint.sendPacket(packet);
-    packet.clear();
-    return val;
+    return udpEndPoint.sendPacket(packet);
   }
 }
