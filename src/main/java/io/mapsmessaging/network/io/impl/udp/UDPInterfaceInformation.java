@@ -31,7 +31,7 @@ public class UDPInterfaceInformation implements InterfaceInformation {
   private final NetworkInterface netint;
   private final InetAddress bcast;
 
-  UDPInterfaceInformation(NetworkInterface inetAddress) {
+  public UDPInterfaceInformation(NetworkInterface inetAddress) {
     netint = inetAddress;
     bcast = null;
   }

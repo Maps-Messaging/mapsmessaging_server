@@ -18,6 +18,7 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.List;
 import javax.net.ssl.SSLContext;
@@ -67,8 +68,10 @@ public class DTLSEndPointServer extends UDPEndPointServer{
     for (UDPInterfaceInformation info : udpInterfaceInformations) {
       for (InterfaceAddress interfaceAddress : info.getInterfaces()) {
         InetSocketAddress bonded = new InetSocketAddress(interfaceAddress.getAddress(), port);
+        NetworkInterface inetAddress = NetworkInterface.getByInetAddress(interfaceAddress.getAddress());
+
         UDPEndPoint udpEndPoint = new UDPEndPoint(bonded, selectorLoadManager.allocate(), 1, this, authenticationConfig, managerMBean);
-        DTLSSessionManager endPoint = new DTLSSessionManager(udpEndPoint, this, protocolImplFactory, sslContext, acceptHandler);
+        DTLSSessionManager endPoint = new DTLSSessionManager(udpEndPoint, inetAddress,this, protocolImplFactory, sslContext, acceptHandler);
         UDPInterfaceInformation nInfo = new UDPInterfaceInformation(info, interfaceAddress.getBroadcast());
         bondedEndPoints.add(endPoint);
       }
