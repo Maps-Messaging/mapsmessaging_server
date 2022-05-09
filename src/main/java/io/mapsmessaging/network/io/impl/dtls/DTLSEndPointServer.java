@@ -43,6 +43,7 @@ public class DTLSEndPointServer extends UDPEndPointServer{
     this.acceptHandler = acceptHandler;
     this.selectorLoadManager = selectorLoadManager;
     this.protocolFactory = protocolFactory;
+
     sslContext = SSLHelper.getInstance().createContext(config.getProperties(), logger);
     bondedEndPoints = new ArrayList<>();
     authenticationConfig = config.getAuthConfig();

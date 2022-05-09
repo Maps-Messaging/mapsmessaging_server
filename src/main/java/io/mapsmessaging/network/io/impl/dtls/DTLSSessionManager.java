@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,20 +46,23 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    udpEndPoint.readPacket(packet);
+    System.err.println("Received::"+packet);
     DTLSEndPoint endPoint = sessionMapping.get(packet.getFromAddress().toString());
     if(endPoint == null){
       try {
         SSLEngine sslEngine = sslContext.createSSLEngine();
-        endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress().toString(),  server, sslEngine);
+        SSLParameters paras = sslEngine.getSSLParameters();
+        paras.setMaximumPacketSize(1024);
+        sslEngine.setSSLParameters(paras);
+        endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, sslEngine);
         acceptHandler.accept(endPoint);
       } catch (IOException e) {
         udpEndPoint.getLogger().log(ServerLogMessages.SSL_SERVER_ACCEPT_FAILED);
         return false;
       }
       sessionMapping.put(packet.getFromAddress().toString(), endPoint);
-
     }
+
     endPoint.readPacket(packet);
     return true;
   }
@@ -93,6 +97,9 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   }
 
   public int sendPacket(Packet packet) throws IOException {
-    return udpEndPoint.sendPacket(packet);
+    System.err.println("Sending ::"+packet);
+    int val = udpEndPoint.sendPacket(packet);
+    packet.clear();
+    return val;
   }
 }
