@@ -38,17 +38,14 @@ public class StateEngine {
   }
 
   public int toNetwork(Packet packet) throws IOException {
-    System.err.println(currentState.getClass().getName()+" >> Decrypted >> To Network::"+packet);
     return currentState.outbound(packet);
   }
 
   public int fromNetwork(Packet packet) throws IOException{
-    System.err.println(currentState.getClass().getName()+" >> Encrypted >> From Network::"+packet);
     return currentState.inbound(packet);
   }
 
   public int send(Packet packet) throws IOException {
-    System.err.println(currentState.getClass().getName()+" >> Encrypted >> To Network::"+packet);
     return manager.sendPacket(packet);
   }
 
@@ -63,7 +60,6 @@ public class StateEngine {
   }
 
   void pushToInBoundQueue(Packet packet){
-    System.err.println(currentState.getClass().getName()+" >> Decrypted >> From Network >> "+packet);
     inboundQueue.add(packet);
     selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
   }
