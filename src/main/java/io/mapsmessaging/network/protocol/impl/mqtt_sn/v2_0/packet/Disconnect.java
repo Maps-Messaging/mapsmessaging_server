@@ -42,7 +42,7 @@ public class Disconnect extends MQTT_SN_2_Packet {
     this.reasonString = reasonString;
   }
 
-  public Disconnect(Packet packet, int length) throws MalformedException {
+  public Disconnect(Packet packet, int length) {
     super(DISCONNECT);
     if (length > 2) {
       reasonCode = ReasonCodes.lookup(packet.get());
@@ -53,7 +53,13 @@ public class Disconnect extends MQTT_SN_2_Packet {
         expiry = 0;
       }
       if(length >= 8) {
-        reasonString = MQTTPacket.readUTF8(packet);
+        String reason = "";
+        try {
+          reason = MQTTPacket.readUTF8(packet);
+        } catch (MalformedException e) {
+          reason = e.getMessage();
+        }
+        reasonString = reason;
       }
       else{
         reasonString = "";
