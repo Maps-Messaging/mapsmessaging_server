@@ -8,6 +8,7 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
+import io.mapsmessaging.network.io.impl.dtls.state.StateEngine;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPoint;
 import io.mapsmessaging.network.io.impl.udp.UDPInterfaceInformation;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
@@ -66,7 +67,8 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
         SSLParameters paras = sslEngine.getSSLParameters();
         paras.setMaximumPacketSize(1024);
         sslEngine.setSSLParameters(paras);
-        endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, sslEngine, managerMBean );
+        StateEngine stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
+        endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, stateEngine, managerMBean );
         acceptHandler.accept(endPoint);
         protocolImplFactory.create(endPoint, inetAddress);
       } catch (IOException e) {
