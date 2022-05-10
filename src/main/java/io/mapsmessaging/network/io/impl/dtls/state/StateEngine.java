@@ -17,12 +17,16 @@ public class StateEngine {
 
   private @Getter final SSLEngine sslEngine;
   private @Getter final SocketAddress clientId;
+  private final DTLSSessionManager manager;
+  private final Queue<Packet> inboundQueue;
+
   private @Getter @Setter Selectable selectableTask;
   private @Getter @Setter Selectable writeTask;
   private @Getter @Setter State currentState;
+  private @Getter long lastAccess;
 
-  private final DTLSSessionManager manager;
-  private final Queue<Packet> inboundQueue;
+  private @Getter @Setter StateChangeListener listener;
+
 
   public StateEngine(SocketAddress clientId, SSLEngine engine, DTLSSessionManager manager){
     this.sslEngine = engine;
@@ -30,6 +34,7 @@ public class StateEngine {
     this.clientId = clientId;
     inboundQueue = new ConcurrentLinkedQueue<>();
     currentState = new HandShakeState(this);
+    lastAccess = System.currentTimeMillis();
   }
 
   public void start() throws SSLException {
@@ -38,14 +43,17 @@ public class StateEngine {
   }
 
   public int toNetwork(Packet packet) throws IOException {
+    lastAccess = System.currentTimeMillis();
     return currentState.outbound(packet);
   }
 
   public int fromNetwork(Packet packet) throws IOException{
+    lastAccess = System.currentTimeMillis();
     return currentState.inbound(packet);
   }
 
   public int send(Packet packet) throws IOException {
+    lastAccess = System.currentTimeMillis();
     return manager.sendPacket(packet);
   }
 
@@ -61,7 +69,12 @@ public class StateEngine {
 
   void pushToInBoundQueue(Packet packet){
     inboundQueue.add(packet);
-    selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
+    if(selectableTask != null) selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
   }
 
+  void handshakeComplete(){
+    if(listener != null){
+      listener.handshakeComplete();
+    }
+  }
 }

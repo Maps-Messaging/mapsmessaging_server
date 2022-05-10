@@ -225,7 +225,17 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
 
   @Override
   public void close() {
-    advertiserTask.stop();
+    if(advertiserTask != null) {
+      advertiserTask.stop();
+    }
+    for(MQTT_SNProtocol protocol:currentSessions.values()){
+      try {
+        protocol.close();
+      } catch (IOException e) {
+
+      }
+      currentSessions.clear();
+    }
   }
 
   @Override

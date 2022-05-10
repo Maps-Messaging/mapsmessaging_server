@@ -51,6 +51,8 @@ public abstract class ProtocolImplFactory implements Service {
 
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException { }
 
+  public void closed(EndPoint endPoint)  { }
+
   public boolean detect(Packet packet) throws EndOfBufferException {
     int pos = packet.position();
     try {

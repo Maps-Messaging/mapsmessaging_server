@@ -12,12 +12,16 @@ import io.mapsmessaging.network.io.impl.dtls.state.StateEngine;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPoint;
 import io.mapsmessaging.network.io.impl.udp.UDPInterfaceInformation;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.NetworkInterface;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -26,6 +30,8 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class DTLSSessionManager  implements Closeable, SelectorCallback {
+
+  private static long TIMEOUT = 60000;
 
   private final AtomicLong uniqueId = new AtomicLong(0);
   private final Map<String, DTLSEndPoint> sessionMapping;
@@ -56,39 +62,57 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getProperties(), udpEndPoint.isUDP());
     sessionMapping = new ConcurrentHashMap<>();
     udpEndPoint.register(SelectionKey.OP_READ, selectorTask);
+    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new ReaperTask(), 30000, 30000, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     DTLSEndPoint endPoint = sessionMapping.get(packet.getFromAddress().toString());
     if(endPoint == null){
+      StateEngine stateEngine;
       try {
         SSLEngine sslEngine = sslContext.createSSLEngine();
         SSLParameters paras = sslEngine.getSSLParameters();
         paras.setMaximumPacketSize(inetAddress.getMTU()-40);
         sslEngine.setSSLParameters(paras);
-        StateEngine stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
-        endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, stateEngine, managerMBean );
-        acceptHandler.accept(endPoint);
-        protocolImplFactory.create(endPoint, inetAddress);
+        stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
       } catch (IOException e) {
         udpEndPoint.getLogger().log(ServerLogMessages.SSL_SERVER_ACCEPT_FAILED);
         return false;
       }
+      endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, stateEngine, managerMBean );
       sessionMapping.put(packet.getFromAddress().toString(), endPoint);
     }
 
-    endPoint.processPacket(packet);
+    try {
+      endPoint.processPacket(packet);
+    } catch (IOException e) {
+      endPoint.close();
+      return false;
+    }
     return true;
   }
 
   public void close(String clientId){
-    sessionMapping.remove(clientId);
+    EndPoint endPoint = sessionMapping.remove(clientId);
+    if(endPoint != null) {
+      protocolImplFactory.closed(endPoint);
+    }
   }
 
   @Override
   public void close()  {
+    for(DTLSEndPoint endPoint:sessionMapping.values()){
+      endPoint.close();
+    }
+    sessionMapping.clear();
     udpEndPoint.close();
+  }
+
+  public void connectionComplete(DTLSEndPoint endPoint) throws IOException {
+    System.err.println("New connection created");
+    acceptHandler.accept(endPoint);
+    protocolImplFactory.create(endPoint, inetAddress);
   }
 
   @Override
@@ -113,5 +137,17 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
 
   public int sendPacket(Packet packet) throws IOException {
     return udpEndPoint.sendPacket(packet);
+  }
+
+  public class ReaperTask implements Runnable{
+    public void run(){
+      List<DTLSEndPoint> endPointList = new ArrayList<>(sessionMapping.values());
+      long timeout = System.currentTimeMillis() - TIMEOUT;
+      for(DTLSEndPoint endPoint:endPointList){
+        if(endPoint.lastAccessTime() < timeout){
+          endPoint.close();
+        }
+      }
+    }
   }
 }

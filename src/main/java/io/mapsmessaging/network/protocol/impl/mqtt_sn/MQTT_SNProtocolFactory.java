@@ -24,8 +24,8 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 // The protocol is MQTT_SN so it makes sense
 @java.lang.SuppressWarnings("squid:S00101")
@@ -37,11 +37,11 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   private static final int IPV6_DATAGRAM_HEADER_SIZE = 40;
   private static final int LORA_DATAGRAM_HEADER_SIZE = 4;
 
-  private final List<MQTTSNInterfaceManager> mappedInterfaces;
+  private final Map<EndPoint, MQTTSNInterfaceManager> mappedInterfaces;
 
   public MQTT_SNProtocolFactory() {
     super("MQTT-SN", "MQTT-SN UDP based protocol as per http://mqtt.org/mqtt-specification/",null);
-    mappedInterfaces = new ArrayList<>();
+    mappedInterfaces = new ConcurrentHashMap<>();
   }
 
   @Override
@@ -52,6 +52,14 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   @Override
   public void create(EndPoint endPoint, Packet packet) {
     // This protocol is not constructed by a packet, rather it is bound to an EndPoint
+  }
+
+  @Override
+  public void closed(EndPoint endPoint) {
+    MQTTSNInterfaceManager manager = mappedInterfaces.remove(endPoint);
+    if(manager != null){
+      manager.close();
+    }
   }
 
   @Override
@@ -78,11 +86,11 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
     }
 
     MQTTSNInterfaceManager manager = new MQTTSNInterfaceManager(info, endPoint, gatewayId);
-    mappedInterfaces.add(manager);
+    mappedInterfaces.put(endPoint, manager);
   }
 
   public void close() {
-    for (MQTTSNInterfaceManager managers : mappedInterfaces) {
+    for (MQTTSNInterfaceManager managers : mappedInterfaces.values()) {
       managers.close();
     }
     mappedInterfaces.clear();

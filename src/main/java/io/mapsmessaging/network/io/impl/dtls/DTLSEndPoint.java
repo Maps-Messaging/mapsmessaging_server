@@ -8,6 +8,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.impl.dtls.state.StateChangeListener;
 import io.mapsmessaging.network.io.impl.dtls.state.StateEngine;
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -17,14 +18,13 @@ import java.util.concurrent.FutureTask;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class DTLSEndPoint extends EndPoint {
+public class DTLSEndPoint extends EndPoint implements StateChangeListener {
 
   private final DTLSSessionManager manager;
   private final SocketAddress clientId;
   private final  StateEngine stateEngine;
   private final EndPointJMX mbean;
   private final String name;
-
 
   public DTLSEndPoint(DTLSSessionManager manager, long id, SocketAddress clientId, EndPointServer server,  StateEngine stateEngine, EndPointManagerJMX managerMBean) throws IOException {
     super(id, server);
@@ -34,12 +34,16 @@ public class DTLSEndPoint extends EndPoint {
     name = getProtocol() + "_" + clientId.toString();
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
+    stateEngine.setListener(this);
     stateEngine.start();
   }
 
   public void close(){
     mbean.close();
     manager.close(clientId.toString());
+    if(server != null) {
+      server.handleCloseEndPoint(this);
+    }
   }
 
   public String getClientId(){
@@ -61,7 +65,7 @@ public class DTLSEndPoint extends EndPoint {
     return stateEngine.read(packet);
   }
 
-  protected int processPacket(@NonNull @NotNull Packet packet) throws IOException{
+  protected int processPacket(@NonNull @NotNull Packet packet) throws IOException {
     return stateEngine.fromNetwork(packet);
   }
 
@@ -95,5 +99,18 @@ public class DTLSEndPoint extends EndPoint {
   @Override
   protected Logger createLogger() {
     return LoggerFactory.getLogger(DTLSEndPoint.class.getName() + "_" + getId());
+  }
+
+  long lastAccessTime(){
+    return stateEngine.getLastAccess();
+  }
+
+  @Override
+  public void handshakeComplete() {
+    try {
+      manager.connectionComplete(this);
+    } catch (IOException e) {
+      close();
+    }
   }
 }

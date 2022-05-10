@@ -29,6 +29,7 @@ public class HandShakeState extends State {
       handshake(packet);
       if(stateEngine.getSslEngine().getHandshakeStatus() == NOT_HANDSHAKING){
         stateEngine.setCurrentState(new NormalState(stateEngine));
+        stateEngine.handshakeComplete();
         return 0;
       }
     }
