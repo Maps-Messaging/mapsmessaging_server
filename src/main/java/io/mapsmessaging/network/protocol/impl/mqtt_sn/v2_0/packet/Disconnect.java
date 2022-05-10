@@ -20,8 +20,8 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
-import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -42,14 +42,12 @@ public class Disconnect extends MQTT_SN_2_Packet {
     this.reasonString = reasonString;
   }
 
-  public Disconnect(Packet packet, int length) {
+  public Disconnect(Packet packet, int length) throws MalformedException {
     super(DISCONNECT);
     if (length > 2) {
       reasonCode = ReasonCodes.lookup(packet.get());
       expiry = MQTTPacket.readInt(packet);
-      byte[] tmp = new byte[packet.available()];
-      packet.get(tmp, 0, tmp.length);
-      reasonString = new String(tmp);
+      reasonString = MQTTPacket.readUTF8(packet);
     } else {
       expiry = 0;
       reasonString="";
@@ -69,14 +67,14 @@ public class Disconnect extends MQTT_SN_2_Packet {
   public int packFrame(Packet packet) {
     int len = 7;
     if(reasonString != null){
-      len = len + reasonString.length();
+      len = len + reasonString.length()+ 2; // Size
     }
     len = packLength(packet, len);
     packet.put((byte) DISCONNECT);
     packet.put((byte)reasonCode.getValue());
     MQTTPacket.writeInt(packet, expiry);
     if(reasonString !=null){
-      packet.put(reasonString.getBytes(StandardCharsets.UTF_8));
+      MQTTPacket.writeUTF8(packet, reasonString);
     }
     return (len);
   }
