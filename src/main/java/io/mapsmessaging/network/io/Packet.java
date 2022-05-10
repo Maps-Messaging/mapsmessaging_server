@@ -161,7 +161,7 @@ public class Packet {
     int len = buffer.limit();
     int end = Math.min(len, pos + 200);
     if (fromAddress != null) {
-      sb.append("From: ").append(fromAddress.toString());
+      sb.append("From: ").append(fromAddress);
     }
     sb.append(" Position:").append(pos).append(" Len:").append(len).append("[");
     for (int x = pos; x < end; x++) {

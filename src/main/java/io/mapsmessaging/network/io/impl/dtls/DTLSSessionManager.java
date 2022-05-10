@@ -137,7 +137,6 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   }
 
   public int sendPacket(Packet packet) throws IOException {
-    System.err.println("Server To:"+packet);
     return udpEndPoint.sendPacket(packet);
   }
 

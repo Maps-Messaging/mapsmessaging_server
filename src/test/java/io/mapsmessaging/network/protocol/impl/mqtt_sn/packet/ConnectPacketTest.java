@@ -3,7 +3,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
@@ -12,13 +11,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ConnectPacketTest extends BaseMqttSnConfig {
+public abstract class ConnectPacketTest extends BaseMqttSnConfig {
 
+
+  abstract PacketTransport createTransport(InetSocketAddress client, InetSocketAddress server) throws Exception;
 
   @ParameterizedTest
   @MethodSource
-  public void testMissingExpiry(int version) throws IOException {
-    try(UDPPacketTransport packetTransport = new UDPPacketTransport(new InetSocketAddress("localhost", 12000+version))) {
+  public void testMissingExpiry(int version) throws Exception {
+    try(PacketTransport packetTransport = new DTLSPacketTransport(new InetSocketAddress("localhost", 0), new InetSocketAddress("localhost", 1886))) {
       Packet packet = new Packet(1024, false);
       byte len = 1;
       packet.put(len);
@@ -33,7 +34,6 @@ public class ConnectPacketTest extends BaseMqttSnConfig {
       len = (byte) packet.position();
       packet.put(0, len);
       packet.flip();
-      packet.setFromAddress(new InetSocketAddress("localhost", 1884));
       packetTransport.sendPacket(packet);
       packet.clear();
       long time = System.currentTimeMillis()+10000;
@@ -52,8 +52,8 @@ public class ConnectPacketTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @MethodSource
-  public void testInvalidFlags(int version) throws IOException {
-    try(UDPPacketTransport packetTransport = new UDPPacketTransport(new InetSocketAddress("localhost", 12000+version))) {
+  public void testInvalidFlags(int version) throws Exception {
+    try(PacketTransport packetTransport = new DTLSPacketTransport(new InetSocketAddress("localhost", 0), new InetSocketAddress("localhost", 1886))) {
       Packet packet = new Packet(1024, false);
       byte len = 1;
       packet.put(len);
@@ -92,8 +92,8 @@ public class ConnectPacketTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @MethodSource
-  public void testWillRequests(int version) throws IOException {
-    try(UDPPacketTransport packetTransport = new UDPPacketTransport(new InetSocketAddress("localhost", 12000+version))) {
+  public void testWillRequests(int version) throws Exception {
+    try(PacketTransport packetTransport = new DTLSPacketTransport(new InetSocketAddress("localhost", 0), new InetSocketAddress("localhost", 1886))) {
       Packet packet = new Packet(1024, false);
       byte len = 1;
       packet.put(len);
