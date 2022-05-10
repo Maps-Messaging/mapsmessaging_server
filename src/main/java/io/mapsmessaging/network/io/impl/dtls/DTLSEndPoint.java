@@ -23,6 +23,7 @@ public class DTLSEndPoint extends EndPoint {
   private final SocketAddress clientId;
   private final  StateEngine stateEngine;
   private final EndPointJMX mbean;
+  private final String name;
 
 
   public DTLSEndPoint(DTLSSessionManager manager, long id, SocketAddress clientId, EndPointServer server,  StateEngine stateEngine, EndPointManagerJMX managerMBean) throws IOException {
@@ -33,9 +34,11 @@ public class DTLSEndPoint extends EndPoint {
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
     stateEngine.start();
+    name = getProtocol() + "_" + clientId.toString();
   }
 
   public void close(){
+    mbean.close();
     manager.close(clientId.toString());
   }
 
@@ -45,7 +48,7 @@ public class DTLSEndPoint extends EndPoint {
 
   @Override
   public String getProtocol() {
-    return "DTLS";
+    return "dtls";
   }
 
   @Override
@@ -86,7 +89,7 @@ public class DTLSEndPoint extends EndPoint {
 
   @Override
   public String getName() {
-    return "DTLS";
+    return name;
   }
 
   @Override
