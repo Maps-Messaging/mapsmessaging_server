@@ -73,7 +73,9 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
       try {
         SSLEngine sslEngine = sslContext.createSSLEngine();
         SSLParameters paras = sslEngine.getSSLParameters();
-        paras.setMaximumPacketSize(inetAddress.getMTU()-40);
+        int mtu = inetAddress.getMTU()-40;
+        if(mtu < 0)mtu = 1460;
+        paras.setMaximumPacketSize(mtu);
         sslEngine.setSSLParameters(paras);
         stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
       } catch (IOException e) {
@@ -110,7 +112,6 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   }
 
   public void connectionComplete(DTLSEndPoint endPoint) throws IOException {
-    System.err.println("New connection created");
     acceptHandler.accept(endPoint);
     protocolImplFactory.create(endPoint, inetAddress);
   }
@@ -136,6 +137,7 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   }
 
   public int sendPacket(Packet packet) throws IOException {
+    System.err.println("Server To:"+packet);
     return udpEndPoint.sendPacket(packet);
   }
 
