@@ -31,10 +31,10 @@ public class DTLSEndPoint extends EndPoint {
     this.stateEngine = stateEngine;
     this.manager = manager;
     this.clientId = clientId;
+    name = getProtocol() + "_" + clientId.toString();
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
     stateEngine.start();
-    name = getProtocol() + "_" + clientId.toString();
   }
 
   public void close(){

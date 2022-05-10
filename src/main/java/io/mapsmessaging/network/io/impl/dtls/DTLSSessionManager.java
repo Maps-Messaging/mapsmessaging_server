@@ -65,7 +65,7 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
       try {
         SSLEngine sslEngine = sslContext.createSSLEngine();
         SSLParameters paras = sslEngine.getSSLParameters();
-        paras.setMaximumPacketSize(1024);
+        paras.setMaximumPacketSize(inetAddress.getMTU()-40);
         sslEngine.setSSLParameters(paras);
         StateEngine stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
         endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, stateEngine, managerMBean );
