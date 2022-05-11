@@ -84,10 +84,22 @@ NetworkManager:
         protocol : mqtt,ws
         auth : public
 
-      - 
+      -
         url: udp://0.0.0.0:1884/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+
+      -
+        url: dtls://0.0.0.0:1886/
+        name: "DTLS MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        ssl_SSLContext: DTLS
 
       -
         url: tcp://0.0.0.0:2001/

@@ -5,8 +5,10 @@ import java.net.InetSocketAddress;
 
 public class UDPConnectPacketTest extends ConnectPacketTest{
 
-  @Override
-  PacketTransport createTransport(InetSocketAddress client, InetSocketAddress server) throws IOException {
-    return new UDPPacketTransport(client, server);
+  PacketTransport createTransport(String host) throws Exception {
+    return new UDPPacketTransport(
+        new InetSocketAddress(host, 0),
+        new InetSocketAddress(host, 1884));
   }
+
 }

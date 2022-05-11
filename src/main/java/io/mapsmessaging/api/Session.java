@@ -27,6 +27,8 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SecurityContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.session.will.WillDetails;
+import io.mapsmessaging.engine.session.will.WillTaskImpl;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -152,7 +154,14 @@ public class Session {
   }
 
   public @Nullable WillTask getWillTask() {
+    if(sessionImpl.getWillTaskImpl() == null){
+      return null;
+    }
     return new WillTask(sessionImpl.getWillTaskImpl());
+  }
+
+  public WillTaskImpl updateWillTopic(WillDetails willDetails) {
+    return sessionImpl.setWillTask(willDetails);
   }
 
   public boolean isRestored() {
@@ -189,7 +198,6 @@ public class Session {
   public boolean isClosed() {
     return sessionImpl.isClosed();
   }
-
 
   private final class MessageCallbackImpl implements MessageCallback {
 

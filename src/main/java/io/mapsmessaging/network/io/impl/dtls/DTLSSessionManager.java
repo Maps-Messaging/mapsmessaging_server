@@ -70,18 +70,13 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     DTLSEndPoint endPoint = sessionMapping.get(packet.getFromAddress().toString());
     if(endPoint == null){
       StateEngine stateEngine;
-      try {
-        SSLEngine sslEngine = sslContext.createSSLEngine();
-        SSLParameters paras = sslEngine.getSSLParameters();
-        int mtu = inetAddress.getMTU()-40;
-        if(mtu < 0)mtu = 1460;
-        paras.setMaximumPacketSize(mtu);
-        sslEngine.setSSLParameters(paras);
-        stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
-      } catch (IOException e) {
-        udpEndPoint.getLogger().log(ServerLogMessages.SSL_SERVER_ACCEPT_FAILED);
-        return false;
-      }
+      SSLEngine sslEngine = sslContext.createSSLEngine();
+      SSLParameters paras = sslEngine.getSSLParameters();
+      //int mtu = inetAddress.getMTU()-40;
+      int mtu = 1460;
+      paras.setMaximumPacketSize(mtu);
+      sslEngine.setSSLParameters(paras);
+      stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
       endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, stateEngine, managerMBean );
       sessionMapping.put(packet.getFromAddress().toString(), endPoint);
     }

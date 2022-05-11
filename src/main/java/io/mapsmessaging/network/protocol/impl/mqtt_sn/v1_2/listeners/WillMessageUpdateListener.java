@@ -18,8 +18,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.WillTask;
+import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
@@ -34,12 +36,21 @@ public class WillMessageUpdateListener extends PacketListener {
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
     WillMessageUpdate willMessageUpdate = (WillMessageUpdate) mqttPacket;
     WillTask task = session.getWillTask();
+    byte[] payload = willMessageUpdate.getMessage();
     ReasonCodes status = ReasonCodes.Success;
-    if (task != null) {
-      byte[] payload = willMessageUpdate.getMessage();
+    if(task == null){
+      System.err.println("New Will Task being constructed:: payload");
+      WillDetails willDetails = new WillDetails();
+      willDetails.setSessionId(session.getName());
+      willDetails.setVersion(protocol.getVersion());
+      willDetails.setDelay(0);
+      MessageBuilder messageBuilder = new MessageBuilder();
+      messageBuilder.setOpaqueData(payload);
+      willDetails.setMsg(messageBuilder.build());
+      session.updateWillTopic(willDetails);
+    }
+    else{
       task.updateMessage(payload);
-    } else {
-      status = ReasonCodes.NotSupported;
     }
     return new WillMessageResponse(status);
   }

@@ -112,7 +112,7 @@ public class SessionManager {
         MessageDaemon.getInstance().getSessionManager().close(session.getSession(), clearWillTask);
         session.close();
         completableFuture.complete(session);
-      } catch (IOException e) {
+      } catch (Throwable e) {
         completableFuture.completeExceptionally(e);
       }
       return null;

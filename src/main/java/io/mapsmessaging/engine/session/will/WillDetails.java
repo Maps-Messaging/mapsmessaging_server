@@ -25,16 +25,23 @@ import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
+@ToString
 public class WillDetails implements MapSerializable {
 
-  private long delay;
-  private String sessionId;
-  private String protocol;
-  private String version;
+  private @Getter @Setter long delay;
+  private @Getter @Setter String sessionId;
+  private @Getter @Setter String protocol;
+  private @Getter @Setter String version;
 
-  private String destination;
-  private Message msg;
+  private @Getter @Setter String destination;
+  private @Getter @Setter Message msg;
+
+  public WillDetails() {
+  }
 
   public WillDetails(Message msg, String destination, long delay, String sessionId, String protocol, String version) {
     this.msg = msg;
@@ -81,34 +88,5 @@ public class WillDetails implements MapSerializable {
 
   public void updateMessage(Message message) {
     msg = message;
-  }
-
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public String getProtocol() {
-    return protocol;
-  }
-
-  public String getVersion() {
-    return version;
-  }
-
-  public String getDestination() {
-    return destination;
-  }
-
-  public Message getMsg() {
-    return msg;
-  }
-
-  public long getDelay() {
-    return delay;
-  }
-
-  @Override
-  public String toString() {
-    return "WillTask:SessionId" + sessionId + " Destination" + destination + " Message:" + msg + " Delay:" + delay;
   }
 }

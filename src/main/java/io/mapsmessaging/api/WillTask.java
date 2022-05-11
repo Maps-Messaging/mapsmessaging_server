@@ -31,7 +31,7 @@ public class WillTask {
 
   private final WillTaskImpl willTaskImpl;
 
-  WillTask(@NonNull @NotNull WillTaskImpl impl) {
+  WillTask(WillTaskImpl impl) {
     willTaskImpl = impl;
   }
 
@@ -60,6 +60,10 @@ public class WillTask {
    */
   public void updateQoS(@NonNull @NotNull QualityOfService qos) {
     willTaskImpl.updateQoS(qos);
+  }
+
+  public void updateRetainFlag(@NonNull @NotNull boolean flag) {
+    willTaskImpl.updateRetain(flag);
   }
 
   /**

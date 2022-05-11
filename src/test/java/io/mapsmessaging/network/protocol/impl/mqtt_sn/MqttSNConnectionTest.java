@@ -44,15 +44,15 @@ public class MqttSNConnectionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
-  public void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException {
+  public void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException, InterruptedException {
     TopicPath tp = new TopicPath("willTopic");
     MqttsnWillData details = new MqttsnWillData(tp, "This is my last will and stuff".getBytes(StandardCharsets.UTF_8), 1, true);
-
-    MqttSnClient client = new MqttSnClient("connectWithFlags", "localhost", 1884, version, details);
+    MqttSnClient client = new MqttSnClient("connectWithFlags"+version, "localhost", 1884, version);
     client.connect(50, true);
-    client.setWillData(details);
-
     Assertions.assertTrue(client.isConnected());
+    client.setWillData(details);
+    TimeUnit.SECONDS.sleep(2);
+
     client.disconnect();
     delay(500);
 

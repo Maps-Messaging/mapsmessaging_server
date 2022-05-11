@@ -107,6 +107,15 @@ NetworkManager:
         advertiseGateway: true
 
       -
+        url: dtls://0.0.0.0:1886/
+        name: "MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        ssl_SSLContext: DTLS
+
+      -
         url: tcp://0.0.0.0:5672/
         name: "AMQP Interface"
         protocol : amqp

@@ -14,12 +14,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 public abstract class ConnectPacketTest extends BaseMqttSnConfig {
 
 
-  abstract PacketTransport createTransport(InetSocketAddress client, InetSocketAddress server) throws Exception;
+  abstract PacketTransport createTransport(String host) throws Exception;
 
   @ParameterizedTest
   @MethodSource
   public void testMissingExpiry(int version) throws Exception {
-    try(PacketTransport packetTransport = new DTLSPacketTransport(new InetSocketAddress("localhost", 0), new InetSocketAddress("localhost", 1886))) {
+    try(PacketTransport packetTransport = createTransport("localhost")) {
       Packet packet = new Packet(1024, false);
       byte len = 1;
       packet.put(len);
@@ -53,7 +53,7 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
   @ParameterizedTest
   @MethodSource
   public void testInvalidFlags(int version) throws Exception {
-    try(PacketTransport packetTransport = new DTLSPacketTransport(new InetSocketAddress("localhost", 0), new InetSocketAddress("localhost", 1886))) {
+    try(PacketTransport packetTransport = createTransport("localhost")) {
       Packet packet = new Packet(1024, false);
       byte len = 1;
       packet.put(len);
@@ -93,7 +93,7 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
   @ParameterizedTest
   @MethodSource
   public void testWillRequests(int version) throws Exception {
-    try(PacketTransport packetTransport = new DTLSPacketTransport(new InetSocketAddress("localhost", 0), new InetSocketAddress("localhost", 1886))) {
+    try(PacketTransport packetTransport = createTransport("localhost")) {
       Packet packet = new Packet(1024, false);
       byte len = 1;
       packet.put(len);

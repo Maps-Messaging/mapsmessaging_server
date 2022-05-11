@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.session.will;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -98,7 +99,11 @@ public class WillTaskImpl implements Runnable {
   }
 
   public void updateQoS(QualityOfService qos) {
-    MessageBuilder messageBuilder = new MessageBuilder(details.getMsg());
+    Message previous = details.getMsg();
+    MessageBuilder messageBuilder = new MessageBuilder();
+    if(previous != null){
+      messageBuilder = new MessageBuilder(previous);
+    }
     messageBuilder.setQoS(qos);
     details.updateMessage(messageBuilder.build());
     updateManager();
@@ -112,8 +117,10 @@ public class WillTaskImpl implements Runnable {
   }
 
   void updateManager() {
-    WillTaskManager.getInstance().remove(details.getSessionId());
-    WillTaskManager.getInstance().put(details.getSessionId(), details);
+    if(details.getSessionId() != null) {
+      WillTaskManager.getInstance().remove(details.getSessionId());
+      WillTaskManager.getInstance().put(details.getSessionId(), details);
+    }
   }
 
   @Override
@@ -121,4 +128,14 @@ public class WillTaskImpl implements Runnable {
     return "WillTask:Active:" + active + " " + details.toString();
   }
 
+  public void updateRetain(boolean flag) {
+    Message previous = details.getMsg();
+    MessageBuilder messageBuilder = new MessageBuilder();
+    if(previous != null){
+      messageBuilder = new MessageBuilder(previous);
+    }
+    messageBuilder.setRetain(flag);
+    details.updateMessage(messageBuilder.build());
+    updateManager();
+  }
 }

@@ -218,6 +218,12 @@ public class SessionImpl {
   public WillTaskImpl getWillTaskImpl() {
     return willTaskImpl;
   }
+
+  public WillTaskImpl setWillTask(WillDetails willDetails) {
+    willTaskImpl =  WillTaskManager.getInstance().replace(getName(), willDetails);
+    return willTaskImpl;
+  }
+
   //</editor-fold>
 
   //<editor-fold desc="Subscription API">

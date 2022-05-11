@@ -427,7 +427,7 @@ public class DestinationImpl implements BaseDestination {
         eventQueue = subscriptionManager.scanForInterest(eventQueue);
         if (!eventQueue.isEmpty()) {
           stats.getStoredMessageAverages().subtract(eventQueue.size());
-          handleTask(new BulkRemoveMessageTask(this, eventQueue));
+          submit(new BulkRemoveMessageTask(this, eventQueue), PUBLISH_PRIORITY);
         }
       }
     }
