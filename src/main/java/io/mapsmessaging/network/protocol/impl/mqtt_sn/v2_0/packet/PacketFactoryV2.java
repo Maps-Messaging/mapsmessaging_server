@@ -77,6 +77,6 @@ public class PacketFactoryV2 extends PacketFactory {
 
   @Override
   public MQTT_SNPacket getConnectError(ReasonCodes reasonCode){
-    return new ConnAck(reasonCode, 0, "");
+    return new ConnAck(reasonCode, 0, "", false);
   }
 }

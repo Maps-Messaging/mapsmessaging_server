@@ -61,7 +61,7 @@ public class InitialConnectionState implements State {
         CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
         sessionFuture.thenApply(session ->{
           protocol.setSession(session);
-          ConnAck response = new ConnAck(ReasonCodes.Success, 0, scb.getId());
+          ConnAck response = new ConnAck(ReasonCodes.Success, 0, scb.getId(), session.isRestored());
           response.setCallback(session::resumeState);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
           try {

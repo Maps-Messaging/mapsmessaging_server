@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
-import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -35,22 +34,26 @@ public class ConnAck extends MQTT_SN_2_Packet {
   @Getter
   private final String clientId;
 
-  public ConnAck(ReasonCodes reasonCode, long sessionExpiry, String clientId) {
+  private final boolean sessionPresent;
+
+  public ConnAck(ReasonCodes reasonCode, long sessionExpiry, String clientId, boolean sessionPresent) {
     super(CONNACK);
     this.reasonCode = reasonCode.getValue();
     this.sessionExpiry = sessionExpiry;
     this.clientId = clientId;
+    this.sessionPresent = sessionPresent;
   }
 
   @Override
   public int packFrame(Packet packet) {
-    int len = 7;
+    int len = 8;
     if(clientId != null){
       len  += clientId.length()+2;
     }
     packet.put((byte) len);
     packet.put((byte) CONNACK);
     packet.put((byte) reasonCode);
+    packet.put( (sessionPresent ? (byte) 1 : 0));
     MQTTPacket.writeInt(packet, sessionExpiry);
     if(clientId != null){
       MQTTPacket.writeUTF8(packet, clientId);
