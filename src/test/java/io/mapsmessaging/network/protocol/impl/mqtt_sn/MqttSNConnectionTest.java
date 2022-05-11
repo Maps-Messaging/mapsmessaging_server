@@ -18,12 +18,15 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
+import org.slj.mqtt.sn.model.MqttsnWillData;
 import org.slj.mqtt.sn.spi.MqttsnException;
+import org.slj.mqtt.sn.utils.TopicPath;
 
 public class MqttSNConnectionTest extends BaseMqttSnConfig {
 
@@ -41,14 +44,17 @@ public class MqttSNConnectionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
-  public void connectWithFlags(int version) throws MqttsnClientConnectException, MqttsnException {
-    MqttSnClient client = new MqttSnClient("connectWithFlags", "localhost", 1884, version);
+  public void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException {
+    TopicPath tp = new TopicPath("willTopic");
+    MqttsnWillData details = new MqttsnWillData(tp, "This is my last will and stuff".getBytes(StandardCharsets.UTF_8), 1, true);
+
+    MqttSnClient client = new MqttSnClient("connectWithFlags", "localhost", 1884, version, details);
     client.connect(50, true);
+    client.setWillData(details);
+
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
     delay(500);
-
-//    client.connect("simpleConnection", true, (short)50, "willTopic", 0, "This is my last will and stuff", false);
 
   }
 

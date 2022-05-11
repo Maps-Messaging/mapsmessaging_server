@@ -11,6 +11,7 @@ import org.slj.mqtt.sn.impl.AbstractTopicRegistry;
 import org.slj.mqtt.sn.impl.ram.MqttsnInMemoryTopicRegistry;
 import org.slj.mqtt.sn.model.MqttsnOptions;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
+import org.slj.mqtt.sn.model.MqttsnWillData;
 import org.slj.mqtt.sn.model.TopicInfo;
 import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
@@ -118,4 +119,7 @@ public class MqttSnClient {
     client.disconnect();
   }
 
+  public void setWillData(MqttsnWillData details) throws MqttsnException {
+    client.setWillData(details);
+  }
 }
