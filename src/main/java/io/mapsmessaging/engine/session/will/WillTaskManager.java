@@ -63,7 +63,6 @@ public class WillTaskManager {
 
 
   public WillTaskImpl put(String id, WillDetails willDetails) {
-    System.err.println("ID:"+id);
     WillTaskImpl task = new WillTaskImpl(willDetails);
     willTaskMap.put(id, willDetails);
     willActiveTasks.put(id, task);
@@ -71,7 +70,6 @@ public class WillTaskManager {
   }
 
   public WillTaskImpl get(String id) {
-    System.err.println("ID:"+id);
     return willActiveTasks.get(id);
   }
 
