@@ -38,6 +38,7 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
   }
 
   public boolean isSecure(Packet packet) {
+    packet.flip();
     mac.update(stamper.getData(packet, size()).getRawBuffer());
     return validatePacket(packet);
   }
@@ -57,6 +58,7 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
 
   private boolean validatePacket(Packet packet){
     byte[] computed = mac.doFinal();
+    reset();
     byte[] signature = new byte[computed.length];
     signature = stamper.getSignature(packet, signature);
     for(int x=0;x<4;x++){
@@ -64,11 +66,14 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
         return false;
       }
     }
+    packet.limit(packet.limit()-computed.length);
+    packet.position(packet.limit());
     return true;
   }
 
   private Packet updatePacket(Packet packet){
     byte[] computed = mac.doFinal();
+    reset();
     return stamper.setSignature(packet, computed);
   }
 }

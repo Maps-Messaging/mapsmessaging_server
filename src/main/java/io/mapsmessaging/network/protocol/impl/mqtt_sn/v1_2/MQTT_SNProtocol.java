@@ -100,7 +100,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   @Override
   public void close() throws IOException {
     if (!closed) {
-      System.err.println("Closing "+session.getName());
       closed = true;
       SessionManager.getInstance().close(session, false);
       factory.close(remoteClient);
@@ -132,7 +131,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
     if(mqtt != null) {
-      System.err.println("IN>>"+mqtt);
       handleMQTTEvent(mqtt);
     }
     return true;
@@ -199,8 +197,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       //
       alias = stateEngine.getTopicAlias(messageEvent.getDestinationName());
       Register register = new Register(alias, (short) 0, messageEvent.getDestinationName());
-      System.err.println("out>>"+register);
-
       writeFrame(register);
     }
     MQTT_SNPacket publish = buildPublish(alias, packetId,  messageEvent, qos);
@@ -215,8 +211,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     if (frame.getCallback() != null) {
       frame.getCallback().run();
     }
-    System.err.println("out>>"+frame);
-
     sentMessage();
   }
 
