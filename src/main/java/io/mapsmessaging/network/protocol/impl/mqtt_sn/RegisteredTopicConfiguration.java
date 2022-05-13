@@ -21,15 +21,15 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 public class RegisteredTopicConfiguration {
 
-  private final HashMap<Integer, TopicConfiguration> topicConfigById;
+  private final HashMap<Integer, List<TopicConfiguration>> topicConfigById;
 
 
   public RegisteredTopicConfiguration(ConfigurationProperties properties) {
@@ -37,28 +37,35 @@ public class RegisteredTopicConfiguration {
     topicConfigById = new LinkedHashMap<>();
     parse(registeredTopics);
     Object predefined = properties.get("preDefinedTopics");
-    if(predefined != null){
-      for(ConfigurationProperties props:((List<ConfigurationProperties>)predefined)){
+    if(predefined instanceof List){
+      List<ConfigurationProperties> predefinedList = (List<ConfigurationProperties>)predefined;
+      for(ConfigurationProperties props:predefinedList){
         int id = props.getIntProperty("id", 0);
         String topic = props.getProperty("topic", "");
         String address = props.getProperty("address", "*");
-        topicConfigById.put(id, new TopicConfiguration(address, id, topic));
+        List<TopicConfiguration> list = topicConfigById.computeIfAbsent(id, k -> new ArrayList<>());
+        list.add(new TopicConfiguration(address, id, topic));
       }
     }
   }
 
   public String getTopic(SocketAddress from, int id) {
-    TopicConfiguration tc = topicConfigById.get(id);
-    if (tc != null) {
+    List<TopicConfiguration> list = topicConfigById.get(id);
+
+    // Search for explicit address mapping
+    for(TopicConfiguration tc:list ){
+      if (from instanceof InetSocketAddress) {
+        InetSocketAddress inetAddress = (InetSocketAddress) from;
+        if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
+          return tc.topic;
+        }
+      }
+    }
+
+    // OK we have no address match, lets now check for a "*"
+    for(TopicConfiguration tc:list ){
       if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
         return tc.topic; // No checks
-      } else {
-        if (from instanceof InetSocketAddress) {
-          InetSocketAddress inetAddress = (InetSocketAddress) from;
-          if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
-            return tc.topic;
-          }
-        }
       }
     }
     return null;
@@ -69,7 +76,8 @@ public class RegisteredTopicConfiguration {
     StringTokenizer st = new StringTokenizer(config, ":");
     while (st.hasMoreElements()) {
       TopicConfiguration tc = new TopicConfiguration(st.nextElement().toString());
-      topicConfigById.put(tc.id, tc);
+      List<TopicConfiguration> list = topicConfigById.computeIfAbsent(tc.id, k -> new ArrayList<>());
+      list.add(tc);
     }
   }
 
