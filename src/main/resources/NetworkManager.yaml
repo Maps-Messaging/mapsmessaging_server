@@ -116,6 +116,19 @@ NetworkManager:
         ssl_SSLContext: DTLS
 
       -
+        url: udp://0.0.0.0:2442/
+        name: "MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        preDefinedTopics:
+          -
+            id: 1
+            topic: predefined/topic
+            address: '*'
+
+      -
         url: tcp://0.0.0.0:5672/
         name: "AMQP Interface"
         protocol : amqp

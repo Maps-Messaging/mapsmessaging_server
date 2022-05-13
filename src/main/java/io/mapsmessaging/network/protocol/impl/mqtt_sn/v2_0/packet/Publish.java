@@ -30,20 +30,14 @@ import lombok.ToString;
 @ToString
 public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
-  @Getter
-  private final int topicId;
-  @Getter
-  private final String topicName;
-  @Getter
-  private final int messageId;
-  @Getter
-  private final byte[] message;
-  @Getter
-  private boolean dup;
-  @Getter @Setter
-  private QualityOfService QoS;
-  @Getter @Setter
-  private boolean retain;
+  @Getter private final int topicId;
+  @Getter private final String topicName;
+  @Getter private final int messageId;
+  @Getter private int topicIdType;
+  @Getter private final byte[] message;
+  @Getter private boolean dup;
+  @Getter @Setter private QualityOfService QoS;
+  @Getter @Setter private boolean retain;
 
   public Publish(short topicId, int messageId, byte[] message) {
     super(PUBLISH);
@@ -51,6 +45,7 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
     this.messageId = messageId;
     this.message = message;
     this.topicName = null;
+    topicIdType = TOPIC_SHORT_NAME;
   }
 
   public Publish(Packet packet, int length) throws IOException {
@@ -59,12 +54,14 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
     dup = (flags & 0b10000000) != 0;
     QoS = QualityOfService.getInstance((flags & 0b01100000) >> 5);
     retain = (flags & 0b00010000) != 0;
-    int topicIdType = flags & 0b11;
+    topicIdType = flags & 0b11;
 
     int topicLength = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
-
-    if (topicIdType == TOPIC_LONG_NAME) {
+    if(topicLength == 2){
+      topicIdType = TOPIC_SHORT_NAME;
+    }
+    if (topicIdType == TOPIC_LONG_NAME || topicIdType == TOPIC_NAME) {
       byte[] tmp = new byte[topicLength];
       packet.get(tmp, 0, topicLength);
       topicName = new String(tmp);
@@ -93,7 +90,7 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
       byte f = (byte) ( (byte) ((QoS.getLevel() & 0b11) << 5));
       int type = MQTT_SN_2_Packet.TOPIC_LONG_NAME;
       if(topicName == null){
-        type = MQTT_SN_2_Packet.TOPIC_ALIAS;
+        type = MQTT_SN_2_Packet.TOPIC_NAME;
       }
       f = (byte) (f | (type & 0b11));
       return f;

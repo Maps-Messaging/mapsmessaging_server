@@ -31,7 +31,7 @@ import lombok.ToString;
 @ToString
 public class MQTT_SNPacket implements ServerPacket {
 
-  public static final int TOPIC_LONG_NAME = 0;
+  public static final int TOPIC_NAME = 0;
   public static final int TOPIC_PRE_DEFINED_ID = 1;
   public static final int TOPIC_SHORT_NAME = 2;
 

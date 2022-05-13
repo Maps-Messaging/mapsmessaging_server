@@ -31,6 +31,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubRec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
 import java.io.IOException;
@@ -47,13 +48,20 @@ public class PublishListener extends PacketListener {
       StateEngine stateEngine) {
 
     Publish publish = (Publish) mqttPacket;
-
-    short topicId = (short) publish.getTopicId();
     QualityOfService qos = publish.getQoS();
     if (qos.equals(QualityOfService.MQTT_SN_REGISTERED)) {
       qos = QualityOfService.AT_MOST_ONCE;
     }
-    String topicName = stateEngine.getTopic(topicId);
+    String topicName;
+    if(publish.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_LONG_NAME ||
+        publish.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_NAME){
+      topicName = publish.getTopicName();
+    }
+    else{
+      topicName = stateEngine.getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
+    }
+
+
     if (topicName != null) {
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setQoS(qos)

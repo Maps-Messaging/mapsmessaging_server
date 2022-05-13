@@ -23,6 +23,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 public class RegisteredTopicConfiguration {
@@ -34,6 +36,15 @@ public class RegisteredTopicConfiguration {
     String registeredTopics = properties.getProperty("registered", "");
     topicConfigById = new LinkedHashMap<>();
     parse(registeredTopics);
+    Object predefined = properties.get("preDefinedTopics");
+    if(predefined != null){
+      for(ConfigurationProperties props:((List<ConfigurationProperties>)predefined)){
+        int id = props.getIntProperty("id", 0);
+        String topic = props.getProperty("topic", "");
+        String address = props.getProperty("address", "*");
+        topicConfigById.put(id, new TopicConfiguration(address, id, topic));
+      }
+    }
   }
 
   public String getTopic(SocketAddress from, int id) {
@@ -68,6 +79,12 @@ public class RegisteredTopicConfiguration {
     private final String address;
     private final int id;
     private final String topic;
+
+    TopicConfiguration(String address, int id, String topic) {
+      this.address = address;
+      this.id = id;
+      this.topic = topic;
+    }
 
     TopicConfiguration(String config) {
       StringTokenizer st = new StringTokenizer(config, ",");

@@ -27,15 +27,13 @@ import lombok.ToString;
 @ToString
 public class Subscribe extends MQTT_SNPacket {
 
-  @Getter
-  private final int msgId;
-  @Getter
-  private String topicName;
-  @Getter
-  private short topicId;
+  @Getter private final int msgId;
+  @Getter private String topicName;
+  @Getter private short topicId;
   @Getter private final boolean dup;
-  private final int QoS;
   @Getter private final int topicIdType;
+
+  private final int QoS;
 
   private byte flags;
 
@@ -48,7 +46,7 @@ public class Subscribe extends MQTT_SNPacket {
     topicIdType = (flags & 0b11);
 
     msgId = MQTTPacket.readShort(packet);
-    if (topicIdType == TOPIC_LONG_NAME) {
+    if (topicIdType == TOPIC_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
       topicName = new String(tmp);

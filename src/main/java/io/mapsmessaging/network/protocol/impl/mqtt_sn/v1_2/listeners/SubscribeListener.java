@@ -40,10 +40,10 @@ public class SubscribeListener extends PacketListener {
     Subscribe subscribe = (Subscribe) mqttPacket;
 
     String topicName;
-    if (subscribe.topicIdType() == MQTT_SNPacket.TOPIC_LONG_NAME) {
+    if (subscribe.topicIdType() == MQTT_SNPacket.TOPIC_NAME) {
       topicName = subscribe.getTopicName();
     } else {
-      topicName = stateEngine.getTopic(subscribe.getTopicId());
+      topicName = stateEngine.getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
     }
     if (topicName != null) {
       //

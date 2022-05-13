@@ -18,15 +18,19 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_SHORT_NAME;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,12 +49,14 @@ public class StateEngine {
   private @Getter @Setter int maxBufferSize = 0;
   private State currentState;
   private SessionContextBuilder sessionContextBuilder;
+  private final RegisteredTopicConfiguration registeredTopicConfiguration;
 
-  public StateEngine() {
+  public StateEngine(RegisteredTopicConfiguration registeredTopicConfiguration) {
     subscribeResponseMap = new LinkedHashMap<>();
     topicAlias = new LinkedHashMap<>();
     currentState = null;
     aliasGenerator = new AtomicInteger(1);
+    this.registeredTopicConfiguration = registeredTopicConfiguration;
   }
 
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol)
@@ -98,7 +104,7 @@ public class StateEngine {
     return alias;
   }
 
-  public String getTopic(short alias) {
+  public String getTopic(int alias) {
     for (Map.Entry<String, Short> entries : topicAlias.entrySet()) {
       if (entries.getValue() == alias) {
         return entries.getKey();
@@ -106,6 +112,21 @@ public class StateEngine {
     }
     return null;
   }
+
+  public String getTopic(SocketAddress address, int alias, int topicType) {
+    if(topicType == TOPIC_SHORT_NAME) {
+      for (Map.Entry<String, Short> entries : topicAlias.entrySet()) {
+        if (entries.getValue() == alias) {
+          return entries.getKey();
+        }
+      }
+    }
+    else{
+      return registeredTopicConfiguration.getTopic(address, alias);
+    }
+    return null;
+  }
+
 
   public CompletableFuture<Session> createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol){
     return SessionManager.getInstance().createAsync(scb.build(), protocol);

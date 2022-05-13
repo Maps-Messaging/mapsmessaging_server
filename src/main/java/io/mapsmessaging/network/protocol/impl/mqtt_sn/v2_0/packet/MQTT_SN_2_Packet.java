@@ -24,7 +24,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 @SuppressWarnings("squid:S00101")
 public class MQTT_SN_2_Packet extends MQTT_SNPacket {
 
-  public static final int TOPIC_ALIAS  = 0;
+  public static final int TOPIC_NAME = 0;
   public static final int TOPIC_PRE_DEFINED_ID = 1;
   public static final int TOPIC_SHORT_NAME = 2;
   public static final int TOPIC_LONG_NAME = 3;

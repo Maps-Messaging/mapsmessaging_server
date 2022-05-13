@@ -36,6 +36,7 @@ public class Subscribe extends MQTT_SN_2_Packet {
   @Getter private final boolean retain;
   @Getter private final RetainHandler retainHandler;
   @Getter private final int topicIdType;
+  @Getter private final int topicId;
 
   public Subscribe(Packet packet) throws IOException {
     super(SUBSCRIBE);
@@ -46,8 +47,15 @@ public class Subscribe extends MQTT_SN_2_Packet {
     retainHandler = RetainHandler.getInstance((flags & 0b00001100) >> 2);
     topicIdType = (flags & 0b11);
     msgId = MQTTPacket.readShort(packet);
-    byte[] tmp = new byte[packet.available()];
-    packet.get(tmp);
-    topicName = new String(tmp);
+    if (topicIdType == TOPIC_LONG_NAME || topicIdType == TOPIC_NAME) {
+      byte[] tmp = new byte[packet.available()];
+      packet.get(tmp);
+      topicName = new String(tmp);
+      topicId = -1;
+    } else {
+      topicId = (short) MQTTPacket.readShort(packet);
+      topicName = null;
+    }
+
   }
 }

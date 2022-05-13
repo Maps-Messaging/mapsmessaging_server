@@ -24,6 +24,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
@@ -44,14 +45,17 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
       @NonNull @NotNull EndPoint endPoint,
       @NonNull @NotNull SocketAddress remoteClient,
       @NonNull @NotNull SelectorTask selectorTask,
-      @NonNull @NotNull Connect connect) {
+      @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration,
+      @NonNull @NotNull Connect connect
+  ) {
     super(
         factory,
         endPoint,
         remoteClient,
         selectorTask,
         "MQTT-SN 2.0 Protocol on " + endPoint.getName(),
-        new PacketFactoryV2());
+        new PacketFactoryV2(),
+        registeredTopicConfiguration);
     stateEngine.setState(new InitialConnectionState());
     handleMQTTEvent(connect);
   }

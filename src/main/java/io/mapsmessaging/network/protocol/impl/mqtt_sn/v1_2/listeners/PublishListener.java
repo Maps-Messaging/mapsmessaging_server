@@ -47,11 +47,11 @@ public class PublishListener extends PacketListener {
 
     Publish publish = (Publish) mqttPacket;
 
-    short topicId = (short) publish.getTopicId();
     QualityOfService qos = publish.getQoS();
     if (qos.equals(QualityOfService.MQTT_SN_REGISTERED)) {
       qos = QualityOfService.AT_MOST_ONCE;
     }
+    short topicId = (short) publish.getTopicId();
     String topicName = stateEngine.getTopic(topicId);
     if (topicName != null) {
       MessageBuilder messageBuilder = new MessageBuilder();

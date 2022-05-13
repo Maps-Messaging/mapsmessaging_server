@@ -147,15 +147,17 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     if (mqttSn instanceof Connect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
-      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, endPoint, packet.getFromAddress(), selectorTask, (Connect) mqttSn);
+      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, endPoint, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn);
       currentSessions.put(packet.getFromAddress(), impl);
+      System.err.println("New MQTT-SN 1.2 session "+impl.getSessionId());
     }
     else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect)mqttSn;
-      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, endPoint, packet.getFromAddress(), selectorTask, connectV2);
+      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, endPoint, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2);
       currentSessions.put(packet.getFromAddress(), impl);
+      System.err.println("New MQTT-SN 2.0 session "+impl.getSessionId());
     }else if (mqttSn instanceof SearchGateway) {
       handleSearch(packet);
     } else if (mqttSn instanceof Publish) {

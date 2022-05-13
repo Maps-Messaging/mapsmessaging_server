@@ -33,6 +33,7 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.SleepManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
@@ -69,7 +70,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       @NonNull @NotNull SocketAddress remoteClient,
       @NonNull @NotNull SelectorTask selectorTask,
       @NonNull @NotNull String loggerName,
-      @NonNull @NotNull PacketFactory packetFactory){
+      @NonNull @NotNull PacketFactory packetFactory,
+      @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration){
     super(endPoint);
     this.logger = LoggerFactory.getLogger(loggerName);
     this.remoteClient = remoteClient;
@@ -79,13 +81,18 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     logger.log(ServerLogMessages.MQTT_SN_INSTANCE);
     this.packetFactory = packetFactory;
     closed = false;
-    stateEngine = new StateEngine();
+    stateEngine = new StateEngine(registeredTopicConfiguration);
     sleepManager = new SleepManager<>(endPoint.getConfig().getProperties().getIntProperty("eventsPerTopicDuringSleep", DefaultConstants.MAX_SLEEP_EVENTS));
   }
 
-  public MQTT_SNProtocol(@NonNull @NotNull MQTTSNInterfaceManager factory, @NonNull @NotNull EndPoint endPoint,
-      @NonNull @NotNull SocketAddress remoteClient, @NonNull @NotNull SelectorTask selectorTask, @NonNull @NotNull Connect connect) {
-    this(factory, endPoint, remoteClient, selectorTask, "MQTT-SN 1.2 Protocol on " + endPoint.getName(), new PacketFactory());
+  public MQTT_SNProtocol(
+      @NonNull @NotNull MQTTSNInterfaceManager factory,
+      @NonNull @NotNull EndPoint endPoint,
+      @NonNull @NotNull SocketAddress remoteClient,
+      @NonNull @NotNull SelectorTask selectorTask,
+      @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration,
+      @NonNull @NotNull Connect connect) {
+    this(factory, endPoint, remoteClient, selectorTask, "MQTT-SN 1.2 Protocol on " + endPoint.getName(), new PacketFactory(), registeredTopicConfiguration);
     stateEngine.setState(new InitialConnectionState());
     handleMQTTEvent(connect);
   }
@@ -93,6 +100,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   @Override
   public void close() throws IOException {
     if (!closed) {
+      System.err.println("Closing "+session.getName());
       closed = true;
       SessionManager.getInstance().close(session, false);
       factory.close(remoteClient);
@@ -124,6 +132,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
     if(mqtt != null) {
+      System.err.println("IN>>"+mqtt);
       handleMQTTEvent(mqtt);
     }
     return true;
@@ -190,6 +199,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       //
       alias = stateEngine.getTopicAlias(messageEvent.getDestinationName());
       Register register = new Register(alias, (short) 0, messageEvent.getDestinationName());
+      System.err.println("out>>"+register);
+
       writeFrame(register);
     }
     MQTT_SNPacket publish = buildPublish(alias, packetId,  messageEvent, qos);
@@ -204,6 +215,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     if (frame.getCallback() != null) {
       frame.getCallback().run();
     }
+    System.err.println("out>>"+frame);
+
     sentMessage();
   }
 

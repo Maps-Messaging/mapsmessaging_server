@@ -39,7 +39,7 @@ public class Unsubscribe extends MQTT_SNPacket {
     super(UNSUBSCRIBE);
     flags = packet.get();
     msgId = MQTTPacket.readShort(packet);
-    if (topicIdType() == TOPIC_LONG_NAME) {
+    if (topicIdType() == TOPIC_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
       topicName = new String(tmp);

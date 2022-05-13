@@ -29,6 +29,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListe
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.SubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Subscribe;
 import java.io.IOException;
@@ -39,8 +40,14 @@ public class SubscribeListener extends PacketListener {
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
-
-    String topicName = subscribe.getTopicName();
+    String topicName;
+    if(subscribe.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_LONG_NAME ||
+        subscribe.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_NAME){
+      topicName = subscribe.getTopicName();
+    }
+    else{
+      topicName = stateEngine.getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
+    }
     if (topicName != null) {
       //
       // Handle packet retransmit on a subscribe
