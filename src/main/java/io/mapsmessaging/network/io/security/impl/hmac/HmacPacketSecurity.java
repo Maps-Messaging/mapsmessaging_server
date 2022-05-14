@@ -60,7 +60,7 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
     reset();
     byte[] signature = new byte[computed.length];
     signature = stamper.getSignature(packet, signature);
-    for(int x=0;x<4;x++){
+    for(int x=0;x<computed.length;x++){
       if(signature[x] != computed[x]){
         return false;
       }

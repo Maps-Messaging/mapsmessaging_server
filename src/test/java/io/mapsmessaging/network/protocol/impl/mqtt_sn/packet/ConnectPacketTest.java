@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
@@ -15,6 +16,13 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
 
 
   abstract PacketTransport createTransport(String host) throws Exception;
+
+  void sendPacket(PacketTransport packetTransport, Packet packet) throws Exception {
+    packetTransport.sendPacket(packet);
+  }
+  void readPacket(PacketTransport packetTransport, Packet packet) throws IOException {
+    packetTransport.readPacket(packet);
+  }
 
   @ParameterizedTest
   @MethodSource
@@ -34,11 +42,11 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       len = (byte) packet.position();
       packet.put(0, len);
       packet.flip();
-      packetTransport.sendPacket(packet);
+      sendPacket(packetTransport, packet);
       packet.clear();
       long time = System.currentTimeMillis()+10000;
       while(time > System.currentTimeMillis() && packet.position() == 0) {
-        packetTransport.readPacket(packet);
+        readPacket(packetTransport, packet);
       }
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
@@ -73,11 +81,11 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       packet.put(0, len);
       packet.flip();
       packet.setFromAddress(new InetSocketAddress("localhost", 1884));
-      packetTransport.sendPacket(packet);
+      sendPacket(packetTransport, packet);
       packet.clear();
       long time = System.currentTimeMillis()+10000;
       while(time > System.currentTimeMillis() && packet.position() == 0) {
-        packetTransport.readPacket(packet);
+        readPacket(packetTransport, packet);
       }
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
@@ -118,11 +126,11 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       packet.put(0, len);
       packet.flip();
       packet.setFromAddress(new InetSocketAddress("localhost", 1884));
-      packetTransport.sendPacket(packet);
+      sendPacket(packetTransport, packet);
       packet.clear();
       long time = System.currentTimeMillis()+10000;
       while(time > System.currentTimeMillis() && packet.position() == 0) {
-        packetTransport.readPacket(packet);
+        readPacket(packetTransport, packet);
       }
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
@@ -137,11 +145,11 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       }
       packet.put(0, (byte)packet.position());
       packet.flip();
-      packetTransport.sendPacket(packet);
+      sendPacket(packetTransport, packet);
       packet.clear();
       time = System.currentTimeMillis()+10000;
       while(time > System.currentTimeMillis() && packet.position() == 0) {
-        packetTransport.readPacket(packet);
+        readPacket(packetTransport, packet);
       }
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
@@ -153,11 +161,11 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       packet.put("This is my will message".getBytes(StandardCharsets.UTF_8));
       packet.put(0, (byte)packet.position());
       packet.flip();
-      packetTransport.sendPacket(packet);
+      sendPacket(packetTransport, packet);
       packet.clear();
       time = System.currentTimeMillis()+10000;
       while(time > System.currentTimeMillis() && packet.position() == 0) {
-        packetTransport.readPacket(packet);
+        readPacket(packetTransport, packet);
       }
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
@@ -168,11 +176,11 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       packet.put((byte)2);
       packet.put((byte) 0x18);
       packet.flip();
-      packetTransport.sendPacket(packet);
+      sendPacket(packetTransport, packet);
       packet.clear();
       time = System.currentTimeMillis()+10000;
       while(time > System.currentTimeMillis() && packet.position() == 0) {
-        packetTransport.readPacket(packet);
+        readPacket(packetTransport, packet);
       }
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
@@ -182,6 +190,7 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
   private static Stream<Arguments> testWillRequests() {
     return createVersionStream();
   }
+
 
 
 }

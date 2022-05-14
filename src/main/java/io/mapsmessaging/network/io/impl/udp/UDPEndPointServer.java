@@ -27,6 +27,8 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
+import io.mapsmessaging.network.io.security.PacketIntegrity;
+import io.mapsmessaging.network.io.security.PacketIntegrityFactory;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
@@ -95,7 +97,29 @@ public class UDPEndPointServer extends EndPointServer {
     for (UDPInterfaceInformation info : udpInterfaceInformations) {
       for (InterfaceAddress interfaceAddress : info.getInterfaces()) {
         InetSocketAddress bonded = new InetSocketAddress(interfaceAddress.getAddress(), port);
-        UDPEndPoint endPoint = new UDPEndPoint(bonded, selectorLoadManager.allocate(), 1, this, authenticationConfig, managerMBean);
+        PacketIntegrity packetIntegrity = PacketIntegrityFactory.getInstance().createPacketIntegrity( getConfig().getProperties() );
+        UDPEndPoint endPoint;
+        if(packetIntegrity != null){
+          endPoint = new HmacUDPEndPoint(
+              bonded,
+              selectorLoadManager.allocate(),
+              1,
+              this,
+              authenticationConfig,
+              managerMBean,
+              packetIntegrity
+          );
+        }
+        else{
+          endPoint = new UDPEndPoint(
+              bonded,
+              selectorLoadManager.allocate(),
+              1,
+              this,
+              authenticationConfig,
+              managerMBean
+          );
+        }
         UDPInterfaceInformation nInfo = new UDPInterfaceInformation(info, interfaceAddress.getBroadcast());
         protocolImplFactory.create(endPoint, nInfo);
         bondedEndPoints.add(endPoint);

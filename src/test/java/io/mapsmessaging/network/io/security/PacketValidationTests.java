@@ -32,7 +32,6 @@ public class PacketValidationTests {
     p.flip();
     p = packetIntegrity.secure(p);
     Assertions.assertEquals(1024+packetIntegrity.size(), p.limit());
-    packetIntegrity.reset();
     Assertions.assertTrue(packetIntegrity.isSecure(p));
   }
 

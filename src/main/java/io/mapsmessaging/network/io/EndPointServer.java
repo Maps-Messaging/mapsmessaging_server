@@ -25,13 +25,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
 
 public abstract class EndPointServer extends EndPointServerStatus implements Closeable, Selectable {
 
   protected final Logger logger;
   protected final AcceptHandler acceptHandler;
   protected final Map<Long, EndPoint> activeEndPoints;
-  private final NetworkConfig config;
+  private @Getter final NetworkConfig config;
 
   protected EndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
     super(url);
@@ -64,10 +65,6 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
 
   public String getName() {
     return url.getProtocol() + "_" + url.getHost() + "_" + url.getPort();
-  }
-
-  public NetworkConfig getConfig() {
-    return config;
   }
 
   public abstract void start() throws IOException;
