@@ -38,7 +38,6 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
   }
 
   public boolean isSecure(Packet packet) {
-    packet.flip();
     mac.update(stamper.getData(packet, size()).getRawBuffer());
     return validatePacket(packet);
   }
