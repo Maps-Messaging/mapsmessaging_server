@@ -43,7 +43,7 @@ public class SubscribeListener extends PacketListener {
     if (subscribe.topicIdType() == MQTT_SNPacket.TOPIC_NAME) {
       topicName = subscribe.getTopicName();
     } else {
-      topicName = stateEngine.getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
+      topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
     }
     if (topicName != null) {
       //
@@ -62,7 +62,7 @@ public class SubscribeListener extends PacketListener {
       // Do NOT register wildcard subscriptions
       //
       if (!(topicName.contains("+") || topicName.contains("#"))) {
-        topicId = stateEngine.getTopicAlias(topicName);
+        topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
       }
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);

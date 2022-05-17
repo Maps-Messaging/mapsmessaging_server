@@ -41,7 +41,7 @@ public class Unsubscribe extends MQTT_SN_2_Packet {
     int topicNameType = flags & 0b11;
 
     //ToDo: implement the different topic name types
-    if (topicNameType == TOPIC_NAME || topicNameType == TOPIC_LONG_NAME) {
+    if (topicNameType == TOPIC_NAME || topicNameType == LONG_TOPIC_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp);
       topicName = new String(tmp);

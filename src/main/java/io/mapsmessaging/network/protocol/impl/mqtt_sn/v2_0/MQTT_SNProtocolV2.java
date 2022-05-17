@@ -84,7 +84,7 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   }
 
   @Override
-  protected MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos){
+  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos){
     Publish publish = new Publish(alias, packetId,  messageEvent.getMessage().getOpaqueData());
     publish.setQoS(qos);
     publish.setCallback(messageEvent.getCompletionTask());

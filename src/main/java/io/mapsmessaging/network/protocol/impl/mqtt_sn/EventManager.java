@@ -30,29 +30,29 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import lombok.Getter;
 
-public class SleepManager<T extends BasePublish> {
+public class EventManager<T extends BasePublish> {
 
   private final int maxEvents;
-  private final TreeMap<String, Queue<T>> sleepingMessages;
+  private final TreeMap<String, Queue<T>> pendingMessages;
   private final Map<String, TopicRegister> registerMap;
 
-  public SleepManager(int maxEvents) {
+  public EventManager(int maxEvents) {
     this.maxEvents = maxEvents;
-    sleepingMessages = new TreeMap<>();
+    pendingMessages = new TreeMap<>();
     registerMap = new LinkedHashMap<>();
   }
 
   public boolean hasEvents() {
-    return !sleepingMessages.isEmpty();
+    return !pendingMessages.isEmpty();
   }
 
   public Set<String> getDestinationList() {
-    return sleepingMessages.keySet();
+    return pendingMessages.keySet();
   }
 
   public int size() {
     int count = 0;
-    for (Queue<T> queue : sleepingMessages.values()) {
+    for (Queue<T> queue : pendingMessages.values()) {
       count += queue.size();
     }
     return count;
@@ -69,7 +69,7 @@ public class SleepManager<T extends BasePublish> {
   }
 
   public Iterator<T> getMessages(String destination) {
-    Queue<T> queue = sleepingMessages.get(destination);
+    Queue<T> queue = pendingMessages.get(destination);
     if (queue == null) {
       queue = new LinkedList<>();
     }
@@ -77,7 +77,7 @@ public class SleepManager<T extends BasePublish> {
   }
 
   public void storeEvent(String destinationName, T message) {
-    Queue<T> currentList = sleepingMessages.computeIfAbsent(destinationName, k -> new LinkedList<>());
+    Queue<T> currentList = pendingMessages.computeIfAbsent(destinationName, k -> new LinkedList<>());
     currentList.add(message);
     if (currentList.size() > maxEvents) {
       currentList.poll(); // Pop the oldest
@@ -111,7 +111,7 @@ public class SleepManager<T extends BasePublish> {
       }
       T message = messageQueue.poll();
       if (messageQueue.isEmpty()) {
-        sleepingMessages.remove(destination);
+        pendingMessages.remove(destination);
       }
       return message;
     }
@@ -120,7 +120,7 @@ public class SleepManager<T extends BasePublish> {
     public void remove() {
       messageQueue.poll();
       if (messageQueue.isEmpty()) {
-        sleepingMessages.remove(destination);
+        pendingMessages.remove(destination);
       }
     }
 
@@ -132,11 +132,10 @@ public class SleepManager<T extends BasePublish> {
     }
   }
 
-  private static class TopicRegister{
-    @Getter
-    private final int id;
-    @Getter
-    private boolean send;
+  private static class TopicRegister {
+
+    @Getter private final int id;
+    @Getter private boolean send;
 
     public TopicRegister(int id){
       this.id = id;

@@ -36,7 +36,7 @@ public class RegisterListener extends PacketListener {
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
     Register register = (Register) mqttPacket;
     String topic = register.getTopic();
-    short topicId = stateEngine.getTopicAlias(topic);
+    short topicId = stateEngine.getTopicAliasManager().getTopicAlias(topic);
     if (topicId == -1) {
       // Exceeded the maximum number of registered topics
       return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.InvalidTopicAlias);

@@ -1,14 +1,20 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
+import org.slj.mqtt.sn.model.IMqttsnContext;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
+import org.slj.mqtt.sn.spi.IMqttsnMessage;
+import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
+import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
 import org.slj.mqtt.sn.spi.MqttsnException;
+import org.slj.mqtt.sn.utils.TopicPath;
 
 public class MqttSnLargeMessageTests extends BaseMqttSnConfig {
 
@@ -20,12 +26,9 @@ public class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage) -> {
-      published.countDown();
-    });
-
+    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
     AtomicLong receiveCount = new AtomicLong(0);
-    client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> receiveCount.incrementAndGet());
+    client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCount.incrementAndGet());
 
     String topicName = "";
     while(topicName.length() < 512){
@@ -52,12 +55,10 @@ public class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage) -> {
-      published.countDown();
-    });
+    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
 
     AtomicLong receiveCount = new AtomicLong(0);
-    client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> {
+    client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
       if(bytes.length == 512) receiveCount.incrementAndGet();
     });
 

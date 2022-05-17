@@ -20,13 +20,17 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.SleepManager;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.EventManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListener;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners.PacketListenerFactoryV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Disconnect;
@@ -44,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 public class SleepState implements State {
 
   private final MQTT_SNProtocol protocol;
+  private final PacketListenerFactory packetListenerFactory;
 
   private Future<?> reaperRunner;
 
@@ -53,11 +58,12 @@ public class SleepState implements State {
   public SleepState(int sleepDuration, MQTT_SNProtocol protocol) {
     this.sleepDuration = sleepDuration;
     this.protocol = protocol;
+    packetListenerFactory = new PacketListenerFactoryV2();
     reaperRunner = SimpleTaskScheduler.getInstance().schedule(new Reaper(), sleepDuration, TimeUnit.SECONDS);
   }
 
   @Override
-  public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
+  public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws MalformedException {
 
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.CONNECT:
@@ -65,8 +71,8 @@ public class SleepState implements State {
         MQTT_SNPacket response = new ConnAck(ReasonCodes.Success, connect.getSessionExpiry(), session.getName(), session.isRestored());
         sleepDuration = 0;
         clearReaper();
-        sendMessages(0, stateEngine);
         stateEngine.setState(new ConnectedState(response));
+        stateEngine.wake();
         return response;
 
       case MQTT_SNPacket.DISCONNECT:
@@ -89,14 +95,18 @@ public class SleepState implements State {
       case MQTT_SNPacket.PINGREQ:
         if (!reaperRunner.isDone()) {
           clearReaper();
+          reaperRunner = SimpleTaskScheduler.getInstance().schedule(new Reaper(), sleepDuration, TimeUnit.SECONDS);
         }
-        PingRequest ping = (PingRequest)mqtt;
-        int maxMessages = ping.getMaxMessages();
-        sendMessages(maxMessages, stateEngine);
-        return new PingResponse(protocol.getSleepManager().size());
+        int maxMessages = ((PingRequest)mqtt).getMaxMessages();
+        stateEngine.emptyQueue(maxMessages, () -> {
+          protocol.writeFrame(new PingResponse(stateEngine.getQueueSize()));
+        });
+        return null;
+
 
       default:
-        return null;
+        PacketListener listener = packetListenerFactory.getListener(mqtt.getControlPacketId());
+        return listener.handlePacket(mqtt, session, endPoint, protocol, stateEngine);
     }
   }
 
@@ -111,33 +121,7 @@ public class SleepState implements State {
 
   @Override
   public void sendPublish(MQTT_SNProtocol protocol, String destination, MQTT_SNPacket publish) {
-    protocol.getSleepManager().storeEvent(destination,(Publish) publish);
-  }
-
-  private void sendMessages(int maxMessages, StateEngine stateEngine) {
-    if(maxMessages == 0){
-      maxMessages = Integer.MAX_VALUE;
-    }
-    SleepManager<BasePublish> manager = protocol.getSleepManager();
-    if (manager.hasEvents()) {
-      Set<String> toSend = manager.getDestinationList();
-      for (String destination : toSend) {
-        Iterator<BasePublish> iterator = manager.getMessages(destination);
-        if(manager.sendRegister(destination)){
-          short alias = stateEngine.findTopicAlias(destination);
-          Register register = new Register(alias, (short) 0, destination);
-          protocol.writeFrame(register);
-        }
-        while (iterator.hasNext()) {
-          Publish publish = (Publish) iterator.next();
-          protocol.writeFrame(publish);
-          maxMessages--;
-          if(maxMessages == 0){
-            return;
-          }
-        }
-      }
-    }
+    protocol.writeFrame(publish);
   }
 
   public final class Reaper implements Runnable {

@@ -35,8 +35,8 @@ public class PubAckListener extends PacketListener {
   @Override
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine)
       throws MalformedException {
-
     PubAck pubAck = (PubAck) mqttPacket;
+    stateEngine.sendNextPublish(pubAck.getMessageId());
     if(!pubAck.getReasonCode().equals(ReasonCodes.Success)){
       throw new MalformedException("Publish rejected by client "+pubAck.getReasonCode().toString());
     }

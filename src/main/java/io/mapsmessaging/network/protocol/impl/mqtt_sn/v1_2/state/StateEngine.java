@@ -18,45 +18,40 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_SHORT_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
 
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 public class StateEngine {
 
-
   private final Map<String, MQTT_SNPacket> subscribeResponseMap;
-  private final HashMap<String, Short> topicAlias;
-  private final AtomicInteger aliasGenerator;
-
+  private @Getter final TopicAliasManager topicAliasManager;
   private @Getter @Setter int maxBufferSize = 0;
   private State currentState;
   private SessionContextBuilder sessionContextBuilder;
-  private final RegisteredTopicConfiguration registeredTopicConfiguration;
+  private final MessagePipeline pipeline;
 
-  public StateEngine(RegisteredTopicConfiguration registeredTopicConfiguration) {
+  public StateEngine(MQTT_SNProtocol protocol, RegisteredTopicConfiguration registeredTopicConfiguration) {
     subscribeResponseMap = new LinkedHashMap<>();
-    topicAlias = new LinkedHashMap<>();
+    pipeline = new MessagePipeline(protocol, this );
     currentState = null;
-    aliasGenerator = new AtomicInteger(1);
-    this.registeredTopicConfiguration = registeredTopicConfiguration;
+    topicAliasManager = new TopicAliasManager(registeredTopicConfiguration);
   }
 
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol)
@@ -92,55 +87,39 @@ public class StateEngine {
     currentState = state;
   }
 
-  public short getTopicAlias(String name) {
-    Short alias = topicAlias.get(name);
-    if (alias == null && topicAlias.size() < DefaultConstants.MAX_REGISTERED_SIZE) {
-      alias = (short) aliasGenerator.incrementAndGet();
-      topicAlias.put(name, alias);
-    }
-    if (alias == null) {
-      return -1;
-    }
-    return alias;
-  }
-
-  public String getTopic(int alias) {
-    for (Map.Entry<String, Short> entries : topicAlias.entrySet()) {
-      if (entries.getValue() == alias) {
-        return entries.getKey();
-      }
-    }
-    return null;
-  }
-
-  public String getTopic(SocketAddress address, int alias, int topicType) {
-    if(topicType == TOPIC_SHORT_NAME) {
-      for (Map.Entry<String, Short> entries : topicAlias.entrySet()) {
-        if (entries.getValue() == alias) {
-          return entries.getKey();
-        }
-      }
-    }
-    else{
-      return registeredTopicConfiguration.getTopic(address, alias);
-    }
-    return null;
-  }
 
 
   public CompletableFuture<Session> createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol){
+    scb.setReceiveMaximum(1);
     return SessionManager.getInstance().createAsync(scb.build(), protocol);
+  }
+
+  public void queueMessage(@NotNull @NonNull MessageEvent messageEvent){
+    pipeline.queue(messageEvent);
   }
 
   public void sendPublish(MQTT_SNProtocol protocol, String destination, MQTT_SNPacket publish) {
     currentState.sendPublish(protocol, destination, publish);
   }
 
-  public short findTopicAlias(String name) {
-    Short alias = topicAlias.get(name);
-    if (alias == null) {
-      return -1;
-    }
-    return alias;
+  public void sendNextPublish(int messageId){
+    pipeline.completed(messageId);
+  }
+
+  public void sleep(){
+    pipeline.pause();
+    getTopicAliasManager().clear();
+  }
+
+  public void wake() {
+    pipeline.resume();
+  }
+
+  public void emptyQueue(int sendSize, Runnable completion) {
+    pipeline.emptyQueue(sendSize, completion);
+  }
+
+  public int getQueueSize() {
+    return pipeline.size();
   }
 }

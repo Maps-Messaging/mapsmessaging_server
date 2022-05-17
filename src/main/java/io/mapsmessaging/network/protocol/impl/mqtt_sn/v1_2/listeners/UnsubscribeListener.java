@@ -32,7 +32,7 @@ public class UnsubscribeListener extends PacketListener {
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
 
     Unsubscribe unsubscribe = (Unsubscribe) mqttPacket;
-    String topicName = stateEngine.getTopic((short) unsubscribe.getTopicId());
+    String topicName = stateEngine.getTopicAliasManager().getTopic((short) unsubscribe.getTopicId());
     if (topicName != null) {
       stateEngine.removeSubscribeResponse(topicName);
       session.removeSubscription(topicName);

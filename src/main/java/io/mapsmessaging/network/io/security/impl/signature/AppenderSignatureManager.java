@@ -37,9 +37,6 @@ public class AppenderSignatureManager implements SignatureManager {
   @Override
   public Packet getData(Packet packet, int size) {
     int resetLimit = packet.limit() - size;
-    if(resetLimit < 0){
-      System.err.println("?");
-    }
     packet.getRawBuffer().limit(packet.limit()-size);
     return packet;
   }

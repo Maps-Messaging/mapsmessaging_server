@@ -60,8 +60,7 @@ public class SubscribeListener5 extends PacketListener5 {
   }
 
   @Override
-  public MQTTPacket5 handlePacket(
-      MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
     Subscribe5 subscribe = (Subscribe5) mqttPacket;
     List<SubscriptionInfo> subscriptionInfos = subscribe.getSubscriptionList();
     StatusCode[] result = new StatusCode[subscriptionInfos.size()];

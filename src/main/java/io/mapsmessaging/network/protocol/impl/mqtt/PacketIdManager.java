@@ -31,6 +31,10 @@ public class PacketIdManager {
     outstandingPacketId = new TreeMap<>();
   }
 
+  public void close(){
+    outstandingPacketId.clear();
+  }
+
   public synchronized int nextPacketIdentifier(SubscribedEventManager subscription, long messageId) {
     int retVal = nextPacketIdentifier();
     PacketIdentifierMap state = new PacketIdentifierMap(retVal, subscription, messageId);

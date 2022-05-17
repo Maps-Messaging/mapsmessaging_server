@@ -53,12 +53,11 @@ public class PublishListener extends PacketListener {
       qos = QualityOfService.AT_MOST_ONCE;
     }
     String topicName;
-    if(publish.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_LONG_NAME ||
-        publish.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_NAME){
+    if(publish.getTopicIdType() == MQTT_SN_2_Packet.LONG_TOPIC_NAME){
       topicName = publish.getTopicName();
     }
     else{
-      topicName = stateEngine.getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
+      topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
     }
 
 

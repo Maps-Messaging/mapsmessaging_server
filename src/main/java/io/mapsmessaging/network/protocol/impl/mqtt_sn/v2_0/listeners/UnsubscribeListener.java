@@ -37,7 +37,7 @@ public class UnsubscribeListener extends PacketListener {
     int id = unsubscribe.getTopicId();
     String topicName = unsubscribe.getTopicName();
     if(id != -1){
-      topicName = stateEngine.getTopic((short)id);
+      topicName = stateEngine.getTopicAliasManager().getTopic((short)id);
     }
     if(topicName != null){
       stateEngine.removeSubscribeResponse(topicName);

@@ -51,21 +51,22 @@ public class RegisteredTopicConfiguration {
 
   public String getTopic(SocketAddress from, int id) {
     List<TopicConfiguration> list = topicConfigById.get(id);
-
-    // Search for explicit address mapping
-    for(TopicConfiguration tc:list ){
-      if (from instanceof InetSocketAddress) {
-        InetSocketAddress inetAddress = (InetSocketAddress) from;
-        if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
-          return tc.topic;
+    if(list != null) {
+      // Search for explicit address mapping
+      for (TopicConfiguration tc : list) {
+        if (from instanceof InetSocketAddress) {
+          InetSocketAddress inetAddress = (InetSocketAddress) from;
+          if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
+            return tc.topic;
+          }
         }
       }
-    }
 
-    // OK we have no address match, lets now check for a "*"
-    for(TopicConfiguration tc:list ){
-      if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
-        return tc.topic; // No checks
+      // OK we have no address match, lets now check for a "*"
+      for (TopicConfiguration tc : list) {
+        if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
+          return tc.topic; // No checks
+        }
       }
     }
     return null;

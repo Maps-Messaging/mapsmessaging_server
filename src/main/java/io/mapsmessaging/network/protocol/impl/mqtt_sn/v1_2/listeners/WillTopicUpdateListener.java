@@ -38,8 +38,6 @@ public class WillTopicUpdateListener extends PacketListener {
     ReasonCodes status = ReasonCodes.Success;
     WillTask task = session.getWillTask();
     if(task == null){
-      System.err.println("New Will Task being constructed:: topic name");
-
       WillDetails willDetails = new WillDetails();
       willDetails.setSessionId(session.getName());
       willDetails.setDestination(willTopicUpdate.getTopic());

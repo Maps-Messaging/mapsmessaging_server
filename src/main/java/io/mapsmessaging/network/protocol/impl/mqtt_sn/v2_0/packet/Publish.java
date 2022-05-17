@@ -52,16 +52,13 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
     super(PUBLISH);
     byte flags = packet.get();
     dup = (flags & 0b10000000) != 0;
-    QoS = QualityOfService.getInstance((flags & 0b01100000) >> 5);
+    int qos = (flags & 0b01100000) >> 5;
+    QoS = QualityOfService.getInstance(qos);
     retain = (flags & 0b00010000) != 0;
     topicIdType = flags & 0b11;
-
     int topicLength = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
-    if(topicLength == 2){
-      topicIdType = TOPIC_SHORT_NAME;
-    }
-    if (topicIdType == TOPIC_LONG_NAME || topicIdType == TOPIC_NAME) {
+    if (topicIdType == LONG_TOPIC_NAME) {
       byte[] tmp = new byte[topicLength];
       packet.get(tmp, 0, topicLength);
       topicName = new String(tmp);
@@ -88,7 +85,7 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
   byte packFlag(){
       byte f = (byte) ( (byte) ((QoS.getLevel() & 0b11) << 5));
-      int type = MQTT_SN_2_Packet.TOPIC_LONG_NAME;
+      int type = MQTT_SN_2_Packet.LONG_TOPIC_NAME;
       if(topicName == null){
         type = MQTT_SN_2_Packet.TOPIC_NAME;
       }

@@ -51,6 +51,7 @@ public class ConnectedState implements State {
         MQTT_SNPacket response = new Disconnect();
         if (disconnect.getDuration() > 0) {
           stateEngine.setState(new SleepState(disconnect.getDuration(), protocol));
+          stateEngine.sleep();
         } else {
           response.setCallback(() -> {
             try {

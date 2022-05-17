@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -29,8 +30,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
+import org.slj.mqtt.sn.model.IMqttsnContext;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
+import org.slj.mqtt.sn.spi.IMqttsnMessage;
+import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
+import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
 import org.slj.mqtt.sn.spi.MqttsnException;
+import org.slj.mqtt.sn.utils.TopicPath;
 
 public class MqttSNPublishingTest extends BaseMqttSnConfig {
 
@@ -53,15 +59,10 @@ public class MqttSNPublishingTest extends BaseMqttSnConfig {
     MqttSnClient client = new MqttSnClient("connectWithFlags", "localhost", 1884, version);
     client.connect(180, true);
 
-    client.registerPublishListener((iMqttsnContext, topicPath, bytes, iMqttsnMessage) -> {
-      received.countDown();
-    });
+    client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
 
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage) -> {
-      published.countDown();
-    });
+    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
 
-    client.registerPublishFailedListener((iMqttsnContext, uuid, topicPath, bytes, iMqttsnMessage, i) -> System.err.println("Failed to send message!!!!!!!!!!!!!!!!!!!"));
     //
     // Test Registered Topics
     //

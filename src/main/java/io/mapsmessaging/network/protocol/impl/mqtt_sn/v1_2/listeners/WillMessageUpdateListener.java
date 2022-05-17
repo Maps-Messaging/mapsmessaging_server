@@ -39,7 +39,6 @@ public class WillMessageUpdateListener extends PacketListener {
     byte[] payload = willMessageUpdate.getMessage();
     ReasonCodes status = ReasonCodes.Success;
     if(task == null){
-      System.err.println("New Will Task being constructed:: payload");
       WillDetails willDetails = new WillDetails();
       willDetails.setSessionId(session.getName());
       willDetails.setVersion(protocol.getVersion());

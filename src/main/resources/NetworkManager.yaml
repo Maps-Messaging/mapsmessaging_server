@@ -107,6 +107,17 @@ NetworkManager:
         advertiseGateway: true
 
       -
+        url: udp://0.0.0.0:1885/
+        name: "MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: false
+        HmacAlgorithm: "HmacSHA512"
+        HmacManager: "Appender"
+        HmacSharedKey: "ThisIsATestKey"
+
+      -
         url: dtls://0.0.0.0:1886/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn

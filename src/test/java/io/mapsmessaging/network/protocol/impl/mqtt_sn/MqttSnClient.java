@@ -91,7 +91,7 @@ public class MqttSnClient {
 
   @SneakyThrows
   public void publish(String topicName, int QoS, byte[] msg) throws MqttsnQueueAcceptException, MqttsnException {
-    client.publish(topicName, QoS, msg);
+    client.publish(topicName, QoS, false,msg);
   }
 
   public void sleep(long expiry) throws MqttsnException {

@@ -47,7 +47,7 @@ public class Subscribe extends MQTT_SN_2_Packet {
     retainHandler = RetainHandler.getInstance((flags & 0b00001100) >> 2);
     topicIdType = (flags & 0b11);
     msgId = MQTTPacket.readShort(packet);
-    if (topicIdType == TOPIC_LONG_NAME || topicIdType == TOPIC_NAME) {
+    if (topicIdType == LONG_TOPIC_NAME || topicIdType == TOPIC_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp);
       topicName = new String(tmp);

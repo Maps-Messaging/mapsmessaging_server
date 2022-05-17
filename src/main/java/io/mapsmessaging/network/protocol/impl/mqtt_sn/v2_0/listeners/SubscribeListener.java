@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
@@ -41,12 +43,12 @@ public class SubscribeListener extends PacketListener {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
     String topicName;
-    if(subscribe.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_LONG_NAME ||
-        subscribe.getTopicIdType() == MQTT_SN_2_Packet.TOPIC_NAME){
+    if(subscribe.getTopicIdType() == MQTT_SN_2_Packet.LONG_TOPIC_NAME ||
+        subscribe.getTopicIdType() == TOPIC_NAME){
       topicName = subscribe.getTopicName();
     }
     else{
-      topicName = stateEngine.getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
+      topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
     }
     if (topicName != null) {
       //
@@ -65,7 +67,7 @@ public class SubscribeListener extends PacketListener {
       // Do NOT register wildcard subscriptions
       //
       if (!(topicName.contains("+") || topicName.contains("#"))) {
-        topicId = stateEngine.getTopicAlias(topicName);
+        topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
       }
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
@@ -73,12 +75,11 @@ public class SubscribeListener extends PacketListener {
       builder.setNoLocalMessages(subscribe.isNoLocal());
       builder.setRetainHandler(subscribe.getRetainHandler());
       builder.setQos(subscribe.getQoS());
-
       try {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
         SubAck subAck = new SubAck(
-            topicId,  (short)0,
+            topicId,  TOPIC_NAME,
             subscribe.getQoS(),
             subscribe.getMsgId(),
             ReasonCodes.Success);
@@ -87,7 +88,7 @@ public class SubscribeListener extends PacketListener {
         return subAck;
       } catch (IOException e) {
         SubAck subAck = new SubAck(
-            topicId,  (short)0,
+            topicId,  TOPIC_NAME,
             subscribe.getQoS(),
             subscribe.getMsgId(),
             ReasonCodes.InvalidTopicAlias);
@@ -96,7 +97,7 @@ public class SubscribeListener extends PacketListener {
       }
     } else {
       SubAck subAck = new SubAck(
-          (short)0,  (short)0,
+          (short)0,  TOPIC_NAME,
           subscribe.getQoS(),
           subscribe.getMsgId(),
           ReasonCodes.InvalidTopicAlias);

@@ -52,7 +52,7 @@ public class PublishListener extends PacketListener {
       qos = QualityOfService.AT_MOST_ONCE;
     }
     short topicId = (short) publish.getTopicId();
-    String topicName = stateEngine.getTopic(topicId);
+    String topicName = stateEngine.getTopicAliasManager().getTopic(topicId);
     if (topicName != null) {
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setQoS(qos)
