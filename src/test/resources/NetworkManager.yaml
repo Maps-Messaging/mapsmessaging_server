@@ -56,8 +56,10 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
       # MQTT-SN specific configuration
       # ---------------------------------------------------------------------------------------------------------
-        eventsPerTopicDuringSleep : 100
-        maxTopicsInSleep : 100
+        maxInFlightEvents : 1
+        dropQoS0Events: true
+        eventQueueTimeout: 10
+
 
     data:
       -
@@ -110,6 +112,15 @@ NetworkManager:
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: true
+        ssl_SSLContext: DTLS
+
+      -
+        url: dtls://0.0.0.0:1886/
+        name: "DTLS MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: false
         ssl_SSLContext: DTLS
 
       -

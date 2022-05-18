@@ -18,58 +18,50 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig.createQoSVersionStream;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
 
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
-import org.slj.mqtt.sn.model.IMqttsnContext;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.spi.IMqttsnMessage;
-import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
-import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
 import org.slj.mqtt.sn.spi.MqttsnException;
-import org.slj.mqtt.sn.utils.TopicPath;
 
 public class MqttSnSleepTest extends BaseTestConfig {
 
-  private int connectionCounter = 0;
-
-
+  private static Stream<Arguments> sleepingClientTest() {
+    return createQoSVersionStream();
+  }
   @ParameterizedTest
-  @ValueSource(ints = {1,2})
-  public void sleepingClientTest(int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException {
+  @MethodSource
+  public void sleepingClientTest(int qos, int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException {
+    int expectedCount = qos!=0 ? PUBLISH_COUNT: 1;
+
     AtomicLong publishCount = new AtomicLong(0);
+    AtomicLong receiveCounter = new AtomicLong(0);
 
     MqttSnClient sleepy = new MqttSnClient("sleepingClientTest", "localhost", 1884, version);
+    MqttSnClient hyper = new MqttSnClient("sleepingClientTest-hyper", "localhost", 1884, version);
+
+    hyper.connect(120, true);
     sleepy.connect(120, true);
 
-    MqttSnClient hyper = new MqttSnClient("sleepingClientTest-hyper", "localhost", 1884, version);
-    hyper.connect(120, true);
     hyper.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
+    sleepy.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
+    sleepy.subscribe("/mqttsn/test", qos);
 
-    AtomicLong receiveCounter = new AtomicLong(0);
-    sleepy.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
-      {
-        receiveCounter.incrementAndGet();
-        System.err.println("Received::"+topicPath);
-      }
-    });
-    sleepy.subscribe("/mqttsn/test", 1);
-
-
-    delay(2000);
     sleepy.sleep(120);// We sleep for 30 seconds
     for(int x=0;x<PUBLISH_COUNT;x++) {
-      hyper.publish("/mqttsn/test",1, "These should be waiting for sleepy".getBytes());
+      hyper.publish("/mqttsn/test",qos, "These should be waiting for sleepy".getBytes());
     }
     long timer = System.currentTimeMillis() + 30000;
     while(publishCount.get() != PUBLISH_COUNT && timer > System.currentTimeMillis()){
@@ -87,8 +79,8 @@ public class MqttSnSleepTest extends BaseTestConfig {
     sleepy.wake();
 
     // We should ask the server to send any outstanding events and then go back to sleep
-    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(receiveCounter.get() == PUBLISH_COUNT));
-    Assertions.assertEquals(PUBLISH_COUNT, receiveCounter.get());
+    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(receiveCounter.get() == expectedCount));
+    Assertions.assertEquals(expectedCount, receiveCounter.get());
 
     //
     // So far so good, but is sleepy asleep again
@@ -112,7 +104,7 @@ public class MqttSnSleepTest extends BaseTestConfig {
     // Brilliant, not only did sleepy wake up, receive events but went back to sleep...
     // final task, lets wake up, and stay awake...
     sleepy.connect(120, false);
-    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(receiveCounter.get() == PUBLISH_COUNT));
+    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(receiveCounter.get() == expectedCount));
 
     //
     // Final test, if I publish then sleepy should receive directly
@@ -131,4 +123,51 @@ public class MqttSnSleepTest extends BaseTestConfig {
     hyper.disconnect();
     sleepy.disconnect();
   }
+
+  private static Stream<Arguments> expiredEventTest() {
+    return createQoSVersionStream();
+  }
+  @ParameterizedTest
+  @MethodSource
+  public void expiredEventTest(int qos, int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException, IOException {
+    AtomicLong publishCount = new AtomicLong(0);
+    AtomicLong receiveCounter = new AtomicLong(0);
+
+    MqttSnClient sleepy = new MqttSnClient("sleepingClientTest", "localhost", 1884, version);
+    MqttSnClient hyper = new MqttSnClient("sleepingClientTest-hyper", "localhost", 1884, version);
+
+    hyper.connect(120, true);
+    sleepy.connect(120, true);
+
+    hyper.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
+    sleepy.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
+    sleepy.subscribe("/mqttsn/test", qos);
+
+    sleepy.sleep(120);// We sleep for 120 seconds
+    for (int x = 0; x < PUBLISH_COUNT; x++) {
+      hyper.publish("/mqttsn/test", qos, "These should be waiting for sleepy".getBytes());
+    }
+    long timer = System.currentTimeMillis() + 30000;
+    while(publishCount.get() != PUBLISH_COUNT && timer > System.currentTimeMillis()){
+      TimeUnit.MILLISECONDS.sleep(10);
+    }
+    //
+    // At this point sleepy should have 0 publish events
+    //
+    // Ok, so sleepy seems to be sleeping, lets wait a couple of seconds to be sure
+    Assertions.assertEquals(receiveCounter.get(), 0);
+    delay(20000); // Time out events
+    Assertions.assertEquals(receiveCounter.get(), 0);
+
+    sleepy.wake();
+
+    // We should ask the server to send any outstanding events and then go back to sleep
+    WaitForState.waitFor(TIMEOUT, TimeUnit.MILLISECONDS, ()->(receiveCounter.get() == 0));
+    Assertions.assertEquals(0, receiveCounter.get());
+    sleepy.connect(120, false);
+    sleepy.disconnect();
+    hyper.disconnect();
+
+  }
+
 }

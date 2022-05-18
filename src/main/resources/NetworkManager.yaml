@@ -75,8 +75,9 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
       # MQTT-SN specific configuration
       # ---------------------------------------------------------------------------------------------------------
-        eventsPerTopicDuringSleep : 10
-        maxTopicsInSleep : 10
+        maxInFlightEvents : 1
+        dropQoS0Events: true
+        eventQueueTimeout: 0
         advertiseGateway: false
 
     data:
@@ -107,15 +108,25 @@ NetworkManager:
         advertiseGateway: true
 
       -
+        url: dtls://0.0.0.0:1886/
+        name: "DTLS MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: false
+        ssl_SSLContext: DTLS
+
+      -
         url: udp://0.0.0.0:1885/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: false
+        nodeConfiguration:
         HmacAlgorithm: "HmacSHA512"
         HmacManager: "Appender"
-        HmacSharedKey: "ThisIsATestKey"
+        HmacSharedKey: "ThisIsALocalHostSharedKey"
 
       -
         url: dtls://0.0.0.0:1886/
@@ -138,7 +149,10 @@ NetworkManager:
             id: 1
             topic: predefined/topic
             address: '*'
-
+          -
+            id: 1
+            topic: predefined/localhost/topic
+            address: '127.0.0.1'
       -
         url: tcp://0.0.0.0:5672/
         name: "AMQP Interface"

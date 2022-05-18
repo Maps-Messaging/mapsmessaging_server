@@ -1,4 +1,4 @@
-package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
+package io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -7,8 +7,13 @@ import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Register;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.NonNull;
@@ -24,6 +29,10 @@ public class MessagePipeline {
   private final AtomicBoolean paused;
   private final AtomicInteger empty;
 
+  private final int maxInFlightEvents;
+  private final long eventTimeout;
+  private final boolean dropQoS0;
+
   private Runnable completion;
 
   public MessagePipeline(MQTT_SNProtocol protocol, StateEngine stateEngine){
@@ -34,6 +43,14 @@ public class MessagePipeline {
     outstanding = new AtomicInteger(0);
     paused = new AtomicBoolean(false);
     empty = new AtomicInteger(0);
+
+    ConfigurationProperties props = protocol.getEndPoint().getConfig().getProperties();
+    maxInFlightEvents = props.getIntProperty("maxInFlightEvents", 1);
+    dropQoS0 = props.getBooleanProperty("dropQoS0Events", false);
+
+    long t = TimeUnit.SECONDS.toMillis(props.getIntProperty("eventQueueTimeout", 0));
+    eventTimeout = t == 0? Long.MAX_VALUE:t;
+
   }
 
   public void pause(){
@@ -47,24 +64,30 @@ public class MessagePipeline {
 
   public void queue(@NotNull @NonNull MessageEvent messageEvent){
     if(paused.get()){
+      if(dropQoS0 &&
+          messageEvent.getMessage().getQualityOfService().getLevel() == 0 &&
+          messageEvent.getSubscription().getDepth() > 1){
+        messageEvent.getCompletionTask().run();
+        // Dropping a QoS:0 event while paused
+        return;
+      }
       outstanding.incrementAndGet();
       publishContexts.offer(messageEvent);
-      return;
     }
-    SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
-    QualityOfService qos = subInfo.getQualityOfService();
-    long depth = outstanding.incrementAndGet();
-    if(depth == 1) {
-      if(qos.getLevel() > 0){
+    else {
+      SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
+      QualityOfService qos = subInfo.getQualityOfService();
+      long depth = outstanding.incrementAndGet();
+      if (depth <= maxInFlightEvents) {
+        if (qos.getLevel() > 0) {
+          publishContexts.offer(messageEvent);
+        } else {
+          outstanding.decrementAndGet();
+        }
+        send(messageEvent);
+      } else {
         publishContexts.offer(messageEvent);
       }
-      else{
-        outstanding.decrementAndGet();
-      }
-      send(messageEvent);
-    }
-    else{
-      publishContexts.offer(messageEvent);
     }
   }
 
@@ -79,23 +102,29 @@ public class MessagePipeline {
   private void sendNext(){
     MessageEvent messageEvent = publishContexts.peek();
     if(messageEvent != null) {
-      SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
-      QualityOfService qos = subInfo.getQualityOfService();
-      if (qos.getLevel() == 0) {
-        outstanding.decrementAndGet();
-        empty.decrementAndGet();
-        publishContexts.poll();
-        send(messageEvent);
-        completed(0);
+      if(messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
+        SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
+        QualityOfService qos = subInfo.getQualityOfService();
+        if (qos.getLevel() == 0) {
+          empty.decrementAndGet();
+          send(messageEvent);
+          completed(0);
+        } else {
+          send(messageEvent);
+        }
       }
       else{
-        send(messageEvent);
+        messageEvent.getCompletionTask().run();
+        completed(0);
       }
     }
     if(outstanding.get() == 0 && paused.get()){
       empty.set(0);
       stateEngine.getTopicAliasManager().clear();
-      completion.run();
+      if(completion != null) {
+        completion.run();
+        completion = null;
+      }
     }
   }
 
@@ -115,17 +144,20 @@ public class MessagePipeline {
       // Updating the client with the new topic id for the destination
       //
       alias = stateEngine.getTopicAliasManager().getTopicAlias(messageEvent.getDestinationName());
-      Register register = new Register(alias, (short) 0, messageEvent.getDestinationName());
+      Register register = new Register(alias, MQTT_SNPacket.TOPIC_NAME, messageEvent.getDestinationName());
       protocol.writeFrame(register);
     }
     MQTT_SNPacket publish = protocol.buildPublish(alias, messageId,  messageEvent, qos);
     stateEngine.sendPublish(protocol, messageEvent.getDestinationName(), publish);
   }
 
-  public void emptyQueue(int sendSize, Runnable completion) {
-    this.completion = completion;
-    if(outstanding.get() == 0){
-      completion.run();
+  public void emptyQueue(int sendSize, Runnable task) {
+    this.completion = task;
+    if(size() == 0){
+      if(completion != null) {
+        completion.run();
+        completion = null;
+      }
     }
     else {
       if (sendSize == 0) {
@@ -138,6 +170,15 @@ public class MessagePipeline {
   }
 
   public int size(){
-    return outstanding.get();
+    int total =0;
+    Map<String, Long> counters = new LinkedHashMap<>();
+    for(MessageEvent event:publishContexts){
+      String destination = event.getDestinationName();
+      if(!counters.containsKey(destination)){
+        total += event.getSubscription().getDepth();
+        counters.put(destination, (long)(event.getSubscription().getDepth()));
+      }
+    }
+    return total;
   }
 }
