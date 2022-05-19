@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 public class MessagePipeline {
 
   private final Queue<MessageEvent> publishContexts;
-  private final AtomicInteger outstanding;
   private final StateEngine stateEngine;
   private final PacketIdManager packetIdManager;
   private final MQTT_SNProtocol protocol;
@@ -40,7 +39,6 @@ public class MessagePipeline {
     this.stateEngine = stateEngine;
     this.packetIdManager = protocol.getPacketIdManager();
     publishContexts = new ConcurrentLinkedQueue<>();
-    outstanding = new AtomicInteger(0);
     paused = new AtomicBoolean(false);
     empty = new AtomicInteger(0);
 
@@ -71,18 +69,14 @@ public class MessagePipeline {
         // Dropping a QoS:0 event while paused
         return;
       }
-      outstanding.incrementAndGet();
       publishContexts.offer(messageEvent);
     }
     else {
       SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
       QualityOfService qos = subInfo.getQualityOfService();
-      long depth = outstanding.incrementAndGet();
-      if (depth <= maxInFlightEvents) {
+      if (publishContexts.size()+1 <= maxInFlightEvents) {
         if (qos.getLevel() > 0) {
           publishContexts.offer(messageEvent);
-        } else {
-          outstanding.decrementAndGet();
         }
         send(messageEvent);
       } else {
@@ -92,7 +86,6 @@ public class MessagePipeline {
   }
 
   public void completed(int messageId) {
-    outstanding.decrementAndGet();
     publishContexts.poll(); // Remove outstanding publish
     if (!paused.get() || empty.get() != 0) {
       sendNext();
@@ -118,7 +111,7 @@ public class MessagePipeline {
         completed(0);
       }
     }
-    if(outstanding.get() == 0 && paused.get()){
+    if(publishContexts.size() == 0 && paused.get()){
       empty.set(0);
       stateEngine.getTopicAliasManager().clear();
       if(completion != null) {
