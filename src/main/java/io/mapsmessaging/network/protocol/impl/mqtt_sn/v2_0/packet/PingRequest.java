@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -27,7 +28,7 @@ import lombok.ToString;
 public class PingRequest extends MQTT_SN_2_Packet {
 
   @Getter
-  private int clientId;
+  private String clientId;
   @Getter
   private int maxMessages;
 
@@ -35,15 +36,17 @@ public class PingRequest extends MQTT_SN_2_Packet {
     super(PINGREQ);
   }
 
-  public PingRequest(Packet packet, int length) {
+  public PingRequest(Packet packet, int length) throws MalformedException {
     super(PINGREQ);
     if (length > 2) {
       maxMessages = packet.get();
-      clientId = MQTTPacket.readShort(packet);
+      if(length > 4) {
+        clientId = MQTTPacket.readUTF8(packet);
+      }
     }
     else{
       maxMessages = 0;
-      clientId = 0;
+      clientId = "";
     }
   }
 

@@ -26,9 +26,7 @@ import lombok.ToString;
 @ToString
 public class PingResponse extends MQTT_SN_2_Packet {
 
-  @Getter
-  @Setter
-  private int messagesRemaining;
+  @Getter @Setter private int messagesRemaining;
 
   public PingResponse() {
     super(PINGRESP);

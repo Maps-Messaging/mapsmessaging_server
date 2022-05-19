@@ -46,7 +46,12 @@ public class PacketFactoryV2 extends PacketFactory {
         return new Unsubscribe(packet);
 
       case MQTT_SNPacket.PINGREQ:
-        return new PingRequest(packet, length);
+        try {
+          return new PingRequest(packet, length);
+        }
+        catch(Exception e){
+          return new PingResponse();
+        }
 
       case MQTT_SNPacket.PINGRESP:
         return new PingResponse();
