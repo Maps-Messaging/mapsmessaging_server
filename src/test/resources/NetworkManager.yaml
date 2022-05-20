@@ -95,15 +95,26 @@ NetworkManager:
         advertiseGateway: true
 
       -
-        url: udp://0.0.0.0:1885/
+        url: hmac://0.0.0.0:1885/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: false
-        HmacAlgorithm: "HmacSHA512"
-        HmacManager: "Appender"
-        HmacSharedKey: "ThisIsATestKey"
+        nodeConfiguration:
+          -
+            host: 127.0.0.1
+            port: 0
+            HmacAlgorithm: "HmacSHA512"
+            HmacManager: "Appender"
+            HmacSharedKey: "ThisIsATestKey"
+          -
+            host: localhost
+            port: 0
+            HmacAlgorithm: "HmacSHA512"
+            HmacManager: "Appender"
+            HmacSharedKey: "ThisIsATestKey"
+
 
       -
         url: dtls://0.0.0.0:1886/

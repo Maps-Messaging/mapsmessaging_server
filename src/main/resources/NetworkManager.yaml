@@ -117,16 +117,25 @@ NetworkManager:
         ssl_SSLContext: DTLS
 
       -
-        url: udp://0.0.0.0:1885/
+        url: hmac://0.0.0.0:1885/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: false
         nodeConfiguration:
-        HmacAlgorithm: "HmacSHA512"
-        HmacManager: "Appender"
-        HmacSharedKey: "ThisIsALocalHostSharedKey"
+          -
+            host: 127.0.0.1
+            port: 0
+            HmacAlgorithm: "HmacSHA512"
+            HmacManager: "Appender"
+            HmacSharedKey: "ThisIsALocalHostSharedKey"
+          -
+            host: localhost
+            port: 0
+            HmacAlgorithm: "HmacSHA512"
+            HmacManager: "Appender"
+            HmacSharedKey: "ThisIsALocalHostSharedKey"
 
       -
         url: dtls://0.0.0.0:1886/

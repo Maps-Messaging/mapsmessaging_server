@@ -14,11 +14,30 @@
 #    limitations under the License.
 #
 
+#
+# Debug based end points
+#
+io.mapsmessaging.network.io.impl.noop.NoOpEndPointServerFactory
 
+#
+# Serial based End points
+#
+io.mapsmessaging.network.io.impl.serial.SerialEndPointServerFactory
+
+#
+# Hardware based end points
+#
+io.mapsmessaging.network.io.impl.lora.LoRaEndPointServerFactory
+
+#
+# TCP based end points
+#
 io.mapsmessaging.network.io.impl.tcp.TCPEndPointServerFactory
 io.mapsmessaging.network.io.impl.ssl.SSLEndPointServerFactory
+
+#
+# UDP based end points
+#
 io.mapsmessaging.network.io.impl.udp.UDPEndPointServerFactory
+io.mapsmessaging.network.io.impl.hmac.HmacUDPEndPointServerFactory
 io.mapsmessaging.network.io.impl.dtls.DTLSEndPointServerFactory
-io.mapsmessaging.network.io.impl.serial.SerialEndPointServerFactory
-io.mapsmessaging.network.io.impl.lora.LoRaEndPointServerFactory
-io.mapsmessaging.network.io.impl.noop.NoOpEndPointServerFactory

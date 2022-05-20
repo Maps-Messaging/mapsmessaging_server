@@ -27,8 +27,6 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-import io.mapsmessaging.network.io.security.PacketIntegrity;
-import io.mapsmessaging.network.io.security.PacketIntegrityFactory;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
@@ -42,10 +40,10 @@ import java.util.List;
 
 public class UDPEndPointServer extends EndPointServer {
 
-  private final EndPointManagerJMX managerMBean;
-  private final SelectorLoadManager selectorLoadManager;
+  protected final EndPointManagerJMX managerMBean;
+  protected final SelectorLoadManager selectorLoadManager;
   private final ProtocolFactory protocolFactory;
-  private final String authenticationConfig;
+  protected final String authenticationConfig;
   private final List<UDPInterfaceInformation> udpInterfaceInformations;
   private final List<UDPEndPoint> bondedEndPoints;
   private final int port;
@@ -97,29 +95,7 @@ public class UDPEndPointServer extends EndPointServer {
     for (UDPInterfaceInformation info : udpInterfaceInformations) {
       for (InterfaceAddress interfaceAddress : info.getInterfaces()) {
         InetSocketAddress bonded = new InetSocketAddress(interfaceAddress.getAddress(), port);
-        PacketIntegrity packetIntegrity = PacketIntegrityFactory.getInstance().createPacketIntegrity( getConfig().getProperties() );
-        UDPEndPoint endPoint;
-        if(packetIntegrity != null){
-          endPoint = new HmacUDPEndPoint(
-              bonded,
-              selectorLoadManager.allocate(),
-              1,
-              this,
-              authenticationConfig,
-              managerMBean,
-              packetIntegrity
-          );
-        }
-        else{
-          endPoint = new UDPEndPoint(
-              bonded,
-              selectorLoadManager.allocate(),
-              1,
-              this,
-              authenticationConfig,
-              managerMBean
-          );
-        }
+        UDPEndPoint endPoint = createEndPoint(bonded);
         UDPInterfaceInformation nInfo = new UDPInterfaceInformation(info, interfaceAddress.getBroadcast());
         protocolImplFactory.create(endPoint, nInfo);
         bondedEndPoints.add(endPoint);
@@ -127,6 +103,17 @@ public class UDPEndPointServer extends EndPointServer {
     }
   }
 
+
+  protected UDPEndPoint createEndPoint( InetSocketAddress bonded ) throws IOException {
+    return new UDPEndPoint(
+        bonded,
+        selectorLoadManager.allocate(),
+        1,
+        this,
+        authenticationConfig,
+        managerMBean
+    );
+  }
   @Override
   protected Logger createLogger(String url) {
     return LoggerFactory.getLogger(UDPEndPointServer.class.getName() + "_" + url);
