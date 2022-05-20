@@ -41,7 +41,7 @@ public class MqttSnClient {
     MqttsnOptions options = new MqttsnOptions().
         //-- specify the address of any static gateway nominating a context id for it
             withNetworkAddressEntry(contextId, NetworkAddress.localhost(port)).
-            withMaxMessagesInflight(1).
+            withMaxMessagesInflight(2).
             withPredefinedTopic("predefined/topic", 1).
         //-- configure your clientId
             withContextId(contextId);
