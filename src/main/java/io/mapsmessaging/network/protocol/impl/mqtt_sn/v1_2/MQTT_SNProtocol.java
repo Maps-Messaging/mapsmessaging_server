@@ -98,7 +98,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       SessionManager.getInstance().close(session, false);
       factory.close(remoteClient);
       packetIdManager.close();
-      super.close();
     }
   }
 

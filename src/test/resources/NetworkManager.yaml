@@ -101,6 +101,7 @@ NetworkManager:
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: false
+        HMACHostLookupCacheExpiry: 10
         nodeConfiguration:
           -
             host: 127.0.0.1
@@ -110,6 +111,12 @@ NetworkManager:
             HmacSharedKey: "ThisIsATestKey"
           -
             host: localhost
+            port: 0
+            HmacAlgorithm: "HmacSHA512"
+            HmacManager: "Appender"
+            HmacSharedKey: "ThisIsATestKey"
+          -
+            host: 10.140.62.189
             port: 0
             HmacAlgorithm: "HmacSHA512"
             HmacManager: "Appender"

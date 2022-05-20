@@ -20,8 +20,8 @@ public class HmacConnectPacketTest extends UDPConnectPacketTest {
         "ThisIsATestKey".getBytes()
     );
     return new UDPPacketTransport(
-        new InetSocketAddress(host, 0),
-        new InetSocketAddress(host, 1885));
+        new InetSocketAddress("10.140.62.189", 0),
+        new InetSocketAddress("10.140.62.189", 1885));
   }
 
 

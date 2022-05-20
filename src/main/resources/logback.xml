@@ -20,7 +20,7 @@
   <appender name="LogFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>messaging.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>messaging.log-%d{yyy-MM-dd}.log.gz</fileNamePattern>
+      <fileNamePattern>messaging.log-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
       <maxHistory>7</maxHistory>
     </rollingPolicy>
     <encoder>
@@ -39,7 +39,7 @@
       <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
-  <root level="warn">
+  <root level="info">
     <appender-ref ref="AsyncLogFile" />
   </root>
 </configuration>

@@ -123,6 +123,7 @@ NetworkManager:
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: false
+        HMACHostLookupCacheExpiry: 60
         nodeConfiguration:
           -
             host: 127.0.0.1

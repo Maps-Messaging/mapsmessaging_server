@@ -6,6 +6,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -185,6 +186,7 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
       Assertions.assertEquals(packet.get(1), 0x18);
+      TimeUnit.SECONDS.sleep(11);
     }
   }
   private static Stream<Arguments> testWillRequests() {
