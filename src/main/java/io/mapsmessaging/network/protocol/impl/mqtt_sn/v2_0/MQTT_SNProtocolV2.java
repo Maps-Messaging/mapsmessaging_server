@@ -57,6 +57,7 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
         new PacketFactoryV2(),
         registeredTopicConfiguration);
     stateEngine.setState(new InitialConnectionState());
+    addressKey = connect.getFromAddress();
     handleMQTTEvent(connect);
   }
 
@@ -84,9 +85,10 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   }
 
   @Override
-  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos){
+  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId){
     Publish publish = new Publish(alias, packetId,  messageEvent.getMessage().getOpaqueData());
     publish.setQoS(qos);
+    publish.setTopicIdType(topicTypeId);
     publish.setCallback(messageEvent.getCompletionTask());
     return publish;
   }

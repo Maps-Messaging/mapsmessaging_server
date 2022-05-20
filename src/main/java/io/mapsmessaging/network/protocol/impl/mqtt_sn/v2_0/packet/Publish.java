@@ -33,7 +33,8 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
   @Getter private final int topicId;
   @Getter private final String topicName;
   @Getter private final int messageId;
-  @Getter private int topicIdType;
+  @Getter
+  @Setter private int topicIdType;
   @Getter private final byte[] message;
   @Getter private boolean dup;
   @Getter @Setter private QualityOfService QoS;
@@ -45,7 +46,7 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
     this.messageId = messageId;
     this.message = message;
     this.topicName = null;
-    topicIdType = TOPIC_SHORT_NAME;
+    topicIdType = TOPIC_NAME;
   }
 
   public Publish(Packet packet, int length) throws IOException {
@@ -85,11 +86,7 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
   byte packFlag(){
       byte f = (byte) ( (byte) ((QoS.getLevel() & 0b11) << 5));
-      int type = MQTT_SN_2_Packet.LONG_TOPIC_NAME;
-      if(topicName == null){
-        type = MQTT_SN_2_Packet.TOPIC_NAME;
-      }
-      f = (byte) (f | (type & 0b11));
+      f = (byte) (f | (topicIdType & 0b11));
       return f;
   }
 }

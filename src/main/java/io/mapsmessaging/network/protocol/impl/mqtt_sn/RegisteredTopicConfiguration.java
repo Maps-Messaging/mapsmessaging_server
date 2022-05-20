@@ -30,11 +30,13 @@ import java.util.StringTokenizer;
 public class RegisteredTopicConfiguration {
 
   private final HashMap<Integer, List<TopicConfiguration>> topicConfigById;
+  private final HashMap<String, List<TopicConfiguration>> topicConfigByName;
 
 
   public RegisteredTopicConfiguration(ConfigurationProperties properties) {
     String registeredTopics = properties.getProperty("registered", "");
     topicConfigById = new LinkedHashMap<>();
+    topicConfigByName = new LinkedHashMap<>();
     parse(registeredTopics);
     Object predefined = properties.get("preDefinedTopics");
     if(predefined instanceof List){
@@ -45,6 +47,10 @@ public class RegisteredTopicConfiguration {
         String address = props.getProperty("address", "*");
         List<TopicConfiguration> list = topicConfigById.computeIfAbsent(id, k -> new ArrayList<>());
         list.add(new TopicConfiguration(address, id, topic));
+
+        List<TopicConfiguration> list1 = topicConfigByName.computeIfAbsent(topic, k -> new ArrayList<>());
+        list1.add(new TopicConfiguration(address, id, topic));
+
       }
     }
   }
@@ -80,6 +86,29 @@ public class RegisteredTopicConfiguration {
       List<TopicConfiguration> list = topicConfigById.computeIfAbsent(tc.id, k -> new ArrayList<>());
       list.add(tc);
     }
+  }
+
+  public int getRegisteredTopicAliasType(SocketAddress from, String destinationName) {
+    List<TopicConfiguration> list = topicConfigByName.get(destinationName);
+
+    if(list != null) {
+      for (TopicConfiguration tc : list) {
+        if (from instanceof InetSocketAddress) {
+          InetSocketAddress inetAddress = (InetSocketAddress) from;
+          if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
+            return tc.id;
+          }
+        }
+      }
+
+      // OK we have no address match, lets now check for a "*"
+      for (TopicConfiguration tc : list) {
+        if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
+          return tc.id; // No checks
+        }
+      }
+    }
+    return -1;
   }
 
 

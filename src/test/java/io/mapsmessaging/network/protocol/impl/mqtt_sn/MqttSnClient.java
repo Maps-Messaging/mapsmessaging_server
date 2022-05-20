@@ -1,5 +1,6 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.client.impl.MqttsnClient;
@@ -25,6 +26,8 @@ import org.slj.mqtt.sn.spi.MqttsnException;
 public class MqttSnClient {
 
   private final MqttsnClient client;
+
+  @Getter
   private final AbstractTopicRegistry topicRegistry;
 
   public MqttSnClient(String contextId, String host, int port, int version) throws MqttsnException {
@@ -38,7 +41,8 @@ public class MqttSnClient {
     MqttsnOptions options = new MqttsnOptions().
         //-- specify the address of any static gateway nominating a context id for it
             withNetworkAddressEntry(contextId, NetworkAddress.localhost(port)).
-            withMaxMessagesInflight(10).
+            withMaxMessagesInflight(1).
+            withPredefinedTopic("predefined/topic", 1).
         //-- configure your clientId
             withContextId(contextId);
 
@@ -64,6 +68,11 @@ public class MqttSnClient {
   public TopicInfo lookupRegistry(String topicName) throws MqttsnException {
     return topicRegistry.lookup(client.getSessionState().getContext(), topicName);
   }
+
+  public void register(String topicName, int alias) throws MqttsnException {
+    topicRegistry.register(client.getSessionState().getContext(), topicName, alias);
+  }
+
 
   public void connect(int keepAlive, boolean cleanSession) throws MqttsnClientConnectException, MqttsnException {
     client.connect(keepAlive, cleanSession);

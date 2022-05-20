@@ -21,8 +21,10 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -51,8 +53,7 @@ public class PublishListener extends PacketListener {
     if (qos.equals(QualityOfService.MQTT_SN_REGISTERED)) {
       qos = QualityOfService.AT_MOST_ONCE;
     }
-    short topicId = (short) publish.getTopicId();
-    String topicName = stateEngine.getTopicAliasManager().getTopic(topicId);
+    String topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
     if (topicName != null) {
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setQoS(qos)
@@ -63,8 +64,15 @@ public class PublishListener extends PacketListener {
         CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
         future.thenApply(destination -> {
           if(destination != null) {
+            Message message = messageBuilder.build();
             try {
-            destination.storeMessage(messageBuilder.build());
+              if(message.getQualityOfService().getLevel() == 2){
+                Transaction transaction = session.startTransaction(session.getName()+":"+publish.getMessageId());
+                transaction.add(destination, message);
+              }
+              else {
+                destination.storeMessage(message);
+              }
             } catch (IOException e) {
               ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
             }

@@ -93,6 +93,11 @@ NetworkManager:
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: true
+        preDefinedTopics:
+          - id: 1
+            topic: predefined/topic
+            address: '*'
+
 
       -
         url: hmac://0.0.0.0:1885/

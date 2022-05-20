@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
 
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
@@ -68,4 +69,14 @@ public class TopicAliasManager {
     return alias;
   }
 
+  public int getTopicAliasType(String destinationName) {
+    if(topicAlias.containsKey(destinationName)){
+      return TOPIC_NAME;
+    }
+    return TOPIC_PRE_DEFINED_ID;
+  }
+
+  public int findRegisteredTopicAlias(SocketAddress key, String destinationName) {
+    return registeredTopicConfiguration.getRegisteredTopicAliasType(key, destinationName);
+  }
 }

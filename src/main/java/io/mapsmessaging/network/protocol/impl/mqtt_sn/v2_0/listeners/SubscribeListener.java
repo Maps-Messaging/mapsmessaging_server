@@ -43,12 +43,17 @@ public class SubscribeListener extends PacketListener {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
     String topicName;
+    short topicId =0;
+
     if(subscribe.getTopicIdType() == MQTT_SN_2_Packet.LONG_TOPIC_NAME ||
         subscribe.getTopicIdType() == TOPIC_NAME){
       topicName = subscribe.getTopicName();
     }
     else{
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
+      if(subscribe.getTopicIdType() == MQTT_SNPacket.TOPIC_PRE_DEFINED_ID){
+        topicId = (short)subscribe.getTopicIdType();
+      }
     }
     if (topicName != null) {
       //
@@ -59,14 +64,9 @@ public class SubscribeListener extends PacketListener {
       }
 
       //
-      // Now map the topic name to a short
-      //
-
-      short topicId = 0;
-      //
       // Do NOT register wildcard subscriptions
       //
-      if (!(topicName.contains("+") || topicName.contains("#"))) {
+      if (topicId == 0 && !(topicName.contains("+") || topicName.contains("#"))) {
         topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
       }
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
@@ -79,7 +79,7 @@ public class SubscribeListener extends PacketListener {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
         SubAck subAck = new SubAck(
-            topicId,  TOPIC_NAME,
+            topicId,  (short) subscribe.getTopicIdType(),
             subscribe.getQoS(),
             subscribe.getMsgId(),
             ReasonCodes.Success);

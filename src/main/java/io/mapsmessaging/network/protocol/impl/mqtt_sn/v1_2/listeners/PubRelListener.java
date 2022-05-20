@@ -19,15 +19,15 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdentifierMap;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubComp;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubRel;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import java.io.IOException;
 
 public class PubRelListener extends PacketListener {
 
@@ -40,6 +40,18 @@ public class PubRelListener extends PacketListener {
       StateEngine stateEngine) throws MalformedException {
 
     PubRel pubRel = (PubRel) mqttPacket;
-    return new PubComp(pubRel.getMessageId());
+    PubComp event = new PubComp(pubRel.getMessageId());
+
+    event.setCallback(() -> {
+      Transaction tx = session.getTransaction(session.getName()+":"+event.getMessageId());
+      if(tx != null){
+        try {
+          tx.commit();
+          session.closeTransaction(tx);
+        } catch (IOException e) {
+        }
+      }
+    });
+    return event;
   }
 }

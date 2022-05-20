@@ -31,7 +31,6 @@ public class Publish extends MQTT_SNPacket implements BasePublish{
   @Getter private final int topicId;
   @Getter private final int messageId;
   @Getter private final byte[] message;
-
   private byte flags;
 
   public Publish(short topicId, int messageId, byte[] message) {
@@ -78,7 +77,7 @@ public class Publish extends MQTT_SNPacket implements BasePublish{
     return (flags & 0b00010000) != 0;
   }
 
-  public int topicIdType() {
+  public int getTopicIdType() {
     return (flags & 0b00000011);
   }
 

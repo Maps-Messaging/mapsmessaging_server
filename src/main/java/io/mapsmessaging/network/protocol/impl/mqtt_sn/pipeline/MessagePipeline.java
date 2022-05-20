@@ -9,6 +9,8 @@ import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_
 import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_PAUSED;
 import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_RESUMED;
 import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_WOKEN;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -149,7 +151,15 @@ public class MessagePipeline {
     if (qos.isSendPacketId()) {
       messageId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier());
     }
+    short topicTypeId = TOPIC_NAME;
     short alias = stateEngine.getTopicAliasManager().findTopicAlias(messageEvent.getDestinationName());
+    if(alias == -1){
+      alias = (short)stateEngine.getTopicAliasManager().findRegisteredTopicAlias(protocol.getAddressKey(), messageEvent.getDestinationName());
+      if(alias != -1){
+        topicTypeId = TOPIC_PRE_DEFINED_ID;
+      }
+    }
+
     //
     // If this event is from a wild card then the client would not have registered it, so lets do that now
     //
@@ -158,10 +168,10 @@ public class MessagePipeline {
       // Updating the client with the new topic id for the destination
       //
       alias = stateEngine.getTopicAliasManager().getTopicAlias(messageEvent.getDestinationName());
-      Register register = new Register(alias, MQTT_SNPacket.TOPIC_NAME, messageEvent.getDestinationName());
+      Register register = new Register(alias, TOPIC_NAME, messageEvent.getDestinationName());
       protocol.writeFrame(register);
     }
-    MQTT_SNPacket publish = protocol.buildPublish(alias, messageId,  messageEvent, qos);
+    MQTT_SNPacket publish = protocol.buildPublish(alias, messageId,  messageEvent, qos, topicTypeId);
     stateEngine.sendPublish(protocol, messageEvent.getDestinationName(), publish);
     logger.log(MQTT_SN_PIPELINE_EVENT_SENT, protocol.getName(), protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
   }

@@ -38,12 +38,15 @@ public class SubscribeListener extends PacketListener {
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
-
+    short topicId =0;
     String topicName;
     if (subscribe.topicIdType() == MQTT_SNPacket.TOPIC_NAME) {
       topicName = subscribe.getTopicName();
     } else {
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
+      if(subscribe.getTopicIdType() == MQTT_SNPacket.TOPIC_PRE_DEFINED_ID){
+        topicId = subscribe.getTopicId();
+      }
     }
     if (topicName != null) {
       //
@@ -54,14 +57,9 @@ public class SubscribeListener extends PacketListener {
       }
 
       //
-      // Now map the topic name to a short
-      //
-
-      short topicId = 0;
-      //
       // Do NOT register wildcard subscriptions
       //
-      if (!(topicName.contains("+") || topicName.contains("#"))) {
+      if (topicId == 0 && !(topicName.contains("+") || topicName.contains("#"))) {
         topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
       }
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();

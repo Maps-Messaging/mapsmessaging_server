@@ -41,6 +41,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.InitialConnecti
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import java.io.IOException;
 import java.net.SocketAddress;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,6 +56,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   protected final MQTTSNInterfaceManager factory;
   protected final StateEngine stateEngine;
   protected final PacketIdManager packetIdManager;
+
+  protected @Getter SocketAddress addressKey;
 
   protected volatile boolean closed;
   protected Session session;
@@ -88,6 +91,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       @NonNull @NotNull Connect connect) {
     this(factory, endPoint, remoteClient, selectorTask, "MQTT-SN 1.2 Protocol on " + endPoint.getName(), new PacketFactory(), registeredTopicConfiguration);
     stateEngine.setState(new InitialConnectionState());
+    addressKey = connect.getFromAddress();
     handleMQTTEvent(connect);
   }
 
@@ -141,7 +145,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
         writeFrame(response);
       }
     } catch (Exception e) {
-      e.printStackTrace();
       logger.log(ServerLogMessages.MQTT_SN_PACKET_EXCEPTION, e, mqtt);
       try {
         close();
@@ -186,10 +189,11 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     sentMessage();
   }
 
-  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos){
+  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId){
     Publish publish = new Publish(alias, packetId,  messageEvent.getMessage().getOpaqueData());
     publish.setQoS(qos);
     publish.setCallback(messageEvent.getCompletionTask());
+    publish.setTopicIdType(stateEngine.getTopicAliasManager().getTopicAliasType(messageEvent.getDestinationName()));
     return publish;
   }
 

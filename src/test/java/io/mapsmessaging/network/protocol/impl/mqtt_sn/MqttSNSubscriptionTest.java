@@ -22,7 +22,6 @@ import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLI
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,13 +34,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
-import org.slj.mqtt.sn.model.IMqttsnContext;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.spi.IMqttsnMessage;
-import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
-import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
 import org.slj.mqtt.sn.spi.MqttsnException;
-import org.slj.mqtt.sn.utils.TopicPath;
 
 public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
@@ -199,7 +193,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @MethodSource
-  public void subscribeTopicAndPublish(int qos, int version) throws InterruptedException {
+  public void subscribeTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnClientConnectException, MqttsnQueueAcceptException, MqttsnException {
     subscribeQoSnTopicAndPublish(qos, version);
   }
 
@@ -207,92 +201,25 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     return createQoSVersionStream();
   }
 
-  public void subscribeQoSnTopicAndPublish(int qos, int version) throws InterruptedException {
-    MqttsClient client = new MqttsClient("localhost",1884 );
-    CountDownLatch connected = new CountDownLatch(1);
-    CountDownLatch registered = new CountDownLatch(1);
-    CountDownLatch subscribed = new CountDownLatch(1);
+  public void subscribeQoSnTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+    MqttSnClient client = new MqttSnClient("subscribeQoSnTopicAndPublish", "localhost",1884, version );
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
-    CountDownLatch unsubscribed = new CountDownLatch(1);
 
-    AtomicInteger registeredTopicId = new AtomicInteger(0);
 
-    client.registerHandler(new MqttsCallback() {
-      @Override
-      public int publishArrived(boolean b, int i, int i1, byte[] bytes) {
-        System.err.println("** Pub Received **");
-        received.countDown();
-        return 0;
-      }
+    client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
+    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
 
-      @Override
-      public void connected() {
-        connected.countDown();
-      }
 
-      @Override
-      public void disconnected(int i) {
-
-      }
-
-      @Override
-      public void unsubackReceived() {
-        unsubscribed.countDown();
-      }
-
-      @Override
-      public void subackReceived(int i, int i1, int i2) {
-        subscribed.countDown();
-      }
-
-      @Override
-      public void pubCompReceived() {
-        if(qos == 2){
-          published.countDown();
-        }
-      }
-
-      @Override
-      public void pubAckReceived(int i, int i1) {
-        if(qos == 1) {
-          published.countDown();
-        }
-      }
-
-      @Override
-      public void regAckReceived(int topicId, int messageId) {
-        registeredTopicId.set(topicId);
-        registered.countDown();
-      }
-
-      @Override
-      public void registerReceived(int i, String s) {
-
-      }
-
-      @Override
-      public void connectSent() {
-
-      }
-    });
-
-    client.connect("simpleConnection", true, (short)50);
-    Assertions.assertTrue(connected.await(TIMEOUT, TimeUnit.MILLISECONDS));
-
-    client.register("/mqttsn/test");
-    Assertions.assertTrue(registered.await(TIMEOUT, TimeUnit.MILLISECONDS));
-
-    Assertions.assertNotEquals(registeredTopicId.get(), -1);
-
+    client.connect(50,true);
     //
     // Test Registered Topics
     //
-    client.subscribe("/mqttsn/test", qos, 0);
-    Assertions.assertTrue(subscribed.await(TIMEOUT, TimeUnit.MILLISECONDS));
+    client.subscribe("predefined/topic", qos);
+
     long count = published.getCount();
     for(int x=0;x<PUBLISH_COUNT;x++){
-      client.publish(registeredTopicId.get(), "Hi There MQTT-SN test".getBytes(), qos, false);
+      client.publish("predefined/topic", qos, "Hi There MQTT-SN test".getBytes());
       if(qos != 0) {
         long timeout = System.currentTimeMillis() + TIMEOUT;
         while (count == published.getCount()) {
@@ -307,8 +234,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     }
     Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS));
 
-    client.unSubscribe(registeredTopicId.get());
-    Assertions.assertTrue(unsubscribed.await(TIMEOUT, TimeUnit.MILLISECONDS));
+    //client.unsubscribe("predefined/topic");
 
     client.disconnect();
   }
