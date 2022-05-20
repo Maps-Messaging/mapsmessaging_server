@@ -32,7 +32,9 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   public int sendPacket(Packet packet) throws IOException {
     PacketIntegrity packetIntegrity = lookup((InetSocketAddress) packet.getFromAddress());
     if(packetIntegrity == null){
-      throw new IOException("No HMAC configuration found for "+packet.getFromAddress());
+      packet.clear();
+      return 0;
+//      throw new IOException("No HMAC configuration found for "+packet.getFromAddress());
     }
     packet = packetIntegrity.secure(packet);
     return super.sendPacket(packet);
@@ -41,15 +43,19 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   @Override
   public int readPacket(Packet packet) throws IOException {
     int res = super.readPacket(packet);
+    packet.flip();
     PacketIntegrity packetIntegrity = lookup((InetSocketAddress) packet.getFromAddress());
     if(packetIntegrity == null){
-      throw new IOException("No HMAC configuration found for "+packet.getFromAddress());
+      packet.clear();
+      res = 0;
+//      throw new IOException("No HMAC configuration found for "+packet.getFromAddress());
     }
-    packet.flip();
-    if(packet.hasRemaining()) {
-      if (!packetIntegrity.isSecure(packet)) {
-        packet.clear();
-        return 0;
+    else {
+      if (packet.hasRemaining()) {
+        if (!packetIntegrity.isSecure(packet)) {
+          packet.clear();
+          return 0;
+        }
       }
     }
     return res;
@@ -61,6 +67,9 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   }
 
   private PacketIntegrity lookup(InetSocketAddress address){
+    if(address == null){
+      return null;
+    }
     String specific = address.getHostName()+":"+address.getPort();
     NodeSecurity lookup = securityMap.get(specific);
     if(lookup != null){
