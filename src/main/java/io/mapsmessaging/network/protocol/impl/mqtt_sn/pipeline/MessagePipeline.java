@@ -1,8 +1,20 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_CREATED;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_COMPLETED;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_DROPPED;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_QUEUED;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_SENT;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_TIMED_OUT;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_PAUSED;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_RESUMED;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_WOKEN;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
@@ -20,7 +32,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class MessagePipeline {
-
+  private final Logger logger;
   private final Queue<MessageEvent> publishContexts;
   private final StateEngine stateEngine;
   private final PacketIdManager packetIdManager;
@@ -41,22 +53,25 @@ public class MessagePipeline {
     publishContexts = new ConcurrentLinkedQueue<>();
     paused = new AtomicBoolean(false);
     empty = new AtomicInteger(0);
-
+    logger = LoggerFactory.getLogger(MessagePipeline.class);
     ConfigurationProperties props = protocol.getEndPoint().getConfig().getProperties();
     maxInFlightEvents = props.getIntProperty("maxInFlightEvents", 1);
     dropQoS0 = props.getBooleanProperty("dropQoS0Events", false);
 
     long t = TimeUnit.SECONDS.toMillis(props.getIntProperty("eventQueueTimeout", 0));
     eventTimeout = t == 0? Long.MAX_VALUE:t;
-
+    logger.log(MQTT_SN_PIPELINE_CREATED, protocol.getName(), dropQoS0, maxInFlightEvents, eventTimeout);
   }
 
   public void pause(){
     paused.set(true);
+    logger.log(MQTT_SN_PIPELINE_PAUSED, protocol.getName());
+
   }
 
   public void resume(){
     paused.set(false);
+    logger.log(MQTT_SN_PIPELINE_RESUMED, protocol.getName());
     sendNext();
   }
 
@@ -66,20 +81,24 @@ public class MessagePipeline {
           messageEvent.getMessage().getQualityOfService().getLevel() == 0 &&
           messageEvent.getSubscription().getDepth() > 1){
         messageEvent.getCompletionTask().run();
-        // Dropping a QoS:0 event while paused
+        logger.log(MQTT_SN_PIPELINE_EVENT_DROPPED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), messageEvent.getMessage().getQualityOfService().getLevel());
         return;
       }
       publishContexts.offer(messageEvent);
+      logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
+
     }
     else {
       SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
       QualityOfService qos = subInfo.getQualityOfService();
       if (publishContexts.size()+1 <= maxInFlightEvents) {
         if (qos.getLevel() > 0) {
+          logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
           publishContexts.offer(messageEvent);
         }
         send(messageEvent);
       } else {
+        logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
         publishContexts.offer(messageEvent);
       }
     }
@@ -87,6 +106,7 @@ public class MessagePipeline {
 
   public void completed(int messageId) {
     publishContexts.poll(); // Remove outstanding publish
+    logger.log(MQTT_SN_PIPELINE_EVENT_COMPLETED, protocol.getName());
     if (!paused.get() || empty.get() != 0) {
       sendNext();
     }
@@ -107,6 +127,7 @@ public class MessagePipeline {
         }
       }
       else{
+        logger.log(MQTT_SN_PIPELINE_EVENT_TIMED_OUT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), messageEvent.getMessage().getQualityOfService().getLevel());
         messageEvent.getCompletionTask().run();
         completed(0);
       }
@@ -142,11 +163,16 @@ public class MessagePipeline {
     }
     MQTT_SNPacket publish = protocol.buildPublish(alias, messageId,  messageEvent, qos);
     stateEngine.sendPublish(protocol, messageEvent.getDestinationName(), publish);
+    logger.log(MQTT_SN_PIPELINE_EVENT_SENT, protocol.getName(), protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
   }
 
   public void emptyQueue(int sendSize, Runnable task) {
+    int size = size();
+    logger.log(MQTT_SN_PIPELINE_WOKEN, protocol.getName(), sendSize,size);
+
+
     this.completion = task;
-    if(size() == 0){
+    if(size == 0){
       if(completion != null) {
         completion.run();
         completion = null;

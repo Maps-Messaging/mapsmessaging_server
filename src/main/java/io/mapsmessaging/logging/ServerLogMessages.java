@@ -550,7 +550,19 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_INITIALISED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Initialised connection"),
   END_POINT_CONNECTION_CLOSED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Closing connection"),
   END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
-  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager");
+  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+
+  //</editor-fold>MQTT-SN message pipeline">
+  MQTT_SN_PIPELINE_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created new outbound pipeline for {}, DropQoS:{}, Max Inflight:{}, Event Time out:{}"),
+  MQTT_SN_PIPELINE_PAUSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been paused {}"),
+  MQTT_SN_PIPELINE_RESUMED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been resumed {}"),
+  MQTT_SN_PIPELINE_WOKEN(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Client, {},  has requested delivery of any outstanding messages, maximum:{}, size:{}"),
+  MQTT_SN_PIPELINE_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Message has been dropped for {} on {}, message id{}, QoS:{} and client sleeping"),
+  MQTT_SN_PIPELINE_EVENT_TIMED_OUT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Message has timed out for {} on {}, message id{}, QoS:{} and client sleeping"),
+  MQTT_SN_PIPELINE_EVENT_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message delivery completed"),
+  MQTT_SN_PIPELINE_EVENT_SENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message has been queued for delivery for {}, on {} message id:{}"),
+  MQTT_SN_PIPELINE_EVENT_QUEUED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for {}, on {} message id:{}");
+
   //</editor-fold>
 
 
