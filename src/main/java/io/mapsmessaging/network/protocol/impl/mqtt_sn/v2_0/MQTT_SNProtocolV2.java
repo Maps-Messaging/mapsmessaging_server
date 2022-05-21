@@ -56,27 +56,24 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
         "MQTT-SN 2.0 Protocol on " + endPoint.getName(),
         new PacketFactoryV2(),
         registeredTopicConfiguration);
+    logger.log(ServerLogMessages.MQTT_SN_START, endPoint.getName());
     stateEngine.setState(new InitialConnectionState());
     addressKey = connect.getFromAddress();
     handleMQTTEvent(connect);
   }
 
   @Override
-  public String getVersion() {
-    return "2.0";
+  public void close() throws IOException {
+    if (!closed) {
+      logger.log(ServerLogMessages.MQTT_SN_CLOSED);
+      closed = true;
+      finish();
+    }
   }
 
   @Override
-  public void sendKeepAlive() {
-    writeFrame(new PingRequest());
-    long timeout = System.currentTimeMillis() - (keepAlive + 1000);
-    if (endPoint.getLastRead() < timeout && endPoint.getLastWrite() < timeout) {
-      try {
-        close();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-      }
-    }
+  public String getVersion() {
+    return "2.0";
   }
 
   @Override
@@ -91,5 +88,10 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
     publish.setTopicIdType(topicTypeId);
     publish.setCallback(messageEvent.getCompletionTask());
     return publish;
+  }
+
+  @Override
+  public MQTT_SNPacket getPingRequest(){
+    return new PingRequest();
   }
 }

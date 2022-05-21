@@ -553,6 +553,13 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
 
   //</editor-fold>MQTT-SN message pipeline">
+  MQTT_SN_START(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT 1.2 protocol instance started"),
+  MQTT_SN_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT 1.2 protocol closed"),
+  MQTT_SN_KEEP_ALIVE_SEND(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Sending KeepAlive"),
+  MQTT_SN_KEEP_ALIVE_TIMED_OUT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Keepalive timeout exceeded, disconnecting client"),
+
+  MQTT_SN_STATE_ENGINE_STATE_CHANGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MQTT-SN State Engine changing state from {} to {}"),
+
   MQTT_SN_PIPELINE_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created new outbound pipeline for {}, DropQoS:{}, Max Inflight:{}, Event Time out:{}"),
   MQTT_SN_PIPELINE_PAUSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been paused {}"),
   MQTT_SN_PIPELINE_RESUMED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been resumed {}"),
@@ -562,7 +569,6 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_SN_PIPELINE_EVENT_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message delivery completed"),
   MQTT_SN_PIPELINE_EVENT_SENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message has been queued for delivery for {}, on {} message id:{}"),
   MQTT_SN_PIPELINE_EVENT_QUEUED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for {}, on {} message id:{}");
-
   //</editor-fold>
 
 

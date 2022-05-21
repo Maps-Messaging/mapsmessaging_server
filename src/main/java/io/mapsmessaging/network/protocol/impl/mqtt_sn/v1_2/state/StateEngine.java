@@ -22,6 +22,9 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
@@ -38,6 +41,7 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 public class StateEngine {
+  private final Logger logger;
 
   private final Map<String, MQTT_SNPacket> subscribeResponseMap;
   private @Getter final TopicAliasManager topicAliasManager;
@@ -47,6 +51,7 @@ public class StateEngine {
   private final MessagePipeline pipeline;
 
   public StateEngine(MQTT_SNProtocol protocol, RegisteredTopicConfiguration registeredTopicConfiguration) {
+    logger = LoggerFactory.getLogger(StateEngine.class);
     subscribeResponseMap = new LinkedHashMap<>();
     pipeline = new MessagePipeline(protocol, this );
     currentState = null;
@@ -83,10 +88,11 @@ public class StateEngine {
   }
 
   public void setState(State state) {
+    if(currentState != null && state != null) {
+      logger.log(ServerLogMessages.MQTT_SN_STATE_ENGINE_STATE_CHANGE, currentState.getClass(), state.getClass());
+    }
     currentState = state;
   }
-
-
 
   public CompletableFuture<Session> createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol){
     scb.setReceiveMaximum(1);

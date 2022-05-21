@@ -90,6 +90,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration,
       @NonNull @NotNull Connect connect) {
     this(factory, endPoint, remoteClient, selectorTask, "MQTT-SN 1.2 Protocol on " + endPoint.getName(), new PacketFactory(), registeredTopicConfiguration);
+    logger.log(ServerLogMessages.MQTT_SN_START);
     stateEngine.setState(new InitialConnectionState());
     addressKey = connect.getFromAddress();
     handleMQTTEvent(connect);
@@ -98,12 +99,18 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   @Override
   public void close() throws IOException {
     if (!closed) {
+      logger.log(ServerLogMessages.MQTT_SN_CLOSED);
       closed = true;
-      SessionManager.getInstance().close(session, false);
-      factory.close(remoteClient);
-      packetIdManager.close();
+      finish();
     }
   }
+
+  protected void finish() throws IOException {
+    SessionManager.getInstance().close(session, false);
+    factory.close(remoteClient);
+    packetIdManager.close();
+  }
+
 
   @Override
   public String getSessionId() {
@@ -156,10 +163,12 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   @Override
   public void sendKeepAlive() {
-    writeFrame(new PingRequest());
+    logger.log(ServerLogMessages.MQTT_SN_KEEP_ALIVE_SEND, endPoint.getName());
+    writeFrame(getPingRequest());
     long timeout = System.currentTimeMillis() - (keepAlive + 1000);
     if (endPoint.getLastRead() < timeout && endPoint.getLastWrite() < timeout) {
       try {
+        logger.log(ServerLogMessages.MQTT_SN_KEEP_ALIVE_TIMED_OUT, endPoint.getName());
         close();
       } catch (IOException e) {
         logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
@@ -176,9 +185,10 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     if(stateEngine.getMaxBufferSize() > 0 &&
         stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9 ) {
       messageEvent.getCompletionTask().run();
-      return; // exceeded buffer size
     }
-    stateEngine.queueMessage(messageEvent);
+    else {
+      stateEngine.queueMessage(messageEvent);
+    }
   }
 
   public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {
@@ -199,5 +209,9 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   public PacketIdManager getPacketIdManager() {
     return packetIdManager;
+  }
+
+  public MQTT_SNPacket getPingRequest(){
+    return new PingRequest();
   }
 }
