@@ -117,7 +117,7 @@ public class PublishListener extends PacketListener {
           }
           return destination;
         });
-        Destination destination = future.get();
+        future.get();
       } catch (IOException e) {
         logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
         try {

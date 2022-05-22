@@ -89,7 +89,7 @@ public class StateEngine {
 
   public void setState(State state) {
     if(currentState != null && state != null) {
-      logger.log(ServerLogMessages.MQTT_SN_STATE_ENGINE_STATE_CHANGE, currentState.getClass(), state.getClass());
+      logger.log(ServerLogMessages.MQTT_SN_STATE_ENGINE_STATE_CHANGE, currentState.getName(), state.getName());
     }
     currentState = state;
   }

@@ -63,6 +63,11 @@ public class SleepState implements State {
   }
 
   @Override
+  public String getName() {
+    return "Sleep";
+  }
+
+  @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws MalformedException {
 
     switch (mqtt.getControlPacketId()) {

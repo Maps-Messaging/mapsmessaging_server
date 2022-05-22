@@ -38,6 +38,11 @@ public class InitialWillTopicState implements State {
   }
 
   @Override
+  public String getName() {
+    return "WillTopic";
+  }
+
+  @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       return lastPacket; // Its a retransmit request

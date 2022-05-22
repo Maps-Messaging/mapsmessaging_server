@@ -27,6 +27,8 @@ import java.io.IOException;
 
 public interface State {
 
+  String getName();
+
   MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws IOException, MalformedException;
 
   default void sendPublish(MQTT_SNProtocol protocol, String destination, MQTT_SNPacket publish){

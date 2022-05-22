@@ -34,6 +34,11 @@ public class DisconnectedState implements State {
   }
 
   @Override
+  public String getName() {
+    return "Disconnected";
+  }
+
+  @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.DISCONNECT) {
       return lastResponse;

@@ -37,6 +37,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Pack
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.CompletableFuture;
 
 public class PublishListener extends PacketListener {
@@ -64,8 +66,13 @@ public class PublishListener extends PacketListener {
 
 
     if (topicName != null) {
+      HashMap<String, String> meta = new LinkedHashMap<>();
+      meta.put("protocol", "MQTT-SN");
+      meta.put("version", "2.0");
+      meta.put("time_ms", "" + System.currentTimeMillis());
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setQoS(qos)
+          .setMeta(meta)
           .setRetain(publish.isRetain())
           .setTransformation(protocol.getTransformation())
           .setOpaqueData(publish.getMessage());

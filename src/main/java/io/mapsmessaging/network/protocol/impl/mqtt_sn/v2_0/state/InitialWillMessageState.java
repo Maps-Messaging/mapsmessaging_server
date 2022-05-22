@@ -49,6 +49,11 @@ public class InitialWillMessageState implements State {
   }
 
   @Override
+  public String getName() {
+    return "WillMessage";
+  }
+
+  @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLMSG && oldSession == null) {
       WillMessage willMessage = (WillMessage) mqtt;

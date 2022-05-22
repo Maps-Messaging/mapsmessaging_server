@@ -25,6 +25,7 @@ import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -35,6 +36,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.CompletableFuture;
 
 public class PublishListener extends PacketListener {
@@ -55,8 +58,18 @@ public class PublishListener extends PacketListener {
     }
     String topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
     if (topicName != null) {
+      HashMap<String, String> meta = new LinkedHashMap<>();
+      meta.put("protocol", "MQTT-SN");
+      meta.put("version", "1.2");
+      meta.put("time_ms", "" + System.currentTimeMillis());
+      meta.put("sessionId", session.getName());
+
+
+      HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
+
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setQoS(qos)
+          .setMeta(meta)
           .setRetain(publish.retain())
           .setTransformation(protocol.getTransformation())
           .setOpaqueData(publish.getMessage());

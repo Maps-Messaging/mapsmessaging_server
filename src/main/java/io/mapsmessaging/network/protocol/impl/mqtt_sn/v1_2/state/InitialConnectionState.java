@@ -39,6 +39,11 @@ import java.util.concurrent.CompletableFuture;
 public class InitialConnectionState implements State {
 
   @Override
+  public String getName() {
+    return "Initial";
+  }
+
+  @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       Connect connect = (Connect) mqtt;
