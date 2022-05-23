@@ -553,7 +553,7 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
 
   //</editor-fold>MQTT-SN message pipeline">
-  MQTT_SN_START(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT 1.2 protocol instance started"),
+  MQTT_SN_START(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN 1.2 protocol instance started {}"),
   MQTT_SN_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT 1.2 protocol closed"),
   MQTT_SN_KEEP_ALIVE_SEND(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Sending KeepAlive"),
   MQTT_SN_KEEP_ALIVE_TIMED_OUT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Keepalive timeout exceeded, disconnecting client"),
@@ -564,10 +564,10 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_SN_PIPELINE_PAUSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been paused {}"),
   MQTT_SN_PIPELINE_RESUMED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been resumed {}"),
   MQTT_SN_PIPELINE_WOKEN(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Client, {},  has requested delivery of any outstanding messages, maximum:{}, size:{}"),
-  MQTT_SN_PIPELINE_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Message has been dropped for {} on {}, message id{}, QoS:{} and client sleeping"),
-  MQTT_SN_PIPELINE_EVENT_TIMED_OUT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Message has timed out for {} on {}, message id{}, QoS:{} and client sleeping"),
-  MQTT_SN_PIPELINE_EVENT_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message delivery completed"),
-  MQTT_SN_PIPELINE_EVENT_SENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message has been queued for delivery for {}, on {} message id:{}"),
+  MQTT_SN_PIPELINE_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Message has been dropped for {} on {}, message id:{}, QoS:{} and client sleeping"),
+  MQTT_SN_PIPELINE_EVENT_TIMED_OUT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Message has timed out for {} on {}, message id:{}, QoS:{} and client sleeping"),
+  MQTT_SN_PIPELINE_EVENT_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message delivery completed {}"),
+  MQTT_SN_PIPELINE_EVENT_SENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message has been sent for delivery for {}, on {} message id:{}"),
   MQTT_SN_PIPELINE_EVENT_QUEUED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for {}, on {} message id:{}");
   //</editor-fold>
 
