@@ -39,8 +39,11 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PingRequest;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.InitialConnectionState;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +59,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   protected final MQTTSNInterfaceManager factory;
   protected final StateEngine stateEngine;
   protected final PacketIdManager packetIdManager;
+  private final ScheduledFuture<?> monitor;
 
   protected @Getter SocketAddress addressKey;
 
@@ -79,6 +83,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     this.packetFactory = packetFactory;
     closed = false;
     stateEngine = new StateEngine(this, registeredTopicConfiguration);
+    monitor = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new TimeOutMonitor(), 60, 60, TimeUnit.SECONDS);
+
   }
 
 
@@ -109,6 +115,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     SessionManager.getInstance().close(session, false);
     factory.close(remoteClient);
     packetIdManager.close();
+    monitor.cancel(false);
   }
 
 
@@ -213,5 +220,18 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   public MQTT_SNPacket getPingRequest(){
     return new PingRequest();
+  }
+  private class TimeOutMonitor implements Runnable{
+
+    @Override
+    public void run() {
+      if(packetIdManager.scanForTimeOut()){
+        try {
+          close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    }
   }
 }

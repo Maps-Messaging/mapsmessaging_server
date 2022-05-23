@@ -14,7 +14,6 @@ import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SN
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
@@ -61,7 +60,7 @@ public class MessagePipeline {
     dropQoS0 = props.getBooleanProperty("dropQoS0Events", false);
 
     long t = TimeUnit.SECONDS.toMillis(props.getIntProperty("eventQueueTimeout", 0));
-    eventTimeout = t == 0? Long.MAX_VALUE:t;
+    eventTimeout = t == 0? (Long.MAX_VALUE>>2):t;
     logger.log(MQTT_SN_PIPELINE_CREATED, protocol.getName(), dropQoS0, maxInFlightEvents, eventTimeout);
   }
 
@@ -78,6 +77,7 @@ public class MessagePipeline {
   }
 
   public void queue(@NotNull @NonNull MessageEvent messageEvent){
+    QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
     if(paused.get()){
       if(dropQoS0 &&
           messageEvent.getMessage().getQualityOfService().getLevel() == 0 &&
@@ -91,8 +91,6 @@ public class MessagePipeline {
 
     }
     else {
-      SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
-      QualityOfService qos = subInfo.getQualityOfService();
       if (publishContexts.size()+1 <= maxInFlightEvents) {
         if (qos.getLevel() > 0) {
           logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
@@ -117,9 +115,8 @@ public class MessagePipeline {
   private void sendNext(){
     MessageEvent messageEvent = publishContexts.peek();
     if(messageEvent != null) {
+      QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
       if(messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
-        SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
-        QualityOfService qos = subInfo.getQualityOfService();
         if (qos.getLevel() == 0) {
           empty.decrementAndGet();
           send(messageEvent);
@@ -129,7 +126,7 @@ public class MessagePipeline {
         }
       }
       else{
-        logger.log(MQTT_SN_PIPELINE_EVENT_TIMED_OUT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), messageEvent.getMessage().getQualityOfService().getLevel());
+        logger.log(MQTT_SN_PIPELINE_EVENT_TIMED_OUT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), qos.getLevel());
         messageEvent.getCompletionTask().run();
         completed(0);
       }
@@ -145,8 +142,7 @@ public class MessagePipeline {
   }
 
   private void send(MessageEvent messageEvent){
-    SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
-    QualityOfService qos = subInfo.getQualityOfService();
+    QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
     int messageId = 0;
     if (qos.isSendPacketId()) {
       messageId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier());
@@ -173,7 +169,7 @@ public class MessagePipeline {
     }
     MQTT_SNPacket publish = protocol.buildPublish(alias, messageId,  messageEvent, qos, topicTypeId);
     stateEngine.sendPublish(protocol, messageEvent.getDestinationName(), publish);
-    logger.log(MQTT_SN_PIPELINE_EVENT_SENT, protocol.getName(), protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
+    logger.log(MQTT_SN_PIPELINE_EVENT_SENT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
   }
 
   public void emptyQueue(int sendSize, Runnable task) {

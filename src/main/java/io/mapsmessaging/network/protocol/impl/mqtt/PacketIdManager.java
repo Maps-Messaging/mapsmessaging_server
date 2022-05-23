@@ -19,12 +19,15 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.api.SubscribedEventManager;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class PacketIdManager {
+public class PacketIdManager  {
 
   private final Map<Integer, PacketIdentifierMap> outstandingPacketId;
+
   private int packetId;
 
   public PacketIdManager() {
@@ -63,5 +66,11 @@ public class PacketIdManager {
 
   public synchronized int size() {
     return outstandingPacketId.size();
+  }
+
+  public boolean scanForTimeOut() {
+    long timeout = System.currentTimeMillis()-20000;
+    List<PacketIdentifierMap> tmp = new ArrayList<>(outstandingPacketId.values());
+    return tmp.stream().anyMatch(map -> map.getTime() < timeout);
   }
 }

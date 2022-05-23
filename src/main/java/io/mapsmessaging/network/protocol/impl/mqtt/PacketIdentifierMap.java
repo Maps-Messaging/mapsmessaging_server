@@ -19,33 +19,25 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.api.SubscribedEventManager;
+import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 public class PacketIdentifierMap {
 
+  @Getter
   private final int packetIdentifier;
+  @Getter
   private final SubscribedEventManager subscription;
+  @Getter
   private final long messageId;
+
+  @Getter private final long time;
 
   public PacketIdentifierMap(int packetIdentifier, SubscribedEventManager subscription, long messageId) {
     this.packetIdentifier = packetIdentifier;
     this.subscription = subscription;
     this.messageId = messageId;
-  }
-
-  public int getPacketIdentifier() {
-    return packetIdentifier;
-  }
-
-  public SubscribedEventManager getSubscription() {
-    return subscription;
-  }
-
-  public long getMessageId() {
-    return messageId;
-  }
-
-  @Override
-  public String toString(){
-    return "Message ID:"+messageId+" Packet ID:"+packetIdentifier+" Subscriber Id:"+subscription.toString();
+    time = System.currentTimeMillis();
   }
 }
