@@ -14,13 +14,33 @@
 #    limitations under the License.
 #
 
-io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocolFactory
+#
+# Local connection (Internal JVM only)
+io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocolFactory
+
+#
+# DEBUG ONLY
+#
 io.mapsmessaging.network.protocol.impl.echo.EchoProtocolFactory
-io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocolFactory
+
+#
+# TCP/Serial based protocols
+#
+io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5ProtocolFactory
-io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocolFactory
 io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
 io.mapsmessaging.network.protocol.impl.stomp.StompProtocolFactory
+
+#
+# UDP based protocols
+#
+io.mapsmessaging.network.protocol.impl.coap.CoapProtocolFactory
+io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocolFactory
+io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocolFactory
+
+#
+# Layered Protocols
+#
 io.mapsmessaging.network.protocol.impl.websockets.WebSocketProtocolFactory
-io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocolFactory
+
