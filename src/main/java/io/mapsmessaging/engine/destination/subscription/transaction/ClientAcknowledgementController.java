@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.engine.destination.subscription.transaction;
 
-import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.OutstandingEventDetails;
 import java.util.ArrayList;
@@ -43,9 +42,7 @@ public class ClientAcknowledgementController implements AcknowledgementControlle
 
   @Override
   public void sent(Message message) {
-    if (!message.getQualityOfService().equals(QualityOfService.AT_MOST_ONCE)) {
-      outstanding.put(message.getIdentifier(), new OutstandingEventDetails(message.getIdentifier(), message.getPriority().getValue()));
-    }
+    outstanding.put(message.getIdentifier(), new OutstandingEventDetails(message.getIdentifier(), message.getPriority().getValue()));
     creditManager.decrement();
   }
 
