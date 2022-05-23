@@ -553,8 +553,8 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
 
   //</editor-fold>MQTT-SN message pipeline">
-  MQTT_SN_START(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN 1.2 protocol instance started {}"),
-  MQTT_SN_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT 1.2 protocol closed"),
+  MQTT_SN_START(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN protocol instance started {}"),
+  MQTT_SN_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN protocol closed"),
   MQTT_SN_KEEP_ALIVE_SEND(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Sending KeepAlive"),
   MQTT_SN_KEEP_ALIVE_TIMED_OUT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Keepalive timeout exceeded, disconnecting client"),
 
