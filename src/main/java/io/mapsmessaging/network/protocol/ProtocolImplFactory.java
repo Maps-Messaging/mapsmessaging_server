@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.SessionManager;
 import io.mapsmessaging.network.protocol.detection.Detection;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
@@ -30,6 +31,8 @@ public abstract class ProtocolImplFactory implements Service {
   private final String name;
   private final String description;
   private final Detection detection;
+
+  private SessionManager sessionManager;
 
   protected ProtocolImplFactory(String name, String description, Detection detection) {
     this.name = name;
@@ -64,5 +67,9 @@ public abstract class ProtocolImplFactory implements Service {
     } finally {
       packet.position(pos);
     }
+  }
+
+  public void registerSessionManager(SessionManager manager){
+    sessionManager = manager;
   }
 }

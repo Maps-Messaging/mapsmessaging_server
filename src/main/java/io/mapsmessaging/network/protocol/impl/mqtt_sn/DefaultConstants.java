@@ -22,7 +22,7 @@ public class DefaultConstants {
 
   public static final int ADVERTISE_INTERVAL = 30;
   public static final int MAX_SLEEP_EVENTS = 10;
-  public static final int RECEIVE_MAXIMUM = 50;
+  public static final int RECEIVE_MAXIMUM = 10;
   public static final int SESSION_TIME_OUT = 86400;
   public static final int MAX_REGISTERED_SIZE = ((1 << 15) - 1);
 
