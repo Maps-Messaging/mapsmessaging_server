@@ -27,10 +27,10 @@ public class BasePacket implements ServerPacket {
   private int version;
 
   @Getter
-  @Setter int clazz;
+  @Setter Clazz clazz;
 
   @Getter
-  @Setter int type;
+  @Setter TYPE type;
 
   @Getter
   @Setter
@@ -47,11 +47,13 @@ public class BasePacket implements ServerPacket {
   public BasePacket(Packet packet){
     byte val = packet.get();
     version =(val>>6 & 0b11);
-    type = (val>>4) & 0b11;
+    type = TYPE.valueOf((val>>4) & 0b11);
     tokenLength = (val) & 0b1111;
+
     val = packet.get();
-    clazz = (val >>5)& 0b111;
+    clazz = Clazz.valueOf((val >>5)& 0b111);
     code = val & 0b11111;
+
     messageId = (packet.get() & 0xff) << 8;
     messageId += (packet.get() & 0xff);
     token = new byte[tokenLength];
@@ -61,8 +63,8 @@ public class BasePacket implements ServerPacket {
 
   @Override
   public int packFrame(Packet packet) {
-    packet.put((byte)( (version & 0b11) | ((type & 0b11) << 2 ) | (tokenLength & 0b1111) << 4));
-    packet.put((byte)(code & 0xff));
+    packet.put((byte)( (version & 0b11)<<6 | ((type.getValue() & 0b11) << 4 ) | (tokenLength & 0b1111)));
+    packet.put((byte)(( (clazz.getValue() & 0b111) << 5) | (code & 0b11111)));
     packet.put((byte) (messageId>>8 & 0xff));
     packet.put((byte) (messageId & 0xff));
     return 4;

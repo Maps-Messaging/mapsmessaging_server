@@ -2,7 +2,6 @@ package io.mapsmessaging.network.protocol.impl.coap.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 
 public class PacketFactory {
 
@@ -19,17 +18,32 @@ public class PacketFactory {
   public BasePacket parseFrame(Packet packet) throws EndOfBufferException{
     byte val = packet.get(packet.position()+1);
     int code = val & 0b11111;
-    BasePacket basePacket = null;
+    BasePacket basePacket;
     switch (code) {
-      case EMPTY: {
+      case EMPTY:
         basePacket = new Empty(packet);
         break;
-      }
-
-      case GET: {
+      case GET:
         basePacket = new Get(packet);
         break;
-      }
+      case DELETE:
+        basePacket = new Delete(packet);
+        break;
+      case POST:
+        basePacket = new Post(packet);
+        break;
+      case PUT:
+        basePacket = new Put(packet);
+        break;
+      case FETCH:
+        basePacket = new Fetch(packet);
+        break;
+      case PATCH:
+        basePacket = new Patch(packet);
+        break;
+      case iPATCH:
+        basePacket = new IPatch(packet);
+        break;
 
       default:
         basePacket = new BasePacket(packet);
