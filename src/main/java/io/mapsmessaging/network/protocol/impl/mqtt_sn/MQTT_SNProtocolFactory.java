@@ -64,19 +64,6 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-    int datagramSize = info.getMTU();
-    if (datagramSize != -1) {
-      if(info.isLoRa()){
-        datagramSize = datagramSize - LORA_DATAGRAM_HEADER_SIZE;
-      }
-      else if (info.isIPV4()) {
-        datagramSize = datagramSize - IPV4_DATAGRAM_HEADER_SIZE;
-      } else {
-        datagramSize = datagramSize - IPV6_DATAGRAM_HEADER_SIZE;
-      }
-      endPoint.getConfig().getProperties().put("serverReadBufferSize", "" + datagramSize);
-      endPoint.getConfig().getProperties().put("serverWriteBufferSize", "" + datagramSize);
-    }
     byte gatewayId;
     String gatewayConfig = endPoint.getConfig().getProperties().getProperty("gatewayId", "1");
     try {
@@ -84,7 +71,6 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
     } catch (Exception ex) {
       gatewayId = 1;
     }
-
     MQTTSNInterfaceManager manager = new MQTTSNInterfaceManager(info, endPoint, gatewayId);
     mappedInterfaces.put(endPoint, manager);
   }

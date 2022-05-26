@@ -1,6 +1,5 @@
 package io.mapsmessaging.network.io.impl.dtls;
 
-import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPoint;
@@ -11,17 +10,14 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.dtls.state.StateEngine;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPoint;
 import io.mapsmessaging.network.io.impl.udp.UDPInterfaceInformation;
+import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
+import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.NetworkInterface;
+import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -31,10 +27,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class DTLSSessionManager  implements Closeable, SelectorCallback {
 
-  private static long TIMEOUT = 60000;
+  private static long TIMEOUT = 60;
 
   private final AtomicLong uniqueId = new AtomicLong(0);
-  private final Map<String, DTLSEndPoint> sessionMapping;
+  private final UDPSessionManager<DTLSEndPoint> sessionMapping;
   private final UDPEndPoint udpEndPoint;
   private final SelectorTask selectorTask;
   private final EndPointServer server;
@@ -60,15 +56,15 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     this.inetAddress = new UDPInterfaceInformation(inetAddress);
     this.managerMBean = managerMBean;
     selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getProperties(), udpEndPoint.isUDP());
-    sessionMapping = new ConcurrentHashMap<>();
+    sessionMapping = new UDPSessionManager<>(TIMEOUT);
     udpEndPoint.register(SelectionKey.OP_READ, selectorTask);
-    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new ReaperTask(), 30000, 30000, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    DTLSEndPoint endPoint = sessionMapping.get(packet.getFromAddress().toString());
-    if(endPoint == null){
+    UDPSessionState<DTLSEndPoint> state = sessionMapping.getState(packet.getFromAddress());
+    DTLSEndPoint endPoint;
+    if(state == null){
       StateEngine stateEngine;
       SSLEngine sslEngine = sslContext.createSSLEngine();
       SSLParameters paras = sslEngine.getSSLParameters();
@@ -78,7 +74,10 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
       sslEngine.setSSLParameters(paras);
       stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
       endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, stateEngine, managerMBean );
-      sessionMapping.put(packet.getFromAddress().toString(), endPoint);
+      sessionMapping.addState(packet.getFromAddress(), new UDPSessionState<>(endPoint));
+    }
+    else{
+      endPoint = state.getContext();
     }
 
     try {
@@ -90,19 +89,16 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     return true;
   }
 
-  public void close(String clientId){
-    EndPoint endPoint = sessionMapping.remove(clientId);
-    if(endPoint != null) {
-      protocolImplFactory.closed(endPoint);
+  public void close(SocketAddress clientId){
+    UDPSessionState<DTLSEndPoint> state = sessionMapping.getState(clientId);
+    if(state != null && state.getContext() != null) {
+      protocolImplFactory.closed(state.getContext());
     }
   }
 
   @Override
   public void close()  {
-    for(DTLSEndPoint endPoint:sessionMapping.values()){
-      endPoint.close();
-    }
-    sessionMapping.clear();
+    sessionMapping.close();
     udpEndPoint.close();
   }
 
@@ -132,18 +128,7 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   }
 
   public int sendPacket(Packet packet) throws IOException {
+    sessionMapping.getState(packet.getFromAddress());
     return udpEndPoint.sendPacket(packet);
-  }
-
-  public class ReaperTask implements Runnable{
-    public void run(){
-      List<DTLSEndPoint> endPointList = new ArrayList<>(sessionMapping.values());
-      long timeout = System.currentTimeMillis() - TIMEOUT;
-      for(DTLSEndPoint endPoint:endPointList){
-        if(endPoint.lastAccessTime() < timeout){
-          endPoint.close();
-        }
-      }
-    }
   }
 }

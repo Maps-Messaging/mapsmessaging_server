@@ -22,7 +22,7 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener {
 
   private final DTLSSessionManager manager;
   private final SocketAddress clientId;
-  private final  StateEngine stateEngine;
+  private final StateEngine stateEngine;
   private final EndPointJMX mbean;
   private final String name;
 
@@ -40,7 +40,7 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener {
 
   public void close(){
     mbean.close();
-    manager.close(clientId.toString());
+    manager.close(clientId);
     if(server != null) {
       server.handleCloseEndPoint(this);
     }

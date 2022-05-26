@@ -30,6 +30,8 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
+import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
+import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Advertise;
@@ -47,8 +49,6 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SelectionKey;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.concurrent.ExecutionException;
 
 // The protocol is MQTT_SN so it makes sense
@@ -58,7 +58,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
-  private final HashMap<SocketAddress, MQTT_SNProtocol> currentSessions;
+  private final UDPSessionManager<MQTT_SNProtocol> currentSessions;
   private final PacketFactory[] packetFactory;
   private final AdvertiserTask advertiserTask;
   private final byte gatewayId;
@@ -71,7 +71,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    currentSessions = new LinkedHashMap<>();
+    currentSessions = new UDPSessionManager<>(60);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();
@@ -83,7 +83,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
-    currentSessions = new LinkedHashMap<>();
+    currentSessions = new UDPSessionManager<>(60);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();
@@ -110,9 +110,10 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
-    MQTT_SNProtocol protocol = currentSessions.get(packet.getFromAddress());
-    if (protocol != null) {
-      // OK we have an existing protocol, so simply hand over the packet for processing
+    UDPSessionState<MQTT_SNProtocol> state = currentSessions.getState(packet.getFromAddress());
+    if(state != null && state.getContext() != null){
+      MQTT_SNProtocol protocol = state.getContext();
+        // OK we have an existing protocol, so simply hand over the packet for processing
       protocol.processPacket(packet);
     } else {
       int offset = 0;
@@ -150,7 +151,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
       MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn);
-      currentSessions.put(packet.getFromAddress(), impl);
+      UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
+      currentSessions.addState(packet.getFromAddress(), state);
     }
     else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
@@ -158,7 +160,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
       io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect)mqttSn;
       MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2);
-      currentSessions.put(packet.getFromAddress(), impl);
+      UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
+      currentSessions.addState(packet.getFromAddress(), state);
     }else if (mqttSn instanceof SearchGateway) {
       handleSearch(packet);
     } else if (mqttSn instanceof Publish) {
@@ -231,14 +234,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     if(advertiserTask != null) {
       advertiserTask.stop();
     }
-    for(MQTT_SNProtocol protocol:currentSessions.values()){
-      try {
-        protocol.close();
-      } catch (IOException e) {
-
-      }
-      currentSessions.clear();
-    }
+    currentSessions.close();
   }
 
   @Override
@@ -262,7 +258,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   public void close(SocketAddress remoteClient) {
-    currentSessions.remove(remoteClient);
+    currentSessions.deleteState(remoteClient);
   }
 
 }
