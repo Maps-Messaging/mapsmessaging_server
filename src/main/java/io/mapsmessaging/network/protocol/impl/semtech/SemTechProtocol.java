@@ -37,7 +37,6 @@ public class SemTechProtocol extends ProtocolImpl {
 
   private final Logger logger;
   private final SelectorTask selectorTask;
-  private final EndPoint endPoint;
   private final PacketFactory packetFactory;
   private final Session session;
   @Getter
@@ -52,7 +51,6 @@ public class SemTechProtocol extends ProtocolImpl {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     packetFactory = new PacketFactory();
-    this.endPoint = endPoint;
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
     waitingMessages = new ConcurrentLinkedQueue<>();
 
