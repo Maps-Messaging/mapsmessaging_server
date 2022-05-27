@@ -121,7 +121,7 @@ public class Packet {
   }
 
   public int getShort() {
-    return buffer.get() << 8 | buffer.get();
+    return (buffer.get()& 0xff) << 8 | (buffer.get() & 0xff);
   }
 
 
