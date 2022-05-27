@@ -153,8 +153,11 @@ public class SessionManager {
   }
 
   private SessionManager(){
-    publisherScheduler =  new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors()*2,
-        30L, TimeUnit.SECONDS,
+    publisherScheduler =  new ThreadPoolExecutor (
+        0,
+        Runtime.getRuntime().availableProcessors()*2,
+        30L,
+        TimeUnit.SECONDS,
         new SynchronousQueue<>(),
         new ThreadFactory() {
       final AtomicLong counter = new AtomicLong(0);
