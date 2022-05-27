@@ -14,8 +14,13 @@ import lombok.ToString;
  *
  * That packet type is used by the gateway mainly to forward the RF packets received, and associated metadata, to the server.
  *
- * Bytes  | Function :------:|--------------------------------------------------------------------- 0      | protocol version = 2 1-2    | random token 3      | PUSH_DATA
- * identifier 0x00 4-11   | Gateway unique identifier (MAC address) 12-end | JSON object, starting with {, ending with }, see section 4
+ * Bytes  | Function
+ * :------:|---------------------------------------------------------------------
+ * 0      | protocol version = 2
+ * 1-2    | random token
+ * 3      | PUSH_DATA identifier 0x00
+ * 4-11   | Gateway unique identifier (MAC address)
+ * 12-end | JSON object, starting with {, ending with }, see section 4
  */
 
 @ToString

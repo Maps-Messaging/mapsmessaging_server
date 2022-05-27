@@ -21,8 +21,8 @@ import lombok.ToString;
  * :------:|---------------------------------------------------------------------
  * 0      | protocol version = 2
  * 1-2    | random token
- * 3      | PULL_DATA
- * identifier 0x02 4-11   | Gateway unique identifier (MAC address)
+ * 3      | PULL_DATA identifier 0x02
+ * 4-11   | Gateway unique identifier (MAC address)
  */
 
 @ToString
