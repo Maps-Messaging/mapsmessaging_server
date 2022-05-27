@@ -96,7 +96,6 @@ public class ReadTask implements Selectable {
       }
       closeProtocol();
     } catch (RuntimeException th) {
-      th.printStackTrace();
       logger.log(READ_TASK_EXCEPTION, th);
       closeProtocol();
     } finally {
