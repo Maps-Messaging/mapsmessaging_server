@@ -76,6 +76,7 @@ public class SemTechProtocol extends ProtocolImpl {
     } catch (InterruptedException | ExecutionException e) {
       if(Thread.currentThread().isInterrupted()){
         endPoint.close();
+        Thread.currentThread().interrupt();
       }
       throw new IOException(e.getMessage());
     }
