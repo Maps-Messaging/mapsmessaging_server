@@ -76,6 +76,9 @@ public class SemTechProtocol extends ProtocolImpl {
       subscriptionContext.setReceiveMaximum(maxQueued);
       outbound = session.addSubscription(subscriptionContext);
     } catch (InterruptedException | ExecutionException e) {
+      if(Thread.currentThread().isInterrupted()){
+        endPoint.close();
+      }
       throw new IOException(e.getMessage());
     }
   }
