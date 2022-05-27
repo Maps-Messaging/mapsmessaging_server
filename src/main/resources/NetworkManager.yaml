@@ -148,6 +148,11 @@ NetworkManager:
         ssl_SSLContext: DTLS
 
       -
+        url: udp://0.0.0.0:5684/
+        name: "CoAP Interface"
+        protocol: coap
+
+      -
         url: udp://0.0.0.0:2442/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn
@@ -182,7 +187,7 @@ NetworkManager:
         auth : public
 
       -
-        url: udp://10.140.62.189:1700/
+        url: udp://0.0.0.0:1700/
         name: "SemTech Gateway"
         protocol: semtech
         inbound: /semtech/in
