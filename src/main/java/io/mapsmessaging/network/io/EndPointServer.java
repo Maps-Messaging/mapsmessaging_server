@@ -30,7 +30,7 @@ import lombok.Getter;
 public abstract class EndPointServer extends EndPointServerStatus implements Closeable, Selectable {
 
   protected final Logger logger;
-  protected final AcceptHandler acceptHandler;
+  protected AcceptHandler acceptHandler;
   protected final Map<Long, EndPoint> activeEndPoints;
   private @Getter final NetworkConfig config;
 

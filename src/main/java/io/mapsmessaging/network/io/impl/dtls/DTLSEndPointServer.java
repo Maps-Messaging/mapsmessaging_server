@@ -25,29 +25,21 @@ import javax.net.ssl.SSLContext;
 
 public class DTLSEndPointServer extends UDPEndPointServer{
 
-
-  private final EndPointManagerJMX managerMBean;
-  private final SelectorLoadManager selectorLoadManager;
   private final ProtocolFactory protocolFactory;
-  private final String authenticationConfig;
   private final List<UDPInterfaceInformation> udpInterfaceInformations;
   private final List<DTLSSessionManager> bondedEndPoints;
   private final int port;
   private final SSLContext sslContext;
-  private final AcceptHandler acceptHandler;
 
   public DTLSEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url,
       SelectorLoadManager selectorLoadManager, AcceptHandler acceptHandler, EndPointManagerJMX managerMBean,
       NetworkConfig config) throws IOException {
     super(inetSocketAddress, protocolFactory, url, selectorLoadManager, managerMBean, config);
-    this.managerMBean = managerMBean;
     this.acceptHandler = acceptHandler;
-    this.selectorLoadManager = selectorLoadManager;
     this.protocolFactory = protocolFactory;
 
     sslContext = SSLHelper.getInstance().createContext(config.getProperties(), logger);
     bondedEndPoints = new ArrayList<>();
-    authenticationConfig = config.getAuthConfig();
     port = url.getPort();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);
   }
