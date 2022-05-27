@@ -24,15 +24,12 @@ public class PushData extends SemTechPacket {
   @Getter
   private final int token;
   @Getter
-  private final int identifier;
-  @Getter
   private final byte[] gatewayIdentifier;
   @Getter
   private final String jsonObject;
 
   public PushData(int token, Packet packet) {
     super(packet.getFromAddress());
-    identifier = PUSH_DATA;
     this.token = token;
 
     gatewayIdentifier = new byte[8];
@@ -43,7 +40,7 @@ public class PushData extends SemTechPacket {
   }
 
   public boolean isValid() {
-    return jsonObject.startsWith("{") && jsonObject.endsWith("}") && identifier == PUSH_DATA;
+    return jsonObject.startsWith("{") && jsonObject.endsWith("}");
   }
 
   @Override

@@ -21,7 +21,7 @@ public class PacketFactory {
       throw new IOException("Unsupported version detected");
     }
     int token = packet.get() << 8 | packet.get();
-    int identifier = packet.get();
+    int identifier = (packet.get() & 0xff);
     switch (identifier) {
       case PUSH_DATA:
         return new PushData(token, packet);
