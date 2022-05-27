@@ -111,6 +111,20 @@ public class Packet {
     buffer.put(b);
   }
 
+  public void putByte(int b) {
+    buffer.put((byte) (b&0xff));
+  }
+
+  public void putShort(int b) {
+    buffer.put((byte) ((b>>8 )&0xff));
+    buffer.put((byte) (b &0xff));
+  }
+
+  public int getShort() {
+    return buffer.get() << 8 | buffer.get();
+  }
+
+
   public void put(int pos, byte b) {
     buffer.put(pos, b);
   }
