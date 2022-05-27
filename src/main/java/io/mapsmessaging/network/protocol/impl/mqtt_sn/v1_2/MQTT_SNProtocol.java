@@ -233,7 +233,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
         try {
           close();
         } catch (IOException e) {
-          e.printStackTrace();
+          // Catch and ignore
         }
       }
     }

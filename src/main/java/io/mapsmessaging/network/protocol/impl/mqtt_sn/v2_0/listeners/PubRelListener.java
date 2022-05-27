@@ -49,7 +49,7 @@ public class PubRelListener extends PacketListener {
           tx.commit();
           session.closeTransaction(tx);
         } catch (IOException e) {
-          e.printStackTrace();
+          // catch & ignore
         }
       }
     });

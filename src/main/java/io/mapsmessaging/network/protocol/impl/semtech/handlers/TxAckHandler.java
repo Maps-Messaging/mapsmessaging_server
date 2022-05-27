@@ -31,7 +31,7 @@ public class TxAckHandler extends Handler {
       try {
         protocol.getInbound().storeMessage(message);
       } catch (IOException e) {
-        e.printStackTrace();
+        // Catch & ignore
       }
 
     }
