@@ -20,7 +20,7 @@ public class PacketFactory {
     if (version != 2) {
       throw new IOException("Unsupported version detected");
     }
-    int token = packet.get() << 8 | packet.get();
+    int token = packet.getShort();
     int identifier = (packet.get() & 0xff);
     switch (identifier) {
       case PUSH_DATA:
