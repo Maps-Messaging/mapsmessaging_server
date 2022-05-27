@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.semtech.packet;
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PULL_ACK;
 
 import java.net.SocketAddress;
+import lombok.ToString;
 
 /**
  * ### 5.3. PULL_ACK packet ###
@@ -15,6 +16,8 @@ import java.net.SocketAddress;
  * 1-2    | same token as the PULL_DATA packet to acknowledge
  * 3      | PULL_ACK identifier 0x04
  */
+
+@ToString
 public class PullAck extends Ack {
 
   public PullAck(int token, SocketAddress address) {

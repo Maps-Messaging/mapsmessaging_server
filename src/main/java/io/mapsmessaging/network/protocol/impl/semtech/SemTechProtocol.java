@@ -6,7 +6,10 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
@@ -55,20 +58,25 @@ public class SemTechProtocol extends ProtocolImpl {
     this.endPoint = endPoint;
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
     waitingMessages = new ConcurrentLinkedQueue<>();
+
+    int maxQueued = endPoint.getConfig().getProperties().getIntProperty("MaxQueueSize", 10);
     SessionContext sessionContext = new SessionContext("SemTech-Gateway", this);
     sessionContext.setPersistentSession(false);
     sessionContext.setResetState(true);
-    sessionContext.setReceiveMaximum(10);
+    sessionContext.setReceiveMaximum(maxQueued);
     try {
-      String inboundTopicName = endPoint.getConfig().getProperties().getProperty("InBound", "/semtech/inbound");
-      String outboundTopicName = endPoint.getConfig().getProperties().getProperty("OutBound", "/semtech/outbound");
+      String inboundTopicName = endPoint.getConfig().getProperties().getProperty("inbound", "/semtech/inbound");
+      String outboundTopicName = endPoint.getConfig().getProperties().getProperty("outbound", "/semtech/outbound");
       session = SessionManager.getInstance().createAsync(sessionContext, this).get();
       inbound = session.findDestination(inboundTopicName, DestinationType.TOPIC).get();
 
-      SubscriptionContext subscriptionContext = new SubscriptionContext();
+      SubscriptionContext subscriptionContext = new SubscriptionContext(outboundTopicName);
       subscriptionContext.setAlias(outboundTopicName);
+      subscriptionContext.setCreditHandler(CreditHandler.AUTO);
+      subscriptionContext.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
+      subscriptionContext.setRetainHandler(RetainHandler.SEND_ALWAYS);
       subscriptionContext.setAcknowledgementController(ClientAcknowledgement.AUTO);
-      subscriptionContext.setReceiveMaximum(10);
+      subscriptionContext.setReceiveMaximum(maxQueued);
       outbound = session.addSubscription(subscriptionContext);
     } catch (InterruptedException | ExecutionException e) {
       throw new IOException(e.getMessage());
@@ -83,13 +91,15 @@ public class SemTechProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     waitingMessages.offer(messageEvent);
-    System.err.println("Received outbound message : "+messageEvent.getMessage());
   }
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
+    logger.log(ServerLogMessages.RECEIVE_PACKET, packet);
     SemTechPacket semTechPacket = packetFactory.parse(packet);
-    PacketHandler.getInstance().handle(this, semTechPacket);
+    if(semTechPacket != null) {
+      PacketHandler.getInstance().handle(this, semTechPacket);
+    }
     return true;
   }
 

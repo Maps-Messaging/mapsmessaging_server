@@ -7,6 +7,7 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 import io.mapsmessaging.network.io.Packet;
 import java.nio.charset.StandardCharsets;
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * ### 3.2. PUSH_DATA packet ###
@@ -17,6 +18,7 @@ import lombok.Getter;
  * identifier 0x00 4-11   | Gateway unique identifier (MAC address) 12-end | JSON object, starting with {, ending with }, see section 4
  */
 
+@ToString
 public class PushData extends SemTechPacket {
 
   @Getter

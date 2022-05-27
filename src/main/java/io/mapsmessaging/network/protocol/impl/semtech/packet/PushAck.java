@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.semtech.packet;
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PUSH_ACK;
 
 import java.net.SocketAddress;
+import lombok.ToString;
 
 /**
  * ### 3.3. PUSH_ACK packet ###
@@ -15,6 +16,8 @@ import java.net.SocketAddress;
  * 1-2    | same token as the PUSH_DATA packet to acknowledge
  * 3      | PUSH_ACK identifier 0x01
  */
+
+@ToString
 public class PushAck extends Ack {
 
   public PushAck(int token, SocketAddress fromAddress) {

@@ -5,6 +5,7 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 
 import io.mapsmessaging.network.io.Packet;
 import java.net.SocketAddress;
+import lombok.ToString;
 
 /**
  * ### 5.4. PULL_RESP packet ###
@@ -18,7 +19,7 @@ import java.net.SocketAddress;
  * 3      | PULL_RESP identifier 0x03
  * 4-end  | JSON object, starting with {, ending with }, see section 6
  */
-
+@ToString
 public class PullResponse extends SemTechPacket {
 
   private final int token;

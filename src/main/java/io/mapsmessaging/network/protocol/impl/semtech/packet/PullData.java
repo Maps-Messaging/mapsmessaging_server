@@ -5,6 +5,7 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 
 import io.mapsmessaging.network.io.Packet;
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * ### 5.2. PULL_DATA packet ###
@@ -23,6 +24,8 @@ import lombok.Getter;
  * 3      | PULL_DATA
  * identifier 0x02 4-11   | Gateway unique identifier (MAC address)
  */
+
+@ToString
 public class PullData extends SemTechPacket {
 
   @Getter

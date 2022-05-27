@@ -33,7 +33,6 @@ public class PushDataHandler extends Handler {
         builder.setOpaqueData(pushData.getJsonObject().getBytes(StandardCharsets.UTF_8));
         builder.setMeta(meta);
         Message message = builder.build();
-        System.err.println("Received inbound message : "+message);
         protocol.getInbound().storeMessage(message);
       } catch (JSONException | IOException jsonParseException) {
         jsonParseException.printStackTrace();

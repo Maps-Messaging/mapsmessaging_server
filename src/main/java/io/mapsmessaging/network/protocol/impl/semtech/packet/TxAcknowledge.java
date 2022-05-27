@@ -4,9 +4,9 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
 
 import io.mapsmessaging.network.io.Packet;
-import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * ### 5.5. TX_ACK packet ###
@@ -22,6 +22,7 @@ import lombok.Getter;
  * 4-11   | Gateway unique identifier (MAC address)
  * 12-end | [optional] JSON object, starting with {, ending with }, see section 6
  */
+@ToString
 public class TxAcknowledge extends SemTechPacket {
 
   @Getter
@@ -30,13 +31,6 @@ public class TxAcknowledge extends SemTechPacket {
   private final byte[] gatewayIdentifier;
   @Getter
   private final String jsonObject;
-
-  public TxAcknowledge(int token, byte[] gatewayIdentifier, String jsonObject, SocketAddress address) {
-    super(address);
-    this.token = token;
-    this.gatewayIdentifier = gatewayIdentifier;
-    this.jsonObject = jsonObject;
-  }
 
   public TxAcknowledge(int token, Packet packet) {
     super(packet.getFromAddress());

@@ -181,3 +181,9 @@ NetworkManager:
         protocol : all
         auth : public
 
+      -
+        url: udp://10.140.62.189:1700/
+        name: "SemTech Gateway"
+        protocol: semtech
+        inbound: /semtech/in
+        outbound: /semtech/out

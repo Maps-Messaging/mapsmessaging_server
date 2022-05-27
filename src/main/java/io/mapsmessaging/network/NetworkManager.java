@@ -100,6 +100,7 @@ public class NetworkManager implements ServiceManager {
           entry.getValue().start();
         }
       } catch (IOException e) {
+        e.printStackTrace();
         logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILED, e, entry.getKey());
       }
     }

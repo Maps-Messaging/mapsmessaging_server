@@ -13,7 +13,7 @@ public class PacketFactory {
   public static final int PULL_RESPONSE = 0x3;
   public static final int PULL_ACK = 0x4;
   public static final int TX_ACK = 0x5;
-  public static final int MAX_EVENTS = 0x5;
+  public static final int MAX_EVENTS = 0x6;
 
   public SemTechPacket parse(Packet packet) throws IOException {
     int version = packet.get();
