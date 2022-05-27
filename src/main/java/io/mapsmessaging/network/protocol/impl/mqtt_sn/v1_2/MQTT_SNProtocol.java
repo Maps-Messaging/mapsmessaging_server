@@ -207,7 +207,11 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId){
-    Publish publish = new Publish(alias, packetId,  messageEvent.getMessage().getOpaqueData());
+    byte[] data = messageEvent.getMessage().getOpaqueData();
+    if(transformation != null){
+      data = transformation.outgoing(messageEvent.getMessage());
+    }
+    Publish publish = new Publish(alias, packetId,  data);
     publish.setQoS(qos);
     publish.setCallback(messageEvent.getCompletionTask());
     publish.setTopicIdType(stateEngine.getTopicAliasManager().getTopicAliasType(messageEvent.getDestinationName()));

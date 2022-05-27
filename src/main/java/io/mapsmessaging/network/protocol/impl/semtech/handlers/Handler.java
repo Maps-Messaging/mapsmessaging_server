@@ -20,17 +20,20 @@ public abstract class Handler {
 
   public void sendMessage(SemTechProtocol protocol, SocketAddress socketAddress) {
     MessageEvent messageEvent = protocol.getWaitingMessages().poll();
-    byte[] raw = messageEvent.getMessage().getOpaqueData();
-    try {
-      JSONObject jsonObject = new JSONObject(new String(raw));
-      int token = TOKEN.incrementAndGet()%0x7FFF;
-      PacketHandler.getInstance().getMessageStateContext().push(token, messageEvent);
-      PullResponse pullResponse = new PullResponse(token, raw, socketAddress);
-      protocol.sendPacket(pullResponse);
-    } catch (JSONException e) {
-      messageEvent.getCompletionTask().run();
+    if(messageEvent != null) {
+      byte[] raw = messageEvent.getMessage().getOpaqueData();
+      if (protocol.getTransformation() != null) {
+        raw = protocol.getTransformation().outgoing(messageEvent.getMessage());
+      }
+      try {
+        JSONObject jsonObject = new JSONObject(new String(raw));
+        int token = TOKEN.incrementAndGet() % 0x7FFF;
+        PacketHandler.getInstance().getMessageStateContext().push(token, messageEvent);
+        PullResponse pullResponse = new PullResponse(token, raw, socketAddress);
+        protocol.sendPacket(pullResponse);
+      } catch (JSONException e) {
+        messageEvent.getCompletionTask().run();
+      }
     }
   }
-
-
 }

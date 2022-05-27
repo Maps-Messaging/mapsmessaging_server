@@ -39,14 +39,11 @@ public class SemTechProtocol extends ProtocolImpl {
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final PacketFactory packetFactory;
-  private final ProtocolMessageTransformation transformation;
   private final Session session;
-
   @Getter
   private final Destination inbound;
   @Getter
   private final SubscribedEventManager outbound;
-
   private final Queue<MessageEvent> waitingMessages;
 
   protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint) throws IOException {
