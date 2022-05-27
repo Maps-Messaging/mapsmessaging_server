@@ -150,7 +150,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   protected void handleMQTTEvent(@NonNull @NotNull MQTT_SNPacket mqtt) {
     if (logger.isInfoEnabled()) {
-      logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt.toString());
+      logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
     }
     receivedMessageAverages.increment();
     try {

@@ -43,7 +43,9 @@ public class PacketFactory {
 
     int type = packet.get();
 
-    return create(type, packetLength, packet);
+    MQTT_SNPacket mqtt = create(type, packetLength, packet);
+    mqtt.setFromAddress(packet.getFromAddress());
+    return mqtt;
   }
 
   protected MQTT_SNPacket create(int type, int length, Packet packet) throws IOException {

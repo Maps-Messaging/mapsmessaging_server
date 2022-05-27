@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class DTLSSessionManager  implements Closeable, SelectorCallback {
 
-  private static long TIMEOUT = 60;
+  private final static long TIMEOUT = 600;
 
   private final AtomicLong uniqueId = new AtomicLong(0);
   private final UDPSessionManager<DTLSEndPoint> sessionMapping;

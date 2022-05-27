@@ -19,7 +19,6 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet;
 
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -27,7 +26,7 @@ import lombok.ToString;
 public class PingRequest extends MQTT_SNPacket {
 
   @Getter
-  private int clientId;
+  private String clientId;
 
   public PingRequest() {
     super(PINGREQ);
@@ -36,7 +35,9 @@ public class PingRequest extends MQTT_SNPacket {
   public PingRequest(Packet packet, int length) {
     super(PINGREQ);
     if (length > 2) {
-      clientId = MQTTPacket.readShort(packet);
+      byte[] tmp = new byte[packet.available()];
+      packet.get(tmp);
+      clientId = new String(tmp);
     }
   }
 

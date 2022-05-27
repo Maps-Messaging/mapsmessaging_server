@@ -31,7 +31,7 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   ) throws IOException {
     super(inetSocketAddress, selector, id, server, authConfig, managerMBean);
     this.securityMap = securityMap;
-    long cacheExpiryTime = getConfig().getProperties().getLongProperty("HMACHostLookupCacheExpiry", 60);
+    long cacheExpiryTime = getConfig().getProperties().getLongProperty("HMACHostLookupCacheExpiry", 600);
     cacheMap = new UDPSessionManager<>(cacheExpiryTime);
   }
 
