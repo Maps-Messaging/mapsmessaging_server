@@ -137,12 +137,11 @@ public class Resource implements AutoCloseable {
         try {
           keyGen.set(store.getLastKey().get());
         } catch (InterruptedException e) {
-          e.printStackTrace();
-        } catch (ExecutionException e) {
-          e.printStackTrace();
-        } catch (IOException e) {
-          e.printStackTrace();
+          Thread.currentThread().interrupt();
+        } catch (ExecutionException | IOException e) {
+          //ignore
         }
+
       }
       loaded = true;
     }
