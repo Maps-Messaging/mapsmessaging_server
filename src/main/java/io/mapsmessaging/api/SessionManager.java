@@ -28,10 +28,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
@@ -153,23 +151,20 @@ public class SessionManager {
   }
 
   private SessionManager(){
-    publisherScheduler =  new ThreadPoolExecutor (
-        0,
-        Runtime.getRuntime().availableProcessors()*2,
-        30L,
-        TimeUnit.SECONDS,
-        new SynchronousQueue<>(),
-        new ThreadFactory() {
-      final AtomicLong counter = new AtomicLong(0);
-      final ThreadGroup  threadGroup = new ThreadGroup("SessionManager");
-      @Override
-      public Thread newThread(@NotNull Runnable r) {
-        Thread t = new Thread(threadGroup, r);
-        t.setDaemon(true);
-        t.setName("Publisher-Thread:"+counter.incrementAndGet());
-        return t;
-      }
-    });
+    publisherScheduler = Executors.newCachedThreadPool(new ThreadFactoryImpl());
+  }
 
+
+  public static class ThreadFactoryImpl implements ThreadFactory {
+    private final ThreadGroup threadGroup = new ThreadGroup("SessionManager");
+    private final AtomicLong counter = new AtomicLong(0);
+
+    @Override
+    public Thread newThread(@NotNull Runnable r) {
+      Thread t = new Thread(threadGroup, r);
+      t.setDaemon(true);
+      t.setName("Publisher-Thread:"+counter.incrementAndGet());
+      return t;
+    }
   }
 }
