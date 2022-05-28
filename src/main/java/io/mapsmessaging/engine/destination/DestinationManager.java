@@ -221,16 +221,16 @@ public class DestinationManager implements DestinationFactory {
 
   private DestinationImpl scanDirectory( File directory, DestinationPathManager pathManager) throws IOException {
     MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
-    ResourceProperties properties = ResourceFactory.getInstance().scanForProperties(directory);
+    ResourceProperties scannedProperties = ResourceFactory.getInstance().scanForProperties(directory);
     Resource resource = null;
-    if(properties != null){
-      resource = ResourceFactory.getInstance().scan(messageExpiryHandler, directory, pathManager, properties);
+    if(scannedProperties != null){
+      resource = ResourceFactory.getInstance().scan(messageExpiryHandler, directory, pathManager, scannedProperties);
 
     }
     if (resource == null) {
       throw new IOException("Invalid resource found");
     }
-    String name = properties.getResourceName();
+    String name = scannedProperties.getResourceName();
     String directoryPath = FilePathHelper.cleanPath(directory.toString()+ File.separator);
     DestinationType destinationType = DestinationType.TOPIC;
     DestinationImpl response;
