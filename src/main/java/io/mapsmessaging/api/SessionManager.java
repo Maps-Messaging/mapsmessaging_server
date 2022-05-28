@@ -151,20 +151,6 @@ public class SessionManager {
   }
 
   private SessionManager(){
-    publisherScheduler = Executors.newCachedThreadPool(new ThreadFactoryImpl());
-  }
-
-
-  public static class ThreadFactoryImpl implements ThreadFactory {
-    private final ThreadGroup threadGroup = new ThreadGroup("SessionManager");
-    private final AtomicLong counter = new AtomicLong(0);
-
-    @Override
-    public Thread newThread(@NotNull Runnable r) {
-      Thread t = new Thread(threadGroup, r);
-      t.setDaemon(true);
-      t.setName("Publisher-Thread:"+counter.incrementAndGet());
-      return t;
-    }
+    publisherScheduler = Executors.newCachedThreadPool();
   }
 }
