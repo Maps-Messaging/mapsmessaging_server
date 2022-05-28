@@ -8,7 +8,7 @@ public abstract class State {
 
   protected final StateEngine stateEngine;
 
-  public State(StateEngine stateEngine){
+  protected State(StateEngine stateEngine){
     this.stateEngine = stateEngine;
   }
 

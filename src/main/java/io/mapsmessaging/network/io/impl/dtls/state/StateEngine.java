@@ -15,17 +15,25 @@ import lombok.Setter;
 
 public class StateEngine {
 
-  private @Getter final SSLEngine sslEngine;
-  private @Getter final SocketAddress clientId;
+
   private final DTLSSessionManager manager;
   private final Queue<Packet> inboundQueue;
 
-  private @Getter @Setter Selectable selectableTask;
-  private @Getter @Setter Selectable writeTask;
-  private @Getter @Setter State currentState;
-  private @Getter long lastAccess;
+  @Getter
+  private final SSLEngine sslEngine;
+  @Getter
+  private final SocketAddress clientId;
+  @Getter
+  private long lastAccess;
 
-  private @Getter @Setter StateChangeListener listener;
+  @Getter @Setter
+  private Selectable selectableTask;
+  @Getter @Setter
+  private Selectable writeTask;
+  @Getter @Setter
+  private State currentState;
+  @Getter @Setter
+  private StateChangeListener listener;
 
 
   public StateEngine(SocketAddress clientId, SSLEngine engine, DTLSSessionManager manager){

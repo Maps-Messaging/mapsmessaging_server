@@ -47,7 +47,6 @@ public class HmacUDPEndPoint extends UDPEndPoint {
     if(packetIntegrity == null){
       packet.clear();
       return 0;
-//      throw new IOException("No HMAC configuration found for "+packet.getFromAddress());
     }
     packet = packetIntegrity.secure(packet);
     return super.sendPacket(packet);
@@ -61,7 +60,6 @@ public class HmacUDPEndPoint extends UDPEndPoint {
     if(packetIntegrity == null){
       packet.clear();
       res = 0;
-//      throw new IOException("No HMAC configuration found for "+packet.getFromAddress());
     }
     else {
       if (packet.hasRemaining()) {
