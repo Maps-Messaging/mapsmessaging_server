@@ -32,8 +32,6 @@ public abstract class ProtocolImplFactory implements Service {
   private final String description;
   private final Detection detection;
 
-  private SessionManager sessionManager;
-
   protected ProtocolImplFactory(String name, String description, Detection detection) {
     this.name = name;
     this.description = description;
@@ -67,9 +65,5 @@ public abstract class ProtocolImplFactory implements Service {
     } finally {
       packet.position(pos);
     }
-  }
-
-  public void registerSessionManager(SessionManager manager){
-    sessionManager = manager;
   }
 }
