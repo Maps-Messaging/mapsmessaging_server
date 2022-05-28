@@ -18,13 +18,16 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants.RECEIVE_MAXIMUM;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.SubAck;
@@ -40,11 +43,11 @@ public class SubscribeListener extends PacketListener {
     Subscribe subscribe = (Subscribe) mqttPacket;
     short topicId =0;
     String topicName;
-    if (subscribe.topicIdType() == MQTT_SNPacket.TOPIC_NAME) {
+    if (subscribe.topicIdType() == TOPIC_NAME) {
       topicName = subscribe.getTopicName();
     } else {
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
-      if(subscribe.getTopicIdType() == MQTT_SNPacket.TOPIC_PRE_DEFINED_ID){
+      if(subscribe.getTopicIdType() == TOPIC_PRE_DEFINED_ID){
         topicId = subscribe.getTopicId();
       }
     }
@@ -64,7 +67,7 @@ public class SubscribeListener extends PacketListener {
       }
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
-      builder.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
+      builder.setReceiveMaximum(RECEIVE_MAXIMUM);
       builder.setQos(subscribe.getQoS());
 
       try {

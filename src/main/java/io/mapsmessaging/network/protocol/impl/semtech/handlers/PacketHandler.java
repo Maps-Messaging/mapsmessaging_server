@@ -28,8 +28,7 @@ public class PacketHandler {
   private PacketHandler() {
     messageStateContext = new MessageStateContext();
     handlers = new Handler[MAX_EVENTS];
-    Handler nullHandler = new NullHandler();
-    Arrays.fill(handlers, nullHandler);
+    Arrays.fill(handlers, null);
     handlers[PUSH_DATA] = new PushDataHandler();
     handlers[PULL_DATA] = new PullDataHandler();
     handlers[TX_ACK] = new TxAckHandler();
@@ -39,14 +38,6 @@ public class PacketHandler {
     Handler handler = handlers[packet.getIdentifier()];
     if (handler != null) {
       handler.process(protocol, packet);
-    }
-  }
-
-  private class NullHandler extends Handler{
-
-    @Override
-    void process(@NotNull @NonNull SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet) {
-
     }
   }
 }
