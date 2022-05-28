@@ -51,8 +51,8 @@ public class PacketIntegrityFactory {
   private PacketIntegrityFactory(){
     implementations = new LinkedHashMap<>();
     ServiceLoader<PacketIntegrity> instanceList = ServiceLoader.load(PacketIntegrity.class);
-    for(PacketIntegrity instance:instanceList){
-      implementations.put(instance.getName(), instance);
+    for(PacketIntegrity packetIntegrity:instanceList){
+      implementations.put(packetIntegrity.getName(), packetIntegrity);
     }
   }
 }
