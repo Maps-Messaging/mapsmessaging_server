@@ -37,6 +37,7 @@ public class UDPFacadeEndPoint extends EndPoint {
     return endPoint.getProtocol();
   }
 
+  @Override
   public List<String> getJMXTypePath() {
     return jmxParentPath;
   }

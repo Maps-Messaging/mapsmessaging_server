@@ -3,18 +3,20 @@ package io.mapsmessaging.network.io.security.impl.checksum;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
 import io.mapsmessaging.network.io.security.SignatureManager;
+import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
 import java.util.zip.Checksum;
-
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class ChecksumPacketSecurity implements PacketIntegrity {
 
   private final SignatureManager stamper;
 
-  public ChecksumPacketSecurity(){
-    stamper = null;
+  protected ChecksumPacketSecurity(){
+    stamper = new AppenderSignatureManager();
   }
 
-  protected ChecksumPacketSecurity(SignatureManager stamper){
+  protected ChecksumPacketSecurity(@NotNull @NonNull SignatureManager stamper){
     this.stamper = stamper;
   }
 

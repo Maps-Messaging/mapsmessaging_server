@@ -38,6 +38,7 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener {
     stateEngine.start();
   }
 
+  @Override
   public void close(){
     mbean.close();
     manager.close(clientId);

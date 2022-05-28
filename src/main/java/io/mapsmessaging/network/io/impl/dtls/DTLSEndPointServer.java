@@ -64,7 +64,6 @@ public class DTLSEndPointServer extends UDPEndPointServer{
 
         UDPEndPoint udpEndPoint = new UDPEndPoint(bonded, selectorLoadManager.allocate(), 1, this, authenticationConfig, managerMBean);
         DTLSSessionManager endPoint = new DTLSSessionManager(udpEndPoint, inetAddress,this, protocolImplFactory, sslContext, acceptHandler, managerMBean);
-        UDPInterfaceInformation nInfo = new UDPInterfaceInformation(info, interfaceAddress.getBroadcast());
         bondedEndPoints.add(endPoint);
       }
     }

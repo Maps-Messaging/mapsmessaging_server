@@ -5,8 +5,7 @@ import java.util.StringTokenizer;
 
 public class SharedKeyHelper {
 
-
-  static public byte[] convertKey(String key){
+  public static byte[] convertKey(String key){
     key = key.trim();
     if(key.startsWith("0x")){
       return fromHex(key);
@@ -14,7 +13,7 @@ public class SharedKeyHelper {
     return key.getBytes();
   }
 
-  static private byte[] fromHex(String hexStr){
+  private static byte[] fromHex(String hexStr){
     StringTokenizer st = new StringTokenizer(hexStr, ",");
     ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
     while(st.hasMoreElements()){
@@ -31,4 +30,6 @@ public class SharedKeyHelper {
     }
     return baos.toByteArray();
   }
+
+  private SharedKeyHelper(){}
 }

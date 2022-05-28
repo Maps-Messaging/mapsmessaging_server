@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class DTLSSessionManager  implements Closeable, SelectorCallback {
 
-  private final static long TIMEOUT = 600;
+  private static final long TIMEOUT = 600;
 
   private final AtomicLong uniqueId = new AtomicLong(0);
   private final UDPSessionManager<DTLSEndPoint> sessionMapping;
@@ -94,6 +94,7 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     if(state != null && state.getContext() != null) {
       protocolImplFactory.closed(state.getContext());
     }
+    selectorTask.close();
   }
 
   @Override

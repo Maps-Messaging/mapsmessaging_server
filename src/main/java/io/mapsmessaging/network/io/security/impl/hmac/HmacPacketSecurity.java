@@ -3,6 +3,7 @@ package io.mapsmessaging.network.io.security.impl.hmac;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
 import io.mapsmessaging.network.io.security.SignatureManager;
+import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
@@ -13,8 +14,8 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
   private final SignatureManager stamper;
   private Mac mac;
 
-  public HmacPacketSecurity(){
-    stamper = null;
+  protected HmacPacketSecurity(){
+    stamper = new AppenderSignatureManager();
   }
 
   protected HmacPacketSecurity(SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException {

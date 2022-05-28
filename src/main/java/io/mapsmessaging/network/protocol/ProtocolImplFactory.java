@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.SessionManager;
 import io.mapsmessaging.network.protocol.detection.Detection;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
