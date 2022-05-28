@@ -95,7 +95,8 @@ public class DestinationManager implements DestinationFactory {
   }
 
   int getIndex(String name){
-    return Math.abs(name.hashCode())%creatorPipelines.length;
+    int hash = name.hashCode()%creatorPipelines.length;
+    return Math.abs(hash);
   }
 
   public void addSystemTopic(SystemTopic systemTopic) {
