@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.LONG_TOPIC_NAME;
+
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
@@ -57,7 +59,7 @@ public class PublishListener extends PacketListener {
       qos = QualityOfService.AT_MOST_ONCE;
     }
     String topicName;
-    if(publish.getTopicIdType() == MQTT_SN_2_Packet.LONG_TOPIC_NAME){
+    if(publish.getTopicIdType() == LONG_TOPIC_NAME){
       topicName = publish.getTopicName();
     }
     else{

@@ -62,7 +62,7 @@ public class WillTask {
     willTaskImpl.updateQoS(qos);
   }
 
-  public void updateRetainFlag(@NonNull @NotNull boolean flag) {
+  public void updateRetainFlag(boolean flag) {
     willTaskImpl.updateRetain(flag);
   }
 

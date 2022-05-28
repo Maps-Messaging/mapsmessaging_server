@@ -25,7 +25,6 @@ import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -63,9 +62,6 @@ public class PublishListener extends PacketListener {
       meta.put("version", "1.2");
       meta.put("time_ms", "" + System.currentTimeMillis());
       meta.put("sessionId", session.getName());
-
-
-      HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
 
       MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setQoS(qos)

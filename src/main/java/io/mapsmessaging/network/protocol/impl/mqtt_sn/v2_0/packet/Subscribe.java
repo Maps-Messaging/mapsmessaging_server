@@ -56,6 +56,5 @@ public class Subscribe extends MQTT_SN_2_Packet {
       topicId = (short) MQTTPacket.readShort(packet);
       topicName = null;
     }
-
   }
 }

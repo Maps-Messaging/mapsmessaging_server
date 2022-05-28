@@ -18,7 +18,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants.RECEIVE_MAXIMUM;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.LONG_TOPIC_NAME;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
@@ -45,13 +48,13 @@ public class SubscribeListener extends PacketListener {
     String topicName;
     short topicId =0;
 
-    if(subscribe.getTopicIdType() == MQTT_SN_2_Packet.LONG_TOPIC_NAME ||
+    if(subscribe.getTopicIdType() == LONG_TOPIC_NAME ||
         subscribe.getTopicIdType() == TOPIC_NAME){
       topicName = subscribe.getTopicName();
     }
     else{
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
-      if(subscribe.getTopicIdType() == MQTT_SNPacket.TOPIC_PRE_DEFINED_ID){
+      if(subscribe.getTopicIdType() == TOPIC_PRE_DEFINED_ID){
         topicId = (short)subscribe.getTopicIdType();
       }
     }
@@ -71,7 +74,7 @@ public class SubscribeListener extends PacketListener {
       }
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
-      builder.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
+      builder.setReceiveMaximum(RECEIVE_MAXIMUM);
       builder.setNoLocalMessages(subscribe.isNoLocal());
       builder.setRetainHandler(subscribe.getRetainHandler());
       builder.setQos(subscribe.getQoS());

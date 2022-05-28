@@ -43,7 +43,7 @@ public class SubscribeListener extends PacketListener {
     Subscribe subscribe = (Subscribe) mqttPacket;
     short topicId =0;
     String topicName;
-    if (subscribe.topicIdType() == TOPIC_NAME) {
+    if (subscribe.getTopicId() == TOPIC_NAME) {
       topicName = subscribe.getTopicName();
     } else {
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());

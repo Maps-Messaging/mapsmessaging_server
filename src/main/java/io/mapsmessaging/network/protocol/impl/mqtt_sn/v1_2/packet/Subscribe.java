@@ -72,13 +72,4 @@ public class Subscribe extends MQTT_SNPacket {
   public void setQoS(QualityOfService qos) {
     flags = (byte) (flags | (byte) ((qos.getLevel() & 0b11) << 5));
   }
-
-  public int topicIdType() {
-    return (flags & 0b00000011);
-  }
-
-  public void setTopicIdType(int type) {
-    flags = (byte) (flags | (type & 0b11));
-  }
-
 }
