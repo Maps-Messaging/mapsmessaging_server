@@ -25,7 +25,9 @@ public class UDPFacadeEndPoint extends EndPoint {
     List<String> end = endPoint.getJMXTypePath();
     end.remove(end.size()-1);
     String entry = "endPointName="+endPoint.getName()+"_"+fromAddress.toString();
-    entry = entry.replaceAll(":", "_");
+    while(entry.contains(":")){
+      entry = entry.replace(":", "_");
+    }
     end.add(entry);
     jmxParentPath = end;
   }
