@@ -4,7 +4,9 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.security.SignatureManager;
 
 public class AppenderSignatureManager implements SignatureManager {
-  public AppenderSignatureManager(){}
+  public AppenderSignatureManager(){
+    // Required to be loaded
+  }
 
   @Override
   public byte[] getSignature(Packet packet, byte[] signature) {

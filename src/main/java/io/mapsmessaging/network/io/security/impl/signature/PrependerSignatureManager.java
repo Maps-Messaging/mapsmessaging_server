@@ -6,7 +6,10 @@ import java.nio.ByteBuffer;
 
 public class PrependerSignatureManager implements SignatureManager {
 
-  public PrependerSignatureManager(){}
+  public PrependerSignatureManager(){
+    // Required to be loaded
+  }
+
   @Override
   public byte[] getSignature(Packet packet, byte[] signature) {
     packet.getRawBuffer().get(0, signature);
