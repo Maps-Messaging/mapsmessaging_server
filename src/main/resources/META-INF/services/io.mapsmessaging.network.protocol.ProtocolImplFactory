@@ -38,7 +38,6 @@ io.mapsmessaging.network.protocol.impl.stomp.StompProtocolFactory
 io.mapsmessaging.network.protocol.impl.coap.CoapProtocolFactory
 io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocolFactory
-io.mapsmessaging.network.protocol.impl.forwarder.ForwarderProtocolFactory
 io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocolFactory
 
 #
