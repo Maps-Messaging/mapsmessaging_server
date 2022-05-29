@@ -83,29 +83,31 @@ public class SemTechProtocol extends ProtocolImpl {
   }
 
   public void close() throws IOException {
+    logger.log(ServerLogMessages.SEMTECH_CLOSE, endPoint.toString());
     SessionManager.getInstance().close(session,true);
     endPoint.close();
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    logger.log(ServerLogMessages.SEMTECH_QUEUE_MESSAGE, messageEvent.getMessage());
     waitingMessages.offer(messageEvent);
   }
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    logger.log(ServerLogMessages.RECEIVE_PACKET, packet);
     SemTechPacket semTechPacket = packetFactory.parse(packet);
     if(semTechPacket != null) {
+      logger.log(ServerLogMessages.RECEIVE_PACKET, semTechPacket);
       PacketHandler.getInstance().handle(this, semTechPacket);
     }
     return true;
   }
 
-  public void sendPacket(@NotNull @NonNull SemTechPacket packet) {
+  public void sendPacket(@NotNull @NonNull SemTechPacket semTechPacket) {
     sentMessageAverages.increment();
-    selectorTask.push(packet);
-    logger.log(ServerLogMessages.PUSH_WRITE, packet);
+    selectorTask.push(semTechPacket);
+    logger.log(ServerLogMessages.SEMTECH_SENDING_PACKET, semTechPacket);
     sentMessage();
   }
 
@@ -113,6 +115,9 @@ public class SemTechProtocol extends ProtocolImpl {
     return waitingMessages;
   }
 
+  public Logger getLogger(){
+    return logger;
+  }
   @Override
   public String getName() {
     return "semtech";

@@ -202,7 +202,7 @@ public class StompProtocol extends ProtocolImpl {
 
     int remaining = packet.available();
     if (activeFrame.isValid()) {
-      logger.log(ServerLogMessages.STOMP_PROCESSING_FRAME, activeFrame);
+      logger.log(ServerLogMessages.RECEIVE_PACKET, activeFrame);
       selectorTask.cancel(OP_READ); // Disable read until this frame is complete
       stateEngine.handleFrame(activeFrame, remaining == 0);
     } else {

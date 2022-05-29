@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.logging;
 
+import io.mapsmessaging.utilities.admin.HealthStatus;
 import lombok.Getter;
 
 /**
@@ -26,6 +27,9 @@ import lombok.Getter;
  */
 
 public enum ServerLogMessages implements LogMessage {
+
+  //-------------------------------------------------------------------------------------------------------------
+
   // <editor-fold desc="Generic messages">
   PUSH_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Packet for write, {}"),
   RECEIVE_PACKET(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Received Packet:{}"),
@@ -82,6 +86,19 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_MANAGER_CLOSE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on accept server raised exception"),
   END_POINT_MANAGER_CLOSE_EXCEPTION_1(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on closed server raised exception"),
   // </editor-fold>
+
+  //<editor-fold desc="End Point Connection Management">
+  END_POINT_CONNECTION_STARTING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Starting connection manager"),
+  END_POINT_CONNECTION_SUBSCRIPTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to establish a {} subscription in between {} and {} "),
+  END_POINT_CONNECTION_CLOSE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Exception raised while closing end point"),
+  END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Established a {} subscription between {} and {}"),
+  END_POINT_CONNECTION_PROTOCOL_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised while establishing protocol between {} and protocol {}"),
+  END_POINT_CONNECTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised while connecting to remote server {}"),
+  END_POINT_CONNECTION_INITIALISED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Initialised connection"),
+  END_POINT_CONNECTION_CLOSED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Closing connection"),
+  END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
+  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+  //</editor-fold>
 
   // <editor-fold desc="Selector and Selector task log messages">
   SELECTOR_OPEN(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Opening Selector"),
@@ -146,14 +163,12 @@ public enum ServerLogMessages implements LogMessage {
   NOOP_END_POINT_CLOSE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Closed a no-op end point {}"),
   //</editor-fold>
 
-
   // <editor-fold desc="TCP/IP Server EndPoint log message">
   TCP_SERVER_ENDPOINT_CREATE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Creating Server Socket on port {} with backlog of {} on interface {}"),
   TCP_SERVER_ENDPOINT_CLOSE(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Closing Server Socket"),
   TCP_SERVER_ENDPOINT_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Registering selector"),
   TCP_SERVER_ENDPOINT_DEREGISTER(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Deregister selector"),
   TCP_SERVER_ENDPOINT_ACCEPT(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Accept failed with "),
-
   // </editor-fold>
 
   // <editor-fold desc="SSL End Point log messages">
@@ -214,7 +229,6 @@ public enum ServerLogMessages implements LogMessage {
   ANON_LOGIN_MODULE_SUBJECT(LEVEL.DEBUG, SERVER_CATEGORY.AUTHENTICATION, "\t\t[AnonymousLoginModule] added AnonymousPrincipal to Subject"),
   ANON_LOGIN_MODULE_LOG_OUT(LEVEL.DEBUG, SERVER_CATEGORY.AUTHENTICATION, "\t\t[AnonymousLoginModule] logged out Subject"),
   // </editor-fold>
-
 
   // <editor-fold desc="SSL Certificate security log messages">
   SSL_CERTIFICATE_SECURITY_USERNAME(LEVEL.DEBUG, SERVER_CATEGORY.AUTHENTICATION, "\t\t[SSLCertificateLoginModule] user entered user name: {}"),
@@ -348,20 +362,6 @@ public enum ServerLogMessages implements LogMessage {
   MQTT5_TOPIC_ALIAS_ALREADY_EXISTS(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Alias already exists for {}"),
   // </editor-fold>
 
-  // <editor-fold desc="MQTT-SN log messages">
-  MQTT_SN_INSTANCE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Protocol instance started"),
-  MQTT_SN_CLOSE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to close EndPoint while cleaning up session"),
-  MQTT_SN_ALREADY_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Potentially already closed"),
-  MQTT_SN_NON_UDP(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Bound to a non UDP based End Point, this will not work"),
-  MQTT_SN_ADVERTISER_SENT_PACKET(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Sent advertise packet {}"),
-  MQTT_SN_ADVERTISE_PACKET_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "An exception occurred while send an advertise packet"),
-  MQTT_SN_PACKET_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised processing frame {}"),
-  MQTT_SN_GATEWAY_DETECTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Detected MQTT-SN service advertise packet for Gateway Id {}, from {}" ),
-  MQTT_SN_REGISTERED_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Registered Event processed for {}"),
-  MQTT_SN_REGISTERED_EVENT_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Registered Event packet detected but no configuration found for host:{} topic Id:{}"),
-  MQTT_SN_INVALID_QOS_PACKET_DETECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Publish packet received from {}, but incorrect QoS should be 3 but found {}"),
-  // </editor-fold>
-
   // <editor-fold desc="Loop connection log messages">
   LOOP_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection created"),
   LOOP_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "loop protocol connection closed"),
@@ -400,7 +400,6 @@ public enum ServerLogMessages implements LogMessage {
   PROPERTY_MANAGER_SCAN_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to scan for property files"),
   PROPERTY_MANAGER_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load property {}"),
   // </editor-fold>
-
 
   //<editor-fold desc="Destination Manager log messages">
   DESTINATION_MANAGER_RELOADED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Reloaded {} out of {}"),
@@ -489,8 +488,10 @@ public enum ServerLogMessages implements LogMessage {
   FILE_FAILED_TO_DELETE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "File delete raised exception"),
   //</editor-fold>
 
+  //<editor-fold desc="Jolokia log messages">
   JOLOKIA_SHUTDOWN_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE , "Jolokia failed to shutdown the HTTP server"),
   JOLOKIA_STARTUP_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE , "Jolokia failed to load the HTTP server"),
+  //</editor-fold>
 
   //<editor-fold desc="AMQP Log messages">
   AMQP_REMOTE_CLIENT_PROPERTIES(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Remote AMQP client property {} - {}"),
@@ -525,7 +526,6 @@ public enum ServerLogMessages implements LogMessage {
   CONSUL_MANAGER_START_SERVER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted since Consol Server is not responding, id {}"),
   //</editor-fold>
 
-
   //<editor-fold desc="CONSUL Key/Value management log messages">
   CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "No keys found in Consul Key/Value for id {}"),
   CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Key {}, lookup failed with exception"),
@@ -540,26 +540,27 @@ public enum ServerLogMessages implements LogMessage {
   NAMESPACE_MAPPING_DEFAULT(LEVEL.INFO, SERVER_CATEGORY.ENGINE,    "Using default mapping {}"),
   //</editor-fold>
 
-  //<editor-fold desc="End Point Connection Management">
-  END_POINT_CONNECTION_STARTING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Starting connection manager"),
-  END_POINT_CONNECTION_SUBSCRIPTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to establish a {} subscription in between {} and {} "),
-  END_POINT_CONNECTION_CLOSE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Exception raised while closing end point"),
-  END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Established a {} subscription between {} and {}"),
-  END_POINT_CONNECTION_PROTOCOL_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised while establishing protocol between {} and protocol {}"),
-  END_POINT_CONNECTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised while connecting to remote server {}"),
-  END_POINT_CONNECTION_INITIALISED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Initialised connection"),
-  END_POINT_CONNECTION_CLOSED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Closing connection"),
-  END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
-  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+  // <editor-fold desc="MQTT-SN log messages">
+  MQTT_SN_INSTANCE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Protocol instance started"),
+  MQTT_SN_CLOSE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Failed to close EndPoint while cleaning up session"),
+  MQTT_SN_ALREADY_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Potentially already closed"),
+  MQTT_SN_NON_UDP(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Bound to a non UDP based End Point, this will not work"),
+  MQTT_SN_ADVERTISER_SENT_PACKET(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Sent advertise packet {}"),
+  MQTT_SN_ADVERTISE_PACKET_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "An exception occurred while send an advertise packet"),
+  MQTT_SN_PACKET_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised processing frame {}"),
+  MQTT_SN_GATEWAY_DETECTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Detected MQTT-SN service advertise packet for Gateway Id {}, from {}" ),
+  MQTT_SN_REGISTERED_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Registered Event processed for {}"),
+  MQTT_SN_REGISTERED_EVENT_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Registered Event packet detected but no configuration found for host:{} topic Id:{}"),
+  MQTT_SN_INVALID_QOS_PACKET_DETECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Publish packet received from {}, but incorrect QoS should be 3 but found {}"),
 
-  //</editor-fold>MQTT-SN message pipeline">
   MQTT_SN_START(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN protocol instance started {}"),
   MQTT_SN_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN protocol closed"),
   MQTT_SN_KEEP_ALIVE_SEND(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Sending KeepAlive"),
   MQTT_SN_KEEP_ALIVE_TIMED_OUT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Keepalive timeout exceeded, disconnecting client"),
-
   MQTT_SN_STATE_ENGINE_STATE_CHANGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MQTT-SN State Engine changing state from {} to {}"),
+  //</editor-fold>
 
+  // <editor-fold desc="MQTT-SN message pipeline">
   MQTT_SN_PIPELINE_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created new outbound pipeline for {}, DropQoS:{}, Max Inflight:{}, Event Time out:{}"),
   MQTT_SN_PIPELINE_PAUSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been paused {}"),
   MQTT_SN_PIPELINE_RESUMED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Pipeline has been resumed {}"),
@@ -568,10 +569,18 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_SN_PIPELINE_EVENT_TIMED_OUT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Message has timed out for {} on {}, message id:{}, QoS:{} and client sleeping"),
   MQTT_SN_PIPELINE_EVENT_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message delivery completed {}"),
   MQTT_SN_PIPELINE_EVENT_SENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message has been sent for delivery for {}, on {} message id:{}"),
-  MQTT_SN_PIPELINE_EVENT_QUEUED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for {}, on {} message id:{}");
-  //</editor-fold>
+  MQTT_SN_PIPELINE_EVENT_QUEUED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for {}, on {} message id:{}"),
+  // </editor-fold>
 
+  // <editor-fold desc="SemTech UDP Protocol Log Messages">
+  SEMTECH_RECIEVED_PACKET(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Received packet {}"),
+  SEMTECH_SENDING_PACKET(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Sending packet {}"),
+  SEMTECH_CLOSE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Closing Protocol"),
+  SEMTECH_QUEUE_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for delivery {}"),
+  // </editor-fold>
 
+  //-------------------------------------------------------------------------------------------------------------
+  LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
   private final @Getter String message;
   private final @Getter LEVEL level;
