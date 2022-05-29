@@ -94,7 +94,6 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     if(state != null && state.getContext() != null) {
       protocolImplFactory.closed(state.getContext());
     }
-    selectorTask.close();
   }
 
   @Override
