@@ -16,11 +16,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class PacketValidationTests {
+class PacketValidationTests {
 
   @ParameterizedTest
   @MethodSource
- public void testSimpleValidation(String algorithm, SignatureManager stamper) throws NoSuchAlgorithmException, InvalidKeyException {
+  void testSimpleValidation(String algorithm, SignatureManager stamper) throws NoSuchAlgorithmException, InvalidKeyException {
     Random r = new Random(System.nanoTime());
     byte[] key = new byte[100];
     r.nextBytes(key);

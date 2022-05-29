@@ -18,6 +18,6 @@ public abstract class SemTechPacket implements ServerPacket {
   @Override
   public void complete() {}
 
-  abstract public int getIdentifier();
+  public abstract int getIdentifier();
 
 }
