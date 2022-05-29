@@ -97,11 +97,10 @@ public class SleepState implements State {
           reaperRunner = SimpleTaskScheduler.getInstance().schedule(new Reaper(), sleepDuration, TimeUnit.SECONDS);
         }
         int maxMessages = ((PingRequest)mqtt).getMaxMessages();
-        stateEngine.emptyQueue(maxMessages, () -> {
-          protocol.writeFrame(new PingResponse(stateEngine.getQueueSize()));
-        });
+        stateEngine.emptyQueue(maxMessages, () ->
+            protocol.writeFrame(new PingResponse(stateEngine.getQueueSize()))
+        );
         return null;
-
 
       default:
         PacketListener listener = packetListenerFactory.getListener(mqtt.getControlPacketId());
