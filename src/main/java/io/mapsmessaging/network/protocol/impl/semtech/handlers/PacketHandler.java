@@ -34,7 +34,7 @@ public class PacketHandler {
     handlers[TX_ACK] = new TxAckHandler();
   }
 
-  public void handle(SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet) {
+  public void handle(@NotNull @NonNull SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet) {
     Handler handler = handlers[packet.getIdentifier()];
     if (handler != null) {
       handler.process(protocol, packet);

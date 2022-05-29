@@ -11,11 +11,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class TxAckHandler extends Handler {
 
   @Override
-  public void process(SemTechProtocol protocol, SemTechPacket packet) {
+  public void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet) {
     TxAcknowledge txAck = (TxAcknowledge) packet;
     PacketHandler.getInstance().getMessageStateContext().complete(txAck.getToken());
     sendMessage(protocol, packet.getFromAddress());

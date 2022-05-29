@@ -12,13 +12,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PushDataHandler extends Handler {
 
   @Override
-  public void process(SemTechProtocol protocol, SemTechPacket packet) {
+  public void process(@NotNull @NonNull SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet) {
     PushData pushData = (PushData) packet;
     if (pushData.isValid()) {
       try {

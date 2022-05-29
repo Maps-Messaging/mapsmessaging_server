@@ -6,6 +6,7 @@ import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullResponse;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import java.net.SocketAddress;
+import java.security.SecureRandom;
 import java.util.Random;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -14,8 +15,7 @@ import org.json.JSONObject;
 
 public abstract class Handler {
 
-  private static Random TOKEN = new Random(System.nanoTime());
-
+  private static final Random TOKEN = new SecureRandom();
 
   abstract void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet);
 
