@@ -104,7 +104,7 @@ public class MessagePipeline {
     }
   }
 
-  public void completed(int messageId) {
+  public void completed() {
     publishContexts.poll(); // Remove outstanding publish
     logger.log(MQTT_SN_PIPELINE_EVENT_COMPLETED, protocol.getName());
     if (!paused.get() || empty.get() != 0) {
@@ -120,7 +120,7 @@ public class MessagePipeline {
         if (qos.getLevel() == 0) {
           empty.decrementAndGet();
           send(messageEvent);
-          completed(0);
+          completed();
         } else {
           send(messageEvent);
         }
@@ -128,7 +128,7 @@ public class MessagePipeline {
       else{
         logger.log(MQTT_SN_PIPELINE_EVENT_TIMED_OUT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), qos.getLevel());
         messageEvent.getCompletionTask().run();
-        completed(0);
+        completed();
       }
     }
     if(publishContexts.size() == 0 && paused.get()){

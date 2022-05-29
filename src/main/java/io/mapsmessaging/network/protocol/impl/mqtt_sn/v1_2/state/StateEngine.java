@@ -107,8 +107,8 @@ public class StateEngine {
     currentState.sendPublish(protocol, destination, publish);
   }
 
-  public void sendNextPublish(int messageId){
-    pipeline.completed(messageId);
+  public void sendNextPublish(){
+    pipeline.completed();
   }
 
   public void sleep(){

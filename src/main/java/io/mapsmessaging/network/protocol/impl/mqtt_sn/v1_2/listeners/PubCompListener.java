@@ -17,8 +17,7 @@ public class PubCompListener extends PacketListener {
   @Override
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine)
       throws MalformedException {
-    PubComp pubComp = (PubComp)mqttPacket;
-    stateEngine.sendNextPublish(pubComp.getMessageId());
+    stateEngine.sendNextPublish();
     return null;
   }
 }

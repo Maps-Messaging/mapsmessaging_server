@@ -33,7 +33,7 @@ public class PubAckListener extends PacketListener {
   @Override
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) throws MalformedException {
     PubAck pubAck = (PubAck) mqttPacket;
-    stateEngine.sendNextPublish(pubAck.getMessageId());
+    stateEngine.sendNextPublish();
     PacketIdentifierMap mapping = ((MQTT_SNProtocol) protocol).getPacketIdManager().completePacketId(pubAck.getMessageId());
     if (mapping != null) {
       mapping.getSubscription().ackReceived(mapping.getMessageId());
