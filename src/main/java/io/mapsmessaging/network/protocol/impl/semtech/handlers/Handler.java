@@ -15,7 +15,7 @@ import org.json.JSONObject;
 
 public abstract class Handler {
 
-  private static final Random TOKEN = new SecureRandom();
+  private static final Random TokenGenerator = new SecureRandom();
 
   abstract void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet);
 
@@ -40,6 +40,6 @@ public abstract class Handler {
   }
 
   private static int nextToken(){
-    return (TOKEN.nextInt() % 0xffff);
+    return (TokenGenerator.nextInt() % 0xffff);
   }
 }
