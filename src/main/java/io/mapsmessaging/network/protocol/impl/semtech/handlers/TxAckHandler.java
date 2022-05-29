@@ -4,6 +4,7 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.TxAcknowledge;
@@ -31,7 +32,10 @@ public class TxAckHandler extends Handler {
       builder.setMeta(meta);
       Message message = builder.build();
       try {
-        protocol.getInbound().storeMessage(message);
+        GatewayInfo info = protocol.getGatewayManager().getInfo(txAck.getGatewayIdentifier());
+        if(info != null) {
+          info.getInbound().storeMessage(message);
+        }
       } catch (IOException e) {
         // Catch & ignore
       }

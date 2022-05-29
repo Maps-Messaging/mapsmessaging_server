@@ -1,16 +1,8 @@
 package io.mapsmessaging.network.protocol.impl.semtech;
 
-import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.api.SubscribedEventManager;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.api.features.CreditHandler;
-import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.api.features.RetainHandler;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -19,7 +11,6 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.semtech.handlers.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
@@ -39,11 +30,12 @@ public class SemTechProtocol extends ProtocolImpl {
   private final SelectorTask selectorTask;
   private final PacketFactory packetFactory;
   private final Session session;
-  @Getter
-  private final Destination inbound;
-  @Getter
-  private final SubscribedEventManager outbound;
+
+
   private final Queue<MessageEvent> waitingMessages;
+
+  @Getter
+  private final GatewayManager gatewayManager;
 
   protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint) throws IOException {
     super(endPoint);
@@ -55,24 +47,15 @@ public class SemTechProtocol extends ProtocolImpl {
     waitingMessages = new ConcurrentLinkedQueue<>();
 
     int maxQueued = endPoint.getConfig().getProperties().getIntProperty("MaxQueueSize", 10);
-    SessionContext sessionContext = new SessionContext("SemTech-Gateway", this);
+    SessionContext sessionContext = new SessionContext("SemTech-Gateway:"+endPoint.getName(), this);
     sessionContext.setPersistentSession(false);
     sessionContext.setResetState(true);
     sessionContext.setReceiveMaximum(maxQueued);
     try {
+      session = SessionManager.getInstance().createAsync(sessionContext, this).get();
       String inboundTopicName = endPoint.getConfig().getProperties().getProperty("inbound", "/semtech/inbound");
       String outboundTopicName = endPoint.getConfig().getProperties().getProperty("outbound", "/semtech/outbound");
-      session = SessionManager.getInstance().createAsync(sessionContext, this).get();
-      inbound = session.findDestination(inboundTopicName, DestinationType.TOPIC).get();
-
-      SubscriptionContext subscriptionContext = new SubscriptionContext(outboundTopicName);
-      subscriptionContext.setAlias(outboundTopicName);
-      subscriptionContext.setCreditHandler(CreditHandler.AUTO);
-      subscriptionContext.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
-      subscriptionContext.setRetainHandler(RetainHandler.SEND_ALWAYS);
-      subscriptionContext.setAcknowledgementController(ClientAcknowledgement.AUTO);
-      subscriptionContext.setReceiveMaximum(maxQueued);
-      outbound = session.addSubscription(subscriptionContext);
+      gatewayManager = new GatewayManager(session, inboundTopicName, outboundTopicName, maxQueued);
     } catch (InterruptedException | ExecutionException e) {
       if(Thread.currentThread().isInterrupted()){
         endPoint.close();

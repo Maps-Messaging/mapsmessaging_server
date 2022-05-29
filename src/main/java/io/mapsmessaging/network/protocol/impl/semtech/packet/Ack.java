@@ -4,9 +4,11 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 
 import io.mapsmessaging.network.io.Packet;
 import java.net.SocketAddress;
+import lombok.Getter;
 
 public abstract class Ack extends SemTechPacket {
 
+  @Getter
   private final int token;
   private final int type;
 

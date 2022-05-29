@@ -7,7 +7,6 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 import io.mapsmessaging.network.io.Packet;
 import java.nio.charset.StandardCharsets;
 import lombok.Getter;
-import lombok.ToString;
 
 /**
  * ### 3.2. PUSH_DATA packet ###
@@ -23,7 +22,6 @@ import lombok.ToString;
  * 12-end | JSON object, starting with {, ending with }, see section 4
  */
 
-@ToString
 public class PushData extends SemTechPacket {
 
   @Getter
@@ -45,7 +43,7 @@ public class PushData extends SemTechPacket {
   }
 
   public boolean isValid() {
-    return jsonObject.startsWith("{") && jsonObject.endsWith("}");
+    return jsonObject.length() == 0 || (jsonObject.startsWith("{") && jsonObject.endsWith("}"));
   }
 
   @Override
@@ -61,5 +59,17 @@ public class PushData extends SemTechPacket {
   @Override
   public int getIdentifier() {
     return PUSH_DATA;
+  }
+
+  public String toString(){
+    return "PushData(token="+token+", gatewayIdentier=["+(dumpIdentifier())+"], jsonObject="+jsonObject+")";
+  }
+
+  public String dumpIdentifier(){
+    StringBuilder sb = new StringBuilder();
+    for(byte b:gatewayIdentifier){
+      sb.append(Integer.toHexString(b&0xff)).append(",");
+    }
+    return sb.toString();
   }
 }

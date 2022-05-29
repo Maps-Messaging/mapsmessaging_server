@@ -190,5 +190,5 @@ NetworkManager:
         url: udp://0.0.0.0:1700/
         name: "SemTech Gateway"
         protocol: semtech
-        inbound: /semtech/in
-        outbound: /semtech/out
+        inbound: /semtech/{gatewayId}/in
+        outbound: /semtech/{gatewayId}/out
