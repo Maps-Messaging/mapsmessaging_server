@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.packet;
 import io.mapsmessaging.network.io.Packet;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.channels.DatagramChannel;
 
@@ -18,6 +19,7 @@ public class UDPPacketTransport implements PacketTransport {
     datagramChannel.configureBlocking(true);
     datagramChannel.setOption(StandardSocketOptions.SO_BROADCAST, true);
     datagramChannel.socket().bind(clientAddress);
+    datagramChannel.socket().setSoTimeout(15000);
   }
 
   public void close() throws IOException {
