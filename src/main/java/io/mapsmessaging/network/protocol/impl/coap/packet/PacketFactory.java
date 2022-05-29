@@ -12,7 +12,7 @@ public class PacketFactory {
   private static final int DELETE = 4;
   private static final int FETCH = 5;
   private static final int PATCH = 6;
-  private static final int iPATCH = 7;
+  private static final int IPATCH = 7;
 
 
   public BasePacket parseFrame(Packet packet) throws EndOfBufferException{
@@ -41,7 +41,7 @@ public class PacketFactory {
       case PATCH:
         basePacket = new Patch(packet);
         break;
-      case iPATCH:
+      case IPATCH:
         basePacket = new IPatch(packet);
         break;
 
