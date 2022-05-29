@@ -123,10 +123,7 @@ public abstract class MQTTPacket implements ServerPacket {
   }
 
   public static int readShort(Packet packet) {
-    int tmp = (packet.get() & 0xff);
-    tmp = tmp << 8;
-    tmp = tmp + (packet.get() & 0xff);
-    return tmp;
+    return (packet.get() & 0xff) << 8 | (packet.get() & 0xff);
   }
 
   public static void writeShort(Packet packet, int value) {
