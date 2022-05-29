@@ -138,11 +138,13 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       Assertions.assertEquals(packet.get(1), 0x6);
       packet.clear(); // Send Will Topic
 
-      packet.put((byte)0);
-      packet.put((byte) 0x7);
+      packet.putByte(0);
+      packet.putByte(0x7);
+      packet.putByte(0);
+      packet.putByte("willTopicName".length());
       packet.put("willTopicName".getBytes(StandardCharsets.UTF_8));
       if(version == 2){
-        packet.put((byte)0b00110000);
+        packet.putByte(0b00110000);
       }
       packet.put(0, (byte)packet.position());
       packet.flip();
