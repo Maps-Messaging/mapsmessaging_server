@@ -30,11 +30,15 @@ public class GatewayManager {
   }
 
   public GatewayInfo getInfo(byte[] gatewayIdentifier) throws IOException {
-    GatewayInfo info = gatewayMap.get(gatewayIdentifier);
+    GatewayInfo info = gatewayMap.get(dumpIdentifier(gatewayIdentifier));
     if(info == null){
       info = createInfo(gatewayIdentifier);
     }
     return info;
+  }
+
+  public GatewayInfo getInfo(String gatewayIdentifier){
+    return gatewayMap.get(gatewayIdentifier);
   }
 
 
@@ -64,7 +68,7 @@ public class GatewayManager {
     }
   }
 
-  private String dumpIdentifier(byte[] gatewayIdentifier) {
+  public static String dumpIdentifier(byte[] gatewayIdentifier) {
     StringBuilder sb = new StringBuilder();
     for (byte b : gatewayIdentifier) {
       String t = Integer.toHexString(b & 0xff);

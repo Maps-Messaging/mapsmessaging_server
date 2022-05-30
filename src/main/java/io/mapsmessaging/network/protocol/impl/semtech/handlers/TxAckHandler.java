@@ -5,6 +5,7 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
+import io.mapsmessaging.network.protocol.impl.semtech.GatewayManager;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.TxAcknowledge;
@@ -21,7 +22,10 @@ public class TxAckHandler extends Handler {
   public void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet) {
     TxAcknowledge txAck = (TxAcknowledge) packet;
     PacketHandler.getInstance().getMessageStateContext().complete(txAck.getToken());
-    sendMessage(protocol, packet.getFromAddress());
+    GatewayInfo info = protocol.getGatewayManager().getInfo(GatewayManager.dumpIdentifier(txAck.getGatewayIdentifier()));
+    if(info != null) {
+      sendMessage(protocol, info, packet.getFromAddress());
+    }
     if(txAck.getJsonObject().length()>0){
       Map<String, String> meta = new LinkedHashMap<>();
       meta.put("protocol", "SemTech");
@@ -32,15 +36,12 @@ public class TxAckHandler extends Handler {
       builder.setMeta(meta);
       Message message = builder.build();
       try {
-        GatewayInfo info = protocol.getGatewayManager().getInfo(txAck.getGatewayIdentifier());
         if(info != null) {
           info.getInbound().storeMessage(message);
         }
       } catch (IOException e) {
         // Catch & ignore
       }
-
     }
   }
-
 }

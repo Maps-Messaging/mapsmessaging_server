@@ -17,8 +17,6 @@ import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import lombok.Getter;
 import lombok.NonNull;
@@ -31,9 +29,6 @@ public class SemTechProtocol extends ProtocolImpl {
   private final PacketFactory packetFactory;
   private final Session session;
 
-
-  private final Queue<MessageEvent> waitingMessages;
-
   @Getter
   private final GatewayManager gatewayManager;
 
@@ -44,7 +39,6 @@ public class SemTechProtocol extends ProtocolImpl {
     selectorTask.register(SelectionKey.OP_READ);
     packetFactory = new PacketFactory();
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
-    waitingMessages = new ConcurrentLinkedQueue<>();
 
     int maxQueued = endPoint.getConfig().getProperties().getIntProperty("MaxQueueSize", 10);
     SessionContext sessionContext = new SessionContext("SemTech-Gateway:"+endPoint.getName(), this);
@@ -74,7 +68,9 @@ public class SemTechProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     logger.log(ServerLogMessages.SEMTECH_QUEUE_MESSAGE, messageEvent.getMessage());
-    waitingMessages.offer(messageEvent);
+    String alias = messageEvent.getSubscription().getContext().getAlias();
+    GatewayInfo info = gatewayManager.getInfo(alias);
+    info.getWaitingMessages().offer(messageEvent);
   }
 
   @Override
@@ -94,13 +90,10 @@ public class SemTechProtocol extends ProtocolImpl {
     sentMessage();
   }
 
-  public @NotNull @NonNull Queue<MessageEvent> getWaitingMessages() {
-    return waitingMessages;
-  }
-
   public Logger getLogger(){
     return logger;
   }
+
   @Override
   public String getName() {
     return "semtech";

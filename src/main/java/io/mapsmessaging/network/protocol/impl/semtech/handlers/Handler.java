@@ -2,6 +2,7 @@ package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullResponse;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
@@ -19,8 +20,8 @@ public abstract class Handler {
 
   abstract void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet);
 
-  public void sendMessage(SemTechProtocol protocol, SocketAddress socketAddress) {
-    MessageEvent messageEvent = protocol.getWaitingMessages().poll();
+  public void sendMessage(SemTechProtocol protocol, GatewayInfo info, SocketAddress socketAddress) {
+    MessageEvent messageEvent = info.getWaitingMessages().poll();
     if(messageEvent != null) {
       byte[] raw = messageEvent.getMessage().getOpaqueData();
       if (protocol.getTransformation() != null) {

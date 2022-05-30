@@ -27,7 +27,7 @@ public class PacketFactory {
         return new PushData(token, packet);
 
       case PULL_DATA:
-        return new PushData(token, packet);
+        return new PullData(token, packet);
 
       case PULL_ACK:
         return new PullAck(token, packet.getFromAddress());
