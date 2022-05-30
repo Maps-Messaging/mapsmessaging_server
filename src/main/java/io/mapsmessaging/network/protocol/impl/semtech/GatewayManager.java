@@ -8,10 +8,15 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class GatewayManager {
 
@@ -20,6 +25,7 @@ public class GatewayManager {
   private final String inbound;
   private final String outbound;
   private final int maxQueued;
+  private final Future<?> scheduledTask;
 
   public GatewayManager(Session session, String inbound, String outbound, int maxQueued){
     gatewayMap = new ConcurrentHashMap<>();
@@ -27,6 +33,11 @@ public class GatewayManager {
     this.inbound = inbound;
     this.outbound = outbound;
     this.maxQueued = maxQueued;
+    scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new TimeoutManager(),30, 30, TimeUnit.SECONDS);
+  }
+
+  public void close(){
+    scheduledTask.cancel(true);
   }
 
   public GatewayInfo getInfo(byte[] gatewayIdentifier) throws IOException {
@@ -34,13 +45,17 @@ public class GatewayManager {
     if(info == null){
       info = createInfo(gatewayIdentifier);
     }
+    info.setLastAccess(System.currentTimeMillis());
     return info;
   }
 
   public GatewayInfo getInfo(String gatewayIdentifier){
-    return gatewayMap.get(gatewayIdentifier);
+    GatewayInfo info = gatewayMap.get(gatewayIdentifier);
+    if(info != null){
+      info.setLastAccess(System.currentTimeMillis());
+    }
+    return info;
   }
-
 
   private GatewayInfo createInfo(byte[] gatewayIdentifier) throws IOException {
     String name = dumpIdentifier(gatewayIdentifier);
@@ -78,6 +93,23 @@ public class GatewayManager {
       sb.append(t);
     }
     return sb.toString();
+  }
+  private final class TimeoutManager implements Runnable{
+
+    @Override
+    public void run() {
+      long timeout = System.currentTimeMillis() - 600000;
+      List<GatewayInfo> timedOut = new ArrayList<>();
+      for(GatewayInfo info:gatewayMap.values()){
+        if(info.getLastAccess() < timeout){
+          timedOut.add(info);
+        }
+      }
+      for(GatewayInfo old:timedOut){
+        old.close(session);
+        gatewayMap.remove(old.getName());
+      }
+    }
   }
 
 }

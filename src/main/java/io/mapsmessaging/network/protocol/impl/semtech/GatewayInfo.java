@@ -2,10 +2,12 @@ package io.mapsmessaging.network.protocol.impl.semtech;
 
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import lombok.Getter;
+import lombok.Setter;
 
 public class GatewayInfo {
   @Getter
@@ -16,6 +18,10 @@ public class GatewayInfo {
   private final byte[] raw_identifier;
   @Getter
   private final String name;
+  @Getter
+  @Setter
+  private long lastAccess;
+
 
   @Getter
   private final Queue<MessageEvent> waitingMessages;
@@ -26,5 +32,11 @@ public class GatewayInfo {
     this.inbound = inbound;
     this.outbound = outbound;
     waitingMessages = new ConcurrentLinkedQueue<>();
+    lastAccess = System.currentTimeMillis();
+  }
+
+  public void close(Session session){
+    session.removeSubscription(outbound.getContext().getAlias());
+    waitingMessages.clear();
   }
 }
