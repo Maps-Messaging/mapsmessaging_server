@@ -42,7 +42,6 @@ public class PushDataHandler extends Handler {
             info.getInbound().storeMessage(message);
           }
         } catch(JSONException | IOException jsonParseException){
-          jsonParseException.printStackTrace();
           // Catch & ignore
         }
       }
