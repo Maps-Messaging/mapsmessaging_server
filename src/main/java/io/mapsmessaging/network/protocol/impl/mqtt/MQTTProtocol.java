@@ -238,7 +238,7 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   public String getName() {
-    return "MQTT";
+    return "MQTT 3.1.1";
   }
 
   @Override

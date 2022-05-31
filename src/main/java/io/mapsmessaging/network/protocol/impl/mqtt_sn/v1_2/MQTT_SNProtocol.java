@@ -112,12 +112,14 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   protected void finish() throws IOException {
-    SessionManager.getInstance().close(session, false);
+    if(!session.isClosed()) {
+      SessionManager.getInstance().close(session, false);
+    }
     factory.close(remoteClient);
     packetIdManager.close();
     monitor.cancel(false);
+    super.close();
   }
-
 
   @Override
   public String getSessionId() {
@@ -183,6 +185,9 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     }
   }
 
+  public long getTimeOut(){
+    return keepAlive;
+  }
   public String getName() {
     return "MQTT_SN 1.2";
   }

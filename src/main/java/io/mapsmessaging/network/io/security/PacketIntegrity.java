@@ -1,11 +1,11 @@
 package io.mapsmessaging.network.io.security;
 
 import io.mapsmessaging.network.io.Packet;
-import java.io.Closeable;
+import io.mapsmessaging.network.io.Timeoutable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-public interface PacketIntegrity extends Closeable {
+public interface PacketIntegrity extends Timeoutable {
 
   PacketIntegrity initialise(SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException;
 

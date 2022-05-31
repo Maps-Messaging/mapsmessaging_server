@@ -28,11 +28,11 @@ import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +42,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class ProtocolImpl implements SelectorCallback, MessageListener, Closeable {
+public abstract class ProtocolImpl implements SelectorCallback, MessageListener, Timeoutable {
 
   private static final LongAdder totalReceived = new LongAdder();
   private static final LongAdder totalSent = new LongAdder();
@@ -136,7 +136,8 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     // by default we don't do anything. A protocol that needs to do something can override this function
   }
 
-  public long getKeepAlive() {
+  @Override
+  public long getTimeOut() {
     return keepAlive;
   }
 

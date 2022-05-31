@@ -33,6 +33,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Protocol dictates that we need to a) Receive a Connect packet b) Respond with a Will Topic Request c) Receive a Will Topic Response d) Respond with a Will Message Request e)
@@ -56,6 +57,7 @@ public class InitialConnectionState implements State {
       scb.setKeepAlive(connect.getKeepAlive());
       scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
       scb.setSessionExpiry(connect.getSessionExpiry());
+      protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getKeepAlive()));
       if (connect.isWill()) {
         stateEngine.setSessionContextBuilder(scb);
         WillTopicRequest topicRequest = new WillTopicRequest();

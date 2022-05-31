@@ -40,7 +40,7 @@ public class DisconnectListener extends PacketListener {
       }
     }
     try {
-      endPoint.close();
+      protocol.close();
     } catch (IOException e) {
       logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }

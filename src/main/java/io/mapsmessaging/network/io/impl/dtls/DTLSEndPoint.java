@@ -8,6 +8,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.dtls.state.StateChangeListener;
 import io.mapsmessaging.network.io.impl.dtls.state.StateEngine;
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.util.concurrent.FutureTask;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class DTLSEndPoint extends EndPoint implements StateChangeListener {
+public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeoutable {
 
   private final DTLSSessionManager manager;
   private final SocketAddress clientId;
@@ -100,10 +101,6 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener {
   @Override
   protected Logger createLogger() {
     return LoggerFactory.getLogger(DTLSEndPoint.class.getName() + "_" + getId());
-  }
-
-  long lastAccessTime(){
-    return stateEngine.getLastAccess();
   }
 
   @Override

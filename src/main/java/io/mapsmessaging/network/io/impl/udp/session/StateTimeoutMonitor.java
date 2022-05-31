@@ -1,8 +1,8 @@
 package io.mapsmessaging.network.io.impl.udp.session;
 
-import java.io.Closeable;
+import io.mapsmessaging.network.io.Timeoutable;
 
-public class StateTimeoutMonitor<T extends Closeable> implements Runnable{
+public class StateTimeoutMonitor<T extends Timeoutable> implements Runnable{
 
   private final UDPSessionManager<T> manager;
 

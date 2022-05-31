@@ -71,7 +71,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    currentSessions = new UDPSessionManager<>(600);
+    long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();
@@ -83,7 +84,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
-    currentSessions = new UDPSessionManager<>(600);
+    long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();

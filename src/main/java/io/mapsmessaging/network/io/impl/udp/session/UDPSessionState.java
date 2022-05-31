@@ -1,10 +1,10 @@
 package io.mapsmessaging.network.io.impl.udp.session;
 
-import java.io.Closeable;
+import io.mapsmessaging.network.io.Timeoutable;
 import lombok.Getter;
 import lombok.Setter;
 
-public class UDPSessionState<T extends Closeable> {
+public class UDPSessionState<T extends Timeoutable> {
   @Getter
   @Setter
   private String clientIdentifier;
@@ -12,16 +12,16 @@ public class UDPSessionState<T extends Closeable> {
   private T context;
 
   @Getter
-  private long timeout;
+  private long getLastAccess;
 
 
   public UDPSessionState(T context){
     this.context = context;
-    timeout = System.currentTimeMillis();
+    getLastAccess = System.currentTimeMillis();
   }
 
   public void updateTimeout(){
-    timeout = System.currentTimeMillis();
+    getLastAccess = System.currentTimeMillis();
   }
 
   public T getContext(){

@@ -147,7 +147,7 @@ public class ConnectListener5 extends PacketListener5 {
         .add(new SubscriptionIdentifiersAvailable(true))
         .add(new WildcardSubscriptionsAvailable(true))
         .add(new SharedSubscriptionsAvailable(true))
-        .add(new ServerKeepAlive(((int) protocol.getKeepAlive() / 1000)))
+        .add(new ServerKeepAlive(((int) protocol.getTimeOut() / 1000)))
         .add(new ReceiveMaximum(protocol.getServerReceiveMaximum()))
         .add(new TopicAliasMaximum(protocol.getClientTopicAliasMapping().getMaximum()));
     connAck.setCallback(session::resumeState);
@@ -156,7 +156,7 @@ public class ConnectListener5 extends PacketListener5 {
   private Session createSession(MQTT5Protocol protocol, String sessionId, Connect5 connect, SessionContextBuilder scb) throws LoginException, IOException {
     int keepAlive = connect.getKeepAlive();
     int minKeepAlive = protocol.getMinKeepAlive();
-    int maxKeepAlive = (int) protocol.getKeepAlive() / 1000;
+    int maxKeepAlive = (int) protocol.getTimeOut() / 1000;
 
     if (keepAlive == 0 && minKeepAlive != 0) { // Special case
       keepAlive = maxKeepAlive; // Push to the end of acceptable range

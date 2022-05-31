@@ -27,8 +27,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class DTLSSessionManager  implements Closeable, SelectorCallback {
 
-  private static final long TIMEOUT = 600;
-
   private final AtomicLong uniqueId = new AtomicLong(0);
   private final UDPSessionManager<DTLSEndPoint> sessionMapping;
   private final UDPEndPoint udpEndPoint;
@@ -56,7 +54,8 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     this.inetAddress = new UDPInterfaceInformation(inetAddress);
     this.managerMBean = managerMBean;
     selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getProperties(), udpEndPoint.isUDP());
-    sessionMapping = new UDPSessionManager<>(TIMEOUT);
+    long timeout = udpEndPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    sessionMapping = new UDPSessionManager<>(timeout);
     udpEndPoint.register(SelectionKey.OP_READ, selectorTask);
   }
 

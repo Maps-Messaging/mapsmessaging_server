@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -68,6 +69,7 @@ public class ConnectedState implements State {
         } else {
           response.setCallback(() -> {
             try {
+              SessionManager.getInstance().close(session, true);
               protocol.close();
             } catch (IOException e) {
               // Ignore this, we are closing

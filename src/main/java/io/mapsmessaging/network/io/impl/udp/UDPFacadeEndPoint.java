@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 
@@ -22,14 +23,21 @@ public class UDPFacadeEndPoint extends EndPoint {
     super(1, server);
     this.endPoint = endPoint;
     this.fromAddress = fromAddress;
-    List<String> end = endPoint.getJMXTypePath();
+    List<String> end = new ArrayList<>(endPoint.getJMXTypePath());
     end.remove(end.size()-1);
-    String entry = "endPointName="+endPoint.getName()+"_"+fromAddress.toString();
-    while(entry.contains(":")){
-      entry = entry.replace(":", "_");
-    }
+
+    String entry =strip("endPointName="+endPoint.getName());
     end.add(entry);
+    String remote = strip("remoteHost="+getName());
+    end.add(remote);
     jmxParentPath = end;
+  }
+
+  private String strip(String val){
+    while(val.contains(":")){
+      val = val.replace(":", "_");
+    }
+    return val;
   }
 
   @Override
@@ -70,7 +78,7 @@ public class UDPFacadeEndPoint extends EndPoint {
 
   @Override
   public String getName() {
-    return fromAddress.toString();
+    return "udp:/"+fromAddress.toString();
   }
 
   @Override

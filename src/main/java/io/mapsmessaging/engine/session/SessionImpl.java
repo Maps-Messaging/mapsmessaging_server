@@ -82,8 +82,8 @@ public class SessionImpl {
     //
     // Schedule a keep alive
     //
-    if (context.getProtocol().getKeepAlive() != 0) {
-      long ka = context.getProtocol().getKeepAlive() + 5000L; // allow 5 seconds more
+    if (context.getProtocol().getTimeOut() != 0) {
+      long ka = context.getProtocol().getTimeOut() + 5000L; // allow 5 seconds more
       scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new KeepAliveTask(context.getProtocol()), ka, ka, TimeUnit.MILLISECONDS);
       logger.log(ServerLogMessages.SESSION_MANAGER_KEEP_ALIVE_TASK);
     } else {

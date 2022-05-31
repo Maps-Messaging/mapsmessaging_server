@@ -1,7 +1,7 @@
 package io.mapsmessaging.network.io.impl.udp.session;
 
+import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class UDPSessionManager<T extends Closeable> {
+public class UDPSessionManager<T extends Timeoutable> {
 
   private final long timeout;
 
@@ -24,8 +24,8 @@ public class UDPSessionManager<T extends Closeable> {
 
   public UDPSessionManager(long timeout){
     sessionStateMap = new ConcurrentHashMap<>();
-    this.timeout = timeout;
-    monitor = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new StateTimeoutMonitor<T>(this), timeout, timeout, TimeUnit.SECONDS);
+    this.timeout = TimeUnit.SECONDS.toMillis(timeout);
+    monitor = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new StateTimeoutMonitor<T>(this), 10, 10, TimeUnit.SECONDS);
   }
 
   public void close(){
@@ -63,9 +63,13 @@ public class UDPSessionManager<T extends Closeable> {
   protected void scanForTimeouts(){
     List<SocketAddress> expiredKeys = new ArrayList<>();
     if(!sessionStateMap.isEmpty()) {
-      long expiryTime = System.currentTimeMillis() - timeout;
+      long now = System.currentTimeMillis();
       for (Entry<SocketAddress, UDPSessionState<T>> entry : sessionStateMap.entrySet()) {
-        if (entry.getValue().getTimeout() < expiryTime) {
+        long expiry = now - timeout;
+        if(entry.getValue().getContext().getTimeOut() != 0 ){
+          expiry = now - entry.getValue().getContext().getTimeOut();
+        }
+        if (entry.getValue().getGetLastAccess() < expiry) {
           expiredKeys.add(entry.getKey());
         }
       }
