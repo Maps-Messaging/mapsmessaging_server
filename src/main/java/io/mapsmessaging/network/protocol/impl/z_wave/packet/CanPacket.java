@@ -1,6 +1,6 @@
 package io.mapsmessaging.network.protocol.impl.z_wave.packet;
 
-import static io.mapsmessaging.network.protocol.impl.z_wave.Constants.CAN;
+import static io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants.CAN;
 
 import io.mapsmessaging.network.io.Packet;
 import lombok.ToString;

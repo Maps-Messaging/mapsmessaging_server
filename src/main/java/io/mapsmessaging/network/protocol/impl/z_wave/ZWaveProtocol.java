@@ -6,15 +6,10 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.StreamEndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.network.protocol.impl.z_wave.packet.AckPacket;
 import io.mapsmessaging.network.protocol.impl.z_wave.packet.BasePacket;
-import io.mapsmessaging.network.protocol.impl.z_wave.packet.DataPacket;
-import io.mapsmessaging.network.protocol.impl.z_wave.packet.NakPacket;
-import io.mapsmessaging.network.protocol.impl.z_wave.packet.PacketFactory;
-import io.mapsmessaging.network.protocol.impl.z_wave.packet.requests.GetInitialData;
-import io.mapsmessaging.network.protocol.impl.z_wave.packet.requests.SoftResetPacket;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -27,30 +22,30 @@ public class ZWaveProtocol extends ProtocolImpl {
   private final Session session;
   private final SelectorTask selectorTask;
   private final String destinationName;
-  private final PacketFactory packetFactory;
-  private boolean sentInit;
+  private final StateManager stateManager;
 
   protected ZWaveProtocol(@NonNull @NotNull EndPoint endPoint, Packet packet) throws IOException, LoginException {
     super(endPoint);
+    if (endPoint instanceof StreamEndPoint) {
+      ((StreamEndPoint) endPoint).setStreamHandler(new ZWaveStreamHandler());
+    }
     SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("ZWave" + endPoint.getId(), this);
     sessionContextBuilder.setSessionExpiry(0);
-    sessionContextBuilder.setKeepAlive(10);
+    sessionContextBuilder.setKeepAlive((int)keepAlive);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), true);
-    packetFactory = new PacketFactory();
     setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));
     destinationName = "$ZWave/"+endPoint.getName();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-    // Initialise the link
-    writeFrame(new NakPacket());
-    writeFrame(new SoftResetPacket());
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-    sentInit = false;
+    stateManager = new StateManager(this);
+  }
+
+  @Override
+  public void close() throws IOException {
+    SessionManager.getInstance().close(session,true);
+    stateManager.close();
+    super.close();
   }
 
   @Override
@@ -59,27 +54,12 @@ public class ZWaveProtocol extends ProtocolImpl {
   }
 
   public void sendKeepAlive(){
-    if(!sentInit){
-      sentInit = true;
-      writeFrame(new GetInitialData());
-    }
   }
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
-    System.err.println(packet);
     if (packet.available() > 0){
-      BasePacket frame = packetFactory.parse(packet);
-      if(frame instanceof DataPacket){
-        DataPacket dataPacket = (DataPacket) frame;
-        if(dataPacket.isValid()){
-          writeFrame( new AckPacket());
-        }
-        else {
-          writeFrame(new NakPacket());
-        }
-      }
-      sendKeepAlive();
+      stateManager.processPacket(packet);
     }
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     return true;
@@ -87,7 +67,6 @@ public class ZWaveProtocol extends ProtocolImpl {
 
   public void writeFrame(@NonNull @NotNull BasePacket frame)  {
     sentMessageAverages.increment();
-    System.err.println("Sending Packet:"+frame);
     selectorTask.push(frame);
     sentMessage();
   }

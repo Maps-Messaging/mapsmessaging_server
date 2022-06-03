@@ -1,4 +1,4 @@
-package io.mapsmessaging.network.protocol.impl.z_wave;
+package io.mapsmessaging.network.protocol.impl.z_wave.commands;
 
 public class Constants {
 

@@ -1,12 +1,12 @@
 package io.mapsmessaging.network.protocol.impl.z_wave.packet;
 
-import static io.mapsmessaging.network.protocol.impl.z_wave.Constants.ACK;
-import static io.mapsmessaging.network.protocol.impl.z_wave.Constants.CAN;
-import static io.mapsmessaging.network.protocol.impl.z_wave.Constants.NAK;
-import static io.mapsmessaging.network.protocol.impl.z_wave.Constants.SOF;
+import static io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants.ACK;
+import static io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants.CAN;
+import static io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants.NAK;
+import static io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants.REQUEST;
+import static io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants.SOF;
 
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.impl.z_wave.packet.requests.IncomingRequest;
 
 public class PacketFactory {
 
@@ -15,8 +15,12 @@ public class PacketFactory {
     byte frame = packet.get();
     switch(frame){
       case SOF:
-        return new IncomingRequest(packet);
-
+        int len = packet.get() & 0xff;
+        int type = packet.get() & 0xff;
+        if(type == REQUEST){
+          return new RequestPacket(packet);
+        }
+        return new ResponsePacket(packet);
       case ACK:
         return new AckPacket();
       case NAK:

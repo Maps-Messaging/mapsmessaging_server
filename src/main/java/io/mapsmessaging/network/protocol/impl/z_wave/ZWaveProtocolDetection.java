@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.z_wave;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.detection.Detection;
+import io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants;
 
 public class ZWaveProtocolDetection  implements Detection {
 

@@ -24,13 +24,22 @@ io.mapsmessaging.network.protocol.impl.local.LocalLoopProtocolFactory
 io.mapsmessaging.network.protocol.impl.echo.EchoProtocolFactory
 
 #
-# TCP/Serial based protocols
+# TCP based protocols
 #
 io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5ProtocolFactory
-io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
 io.mapsmessaging.network.protocol.impl.stomp.StompProtocolFactory
+
+#
+# TCP/Serial based protocols
+#
+io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
+
+#
+# Serial based protocols
+#
+io.mapsmessaging.network.protocol.impl.z_wave.ZWaveProtocolFactory
 
 #
 # UDP based protocols

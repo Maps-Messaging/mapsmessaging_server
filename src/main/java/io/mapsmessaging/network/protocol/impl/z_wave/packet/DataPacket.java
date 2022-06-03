@@ -1,61 +1,68 @@
 package io.mapsmessaging.network.protocol.impl.z_wave.packet;
 
-import static io.mapsmessaging.network.protocol.impl.z_wave.Constants.SOF;
+import static io.mapsmessaging.network.protocol.impl.z_wave.commands.Constants.SOF;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.z_wave.commands.Command;
+import io.mapsmessaging.network.protocol.impl.z_wave.commands.CommandFactory;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class DataPacket extends BasePacket{
 
-  private int computedChecksum;
-  private int checksum;
+  private boolean checksum;
+  private List<Command> commandList = new ArrayList<>();
+
+  protected byte[] data;
 
   public DataPacket(){}
 
   public DataPacket(Packet packet){
-    int len = packet.get();
-    int type = packet.get();
-    byte[] data = new byte[packet.available()-1];
-    packet.get(data);
-    checksum = (packet.get() & 0xff);
-
-    int csum = computeCheckSum(0xff, (len&0xff));
-    csum = computeCheckSum(csum, type);
-    for(byte b:data){
-      csum = computeCheckSum(csum, (b&0xff));
+    while(packet.available() > 1){ // Checksum
+      Command command = CommandFactory.parseCommand(packet);
+      if(command != null){
+        commandList.add(command);
+      }
     }
-    dumpData(data);
-    computedChecksum = csum;
-
+    if(packet.available() == 1) {
+      checksum = (packet.get() & 0xff) != 0x0;
+    }
+    else{
+      System.err.println("Truncated?");
+    }
   }
 
-  private void dumpData(byte[] data){
-    StringBuilder sb = new StringBuilder("Len:");
-    sb.append(data.length).append(" [");
-    for(byte b:data){
-      int val = (b &0xff);
-      sb.append(Integer.toHexString(val)).append(",");
-    }
-    sb.append("]");
-    System.err.println(sb);
+  public void addCommand(Command command){
+    commandList.add(command);
+  }
+
+  public List<Command> getCommandList(){
+    return commandList;
   }
 
   public boolean isValid(){
-    return checksum == computedChecksum;
+    return checksum;
   }
 
-
   public abstract int getType();
-
-  public abstract int packData(Packet packet);
 
   @Override
   public int packFrame(Packet packet) {
     packet.putByte(SOF);
-    packet.putByte(0); // Length - hold
     packet.putByte(getType());
-    packData(packet);
-    packet.putByte(computeChecksum(packet));
-    packet.put(1, ( byte) (packet.position()-1 & 0xff));
+    for(Command command: commandList){
+      command.pack(packet);
+    }
     return packet.position();
+  }
+
+  @Override
+  public String toString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append("Commands : ").append(commandList.size()).append("\n");
+    for(Command command:commandList){
+      sb.append("\t").append(command).append("\n");
+    }
+    return sb.toString();
   }
 }
