@@ -8,6 +8,14 @@ public class CommandFactory {
     int commandId = packet.get() & 0xff;
     Command command = null;
     switch (commandId){
+      case Constants.FUNC_ID_APPLICATION_COMMAND_HANDLER:
+        command = new ApplicationCommand();
+        break;
+
+      case Constants.FUNC_ID_ZW_APPLICATION_UPDATE:
+        command = new ApplicationUpdate();
+        break;
+
       case Constants.FUNC_ID_ZW_SET_SUC_NODE_ID:
         command = new ForceSucNodeId();
         break;
@@ -16,8 +24,8 @@ public class CommandFactory {
         command = new GetInitialData();
         break;
 
-      case Constants.FUNC_ID_APPLICATION_COMMAND_HANDLER:
-        command = new SensorUpdate();
+      case Constants.FUNC_ID_SERIAL_API_START:
+        command = new StartCommand();
         break;
 
     }

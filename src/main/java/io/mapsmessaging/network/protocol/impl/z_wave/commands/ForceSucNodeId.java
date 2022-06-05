@@ -3,9 +3,10 @@ package io.mapsmessaging.network.protocol.impl.z_wave.commands;
 import io.mapsmessaging.network.io.Packet;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
+@ToString
 public class ForceSucNodeId extends Command {
-
 
   @Getter
   @Setter
@@ -18,18 +19,13 @@ public class ForceSucNodeId extends Command {
 
   @Override
   public void unpack(Packet packet){
-    success = packet.get() != 0x1;
   }
 
   public void pack(Packet packet){
     super.pack(packet);
-    packet.putByte(01);
-    packet.putByte(01);
+    packet.putByte(1);
+    packet.putByte(1);
     success = false;
   }
 
-  @Override
-  public String toString(){
-    return "FUNC_ID_ZW_SET_SUC_NODE_ID";
-  }
 }

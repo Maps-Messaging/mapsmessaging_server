@@ -106,6 +106,9 @@ public class Packet {
   public byte get() {
     return buffer.get();
   }
+  public int getByte() {
+    return buffer.get() & 0xff;
+  }
 
   public void put(byte b) {
     buffer.put(b);

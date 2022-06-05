@@ -1,10 +1,10 @@
-package io.mapsmessaging.network.protocol.impl.z_wave;
+package io.mapsmessaging.network.protocol.impl.z_wave.state;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.z_wave.ZWaveProtocol;
 import io.mapsmessaging.network.protocol.impl.z_wave.commands.Command;
 import io.mapsmessaging.network.protocol.impl.z_wave.commands.ForceSucNodeId;
 import io.mapsmessaging.network.protocol.impl.z_wave.commands.GetInitialData;
-import io.mapsmessaging.network.protocol.impl.z_wave.commands.NodeProtocolInfo;
 import io.mapsmessaging.network.protocol.impl.z_wave.packet.AckPacket;
 import io.mapsmessaging.network.protocol.impl.z_wave.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.z_wave.packet.DataPacket;
@@ -16,25 +16,25 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class StateManager {
+public class RequestStateManager {
 
-  private final Queue<Command> commandList;
+  private final Queue<DataPacket> commandList;
   private final ZWaveProtocol protocol;
   private final PacketFactory packetFactory;
   private final AtomicBoolean runFlag;
+  private final CommandListener listener;
 
-  private Command outstanding;
+  private DataPacket outstanding;
   private int nakCount;
 
-
-  public StateManager(ZWaveProtocol protocol){
+  public RequestStateManager(ZWaveProtocol protocol, CommandListener listener){
     this.protocol = protocol;
+    this.listener = listener;
     commandList = new ConcurrentLinkedQueue<>();
     packetFactory = new PacketFactory();
     outstanding = null;
     runFlag = new AtomicBoolean(true);
     nakCount = 0;
-    initialiseLink();
     Thread t = new Thread(new CommandThread());
     t.setDaemon(true);
     t.setName(protocol.getName()+":"+protocol.getSessionId());
@@ -44,26 +44,37 @@ public class StateManager {
   public void close(){
     commandList.clear();
     runFlag.set(false);
-
   }
 
-  private void initialiseLink(){
-    queueCommand(new ForceSucNodeId());
-    queueCommand(new GetInitialData());
-    queueCommand(new NodeProtocolInfo(1));
-    queueCommand(new NodeProtocolInfo(4));
-    queueCommand(new NodeProtocolInfo(5));
+  public void queueResponse(Command command){
+    RequestPacket requestPacket = new RequestPacket();
+    requestPacket.addCommand(command);
+    commandList.add(requestPacket);
   }
 
-  public void queueCommand(Command command){
-    commandList.add(command);
+  public void queueRequest(Command command){
+    RequestPacket requestPacket = new RequestPacket();
+    requestPacket.addCommand(command);
+    commandList.add(requestPacket);
   }
+
 
   public void processPacket(Packet packet){
     BasePacket frame = packetFactory.parse(packet);
     if(frame instanceof DataPacket){
       DataPacket dataPacket = (DataPacket) frame;
       if(dataPacket.isValid()){
+        if(dataPacket instanceof RequestPacket){
+          for(Command command:dataPacket.getCommandList()){
+            listener.handleRequest(command);
+          }
+        }
+        else{
+          for(Command command:dataPacket.getCommandList()){
+            listener.handleResponse(command);
+          }
+        }
+
         protocol.writeFrame( new AckPacket());
       }
       else {
@@ -90,11 +101,9 @@ public class StateManager {
     outstanding = null;
   }
 
-  private void sendCommand(Command command){
-    outstanding = command;
-    RequestPacket requestPacket = new RequestPacket();
-    requestPacket.addCommand(command);
-    protocol.writeFrame(requestPacket);
+  private void sendCommand(DataPacket data){
+    System.err.println("Sending :->"+data);
+    protocol.writeFrame(data);
   }
 
   public final class CommandThread implements Runnable{
@@ -104,20 +113,18 @@ public class StateManager {
       int waitCounter = 0;
       while(runFlag.get()){
         if(outstanding == null) {
-          Command command = commandList.poll();
-          if (command != null) {
-            outstanding = command;
+          DataPacket data = commandList.poll();
+          if (data != null) {
+            outstanding = data;
             nakCount = 0;
             waitCounter = 0;
-            sendCommand(command);
+            sendCommand(data);
           }
         }
         else{
           waitCounter++;
           if(waitCounter > 40){
-            // 4 seconds has passed and we have no response, lets abort and go the next one
             waitCounter = 0;
-            System.err.println("Dropping command :"+outstanding);
             outstanding = null;
           }
         }

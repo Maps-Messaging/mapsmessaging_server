@@ -10,6 +10,7 @@ import io.mapsmessaging.network.io.StreamEndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.z_wave.packet.BasePacket;
+import io.mapsmessaging.network.protocol.impl.z_wave.state.NetworkStateManager;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -21,8 +22,7 @@ public class ZWaveProtocol extends ProtocolImpl {
 
   private final Session session;
   private final SelectorTask selectorTask;
-  private final String destinationName;
-  private final StateManager stateManager;
+  private final NetworkStateManager stateManager;
 
   protected ZWaveProtocol(@NonNull @NotNull EndPoint endPoint, Packet packet) throws IOException, LoginException {
     super(endPoint);
@@ -36,9 +36,8 @@ public class ZWaveProtocol extends ProtocolImpl {
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), true);
     setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));
-    destinationName = "$ZWave/"+endPoint.getName();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-    stateManager = new StateManager(this);
+    stateManager = new NetworkStateManager(this);
   }
 
   @Override
@@ -73,7 +72,7 @@ public class ZWaveProtocol extends ProtocolImpl {
 
   @Override
   public String getName() {
-    return "ZWave";
+    return "Z_Wave";
   }
 
   @Override

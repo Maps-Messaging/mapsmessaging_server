@@ -25,6 +25,8 @@ public class Constants {
 
   public static final int FUNC_ID_SERIAL_API_SOFT_RESET = 0x08;
 
+  public static final int FUNC_ID_SERIAL_API_START = 0x0a;
+
   public static final int FUNC_ID_SERIAL_API_SETUP = 0x0b;
 
   public static final int FUNC_ID_ZW_SEND_NODE_INFORMATION = 0x12;
