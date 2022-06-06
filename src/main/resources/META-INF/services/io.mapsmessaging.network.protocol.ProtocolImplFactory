@@ -39,13 +39,12 @@ io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
 #
 # Serial based protocols
 #
-io.mapsmessaging.network.protocol.impl.z_wave.ZWaveProtocolFactory
+io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocolFactory
 
 #
 # UDP based protocols
 #
 io.mapsmessaging.network.protocol.impl.coap.CoapProtocolFactory
-io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTT_SNProtocolFactory
 io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocolFactory
 
