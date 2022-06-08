@@ -459,7 +459,7 @@
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-stdlib</artifactId>
-      <version>1.6.21</version>
+      <version>1.7.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
