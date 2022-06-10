@@ -36,6 +36,7 @@ RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
 # AMQP      5672
 # Stomp     8675
 # Admin     8080
+# SemTech   1700
 #----------------------------------------------------------------------------------------------
 EXPOSE 1882/tcp
 EXPOSE 1883/tcp
@@ -43,6 +44,7 @@ EXPOSE 1884/udp
 EXPOSE 5672/tcp
 EXPOSE 8675/tcp
 EXPOSE 8080/tcp
+EXPOSE 1700/udp
 
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
