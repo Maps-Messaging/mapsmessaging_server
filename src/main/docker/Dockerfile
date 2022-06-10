@@ -58,8 +58,8 @@ RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod
 #----------------------------------------------------------------------------------------------
 RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
     dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/log4j2.xml message_daemon-%%MAPS_VERSION%%/conf/log4j2.xml_orig && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/docker_log4j2.xml message_daemon-%%MAPS_VERSION%%/conf/log4j2.xml
+    mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
 
 
 #----------------------------------------------------------------------------------------------
