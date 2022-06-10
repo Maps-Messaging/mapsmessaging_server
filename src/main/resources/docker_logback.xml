@@ -15,16 +15,18 @@
   ~ limitations under the License.
   -->
 
-<Configuration status="WARN">
-  <Appenders>
-    <Console name="Console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}, [%X{division}-%X{category}], %X{endpoint}, %X{protocol}-%X{version}, %X{session}, [%t] %-5level %logger{36} - %msg%n"/>
-    </Console>
-  </Appenders>
-
-  <Loggers>
-    <Root level="warn">
-      <AppenderRef ref="Console" level="warn"/>
-    </Root>
-  </Loggers>
-</Configuration>
+<configuration>
+  <shutdownHook/>
+  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>warn</level>
+    </filter>
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+  <root level="info">
+    <appender-ref ref="STDERR" />
+  </root>
+</configuration>
