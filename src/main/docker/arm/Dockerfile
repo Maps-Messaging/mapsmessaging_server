@@ -11,8 +11,8 @@ ENV LC_ALL en_US.UTF-8
 # https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz
 # Setup the repos
 #
-ENV JAVA_HOME=/usr/lib/jvm/zulu-11
-RUN ZULU_ARCH=zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz && \
+ENV JAVA_HOME=/usr/lib/jvm/zulu-13
+RUN ZULU_ARCH=zulu16.32.15-ca-jdk16.0.2-linux_musl_aarch64.tar.gz && \
     INSTALL_DIR=$( dirname $JAVA_HOME ) && \
     BIN_DIR=/usr/bin && \
     MAN_DIR=/usr/share/man/man1 && \
