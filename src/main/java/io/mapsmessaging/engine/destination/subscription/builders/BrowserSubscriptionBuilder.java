@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.builders;
 
+import io.mapsmessaging.api.message.Filter;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
@@ -112,7 +113,7 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
       while(System.currentTimeMillis() < endTime && source.hasNext() && !destination.isClosed() && !interrupted) {
         long nextMessage = source.next();
         Message message = destination.getMessage(nextMessage);
-        if (message != null && executor.evaluate(message)) {
+        if (Filter.getInstance().filterMessage(executor, message, destination)) {
           stateManager.register(message); // Message matches the current selector
         }
         if(Thread.currentThread().isInterrupted()){

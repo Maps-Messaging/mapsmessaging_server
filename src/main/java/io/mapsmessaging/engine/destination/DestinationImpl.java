@@ -105,6 +105,7 @@ public class DestinationImpl implements BaseDestination {
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
   private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
+  private final @Getter String formatType = "RAW";
   private volatile boolean closed;
   //</editor-fold>
 

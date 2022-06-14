@@ -63,7 +63,10 @@ public class JsonFormat implements Format{
 
     @Override
     public Object get(String s) {
-      return jsonObject.get(s);
+      if(jsonObject.has(s)) {
+        return jsonObject.get(s);
+      }
+      return null;
     }
 
     @Override

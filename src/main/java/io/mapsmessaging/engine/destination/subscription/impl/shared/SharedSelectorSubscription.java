@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.api.message.Filter;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -41,7 +42,7 @@ public class SharedSelectorSubscription extends SharedSubscription {
 
   @Override
   public int register(Message message) {
-    if(parserExecutor == null || parserExecutor.evaluate(message)) {
+    if(Filter.getInstance().filterMessage(parserExecutor, message, getDestinationImpl())) {
       return super.register(message);
     }
     return 0;

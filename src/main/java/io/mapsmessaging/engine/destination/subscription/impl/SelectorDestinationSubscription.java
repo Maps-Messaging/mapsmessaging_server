@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl;
 
+import io.mapsmessaging.api.message.Filter;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -45,7 +46,7 @@ public class SelectorDestinationSubscription extends DestinationSubscription {
 
   @Override
   public int register(Message message) {
-    if(selector.evaluate(message)) {
+    if(Filter.getInstance().filterMessage(selector, message, getDestinationImpl())){
       return super.register(message);
     }
     return 0;
