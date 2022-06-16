@@ -3,15 +3,22 @@ package io.mapsmessaging.api.message.format;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.mapsmessaging.api.message.format.walker.MapResolver;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.json.XML;
 
 public class Protobuf implements Format{
 
@@ -58,7 +65,31 @@ public class Protobuf implements Format{
 
   @Override
   public IdentifierResolver getResolver(byte[] payload) throws IOException {
-    return null;
+    DynamicMessage message = (DynamicMessage) fromByteArray(payload);
+    return new GeneralIdentifierResolver(new MapResolver(convertToMap(message)));
+  }
+
+  private Map<String, Object> convertToMap(DynamicMessage message){
+    Map<String, Object> map = new LinkedHashMap<>();
+    for(Entry<FieldDescriptor, Object> entry:message.getAllFields().entrySet()){
+      if(entry.getValue() instanceof Collection){
+        map.put(entry.getKey().getName(), createMap((Collection)entry.getValue()));
+      }
+      else{
+        map.put(entry.getKey().getName(), entry.getValue());
+      }
+    }
+    return map;
+  }
+
+  private List<Map<String, Object>> createMap(Collection<Object> collection){
+    List<Map<String, Object>> list = new ArrayList<>();
+    for(Object obj:collection){
+      if(obj instanceof DynamicMessage){
+        list.add(convertToMap((DynamicMessage) obj));
+      }
+    }
+    return list;
   }
 
   @Override
