@@ -20,6 +20,7 @@ public class StructureWalker {
   }
 
   private static Object parse(Object lookup){
+    if(lookup == null) return null;
     if (lookup instanceof String ||
         lookup instanceof Float ||
         lookup instanceof Double ||

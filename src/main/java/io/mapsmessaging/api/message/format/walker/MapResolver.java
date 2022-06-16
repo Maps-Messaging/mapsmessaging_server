@@ -24,7 +24,12 @@ public class MapResolver implements Resolver {
       if(val instanceof List && isArray){
         String index = s.substring(s.indexOf("[")+1, s.indexOf("]"));
         var idx = Integer.parseInt(index.trim());
-        val = ((List)val).get(idx);
+        if( ( (List)val).size() > idx) {
+          val = ((List) val).get(idx);
+        }
+        else{
+          return null;
+        }
       }
       if(val instanceof Map){
         return new MapResolver((Map)val);
