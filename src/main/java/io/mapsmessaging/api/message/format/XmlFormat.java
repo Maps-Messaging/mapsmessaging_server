@@ -17,13 +17,11 @@
  */
 package io.mapsmessaging.api.message.format;
 
+import io.mapsmessaging.api.message.format.walker.MapResolver;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import org.eclipse.jetty.xml.XmlParser;
-import org.eclipse.jetty.xml.XmlParser.Node;
-import org.xml.sax.SAXException;
+import org.json.JSONException;
+import org.json.XML;
 
 public class XmlFormat implements Format{
 
@@ -38,22 +36,13 @@ public class XmlFormat implements Format{
   }
 
 
-  private Object fromByteArray(byte[] payload) throws IOException {
-    XmlParser xmlParser = new XmlParser();
-    try {
-      return xmlParser.parse(new ByteArrayInputStream(payload));
-    } catch (SAXException e) {
-      throw new IOException(e);
-    }
-  }
-
   @Override
   public boolean isValid(byte[] payload) {
     try{
-      Node node = (Node)fromByteArray(payload);
+      XML.toJSONObject(new String(payload));
       return true;
     }
-    catch(IOException ex){
+    catch(JSONException ex){
       // ignore
     }
     return false;
@@ -65,26 +54,7 @@ public class XmlFormat implements Format{
   }
 
   @Override
-  public IdentifierResolver getResolver(byte[] payload) throws IOException {
-    return new XmlIdentifierResolver((Node)fromByteArray(payload));
-  }
-
-  public static final class XmlIdentifierResolver implements IdentifierResolver{
-
-    private final Node node;
-
-    public XmlIdentifierResolver(Node node){
-      this.node = node;
-    }
-
-    @Override
-    public Object get(String s) {
-      return node.get(s);
-    }
-
-    @Override
-    public byte[] getOpaqueData() {
-      return IdentifierResolver.super.getOpaqueData();
-    }
+  public IdentifierResolver getResolver(byte[] payload) {
+    return new GeneralIdentifierResolver(new MapResolver((XML.toJSONObject(new String(payload))).toMap()));
   }
 }
