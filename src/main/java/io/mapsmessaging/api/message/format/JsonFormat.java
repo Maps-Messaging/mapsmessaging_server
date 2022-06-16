@@ -17,6 +17,7 @@
  */
 package io.mapsmessaging.api.message.format;
 
+import io.mapsmessaging.api.message.format.walker.MapResolver;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
@@ -61,28 +62,6 @@ public class JsonFormat implements Format{
 
   @Override
   public IdentifierResolver getResolver(byte[] payload) throws IOException {
-    return new JsonIdentifierResolver((JSONObject)fromByteArray(payload));
-  }
-
-  public static final class JsonIdentifierResolver implements IdentifierResolver{
-
-    private final JSONObject jsonObject;
-
-    public JsonIdentifierResolver(JSONObject jsonObject){
-      this.jsonObject = jsonObject;
-    }
-
-    @Override
-    public Object get(String s) {
-      if(jsonObject.has(s)) {
-        return jsonObject.get(s);
-      }
-      return null;
-    }
-
-    @Override
-    public byte[] getOpaqueData() {
-      return IdentifierResolver.super.getOpaqueData();
-    }
+    return new GeneralIdentifierResolver(new MapResolver(((JSONObject) fromByteArray(payload)).toMap()));
   }
 }
