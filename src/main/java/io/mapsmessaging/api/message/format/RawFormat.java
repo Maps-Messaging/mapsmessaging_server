@@ -18,6 +18,7 @@
 package io.mapsmessaging.api.message.format;
 
 import io.mapsmessaging.selector.IdentifierResolver;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 
 public class RawFormat implements Format{
@@ -33,20 +34,17 @@ public class RawFormat implements Format{
   }
 
   @Override
-  public byte[] toByteArray(Object obj) throws IOException {
-    if(obj instanceof byte[]){
-      return (byte[]) obj;
-    }
-    return null;
-  }
-
-  @Override
-  public Object fromByteArray(byte[] payload) throws IOException {
-    return payload;
+  public boolean isValid(byte[] payload) {
+    return true;
   }
 
   @Override
   public IdentifierResolver getResolver(byte[] payload) throws IOException {
     return null;
+  }
+
+  @Override
+  public Format getInstance(ConfigurationProperties properties) {
+    return this;
   }
 }

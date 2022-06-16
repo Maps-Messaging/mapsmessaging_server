@@ -18,6 +18,7 @@
 package io.mapsmessaging.api.message.format;
 
 import io.mapsmessaging.selector.IdentifierResolver;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import org.json.JSONObject;
 
@@ -33,20 +34,30 @@ public class JsonFormat implements Format{
     return "Processes JSON formatted payloads";
   }
 
-  @Override
-  public byte[] toByteArray(Object obj) throws IOException {
-    if(obj instanceof JSONObject){
-      return ((JSONObject)obj).toString(2).getBytes();
+  private Object fromByteArray(byte[] payload) throws IOException {
+    try {
+      return new JSONObject(new String(payload));
+    } catch (Throwable e) {
+      throw new IOException(e);
     }
-    return null;
   }
 
   @Override
-  public Object fromByteArray(byte[] payload) throws IOException {
-    String tmp = new String(payload);
-    return new JSONObject(tmp);
+  public boolean isValid(byte[] payload) {
+    try{
+      fromByteArray(payload);
+      return true;
+    }
+    catch(IOException ex){
+      // ignore
+    }
+    return false;
   }
 
+  @Override
+  public Format getInstance(ConfigurationProperties properties) {
+    return this;
+  }
 
   @Override
   public IdentifierResolver getResolver(byte[] payload) throws IOException {

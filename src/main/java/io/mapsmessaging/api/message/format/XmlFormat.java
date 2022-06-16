@@ -18,6 +18,7 @@
 package io.mapsmessaging.api.message.format;
 
 import io.mapsmessaging.selector.IdentifierResolver;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.eclipse.jetty.xml.XmlParser;
@@ -36,16 +37,8 @@ public class XmlFormat implements Format{
     return "Processes XML formatted payloads";
   }
 
-  @Override
-  public byte[] toByteArray(Object obj) throws IOException {
-    if(obj instanceof Node){
-      return obj.toString().getBytes();
-    }
-    return null;
-  }
 
-  @Override
-  public Object fromByteArray(byte[] payload) throws IOException {
+  private Object fromByteArray(byte[] payload) throws IOException {
     XmlParser xmlParser = new XmlParser();
     try {
       return xmlParser.parse(new ByteArrayInputStream(payload));
@@ -53,6 +46,24 @@ public class XmlFormat implements Format{
       throw new IOException(e);
     }
   }
+
+  @Override
+  public boolean isValid(byte[] payload) {
+    try{
+      Node node = (Node)fromByteArray(payload);
+      return true;
+    }
+    catch(IOException ex){
+      // ignore
+    }
+    return false;
+  }
+
+  @Override
+  public Format getInstance(ConfigurationProperties properties) {
+    return this;
+  }
+
   @Override
   public IdentifierResolver getResolver(byte[] payload) throws IOException {
     return new XmlIdentifierResolver((Node)fromByteArray(payload));
