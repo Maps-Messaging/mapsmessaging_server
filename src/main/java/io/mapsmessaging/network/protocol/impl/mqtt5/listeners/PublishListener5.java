@@ -146,7 +146,7 @@ public class PublishListener5 extends PacketListener5 {
       outstanding.add(id);
     }
 
-    if (!publish.getDestinationName().startsWith("$")) {
+    if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
       TopicAliasMapping topicAliasMapping = ((MQTT5Protocol) protocol).getClientTopicAliasMapping();
       String destinationName = publish.getDestinationName();
       if (destinationName == null || destinationName.length() == 0) {

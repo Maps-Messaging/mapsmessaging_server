@@ -30,7 +30,10 @@ public enum DestinationType {
   TOPIC(0, true, false,"Topic", "Reading of messages are not destructive"),
   QUEUE(1, false, false,"Queue", "Reading of events are destructive and only one consumer reads the event"),
   TEMPORARY_TOPIC(2, true, true,"TemporaryTopic", "Reading of messages are not destructive, this topic is deleted when the constructing connection disconnects"),
-  TEMPORARY_QUEUE(3, false, true, "TemporaryQueue", "Reading of events are destructive and only one consumer reads the event, this topic is deleted when the constructing connection disconnects");
+  TEMPORARY_QUEUE(3, false, true, "TemporaryQueue", "Reading of events are destructive and only one consumer reads the event, this topic is deleted when the constructing connection disconnects"),
+  SCHEMA(4, true, false, "Schema", "Manages the destinations schema"),
+  METRICS(5, true, false, "Metrics", "Manages the destinations metrics");
+
 
   // If we receive a destination type not of the following, there is nothing we can or should do
   // but throw a runtime exception
@@ -47,6 +50,12 @@ public enum DestinationType {
     }
     else if(value.equalsIgnoreCase("TemporaryQueue")){
       return TEMPORARY_QUEUE;
+    }
+    else if(value.equalsIgnoreCase("Schema")){
+      return SCHEMA;
+    }
+    else if(value.equalsIgnoreCase("Metrics")){
+      return METRICS;
     }
     throw new RuntimeException("No Such Resource Type");
   }

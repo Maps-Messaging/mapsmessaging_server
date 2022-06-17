@@ -76,15 +76,36 @@ public class Session {
     CompletableFuture<Destination> future = new CompletableFuture<>();
     Destination result = destinations.get(destinationName);
     if (result == null) {
+      String tmp = destinationName;
+      DestinationType tmpMeta = type;
+      if(tmp.startsWith("$schema/")) {
+        tmp = tmp.substring("$schema/".length());
+        tmpMeta = DestinationType.SCHEMA;
+      }
+      else if(tmp.startsWith("$metrics/")){
+        tmp = tmp.substring("$metrics/".length());
+        tmpMeta = DestinationType.METRICS;
+      }
+      String name = tmp;
+      DestinationType meta = tmpMeta;
       Callable<Destination> lookupTask = () -> {
-        CompletableFuture<DestinationImpl> destinationCompletableFuture = sessionImpl.findDestination(destinationName, type);
+        CompletableFuture<DestinationImpl> destinationCompletableFuture = sessionImpl.findDestination(name, type);
         DestinationImpl destination = destinationCompletableFuture.get();
         Destination end = null;
         if (destination != null) {
-          if (destination.getResourceType().isTopic()) {
-            end = new Topic(destination);
-          } else {
-            end = new Queue(destination);
+          switch(meta){
+            case TOPIC:
+              end = new Topic(destination);
+              break;
+            case QUEUE:
+              end = new Queue(destination);
+              break;
+            case SCHEMA:
+              end = new Schema(destination);
+              break;
+            case METRICS:
+              end = new Metrics(destination);
+              break;
           }
           if (destination.getResourceType().isTemporary()) {
             TemporaryDestinationDeletionTask deletionTask = new TemporaryDestinationDeletionTask((TemporaryDestination) destination);

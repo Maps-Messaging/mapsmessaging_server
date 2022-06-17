@@ -94,7 +94,7 @@ public class PublishListener extends PacketListener {
       }
     }
 
-    if (!lookup.startsWith("$")) {
+    if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
       try {
         MQTTPacket finalResponse = response;
         CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
