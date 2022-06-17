@@ -20,7 +20,8 @@ public class Schema extends Destination {
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
     // No we don't store events we need to parse the message to change this destinations schema
     try {
-      JSONObject schemaRequest = new JSONObject(message.getOpaqueData());
+
+      JSONObject schemaRequest = new JSONObject(new String(message.getOpaqueData()));
       if(schemaRequest.has("schema")){
         JsonParser parser = new JsonParser(schemaRequest.getJSONObject("schema"));
         ConfigurationProperties props = new ConfigurationProperties(parser.parse());
@@ -38,4 +39,8 @@ public class Schema extends Destination {
     return 1; // We only have 1 schema per destination
   }
 
+  @Override
+  public String getFullyQualifiedNamespace() {
+    return "$schema/"+super.getFullyQualifiedNamespace();
+  }
 }

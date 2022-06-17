@@ -22,13 +22,8 @@ public class Filter {
       Format format = destination.getSchema().getFormat();
       try {
         IdentifierResolver formatResolver = format.getResolver(message.getOpaqueData());
-        return  (selector.evaluate((IdentifierResolver) s -> {
-          Object val = message.get(s);
-          if(val == null){
-            val = formatResolver.get(s);
-          }
-          return val;
-        }));
+        boolean result = selector.evaluate(new Resolver(formatResolver, message));
+        return result;
       } catch (IOException e) {
         e.printStackTrace(); // Log this and move on...
       }
@@ -37,4 +32,29 @@ public class Filter {
   }
 
   private Filter(){}
+
+  private static final class Resolver implements IdentifierResolver{
+    private final IdentifierResolver formatResolver;
+    private final Message message;
+
+    public Resolver(IdentifierResolver formatResolver, Message message){
+      this.formatResolver = formatResolver;
+      this.message = message;
+    }
+
+
+    @Override
+    public Object get(String s) {
+      Object val = message.get(s);
+      if(val == null){
+        val = formatResolver.get(s);
+      }
+      return val;
+    }
+
+    @Override
+    public byte[] getOpaqueData() {
+      return IdentifierResolver.super.getOpaqueData();
+    }
+  }
 }

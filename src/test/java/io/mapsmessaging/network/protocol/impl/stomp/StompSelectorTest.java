@@ -42,8 +42,13 @@ class StompSelectorTest extends StompBaseTest implements Listener {
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");
-    map.put("selector", "extension('json', 'odd') = 0");
+    map.put("selector", "odd = 0");
     String topicName = getTopicName();
+    client.send("$schema/"+topicName, "{\n"
+        + "\t\"schema\": {\n"
+        + "\t\t\"format\": \"JSON\"\n"
+        + "\t}\n"
+        + "}");
     client.subscribeW(topicName, this, map);
     for(int x=0;x<EVENT_COUNT;x++){
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
@@ -63,8 +68,13 @@ class StompSelectorTest extends StompBaseTest implements Listener {
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");
-    map.put("selector", "extension('json', 'odd') = 0");
+    map.put("selector", "odd= 0");
     String topicName = getTopicName();
+    client.send("$schema/"+topicName, "{\n"
+        + "\t\"schema\": {\n"
+        + "\t\t\"format\": \"JSON\"\n"
+        + "\t}\n"
+        + "}");
     client.subscribeW(topicName, this, map);
     for(int x=0;x<EVENT_COUNT;x++){
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
