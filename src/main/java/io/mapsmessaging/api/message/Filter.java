@@ -19,7 +19,7 @@ public class Filter {
   public boolean filterMessage(ParserExecutor selector, Message message, DestinationImpl destination) {
     if(selector == null) return true;
     if(message != null) {
-      Format format = FormatManager.getInstance().getFormat(destination.getFormatType());
+      Format format = destination.getSchema().getFormat();
       try {
         IdentifierResolver formatResolver = format.getResolver(message.getOpaqueData());
         return  (selector.evaluate((IdentifierResolver) s -> {

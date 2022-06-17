@@ -32,6 +32,10 @@ public class JsonParser {
 
   protected JsonParser(){}
 
+  public JsonParser(JSONObject json){
+    this.json = json;
+  }
+
   public JSONObject getJson() {
     return json;
   }

@@ -31,7 +31,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
     super();
   }
 
-  protected ConfigurationProperties(Map<String, Object> map) {
+  public ConfigurationProperties(Map<String, Object> map) {
     for(Map.Entry<String, Object> entry:map.entrySet()){
       if(entry.getValue() instanceof Map){
         put(entry.getKey(), new ConfigurationProperties((Map<String, Object>)entry.getValue()));

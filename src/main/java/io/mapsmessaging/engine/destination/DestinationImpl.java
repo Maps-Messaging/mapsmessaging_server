@@ -41,6 +41,7 @@ import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.resources.ResourceStatistics;
+import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
@@ -105,7 +106,7 @@ public class DestinationImpl implements BaseDestination {
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
   private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
-  private final @Getter String formatType = "RAW";
+  private final @Getter Schema schema = new Schema("RAW");
   private volatile boolean closed;
   //</editor-fold>
 

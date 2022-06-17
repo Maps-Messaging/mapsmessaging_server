@@ -10,15 +10,16 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import io.mapsmessaging.api.message.format.walker.MapResolver;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.json.XML;
 
 public class Protobuf implements Format{
 
@@ -33,7 +34,7 @@ public class Protobuf implements Format{
   private Protobuf(ConfigurationProperties props) throws IOException{
     properties = props;
     try {
-      descriptor = loadDescFile(props.getProperty("schema"));
+      descriptor = loadDescFile(props.getProperty("descriptor"));
     } catch (IOException|DescriptorValidationException e) {
       throw new IOException(e);
     }
@@ -102,8 +103,9 @@ public class Protobuf implements Format{
     return "Processes Protobuf formatted payloads";
   }
 
-  private FileDescriptor loadDescFile(String filename) throws IOException, DescriptorValidationException {
-    FileInputStream fin = new FileInputStream(filename);
+  private FileDescriptor loadDescFile(String encodedDescriptor) throws IOException, DescriptorValidationException {
+    byte[] descriptorImage = Base64.getDecoder().decode(encodedDescriptor);
+    InputStream fin = new ByteArrayInputStream(descriptorImage);
     DescriptorProtos.FileDescriptorSet set;
     List<FileDescriptor> dependencyFileDescriptorList;
     try {
