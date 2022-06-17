@@ -40,7 +40,7 @@ public class RawFormat implements Format{
 
   @Override
   public IdentifierResolver getResolver(byte[] payload) throws IOException {
-    return null;
+    return s -> null;
   }
 
   @Override
