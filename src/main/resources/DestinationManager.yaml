@@ -64,6 +64,8 @@ DestinationManager:
          maxPartitionSize: 536870912  # 1/2 GB
          expiredEventPoll: 10 # Time in seconds to scan for expired events
          autoPauseTimeout: 120 # Idle time in seconds before pausing the store ( Close file descriptors and free mapped memory )
+         format:
+            name: json # RAW, JSON, XML
          cache:
             type: WeakReference # could be WeakReference or JCS for the apache cache implementation
             writeThrough: enable # Could be either enable or disable
