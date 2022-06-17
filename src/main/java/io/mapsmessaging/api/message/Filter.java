@@ -22,8 +22,7 @@ public class Filter {
       Format format = destination.getSchema().getFormat();
       try {
         IdentifierResolver formatResolver = format.getResolver(message.getOpaqueData());
-        boolean result = selector.evaluate(new Resolver(formatResolver, message));
-        return result;
+        return selector.evaluate(new Resolver(formatResolver, message));
       } catch (IOException e) {
         e.printStackTrace(); // Log this and move on...
       }
@@ -41,7 +40,6 @@ public class Filter {
       this.formatResolver = formatResolver;
       this.message = message;
     }
-
 
     @Override
     public Object get(String s) {
