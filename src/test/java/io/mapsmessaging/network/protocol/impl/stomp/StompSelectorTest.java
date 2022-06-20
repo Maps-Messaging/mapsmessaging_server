@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.client.schema.JsonSchemaConfig;
+import io.mapsmessaging.client.schema.SchemaConfig;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.HashMap;
@@ -44,11 +46,8 @@ class StompSelectorTest extends StompBaseTest implements Listener {
     map.put("id", "subscribe1");
     map.put("selector", "odd = 0");
     String topicName = getTopicName();
-    client.send("$schema/"+topicName, "{\n"
-        + "\t\"schema\": {\n"
-        + "\t\t\"format\": \"JSON\"\n"
-        + "\t}\n"
-        + "}");
+    SchemaConfig config = new JsonSchemaConfig();
+    client.send("$schema/"+topicName, config.pack());
     client.subscribeW(topicName, this, map);
     for(int x=0;x<EVENT_COUNT;x++){
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
@@ -69,12 +68,9 @@ class StompSelectorTest extends StompBaseTest implements Listener {
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");
     map.put("selector", "odd= 0");
+    SchemaConfig config = new JsonSchemaConfig();
     String topicName = getTopicName();
-    client.send("$schema/"+topicName, "{\n"
-        + "\t\"schema\": {\n"
-        + "\t\t\"format\": \"JSON\"\n"
-        + "\t}\n"
-        + "}");
+    client.send("$schema/"+topicName, config.pack());
     client.subscribeW(topicName, this, map);
     for(int x=0;x<EVENT_COUNT;x++){
       String json = "{\"temperature\":28, \"count\":"+x+", \"testName\":simpleSelectorTest, \"odd\":"+x%2+"}";
