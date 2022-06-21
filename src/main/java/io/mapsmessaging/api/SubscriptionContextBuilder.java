@@ -20,6 +20,7 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.CreditHandler;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -45,6 +46,7 @@ public class SubscriptionContextBuilder {
   @Getter private boolean isBrowser;
   @Getter private long subscriptionId;
   @Getter private int receiveMaximum;
+  @Getter private DestinationMode mode;
 
   public SubscriptionContextBuilder(@NonNull @NotNull String name, @NonNull @NotNull ClientAcknowledgement acknowledgementController) {
     this.name = name;
@@ -61,6 +63,7 @@ public class SubscriptionContextBuilder {
     isBrowser = false;
     subscriptionId = 0;
     receiveMaximum = 1;
+    mode = DestinationMode.NORMAL;
   }
 
   public SubscriptionContextBuilder setRetainHandler(@NonNull @NotNull RetainHandler retainHandler) {
@@ -70,6 +73,11 @@ public class SubscriptionContextBuilder {
 
   public SubscriptionContextBuilder setSharedName(@NonNull @NotNull String sharedName) {
     this.sharedName = sharedName;
+    return this;
+  }
+
+  public SubscriptionContextBuilder setMode(@NonNull @NotNull DestinationMode mode) {
+    this.mode = mode;
     return this;
   }
 
@@ -125,19 +133,20 @@ public class SubscriptionContextBuilder {
 
   public SubscriptionContext build() {
     SubscriptionContext context = new SubscriptionContext(name);
-    context.setAcknowledgementController(acknowledgementController);
-    context.setAllowOverlap(allowOverlap);
-    context.setNoLocalMessages(noLocalMessages);
-    context.setQualityOfService(qos);
-    context.setRetainAsPublish(retainAsPublish);
-    context.setSelector(selector);
-    context.setSharedName(sharedName);
-    context.setRetainHandler(retainHandler);
-    context.setSubscriptionId(subscriptionId);
-    context.setReceiveMaximum(receiveMaximum);
-    context.setAlias(alias);
-    context.setCreditHandler(creditHandler);
-    context.setBrowserFlag(isBrowser);
+    context.setAcknowledgementController(acknowledgementController)
+        .setAllowOverlap(allowOverlap)
+        .setNoLocalMessages(noLocalMessages)
+        .setQualityOfService(qos)
+        .setRetainAsPublish(retainAsPublish)
+        .setSelector(selector)
+        .setSharedName(sharedName)
+        .setRetainHandler(retainHandler)
+        .setSubscriptionId(subscriptionId)
+        .setReceiveMaximum(receiveMaximum)
+        .setAlias(alias)
+        .setCreditHandler(creditHandler)
+        .setBrowserFlag(isBrowser)
+        .setDestinationMode(mode);
     return context;
   }
 }

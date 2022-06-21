@@ -57,7 +57,9 @@ public class Protobuf implements Format{
   @Override
   public boolean isValid(byte[] payload) {
     try {
-      return fromByteArray(payload) != null;
+      if(payload != null) {
+        return fromByteArray(payload) != null;
+      }
     } catch (IOException e) {
       // todo, log this
     }

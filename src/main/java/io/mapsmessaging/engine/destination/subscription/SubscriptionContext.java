@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.CreditHandler;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.engine.serializer.MapSerializable;
@@ -51,6 +52,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
   @Getter private RetainHandler retainHandler;
   @Getter private QualityOfService qualityOfService;
   @Getter private CreditHandler creditHandler;
+  @Getter private DestinationMode destinationMode;
 
   //
   // Server Only flag
@@ -65,6 +67,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     flags = new BitSet(8);
     receiveMaximum = 1;
     rootPath = "";
+    destinationMode = DestinationMode.NORMAL;
   }
 
   public SubscriptionContext(SubscriptionContext rhs, String destinationName, String alias) {
@@ -78,6 +81,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     retainHandler = rhs.retainHandler;
     qualityOfService = rhs.qualityOfService;
     flags = BitSet.valueOf(rhs.flags.toByteArray());
+    destinationMode = DestinationMode.NORMAL;
   }
 
   public SubscriptionContext(ObjectReader reader) throws IOException {
@@ -89,6 +93,8 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     creditHandler = CreditHandler.getInstance(reader.readByte());
     qualityOfService = QualityOfService.getInstance(reader.readByte());
     acknowledgementController = ClientAcknowledgement.getInstance(reader.readByte());
+    destinationMode = DestinationMode.getInstance(reader.readByte());
+
     subscriptionId = reader.readLong();
 
     destinationName = reader.readString();
@@ -108,6 +114,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     writer.write((byte) creditHandler.getValue());
     writer.write((byte) qualityOfService.getLevel());
     writer.write((byte) acknowledgementController.getValue());
+    writer.write((byte) destinationMode.getId());
     writer.write(subscriptionId);
 
     writer.write(destinationName);
@@ -201,6 +208,11 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
 
   public SubscriptionContext setCreditHandler(CreditHandler creditHandler) {
     this.creditHandler = creditHandler;
+    return this;
+  }
+
+  public SubscriptionContext setDestinationMode(DestinationMode mode){
+    this.destinationMode = mode;
     return this;
   }
 
