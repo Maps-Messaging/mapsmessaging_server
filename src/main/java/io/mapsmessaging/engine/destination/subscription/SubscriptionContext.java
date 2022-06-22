@@ -67,7 +67,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     flags = new BitSet(8);
     receiveMaximum = 1;
     rootPath = "";
-    destinationMode = DestinationMode.NORMAL;
+    parseName();
   }
 
   public SubscriptionContext(SubscriptionContext rhs, String destinationName, String alias) {
@@ -81,7 +81,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     retainHandler = rhs.retainHandler;
     qualityOfService = rhs.qualityOfService;
     flags = BitSet.valueOf(rhs.flags.toByteArray());
-    destinationMode = DestinationMode.NORMAL;
+    parseName();
   }
 
   public SubscriptionContext(ObjectReader reader) throws IOException {
@@ -93,7 +93,6 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     creditHandler = CreditHandler.getInstance(reader.readByte());
     qualityOfService = QualityOfService.getInstance(reader.readByte());
     acknowledgementController = ClientAcknowledgement.getInstance(reader.readByte());
-    destinationMode = DestinationMode.getInstance(reader.readByte());
 
     subscriptionId = reader.readLong();
 
@@ -107,6 +106,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     if (alias == null) {
       alias = destinationName;
     }
+    parseName();
   }
 
   public void write(ObjectWriter writer) throws IOException {
@@ -114,10 +114,9 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     writer.write((byte) creditHandler.getValue());
     writer.write((byte) qualityOfService.getLevel());
     writer.write((byte) acknowledgementController.getValue());
-    writer.write((byte) destinationMode.getId());
     writer.write(subscriptionId);
 
-    writer.write(destinationName);
+    writer.write(destinationMode.getNamespace()+destinationName);
     writer.write(sharedName);
     writer.write(selector);
     writer.write(alias);
@@ -211,11 +210,6 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     return this;
   }
 
-  public SubscriptionContext setDestinationMode(DestinationMode mode){
-    this.destinationMode = mode;
-    return this;
-  }
-
   public boolean isSharedSubscription() {
     return (sharedName != null && sharedName.length() > 0);
   }
@@ -268,6 +262,18 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     return super.hashCode();
   }
 
-
+  private void parseName(){
+    if(destinationName.startsWith(DestinationMode.SCHEMA.getNamespace())){
+      destinationMode = DestinationMode.SCHEMA;
+      destinationName = destinationName.substring(DestinationMode.SCHEMA.getNamespace().length());
+    }
+    else if(destinationName.startsWith(DestinationMode.METRICS.getNamespace())){
+      destinationMode = DestinationMode.METRICS;
+      destinationName = destinationName.substring(DestinationMode.METRICS.getNamespace().length());
+    }
+    else {
+      destinationMode = DestinationMode.NORMAL;
+    }
+  }
 
 }

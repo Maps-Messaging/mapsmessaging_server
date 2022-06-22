@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 public class SubscriptionContextBuilder {
 
   @Getter private final String name;
-  @Getter   private final ClientAcknowledgement acknowledgementController;
+  @Getter private final ClientAcknowledgement acknowledgementController;
   @Getter private RetainHandler retainHandler;
   @Getter private CreditHandler creditHandler;
   @Getter private boolean noLocalMessages;
@@ -145,8 +145,7 @@ public class SubscriptionContextBuilder {
         .setReceiveMaximum(receiveMaximum)
         .setAlias(alias)
         .setCreditHandler(creditHandler)
-        .setBrowserFlag(isBrowser)
-        .setDestinationMode(mode);
+        .setBrowserFlag(isBrowser);
     return context;
   }
 }
