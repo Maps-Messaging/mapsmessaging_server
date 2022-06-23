@@ -241,26 +241,42 @@ public class SubscriptionController implements DestinationManagerListener {
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
-    DestinationSet destinationSet = subscriptions.remove(id);
-    if (destinationSet != null) {
-      contextMap.remove(id);
-      List<DestinationImpl> lostInterest = new ArrayList<>(destinationSet);
-      AtomicLong counter = new AtomicLong(lostInterest.size());
-      for (DestinationImpl destinationImpl : lostInterest) {
-        UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl,  destinationSet, counter);
-        if(destinationImpl.submit(task).isCancelled()){
-          counter.decrementAndGet();
+    if(id.startsWith("$schema")){
+      String destinationName = id.substring("$schema".length()+1);
+      for(Entry<DestinationImpl, Subscription> entry:schemaSubscriptions.entrySet()){
+        if(entry.getKey().getFullyQualifiedNamespace().equals(destinationName)){
+          schemaSubscriptions.remove(entry.getKey());
+          return true;
         }
       }
-      int timeout = 1000;
-      while (counter.get() > 0 && timeout > 0) {
-        LockSupport.parkNanos(10000000);
-        timeout--;
-      }
+    }
+    DestinationSet destinationSet = subscriptions.remove(id);
+    if (destinationSet != null) {
+      handleUnsubscribeSet(id, destinationSet);
       return true;
     }
+
     return false;
   }
+
+
+  private void handleUnsubscribeSet(String id, DestinationSet destinationSet){
+    contextMap.remove(id);
+    List<DestinationImpl> lostInterest = new ArrayList<>(destinationSet);
+    AtomicLong counter = new AtomicLong(lostInterest.size());
+    for (DestinationImpl destinationImpl : lostInterest) {
+      UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl,  destinationSet, counter);
+      if(destinationImpl.submit(task).isCancelled()){
+        counter.decrementAndGet();
+      }
+    }
+    int timeout = 1000;
+    while (counter.get() > 0 && timeout > 0) {
+      LockSupport.parkNanos(10000000);
+      timeout--;
+    }
+  }
+
 
   /**
    * Called when a new destination is created, we see if any wildcards match the new destination
