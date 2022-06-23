@@ -24,7 +24,7 @@ public class Schema extends Destination {
       if(schemaRequest.has("schema")){
         JsonParser parser = new JsonParser(schemaRequest.getJSONObject("schema"));
         ConfigurationProperties props = new ConfigurationProperties(parser.parse());
-        destinationImpl.updateSchema(props);
+        destinationImpl.updateSchema(props, message);
       }
     } catch (Exception e) {
       throw new IOException("Invalid schema format");

@@ -43,6 +43,7 @@ import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.engine.schema.Schema;
+import io.mapsmessaging.engine.tasks.EngineTask;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
@@ -90,6 +91,7 @@ public class DestinationImpl implements BaseDestination {
 
   //<editor-fold desc="Destination specific fields">
   protected final DestinationSubscriptionManager subscriptionManager;
+  protected final DestinationSubscriptionManager schemaManager;
   private final SharedSubscriptionRegister sharedSubscriptionRegistry;
 
   protected final DestinationJMX destinationJMXBean;
@@ -130,6 +132,7 @@ public class DestinationImpl implements BaseDestination {
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
+    schemaManager= new DestinationSubscriptionManager(name);
     resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType);
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
@@ -160,6 +163,7 @@ public class DestinationImpl implements BaseDestination {
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
+    schemaManager= new DestinationSubscriptionManager(name);
     this.resource = resource;
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
@@ -193,6 +197,7 @@ public class DestinationImpl implements BaseDestination {
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
+    schemaManager= new DestinationSubscriptionManager(name);
     resource = new Resource();
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
@@ -228,12 +233,16 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  public void updateSchema(ConfigurationProperties props) throws IOException {
+  public void updateSchema(@NonNull @NotNull ConfigurationProperties props, @NonNull @NotNull Message message) throws IOException {
     Schema newSchema = new Schema(props);
     if(schema.update(newSchema)){
       ResourceProperties resourceProperties = resource.getResourceProperties();
       resourceProperties.setSchema(props);
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
+      if(schemaManager.hasSubscriptions()){
+        EngineTask task = new NonDelayedStoreMessageTask(this, schemaManager, message);
+        handleTask(task);
+      }
     }
   }
 
@@ -262,6 +271,7 @@ public class DestinationImpl implements BaseDestination {
     if(!closed) {
       closed = true;
       subscriptionManager.close();
+      schemaManager.close();
       transactionMessageManager.delete();
       delayedMessageManager.delete();
       resource.delete();
@@ -457,6 +467,14 @@ public class DestinationImpl implements BaseDestination {
     return subscription;
   }
   //</editor-fold>
+
+  public void addSchemaSubscription( @NonNull @NotNull Subscription subscription) {
+    stats.subscriptionAdded();
+    schemaManager.put(subscription.getSessionId(), subscription);
+  }
+
+
+
 
   //<editor-fold desc="Message delivery and completion APIs">
 

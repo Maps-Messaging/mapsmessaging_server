@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.api;
 
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.closure.TemporaryDestinationDeletionTask;
@@ -230,6 +231,9 @@ public class Session {
         destinations.put(destination.getFullyQualifiedNamespace(), destination);
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
+      if(subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA)){
+        normalisedName = "$schema/"+normalisedName;
+      }
       MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);
       listener.sendMessage(event);
     }

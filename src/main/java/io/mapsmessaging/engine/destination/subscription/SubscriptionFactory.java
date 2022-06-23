@@ -18,9 +18,11 @@
 
 package io.mapsmessaging.engine.destination.subscription;
 
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.builders.BrowserSubscriptionBuilder;
 import io.mapsmessaging.engine.destination.subscription.builders.QueueSubscriptionBuilder;
+import io.mapsmessaging.engine.destination.subscription.builders.SchemaSubscriptionBuilder;
 import io.mapsmessaging.engine.destination.subscription.builders.SharedSubscriptionBuilder;
 import io.mapsmessaging.engine.destination.subscription.builders.StandardSubscriptionBuilder;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
@@ -35,6 +37,9 @@ public class SubscriptionFactory {
   }
 
   public SubscriptionBuilder getBuilder(DestinationImpl destination, SubscriptionContext context, boolean isPersist) throws IOException {
+    if(context.getDestinationMode().equals(DestinationMode.SCHEMA)){
+      return new SchemaSubscriptionBuilder(destination, context);
+    }
     if (context.isSharedSubscription()) {
       return new SharedSubscriptionBuilder(destination, context);
     }
