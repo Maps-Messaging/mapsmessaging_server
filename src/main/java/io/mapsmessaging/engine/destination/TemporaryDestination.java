@@ -56,10 +56,8 @@ public class TemporaryDestination extends DestinationImpl {
 
   public void checkForDeletion(){
     // No longer have subscriptions here, so we have no readers, lets see if the owner is still around
-    if(!super.subscriptionManager.hasSubscriptions() && ownerDisconnected){
-      MessageDaemon.getInstance().getDestinationManager().delete(this);
-    }
-    else if(ownerDisconnected && super.getResourceType().isTemporary() && super.getResourceType().isQueue()){
+    if(!super.subscriptionManager.hasSubscriptions() && ownerDisconnected ||
+        ownerDisconnected && super.getResourceType().isTemporary() && super.getResourceType().isQueue()){
       MessageDaemon.getInstance().getDestinationManager().delete(this);
     }
   }

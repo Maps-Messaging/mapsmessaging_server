@@ -27,6 +27,8 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
+import io.mapsmessaging.engine.destination.subscription.tasks.MetricsSubscriptionTask;
+import io.mapsmessaging.engine.destination.subscription.tasks.SchemaSubscriptionTask;
 import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTask;
 import io.mapsmessaging.engine.destination.subscription.tasks.UnsubscribeTask;
 import io.mapsmessaging.engine.session.SessionContext;
@@ -358,7 +360,19 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   private Future<Response> scheduleSubscription(SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter){
-    SubscriptionTask task = new SubscriptionTask(this, context, destinationImpl, counter);
+    SubscriptionTask task = null;
+    switch (context.getDestinationMode()){
+      case SCHEMA:
+        task = new SchemaSubscriptionTask(this, context, destinationImpl, counter);
+        break;
+      case METRICS:
+        task = new MetricsSubscriptionTask(this, context, destinationImpl, counter);
+        break;
+      case NORMAL:
+      default:
+        task = new SubscriptionTask(this, context, destinationImpl, counter);
+        break;
+    }
     return destinationImpl.submit(task);
   }
 

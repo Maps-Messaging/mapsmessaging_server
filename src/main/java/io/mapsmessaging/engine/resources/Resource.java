@@ -59,17 +59,19 @@ public class Resource implements AutoCloseable {
 
   private @Getter long retainedIdentifier;
   private boolean isClosed;
+  private @Getter ResourceProperties resourceProperties;
 
   public Resource() throws IOException {
-    this(null, null, "Internal-Resource:"+INTERNAL_RESOURCE_COUNTER.incrementAndGet());
+    this(null, null, "Internal-Resource:"+INTERNAL_RESOURCE_COUNTER.incrementAndGet(), null);
   }
 
-  public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName) throws IOException {
+  public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName, @Nullable ResourceProperties resourceProperties) throws IOException {
     keyGen = new AtomicLong(0);
     loaded = false;
     isClosed = false;
     retainedIdentifier = -1;
     name = fileName+"message.data";
+    this.resourceProperties = resourceProperties;
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("basePath", fileName);
     StorageBuilder<Message> builder = new StorageBuilder<>();

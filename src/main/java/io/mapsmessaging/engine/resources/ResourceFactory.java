@@ -23,12 +23,10 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.DestinationPathManager;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.UUID;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 public class ResourceFactory {
@@ -48,8 +46,8 @@ public class ResourceFactory {
     if (resourceName.toLowerCase().startsWith("$sys")) {
       return new Resource();
     } else {
-      createMetaData(pathManager, resourceName, uuid, destinationType);
-      return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath);
+      ResourceProperties props = createMetaData(pathManager, resourceName, uuid, destinationType);
+      return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath, props);
     }
   }
 
@@ -75,15 +73,15 @@ public class ResourceFactory {
         long least = Long.parseLong(leastString);
         long most = Long.parseLong(mostString);
         UUID uuid = new UUID(most, least);
-        String fullyQualifiedPath = pathManager.getDirectory() + File.separator + uuid.toString() + File.separator;
-        return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath);
+        String fullyQualifiedPath = pathManager.getDirectory() + File.separator + uuid + File.separator;
+        return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath, properties);
       }
     }
     Files.delete(directory.toPath());
     return null;
   }
 
-  private void createMetaData(DestinationPathManager path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
+  private ResourceProperties createMetaData(DestinationPathManager path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
     File directoryPath = new File(path.getDirectory() + File.separator + uuid.toString() + File.separator);
     if (!directoryPath.exists()) {
       if (!directoryPath.mkdirs()) {
@@ -97,13 +95,9 @@ public class ResourceFactory {
           BuildInfo.getInstance().getBuildDate(),
           BuildInfo.getInstance().getBuildVersion()
       );
-      final DumperOptions options = new DumperOptions();
-      options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-      options.setPrettyFlow(true);
-      final Yaml yaml = new Yaml(options);
-      FileWriter writer = new FileWriter(directoryPath + File.separator + RESOURCE_FILE_NAME);
-      yaml.dump(properties, writer);
-      writer.close();
+      properties.write(directoryPath);
+      return properties;
     }
+    return null;
   }
 }
