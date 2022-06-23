@@ -40,12 +40,14 @@ import io.mapsmessaging.engine.destination.tasks.TransactionalMessageProcessor;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
+import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
@@ -140,6 +142,7 @@ public class DestinationImpl implements BaseDestination {
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
     transactionMessageManager= DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     closed = false;
+    loadSchema();
   }
 
   /**
@@ -173,6 +176,7 @@ public class DestinationImpl implements BaseDestination {
     transactionMessageManager= DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
+    loadSchema();
   }
 
   /**
@@ -213,6 +217,23 @@ public class DestinationImpl implements BaseDestination {
     }
     if(transactionMessageManager != null) {
       transactionMessageManager.close();
+    }
+  }
+
+  private void loadSchema(){
+    ConfigurationProperties props = new ConfigurationProperties(resource.getResourceProperties().getSchema());
+    if(!props.isEmpty()){
+      Schema newSchema = new Schema(props);
+      schema.update(newSchema);
+    }
+  }
+
+  public void updateSchema(ConfigurationProperties props) throws IOException {
+    Schema newSchema = new Schema(props);
+    if(schema.update(newSchema)){
+      ResourceProperties resourceProperties = resource.getResourceProperties();
+      resourceProperties.setSchema(props);
+      resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
     }
   }
 

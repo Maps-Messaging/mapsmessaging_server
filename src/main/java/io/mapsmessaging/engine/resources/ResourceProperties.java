@@ -41,7 +41,7 @@ public class ResourceProperties {
   @Getter @Setter private String uuid;
   @Getter @Setter private String buildDate;
   @Getter @Setter private String buildVersion;
-  @Getter @Setter private Map<String, String> schema;
+  @Getter @Setter private Map<String, Object> schema;
 
   public ResourceProperties(){}
 
