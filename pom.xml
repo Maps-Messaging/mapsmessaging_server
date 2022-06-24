@@ -469,6 +469,12 @@
       <artifactId>DynamicStorage</artifactId>
       <version>2.2.7</version>
     </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>Client_Layer</artifactId>
+      <version>1.0.0</version>
+      <scope>test</scope>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
     <dependency>
