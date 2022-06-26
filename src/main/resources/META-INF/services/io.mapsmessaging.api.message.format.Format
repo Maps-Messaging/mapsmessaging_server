@@ -17,3 +17,4 @@ io.mapsmessaging.api.message.format.JsonFormat
 io.mapsmessaging.api.message.format.RawFormat
 io.mapsmessaging.api.message.format.XmlFormat
 io.mapsmessaging.api.message.format.Protobuf
+io.mapsmessaging.api.message.format.CsvFormat
