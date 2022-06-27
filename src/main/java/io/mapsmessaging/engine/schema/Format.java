@@ -15,7 +15,7 @@
  *
  *
  */
-package io.mapsmessaging.api.message.format;
+package io.mapsmessaging.engine.schema;
 
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;

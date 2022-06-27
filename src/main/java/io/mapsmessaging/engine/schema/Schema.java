@@ -1,6 +1,5 @@
 package io.mapsmessaging.engine.schema;
 
-import io.mapsmessaging.api.message.format.Format;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;

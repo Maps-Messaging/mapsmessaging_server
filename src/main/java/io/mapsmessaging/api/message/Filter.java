@@ -1,6 +1,6 @@
 package io.mapsmessaging.api.message;
 
-import io.mapsmessaging.api.message.format.Format;
+import io.mapsmessaging.engine.schema.Format;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.selector.operators.ParserExecutor;
