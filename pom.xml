@@ -300,57 +300,6 @@
           </replacements>
         </configuration>
       </plugin>
-
-      <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-        <version>3.11.4</version>
-        <executions>
-          <execution>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <protocVersion>3.1.0</protocVersion>
-              <inputDirectories>
-                <include>src/test/resources</include>
-              </inputDirectories>
-              <outputTargets>
-                <outputTarget>
-                  <type>java</type>
-                  <addSources>none</addSources>
-                  <outputDirectory>target/generated-test-sources</outputDirectory>
-                </outputTarget>
-                <outputTarget>
-                  <type>descriptor</type>
-                  <addSources>none</addSources>
-                  <outputDirectory>src/test/resources</outputDirectory>
-                </outputTarget>
-              </outputTargets>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>add-test-sources</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-test-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${basedir}/target/generated-test-sources</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
     </plugins>
   </build>
 
@@ -469,11 +418,11 @@
       <artifactId>DynamicStorage</artifactId>
       <version>2.2.7</version>
     </dependency>
+
     <dependency>
       <groupId>io.mapsmessaging</groupId>
-      <artifactId>Client_Layer</artifactId>
-      <version>1.0.0</version>
-      <scope>test</scope>
+      <artifactId>Schemas</artifactId>
+      <version>1.0.5</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
@@ -530,13 +479,6 @@
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-stdlib</artifactId>
       <version>1.6.21</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
-    <dependency>
-      <groupId>org.projectodd.stilts</groupId>
-      <artifactId>stilts-stomp-client</artifactId>
-      <version>0.1.40</version>
     </dependency>
 
     <!-- Consul client API -->
@@ -696,6 +638,13 @@
     <!-- ***********************  -->
     <!-- Test Dependency Imports -->
     <!-- ***********************  -->
+    <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
+    <dependency>
+      <groupId>org.projectodd.stilts</groupId>
+      <artifactId>stilts-stomp-client</artifactId>
+      <version>0.1.40</version>
+      <scope>test</scope>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.eclipse.paho/org.eclipse.paho.client.mqttv3 -->
     <dependency>

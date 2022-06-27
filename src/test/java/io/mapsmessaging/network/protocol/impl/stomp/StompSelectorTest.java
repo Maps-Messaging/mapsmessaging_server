@@ -18,8 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
-import io.mapsmessaging.client.schema.JsonSchemaConfig;
-import io.mapsmessaging.client.schema.SchemaConfig;
+import io.mapsmessaging.schemas.config.JsonSchemaConfig;
+import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.HashMap;

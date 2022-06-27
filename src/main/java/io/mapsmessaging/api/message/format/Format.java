@@ -17,17 +17,20 @@
  */
 package io.mapsmessaging.api.message.format;
 
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 
-public interface Format extends Service {
+public class Format  {
 
-  boolean isValid(byte[] payload);
+  private final MessageFormatter formatter;
 
-  IdentifierResolver getResolver(byte[] payload) throws IOException;
+  public Format(MessageFormatter formatter){
+    this.formatter = formatter;
+  }
 
-  Format getInstance(ConfigurationProperties properties);
+  public IdentifierResolver getResolver(byte[] payload) throws IOException{
+    return formatter.parse(payload);
+  }
 
 }
