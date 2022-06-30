@@ -4,7 +4,7 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
-import io.mapsmessaging.schemas.formatters.RawFormatter;
+import io.mapsmessaging.schemas.formatters.impl.RawFormatter;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import lombok.Getter;
