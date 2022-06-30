@@ -18,12 +18,13 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
-import io.mapsmessaging.schemas.config.JsonSchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import javax.security.auth.login.LoginException;
@@ -47,6 +48,7 @@ class StompSelectorTest extends StompBaseTest implements Listener {
     map.put("selector", "odd = 0");
     String topicName = getTopicName();
     SchemaConfig config = new JsonSchemaConfig();
+    config.setUniqueId(UUID.randomUUID());
     client.send("$schema/"+topicName, config.pack());
     client.subscribeW(topicName, this, map);
     for(int x=0;x<EVENT_COUNT;x++){
@@ -69,6 +71,7 @@ class StompSelectorTest extends StompBaseTest implements Listener {
     map.put("id", "subscribe1");
     map.put("selector", "odd= 0");
     SchemaConfig config = new JsonSchemaConfig();
+    config.setUniqueId(UUID.randomUUID());
     String topicName = getTopicName();
     client.send("$schema/"+topicName, config.pack());
     client.subscribeW(topicName, this, map);
