@@ -28,17 +28,15 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public void rollbackReceived(long messageId) {
-    // Ignore
+
   }
 
   @Override
   public void ackReceived(long messageId) {
-// Ignore
   }
 
   @Override
   public void updateCredit(int credit) {
-// Ignore
   }
 
   @Override
@@ -99,20 +97,14 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public void pause() {
-// Ignore
-
   }
 
   @Override
   public void resume() {
-// Ignore
-
   }
 
   @Override
   public void cancel() throws IOException {
-// Ignore
-
   }
 
   @Override
@@ -151,7 +143,6 @@ public class SchemaSubscription extends Subscription {
     callback.sendMessage(destinationImpl, eventManager, message, () -> {
       // Nothing to do
     });
-//    logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
     ThreadContext.clear();
   }
 

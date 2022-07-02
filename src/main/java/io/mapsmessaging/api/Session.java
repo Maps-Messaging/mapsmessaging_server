@@ -42,6 +42,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class Session {
 
+  private static final String SCHEMA_NAME="$schema/";
+  private static final String METRICS_NAME="$metrics/";
+
   private final SessionImpl sessionImpl;
   private final MessageListener listener;
   private final Map<String, Destination> destinations;
@@ -73,18 +76,18 @@ public class Session {
     }
   }
 
-  public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, DestinationType type) throws IOException {
+  public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, DestinationType type) {
     CompletableFuture<Destination> future = new CompletableFuture<>();
     Destination result = destinations.get(destinationName);
     if (result == null) {
       String tmp = destinationName;
       DestinationType tmpMeta = type;
-      if(tmp.startsWith("$schema/")) {
-        tmp = tmp.substring("$schema/".length());
+      if(tmp.startsWith(SCHEMA_NAME)) {
+        tmp = tmp.substring(SCHEMA_NAME.length());
         tmpMeta = DestinationType.SCHEMA;
       }
-      else if(tmp.startsWith("$metrics/")){
-        tmp = tmp.substring("$metrics/".length());
+      else if(tmp.startsWith(METRICS_NAME)){
+        tmp = tmp.substring(METRICS_NAME.length());
         tmpMeta = DestinationType.METRICS;
       }
       String name = tmp;
@@ -92,28 +95,8 @@ public class Session {
       Callable<Destination> lookupTask = () -> {
         CompletableFuture<DestinationImpl> destinationCompletableFuture = sessionImpl.findDestination(name, type);
         DestinationImpl destination = destinationCompletableFuture.get();
-        Destination end = null;
-        if (destination != null) {
-          switch(meta){
-            case TOPIC:
-              end = new Topic(destination);
-              break;
-            case QUEUE:
-              end = new Queue(destination);
-              break;
-            case SCHEMA:
-              end = new Schema(destination);
-              break;
-            case METRICS:
-              end = new Metrics(destination);
-              break;
-          }
-          if (destination.getResourceType().isTemporary()) {
-            TemporaryDestinationDeletionTask deletionTask = new TemporaryDestinationDeletionTask((TemporaryDestination) destination);
-            sessionImpl.addClosureTask(deletionTask);
-          }
-          destinations.put(end.getFullyQualifiedNamespace(), end);
-        }
+        Destination end = buildDestination(destination, meta);
+        if(end != null) destinations.put(end.getFullyQualifiedNamespace(), end);
         future.complete(end);
         return end;
       };
@@ -129,6 +112,33 @@ public class Session {
       future.complete(result);
     }
     return future;
+  }
+
+  private Destination buildDestination(DestinationImpl destination, DestinationType meta){
+    Destination end = null;
+    if (destination != null) {
+      switch(meta){
+        case TOPIC:
+          end = new Topic(destination);
+          break;
+        case QUEUE:
+          end = new Queue(destination);
+          break;
+        case SCHEMA:
+          end = new Schema(destination);
+          break;
+        case METRICS:
+          end = new Metrics(destination);
+          break;
+        default:
+          break;
+      }
+      if (destination.getResourceType().isTemporary()) {
+        TemporaryDestinationDeletionTask deletionTask = new TemporaryDestinationDeletionTask((TemporaryDestination) destination);
+        sessionImpl.addClosureTask(deletionTask);
+      }
+    }
+    return end;
   }
 
   public CompletableFuture<Void> deleteDestination(Destination destination) {
@@ -232,7 +242,7 @@ public class Session {
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
       if(subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA)){
-        normalisedName = "$schema/"+normalisedName;
+        normalisedName = SCHEMA_NAME+normalisedName;
       }
       MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);
       listener.sendMessage(event);

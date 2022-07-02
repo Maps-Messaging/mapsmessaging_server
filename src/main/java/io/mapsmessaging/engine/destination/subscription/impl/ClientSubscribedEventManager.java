@@ -70,7 +70,6 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
     return subscription.getPending();
   }
 
-
   @Override
   public int getDepth() {
     return subscription.getDepth();
