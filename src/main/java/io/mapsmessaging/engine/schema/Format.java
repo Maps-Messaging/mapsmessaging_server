@@ -19,7 +19,6 @@ package io.mapsmessaging.engine.schema;
 
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
-import java.io.IOException;
 
 public class Format  {
 
@@ -29,7 +28,7 @@ public class Format  {
     this.formatter = formatter;
   }
 
-  public IdentifierResolver getResolver(byte[] payload) throws IOException{
+  public IdentifierResolver getResolver(byte[] payload) {
     return formatter.parse(payload);
   }
 

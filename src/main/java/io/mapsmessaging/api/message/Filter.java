@@ -18,12 +18,8 @@ public class Filter {
     if(selector == null) return true;
     if(message != null) {
       Format format = destination.getSchema().getFormat();
-      try {
-        IdentifierResolver formatResolver = format.getResolver(message.getOpaqueData());
-        return selector.evaluate(new Resolver(formatResolver, message));
-      } catch (IOException e) {
-        e.printStackTrace(); // Log this and move on...
-      }
+      IdentifierResolver formatResolver = format.getResolver(message.getOpaqueData());
+      return selector.evaluate(new Resolver(formatResolver, message));
     }
     return false;
   }
