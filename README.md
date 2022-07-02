@@ -23,4 +23,7 @@ Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt
 * Support for JMX management, RestAPI via [Jolokia](https://jolokia.org/) as well as web based management via [hawtio](https://hawt.io/)
 
 
+[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=Maps-Messaging_mapsmessaging_server)
+
+
 
