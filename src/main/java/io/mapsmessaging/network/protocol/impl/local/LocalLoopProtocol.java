@@ -74,7 +74,6 @@ public class LocalLoopProtocol extends ProtocolImpl {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     String lookup = nameMapping.get(messageEvent.getDestinationName());
     if(lookup != null) {
-      try{
       CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
       future.thenApply(destination -> {
         try {
@@ -90,9 +89,6 @@ public class LocalLoopProtocol extends ProtocolImpl {
         }
         return destination;
       });
-      } catch (IOException ioException) {
-        logger.log(ServerLogMessages.LOOP_SEND_MESSAGE_FAILED, ioException);
-      }
     }
   }
 

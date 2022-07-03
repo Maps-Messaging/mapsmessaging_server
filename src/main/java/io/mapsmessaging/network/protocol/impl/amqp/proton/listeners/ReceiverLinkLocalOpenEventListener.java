@@ -18,12 +18,13 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.Target;
@@ -59,21 +60,20 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
       UUID uuid = UUID.randomUUID();
       String address = "/dynamic/temporary/";
-      if(scanForQueue(messagingTarget)){
+      if (scanForQueue(messagingTarget)) {
         type = DestinationType.TEMPORARY_QUEUE;
-        address+="queue/";
+        address += "queue/";
+      } else {
+        address += "topic/";
       }
-      else{
-        address +="topic/";
-      }
-      address+=uuid;
-      try {
-        String sessionId = parseSessionId(event.getConnection().getRemoteContainer());
-        SessionManager sessionManager = super.protocol.getSession(sessionId);
-        sessionManager.getSession().findDestination(address, type);
+      address += uuid;
+      String sessionId = parseSessionId(event.getConnection().getRemoteContainer());
+      SessionManager sessionManager = super.protocol.getSession(sessionId);
+      CompletableFuture<Destination> future = sessionManager.getSession().findDestination(address, type);
+      if (future.isCompletedExceptionally()) {
+        link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::"));
+      } else {
         messagingTarget.setAddress(address);
-      } catch (IOException e) {
-        link.setCondition(new ErrorCondition(DYNAMIC_CREATION_ERROR, "Failed to create the dynamic destination::" + e.getMessage()));
       }
     }
   }

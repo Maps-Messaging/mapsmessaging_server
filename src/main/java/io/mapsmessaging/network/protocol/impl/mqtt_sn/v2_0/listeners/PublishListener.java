@@ -35,7 +35,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubRec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
 import java.io.IOException;
@@ -78,37 +77,30 @@ public class PublishListener extends PacketListener {
           .setRetain(publish.isRetain())
           .setTransformation(protocol.getTransformation())
           .setOpaqueData(publish.getMessage());
-      try {
-        CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-        future.thenApply(destination -> {
-          if(destination != null) {
-            Message message = messageBuilder.build();
-            try {
-              if(message.getQualityOfService().getLevel() == 2){
-                Transaction transaction = session.startTransaction(session.getName()+":"+publish.getMessageId());
-                transaction.add(destination, message);
-              }
-              else {
-                destination.storeMessage(message);
-              }
-            } catch (IOException e) {
-              ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
+      CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
+      future.thenApply(destination -> {
+        if (destination != null) {
+          Message message = messageBuilder.build();
+          try {
+            if (message.getQualityOfService().getLevel() == 2) {
+              Transaction transaction = session.startTransaction(session.getName() + ":" + publish.getMessageId());
+              transaction.add(destination, message);
+            } else {
+              destination.storeMessage(message);
             }
-            if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
-              ((MQTT_SNProtocol)protocol).writeFrame( new PubAck(publish.getMessageId(), ReasonCodes.Success));
-            } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
-              ((MQTT_SNProtocol)protocol).writeFrame( new PubRec(publish.getMessageId()));
-            }
+          } catch (IOException e) {
+            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
           }
-          else{
-            ((MQTT_SNProtocol)protocol).writeFrame(new PubAck(publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
+          if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
+            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getMessageId(), ReasonCodes.Success));
+          } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
+            ((MQTT_SNProtocol) protocol).writeFrame(new PubRec(publish.getMessageId()));
           }
-          return destination;
-        });
-
-      } catch (IOException e) {
-        return new PubAck(publish.getMessageId(), ReasonCodes.InvalidTopicAlias);
-      }
+        } else {
+          ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
+        }
+        return destination;
+      });
     }
     return null;
   }

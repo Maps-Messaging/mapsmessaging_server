@@ -40,12 +40,8 @@ public class RegisterListener extends PacketListener {
       // Exceeded the maximum number of registered topics
       return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.NotSupported);
     }
-    try {
       session.findDestination(topic, DestinationType.TOPIC);
       // We don't need to do anything with this destination at present
-    } catch (IOException e) {
-      return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.NotSupported);
-    }
     return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.Success);
   }
 }

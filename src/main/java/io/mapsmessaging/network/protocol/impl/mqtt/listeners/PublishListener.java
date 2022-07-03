@@ -95,38 +95,28 @@ public class PublishListener extends PacketListener {
     }
 
     if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
-      try {
-        MQTTPacket finalResponse = response;
-        CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
-        future.thenApply(destination -> {
-          if (destination != null) {
-            try {
-              processMessage(publish, protocol, session, finalResponse, destination);
-              if (finalResponse != null) {
-                ((MQTTProtocol) protocol).writeFrame(finalResponse);
-              }
-            } catch (IOException e) {
-              logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
-              try {
-                endPoint.close();
-              } catch (IOException ioException) {
-                // Ignore we are in an error state
-              }
-              future.completeExceptionally(new MalformedException("[MQTT-3.3.5-2]"));
+      MQTTPacket finalResponse = response;
+      CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
+      future.thenApply(destination -> {
+        if (destination != null) {
+          try {
+            processMessage(publish, protocol, session, finalResponse, destination);
+            if (finalResponse != null) {
+              ((MQTTProtocol) protocol).writeFrame(finalResponse);
             }
+          } catch (IOException e) {
+            logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
+            try {
+              endPoint.close();
+            } catch (IOException ioException) {
+              // Ignore we are in an error state
+            }
+            future.completeExceptionally(new MalformedException("[MQTT-3.3.5-2]"));
           }
-          return destination;
-        });
-        future.get();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
-        try {
-          endPoint.close();
-        } catch (IOException ioException) {
-          // Ignore we are in an error state
         }
-        throw new MalformedException("[MQTT-3.3.5-2]");
-      }
+        return destination;
+      });
+      future.get();
     }
     else{
       return response;
