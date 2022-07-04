@@ -13,13 +13,14 @@ public class SchemaSubscribedEventManager implements SubscribedEventManager {
 
   @Override
   public void rollbackReceived(long messageId) {
-
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
   public void ackReceived(long messageId) {
-
+    // A Schema subscription is a simple deliver a single message when it changes
   }
+
   @Override
   public SubscriptionContext getContext() {
     return subscription.getContext();
@@ -32,7 +33,7 @@ public class SchemaSubscribedEventManager implements SubscribedEventManager {
 
   @Override
   public void updateCredit(int credit) {
-
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
