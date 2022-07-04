@@ -6,9 +6,10 @@ import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.destination.subscription.impl.SchemaSubscribedEventManager;
-import io.mapsmessaging.engine.schema.Schema;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.tasks.SubscriptionResponse;
+import io.mapsmessaging.schemas.config.SchemaConfig;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -30,11 +31,12 @@ public class SchemaSubscriptionTask extends SubscriptionTask {
       } else {
         subscription = controller.createSchemaSubscription(context, destination);
       }
-      Schema schema = destination.getSchema();
-      MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(schema.toString().getBytes(StandardCharsets.UTF_8));
-
-     // subscription.sendMessage(messageBuilder.build());
+      SchemaConfig config = SchemaManager.getInstance().getSchema(destination.getSchema().getUniqueId());
+      if(config != null) {
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.setOpaqueData(config.pack().getBytes(StandardCharsets.UTF_8));
+        subscription.sendMessage(messageBuilder.build());
+      }
     } finally {
       counter.decrementAndGet();
     }

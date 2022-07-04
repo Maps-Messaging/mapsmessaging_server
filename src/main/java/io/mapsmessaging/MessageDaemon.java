@@ -22,6 +22,7 @@ import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
@@ -33,6 +34,9 @@ import io.mapsmessaging.network.NetworkConnectionManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -71,6 +75,7 @@ public class MessageDaemon implements WrapperListener {
   private final SessionManager sessionManager;
   private final HawtioManager hawtioManager;
   private final JolokaManager jolokaManager;
+  private final SchemaManager schemaManager;
   private final SecurityManager securityManager;
   private final SystemTopicManager systemTopicManager;
   private final UUID uniqueId;
@@ -133,7 +138,6 @@ public class MessageDaemon implements WrapperListener {
     // May block till a consul connection is made, depending on config
      ConsulManagerFactory.getInstance().start(uniqueId);
     //</editor-fold>
-
     ConfigurationManager.getInstance().initialise(uniqueId.toString()+"_");
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
     int delayTimer = properties.getIntProperty("DelayedPublishInterval", 1000);
@@ -142,6 +146,14 @@ public class MessageDaemon implements WrapperListener {
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
+
+
+    schemaManager = SchemaManager.getInstance();
+    SchemaConfig rawConfig = new RawSchemaConfig();
+    rawConfig.setUniqueId(SchemaManager.DEFAULT_RAW_UUID);
+    schemaManager.addSchema("", rawConfig);
+    MessageFormatterFactory factory = MessageFormatterFactory.getInstance();
+
 
     networkManager = new NetworkManager(mBean.getTypePath());
     networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());

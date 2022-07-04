@@ -422,7 +422,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Schemas</artifactId>
-      <version>1.1.5</version>
+      <version>1.1.8</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/tanukisoft/wrapper -->
@@ -742,15 +742,13 @@
       <version>1.35</version>
       <scope>test</scope>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>3.21.2</version>
-      <scope>test</scope>
     </dependency>
-
-
 
   </dependencies>
 

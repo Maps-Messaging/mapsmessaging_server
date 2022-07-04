@@ -31,7 +31,10 @@ public class TransformerManager implements ServiceManager {
   public static TransformerManager getInstance(){
     return instance;
   }
-  private static final TransformerManager instance = new TransformerManager();
+  private static final TransformerManager instance;
+  static {
+    instance =new TransformerManager();
+  }
 
   private final Map<String, Service> transformerMap;
 

@@ -30,7 +30,10 @@ import java.io.IOException;
 
 public class SubscriptionFactory {
 
-  private static final SubscriptionFactory instance = new SubscriptionFactory();
+  private static final SubscriptionFactory instance;
+  static{
+    instance = new SubscriptionFactory();
+  }
 
   public static SubscriptionFactory getInstance(){
     return instance;

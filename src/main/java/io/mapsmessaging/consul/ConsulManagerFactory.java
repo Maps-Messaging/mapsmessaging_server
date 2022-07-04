@@ -28,7 +28,10 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ConsulManagerFactory {
 
-  private static final ConsulManagerFactory instance = new ConsulManagerFactory();
+  private static final ConsulManagerFactory instance;
+  static {
+    instance = new ConsulManagerFactory();
+  }
 
   public static ConsulManagerFactory getInstance(){
     return instance;

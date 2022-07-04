@@ -1,29 +1,24 @@
 package io.mapsmessaging.engine.schema;
 
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.formatters.impl.RawFormatter;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
+import java.util.UUID;
 import lombok.Getter;
 
 public class Schema {
 
   @Getter
+  private final UUID uniqueId;
+
+  @Getter
   private Format format;
 
-  public Schema(String format){
-    ConfigurationProperties props = new ConfigurationProperties();
-    props.put("format", format);
-    this.format = buildFormat(props);
-  }
-
-  public Schema(ConfigurationProperties props){
-    ConfigurationProperties schemaProps = new ConfigurationProperties();
-    schemaProps.put("schema", props);
-    format = buildFormat(schemaProps);
+  public Schema(SchemaConfig config){
+    uniqueId = config.getUniqueId();
+    format = buildFormat(config);
   }
 
   public boolean update(Schema rhs){
@@ -31,9 +26,8 @@ public class Schema {
     return true;
   }
 
-  private Format buildFormat(ConfigurationProperties props){
+  private Format buildFormat(SchemaConfig config){
     try {
-      SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(props);
       MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(config);
       return new Format(messageFormatter);
     } catch (IOException e) {

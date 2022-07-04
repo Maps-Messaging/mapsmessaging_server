@@ -7,7 +7,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class MessageFactory implements StorableFactory<Message> {
 
-  private static MessageFactory instance = new MessageFactory();
+  private static MessageFactory instance;
+  static {
+    instance = new MessageFactory();
+  }
   public static MessageFactory getInstance(){
     return instance;
   }

@@ -43,11 +43,14 @@ import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.engine.schema.Schema;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.tasks.EngineTask;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
@@ -91,7 +94,7 @@ public class DestinationImpl implements BaseDestination {
 
   //<editor-fold desc="Destination specific fields">
   protected final DestinationSubscriptionManager subscriptionManager;
-  protected final DestinationSubscriptionManager schemaManager;
+  protected final DestinationSubscriptionManager schemaSubscriptionManager;
   private final SharedSubscriptionRegister sharedSubscriptionRegistry;
 
   protected final DestinationJMX destinationJMXBean;
@@ -110,7 +113,7 @@ public class DestinationImpl implements BaseDestination {
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
   private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
-  private final @Getter Schema schema = new Schema("RAW");
+  private @Getter Schema schema;
   private volatile boolean closed;
   //</editor-fold>
 
@@ -126,13 +129,14 @@ public class DestinationImpl implements BaseDestination {
    * @throws IOException if, at anytime, the file system was unable to construct, read or write to the required files
    */
   public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  DestinationPathManager pathManager, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
+    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = computePath(pathManager, uuid);
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    schemaManager= new DestinationSubscriptionManager(name);
+    schemaSubscriptionManager = new DestinationSubscriptionManager(name);
     resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType);
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
@@ -158,12 +162,13 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl( @NonNull @NotNull String name,@NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
     this.fullyQualifiedNamespace = name;
+    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     fullyQualifiedDirectoryRoot = directory;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    schemaManager= new DestinationSubscriptionManager(name);
+    schemaSubscriptionManager = new DestinationSubscriptionManager(name);
     this.resource = resource;
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
@@ -191,13 +196,14 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of the destination
    */
   public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = "";
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
-    schemaManager= new DestinationSubscriptionManager(name);
+    schemaSubscriptionManager = new DestinationSubscriptionManager(name);
     resource = new Resource();
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
@@ -228,19 +234,33 @@ public class DestinationImpl implements BaseDestination {
   private void loadSchema(){
     ConfigurationProperties props = new ConfigurationProperties(resource.getResourceProperties().getSchema());
     if(!props.isEmpty()){
-      Schema newSchema = new Schema(props);
+      SchemaConfig config = null;
+      try {
+        config = SchemaConfigFactory.getInstance().constructConfig(props);
+      } catch (IOException e) {
+        config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
+      }
+      config = SchemaManager.getInstance().addSchema(getFullyQualifiedNamespace(), config);
+      Schema newSchema = new Schema(config);
       schema.update(newSchema);
     }
   }
 
-  public void updateSchema(@NonNull @NotNull ConfigurationProperties props, @NonNull @NotNull Message message) throws IOException {
-    Schema newSchema = new Schema(props);
+  public void updateSchema(@NonNull @NotNull SchemaConfig config, @NonNull @NotNull Message message) throws IOException {
+    SchemaConfig loaded = SchemaManager.getInstance().getSchema(config.getUniqueId());
+    if(loaded != null){
+      config = loaded;
+    }
+    else{
+      config = SchemaManager.getInstance().addSchema(getFullyQualifiedNamespace(), config);
+    }
+    Schema newSchema = new Schema(config);
     if(schema.update(newSchema)){
       ResourceProperties resourceProperties = resource.getResourceProperties();
-      resourceProperties.setSchema(props);
+      resourceProperties.setSchema(config.toMap());
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
-      if(schemaManager.hasSubscriptions()){
-        EngineTask task = new NonDelayedStoreMessageTask(this, schemaManager, message);
+      if(schemaSubscriptionManager.hasSubscriptions()){
+        EngineTask task = new NonDelayedStoreMessageTask(this, schemaSubscriptionManager, message);
         handleTask(task);
       }
     }
@@ -271,7 +291,7 @@ public class DestinationImpl implements BaseDestination {
     if(!closed) {
       closed = true;
       subscriptionManager.close();
-      schemaManager.close();
+      schemaSubscriptionManager.close();
       transactionMessageManager.delete();
       delayedMessageManager.delete();
       resource.delete();
@@ -470,7 +490,7 @@ public class DestinationImpl implements BaseDestination {
 
   public void addSchemaSubscription( @NonNull @NotNull Subscription subscription) {
     stats.subscriptionAdded();
-    schemaManager.put(subscription.getSessionId(), subscription);
+    schemaSubscriptionManager.put(subscription.getSessionId(), subscription);
   }
 
 
