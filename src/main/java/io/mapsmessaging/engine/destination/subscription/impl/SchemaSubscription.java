@@ -28,15 +28,17 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public void rollbackReceived(long messageId) {
-
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
   public void ackReceived(long messageId) {
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
   public void updateCredit(int credit) {
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
@@ -97,14 +99,17 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public void pause() {
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
   public void resume() {
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
   public void cancel() throws IOException {
+    // A Schema subscription is a simple deliver a single message when it changes
   }
 
   @Override
@@ -153,11 +158,13 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public void close() throws IOException {
+    // A Schema subscription is a simple deliver a single message when it changes
 
   }
 
   @Override
   public void run() {
+    // A Schema subscription is a simple deliver a single message when it changes
 
   }
 }
