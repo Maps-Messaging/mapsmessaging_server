@@ -34,9 +34,6 @@ import io.mapsmessaging.network.NetworkConnectionManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.schemas.config.SchemaConfig;
-import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
-import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -75,7 +72,6 @@ public class MessageDaemon implements WrapperListener {
   private final SessionManager sessionManager;
   private final HawtioManager hawtioManager;
   private final JolokaManager jolokaManager;
-  private final SchemaManager schemaManager;
   private final SecurityManager securityManager;
   private final SystemTopicManager systemTopicManager;
   private final UUID uniqueId;
@@ -148,12 +144,8 @@ public class MessageDaemon implements WrapperListener {
     TransactionManager.setExpiryTime(transactionExpiry);
 
 
-    schemaManager = SchemaManager.getInstance();
-    SchemaConfig rawConfig = new RawSchemaConfig();
-    rawConfig.setUniqueId(SchemaManager.DEFAULT_RAW_UUID);
-    schemaManager.addSchema("", rawConfig);
-    MessageFormatterFactory factory = MessageFormatterFactory.getInstance();
-
+    // Start the Schema manager to it has the defaults and has loaded the required classes
+    SchemaManager.getInstance().start();
 
     networkManager = new NetworkManager(mBean.getTypePath());
     networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());

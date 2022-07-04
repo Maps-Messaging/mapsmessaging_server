@@ -49,6 +49,8 @@ public class DestinationStats extends Statistics {
     totalDeliveredMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Delivered messages", MESSAGES);
   }
 
+  private static final LongAdder totalCurrentSubscriptions = new LongAdder();
+
 
   private static final LongAdder totalPublishedMessages = new LongAdder();
   private static final LongAdder totalSubscribedMessages = new LongAdder();
@@ -75,6 +77,7 @@ public class DestinationStats extends Statistics {
   public static long getTotalDeliveredMessages() {
     return totalDeliveredMessages.sum();
   }
+  public static long getTotalCurrentSubscriptions(){ return totalCurrentSubscriptions.sum();}
   //</editor-fold>
 
   //<editor-fold desc="Statistic fields">
@@ -111,10 +114,12 @@ public class DestinationStats extends Statistics {
   }
 
   public void subscriptionAdded(){
+    totalCurrentSubscriptions.increment();
     subscribedClientAverages.increment();
   }
 
   public void subscriptionRemoved(){
+    totalCurrentSubscriptions.decrement();
     subscribedClientAverages.decrement();
   }
 

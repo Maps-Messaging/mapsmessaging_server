@@ -106,14 +106,17 @@ public class DestinationImpl implements BaseDestination {
   private final DelayedMessageManager delayedMessageManager;
   private final TransactionalMessageManager transactionMessageManager;
   private final DestinationStats stats;
-  private final @Getter ResourceStatistics resourceStatistics;
+
+  @Getter
+  private final ResourceStatistics resourceStatistics;
   private final Resource resource;
   private final DestinationType destinationType;
 
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
   private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
-  private @Getter Schema schema;
+  @Getter
+  private final Schema schema;
   private volatile boolean closed;
   //</editor-fold>
 
@@ -246,7 +249,7 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  public void updateSchema(@NonNull @NotNull SchemaConfig config, @NonNull @NotNull Message message) throws IOException {
+  public void updateSchema(@NonNull @NotNull SchemaConfig config, @Nullable Message message) throws IOException {
     SchemaConfig loaded = SchemaManager.getInstance().getSchema(config.getUniqueId());
     if(loaded != null){
       config = loaded;
@@ -255,11 +258,12 @@ public class DestinationImpl implements BaseDestination {
       config = SchemaManager.getInstance().addSchema(getFullyQualifiedNamespace(), config);
     }
     Schema newSchema = new Schema(config);
-    if(schema.update(newSchema)){
-      ResourceProperties resourceProperties = resource.getResourceProperties();
+    ResourceProperties resourceProperties = resource.getResourceProperties();
+
+    if(schema.update(newSchema) && resourceProperties != null){
       resourceProperties.setSchema(config.toMap());
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
-      if(schemaSubscriptionManager.hasSubscriptions()){
+      if (message != null && schemaSubscriptionManager.hasSubscriptions()) {
         EngineTask task = new NonDelayedStoreMessageTask(this, schemaSubscriptionManager, message);
         handleTask(task);
       }

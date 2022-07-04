@@ -41,6 +41,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -291,7 +292,7 @@ public class DestinationManager implements DestinationFactory {
       while(!complete) {
         for (ResourceLoader loader : loaders) {
           complete = true;
-          if (!loader.complete) {
+          if (!loader.complete.get()) {
             complete = false;
             try {
               loader.join(10);
@@ -316,22 +317,23 @@ public class DestinationManager implements DestinationFactory {
 
     private final Queue<File> fileList;
     private final DestinationPathManager pathManager;
-    private transient boolean complete;
+    private final AtomicBoolean complete;
 
     public ResourceLoader (Queue<File> fileList,DestinationPathManager pathManager){
       this.fileList = fileList;
       this.pathManager = pathManager;
-      complete = false;
+      complete = new AtomicBoolean(false);
       setName("Resource Loader Thread");
     }
 
+    @Override
     public void run(){
       File file = fileList.poll();
       while(file != null){
         parseDirectoryPath(file, pathManager);
         file = fileList.poll();
       }
-      complete = true;
+      complete.set(true);
     }
   }
 }

@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -183,7 +184,11 @@ public class SubscriptionController implements DestinationManagerListener {
     }
     if (!subscriptions.containsKey(filter)) {
       if (!context.containsWildcard()) {
-        destinationManager.findOrCreate(context.getFilter()).get();
+        CompletableFuture<DestinationImpl> future = destinationManager.findOrCreate(filter);
+        if(future == null && filter.toLowerCase().startsWith("$sys")){
+          future = destinationManager.find("$SYS/notImplemented");
+        }
+        future.get();
       }
       DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
       DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
