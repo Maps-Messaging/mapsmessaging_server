@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -43,31 +44,48 @@ public class Message implements IdentifierResolver, Storable {
   private static final int RETAIN_BIT = 0;
   private static final int UTF8_BIT = 1;
   private static final int CORRELATION_BYTE_ARRAY_BIT = 2;
+  private static final int SCHEMA_ID_PRESENT = 3;
 
 
-  private final @Getter long expiry;   // time in milliseconds when this message will expire
-  private final @Getter long creation;
-  private final @Getter Priority priority;
-  private final @Getter QualityOfService qualityOfService;
-  private final @Getter String responseTopic;
-  private final @Getter String contentType;
-  private final @Getter byte[] correlationData;
-  private final @Getter byte[] opaqueData;
-  private final @Getter Map<String, String> meta;
-  private final @Getter Map<String, TypedData> dataMap;
+  @Getter
+  private final long expiry;   // time in milliseconds when this message will expire
+  @Getter
+  private final long creation;
+  @Getter
+  private final Priority priority;
+  @Getter
+  private final QualityOfService qualityOfService;
+  @Getter
+  private final String responseTopic;
+  @Getter
+  private final String contentType;
+  @Getter
+  private final byte[] correlationData;
+  @Getter
+  private final byte[] opaqueData;
+  @Getter
+  private final Map<String, String> meta;
+  @Getter
+  private final Map<String, TypedData> dataMap;
 
-  private final @Getter boolean storeOffline; // Not stored to disk
+  @Getter
+  private UUID schemaId;
+
+  @Getter
+  private final boolean storeOffline; // Not stored to disk
 
   private final BitSet flags;
 
-
-  private @Getter long delayed; // This is set via the engine on the way through
+  @Getter
+  private long delayed; // This is set via the engine on the way through
 
   // <editor-fold desc="Transient data">
-  private @Getter @Setter boolean lastMessage; // This is set via the engine as it is delivered to the client
+  @Getter @Setter
+  private boolean lastMessage; // This is set via the engine as it is delivered to the client
   // </editor-fold>
   // <editor-fold desc="Persistent data">
-  private @Getter @Setter long identifier;
+  @Getter @Setter
+  private long identifier;
   // </editor-fold>
 
 
@@ -120,6 +138,10 @@ public class Message implements IdentifierResolver, Storable {
       flags.set(UTF8_BIT);
     }
     lastMessage = false;
+    schemaId = builder.getSchemaId();
+    if(schemaId != null){
+      flags.set(SCHEMA_ID_PRESENT);
+    }
   }
 
   Message(ByteBuffer[] packed) throws IOException {
@@ -139,6 +161,9 @@ public class Message implements IdentifierResolver, Storable {
     responseTopic = optional.readString();
     contentType = optional.readString();
     correlationData = optional.readByteArray();
+    if(flags.get(SCHEMA_ID_PRESENT)){
+      schemaId = UUID.fromString(optional.readString());
+    }
     byte containsBuffers = optional.readByte();
 
     int idx = 2;
@@ -174,7 +199,6 @@ public class Message implements IdentifierResolver, Storable {
   }
 
   ByteBuffer[] pack() throws IOException {
-
     ByteBuffer header = ByteBuffer.allocate(34);
     header.putLong(identifier);
     header.putLong(expiry);
@@ -201,13 +225,15 @@ public class Message implements IdentifierResolver, Storable {
       bufferCount++;
       containsBuffers = (byte)(containsBuffers | 0x4);
     }
-
     ByteArrayOutputStream optional = new ByteArrayOutputStream(1024);
     StreamObjectWriter optionalWriter = new StreamObjectWriter(optional);
     optionalWriter.write(flags.toByteArray());
     optionalWriter.write(responseTopic);
     optionalWriter.write(contentType);
     optionalWriter.write(correlationData);
+    if(schemaId != null){
+      optionalWriter.write(schemaId.toString());
+    }
     optionalWriter.write(containsBuffers);
 
 

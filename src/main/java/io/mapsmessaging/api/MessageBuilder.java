@@ -25,6 +25,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.NonNull;
@@ -50,6 +51,7 @@ public class MessageBuilder {
   @Getter private boolean storeOffline;
   @Getter private boolean payloadUTF8;
   @Getter private Transformer transformer;
+  @Getter private UUID schemaId;
 
   public MessageBuilder() {
     id = 0;
@@ -66,6 +68,7 @@ public class MessageBuilder {
     contentType = null;
     correlationData = null;
     qualityOfService = QualityOfService.AT_MOST_ONCE;
+    schemaId = null;
   }
 
   public MessageBuilder(Message previousMessage) {
@@ -171,6 +174,11 @@ public class MessageBuilder {
 
   public  @NonNull @NotNull MessageBuilder setDestinationTransformer(Transformer transformer) {
     this.transformer = transformer;
+    return this;
+  }
+
+  public @NonNull @NotNull MessageBuilder setSchemaId(UUID schemaId) {
+    this.schemaId = schemaId;
     return this;
   }
 

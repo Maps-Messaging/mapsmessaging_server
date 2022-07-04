@@ -4,10 +4,13 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
 import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class SchemaManager implements SchemaRepository{
@@ -25,12 +28,23 @@ public class SchemaManager implements SchemaRepository{
   }
 
   private final SchemaRepository repository;
+  private final Map<UUID, MessageFormatter> loadedFormatter;
 
   @Override
   public synchronized SchemaConfig addSchema(String s, SchemaConfig schemaConfig) {
+    try {
+      MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
+      loadedFormatter.put(schemaConfig.getUniqueId(), messageFormatter);
+    } catch (Exception e) {
+      // Unable to load the formatter
+    }
     return repository.addSchema(s, schemaConfig);
   }
 
+  public MessageFormatter getMessageFormatter(UUID uniqueId){
+    return loadedFormatter.get(uniqueId);
+
+  }
   @Override
   public synchronized SchemaConfig getSchema(UUID uuid) {
     return repository.getSchema(uuid);
@@ -54,10 +68,12 @@ public class SchemaManager implements SchemaRepository{
   @Override
   public synchronized void removeSchema(UUID uuid) {
     repository.removeSchema(uuid);
+    loadedFormatter.remove(uuid);
   }
 
   @Override
   public synchronized void removeAllSchemas() {
+    loadedFormatter.clear();
     repository.removeAllSchemas();
   }
 
@@ -76,13 +92,12 @@ public class SchemaManager implements SchemaRepository{
     nativeSchemaConfig.setType(TYPE.STRING);
     addSchema("$SYS", nativeSchemaConfig);
 
-
-    MessageFormatterFactory factory = MessageFormatterFactory.getInstance();
-
+    MessageFormatterFactory.getInstance();
   }
 
   private SchemaManager(){
     repository = new SimpleSchemaRepository();
+    loadedFormatter = new LinkedHashMap<>();
   }
 
 }
