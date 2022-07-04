@@ -28,7 +28,6 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -159,7 +158,7 @@ public class SessionManager {
   // is an atomic operation. If we had 2 or more competing sessions with the same ID we would
   // get corruption as to which will or session was what.
   //
-  public SessionImpl create(SessionContext sessionContext) throws LoginException, IOException {
+  public SessionImpl create(SessionContext sessionContext) throws LoginException {
     logger.log(ServerLogMessages.SESSION_MANAGER_CREATE, sessionContext.toString());
     return sessionPipeLines[getPipeLineIndex(sessionContext.getId())].create(sessionContext);
   }

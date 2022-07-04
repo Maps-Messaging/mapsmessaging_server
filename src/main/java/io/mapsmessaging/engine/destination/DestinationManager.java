@@ -288,29 +288,32 @@ public class DestinationManager implements DestinationFactory {
         loaders[x] = new ResourceLoader(fileList, pathManager);
         loaders[x].start();
       }
-      boolean complete = false;
-      while(!complete) {
-        for (ResourceLoader loader : loaders) {
-          complete = true;
-          if (!loader.complete.get()) {
-            complete = false;
-            try {
-              loader.join(10);
-            } catch (InterruptedException e) {
-              // Hmm, we are interrupted, could mean that the load is taking too long and a shutdown is requested
-              if (Thread.currentThread().isInterrupted()) {
-                logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOAD_INTERRUPTED);
-                return;
-              }
-            }
-          }
-        }
+      while(!process(loaders)) {
         if(report <= System.currentTimeMillis()){
           report = System.currentTimeMillis() + 1000;
           logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOADED, (initialSize-fileList.size()), initialSize);
         }
       }
     }
+  }
+
+  private boolean process(ResourceLoader[] loaders){
+    boolean complete = true;
+    for (ResourceLoader loader : loaders) {
+      if (!loader.complete.get()) {
+        complete = false;
+        try {
+          loader.join(10);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          if (Thread.currentThread().isInterrupted()) {
+            logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOAD_INTERRUPTED);
+            return complete;
+          }
+        }
+      }
+    }
+    return complete;
   }
 
   public class ResourceLoader extends Thread{

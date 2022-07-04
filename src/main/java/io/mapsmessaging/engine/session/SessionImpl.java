@@ -44,8 +44,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import lombok.NonNull;
 import lombok.SneakyThrows;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 public class SessionImpl {
   private final Logger logger;
@@ -133,7 +134,7 @@ public class SessionImpl {
 
   //<editor-fold desc="Destination Control API">
   @SneakyThrows
-  public CompletableFuture<DestinationImpl> findDestination(String destinationName, @Nullable DestinationType destinationType) throws IOException {
+  public CompletableFuture<DestinationImpl> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType destinationType) throws IOException {
     if(isClosed){
       throw new IOException("Session is closed");
     }
@@ -156,8 +157,11 @@ public class SessionImpl {
           CompletableFuture<DestinationImpl> creationFuture = destinationManager.create(finalMapped, destinationType);
           created = creationFuture.get();
           future.complete(created);
-        } catch (IOException | ExecutionException | InterruptedException e) {
+        } catch (IOException | ExecutionException e) {
           future.completeExceptionally(e);
+        }
+        catch(InterruptedException e){
+          Thread.currentThread().interrupt();
         }
         return created;
       };
@@ -303,7 +307,7 @@ public class SessionImpl {
     }
   }
 
-  private WillTaskImpl createWill(SessionContext sessionContext) throws IOException {
+  private WillTaskImpl createWill(SessionContext sessionContext) {
     if (sessionContext.getWillTopic() != null) {
       String willTopicName = destinationManager.calculateNamespace(context.getWillTopic());
       MessageDaemon.getInstance().getDestinationManager().findOrCreate(willTopicName);

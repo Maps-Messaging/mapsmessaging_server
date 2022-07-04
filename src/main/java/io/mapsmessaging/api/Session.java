@@ -76,7 +76,7 @@ public class Session {
     }
   }
 
-  public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, DestinationType type) {
+  public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName,@NonNull @NotNull DestinationType type) {
     CompletableFuture<Destination> future = new CompletableFuture<>();
     Destination result = destinations.get(destinationName);
     if (result == null) {
