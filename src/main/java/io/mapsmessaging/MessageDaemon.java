@@ -303,10 +303,16 @@ public class MessageDaemon implements WrapperListener {
   }
 
   private String generateUniqueId(){
+    String env = System.getenv("SERVER_ID");
+    if(env != null){
+      return env;
+    }
+
     boolean useUUID = Boolean.parseBoolean(System.getProperty("USE_UUID", "TRUE"));
     if(useUUID){
       return UUID.randomUUID().toString();
     }
+
     try {
       return InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
