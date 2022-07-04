@@ -18,13 +18,26 @@
 
 package io.mapsmessaging.engine.system.impl.messages.publish;
 
-import io.mapsmessaging.engine.system.SystemTopic;
+import io.mapsmessaging.engine.destination.DestinationStats;
+import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.engine.system.SystemTopicWithAverage;
 import java.io.IOException;
+import java.util.UUID;
 
-public class Dropped extends SystemTopic {
+public class Dropped extends SystemTopicWithAverage {
 
   public Dropped() throws IOException {
-    super("$SYS/broker/publish/messages/dropped");
+    super("$SYS/broker/publish/messages/dropped", true);
+  }
+
+  @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
+  }
+
+  @Override
+  public long getData() {
+    return DestinationStats.getTotalNoInterestMessages();
   }
 
   @Override

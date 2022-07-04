@@ -25,12 +25,12 @@ import java.io.IOException;
 public class Connected extends SystemTopicWithAverage {
 
   public Connected() throws IOException {
-    super( "$SYS/broker/clients/connected", false);
+    super("$SYS/broker/clients/connected", false);
   }
 
   @Override
   public String[] aliases() {
-    return new String[]{"$SYS/broker/clients/active", "$SYS/load/connected"};
+    return new String[]{"$SYS/broker/clients/active", "$SYS/clients/connected", "$SYS/load/connected"};
   }
 
   @Override

@@ -30,11 +30,11 @@ public class Sent extends SystemTopicWithAverage {
 
   @Override
   public String[] aliases() {
-    return new String[]{"$SYS/broker/bytes/sent", "$SYS/bytes/sent"};
+    return new String[]{"$SYS/broker/bytes/sent", "$SYS/bytes/sent", "$SYS/load/bytes/sent"};
   }
 
   @Override
   public long getData() {
-    return  EndPoint.totalWriteBytes.sum();
+    return EndPoint.totalWriteBytes.sum();
   }
 }

@@ -20,13 +20,20 @@ package io.mapsmessaging.engine.system.impl;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import java.io.IOException;
+import java.util.UUID;
 
 public class BrokerVersion extends SystemTopic {
 
   public BrokerVersion() throws IOException {
     super("$SYS/broker/version");
+  }
+
+  @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_STRING_SCHEMA;
   }
 
   @Override

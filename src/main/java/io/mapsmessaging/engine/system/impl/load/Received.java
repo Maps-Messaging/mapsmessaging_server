@@ -30,7 +30,7 @@ public class Received extends SystemTopicWithAverage {
 
   @Override
   public String[] aliases() {
-    return new String[]{"$SYS/broker/bytes/received", "$SYS/bytes/received"};
+    return new String[]{"$SYS/broker/bytes/received", "$SYS/bytes/received", "$SYS/load/bytes/received"};
   }
 
   @Override

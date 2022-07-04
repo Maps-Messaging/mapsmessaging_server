@@ -19,8 +19,10 @@
 package io.mapsmessaging.engine.system.impl;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import java.io.IOException;
+import java.util.UUID;
 
 public class Uptime extends SystemTopic {
 
@@ -29,6 +31,11 @@ public class Uptime extends SystemTopic {
   public Uptime() throws IOException {
     super("$SYS/broker/uptime");
     startTime = System.currentTimeMillis();
+  }
+
+  @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
   }
 
   @Override

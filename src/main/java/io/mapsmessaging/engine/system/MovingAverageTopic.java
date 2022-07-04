@@ -19,8 +19,10 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.utilities.stats.MovingAverage;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class MovingAverageTopic extends SystemTopic {
@@ -39,9 +41,14 @@ public class MovingAverageTopic extends SystemTopic {
   }
 
   @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
+  }
+
+  @Override
   protected Message generateMessage() {
     long value = dataSource.getData();
-    if(diff) {
+    if (diff) {
       value = value - previous;
       previous = value;
     }

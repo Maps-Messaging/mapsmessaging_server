@@ -19,9 +19,11 @@
 package io.mapsmessaging.engine.system.impl;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import java.io.IOException;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class Timestamp extends SystemTopic {
 
@@ -30,9 +32,13 @@ public class Timestamp extends SystemTopic {
   }
 
   @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_STRING_SCHEMA;
+  }
+
+  @Override
   protected Message generateMessage() {
-    Date dt = new Date();
-    return getMessage(dt.toString().getBytes());
+    return getMessage(LocalDateTime.now().toString().getBytes());
   }
 
   @Override

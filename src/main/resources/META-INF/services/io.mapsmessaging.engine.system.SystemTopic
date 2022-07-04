@@ -26,7 +26,11 @@ io.mapsmessaging.engine.system.impl.clients.Maximum
 io.mapsmessaging.engine.system.impl.clients.Total
 io.mapsmessaging.engine.system.impl.load.Received
 io.mapsmessaging.engine.system.impl.load.Sent
+io.mapsmessaging.engine.system.impl.load.MessageReceived
+io.mapsmessaging.engine.system.impl.load.MessagesSent
+io.mapsmessaging.engine.system.impl.messages.InFlight
 io.mapsmessaging.engine.system.impl.messages.Received
+io.mapsmessaging.engine.system.impl.messages.Stored
 io.mapsmessaging.engine.system.impl.messages.RetainedCount
 io.mapsmessaging.engine.system.impl.messages.Sent
 io.mapsmessaging.engine.system.impl.messages.publish.Dropped

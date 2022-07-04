@@ -18,13 +18,26 @@
 
 package io.mapsmessaging.engine.system.impl;
 
-import io.mapsmessaging.engine.system.SystemTopic;
+import io.mapsmessaging.engine.destination.DestinationStats;
+import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.engine.system.SystemTopicWithAverage;
 import java.io.IOException;
+import java.util.UUID;
 
-public class SubscriptionCount extends SystemTopic {
+public class SubscriptionCount extends SystemTopicWithAverage {
 
   public SubscriptionCount() throws IOException {
-    super("$SYS/broker/subscriptions/count");
+    super("$SYS/broker/subscriptions/count", false);
+  }
+
+  @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
+  }
+
+  @Override
+  public long getData() {
+    return DestinationStats.getTotalCurrentSubscriptions();
   }
 
   @Override

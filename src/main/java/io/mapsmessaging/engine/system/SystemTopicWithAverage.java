@@ -19,9 +19,11 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public abstract class SystemTopicWithAverage extends SystemTopic implements DataSource {
@@ -31,26 +33,33 @@ public abstract class SystemTopicWithAverage extends SystemTopic implements Data
 
   protected SystemTopicWithAverage(String name, boolean diff) throws IOException {
     super(name);
+    updateSchema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA), null);
     movingAverageTopics = new ArrayList<>();
-    movingAverageTopics.add(new MovingAverageTopic(name+"/1", 1, TimeUnit.MINUTES, this, diff));
-    movingAverageTopics.add(new MovingAverageTopic(name+"/5", 5, TimeUnit.MINUTES, this, diff));
-    movingAverageTopics.add(new MovingAverageTopic(name+"/10", 10, TimeUnit.MINUTES, this, diff));
-    movingAverageTopics.add(new MovingAverageTopic(name+"/15", 15, TimeUnit.MINUTES, this, diff));
+    movingAverageTopics.add(new MovingAverageTopic(name + "/1", 1, TimeUnit.MINUTES, this, diff));
+    movingAverageTopics.add(new MovingAverageTopic(name + "/5", 5, TimeUnit.MINUTES, this, diff));
+    movingAverageTopics.add(new MovingAverageTopic(name + "/10", 10, TimeUnit.MINUTES, this, diff));
+    movingAverageTopics.add(new MovingAverageTopic(name + "/15", 15, TimeUnit.MINUTES, this, diff));
     lastUpdate = 0;
   }
 
   @Override
-  public List<SystemTopic> getChildren(){
+  public List<SystemTopic> getChildren() {
     return movingAverageTopics;
   }
+
   @Override
   public boolean hasUpdates() {
     long next = getData();
-    if(next != lastUpdate){
+    if (next != lastUpdate) {
       lastUpdate = next;
       return true;
     }
     return false;
+  }
+
+  @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
   }
 
   @Override

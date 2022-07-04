@@ -19,9 +19,11 @@
 package io.mapsmessaging.engine.system.impl.clients;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.io.EndPoint;
 import java.io.IOException;
+import java.util.UUID;
 
 public class Maximum extends SystemTopic {
 
@@ -33,14 +35,20 @@ public class Maximum extends SystemTopic {
   }
 
   @Override
+  public UUID getSchemaUUID() {
+    return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
+  }
+
+
+  @Override
   protected Message generateMessage() {
-    return getMessage((""+max).getBytes());
+    return getMessage(("" + max).getBytes());
   }
 
   @Override
   public boolean hasUpdates() {
     long current = EndPoint.totalConnections.sum() - EndPoint.totalDisconnections.sum();
-    if(current > max){
+    if (current > max) {
       max = current;
       return true;
     }

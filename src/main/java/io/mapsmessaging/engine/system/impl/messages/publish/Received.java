@@ -32,4 +32,11 @@ public class Received extends SystemTopicWithAverage {
   public long getData() {
     return DestinationStats.getTotalPublishedMessages();
   }
+
+  @Override
+  public String[] aliases() {
+    return new String[]{
+        "$SYS/load/publish/received", "$SYS/messages/publish/received"
+    };
+  }
 }

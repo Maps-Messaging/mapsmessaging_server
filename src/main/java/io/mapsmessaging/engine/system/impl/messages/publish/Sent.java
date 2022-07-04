@@ -37,4 +37,6 @@ public class Sent extends SystemTopicWithAverage {
   public long getData() {
     return DestinationStats.getTotalSubscribedMessages();
   }
+
+
 }

@@ -40,6 +40,7 @@ public class SystemTopicManager implements Runnable, ServiceManager {
     systemTopics = ServiceLoader.load(SystemTopic.class);
     completeList = new ArrayList<>();
     for (SystemTopic systemTopic : systemTopics) {
+      systemTopic.start();
       destinationManager.addSystemTopic(systemTopic);
       String[] aliases = systemTopic.aliases();
       completeList.add(systemTopic);
@@ -48,8 +49,8 @@ public class SystemTopicManager implements Runnable, ServiceManager {
         destinationManager.addSystemTopic(aliasTopic);
       }
       List<SystemTopic> children = systemTopic.getChildren();
-      if(children != null){
-        for(SystemTopic child:children){
+      if (children != null) {
+        for (SystemTopic child : children) {
           destinationManager.addSystemTopic(child);
           completeList.add(child);
         }
@@ -80,7 +81,7 @@ public class SystemTopicManager implements Runnable, ServiceManager {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
-    for(SystemTopic systemTopic:systemTopics){
+    for (SystemTopic systemTopic : systemTopics) {
       service.add(systemTopic);
     }
     return service.listIterator();

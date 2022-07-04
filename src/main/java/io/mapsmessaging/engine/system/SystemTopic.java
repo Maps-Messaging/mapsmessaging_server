@@ -23,10 +23,12 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,12 +42,12 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   }
 
   @Override
-  public String getName(){
+  public String getName() {
     return getFullyQualifiedNamespace();
   }
 
   @Override
-  public String getDescription(){
+  public String getDescription() {
     return "";
   }
 
@@ -59,6 +61,19 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   public synchronized int storeMessage(@NonNull @NotNull Message message) throws IOException {
     throw new IOException("Write to a system topic is prohibited");
   }
+
+  public void start() {
+    UUID schemaId = getSchemaUUID();
+    if (schemaId != null) {
+      try {
+        super.updateSchema(SchemaManager.getInstance().getSchema(schemaId), null);
+      } catch (IOException e) {
+        // No need to worry about these since system topics are in memory only
+      }
+    }
+  }
+
+  public abstract UUID getSchemaUUID();
 
   public void sendUpdate() throws IOException {
     super.storeMessage(generateMessage());
@@ -76,7 +91,7 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
     return new String[0];
   }
 
-  public List<SystemTopic> getChildren(){
+  public List<SystemTopic> getChildren() {
     return empty;
   }
 

@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.api.message.Message;
 import java.io.IOException;
+import java.util.UUID;
 
 public class SystemTopicAlias extends SystemTopic {
 
@@ -29,6 +30,12 @@ public class SystemTopicAlias extends SystemTopic {
     super(name);
     actual = topic;
   }
+
+  @Override
+  public UUID getSchemaUUID() {
+    return actual.getSchemaUUID();
+  }
+
 
   @Override
   protected Message generateMessage() {
