@@ -188,7 +188,7 @@ public class SubscriptionController implements DestinationManagerListener {
         if(future == null && filter.toLowerCase().startsWith("$sys")){
           future = destinationManager.find("$SYS/notImplemented");
         }
-        future.get();
+        if(future != null) future.get();
       }
       DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
       DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
