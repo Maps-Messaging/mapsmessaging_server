@@ -21,18 +21,20 @@ public class SchemaSubscriptionTask extends SubscriptionTask {
     super(controller, context, destination, counter);
   }
 
+
+  @java.lang.SuppressWarnings("java:S2095")
   @Override
   public Response taskCall() throws Exception {
-    Subscription subscription;
+    Subscription subscription = null;
     try {
-      subscription = controller.getSchema(destination);
-      if (subscription != null) {
-        subscription.addContext(context);
-      } else {
-        subscription = controller.createSchemaSubscription(context, destination);
-      }
       SchemaConfig config = SchemaManager.getInstance().getSchema(destination.getSchema().getUniqueId());
       if(config != null) {
+        subscription = controller.getSchema(destination);
+        if (subscription != null) {
+          subscription.addContext(context);
+        } else {
+          subscription = controller.createSchemaSubscription(context, destination);
+        }
         MessageBuilder messageBuilder = new MessageBuilder();
         messageBuilder.setOpaqueData(config.pack().getBytes(StandardCharsets.UTF_8));
         subscription.sendMessage(messageBuilder.build());
