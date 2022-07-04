@@ -96,8 +96,11 @@ public class SessionManager {
   public void close(@NonNull @NotNull Session session, boolean clearWillTask) throws IOException {
     try {
       closeAsync(session, clearWillTask).get();
-    } catch (ExecutionException|InterruptedException e) {
+    } catch (ExecutionException e) {
       throw new IOException(e);
+    }
+    catch(InterruptedException interruptedException){
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -108,7 +111,7 @@ public class SessionManager {
         MessageDaemon.getInstance().getSessionManager().close(session.getSession(), clearWillTask);
         session.close();
         completableFuture.complete(session);
-      } catch (Throwable e) {
+      } catch (Exception e) {
         completableFuture.completeExceptionally(e);
       }
       return null;
