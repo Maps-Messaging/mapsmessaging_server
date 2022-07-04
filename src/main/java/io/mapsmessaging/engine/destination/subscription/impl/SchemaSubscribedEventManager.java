@@ -5,7 +5,7 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import java.util.List;
 
 public class SchemaSubscribedEventManager implements SubscribedEventManager {
-  private SubscribedEventManager subscription;
+  private final SubscribedEventManager subscription;
 
   public SchemaSubscribedEventManager(SubscribedEventManager subscription) {
     this.subscription = subscription;
