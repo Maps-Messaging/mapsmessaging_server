@@ -23,7 +23,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import java.net.ConnectException;
-import java.util.UUID;
 import java.util.concurrent.locks.LockSupport;
 
 public class ConsulManagerFactory {
@@ -41,14 +40,14 @@ public class ConsulManagerFactory {
   private final boolean forceWait;
   private ConsulManager manager;
 
-  public synchronized void start(UUID id) {
+  public synchronized void start(String serverId) {
     stop(); // just to be sure
-    logger.log(ServerLogMessages.CONSUL_MANAGER_START, id.toString());
+    logger.log(ServerLogMessages.CONSUL_MANAGER_START, serverId);
     boolean retry = true;
     int counter = 0;
     while(retry && counter < Constants.RETRY_COUNT) {
       try {
-        manager = new ConsulManager(id);
+        manager = new ConsulManager(serverId);
         retry = false;
       } catch (Exception e) {
         LockSupport.parkNanos(1000000000L);
@@ -57,14 +56,14 @@ public class ConsulManagerFactory {
           if(e instanceof ConsulException) {
             Exception actual = (Exception) e.getCause();
             if(actual instanceof ConnectException){
-              logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, id.toString());
+              logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, serverId);
             }else {
-              logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, id.toString(), e);
+              logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, serverId, e);
             }
             return;
           }
         }
-        logger.log(ServerLogMessages.CONSUL_MANAGER_START_DELAYED, id.toString());
+        logger.log(ServerLogMessages.CONSUL_MANAGER_START_DELAYED, serverId);
       }
     }
   }

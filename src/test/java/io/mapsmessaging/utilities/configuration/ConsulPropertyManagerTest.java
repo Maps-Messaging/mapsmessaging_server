@@ -28,7 +28,7 @@ class ConsulPropertyManagerTest {
 
   @BeforeEach
   public void beforeMethod() {
-    ConsulManagerFactory.getInstance().start(UUID.randomUUID());
+    ConsulManagerFactory.getInstance().start(UUID.randomUUID().toString());
     if(ConsulManagerFactory.getInstance().isStarted()) {
       ConsulManagerFactory.getInstance().getManager();
     }

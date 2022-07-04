@@ -40,6 +40,8 @@ import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -74,7 +76,7 @@ public class MessageDaemon implements WrapperListener {
   private final JolokaManager jolokaManager;
   private final SecurityManager securityManager;
   private final SystemTopicManager systemTopicManager;
-  private final UUID uniqueId;
+  private final String uniqueId;
   private final MessageDaemonJMX mBean;
   private final DB dataStore;
   private final HTreeMap<String, String> config;
@@ -113,17 +115,17 @@ public class MessageDaemon implements WrapperListener {
 
     String serverId = config.get(SERVER_ID);
     if (serverId != null) {
-      uniqueId = UUID.fromString(serverId);
+      uniqueId = serverId;
     } else {
-      String suppliedUUID = System.getProperty("UUID");
-      if(suppliedUUID == null) {
-        uniqueId = UUID.randomUUID();
+      serverId = System.getProperty("SERVER_ID");
+      if(serverId == null) {
+        uniqueId = generateUniqueId();
       }
       else{
-        uniqueId = UUID.fromString(suppliedUUID);
+        uniqueId = serverId;
       }
-      config.put(SERVER_ID, uniqueId.toString());
-      dataStore.atomicString(SERVER_ID, uniqueId.toString());
+      config.put(SERVER_ID, uniqueId);
+      dataStore.atomicString(SERVER_ID, uniqueId);
     }
     // </editor-fold>
 
@@ -134,7 +136,7 @@ public class MessageDaemon implements WrapperListener {
     // May block till a consul connection is made, depending on config
      ConsulManagerFactory.getInstance().start(uniqueId);
     //</editor-fold>
-    ConfigurationManager.getInstance().initialise(uniqueId.toString()+"_");
+    ConfigurationManager.getInstance().initialise(uniqueId+"_");
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
     int delayTimer = properties.getIntProperty("DelayedPublishInterval", 1000);
     int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
@@ -294,7 +296,19 @@ public class MessageDaemon implements WrapperListener {
   }
 
   public String getId() {
-    return uniqueId.toString();
+    return uniqueId;
+  }
+
+  private String generateUniqueId(){
+    boolean useUUID = Boolean.parseBoolean(System.getProperty("USE_UUID", "TRUE"));
+    if(useUUID){
+      return UUID.randomUUID().toString();
+    }
+    try {
+      return InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+      return InetAddress.getLoopbackAddress().getHostName();
+    }
   }
 
   public static class ExitRunner extends Thread {

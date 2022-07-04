@@ -31,7 +31,6 @@ import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -40,13 +39,13 @@ public class ConsulManager implements Runnable {
   private final Logger logger = LoggerFactory.getLogger(ConsulManager.class);
   private final Consul client;
   private final AgentClient agentClient;
-  private final UUID serviceId;
+  private final String serviceId;
   private Future<?> scheduledTask;
 
-  public ConsulManager(UUID id) {
+  public ConsulManager(String serverId) {
     client = Consul.builder().build();
     agentClient = client.agentClient();
-    serviceId = id;
+    serviceId = serverId;
     logger.log(ServerLogMessages.CONSUL_STARTUP);
   }
 
@@ -60,7 +59,7 @@ public class ConsulManager implements Runnable {
     logger.log(ServerLogMessages.CONSUL_REGISTER);
 
     Registration service = ImmutableRegistration.builder()
-        .id(serviceId.toString())
+        .id(serviceId)
         .name(Constants.NAME)
         .port(Constants.CONSUL_PORT)
         .check(Registration.RegCheck.ttl(Constants.PING_TIME))
