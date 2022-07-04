@@ -18,6 +18,8 @@
 
 package io.mapsmessaging;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_BOOTSTRAP;
+
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.engine.TransactionManager;
@@ -126,6 +128,7 @@ public class MessageDaemon implements WrapperListener {
       }
       config.put(SERVER_ID, uniqueId);
       dataStore.atomicString(SERVER_ID, uniqueId);
+      logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
     }
     // </editor-fold>
 
