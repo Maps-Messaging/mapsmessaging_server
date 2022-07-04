@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.LongAdder;
 
 public abstract class EndPointServerStatus {
 
+  public static final LongAdder SystemTotalPacketsSent = new LongAdder();
+  public static final LongAdder SystemTotalPacketsReceived = new LongAdder();
 
   private final LongAdder totalPacketsSent;
   private final LongAdder totalPacketsRead;
@@ -69,10 +71,12 @@ public abstract class EndPointServerStatus {
 
   public void incrementPacketsSent(){
     totalPacketsSent.increment();
+    SystemTotalPacketsSent.increment();
   }
 
   public void incrementPacketsRead(){
     totalPacketsRead.increment();
+    SystemTotalPacketsReceived.increment();
   }
 
   public void updateBytesSent(int count){
