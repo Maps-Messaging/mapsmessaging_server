@@ -172,7 +172,7 @@ public class TCPEndPoint extends EndPoint {
   }
 
   protected int readBuffer(ByteBuffer bb) throws IOException {
-    if (!socketChannel.isOpen() || isClosed.get()) {
+    if (!socketChannel.isConnected() || isClosed.get()) {
       throw new IOException("Socket closed");
     }
     int count = socketChannel.read(bb);
