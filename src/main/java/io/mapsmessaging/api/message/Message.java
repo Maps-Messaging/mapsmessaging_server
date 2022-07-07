@@ -224,7 +224,7 @@ public class Message implements IdentifierResolver, Storable {
     optionalWriter.write(contentType);
     optionalWriter.write(correlationData);
     if (schemaId != null) {
-      optionalWriter.write(schemaId.toString());
+      optionalWriter.write(schemaId);
     }
     optionalWriter.write(containsBuffers);
 
