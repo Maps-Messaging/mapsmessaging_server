@@ -109,7 +109,7 @@ NetworkManager:
 
       -
         url: dtls://0.0.0.0:1886/
-        name: "DTLS MQTT-SN Interface"
+        name: "DTLS"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
@@ -118,7 +118,7 @@ NetworkManager:
 
       -
         url: hmac://0.0.0.0:1885/
-        name: "MQTT-SN Interface"
+        name: "HMAC"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
@@ -140,7 +140,7 @@ NetworkManager:
 
       -
         url: dtls://0.0.0.0:1886/
-        name: "MQTT-SN Interface"
+        name: "DTLS"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
@@ -154,7 +154,7 @@ NetworkManager:
 
       -
         url: udp://0.0.0.0:2442/
-        name: "MQTT-SN Interface"
+        name: "V2 predefined"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
@@ -181,7 +181,7 @@ NetworkManager:
         protocol : stomp
 
       -
-        name: "Global Interface for all interfaces"
+        name: "Global All Protocols"
         url: tcp://0.0.0.0:8888/
         protocol : all
         auth : public

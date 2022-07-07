@@ -562,6 +562,12 @@
       <version>0.33.10</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.jmdns/jmdns -->
+    <dependency>
+      <groupId>org.jmdns</groupId>
+      <artifactId>jmdns</artifactId>
+      <version>3.5.1</version>
+    </dependency>
 
     <!-- Hawtio Dependencies -->
     <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-embedded -->

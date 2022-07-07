@@ -62,6 +62,13 @@ public class HawtioManager {
       Thread runner = new Thread(new Startup());
       runner.setDaemon(true);
       runner.start();
+      String service = "_http._tcp.local.";
+      try{
+        MessageDaemon.getInstance().getDiscoveryManager().register(service, "hawtio", 8080, "/hawtio/");
+      }
+      catch (Exception e){
+        e.printStackTrace();
+      }
     }
   }
 

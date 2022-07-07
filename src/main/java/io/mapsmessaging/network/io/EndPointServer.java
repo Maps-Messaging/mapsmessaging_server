@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.io;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
@@ -42,6 +43,11 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
     acceptHandler = accept;
     activeEndPoints = new ConcurrentHashMap<>();
     logger = createLogger(url.toString());
+    MessageDaemon.getInstance().getDiscoveryManager().register(this);
+  }
+
+  public void close()throws IOException{
+    MessageDaemon.getInstance().getDiscoveryManager().deregister(this);
   }
 
   public long generateID() {

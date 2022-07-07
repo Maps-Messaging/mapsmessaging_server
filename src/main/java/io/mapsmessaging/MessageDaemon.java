@@ -34,6 +34,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.NetworkConnectionManager;
 import io.mapsmessaging.network.NetworkManager;
+import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
@@ -76,6 +77,7 @@ public class MessageDaemon implements WrapperListener {
   private final SessionManager sessionManager;
   private final HawtioManager hawtioManager;
   private final JolokaManager jolokaManager;
+  private final DiscoveryManager discoveryManager;
   private final SecurityManager securityManager;
   private final SystemTopicManager systemTopicManager;
   private final String uniqueId;
@@ -149,6 +151,7 @@ public class MessageDaemon implements WrapperListener {
 
     // Start the Schema manager to it has the defaults and has loaded the required classes
     SchemaManager.getInstance().start();
+    discoveryManager = new DiscoveryManager(uniqueId);
 
     networkManager = new NetworkManager(mBean.getTypePath());
     networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());
@@ -222,6 +225,10 @@ public class MessageDaemon implements WrapperListener {
     WrapperManager.start(new MessageDaemon(), args);
   }
 
+  public DiscoveryManager getDiscoveryManager(){
+    return discoveryManager;
+  }
+
   public NetworkManager getNetworkManager() {
     return networkManager;
   }
@@ -282,6 +289,7 @@ public class MessageDaemon implements WrapperListener {
     destinationManager.stop();
     systemTopicManager.stop();
     mBean.close();
+    discoveryManager.deregisterAll();
     return i;
   }
 

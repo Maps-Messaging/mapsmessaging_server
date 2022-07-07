@@ -74,7 +74,9 @@ public class TCPEndPointServer extends EndPointServer {
     logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_CREATE, bindAddress.getPort(), backLog, bindAddress.getHostName());
   }
 
+  @Override
   public void close() throws IOException {
+    super.close();
     logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_CLOSE);
     deregister();
     serverSocket.close();
