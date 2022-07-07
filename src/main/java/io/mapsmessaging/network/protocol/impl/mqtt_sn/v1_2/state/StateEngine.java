@@ -45,10 +45,11 @@ public class StateEngine {
   private final Logger logger;
 
   private final Map<String, MQTT_SNPacket> subscribeResponseMap;
-  private @Getter
-  final TopicAliasManager topicAliasManager;
-  private @Getter
-  @Setter int maxBufferSize = 0;
+  @Getter
+  private final TopicAliasManager topicAliasManager;
+  @Getter
+  @Setter
+  private int maxBufferSize = 0;
   private State currentState;
   private SessionContextBuilder sessionContextBuilder;
   private final MessagePipeline pipeline;
