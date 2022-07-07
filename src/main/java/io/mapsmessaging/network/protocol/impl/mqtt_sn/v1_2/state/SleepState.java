@@ -115,6 +115,7 @@ public class SleepState implements State {
   }
 
   public final class Reaper implements Runnable {
+
     @Override
     public void run() {
       try {

@@ -24,12 +24,12 @@ public enum TYPE {
   }
 
   @Override
-  public String toString(){
-    return "TYPE:"+value+" "+name+" ( "+description+" )";
+  public String toString() {
+    return "TYPE:" + value + " " + name + " ( " + description + " )";
   }
 
-  public static TYPE valueOf(int val){
-    switch (val){
+  public static TYPE valueOf(int val) {
+    switch (val) {
       case 0:
         return CON;
       case 1:

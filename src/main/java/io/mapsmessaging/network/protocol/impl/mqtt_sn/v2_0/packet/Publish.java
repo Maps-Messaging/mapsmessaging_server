@@ -30,15 +30,25 @@ import lombok.ToString;
 @ToString
 public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
-  @Getter private final int topicId;
-  @Getter private final String topicName;
-  @Getter private final int messageId;
   @Getter
-  @Setter private int topicIdType;
-  @Getter private final byte[] message;
-  @Getter private boolean dup;
-  @Getter @Setter private QualityOfService QoS;
-  @Getter @Setter private boolean retain;
+  private final int topicId;
+  @Getter
+  private final String topicName;
+  @Getter
+  private final int messageId;
+  @Getter
+  @Setter
+  private int topicIdType;
+  @Getter
+  private final byte[] message;
+  @Getter
+  private boolean dup;
+  @Getter
+  @Setter
+  private QualityOfService QoS;
+  @Getter
+  @Setter
+  private boolean retain;
 
   public Publish(short topicId, int messageId, byte[] message) {
     super(PUBLISH);
@@ -74,7 +84,7 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
   @Override
   public int packFrame(Packet packet) {
-    int len = packLength(packet, 9 +  message.length);
+    int len = packLength(packet, 9 + message.length);
     packet.put((byte) PUBLISH);
     packet.put(packFlag());
     MQTTPacket.writeShort(packet, 2);
@@ -84,9 +94,9 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
     return len;
   }
 
-  byte packFlag(){
-      byte f = (byte) ( (byte) ((QoS.getLevel() & 0b11) << 5));
-      f = (byte) (f | (topicIdType & 0b11));
-      return f;
+  byte packFlag() {
+    byte f = (byte) ((byte) ((QoS.getLevel() & 0b11) << 5));
+    f = (byte) (f | (topicIdType & 0b11));
+    return f;
   }
 }

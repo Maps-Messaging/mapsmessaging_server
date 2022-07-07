@@ -74,7 +74,7 @@ public class BoundedMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public void delete()  throws IOException {
+  public void delete() throws IOException {
     for (MessageStateManagerImpl messageStateManager : sharedStateList) {
       messageStateManager.delete();
     }
@@ -107,7 +107,7 @@ public class BoundedMessageStateManager implements MessageStateManager {
   public boolean rollback(long messageIdentifier) {
     boolean rolledBack = false;
     for (MessageStateManagerImpl messageStateManager : sharedStateList) {
-      if(messageStateManager.rollback(messageIdentifier)){
+      if (messageStateManager.rollback(messageIdentifier)) {
         rolledBack = true;
       }
     }
@@ -128,7 +128,7 @@ public class BoundedMessageStateManager implements MessageStateManager {
 
   @Override
   public int size() {
-    int size =0;
+    int size = 0;
     for (MessageStateManagerImpl messageStateManager : sharedStateList) {
       size += messageStateManager.size();
     }
@@ -137,8 +137,8 @@ public class BoundedMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public int pending(){
-    int pending =0;
+  public int pending() {
+    int pending = 0;
     for (MessageStateManagerImpl messageStateManager : sharedStateList) {
       pending += messageStateManager.pending();
     }
@@ -149,7 +149,7 @@ public class BoundedMessageStateManager implements MessageStateManager {
   @Override
   public boolean hasMessagesInFlight() {
     for (MessageStateManagerImpl messageStateManager : sharedStateList) {
-      if(messageStateManager.hasMessagesInFlight()){
+      if (messageStateManager.hasMessagesInFlight()) {
         return true;
       }
     }
@@ -159,7 +159,7 @@ public class BoundedMessageStateManager implements MessageStateManager {
   @Override
   public boolean hasAtRestMessages() {
     for (MessageStateManagerImpl messageStateManager : sharedStateList) {
-      if(messageStateManager.hasAtRestMessages()){
+      if (messageStateManager.hasAtRestMessages()) {
         return true;
       }
     }

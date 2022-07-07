@@ -73,7 +73,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     String lookup = nameMapping.get(messageEvent.getDestinationName());
-    if(lookup != null) {
+    if (lookup != null) {
       CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
       future.thenApply(destination -> {
         try {
@@ -93,7 +93,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void connect(String sessionId, String username, String password) throws IOException{
+  public void connect(String sessionId, String username, String password) throws IOException {
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, this);
     scb.setUsername(username);
     scb.setPassword(password.toCharArray());
@@ -111,13 +111,13 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@Nullable Transformer transformer) throws IOException{
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException {
     subscribeLocal(resource, mappedResource, null, transformer);
   }
 
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
-    if(transformer != null) {
+    if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
     nameMapping.put(resource, mappedResource);

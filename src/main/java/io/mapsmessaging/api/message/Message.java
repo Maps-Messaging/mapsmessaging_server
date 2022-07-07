@@ -34,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -69,7 +68,7 @@ public class Message implements IdentifierResolver, Storable {
   private final Map<String, TypedData> dataMap;
 
   @Getter
-  private UUID schemaId;
+  private String schemaId;
 
   @Getter
   private final boolean storeOffline; // Not stored to disk
@@ -80,11 +79,13 @@ public class Message implements IdentifierResolver, Storable {
   private long delayed; // This is set via the engine on the way through
 
   // <editor-fold desc="Transient data">
-  @Getter @Setter
+  @Getter
+  @Setter
   private boolean lastMessage; // This is set via the engine as it is delivered to the client
   // </editor-fold>
   // <editor-fold desc="Persistent data">
-  @Getter @Setter
+  @Getter
+  @Setter
   private long identifier;
   // </editor-fold>
 
@@ -95,30 +96,26 @@ public class Message implements IdentifierResolver, Storable {
     identifier = builder.getId();
     meta = builder.getMeta();
     Map<String, TypedData> map = builder.getDataMap();
-    if(map instanceof DataMap){
+    if (map instanceof DataMap) {
       dataMap = map;
-    }
-    else if(map != null) {
+    } else if (map != null) {
       dataMap = new DataMap(map);
-    }
-    else {
+    } else {
       dataMap = new DataMap();
     }
-    ((DataMap)dataMap).setMessage(this);
+    ((DataMap) dataMap).setMessage(this);
     opaqueData = builder.getOpaqueData();
-    if(builder.getPriority() == null){
+    if (builder.getPriority() == null) {
       priority = Priority.NORMAL;
-    }
-    else {
+    } else {
       priority = builder.getPriority();
     }
     storeOffline = builder.isStoreOffline();
     qualityOfService = builder.getQualityOfService();
     Object correlation = builder.getCorrelationData();
-    if(correlation instanceof String){
-      correlationData = ((String)correlation).getBytes(StandardCharsets.UTF_8);
-    }
-    else {
+    if (correlation instanceof String) {
+      correlationData = ((String) correlation).getBytes(StandardCharsets.UTF_8);
+    } else {
       correlationData = (byte[]) builder.getCorrelationData();
       flags.set(CORRELATION_BYTE_ARRAY_BIT); // Mark as byte[]
     }
@@ -139,7 +136,7 @@ public class Message implements IdentifierResolver, Storable {
     }
     lastMessage = false;
     schemaId = builder.getSchemaId();
-    if(schemaId != null){
+    if (schemaId != null) {
       flags.set(SCHEMA_ID_PRESENT);
     }
   }
@@ -148,7 +145,6 @@ public class Message implements IdentifierResolver, Storable {
     BufferObjectReader header = new BufferObjectReader(packed[0]);
     BufferObjectReader optional = new BufferObjectReader(packed[1]);
 
-
     identifier = header.readLong();
     expiry = header.readLong();
     delayed = header.readLong();
@@ -156,42 +152,38 @@ public class Message implements IdentifierResolver, Storable {
     priority = Priority.getInstance(header.readByte());
     qualityOfService = QualityOfService.getInstance(header.readByte());
 
-
     flags = BitSet.valueOf(optional.readByteArray());
     responseTopic = optional.readString();
     contentType = optional.readString();
     correlationData = optional.readByteArray();
-    if(flags.get(SCHEMA_ID_PRESENT)){
-      schemaId = UUID.fromString(optional.readString());
+    if (flags.get(SCHEMA_ID_PRESENT)) {
+      schemaId = optional.readString();
     }
     byte containsBuffers = optional.readByte();
 
     int idx = 2;
-    if((containsBuffers & 0x1) != 0){
+    if ((containsBuffers & 0x1) != 0) {
       BufferObjectReader metaReader = new BufferObjectReader(packed[idx]);
       meta = loadMeta(metaReader);
       idx++;
-    }
-    else{
+    } else {
       meta = null;
     }
 
-    if((containsBuffers & 0x2) != 0) {
+    if ((containsBuffers & 0x2) != 0) {
       BufferObjectReader map = new BufferObjectReader(packed[idx]);
       dataMap = loadDataMap(map);
       idx++;
-    }
-    else{
+    } else {
       dataMap = new DataMap();
     }
-    if(dataMap != null) {
+    if (dataMap != null) {
       ((DataMap) dataMap).setMessage(this);
     }
 
-    if((containsBuffers & 0x4) != 0) {
+    if ((containsBuffers & 0x4) != 0) {
       opaqueData = packed[idx].array();
-    }
-    else{
+    } else {
       opaqueData = null;
     }
     storeOffline = true;
@@ -204,8 +196,8 @@ public class Message implements IdentifierResolver, Storable {
     header.putLong(expiry);
     header.putLong(delayed);
     header.putLong(creation);
-    header.put((byte)priority.getValue());
-    header.put((byte)qualityOfService.getLevel());
+    header.put((byte) priority.getValue());
+    header.put((byte) qualityOfService.getLevel());
     header.flip();
 
     byte containsBuffers = 0;
@@ -213,17 +205,17 @@ public class Message implements IdentifierResolver, Storable {
     boolean hasMap = dataMap != null && !dataMap.isEmpty();
     boolean hasOpaque = opaqueData != null;
     int bufferCount = 2;
-    if(hasMeta){
+    if (hasMeta) {
       bufferCount++;
       containsBuffers = 0x1;
     }
-    if(hasMap){
+    if (hasMap) {
       bufferCount++;
-      containsBuffers = (byte)(containsBuffers | 0x2);
+      containsBuffers = (byte) (containsBuffers | 0x2);
     }
-    if(hasOpaque){
+    if (hasOpaque) {
       bufferCount++;
-      containsBuffers = (byte)(containsBuffers | 0x4);
+      containsBuffers = (byte) (containsBuffers | 0x4);
     }
     ByteArrayOutputStream optional = new ByteArrayOutputStream(1024);
     StreamObjectWriter optionalWriter = new StreamObjectWriter(optional);
@@ -231,62 +223,61 @@ public class Message implements IdentifierResolver, Storable {
     optionalWriter.write(responseTopic);
     optionalWriter.write(contentType);
     optionalWriter.write(correlationData);
-    if(schemaId != null){
+    if (schemaId != null) {
       optionalWriter.write(schemaId.toString());
     }
     optionalWriter.write(containsBuffers);
-
 
     ByteBuffer[] packed = new ByteBuffer[bufferCount];
     packed[0] = header;
     packed[1] = ByteBuffer.wrap(optional.toByteArray());
     int idx = 2;
-    if(hasMeta) {
+    if (hasMeta) {
       ByteArrayOutputStream metaStream = new ByteArrayOutputStream(1024);
       StreamObjectWriter metaWriter = new StreamObjectWriter(metaStream);
       saveMeta(metaWriter);
       packed[idx] = ByteBuffer.wrap(metaStream.toByteArray());
       idx++;
     }
-    if(hasMap) {
+    if (hasMap) {
       ByteArrayOutputStream mapStream = new ByteArrayOutputStream(1024);
       StreamObjectWriter dataMapWriter = new StreamObjectWriter(mapStream);
       saveDataMap(dataMapWriter);
       packed[idx] = ByteBuffer.wrap(mapStream.toByteArray());
       idx++;
     }
-    if(opaqueData != null){
+    if (opaqueData != null) {
       packed[idx] = ByteBuffer.wrap(opaqueData);
     }
     return packed;
   }
 
 
-  private long calculateExpiry(long dly, long exp){
+  private long calculateExpiry(long dly, long exp) {
     long calc = 0;
     if (exp > 0) {
       calc = System.currentTimeMillis() + exp;
-      if(dly > 0){
+      if (dly > 0) {
         calc = calc + dly; // Do not expire the event until AFTER it has been published
       }
     }
     return calc;
   }
 
-  private long calculateDelay(long dly){
-    if(dly > 0){
+  private long calculateDelay(long dly) {
+    if (dly > 0) {
       return System.currentTimeMillis() + dly;
     }
     return 0;
   }
 
   public void setDelayed(long delayed) {
-    if(delayed >= 0) {
+    if (delayed >= 0) {
       this.delayed = delayed;
     }
   }
 
-  public long getKey(){
+  public long getKey() {
     return identifier;
   }
 
@@ -315,7 +306,7 @@ public class Message implements IdentifierResolver, Storable {
     return flags.get(RETAIN_BIT);
   }
 
-  public boolean isCorrelationDataByteArray(){
+  public boolean isCorrelationDataByteArray() {
     return flags.get(CORRELATION_BYTE_ARRAY_BIT);
   }
 
@@ -354,8 +345,8 @@ public class Message implements IdentifierResolver, Storable {
         .append(delayed)
         .append(" CorrelationData:");
     if (correlationData != null) {
-      for(byte b:correlationData){
-        sb.append(Long.toHexString((0xff&b))).append(",");
+      for (byte b : correlationData) {
+        sb.append(Long.toHexString((0xff & b))).append(",");
       }
       sb.append("[").append(new String(correlationData)).append("]");
       sb.append(correlationData.length);

@@ -47,7 +47,8 @@ public class UDPEndPoint extends EndPoint {
   private final EndPointJMX mbean;
   private final String name;
 
-  public UDPEndPoint(InetSocketAddress inetSocketAddress, Selector selector, long id, EndPointServer server, String authConfig, EndPointManagerJMX managerMBean) throws IOException {
+  public UDPEndPoint(InetSocketAddress inetSocketAddress, Selector selector, long id, EndPointServer server, String authConfig, EndPointManagerJMX managerMBean)
+      throws IOException {
     super(id, server);
     this.selector = selector;
     datagramChannel = DatagramChannel.open();

@@ -34,26 +34,25 @@ import org.jetbrains.annotations.NotNull;
 public class MapMessageTranslator extends BaseMessageTranslator {
 
   @Override
-  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
-    if(body instanceof AmqpValue){
-      AmqpValue amqpBody = (AmqpValue)body;
+    if (body instanceof AmqpValue) {
+      AmqpValue amqpBody = (AmqpValue) body;
       Object data = amqpBody.getValue();
       Map<String, TypedData> dataMap = messageBuilder.getDataMap();
-      if(dataMap == null){
+      if (dataMap == null) {
         dataMap = new LinkedHashMap<>();
         messageBuilder.setDataMap(dataMap);
       }
-      if(data instanceof LinkedHashMap) {
+      if (data instanceof LinkedHashMap) {
         LinkedHashMap<String, Object> map = (LinkedHashMap) data;
-        for (Map.Entry<String,Object> entry : map.entrySet()) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
           Object val = entry.getValue();
-          if(val instanceof Binary){
-            Binary binary = (Binary)val;
+          if (val instanceof Binary) {
+            Binary binary = (Binary) val;
             dataMap.put(entry.getKey(), new TypedData(binary.getArray()));
-          }
-          else {
+          } else {
             dataMap.put(entry.getKey(), new TypedData(val));
           }
         }
@@ -82,7 +81,7 @@ public class MapMessageTranslator extends BaseMessageTranslator {
   }
 
   @Override
-  protected byte getType(){
+  protected byte getType() {
     return (byte) MessageTypes.MAP.getValue();
   }
 

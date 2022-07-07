@@ -64,10 +64,9 @@ public class TCPEndPoint extends EndPoint {
       socketChannel = accepted;
       selector = select;
       authenticationConfig = null;
-      if(isClient()) {
-        name = getProtocol() + "_" + socket.getLocalAddress().toString()+"_"+socket.getLocalPort();
-      }
-      else{
+      if (isClient()) {
+        name = getProtocol() + "_" + socket.getLocalAddress().toString() + "_" + socket.getLocalPort();
+      } else {
         name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
       }
       configure(endPointServerStatus.getConfig().getProperties());
@@ -116,7 +115,7 @@ public class TCPEndPoint extends EndPoint {
         logger.log(ServerLogMessages.TCP_CLOSE_EXCEPTION, e, name);
       } finally {
         mbean.close();
-        if(server != null) {
+        if (server != null) {
           server.handleCloseEndPoint(this);
         }
       }
@@ -225,7 +224,7 @@ public class TCPEndPoint extends EndPoint {
     try {
       socket.setSoLinger(true, linger);
     } catch (SocketException e) {
-      logger.log(TCP_CONFIGURED_PARAMETER, "Unable to set soLinger to "+linger, e);
+      logger.log(TCP_CONFIGURED_PARAMETER, "Unable to set soLinger to " + linger, e);
     }
   }
 }

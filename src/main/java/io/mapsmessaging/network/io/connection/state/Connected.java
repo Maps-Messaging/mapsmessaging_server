@@ -36,13 +36,13 @@ public class Connected extends State {
   public void execute() {
     boolean failed = false;
     List<ConfigurationProperties> properties = endPointConnection.getDestinationMappings();
-    for(ConfigurationProperties property:properties) {
+    for (ConfigurationProperties property : properties) {
       String direction = property.getProperty("direction");
-      String local =  property.getProperty("local_namespace");
-      String remote =  property.getProperty("remote_namespace");
+      String local = property.getProperty("local_namespace");
+      String remote = property.getProperty("remote_namespace");
       String selector = property.getProperty("selector");
 
-      Transformer transformer  = TransformerManager.getInstance().get(property.getProperty("transformer"));
+      Transformer transformer = TransformerManager.getInstance().get(property.getProperty("transformer"));
 
       try {
         if (direction.equalsIgnoreCase("pull")) {
@@ -51,16 +51,14 @@ public class Connected extends State {
           endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer);
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
-      }
-      catch(IOException ioException) {
+      } catch (IOException ioException) {
         failed = true;
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, local, remote, ioException);
       }
     }
-    if(!failed) {
+    if (!failed) {
       endPointConnection.scheduleState(new Established(endPointConnection));
-    }
-    else{
+    } else {
       try {
         endPointConnection.getConnection().close();
       } catch (IOException ioException) {

@@ -4,7 +4,7 @@ import java.io.Closeable;
 
 public interface Timeoutable extends Closeable {
 
-  default long getTimeOut(){
+  default long getTimeOut() {
     return 0;
   }
 

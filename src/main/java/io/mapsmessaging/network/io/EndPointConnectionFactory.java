@@ -24,7 +24,7 @@ import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import java.util.List;
 
-public interface EndPointConnectionFactory  extends Service {
+public interface EndPointConnectionFactory extends Service {
 
   EndPoint connect(EndPointURL url,
       SelectorLoadManager selector,

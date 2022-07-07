@@ -40,12 +40,12 @@ public class EndPointConnectionJMX implements HealthMonitor {
   public EndPointConnectionJMX(List<String> parent, EndPointConnection connection) {
     this.connection = connection;
     typePath = new ArrayList<>(parent);
-    typePath.add("connection="+connection.getProperties().getProperty("direction"));
+    typePath.add("connection=" + connection.getProperties().getProperty("direction"));
 
     mbean = JMXManager.getInstance().register(this, typePath);
   }
 
-  public void close(){
+  public void close() {
     JMXManager.getInstance().unregister(mbean);
   }
 
@@ -55,25 +55,25 @@ public class EndPointConnectionJMX implements HealthMonitor {
 
 
   //<editor-fold desc="JMX Bean functions">
-  @JMXBeanOperation(name = "pause", description ="Pauses the connection")
-  public void pauseConnection()  {
+  @JMXBeanOperation(name = "pause", description = "Pauses the connection")
+  public void pauseConnection() {
     connection.pause();
   }
 
   //<editor-fold desc="JMX Bean functions">
-  @JMXBeanOperation(name = "resume", description ="Resumes the connection")
+  @JMXBeanOperation(name = "resume", description = "Resumes the connection")
   public void resumeConnection() {
     connection.resume();
   }
 
   //<editor-fold desc="JMX Bean functions">
-  @JMXBeanOperation(name = "stop", description ="Stops the connection")
-  public void stopConnection()  {
+  @JMXBeanOperation(name = "stop", description = "Stops the connection")
+  public void stopConnection() {
     connection.stop();
   }
 
   //<editor-fold desc="JMX Bean functions">
-  @JMXBeanOperation(name = "start", description ="Starts the connection")
+  @JMXBeanOperation(name = "start", description = "Starts the connection")
   public void startConnection() {
     connection.start();
   }

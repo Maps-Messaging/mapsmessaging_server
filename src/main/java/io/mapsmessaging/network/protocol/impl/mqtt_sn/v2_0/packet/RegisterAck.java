@@ -62,7 +62,7 @@ public class RegisterAck extends MQTT_SN_2_Packet {
   public int packFrame(Packet packet) {
     packet.put((byte) 8);
     packet.put((byte) REGACK);
-    packet.put((byte)(aliasType & 0b11));
+    packet.put((byte) (aliasType & 0b11));
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, messageId);
     packet.put((byte) status.getValue());

@@ -21,8 +21,8 @@ import java.util.Iterator;
 
 public class TypeFactory {
 
-  public static Type create(String parameterName, String typeName, String param, Iterator<String> iterator){
-    switch(typeName){
+  public static Type create(String parameterName, String typeName, String param, Iterator<String> iterator) {
+    switch (typeName) {
       case "Position":
         return new PositionType(iterator.next(), iterator.next());
 
@@ -58,5 +58,6 @@ public class TypeFactory {
     }
   }
 
-  private TypeFactory(){}
+  private TypeFactory() {
+  }
 }

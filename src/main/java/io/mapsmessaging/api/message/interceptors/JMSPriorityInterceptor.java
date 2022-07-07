@@ -26,7 +26,7 @@ public class JMSPriorityInterceptor implements Interceptor {
   @Override
   public Object get(Message message) {
     Priority priority = message.getPriority();
-    if(priority == null){
+    if (priority == null) {
       return 0;
     }
     return priority.getValue();

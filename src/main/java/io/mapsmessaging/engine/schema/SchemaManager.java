@@ -13,22 +13,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class SchemaManager implements SchemaRepository{
+public class SchemaManager implements SchemaRepository {
 
-  public static final UUID DEFAULT_RAW_UUID = UUID.fromString("10000000-0000-1000-a000-100000000000");
-  public static final UUID DEFAULT_NUMERIC_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000001");
-  public static final UUID DEFAULT_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000002");
+  public static final String DEFAULT_RAW_UUID = UUID.fromString("10000000-0000-1000-a000-100000000000").toString();
+  public static final String DEFAULT_NUMERIC_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000001").toString();
+  public static final String DEFAULT_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000002").toString();
 
   private static final SchemaManager instance;
-  public static SchemaManager getInstance(){
+
+  public static SchemaManager getInstance() {
     return instance;
   }
-  static{
+
+  static {
     instance = new SchemaManager();
   }
 
   private final SchemaRepository repository;
-  private final Map<UUID, MessageFormatter> loadedFormatter;
+  private final Map<String, MessageFormatter> loadedFormatter;
 
   @Override
   public synchronized SchemaConfig addSchema(String s, SchemaConfig schemaConfig) {
@@ -41,18 +43,19 @@ public class SchemaManager implements SchemaRepository{
     return repository.addSchema(s, schemaConfig);
   }
 
-  public MessageFormatter getMessageFormatter(UUID uniqueId){
+  public MessageFormatter getMessageFormatter(String uniqueId) {
     return loadedFormatter.get(uniqueId);
 
   }
+
   @Override
-  public synchronized SchemaConfig getSchema(UUID uuid) {
-    return repository.getSchema(uuid);
+  public synchronized SchemaConfig getSchema(String uniqueId) {
+    return repository.getSchema(uniqueId);
   }
 
   @Override
-  public synchronized List<SchemaConfig> getSchema(String s) {
-    return repository.getSchema(s);
+  public synchronized List<SchemaConfig> getSchemaByContext(String s) {
+    return repository.getSchemaByContext(s);
   }
 
   @Override
@@ -66,9 +69,9 @@ public class SchemaManager implements SchemaRepository{
   }
 
   @Override
-  public synchronized void removeSchema(UUID uuid) {
-    repository.removeSchema(uuid);
-    loadedFormatter.remove(uuid);
+  public synchronized void removeSchema(String uniqueId) {
+    repository.removeSchema(uniqueId);
+    loadedFormatter.remove(uniqueId);
   }
 
   @Override
@@ -77,7 +80,7 @@ public class SchemaManager implements SchemaRepository{
     repository.removeAllSchemas();
   }
 
-  public void start(){
+  public void start() {
     SchemaConfig rawConfig = new RawSchemaConfig();
     rawConfig.setUniqueId(DEFAULT_RAW_UUID);
     addSchema("", rawConfig);
@@ -95,7 +98,7 @@ public class SchemaManager implements SchemaRepository{
     MessageFormatterFactory.getInstance();
   }
 
-  private SchemaManager(){
+  private SchemaManager() {
     repository = new SimpleSchemaRepository();
     loadedFormatter = new LinkedHashMap<>();
   }

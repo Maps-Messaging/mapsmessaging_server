@@ -82,14 +82,12 @@ public class PublishListener extends PacketListener {
       response = new PubRec(publish.getPacketId());
     }
 
-
     String lookup = publish.getDestinationName();
 
-
     Map<String, String> map = ((MQTTProtocol) protocol).getTopicNameMapping();
-    if(map != null){
+    if (map != null) {
       lookup = map.get(publish.getDestinationName());
-      if(lookup == null){
+      if (lookup == null) {
         lookup = publish.getDestinationName();
       }
     }
@@ -117,31 +115,29 @@ public class PublishListener extends PacketListener {
         return destination;
       });
       future.get();
-    }
-    else{
+    } else {
       return response;
     }
     return null;
   }
 
   private void processMessage(Publish publish, ProtocolImpl protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
-    Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace() );
+    Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace());
     Message message = createMessage(publish.getPayload(), publish.getPriority(), publish.isRetain(), publish.getQos(), protocol.getTransformation(), transformer);
-    if(response != null){
+    if (response != null) {
       Transaction transaction = null;
       try {
-        transaction = session.startTransaction(session.getName()+"_"+publish.getPacketId());
+        transaction = session.startTransaction(session.getName() + "_" + publish.getPacketId());
       } catch (TransactionException e) {
         logger.log(ServerLogMessages.MQTT_DUPLICATE_EVENT_RECEIVED, publish.getPacketId());
       }
-      if(transaction != null) {
+      if (transaction != null) {
         transaction.add(destination, message);
-        if(publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)){
+        if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {
           transaction.commit();
         }
       }
-    }
-    else {
+    } else {
       destination.storeMessage(message);
     }
   }

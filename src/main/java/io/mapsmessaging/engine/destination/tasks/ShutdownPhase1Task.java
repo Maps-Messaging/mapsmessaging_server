@@ -27,11 +27,12 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
 
 public class ShutdownPhase1Task extends StoreMessageTask {
+
   private final DestinationImpl destination;
   private final Logger logger;
   private final DestinationUpdateManager listener;
 
-  public ShutdownPhase1Task(DestinationImpl destination, DestinationUpdateManager listeners, Logger logger){
+  public ShutdownPhase1Task(DestinationImpl destination, DestinationUpdateManager listeners, Logger logger) {
     super();
     this.destination = destination;
     this.logger = logger;
@@ -43,7 +44,7 @@ public class ShutdownPhase1Task extends StoreMessageTask {
     destination.pauseClientRequests();
     DeleteDestinationTask deleteDestinationTask = new DeleteDestinationTask(destination, listener, logger);
     deleteDestinationTask.taskCall();
-    destination.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE-1 );
+    destination.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE - 1);
     return new BooleanResponse(true);
   }
 

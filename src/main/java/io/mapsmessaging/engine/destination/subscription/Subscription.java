@@ -41,7 +41,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
 
   @Override
   public @Nullable SubscriptionContext getContext() {
-    if(!contextList.isEmpty()) {
+    if (!contextList.isEmpty()) {
       return contextList.get(0);
     }
     return null;

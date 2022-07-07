@@ -48,7 +48,7 @@ public class Unsubscribe extends Frame {
   byte[] getCommand() {
     return "UNSUBSCRIBE".getBytes();
   }
-  
+
   @Override
   public Frame instance() {
     return new Unsubscribe();

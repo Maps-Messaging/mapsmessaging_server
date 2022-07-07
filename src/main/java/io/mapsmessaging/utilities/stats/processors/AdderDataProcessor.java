@@ -20,16 +20,16 @@ package io.mapsmessaging.utilities.stats.processors;
 
 import java.util.concurrent.atomic.LongAdder;
 
-public class AdderDataProcessor implements DataProcessor{
+public class AdderDataProcessor implements DataProcessor {
 
   private final LongAdder adder;
 
-  public AdderDataProcessor(){
+  public AdderDataProcessor() {
     adder = new LongAdder();
   }
 
   @Override
-  public long calculate(){
+  public long calculate() {
     return adder.sumThenReset();
   }
 
@@ -40,7 +40,7 @@ public class AdderDataProcessor implements DataProcessor{
   }
 
   @Override
-  public void reset(){
+  public void reset() {
     adder.reset();
   }
 

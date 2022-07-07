@@ -40,7 +40,7 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 @JMXBean(description = "Health Monitor JMX Bean")
-public class HealthMonitorJMX  {
+public class HealthMonitorJMX {
 
   private static final String[] ITEM_NAMES = new String[]{"healthId", "level", "message", "resource"};
   private static final String[] ITEM_DESCRIPTIONS = new String[]{"Resource ID name", "current status", "description of the current state", "Object Name of the resource"};
@@ -62,7 +62,7 @@ public class HealthMonitorJMX  {
     JMXManager.getInstance().unregister(mbean);
   }
 
-  @JMXBeanOperation(name = "health", description ="Returns health status of this node")
+  @JMXBeanOperation(name = "health", description = "Returns health status of this node")
   public TabularData health() throws OpenDataException {
     CompositeType compositeType = new CompositeType("HealthStatus", "Messaging Servers current health stat", ITEM_NAMES, ITEM_DESCRIPTIONS, OBJECT_TYPES);
     TabularType tabularType = new TabularType("HealthStatus", "Messaging Servers current health state", compositeType, ITEM_NAMES);
@@ -80,14 +80,14 @@ public class HealthMonitorJMX  {
     return tabularDataSupport;
   }
 
-  @JMXBeanOperation(name = "healthList", description ="Returns the complete list of Health Status objects")
+  @JMXBeanOperation(name = "healthList", description = "Returns the complete list of Health Status objects")
   public List<HealthStatus> healthList() {
     List<HealthMonitor> monitors = JMXManager.getInstance().getHealthList();
     List<HealthStatus> statuses = new ArrayList<>();
     StringBuilder stringBuffer = new StringBuilder();
     for (HealthMonitor monitor : monitors) {
       HealthStatus status = monitor.checkHealth();
-      if(!status.getLevel().name().equals(LEVEL.INFO.name())){
+      if (!status.getLevel().name().equals(LEVEL.INFO.name())) {
         stringBuffer.append(status.getMessage()).append(",");
       }
       statuses.add(status);
@@ -96,7 +96,7 @@ public class HealthMonitorJMX  {
     return statuses;
   }
 
-  @JMXBeanAttribute(name = "currentStatus", description ="Returns the current health status")
+  @JMXBeanAttribute(name = "currentStatus", description = "Returns the current health status")
   public String getCurrentStatus() {
     return myStatus;
   }

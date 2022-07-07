@@ -7,14 +7,14 @@ import java.io.IOException;
 import java.util.Queue;
 import lombok.Setter;
 
-public class MessageExpiryHandler implements ExpiredStorableHandler{
+public class MessageExpiryHandler implements ExpiredStorableHandler {
 
   private @Setter DestinationImpl destination;
 
-  public MessageExpiryHandler(){
+  public MessageExpiryHandler() {
   }
 
-  public MessageExpiryHandler(DestinationImpl destination){
+  public MessageExpiryHandler(DestinationImpl destination) {
     this.destination = destination;
   }
 

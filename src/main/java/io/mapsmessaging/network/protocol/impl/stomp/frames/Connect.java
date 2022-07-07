@@ -97,8 +97,12 @@ public class Connect extends Frame {
     host = removeHeader("host");
     login = removeHeader("login");
     passcode = removeHeader("passcode");
-    if(login != null && login.equals("null"))login = null;
-    if(passcode != null && passcode.equals("null")) passcode = null;
+    if (login != null && login.equals("null")) {
+      login = null;
+    }
+    if (passcode != null && passcode.equals("null")) {
+      passcode = null;
+    }
     acceptVersion = removeHeader("accept-version");
     if (acceptVersion == null) {
       acceptVersion = "1.0"; // This is the only version that allows this

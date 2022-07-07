@@ -12,11 +12,11 @@ import org.jetbrains.annotations.NotNull;
 public class PullDataHandler extends Handler {
 
   @Override
-  public void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet) {
+  public void process(@NotNull @NonNull SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet) {
     PullData pullData = (PullData) packet;
     protocol.sendPacket(new PullAck(pullData.getToken(), packet.getFromAddress()));
     GatewayInfo info = protocol.getGatewayManager().getInfo(GatewayManager.dumpIdentifier(pullData.getGatewayIdentifier()));
-    if(info != null) {
+    if (info != null) {
       sendMessage(protocol, info, packet.getFromAddress());
     }
   }

@@ -39,9 +39,9 @@ public class RegisteredTopicConfiguration {
     topicConfigByName = new LinkedHashMap<>();
     parse(registeredTopics);
     Object predefined = properties.get("preDefinedTopics");
-    if(predefined instanceof List){
-      List<ConfigurationProperties> predefinedList = (List<ConfigurationProperties>)predefined;
-      for(ConfigurationProperties props:predefinedList){
+    if (predefined instanceof List) {
+      List<ConfigurationProperties> predefinedList = (List<ConfigurationProperties>) predefined;
+      for (ConfigurationProperties props : predefinedList) {
         int id = props.getIntProperty("id", 0);
         String topic = props.getProperty("topic", "");
         String address = props.getProperty("address", "*");
@@ -57,7 +57,7 @@ public class RegisteredTopicConfiguration {
 
   public String getTopic(SocketAddress from, int id) {
     List<TopicConfiguration> list = topicConfigById.get(id);
-    if(list != null) {
+    if (list != null) {
       // Search for explicit address mapping
       for (TopicConfiguration tc : list) {
         if (from instanceof InetSocketAddress) {
@@ -91,7 +91,7 @@ public class RegisteredTopicConfiguration {
   public int getRegisteredTopicAliasType(SocketAddress from, String destinationName) {
     List<TopicConfiguration> list = topicConfigByName.get(destinationName);
 
-    if(list != null) {
+    if (list != null) {
       for (TopicConfiguration tc : list) {
         if (from instanceof InetSocketAddress) {
           InetSocketAddress inetAddress = (InetSocketAddress) from;

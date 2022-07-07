@@ -27,11 +27,12 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 
 public class DeleteDestinationTask extends StoreMessageTask {
+
   private final DestinationImpl destination;
   private final Logger logger;
   private final DestinationUpdateManager listeners;
 
-  public DeleteDestinationTask(DestinationImpl destination, DestinationUpdateManager listeners, Logger logger){
+  public DeleteDestinationTask(DestinationImpl destination, DestinationUpdateManager listeners, Logger logger) {
     super();
     this.destination = destination;
     this.logger = logger;
@@ -44,7 +45,7 @@ public class DeleteDestinationTask extends StoreMessageTask {
     try {
       destination.delete();
     } catch (IOException e) {
-      logger.log(ServerLogMessages.DESTINATION_MANAGER_DELETED_TOPIC,  destination.getFullyQualifiedNamespace(), e);
+      logger.log(ServerLogMessages.DESTINATION_MANAGER_DELETED_TOPIC, destination.getFullyQualifiedNamespace(), e);
     }
     listeners.deleted(destination);
     logger.log(ServerLogMessages.DESTINATION_MANAGER_DELETED_TOPIC, destination.getFullyQualifiedNamespace());

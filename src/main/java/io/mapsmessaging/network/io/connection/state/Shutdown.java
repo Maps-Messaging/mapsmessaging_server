@@ -29,7 +29,7 @@ public class Shutdown extends State {
 
   @Override
   public void execute() {
-    if(endPointConnection.getConnection() != null){
+    if (endPointConnection.getConnection() != null) {
       try {
         endPointConnection.getConnection().close();
       } catch (IOException ioException) {

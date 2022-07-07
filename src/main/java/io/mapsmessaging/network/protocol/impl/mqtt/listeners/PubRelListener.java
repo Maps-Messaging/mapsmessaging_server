@@ -33,8 +33,8 @@ public class PubRelListener extends PacketListener {
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     PubRel pubRel = (PubRel) mqttPacket;
-    Transaction transaction = session.getTransaction(session.getName()+"_"+pubRel.getPacketIdentifier());
-    if(transaction != null){
+    Transaction transaction = session.getTransaction(session.getName() + "_" + pubRel.getPacketIdentifier());
+    if (transaction != null) {
       try {
         transaction.commit();
       } catch (IOException e) {

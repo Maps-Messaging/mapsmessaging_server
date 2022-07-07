@@ -36,10 +36,10 @@ public class UnsubscribeListener extends PacketListener {
     Unsubscribe unsubscribe = (Unsubscribe) mqttPacket;
     int id = unsubscribe.getTopicId();
     String topicName = unsubscribe.getTopicName();
-    if(id != -1){
-      topicName = stateEngine.getTopicAliasManager().getTopic((short)id);
+    if (id != -1) {
+      topicName = stateEngine.getTopicAliasManager().getTopic((short) id);
     }
-    if(topicName != null){
+    if (topicName != null) {
       stateEngine.removeSubscribeResponse(topicName);
       session.removeSubscription(topicName);
       return new UnSubAck(unsubscribe.getMsgId(), ReasonCodes.Success);

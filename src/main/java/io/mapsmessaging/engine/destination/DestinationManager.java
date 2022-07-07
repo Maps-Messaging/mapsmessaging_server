@@ -65,15 +65,14 @@ public class DestinationManager implements DestinationFactory {
     DestinationPathManager rootPathLookup = null;
     Object rootConf = list.get("data");
 
-    if(rootConf instanceof ConfigurationProperties){
-      ConfigurationProperties rootCfg = (ConfigurationProperties)rootConf;
+    if (rootConf instanceof ConfigurationProperties) {
+      ConfigurationProperties rootCfg = (ConfigurationProperties) rootConf;
       DestinationPathManager destinationPathManager = new DestinationPathManager(rootCfg);
       properties.put(destinationPathManager.getNamespaceMapping(), destinationPathManager);
       if (destinationPathManager.getNamespaceMapping().equals("/")) {
         rootPathLookup = destinationPathManager;
       }
-    }
-    else if(rootConf instanceof List) {
+    } else if (rootConf instanceof List) {
       for (Object configuration : (List<?>) rootConf) {
         if (configuration instanceof ConfigurationProperties) {
           DestinationPathManager destinationPathManager = new DestinationPathManager((ConfigurationProperties) configuration);
@@ -89,14 +88,14 @@ public class DestinationManager implements DestinationFactory {
 
     destinationManagerListeners = new DestinationUpdateManager();
     rootPath = rootPathLookup;
-    creatorPipelines = new DestinationManagerPipeline[Runtime.getRuntime().availableProcessors()*2];
+    creatorPipelines = new DestinationManagerPipeline[Runtime.getRuntime().availableProcessors() * 2];
     Arrays.setAll(creatorPipelines, x -> new DestinationManagerPipeline(rootPath, properties, destinationManagerListeners));
 
     SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, time, TimeUnit.MILLISECONDS);
   }
 
-  int getIndex(String name){
-    int hash = name.hashCode()%creatorPipelines.length;
+  int getIndex(String name) {
+    int hash = name.hashCode() % creatorPipelines.length;
     return Math.abs(hash);
   }
 
@@ -117,20 +116,19 @@ public class DestinationManager implements DestinationFactory {
 
   @SneakyThrows
   @Override
-  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType){
+  public CompletableFuture<DestinationImpl> findOrCreate(String name, DestinationType destinationType) {
     DestinationImpl destination = find(name).get();
-    if(destination != null){
+    if (destination != null) {
       CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
       future.complete(destination);
       return future;
-    }
-    else{
+    } else {
       return create(name, destinationType);
     }
   }
 
   @Override
-  public  CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     if (name.startsWith("$SYS")) {
       // can not create these
       logger.log(ServerLogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
@@ -140,7 +138,7 @@ public class DestinationManager implements DestinationFactory {
   }
 
   @Override
-  public  CompletableFuture<DestinationImpl> delete(DestinationImpl destinationImpl) {
+  public CompletableFuture<DestinationImpl> delete(DestinationImpl destinationImpl) {
     if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
       return creatorPipelines[getIndex(destinationImpl.getFullyQualifiedNamespace())].delete(destinationImpl);
     }
@@ -149,9 +147,9 @@ public class DestinationManager implements DestinationFactory {
 
   @SneakyThrows
   @Override
-  public Map<String, DestinationImpl> get(DestinationFilter filter){
+  public Map<String, DestinationImpl> get(DestinationFilter filter) {
     Map<String, DestinationImpl> response = new LinkedHashMap<>();
-    for(DestinationManagerPipeline pipeline:creatorPipelines){
+    for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.copy(filter, response).get();
     }
     return response;
@@ -160,7 +158,7 @@ public class DestinationManager implements DestinationFactory {
   @SneakyThrows
   public int size() {
     int size = 0;
-    for(DestinationManagerPipeline pipeline:creatorPipelines){
+    for (DestinationManagerPipeline pipeline : creatorPipelines) {
       size += pipeline.size().get();
     }
     return size;
@@ -178,7 +176,7 @@ public class DestinationManager implements DestinationFactory {
 
   public void stop() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
-    for(DestinationManagerPipeline pipeline:creatorPipelines){
+    for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.stop();
     }
   }
@@ -195,7 +193,7 @@ public class DestinationManager implements DestinationFactory {
     return destinationManagerListeners.get();
   }
 
-  private void processFileList(List<File> directories, DestinationPathManager pathManager){
+  private void processFileList(List<File> directories, DestinationPathManager pathManager) {
     if (directories != null) {
       ResourceLoaderManagement resourceLoaderManagement = new ResourceLoaderManagement(directories, pathManager);
       resourceLoaderManagement.start();
@@ -214,18 +212,17 @@ public class DestinationManager implements DestinationFactory {
           creatorPipelines[getIndex(destinationImpl.getFullyQualifiedNamespace())].put(destinationImpl);
           logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
         }
-      }
-      catch(IOException error){
+      } catch (IOException error) {
         logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEPTION_ON_START, error);
       }
     }
   }
 
-  private DestinationImpl scanDirectory( File directory, DestinationPathManager pathManager) throws IOException {
+  private DestinationImpl scanDirectory(File directory, DestinationPathManager pathManager) throws IOException {
     MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
     ResourceProperties scannedProperties = ResourceFactory.getInstance().scanForProperties(directory);
     Resource resource = null;
-    if(scannedProperties != null){
+    if (scannedProperties != null) {
       resource = ResourceFactory.getInstance().scan(messageExpiryHandler, directory, pathManager, scannedProperties);
 
     }
@@ -233,19 +230,17 @@ public class DestinationManager implements DestinationFactory {
       throw new IOException("Invalid resource found");
     }
     String name = scannedProperties.getResourceName();
-    String directoryPath = FilePathHelper.cleanPath(directory.toString()+ File.separator);
+    String directoryPath = FilePathHelper.cleanPath(directory.toString() + File.separator);
     DestinationType destinationType = DestinationType.TOPIC;
     DestinationImpl response;
-    if(name.toLowerCase().startsWith(TEMPORARY_TOPIC)){
+    if (name.toLowerCase().startsWith(TEMPORARY_TOPIC)) {
       destinationType = DestinationType.TEMPORARY_TOPIC;
       response = new TemporaryDestination(name, directoryPath, resource, destinationType);
-    }
-    else if(name.toLowerCase().startsWith(TEMPORARY_QUEUE)){
+    } else if (name.toLowerCase().startsWith(TEMPORARY_QUEUE)) {
       destinationType = DestinationType.TEMPORARY_QUEUE;
       response = new TemporaryDestination(name, directoryPath, resource, destinationType);
-    }
-    else{
-      if(name.toLowerCase().startsWith(QUEUE[0]) || name.toLowerCase().startsWith(QUEUE[1])){
+    } else {
+      if (name.toLowerCase().startsWith(QUEUE[0]) || name.toLowerCase().startsWith(QUEUE[1])) {
         destinationType = DestinationType.QUEUE;
       }
       response = new DestinationImpl(name, directoryPath, resource, destinationType);
@@ -254,50 +249,54 @@ public class DestinationManager implements DestinationFactory {
     return response;
   }
 
-  public class DelayProcessor implements Runnable{
+  public class DelayProcessor implements Runnable {
+
     @Override
     public void run() {
-      for(DestinationManagerPipeline pipeline:creatorPipelines){
+      for (DestinationManagerPipeline pipeline : creatorPipelines) {
         pipeline.scan();
       }
     }
   }
 
   public class ResourceLoaderManagement {
+
     private final Queue<File> fileList;
     private final DestinationPathManager pathManager;
     private final int initialSize;
 
-    public ResourceLoaderManagement(List<File> list, DestinationPathManager pathManager){
+    public ResourceLoaderManagement(List<File> list, DestinationPathManager pathManager) {
       this.fileList = new ConcurrentLinkedQueue<>(list);
       this.pathManager = pathManager;
       initialSize = list.size();
     }
 
-    public void start(){
-      if(fileList.isEmpty()) return;
+    public void start() {
+      if (fileList.isEmpty()) {
+        return;
+      }
       // We need to ensure the underlying storage component has loaded and warmed up
       File file = fileList.poll();
-      if(file != null) {
+      if (file != null) {
         parseDirectoryPath(file, pathManager);
       }
 
       long report = System.currentTimeMillis() + 1000;
-      ResourceLoader[] loaders = new ResourceLoader[Runtime.getRuntime().availableProcessors()*2];
-      for(int x=0;x<loaders.length;x++){
+      ResourceLoader[] loaders = new ResourceLoader[Runtime.getRuntime().availableProcessors() * 2];
+      for (int x = 0; x < loaders.length; x++) {
         loaders[x] = new ResourceLoader(fileList, pathManager);
         loaders[x].start();
       }
-      while(!process(loaders)) {
-        if(report <= System.currentTimeMillis()){
+      while (!process(loaders)) {
+        if (report <= System.currentTimeMillis()) {
           report = System.currentTimeMillis() + 1000;
-          logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOADED, (initialSize-fileList.size()), initialSize);
+          logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOADED, (initialSize - fileList.size()), initialSize);
         }
       }
     }
   }
 
-  private boolean process(ResourceLoader[] loaders){
+  private boolean process(ResourceLoader[] loaders) {
     boolean complete = true;
     for (ResourceLoader loader : loaders) {
       if (!loader.complete.get()) {
@@ -316,13 +315,13 @@ public class DestinationManager implements DestinationFactory {
     return complete;
   }
 
-  public class ResourceLoader extends Thread{
+  public class ResourceLoader extends Thread {
 
     private final Queue<File> fileList;
     private final DestinationPathManager pathManager;
     private final AtomicBoolean complete;
 
-    public ResourceLoader (Queue<File> fileList,DestinationPathManager pathManager){
+    public ResourceLoader(Queue<File> fileList, DestinationPathManager pathManager) {
       this.fileList = fileList;
       this.pathManager = pathManager;
       complete = new AtomicBoolean(false);
@@ -330,9 +329,9 @@ public class DestinationManager implements DestinationFactory {
     }
 
     @Override
-    public void run(){
+    public void run() {
       File file = fileList.poll();
-      while(file != null){
+      while (file != null) {
         parseDirectoryPath(file, pathManager);
         file = fileList.poll();
       }

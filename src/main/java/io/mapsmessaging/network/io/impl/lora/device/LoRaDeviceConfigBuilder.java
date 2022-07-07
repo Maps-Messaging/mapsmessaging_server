@@ -23,7 +23,7 @@ public class LoRaDeviceConfigBuilder {
   private final LoRaDeviceConfig config;
 
 
-  public LoRaDeviceConfigBuilder(){
+  public LoRaDeviceConfigBuilder() {
     config = new LoRaDeviceConfig();
   }
 
@@ -31,7 +31,7 @@ public class LoRaDeviceConfigBuilder {
     return (config.getCs() != -1 && config.getIrq() != -1 && config.getRst() != -1);
   }
 
-  public LoRaDeviceConfig build(){
+  public LoRaDeviceConfig build() {
     return config;
   }
 

@@ -33,10 +33,9 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Base class that manages messages that have been written to a destination but are not yet active and can not
- * be delivered as part of a subscription but are awaiting a trigger, like a commit or a time period. Once the trigger
- * happens it is up to the calling functions to manage to migration of the message ID to active and then clear out
- * the current context here
+ * Base class that manages messages that have been written to a destination but are not yet active and can not be delivered as part of a subscription but are awaiting a trigger,
+ * like a commit or a time period. Once the trigger happens it is up to the calling functions to manage to migration of the message ID to active and then clear out the current
+ * context here
  */
 public class MessageManager {
 
@@ -53,10 +52,10 @@ public class MessageManager {
     bucketList = new ArrayList<>();
     counter = 0;
     List<Long> ids = factory.getUniqueIds();
-    for(Long bucketId:ids){
+    for (Long bucketId : ids) {
       bucketList.add(bucketId);
-      DelayedBucket bucket =  new DelayedBucket(bucketId);
-      treeList.put(bucketId,bucket);
+      DelayedBucket bucket = new DelayedBucket(bucketId);
+      treeList.put(bucketId, bucket);
       counter += bucket.size();
     }
   }
@@ -75,7 +74,7 @@ public class MessageManager {
     factory.delete();
   }
 
-  public synchronized List<Long> getBucketIds(){
+  public synchronized List<Long> getBucketIds() {
     List<Long> response = new ArrayList<>(bucketList);
     Collections.sort(response);
     return response;
@@ -87,15 +86,15 @@ public class MessageManager {
    * @param bucketId The bucket ID to register the message with
    * @param message Message to register with the delay structure
    */
-  public synchronized void register(long bucketId, @NonNull @NotNull Message message){
-    DelayedBucket bucket = treeList.computeIfAbsent(bucketId, f-> {
+  public synchronized void register(long bucketId, @NonNull @NotNull Message message) {
+    DelayedBucket bucket = treeList.computeIfAbsent(bucketId, f -> {
       bucketList.add(bucketId);
-      if(bucketList.size() > 1){
+      if (bucketList.size() > 1) {
         Collections.sort(bucketList);
       }
       return new DelayedBucket(bucketId);
     });
-    if(bucket.register(message.getIdentifier())) {
+    if (bucket.register(message.getIdentifier())) {
       counter++;
     }
   }
@@ -107,10 +106,10 @@ public class MessageManager {
    * @param messageIdentifier The message identifier to remove from the bucket
    * @return If the transaction and the specified message identifier has been removed else false if it can not be found
    */
-  public synchronized boolean remove(long bucketId, long messageIdentifier){
-    if(!bucketList.isEmpty()) {
+  public synchronized boolean remove(long bucketId, long messageIdentifier) {
+    if (!bucketList.isEmpty()) {
       DelayedBucket bucket = treeList.get(bucketId);
-      if (bucket != null && bucket.delayedMessageState.remove(messageIdentifier)){
+      if (bucket != null && bucket.delayedMessageState.remove(messageIdentifier)) {
         counter--;
         return true;
       }
@@ -124,9 +123,9 @@ public class MessageManager {
    * @param bucketId the transaction id to delete
    * @return true if the transaction id was found else false indicating no known transaction
    */
-  public synchronized boolean delete(long bucketId){
+  public synchronized boolean delete(long bucketId) {
     DelayedBucket delayedBucket = treeList.remove(bucketId);
-    if(delayedBucket != null){
+    if (delayedBucket != null) {
       counter -= delayedBucket.delayedMessageState.size();
       return true;
     }
@@ -134,17 +133,16 @@ public class MessageManager {
   }
 
   /**
-   * Get the next Message Id that belongs in this bucket. This is a read only function and does not change the structure
-   * you need to call remove to move to the next message id
+   * Get the next Message Id that belongs in this bucket. This is a read only function and does not change the structure you need to call remove to move to the next message id
    *
    * @param bucketId the specific transaction that we are currently processing
    * @return The message ID of the next message to process
    */
-  public synchronized long getNext(long bucketId){
+  public synchronized long getNext(long bucketId) {
     DelayedBucket delayedBucket = treeList.get(bucketId);
 
     // The bucket is NOT in the tree so clean up the index and try again
-    if(delayedBucket == null){
+    if (delayedBucket == null) {
       bucketList.remove(bucketId);
       return -1;
     }
@@ -167,7 +165,7 @@ public class MessageManager {
     return counter;
   }
 
-  public synchronized boolean isEmpty(){
+  public synchronized boolean isEmpty() {
     return counter == 0;
   }
 
@@ -186,7 +184,7 @@ public class MessageManager {
 
   public synchronized @NonNull @NotNull Queue<Long> removeBucket(long bucketId) {
     DelayedBucket bucket = treeList.remove(bucketId);
-    if(bucket != null){
+    if (bucket != null) {
       return bucket.delayedMessageState;
     }
     return new ArrayDeque<>();

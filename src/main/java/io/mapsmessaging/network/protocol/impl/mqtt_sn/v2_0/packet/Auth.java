@@ -8,9 +8,12 @@ import lombok.ToString;
 @ToString
 public class Auth extends MQTT_SN_2_Packet {
 
-  @Getter private final ReasonCodes reasonCode;
-  @Getter private final String method;
-  @Getter private final byte[] data;
+  @Getter
+  private final ReasonCodes reasonCode;
+  @Getter
+  private final String method;
+  @Getter
+  private final byte[] data;
 
   public Auth(ReasonCodes reasonCode, String method, byte[] data) {
     super(AUTH);
@@ -26,13 +29,13 @@ public class Auth extends MQTT_SN_2_Packet {
     byte[] tmp = new byte[methodLen];
     packet.get(tmp, 0, tmp.length);
     method = new String(tmp);
-    data = new byte[length - (methodLen+6)];
+    data = new byte[length - (methodLen + 6)];
     packet.get(data);
   }
 
   @Override
   public int packFrame(Packet packet) {
-    int len = 4 + method.length()+ data.length;
+    int len = 4 + method.length() + data.length;
     packet.put((byte) len);
     packet.put((byte) AUTH);
     packet.put((byte) reasonCode.getValue());

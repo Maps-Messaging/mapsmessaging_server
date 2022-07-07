@@ -43,9 +43,9 @@ public class WillTopicUpdate extends MQTT_SNPacket {
     return (flags & 0b10000) != 0;
   }
 
-  public void setRetain(boolean set){
-    if(set){
-      flags = (byte)(flags | 0b10000);
+  public void setRetain(boolean set) {
+    if (set) {
+      flags = (byte) (flags | 0b10000);
     }
   }
 

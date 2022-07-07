@@ -28,7 +28,6 @@ import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -63,7 +62,7 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   }
 
   public void start() {
-    UUID schemaId = getSchemaUUID();
+    String schemaId = getSchemaUUID();
     if (schemaId != null) {
       try {
         super.updateSchema(SchemaManager.getInstance().getSchema(schemaId), null);
@@ -73,7 +72,7 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
     }
   }
 
-  public abstract UUID getSchemaUUID();
+  public abstract String getSchemaUUID();
 
   public void sendUpdate() throws IOException {
     super.storeMessage(generateMessage());

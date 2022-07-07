@@ -9,21 +9,22 @@ import java.util.ServiceLoader;
 
 public class TokenGeneratorManager implements ServiceManager {
 
-  public static TokenGeneratorManager getInstance(){
+  public static TokenGeneratorManager getInstance() {
     return instance;
   }
+
   private static final TokenGeneratorManager instance = new TokenGeneratorManager();
 
   private final Map<String, Service> tokenGeneratorMap;
 
-  public TokenGenerator get(String tokenGenerator){
+  public TokenGenerator get(String tokenGenerator) {
     return (TokenGenerator) tokenGeneratorMap.get(tokenGenerator);
   }
 
-  private TokenGeneratorManager(){
+  private TokenGeneratorManager() {
     ServiceLoader<TokenGenerator> transformerServiceLoader = ServiceLoader.load(TokenGenerator.class);
     tokenGeneratorMap = new LinkedHashMap<>();
-    for(TokenGenerator tokenGenerator:transformerServiceLoader){
+    for (TokenGenerator tokenGenerator : transformerServiceLoader) {
       tokenGeneratorMap.put(tokenGenerator.getName(), tokenGenerator);
     }
   }

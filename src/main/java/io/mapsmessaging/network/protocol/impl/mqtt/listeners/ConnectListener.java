@@ -79,12 +79,12 @@ public class ConnectListener extends BaseConnectionListener {
     }
     protocol.setKeepAlive(connect.getKeepAlive());
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sessionId);
-    sessionFuture.thenApply(session ->{
+    sessionFuture.thenApply(session -> {
       connAck.setResponseCode(ConnAck.SUCCESS);
       connAck.setRestoredFlag(session.isRestored());
       connAck.setCallback(session::resumeState);
       try {
-        ((MQTTProtocol)protocol).registerRead();
+        ((MQTTProtocol) protocol).registerRead();
       } catch (IOException e) {
         sessionFuture.completeExceptionally(e);
         connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
@@ -96,7 +96,7 @@ public class ConnectListener extends BaseConnectionListener {
           }
         }, 100, TimeUnit.MILLISECONDS));
       }
-      ((MQTTProtocol)protocol).writeFrame(connAck);
+      ((MQTTProtocol) protocol).writeFrame(connAck);
       return session;
     });
     sessionFuture.exceptionally(throwable -> {
@@ -109,23 +109,21 @@ public class ConnectListener extends BaseConnectionListener {
     });
   }
 
-  boolean checkStrict(Connect connect,ProtocolImpl protocol){
+  boolean checkStrict(Connect connect, ProtocolImpl protocol) {
     boolean strict;
-    if(connect.getProtocolLevel() == 3){
+    if (connect.getProtocolLevel() == 3) {
       strict = true; // For MQTT 3.1 it must be strict to adhere to the standard
-    }
-    else{
+    } else {
       strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
     }
     return strict;
   }
 
-  boolean clientIdAllowed(String clientId, boolean strict){
-    if(strict) {
+  boolean clientIdAllowed(String clientId, boolean strict) {
+    if (strict) {
       boolean legalChars = clientId.chars().allMatch(c -> RESTRICTED_CHARACTERS.contains(String.valueOf((char) c)));
       return clientId.length() <= RESTRICTED_LENGTH && legalChars;
-    }
-    else{
+    } else {
       return true;
     }
   }

@@ -45,9 +45,9 @@ public class SerialEndPointServer extends EndPointServer {
   private final SerialEndPointURL serialEndPointURL;
   private SerialEndPoint serialEndPoint;
 
-  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, NetworkConfig config,  EndPointManagerJMX managerMBean) {
+  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, NetworkConfig config, EndPointManagerJMX managerMBean) {
     super(acceptHandler, url, config);
-    serialEndPointURL = (SerialEndPointURL)url;
+    serialEndPointURL = (SerialEndPointURL) url;
     protocolFactory = new ProtocolFactory(config.getProtocols());
     this.managerMBean = managerMBean;
     serialEndPoint = null;
@@ -80,7 +80,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public String getName() {
-    return "serial_"+serialEndPointURL.getPortName();
+    return "serial_" + serialEndPointURL.getPortName();
   }
 
   @Override

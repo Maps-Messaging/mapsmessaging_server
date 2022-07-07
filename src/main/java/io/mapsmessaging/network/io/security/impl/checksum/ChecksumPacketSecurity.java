@@ -12,11 +12,11 @@ public abstract class ChecksumPacketSecurity implements PacketIntegrity {
 
   private final SignatureManager stamper;
 
-  protected ChecksumPacketSecurity(){
+  protected ChecksumPacketSecurity() {
     stamper = new AppenderSignatureManager();
   }
 
-  protected ChecksumPacketSecurity(@NotNull @NonNull SignatureManager stamper){
+  protected ChecksumPacketSecurity(@NotNull @NonNull SignatureManager stamper) {
     this.stamper = stamper;
   }
 
@@ -27,7 +27,7 @@ public abstract class ChecksumPacketSecurity implements PacketIntegrity {
 
   public abstract PacketIntegrity initialise(SignatureManager stamper);
 
-  public int size(){
+  public int size() {
     return 4; // 32 bits
   }
 
@@ -62,26 +62,27 @@ public abstract class ChecksumPacketSecurity implements PacketIntegrity {
     return updatePacket(checksum, packet);
   }
 
-  private boolean validatePacket(Checksum checksum, Packet packet){
+  private boolean validatePacket(Checksum checksum, Packet packet) {
     long crcL = checksum.getValue();
     byte[] crc32 = new byte[size()]; //32 bits;
     crc32 = stamper.getSignature(packet, crc32);
-    for(int x=0;x<4;x++){
-      if(crc32[x] != (byte) ((crcL>>x) & 0xff)){
+    for (int x = 0; x < 4; x++) {
+      if (crc32[x] != (byte) ((crcL >> x) & 0xff)) {
         return false;
       }
     }
     return true;
   }
 
-  private Packet updatePacket(Checksum checksum, Packet packet){
+  private Packet updatePacket(Checksum checksum, Packet packet) {
     long crcL = checksum.getValue();
     byte[] crc32 = new byte[size()]; //32 bits;
-    for(int x=0;x<4;x++){
-      crc32[x] = (byte) ((crcL>>x) & 0xff);
+    for (int x = 0; x < 4; x++) {
+      crc32[x] = (byte) ((crcL >> x) & 0xff);
     }
     return stamper.setSignature(packet, crc32);
   }
 
-  public void reset(){}
+  public void reset() {
+  }
 }

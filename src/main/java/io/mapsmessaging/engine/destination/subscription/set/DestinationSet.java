@@ -130,9 +130,9 @@ public class DestinationSet implements Set<DestinationImpl> {
     return matching.values().toArray(a);
   }
 
-  public boolean interest(String destinationName){
+  public boolean interest(String destinationName) {
     return matches(context, destinationName);
-    }
+  }
 
   @Override
   public boolean add(DestinationImpl destination) {

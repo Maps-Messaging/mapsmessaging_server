@@ -27,16 +27,16 @@ public class PacketReader implements Runnable {
   private final LoRaDevice device;
   private boolean isClosed;
 
-  PacketReader(LoRaDevice device){
+  PacketReader(LoRaDevice device) {
     this.device = device;
     isClosed = false;
     Thread reader = new Thread(this);
     reader.setDaemon(true);
-    reader.setName("LoRa_Packet_Reader_v2:"+device.getName());
+    reader.setName("LoRa_Packet_Reader_v2:" + device.getName());
     reader.start();
   }
 
-  public void close(){
+  public void close() {
     isClosed = true;
   }
 
@@ -44,40 +44,38 @@ public class PacketReader implements Runnable {
   public void run() {
     Thread.currentThread().setPriority(Thread.MAX_PRIORITY); // We go high to ensure we don't drop packets
     byte[] workingBuffer = new byte[256];
-    long lastReported = System.currentTimeMillis()+LOG_DELAY;
+    long lastReported = System.currentTimeMillis() + LOG_DELAY;
     try {
-      while(!isClosed){
-        try{
+      while (!isClosed) {
+        try {
           long flags = device.read(workingBuffer, workingBuffer.length);
-          if(flags != 0){
+          if (flags != 0) {
             // byte[0] = length of buffer
             // byte[1] = to host
             // byte[2] = from host
             // byte[3] = RSSI value
-            short len  = (short) (flags & 0xff);
+            short len = (short) (flags & 0xff);
             short from = (short) (flags >> 8 & 0xff);
-            byte rssi = (byte) (flags>> 16 & 0xff);
-            short to   = (short) (flags>> 24 & 0xff);
-            short id   = (short) (flags>>32 & 0xff);
+            byte rssi = (byte) (flags >> 16 & 0xff);
+            short to = (short) (flags >> 24 & 0xff);
+            short id = (short) (flags >> 32 & 0xff);
 
-            if(len > 0){
+            if (len > 0) {
               device.logger.log(ServerLogMessages.LORA_DEVICE_RECEIVED_PACKET, to, from, rssi, len, id);
               byte[] buffer = new byte[len];
               System.arraycopy(workingBuffer, 0, buffer, 0, len);
               LoRaDatagram datagram = new LoRaDatagram(to, from, rssi, buffer, id);
               device.handleIncomingPacket(datagram);
-              lastReported = System.currentTimeMillis()+LOG_DELAY;
+              lastReported = System.currentTimeMillis() + LOG_DELAY;
             }
-          }
-          else{
-            if(lastReported<System.currentTimeMillis()){
-              lastReported = System.currentTimeMillis()+LOG_DELAY;
+          } else {
+            if (lastReported < System.currentTimeMillis()) {
+              lastReported = System.currentTimeMillis() + LOG_DELAY;
               device.logger.log(ServerLogMessages.LORA_DEVICE_IDLE);
             }
             LockSupport.parkNanos(1000000);
           }
-        }
-        catch(Exception ex){
+        } catch (Exception ex) {
           device.logger.log(ServerLogMessages.LORA_DEVICE_READ_THREAD_ERROR, device.getName(), ex);
         }
       }

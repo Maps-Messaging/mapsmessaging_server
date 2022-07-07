@@ -35,8 +35,7 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Session lifetime management class. This class handles the life cycle of a Session, as well as the ability to
- * perform anonymous publishes, if configured and allowed.
+ * Session lifetime management class. This class handles the life cycle of a Session, as well as the ability to perform anonymous publishes, if configured and allowed.
  */
 public class SessionManager {
 
@@ -55,8 +54,7 @@ public class SessionManager {
 
 
   /**
-   * Creates a new Session using the supplied context and the message listener to deliver events
-   * that match any future subscriptions
+   * Creates a new Session using the supplied context and the message listener to deliver events that match any future subscriptions
    *
    * @param sessionContext The Session Context object containing session configuration
    * @param listener A callback object to handle all messages that match subscriptions
@@ -75,7 +73,7 @@ public class SessionManager {
       SessionImpl sessionImpl = null;
       try {
         sessionImpl = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
-        completableFuture.complete( new Session(sessionImpl, listener));
+        completableFuture.complete(new Session(sessionImpl, listener));
       } catch (LoginException e) {
         completableFuture.completeExceptionally(e);
       }
@@ -86,8 +84,8 @@ public class SessionManager {
   }
 
   /**
-   * Closes the supplied session, clears all resources and, if, the session is persistent marks all subscriptions as hibernated
-   * With the optional flag indicating that the WillTask ( if supplied ) to be executed or to be cleared
+   * Closes the supplied session, clears all resources and, if, the session is persistent marks all subscriptions as hibernated With the optional flag indicating that the WillTask
+   * ( if supplied ) to be executed or to be cleared
    *
    * @param session The session to close
    * @param clearWillTask Flag indicating if the will task should be executed or not
@@ -98,8 +96,7 @@ public class SessionManager {
       closeAsync(session, clearWillTask).get();
     } catch (ExecutionException e) {
       throw new IOException(e);
-    }
-    catch(InterruptedException interruptedException){
+    } catch (InterruptedException interruptedException) {
       Thread.currentThread().interrupt();
     }
   }
@@ -122,20 +119,19 @@ public class SessionManager {
 
 
   /**
-   * The function requires a simple path to inject a message onto a destination without the requirement of
-   * an existing session. This is useful for preconfigured bound destinations.
+   * The function requires a simple path to inject a message onto a destination without the requirement of an existing session. This is useful for preconfigured bound
+   * destinations.
    *
    * @param destination The destination that this message is bound for
    * @param message The message to send
    * @return If the publish was successful then true, else false if it failed
-   *
    * @throws IOException Thrown if the message write failed, typically due to file system errors
    */
-  public CompletableFuture<Integer> publish(@NonNull @NotNull String destination,@NonNull @NotNull  Message message) throws IOException {
+  public CompletableFuture<Integer> publish(@NonNull @NotNull String destination, @NonNull @NotNull Message message) throws IOException {
     CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
-    Callable< CompletableFuture<DestinationImpl>> task = (() -> {
+    Callable<CompletableFuture<DestinationImpl>> task = (() -> {
       CompletableFuture<DestinationImpl> future = MessageDaemon.getInstance().getDestinationManager().find(destination);
-      future.thenApply(destinationImpl ->{
+      future.thenApply(destinationImpl -> {
         if (destinationImpl != null) {
           try {
             return destinationImpl.storeMessage(message);
@@ -151,7 +147,7 @@ public class SessionManager {
     return completableFuture;
   }
 
-  private SessionManager(){
+  private SessionManager() {
     publisherScheduler = Executors.newCachedThreadPool();
   }
 }

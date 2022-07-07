@@ -23,7 +23,7 @@ public enum AuditEvent implements LogMessage {
   private final @Getter Category category;
   private final @Getter int parameterCount;
 
-  AuditEvent(String message, Category category){
+  AuditEvent(String message, Category category) {
     this.message = message;
     this.category = category;
     int count = 0;
@@ -50,7 +50,7 @@ public enum AuditEvent implements LogMessage {
 
     private final @Getter String description;
 
-    public String getDivision(){
+    public String getDivision() {
       return "Messaging";
     }
 

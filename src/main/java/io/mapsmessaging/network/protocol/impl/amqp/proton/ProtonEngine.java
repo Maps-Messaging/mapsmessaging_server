@@ -65,7 +65,7 @@ public class ProtonEngine {
   private final Map<String, Sender> subscriptions;
   private TaskScheduler engineScheduler;
 
-  public ProtonEngine(AMQPProtocol protocol){
+  public ProtonEngine(AMQPProtocol protocol) {
     engineScheduler = new SingleConcurrentTaskScheduler(PROTON_ENGINE_KEY);
 
     this.protocol = protocol;
@@ -84,7 +84,7 @@ public class ProtonEngine {
     String mechanismString = protocol.getEndPoint().getConfig().getProperties().getProperty("SaslMechanisms", "ANONYMOUS");
     List<String> mechanismList = new ArrayList<>();
     StringTokenizer st = new StringTokenizer(mechanismString, ",");
-    while(st.hasMoreElements()){
+    while (st.hasMoreElements()) {
       mechanismList.add(st.nextElement().toString().trim());
     }
     String[] mechanisms = new String[mechanismList.size()];
@@ -97,7 +97,6 @@ public class ProtonEngine {
     // This will need to be moved into the correct SASL handler and ensure data is pushed into the SASL server till
     // auth is complete and then move to the normal event processing.
     sasl.done(Sasl.PN_SASL_OK);
-
 
     // Note: This should be a state engine and the state should be something like
     //       -> Init() -- Starting, initializing the session and the connection
@@ -120,10 +119,10 @@ public class ProtonEngine {
   public void close() {
     transport.close();
     connection.close();
-    for(Entry<String, Sender> entry:subscriptions.entrySet()){
+    for (Entry<String, Sender> entry : subscriptions.entrySet()) {
       Object sessionContext = entry.getValue().getSession().getContext();
-      if(sessionContext != null){
-        Session session = (Session)sessionContext;
+      if (sessionContext != null) {
+        Session session = (Session) sessionContext;
         session.removeSubscription(entry.getKey());
       }
     }
@@ -134,7 +133,7 @@ public class ProtonEngine {
   public void processPacket(Packet packet) throws IOException {
     Future<Boolean> future = submit(new PacketTask(packet));
     try {
-      if(!future.isDone()) {
+      if (!future.isDone()) {
         future.get(10000, TimeUnit.MILLISECONDS);
       }
     } catch (InterruptedException e) {
@@ -144,9 +143,9 @@ public class ProtonEngine {
     }
   }
 
-   void processOutput() throws IOException {
+  void processOutput() throws IOException {
     transport.process();
-    while(transport.pending() > 0) {
+    while (transport.pending() > 0) {
       ByteBuffer buffer = transport.getOutputBuffer();
       Packet packet = new Packet(buffer);
       while (buffer.hasRemaining()) {
@@ -161,21 +160,21 @@ public class ProtonEngine {
  Add the message ID as the tag for the delivery so when we get the delivery complete we can
  acknowledge the correct message Id
   */
-  public void sendMessage(Message message, SubscribedEventManager manager){
+  public void sendMessage(Message message, SubscribedEventManager manager) {
     submit(new SendMessageTask(message, manager));
   }
 
-  public byte[] packLong( long value) {
+  public byte[] packLong(long value) {
     byte[] buff = new byte[8];
-    for(int x=0;x<buff.length;x++) {
-      buff[x] =(byte) ((value >> (8*x)) & 0xff);
+    for (int x = 0; x < buff.length; x++) {
+      buff[x] = (byte) ((value >> (8 * x)) & 0xff);
     }
     return buff;
   }
 
-  public long unpackLong( byte[] buff) {
-    long value =0;
-    for(int x=0;x<buff.length;x++) {
+  public long unpackLong(byte[] buff) {
+    long value = 0;
+    for (int x = 0; x < buff.length; x++) {
       long val = buff[x];
       value ^= (val & 0xff) << (8 * x);
     }
@@ -195,7 +194,7 @@ public class ProtonEngine {
     }
   }
 
-  private Future<Boolean> submit(Callable<Boolean> task){
+  private Future<Boolean> submit(Callable<Boolean> task) {
     return engineScheduler.submit(task);
   }
 
@@ -218,7 +217,7 @@ public class ProtonEngine {
     private void processMessage() throws IOException {
       String alias = manager.getContext().getAlias();
       Sender sender = subscriptions.get(alias);
-      if(sender != null){
+      if (sender != null) {
         byte[] tag = packLong(message.getIdentifier());
         Delivery dlv = sender.delivery(tag);
         dlv.setContext(manager);
@@ -242,11 +241,11 @@ public class ProtonEngine {
     }
   }
 
-  private class PacketTask implements Callable<Boolean>{
+  private class PacketTask implements Callable<Boolean> {
 
     private final Packet packet;
 
-    public PacketTask(Packet packet){
+    public PacketTask(Packet packet) {
       this.packet = packet;
     }
 
@@ -257,7 +256,7 @@ public class ProtonEngine {
       return true;
     }
 
-    private void processBuffers(){
+    private void processBuffers() {
       ByteBuffer buffer = transport.getInputBuffer();
       if (buffer.capacity() < packet.available()) {
         // Seems the buffer.put(ByteBuffer) will not just take what it can
@@ -269,7 +268,7 @@ public class ProtonEngine {
       }
     }
 
-    private void handleEvents(){
+    private void handleEvents() {
       Event ev = collector.peek();
       while (ev != null) {
         eventListenerFactory.handleEvent(ev);

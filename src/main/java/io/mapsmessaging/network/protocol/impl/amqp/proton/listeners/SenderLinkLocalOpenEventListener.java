@@ -52,14 +52,14 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
   @Override
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
-    if(link instanceof Sender) {
+    if (link instanceof Sender) {
       Sender sender = (Sender) link;
       Source source = (Source) sender.getRemoteSource();
       String destinationName = getDestinationName(source);
-      if(destinationName != null){
+      if (destinationName != null) {
         try {
           return processEvent(event, link, sender, source, destinationName);
-        } catch  (LoginException | IOException e){
+        } catch (LoginException | IOException e) {
           link.close();
         }
       }
@@ -84,11 +84,10 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     getShareName(sender, contextBuilder);
 
     DestinationType destinationType = getDestinationType(source);
-    if (isShared(source) && destinationType.isTopic() && !getShareName(sender, contextBuilder)){
+    if (isShared(source) && destinationType.isTopic() && !getShareName(sender, contextBuilder)) {
       link.setCondition(new ErrorCondition(SHARE_NAME_ERROR, "Must supply a share name"));
       throw new IOException("Must Supply a share name");
-    }
-    else {
+    } else {
       Session session;
       try {
         session = getOrCreateSession(event);
@@ -102,7 +101,8 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
   }
 
   @SneakyThrows
-  private void handleSubscription(Link link, Sender sender, boolean browser, SubscriptionContextBuilder contextBuilder, Session session, String destinationName, DestinationType destinationType)
+  private void handleSubscription(Link link, Sender sender, boolean browser, SubscriptionContextBuilder contextBuilder, Session session, String destinationName,
+      DestinationType destinationType)
       throws IOException {
     SubscriptionContext context = contextBuilder.build();
     try {
@@ -119,8 +119,8 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     } catch (IOException e) {
       ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
       Throwable throwable = e.getCause();
-      if(throwable instanceof TokenMgrError){
-        errorCondition =new ErrorCondition(SELECTOR_ERROR, "Selector exception raised::" + throwable.getMessage());
+      if (throwable instanceof TokenMgrError) {
+        errorCondition = new ErrorCondition(SELECTOR_ERROR, "Selector exception raised::" + throwable.getMessage());
       }
       link.setCondition(errorCondition);
       throw e;

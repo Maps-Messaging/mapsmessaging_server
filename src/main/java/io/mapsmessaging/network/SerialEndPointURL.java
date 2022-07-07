@@ -86,8 +86,8 @@ public class SerialEndPointURL extends EndPointURL {
   }
 
   @Override
-  public String getJMXName(){
-    return getProtocol() + "_" +portName;
+  public String getJMXName() {
+    return getProtocol() + "_" + portName;
   }
 
   @Override

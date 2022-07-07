@@ -27,41 +27,40 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   private ConfigurationProperties globalValues;
 
-  public ConfigurationProperties(){
+  public ConfigurationProperties() {
     super();
   }
 
   public ConfigurationProperties(Map<String, Object> map) {
-    for(Map.Entry<String, Object> entry:map.entrySet()){
-      if(entry.getValue() instanceof Map){
-        put(entry.getKey(), new ConfigurationProperties((Map<String, Object>)entry.getValue()));
-      }
-      else if(entry.getValue() instanceof List){
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      if (entry.getValue() instanceof Map) {
+        put(entry.getKey(), new ConfigurationProperties((Map<String, Object>) entry.getValue()));
+      } else if (entry.getValue() instanceof List) {
         List<Object> parsedList = new ArrayList<>();
-        for(Object list:(List<Object>)entry.getValue()){
-          if(list instanceof Map){
+        for (Object list : (List<Object>) entry.getValue()) {
+          if (list instanceof Map) {
             parsedList.add(new ConfigurationProperties((Map<String, Object>) list));
           }
         }
         put(entry.getKey(), parsedList);
-      }
-      else{
+      } else {
         put(entry.getKey(), entry.getValue());
       }
     }
 
     Object global = map.get("global");
-    if(global instanceof ConfigurationProperties){
+    if (global instanceof ConfigurationProperties) {
       globalValues = (ConfigurationProperties) global;
     }
   }
+
   public String getProperty(String key) {
     return getProperty(key, null);
   }
 
   public String getProperty(String key, String defaultValue) {
     Object val = get(key, defaultValue);
-    if(val != null){
+    if (val != null) {
       return val.toString();
     }
     return null;
@@ -73,7 +72,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   public long getLongProperty(String key, long defaultValue) {
     try {
-      return asLong(get(key,  defaultValue));
+      return asLong(get(key, defaultValue));
     } catch (NumberFormatException e) {
       return defaultValue;
     }
@@ -81,7 +80,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   public int getIntProperty(String key, int defaultValue) {
     try {
-      return (int) asLong(get(key,  defaultValue));
+      return (int) asLong(get(key, defaultValue));
     } catch (NumberFormatException e) {
       return defaultValue;
     }
@@ -89,7 +88,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   public float getFloatProperty(String key, float defaultValue) {
     try {
-      return (float) asDouble(get(key,  defaultValue));
+      return (float) asDouble(get(key, defaultValue));
     } catch (NumberFormatException e) {
       return defaultValue;
     }
@@ -97,7 +96,7 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   public double getDoubleProperty(String key, double defaultValue) {
     try {
-      return asDouble(get(key,  defaultValue));
+      return asDouble(get(key, defaultValue));
     } catch (NumberFormatException e) {
       return defaultValue;
     }
@@ -105,44 +104,42 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   private Object get(String key, Object defaultValue) {
     Object val = get(key);
-    if(val == null && globalValues != null) {
+    if (val == null && globalValues != null) {
       val = globalValues.get(key);
     }
-    if(val != null){
+    if (val != null) {
       return val;
     }
     return defaultValue;
   }
 
-  private boolean asBoolean(Object value){
-    if(value instanceof Boolean){
+  private boolean asBoolean(Object value) {
+    if (value instanceof Boolean) {
       return (Boolean) value;
-    }
-    else if(value instanceof String){
-      if(((String) value).equalsIgnoreCase("enable")){
+    } else if (value instanceof String) {
+      if (((String) value).equalsIgnoreCase("enable")) {
         return true;
       }
-      if(((String) value).equalsIgnoreCase("disable")){
+      if (((String) value).equalsIgnoreCase("disable")) {
         return false;
       }
-      return Boolean.parseBoolean(((String)value).trim());
+      return Boolean.parseBoolean(((String) value).trim());
     }
     return false;
   }
 
   private long asLong(Object entry) {
-    if(entry instanceof Number){
-      if(entry instanceof Float ){
-        return Math.round((float)entry);
+    if (entry instanceof Number) {
+      if (entry instanceof Float) {
+        return Math.round((float) entry);
       }
-      if(entry instanceof Double){
-        return Math.round((double)entry);
+      if (entry instanceof Double) {
+        return Math.round((double) entry);
       }
-      return  ((Number)entry).longValue();
-    }
-    else if(entry instanceof String) {
-      String value = ((String)entry).trim();
-      if(value.contains(".")){
+      return ((Number) entry).longValue();
+    } else if (entry instanceof String) {
+      String value = ((String) entry).trim();
+      if (value.contains(".")) {
         double d = asDouble(value);
         return Math.round(d);
       }
@@ -164,22 +161,21 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
       val = val * multiplier;
       return val;
     }
-    throw new NumberFormatException("Unknown number format detected ["+entry+"]");
+    throw new NumberFormatException("Unknown number format detected [" + entry + "]");
   }
 
   private double asDouble(Object entry) {
-    if(entry instanceof Number){
-      return ((Number)entry).doubleValue();
+    if (entry instanceof Number) {
+      return ((Number) entry).doubleValue();
+    } else if (entry instanceof String) {
+      return Double.parseDouble(((String) entry).trim());
     }
-    else if(entry instanceof String) {
-      return Double.parseDouble( ((String)entry).trim());
-    }
-    throw new NumberFormatException("Unknown number format detected ["+entry+"]");
+    throw new NumberFormatException("Unknown number format detected [" + entry + "]");
   }
 
   public boolean containsKey(String key) {
-    if(!super.containsKey(key)){
-      if(globalValues != null) {
+    if (!super.containsKey(key)) {
+      if (globalValues != null) {
         return globalValues.containsKey(key);
       }
       return false;
@@ -192,17 +188,17 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
   }
 
   public ConfigurationProperties getGlobal() {
-    if(globalValues == null){
+    if (globalValues == null) {
       return (ConfigurationProperties) get("global");
     }
     return globalValues;
   }
 
   @Override
-  public boolean equals(Object object){
-    if(object instanceof ConfigurationProperties){
+  public boolean equals(Object object) {
+    if (object instanceof ConfigurationProperties) {
       boolean listEquals = super.equals(object);
-      if(globalValues != null) {
+      if (globalValues != null) {
         return listEquals && globalValues.equals(((ConfigurationProperties) object).globalValues);
       }
       return listEquals;
@@ -211,16 +207,16 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
   }
 
   @Override
-  public int hashCode(){
-    if(globalValues != null) {
+  public int hashCode() {
+    if (globalValues != null) {
       return super.hashCode() + globalValues.hashCode();
     }
     return super.hashCode();
   }
 
   @Override
-  public String toString(){
-    if(globalValues != null) {
+  public String toString() {
+    if (globalValues != null) {
       return super.toString() + " " + globalValues.toString();
     }
     return super.toString();

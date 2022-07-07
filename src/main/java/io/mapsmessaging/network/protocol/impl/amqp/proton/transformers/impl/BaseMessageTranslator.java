@@ -37,22 +37,22 @@ import org.jetbrains.annotations.NotNull;
 public class BaseMessageTranslator implements MessageTranslator {
 
   @Override
-  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     Map<String, TypedData> dataMap = new LinkedHashMap<>();
     messageBuilder.setContentType(protonMessage.getContentType());
 
-    HeaderEncoder.unpackHeader(messageBuilder,  protonMessage.getHeader());
+    HeaderEncoder.unpackHeader(messageBuilder, protonMessage.getHeader());
     PropertiesEncoder.unpackProperties(protonMessage.getProperties(), dataMap, messageBuilder);
     ApplicationMapEncoder.unpackApplicationMap(dataMap, protonMessage);
 
     messageBuilder.setDataMap(dataMap);
 
     Map<String, String> meta = messageBuilder.getMeta();
-    if(meta == null){
+    if (meta == null) {
       meta = new LinkedHashMap<>();
       messageBuilder.setMeta(meta);
     }
-    meta.put("type", ""+ getType());
+    meta.put("type", "" + getType());
     return messageBuilder;
   }
 
@@ -61,7 +61,7 @@ public class BaseMessageTranslator implements MessageTranslator {
     Message protonMessage = org.apache.qpid.proton.message.Message.Factory.create();
 
     Header header = new Header();
-    if(HeaderEncoder.packHeader(message, header)){
+    if (HeaderEncoder.packHeader(message, header)) {
       protonMessage.setHeader(header);
     }
 
@@ -80,7 +80,7 @@ public class BaseMessageTranslator implements MessageTranslator {
     return protonMessage;
   }
 
-  protected byte getType(){
-    return (byte)MessageTypes.MESSAGE.getValue();
+  protected byte getType() {
+    return (byte) MessageTypes.MESSAGE.getValue();
   }
 }

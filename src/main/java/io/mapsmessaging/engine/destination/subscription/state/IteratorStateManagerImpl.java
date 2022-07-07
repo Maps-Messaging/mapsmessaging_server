@@ -24,21 +24,19 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * This class iterates over an existing Message State Manager and allows a browser to walk down the current
- * messages that are still outstanding for this subscriber. As an iterator it can not modify the underlying
- * structure but can only walk down the list of messages. To do this, it takes a deep copy of the messages
- * at rest structure and maintains any addition or deletion from the parent structure. This will keep this structure
- * up to date with the parent and reflect any changes based on message delivery or expiry etc.
+ * This class iterates over an existing Message State Manager and allows a browser to walk down the current messages that are still outstanding for this subscriber. As an iterator
+ * it can not modify the underlying structure but can only walk down the list of messages. To do this, it takes a deep copy of the messages at rest structure and maintains any
+ * addition or deletion from the parent structure. This will keep this structure up to date with the parent and reflect any changes based on message delivery or expiry etc.
  */
 
 public class IteratorStateManagerImpl extends BaseMessageStateManager implements MessageStateManagerListener {
 
   private final MessageStateManagerImpl parent;
 
-  public IteratorStateManagerImpl (String name, MessageStateManagerImpl parentState, boolean deepCopy) {
+  public IteratorStateManagerImpl(String name, MessageStateManagerImpl parentState, boolean deepCopy) {
     super(name, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE), new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     parent = parentState;
-    if(deepCopy) {
+    if (deepCopy) {
       parent.getAllAtRest(messagesAtRest);
     }
     parent.add(this);

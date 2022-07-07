@@ -46,7 +46,7 @@ public class SelectorDestinationSubscription extends DestinationSubscription {
 
   @Override
   public int register(Message message) {
-    if(Filter.getInstance().filterMessage(selector, message, getDestinationImpl())){
+    if (Filter.getInstance().filterMessage(selector, message, getDestinationImpl())) {
       return super.register(message);
     }
     return 0;

@@ -23,5 +23,6 @@ public class Constants {
   public static final int BITSET_BLOCK_SIZE = 4096;
 
   // Hide the constructor
-  private Constants(){}
+  private Constants() {
+  }
 }

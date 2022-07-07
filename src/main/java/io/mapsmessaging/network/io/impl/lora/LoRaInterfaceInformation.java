@@ -29,7 +29,7 @@ public class LoRaInterfaceInformation implements InterfaceInformation {
   private final int mtu;
   private final InetAddress bcast;
 
-  LoRaInterfaceInformation(int mtu, InetAddress bcast){
+  LoRaInterfaceInformation(int mtu, InetAddress bcast) {
     this.mtu = mtu;
     this.bcast = bcast;
   }

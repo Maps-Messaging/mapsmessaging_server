@@ -20,7 +20,7 @@ package io.mapsmessaging.utilities.stats.processors;
 
 public interface DataProcessor {
 
-  long add (long current, long previous);
+  long add(long current, long previous);
 
   long calculate();
 

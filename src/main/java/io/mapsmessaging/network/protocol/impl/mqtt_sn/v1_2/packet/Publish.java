@@ -26,11 +26,14 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public class Publish extends MQTT_SNPacket implements BasePublish{
+public class Publish extends MQTT_SNPacket implements BasePublish {
 
-  @Getter private final int topicId;
-  @Getter private final int messageId;
-  @Getter private final byte[] message;
+  @Getter
+  private final int topicId;
+  @Getter
+  private final int messageId;
+  @Getter
+  private final byte[] message;
   private byte flags;
 
   public Publish(short topicId, int messageId, byte[] message) {

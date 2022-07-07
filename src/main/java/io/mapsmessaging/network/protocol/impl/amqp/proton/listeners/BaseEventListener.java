@@ -91,8 +91,7 @@ public abstract class BaseEventListener implements EventListener {
       session.login();
       sessionManager = protocol.addSession(sessionId, session);
       protocol.getLogger().log(ServerLogMessages.AMQP_CREATED_SESSION, sessionId);
-    }
-    else{
+    } else {
       sessionManager.increment();
     }
     return sessionManager;
@@ -129,7 +128,7 @@ public abstract class BaseEventListener implements EventListener {
 
   protected DestinationType getDestinationType(Source source) {
     Symbol[] symbols = source.getCapabilities();
-    if(symbols != null) {
+    if (symbols != null) {
       for (Symbol symbol : symbols) {
         if (symbol.equals(Symbol.getSymbol("queue"))) {
           return DestinationType.QUEUE;
@@ -144,7 +143,7 @@ public abstract class BaseEventListener implements EventListener {
 
   protected boolean isShared(Source source) {
     Symbol[] symbols = source.getCapabilities();
-    if(symbols != null) {
+    if (symbols != null) {
       for (Symbol symbol : symbols) {
         if (symbol.equals(Symbol.getSymbol("shared"))) {
           return true;

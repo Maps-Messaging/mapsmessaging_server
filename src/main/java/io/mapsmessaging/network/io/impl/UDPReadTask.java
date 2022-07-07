@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.Packet;
 import java.io.IOException;
 
 public class UDPReadTask extends ReadTask {
+
   private final Packet udpPacket;
 
 

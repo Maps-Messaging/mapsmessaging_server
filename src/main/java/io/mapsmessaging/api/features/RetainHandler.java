@@ -40,8 +40,10 @@ public enum RetainHandler {
       "Do not send ANY retained messages, regardless of subscription state"
   );
 
-  @Getter private final int handler;
-  @Getter private final String description;
+  @Getter
+  private final int handler;
+  @Getter
+  private final String description;
 
   RetainHandler(int handler, String description) {
     this.handler = handler;

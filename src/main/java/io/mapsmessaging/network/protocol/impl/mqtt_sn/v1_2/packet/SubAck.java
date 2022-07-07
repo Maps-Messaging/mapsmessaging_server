@@ -51,7 +51,7 @@ public class SubAck extends MQTT_SNPacket {
     packet.put(flags); // Only QOS counts
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, msgId);
-    packet.put((byte)status.getValue());
+    packet.put((byte) status.getValue());
     return 8;
   }
 

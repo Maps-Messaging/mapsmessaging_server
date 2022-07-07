@@ -28,13 +28,13 @@ import java.util.concurrent.CompletableFuture;
 
 public class MessageListener extends EventListener {
 
-  protected void processEvent( StateEngine engine, Event event, Message message) throws IOException {
+  protected void processEvent(StateEngine engine, Event event, Message message) throws IOException {
     String lookup = engine.getMapping(event.getDestination());
     CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
-    if(future != null) {
+    if (future != null) {
       future.thenApply(destination -> {
         try {
-          if(destination != null) {
+          if (destination != null) {
             handleMessageStoreToDestination(destination, engine, event, message);
           }
         } catch (IOException e) {

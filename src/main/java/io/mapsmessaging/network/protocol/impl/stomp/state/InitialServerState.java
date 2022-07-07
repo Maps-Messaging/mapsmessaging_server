@@ -33,8 +33,7 @@ public class InitialServerState implements State {
       FrameListener listener = frame.getFrameListener();
       listener.frameEvent(frame, engine, endOfBuffer);
       listener.postFrameHandling(frame, engine);
-    }
-    else {
+    } else {
       throw new StompProtocolException("Invalid frame received");
     }
   }

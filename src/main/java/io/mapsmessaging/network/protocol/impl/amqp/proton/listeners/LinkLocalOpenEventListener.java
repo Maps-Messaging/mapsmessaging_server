@@ -38,8 +38,8 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
     super(protocol, engine);
   }
 
-  protected String getDestinationName(Source source){
-    if(source != null) {
+  protected String getDestinationName(Source source) {
+    if (source != null) {
       return source.getAddress();
     }
     return null;
@@ -49,8 +49,8 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     // Check to see if we update the credit
     Link link = event.getLink();
-    if(link instanceof Receiver){
-      topUp((Receiver)link);
+    if (link instanceof Receiver) {
+      topUp((Receiver) link);
     }
     return true;
   }
@@ -61,9 +61,9 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
   }
 
 
-  protected boolean getShareName(Sender sender, SubscriptionContextBuilder contextBuilder){
+  protected boolean getShareName(Sender sender, SubscriptionContextBuilder contextBuilder) {
     String shareName = sender.getName();
-    if(shareName != null) {
+    if (shareName != null) {
       int location = shareName.indexOf('|');
       if (location > 0) {
         shareName = shareName.substring(0, location);
@@ -77,11 +77,11 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
   //
   // Locates the selector within the source objects mapping and returns the string, if there is one
   //
-  protected void getSelector(Source source, SubscriptionContextBuilder contextBuilder){
-    if(source.getFilter() != null){
+  protected void getSelector(Source source, SubscriptionContextBuilder contextBuilder) {
+    if (source.getFilter() != null) {
       Object filter = source.getFilter().get(Symbol.getSymbol("jms-selector"));
-      if(filter instanceof DescribedType){
-        DescribedType decoder = (DescribedType)filter;
+      if (filter instanceof DescribedType) {
+        DescribedType decoder = (DescribedType) filter;
         String selector = decoder.getDescribed().toString();
         if (selector != null) {
           contextBuilder.setSelector(selector);

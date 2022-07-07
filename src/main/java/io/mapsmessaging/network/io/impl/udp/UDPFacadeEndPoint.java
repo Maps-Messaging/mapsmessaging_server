@@ -24,17 +24,17 @@ public class UDPFacadeEndPoint extends EndPoint {
     this.endPoint = endPoint;
     this.fromAddress = fromAddress;
     List<String> end = new ArrayList<>(endPoint.getJMXTypePath());
-    end.remove(end.size()-1);
+    end.remove(end.size() - 1);
 
-    String entry =strip("endPointName="+endPoint.getName());
+    String entry = strip("endPointName=" + endPoint.getName());
     end.add(entry);
-    String remote = strip("remoteHost="+getName());
+    String remote = strip("remoteHost=" + getName());
     end.add(remote);
     jmxParentPath = end;
   }
 
-  private String strip(String val){
-    while(val.contains(":")){
+  private String strip(String val) {
+    while (val.contains(":")) {
       val = val.replace(":", "_");
     }
     return val;
@@ -78,7 +78,7 @@ public class UDPFacadeEndPoint extends EndPoint {
 
   @Override
   public String getName() {
-    return "udp:/"+fromAddress.toString();
+    return "udp:/" + fromAddress.toString();
   }
 
   @Override

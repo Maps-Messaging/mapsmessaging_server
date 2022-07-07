@@ -19,14 +19,14 @@ import org.jetbrains.annotations.NotNull;
 public class TxAckHandler extends Handler {
 
   @Override
-  public void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet) {
+  public void process(@NotNull @NonNull SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet) {
     TxAcknowledge txAck = (TxAcknowledge) packet;
     PacketHandler.getInstance().getMessageStateContext().complete(txAck.getToken());
     GatewayInfo info = protocol.getGatewayManager().getInfo(GatewayManager.dumpIdentifier(txAck.getGatewayIdentifier()));
-    if(info != null) {
+    if (info != null) {
       sendMessage(protocol, info, packet.getFromAddress());
     }
-    if(txAck.getJsonObject().length()>0){
+    if (txAck.getJsonObject().length() > 0) {
       Map<String, String> meta = new LinkedHashMap<>();
       meta.put("protocol", "SemTech");
       meta.put("version", "" + VERSION);
@@ -36,7 +36,7 @@ public class TxAckHandler extends Handler {
       builder.setMeta(meta);
       Message message = builder.build();
       try {
-        if(info != null) {
+        if (info != null) {
           info.getInbound().storeMessage(message);
         }
       } catch (IOException e) {

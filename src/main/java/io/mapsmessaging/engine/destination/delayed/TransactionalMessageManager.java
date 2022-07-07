@@ -22,17 +22,16 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import java.util.List;
 
 /**
- * This class manages a group of transactions and the messages that belong to each transaction. Since
- * messages are stored with the normal messages we need to manage when they are ready to be delivered
- * and this class maintains this list.
+ * This class manages a group of transactions and the messages that belong to each transaction. Since messages are stored with the normal messages we need to manage when they are
+ * ready to be delivered and this class maintains this list.
  */
-public class TransactionalMessageManager extends MessageManager{
+public class TransactionalMessageManager extends MessageManager {
 
-  public TransactionalMessageManager(BitSetFactory factory){
+  public TransactionalMessageManager(BitSetFactory factory) {
     super(factory);
   }
 
-  public List<Long> getTransactions(){
+  public List<Long> getTransactions() {
     return getBucketIds();
   }
 

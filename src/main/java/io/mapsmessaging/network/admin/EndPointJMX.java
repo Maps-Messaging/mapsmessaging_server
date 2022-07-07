@@ -49,7 +49,7 @@ public class EndPointJMX implements HealthMonitor {
     statistics = new EndPointStatisticsJMX(endPoint, typePath);
   }
 
-  protected ObjectInstance register(){
+  protected ObjectInstance register() {
     return JMXManager.getInstance().register(this, typePath);
   }
 
@@ -64,12 +64,12 @@ public class EndPointJMX implements HealthMonitor {
   //</editor-fold>
 
   //<editor-fold desc="JMX Bean functions">
-  @JMXBeanOperation(name = "close", description ="Closes the low level network End Point")
+  @JMXBeanOperation(name = "close", description = "Closes the low level network End Point")
   public void closeEndPoint() throws IOException {
     endPoint.close();
   }
 
-  @JMXBeanOperation(name = "checkHealth", description ="Returns current health status of this End Point ")
+  @JMXBeanOperation(name = "checkHealth", description = "Returns current health status of this End Point ")
   public HealthStatus checkHealth() {
     return new HealthStatus(endPoint.getName(), LEVEL.INFO, "End Point seems ok", mbean.getObjectName().toString());
   }

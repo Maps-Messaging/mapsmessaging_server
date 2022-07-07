@@ -30,7 +30,8 @@ public class LoRaDeviceConfig {
   private int cadTimeout;
   private float frequency;
 
-  LoRaDeviceConfig(){}
+  LoRaDeviceConfig() {
+  }
 
   public String getName() {
     return name;

@@ -140,7 +140,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
       while (serialPort.bytesAvailable() == 0) {
         LockSupport.parkNanos(1000000);
       }
-      runner.selected(runner,null, SelectionKey.OP_READ);
+      runner.selected(runner, null, SelectionKey.OP_READ);
     }
   }
   //</editor-fold>

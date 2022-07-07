@@ -36,7 +36,7 @@ public class SubAck5 extends MQTTPacket5 {
   public String toString() {
     StringBuilder sb = new StringBuilder("MQTTv5 SubAck[ Result:");
     for (StatusCode b : result) {
-      sb.append( b);
+      sb.append(b);
     }
     sb.append(" Packet Id:").append(packetId).append("]");
     return sb.toString();

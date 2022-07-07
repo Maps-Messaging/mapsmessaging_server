@@ -61,14 +61,14 @@ public class NMEAStreamHandler implements StreamHandler {
     if (idx >= inputBuffer.length) {
       throw new IOException("Exceeded buffer size of known NMEA sentences");
     }
-    inputBuffer[idx++] = (byte)Constants.CR;
-    inputBuffer[idx++] = (byte)Constants.LF;
+    inputBuffer[idx++] = (byte) Constants.CR;
+    inputBuffer[idx++] = (byte) Constants.LF;
     packet.put(inputBuffer, 0, idx);
     return idx;
   }
 
   @Override
-  public int parseOutput(OutputStream output, Packet packet)  {
+  public int parseOutput(OutputStream output, Packet packet) {
     return 0;
   }
 }

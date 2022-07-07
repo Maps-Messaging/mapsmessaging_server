@@ -26,6 +26,7 @@ import io.mapsmessaging.engine.tasks.Response;
 import java.util.Queue;
 
 public class BulkRemoveMessageTask extends EngineTask {
+
   private static final int MAX_TASK_TIME = 10000;
 
   private final Queue<Long> queue;
@@ -39,7 +40,7 @@ public class BulkRemoveMessageTask extends EngineTask {
 
   @Override
   public Response taskCall() throws Exception {
-    if(destination.isClosed()){
+    if (destination.isClosed()) {
       return new LongResponse(-1);
     }
     int count = queue.size();

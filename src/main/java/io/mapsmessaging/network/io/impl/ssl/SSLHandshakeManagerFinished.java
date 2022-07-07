@@ -24,7 +24,7 @@ import io.mapsmessaging.network.io.impl.Selector;
 public class SSLHandshakeManagerFinished implements SSLHandshakeManager {
 
   @Override
-  public boolean handleSSLHandshakeStatus(){
+  public boolean handleSSLHandshakeStatus() {
     return false;
   }
 

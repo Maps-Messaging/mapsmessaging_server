@@ -59,76 +59,76 @@ public class MessageDaemonJMX implements HealthMonitor {
     entryJMX = new MessageDaemonEntryJMX(daemon);
     List<String> resourceList = new ArrayList<>(typePath);
     movingAveragesJMXList = new ArrayList<>();
-    for(LinkedMovingAverages linkedMovingAverages:DestinationStats.getGlobalAverages()){
+    for (LinkedMovingAverages linkedMovingAverages : DestinationStats.getGlobalAverages()) {
       movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
     }
 
   }
 
-  @JMXBeanOperation(name="shutdown",description = "Initiates a server shutdown")
+  @JMXBeanOperation(name = "shutdown", description = "Initiates a server shutdown")
   public void shutdown() {
     daemon.stop(1);
   }
 
   //<editor-fold desc="Destination based statistics">
-  @JMXBeanAttribute(name = "noInterest", description ="Returns total number of messages with no subscription interst received")
+  @JMXBeanAttribute(name = "noInterest", description = "Returns total number of messages with no subscription interst received")
   public long getTotalNoInterest() {
     return DestinationStats.getTotalNoInterestMessages();
   }
 
-  @JMXBeanAttribute(name = "published", description ="Returns the total number of messages received")
+  @JMXBeanAttribute(name = "published", description = "Returns the total number of messages received")
   public long getTotalPublishedMessages() {
     return DestinationStats.getTotalPublishedMessages();
   }
 
-  @JMXBeanAttribute(name = "subscribed", description ="Returns the total number of messages that match a subscription")
+  @JMXBeanAttribute(name = "subscribed", description = "Returns the total number of messages that match a subscription")
   public long getTotalSubscribedMessages() {
     return DestinationStats.getTotalSubscribedMessages();
   }
 
-  @JMXBeanAttribute(name = "retrieved", description ="Returns the total number of messages retrieved from underlying storage")
+  @JMXBeanAttribute(name = "retrieved", description = "Returns the total number of messages retrieved from underlying storage")
   public long getTotalRetrievedMessages() {
     return DestinationStats.getTotalRetrievedMessages();
   }
 
-  @JMXBeanAttribute(name = "expired", description ="Returns the total number of messages that have expired")
+  @JMXBeanAttribute(name = "expired", description = "Returns the total number of messages that have expired")
   public long getTotalExpiredMessages() {
     return DestinationStats.getTotalExpiredMessages();
   }
 
-  @JMXBeanAttribute(name = "delivered", description ="Returns the total number of messages that have been delivered to a client and acknowledged")
+  @JMXBeanAttribute(name = "delivered", description = "Returns the total number of messages that have been delivered to a client and acknowledged")
   public long getTotalDeliveredMessages() {
     return DestinationStats.getTotalDeliveredMessages();
   }
 
   //</editor-fold>
 
-  @JMXBeanAttribute(name = "packets Received", description ="Returns the total number of protocol specific packets received")
+  @JMXBeanAttribute(name = "packets Received", description = "Returns the total number of protocol specific packets received")
   public long getTotalEventsReceived() {
     return ProtocolImpl.getTotalReceived();
   }
 
-  @JMXBeanAttribute(name = "packets Sent", description ="Returns the total number of protocol specific packets sent")
+  @JMXBeanAttribute(name = "packets Sent", description = "Returns the total number of protocol specific packets sent")
   public long getTotalEventsSent() {
     return ProtocolImpl.getTotalSent();
   }
 
-  @JMXBeanAttribute(name = "Bytes received", description ="Returns the total number of bytes received across all End Points")
+  @JMXBeanAttribute(name = "Bytes received", description = "Returns the total number of bytes received across all End Points")
   public long getTotalBytesReceived() {
     return EndPoint.totalReadBytes.sum();
   }
 
-  @JMXBeanAttribute(name = "Bytes sent", description ="Returns the total number of bytes sent across all End Points")
+  @JMXBeanAttribute(name = "Bytes sent", description = "Returns the total number of bytes sent across all End Points")
   public long getTotalBytesSent() {
     return EndPoint.totalWriteBytes.sum();
   }
 
-  @JMXBeanAttribute(name = "build Date", description ="Returns the build date and time of the server")
+  @JMXBeanAttribute(name = "build Date", description = "Returns the build date and time of the server")
   public String getBuildDate() {
     return BuildInfo.getInstance().getBuildDate();
   }
 
-  @JMXBeanAttribute(name = "build Version", description ="Returns the build version of the server")
+  @JMXBeanAttribute(name = "build Version", description = "Returns the build version of the server")
   public String getBuildVersion() {
     return BuildInfo.getInstance().getBuildVersion();
   }
@@ -143,17 +143,17 @@ public class MessageDaemonJMX implements HealthMonitor {
     JMXManager.getInstance().unregister(mbean);
   }
 
-  @JMXBeanOperation(name = "createDestination", description ="Creates a new destination instance")
+  @JMXBeanOperation(name = "createDestination", description = "Creates a new destination instance")
   public boolean create(String name, boolean isTopic) throws IOException {
     DestinationType type = DestinationType.TOPIC;
-    if(!isTopic){
+    if (!isTopic) {
       type = DestinationType.QUEUE;
     }
     daemon.getDestinationManager().create(name, type);
     return true;
   }
 
-  @JMXBeanOperation(name = "checkHealth", description ="Returns the last total number of bytes sent from this end point")
+  @JMXBeanOperation(name = "checkHealth", description = "Returns the last total number of bytes sent from this end point")
   public HealthStatus checkHealth() {
     return new HealthStatus(daemon.getId(), LEVEL.INFO, "Seems to be running ok", mbean.getObjectName().toString());
   }

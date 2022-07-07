@@ -7,10 +7,10 @@ import java.util.zip.Checksum;
 
 public class Crc32PacketSecurity extends ChecksumPacketSecurity {
 
-  public Crc32PacketSecurity(){
+  public Crc32PacketSecurity() {
   }
 
-  protected Crc32PacketSecurity(SignatureManager stamper){
+  protected Crc32PacketSecurity(SignatureManager stamper) {
     super(stamper);
   }
 
@@ -24,7 +24,7 @@ public class Crc32PacketSecurity extends ChecksumPacketSecurity {
     return "CRC32";
   }
 
-  protected Checksum getChecksum(){
+  protected Checksum getChecksum() {
     return new CRC32();
   }
 

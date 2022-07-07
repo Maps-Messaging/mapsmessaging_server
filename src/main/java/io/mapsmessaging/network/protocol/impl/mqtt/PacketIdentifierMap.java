@@ -32,7 +32,8 @@ public class PacketIdentifierMap {
   @Getter
   private final long messageId;
 
-  @Getter private final long time;
+  @Getter
+  private final long time;
 
   public PacketIdentifierMap(int packetIdentifier, SubscribedEventManager subscription, long messageId) {
     this.packetIdentifier = packetIdentifier;

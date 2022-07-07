@@ -41,7 +41,7 @@ public class SecurityContext {
     isLoggedIn = false;
   }
 
-  public String getUsername(){
+  public String getUsername() {
     return username;
   }
 

@@ -26,5 +26,6 @@ public class DefaultConstants {
   public static final int SESSION_TIME_OUT = 86400;
   public static final int MAX_REGISTERED_SIZE = ((1 << 15) - 1);
 
-  private DefaultConstants(){}
+  private DefaultConstants() {
+  }
 }

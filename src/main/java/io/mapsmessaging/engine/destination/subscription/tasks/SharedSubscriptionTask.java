@@ -25,12 +25,13 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.tasks.VoidResponse;
 
 public class SharedSubscriptionTask extends EngineTask {
+
   private final SharedSubscription sharedSubscription;
   private final AcknowledgementController acknowledgementController;
   private final long messageId;
   private final boolean ack;
 
-  public SharedSubscriptionTask(SharedSubscription sharedSubscription, AcknowledgementController acknowledgementController, long messageId, final boolean ack){
+  public SharedSubscriptionTask(SharedSubscription sharedSubscription, AcknowledgementController acknowledgementController, long messageId, final boolean ack) {
     this.sharedSubscription = sharedSubscription;
     this.acknowledgementController = acknowledgementController;
     this.messageId = messageId;
@@ -39,11 +40,10 @@ public class SharedSubscriptionTask extends EngineTask {
 
   @Override
   public Response taskCall() {
-    if(ack){
+    if (ack) {
       acknowledgementController.ack(messageId);
       sharedSubscription.ackReceived(messageId);
-    }
-    else{
+    } else {
       acknowledgementController.rollback(messageId);
     }
     return new VoidResponse();

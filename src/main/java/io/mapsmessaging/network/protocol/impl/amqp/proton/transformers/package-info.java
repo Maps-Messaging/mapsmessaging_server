@@ -16,10 +16,9 @@
  *
  */
 /**
- * The support of JMS over AMQP is contingent on the payload following the specification,
- * found here https://www.oasis-open.org/committees/download.php/60574/amqp-bindmap-jms-v1.0-wd09.pdf
- * By using the Proton AMQP Message the classes here provide a mapping between the AMQP (JMS) message and the
- * internal Message.
+ * The support of JMS over AMQP is contingent on the payload following the specification, found here
+ * https://www.oasis-open.org/committees/download.php/60574/amqp-bindmap-jms-v1.0-wd09.pdf By using the Proton AMQP Message the classes here provide a mapping between the AMQP
+ * (JMS) message and the internal Message.
  *
  * This enables non JMS clients to send and receive events from a JMS client and vice versa
  */

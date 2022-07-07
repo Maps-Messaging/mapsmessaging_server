@@ -35,7 +35,7 @@ public class Disconnect extends MQTT_SN_2_Packet {
   @Getter
   private final String reasonString;
 
-  public Disconnect(ReasonCodes reasonCode, String reasonString, long expiry){
+  public Disconnect(ReasonCodes reasonCode, String reasonString, long expiry) {
     super(DISCONNECT);
     this.expiry = expiry;
     this.reasonCode = reasonCode;
@@ -46,13 +46,12 @@ public class Disconnect extends MQTT_SN_2_Packet {
     super(DISCONNECT);
     if (length > 2) {
       reasonCode = ReasonCodes.lookup(packet.get());
-      if(length >= 6) {
+      if (length >= 6) {
         expiry = MQTTPacket.readInt(packet);
-      }
-      else {
+      } else {
         expiry = 0;
       }
-      if(length >= 8) {
+      if (length >= 8) {
         String reason = "";
         try {
           reason = MQTTPacket.readUTF8(packet);
@@ -60,13 +59,12 @@ public class Disconnect extends MQTT_SN_2_Packet {
           reason = e.getMessage();
         }
         reasonString = reason;
-      }
-      else{
+      } else {
         reasonString = "";
       }
     } else {
       expiry = 0;
-      reasonString="";
+      reasonString = "";
       reasonCode = ReasonCodes.Success;
     }
   }
@@ -82,14 +80,14 @@ public class Disconnect extends MQTT_SN_2_Packet {
   @Override
   public int packFrame(Packet packet) {
     int len = 7;
-    if(reasonString != null){
-      len = len + reasonString.length()+ 2; // Size
+    if (reasonString != null) {
+      len = len + reasonString.length() + 2; // Size
     }
     len = packLength(packet, len);
     packet.put((byte) DISCONNECT);
-    packet.put((byte)reasonCode.getValue());
+    packet.put((byte) reasonCode.getValue());
     MQTTPacket.writeInt(packet, expiry);
-    if(reasonString !=null){
+    if (reasonString != null) {
       MQTTPacket.writeUTF8(packet, reasonString);
     }
     return (len);

@@ -54,7 +54,7 @@ public class SharedSubscription extends DestinationSubscription {
     subscriptions.close();
     SharedSubscriptionManager register = destinationImpl.findShareRegister(destinationImpl.getFullyQualifiedNamespace());
     register.delete(shareName);
-    if(register.isEmpty()) {
+    if (register.isEmpty()) {
       destinationImpl.delShareRegistry(destinationImpl.getFullyQualifiedNamespace());
     }
   }
@@ -66,8 +66,7 @@ public class SharedSubscription extends DestinationSubscription {
     if (hibernating && sessionImpl != null) {
       wakeUp(sessionImpl);
       destinationImpl.addSubscription(this);
-    }
-    else{
+    } else {
       schedule();
     }
     return subscription;
@@ -99,10 +98,10 @@ public class SharedSubscription extends DestinationSubscription {
   }
 
   @Override
-  protected boolean isReady(){
-    if(super.isReady()){
-      for(SessionSharedSubscription subscription:subscriptions.flatMap){
-        if(subscription.canSend()){
+  protected boolean isReady() {
+    if (super.isReady()) {
+      for (SessionSharedSubscription subscription : subscriptions.flatMap) {
+        if (subscription.canSend()) {
           return true;
         }
       }

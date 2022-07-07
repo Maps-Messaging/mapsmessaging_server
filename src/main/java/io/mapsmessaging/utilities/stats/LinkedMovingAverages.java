@@ -26,12 +26,12 @@ import java.util.concurrent.atomic.LongAdder;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 /**
- * Creates a list of moving average with different time periods. Data is pushed through all the moving averages resulting in the ability
- * to see longer period trends versus short term trends.
+ * Creates a list of moving average with different time periods. Data is pushed through all the moving averages resulting in the ability to see longer period trends versus short
+ * term trends.
  *
- * @since 1.0
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 public class LinkedMovingAverages {
 
@@ -50,22 +50,22 @@ public class LinkedMovingAverages {
   /**
    * Creates an instance of a list of moving averages
    *
-   * @param dataProcessor  The data processor object to use when adding data to the average
+   * @param dataProcessor The data processor object to use when adding data to the average
    * @param name The name of this instance
    * @param timeList A List of time intervals to create moving averages for
    * @param unit The TimeUnit that represents the time units provided in timeList
    * @param unitName The name of the unit being measured
    */
-  protected LinkedMovingAverages (DataProcessor dataProcessor, String name, int[] timeList, TimeUnit unit, String unitName){
+  protected LinkedMovingAverages(DataProcessor dataProcessor, String name, int[] timeList, TimeUnit unit, String unitName) {
     this.dataProcessor = dataProcessor;
     this.name = name;
     this.unitName = unitName;
     total = new LongAdder();
     movingAverages = new ArrayList<>();
     int start = 0;
-    for(int time:timeList){
-      movingAverages.add(new MovingAverage(time- start, unit));
-      if(start == 0){
+    for (int time : timeList) {
+      movingAverages.add(new MovingAverage(time - start, unit));
+      if (start == 0) {
         start = time;
       }
     }
@@ -76,69 +76,65 @@ public class LinkedMovingAverages {
   }
 
   /**
-   *
    * @return The name of this instance
    */
-  public String getName(){
+  public String getName() {
     return name;
   }
 
   /**
-   *
    * @return The name of the units being measured
    */
-  public String getUnits(){
+  public String getUnits() {
     return unitName;
   }
 
   /**
-   *
    * @return A list of complete names of all moving averages
    */
-  public String[] getNames(){
+  public String[] getNames() {
     String[] names = new String[movingAverages.size()];
-    int x =0;
-    for(MovingAverage movingAverage:movingAverages){
+    int x = 0;
+    for (MovingAverage movingAverage : movingAverages) {
       names[x] = movingAverage.getName();
       x++;
     }
     return names;
   }
 
-  public SummaryStatistics getDetailedStatistics(){
+  public SummaryStatistics getDetailedStatistics() {
     return previousStatistics;
   }
 
   /**
    * Increment the current value
    */
-  public void increment(){
+  public void increment() {
     add(1);
   }
 
   /**
    * Decrement the current value
    */
-  public void decrement(){
+  public void decrement() {
     subtract(1);
   }
 
   /**
    * @param value Add the supplied value to the current average
    */
-  public void add(long value){
+  public void add(long value) {
     updateValue(value);
   }
 
   /**
-   *
    * @param value Subtract the supplied value from the current average
    */
-  public void subtract(long value){
-    updateValue(value* -1);
+  public void subtract(long value) {
+    updateValue(value * -1);
   }
 
-  private void updateValue(long value){
+  private void updateValue(long value) {
     long corrected = dataProcessor.add(value, previous);
     total.add(corrected);
     currentStatistics.addValue(corrected);
@@ -146,29 +142,26 @@ public class LinkedMovingAverages {
   }
 
   /**
-   *
    * @return The current value
    */
-  public long getCurrent(){
+  public long getCurrent() {
     return previous;
   }
 
   /**
-   *
    * @return The running total for the current period
    */
-  public long getTotal(){
+  public long getTotal() {
     return total.sum();
   }
 
   /**
-   *
    * @param name The name of the moving average to get the value for
    * @return The current moving average if found
    */
-  public long getAverage(String name){
-    for(MovingAverage average:movingAverages){
-      if(average.getName().equals(name)){
+  public long getAverage(String name) {
+    for (MovingAverage average : movingAverages) {
+      if (average.getName().equals(name)) {
         return average.getAverage();
       }
     }
@@ -182,13 +175,13 @@ public class LinkedMovingAverages {
     previous = 0;
     total.reset();
     dataProcessor.reset();
-    for(MovingAverage average:movingAverages){
+    for (MovingAverage average : movingAverages) {
       average.reset();
     }
   }
 
-  protected void update(){
-    if(lastUpdate < System.currentTimeMillis()) {
+  protected void update() {
+    if (lastUpdate < System.currentTimeMillis()) {
       lastUpdate = System.currentTimeMillis() + timeSpan;
       long ave = dataProcessor.calculate();
       for (MovingAverage movingAverage : movingAverages) {

@@ -65,7 +65,7 @@ public class SecurityManager {
     return new LoginContext(definedAuth, new LocalCallbackHandler(username, passCode, endPointPrincipal));
   }
 
-  public String getAuthenticationName(ProtocolImpl protocol){
+  public String getAuthenticationName(ProtocolImpl protocol) {
     String authConfig = protocol.getEndPoint().getAuthenticationConfig();
     if (authConfig != null && authConfig.length() > 0) {
       return properties.getProperty(authConfig);

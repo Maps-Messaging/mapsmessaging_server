@@ -24,11 +24,9 @@ import java.util.Map;
 /**
  * This class manages a unique shared subscription instance. It manages ALL subscriptions under the unique name, this includes
  *
- * a. Simple standard subscriptions
- * b. Selector based subscriptions that would filter a sub set of messages
+ * a. Simple standard subscriptions b. Selector based subscriptions that would filter a sub set of messages
  *
- * It must also coordinate the allocation of message IDs and the commitment of these IDs across ALL subscriptions to maintain
- * a queue like delivery of once and only once.
+ * It must also coordinate the allocation of message IDs and the commitment of these IDs across ALL subscriptions to maintain a queue like delivery of once and only once.
  */
 
 public class SharedSubscriptionRegister {
@@ -36,19 +34,19 @@ public class SharedSubscriptionRegister {
   private final Map<String, SharedSubscriptionManager> activeGroups;
 
 
-  public SharedSubscriptionRegister(){
+  public SharedSubscriptionRegister() {
     activeGroups = new LinkedHashMap<>();
   }
 
-  public SharedSubscriptionManager get(String name){
+  public SharedSubscriptionManager get(String name) {
     return activeGroups.get(name);
   }
 
-  public SharedSubscriptionManager add(String name, SharedSubscriptionManager sharedSubscriptionManager){
+  public SharedSubscriptionManager add(String name, SharedSubscriptionManager sharedSubscriptionManager) {
     return activeGroups.put(name, sharedSubscriptionManager);
   }
 
-  public void del(String name){
+  public void del(String name) {
     activeGroups.remove(name);
   }
 

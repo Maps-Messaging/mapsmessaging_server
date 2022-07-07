@@ -46,13 +46,12 @@ public class FrameFactory {
 
   public FrameFactory(int maxBufferSize, boolean isClient) {
     frames = new ArrayList<>();
-    if(isClient){
+    if (isClient) {
       frames.add(new FrameLookup("CONNECTED".getBytes(), new Connected(), new ConnectedListener()));
       frames.add(new FrameLookup("ERROR".getBytes(), new Error(), new ErrorListener()));
       frames.add(new FrameLookup("MESSAGE".getBytes(), new Message(maxBufferSize), new MessageListener()));
       frames.add(new FrameLookup("RECEIPT".getBytes(), new Receipt(), new ReceiptListener()));
-    }
-    else {
+    } else {
       frames.add(new FrameLookup("".getBytes(), new ClientHeartBeat(), new ClientHeartBeatListener()));
       frames.add(new FrameLookup("ABORT".getBytes(), new Abort(), new AbortListener()));
       frames.add(new FrameLookup("ACK".getBytes(), new Ack(), new AckListener()));

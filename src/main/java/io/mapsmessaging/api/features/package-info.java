@@ -16,7 +16,7 @@
  *
  */
 /**
- * This package contains features selections that are used within the messaging engine. These feature include the
- * way the messages are handled, flow control options, resource tops etc.
+ * This package contains features selections that are used within the messaging engine. These feature include the way the messages are handled, flow control options, resource tops
+ * etc.
  */
 package io.mapsmessaging.api.features;

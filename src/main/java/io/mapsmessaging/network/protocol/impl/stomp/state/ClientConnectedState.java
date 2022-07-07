@@ -25,7 +25,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Send;
 public class ClientConnectedState extends ConnectedState {
 
   @Override
-  public boolean sendMessage(StateEngine engine, String destinationName,  SubscriptionContext context, Message message, Runnable completionTask) {
+  public boolean sendMessage(StateEngine engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
     Send msg = new Send(1024);
     msg.packMessage(destinationName, message);
     msg.setCallback(new MessageCompletionHandler(completionTask));

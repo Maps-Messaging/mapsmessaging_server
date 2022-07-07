@@ -91,7 +91,7 @@ public class SerialEndPortScanner implements Runnable {
     }
   }
 
-  private void scanForChanges(SerialPort[] ports){
+  private void scanForChanges(SerialPort[] ports) {
     List<String> currentPorts = new ArrayList<>(knownPorts.keySet());
     for (String current : currentPorts) {
       boolean found = false;
@@ -108,7 +108,7 @@ public class SerialEndPortScanner implements Runnable {
     }
   }
 
-  private void handleNewPorts(String current){
+  private void handleNewPorts(String current) {
     SerialEndPointServer server = serverEndPoints.get(current);
     SerialPort port = knownPorts.remove(current);
     if (server != null &&

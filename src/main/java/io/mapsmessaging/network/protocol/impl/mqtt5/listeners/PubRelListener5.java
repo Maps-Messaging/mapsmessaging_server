@@ -32,8 +32,8 @@ public class PubRelListener5 extends PacketListener5 {
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
     PubRel5 pubRel = (PubRel5) mqttPacket;
-    Transaction transaction = session.getTransaction(session.getName()+"_"+pubRel.getPacketIdentifier());
-    if(transaction != null){
+    Transaction transaction = session.getTransaction(session.getName() + "_" + pubRel.getPacketIdentifier());
+    if (transaction != null) {
       try {
         transaction.commit();
       } catch (IOException e) {

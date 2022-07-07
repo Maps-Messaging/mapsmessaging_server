@@ -30,7 +30,8 @@ public class EndPointURL {
   protected String file;
   protected Map<String, String> parameterMap;
 
-  protected EndPointURL(){ }
+  protected EndPointURL() {
+  }
 
   public EndPointURL(String url) {
     protocol = parseProtocol(url);
@@ -38,10 +39,9 @@ public class EndPointURL {
     String tmp = protocol + "://" + host + "/";
     port = parsePort(url.substring(tmp.length()));
     tmp = protocol + "://" + host + ":" + port + "/";
-    if(url.length() > tmp.length()) {
+    if (url.length() > tmp.length()) {
       file = url.substring(tmp.length());
-    }
-    else{
+    } else {
       file = "";
     }
     parseParameterMap(url);
@@ -68,13 +68,13 @@ public class EndPointURL {
   }
 
 
-  public String getJMXName(){
+  public String getJMXName() {
     return getProtocol() + "_" + getHost() + "_" + getPort();
   }
 
   @Override
   public String toString() {
-    if(file != null) {
+    if (file != null) {
       return protocol + "://" + host + ":" + port + "/" + file;
     }
     return protocol + "://" + host + ":" + port + "/";
@@ -85,7 +85,7 @@ public class EndPointURL {
     return url.substring(0, idx);
   }
 
-  protected void parseParameterMap(String url){
+  protected void parseParameterMap(String url) {
     parameterMap = new LinkedHashMap<>();
     int paramIdx = url.indexOf('?');
     if (paramIdx != -1) {

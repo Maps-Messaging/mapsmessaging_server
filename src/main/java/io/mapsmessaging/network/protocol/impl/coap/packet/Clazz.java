@@ -6,7 +6,7 @@ public enum Clazz {
   REQUEST(0, "Request", "Request packet"),
   SUCCESS_RESPONSE(2, "Success", "Successful response packet"),
   ERROR_RESPONSE(4, "Error", "Error response packet"),
-  SERVER_ERROR_RESPONSE(5, "ServerError", "Server error response packet" ),
+  SERVER_ERROR_RESPONSE(5, "ServerError", "Server error response packet"),
   SIGNAL(7, "Signal", "Signal packet");
 
 
@@ -17,7 +17,7 @@ public enum Clazz {
   @Getter
   private final String description;
 
-  Clazz(int val, String name, String description){
+  Clazz(int val, String name, String description) {
     value = val;
     this.name = name;
     this.description = description;
@@ -41,7 +41,7 @@ public enum Clazz {
   }
 
   @Override
-  public String toString(){
-    return "Clazz:"+value+" "+name+" ( "+description+" )";
+  public String toString() {
+    return "Clazz:" + value + " " + name + " ( " + description + " )";
   }
 }

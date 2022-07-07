@@ -20,15 +20,15 @@ package io.mapsmessaging.engine.tasks;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 
-public class SubscriptionResponse implements  Response {
+public class SubscriptionResponse implements Response {
 
   private final SubscribedEventManager subscription;
 
-  public SubscriptionResponse(SubscribedEventManager subscription){
+  public SubscriptionResponse(SubscribedEventManager subscription) {
     this.subscription = subscription;
   }
 
-  public SubscribedEventManager getSubscription(){
+  public SubscribedEventManager getSubscription() {
     return subscription;
   }
 

@@ -9,7 +9,7 @@ import javax.net.ssl.SSLException;
 
 public class NormalState extends State {
 
-  public NormalState(StateEngine stateEngine){
+  public NormalState(StateEngine stateEngine) {
     super(stateEngine);
   }
 
@@ -27,7 +27,7 @@ public class NormalState extends State {
   int inbound(Packet packet) throws SSLException {
     Packet networkOut = new Packet(2048, false);
     SSLEngineResult rs = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), networkOut.getRawBuffer());
-    if(rs.getStatus() == Status.OK) {
+    if (rs.getStatus() == Status.OK) {
       networkOut.flip();
       networkOut.setFromAddress(packet.getFromAddress());
       stateEngine.pushToInBoundQueue(networkOut);

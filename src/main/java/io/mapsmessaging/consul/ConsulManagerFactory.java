@@ -28,11 +28,12 @@ import java.util.concurrent.locks.LockSupport;
 public class ConsulManagerFactory {
 
   private static final ConsulManagerFactory instance;
+
   static {
     instance = new ConsulManagerFactory();
   }
 
-  public static ConsulManagerFactory getInstance(){
+  public static ConsulManagerFactory getInstance() {
     return instance;
   }
 
@@ -45,19 +46,19 @@ public class ConsulManagerFactory {
     logger.log(ServerLogMessages.CONSUL_MANAGER_START, serverId);
     boolean retry = true;
     int counter = 0;
-    while(retry && counter < Constants.RETRY_COUNT) {
+    while (retry && counter < Constants.RETRY_COUNT) {
       try {
         manager = new ConsulManager(serverId);
         retry = false;
       } catch (Exception e) {
         LockSupport.parkNanos(1000000000L);
         counter++;
-        if(!forceWait){
-          if(e instanceof ConsulException) {
+        if (!forceWait) {
+          if (e instanceof ConsulException) {
             Exception actual = (Exception) e.getCause();
-            if(actual instanceof ConnectException){
+            if (actual instanceof ConnectException) {
               logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, serverId);
-            }else {
+            } else {
               logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, serverId, e);
             }
             return;
@@ -68,8 +69,8 @@ public class ConsulManagerFactory {
     }
   }
 
-  public synchronized void stop(){
-    if(manager != null){
+  public synchronized void stop() {
+    if (manager != null) {
       logger.log(ServerLogMessages.CONSUL_MANAGER_STOP);
       manager.stop();
     }
@@ -79,11 +80,11 @@ public class ConsulManagerFactory {
     return manager;
   }
 
-  public synchronized boolean isStarted(){
+  public synchronized boolean isStarted() {
     return manager != null;
   }
 
-  private ConsulManagerFactory(){
+  private ConsulManagerFactory() {
     boolean config;
     try {
       config = Boolean.parseBoolean(System.getProperty("ForceConsul", "FALSE"));

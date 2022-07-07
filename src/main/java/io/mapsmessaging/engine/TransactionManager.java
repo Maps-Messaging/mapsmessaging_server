@@ -34,28 +34,29 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This class manages the timeouts of transactions, if we do not have timeouts it is a simple
- * DOS attack to simply start transactions and publish messages with no commit or abort, resulting
- * in a build up of messages that can never be delivered.
+ * This class manages the timeouts of transactions, if we do not have timeouts it is a simple DOS attack to simply start transactions and publish messages with no commit or abort,
+ * resulting in a build up of messages that can never be delivered.
  */
 public class TransactionManager implements Runnable {
 
   private static long timeOutInterval = 100;
   private static long expiryTime = 3600000;
 
-  public static void setTimeOutInterval(long timeout){
+  public static void setTimeOutInterval(long timeout) {
     timeOutInterval = timeout;
   }
 
   public static long getExpiryTime() {
     return expiryTime;
   }
+
   public static void setExpiryTime(long expiry) {
     expiryTime = expiry;
   }
 
   private static final TransactionManager instance = new TransactionManager();
-  public static TransactionManager getInstance(){
+
+  public static TransactionManager getInstance() {
     return instance;
   }
 
@@ -73,11 +74,11 @@ public class TransactionManager implements Runnable {
    *
    * @param transaction object that is currently active
    */
-  public synchronized void add(@NonNull @NotNull Transaction transaction){
+  public synchronized void add(@NonNull @NotNull Transaction transaction) {
     transactionList.put(transaction.getTransactionId(), transaction);
   }
 
-  public synchronized Transaction find(@NonNull @NotNull String transactionId){
+  public synchronized Transaction find(@NonNull @NotNull String transactionId) {
     return transactionList.get(transactionId);
   }
 
@@ -87,7 +88,7 @@ public class TransactionManager implements Runnable {
    * @param transaction object to remove
    * @return true of the transaction object was removed from the list, else false if not found
    */
-  public synchronized boolean remove(@NonNull @NotNull Transaction transaction){
+  public synchronized boolean remove(@NonNull @NotNull Transaction transaction) {
     return transactionList.remove(transaction.getTransactionId()) != null;
   }
 
@@ -99,8 +100,8 @@ public class TransactionManager implements Runnable {
     logger.log(ServerLogMessages.TRANSACTION_MANAGER_SCANNING);
     long now = System.currentTimeMillis();
     List<Transaction> currentList = new ArrayList<>(transactionList.values());
-    for(Transaction transaction:currentList){
-      if(transaction.getExpiryTime() < now){
+    for (Transaction transaction : currentList) {
+      if (transaction.getExpiryTime() < now) {
         logger.log(ServerLogMessages.TRANSACTION_MANAGER_TIMEOUT_DETECTED, transaction.getTransactionId());
         try {
           transaction.close();
@@ -111,24 +112,23 @@ public class TransactionManager implements Runnable {
     }
   }
 
-  public synchronized void start(){
-    if(schedule != null){
+  public synchronized void start() {
+    if (schedule != null) {
       schedule.cancel(false);
     }
     schedule = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, timeOutInterval, timeOutInterval, TimeUnit.MILLISECONDS);
   }
 
-  public synchronized void stop(){
-    if(schedule != null){
+  public synchronized void stop() {
+    if (schedule != null) {
       schedule.cancel(false);
     }
- }
+  }
 
   /**
-   * Hidden constructor, since this is a singleton that simply manages the timeouts of transactions and cleans up any mess
-   * left over.
+   * Hidden constructor, since this is a singleton that simply manages the timeouts of transactions and cleans up any mess left over.
    */
-  private TransactionManager(){
+  private TransactionManager() {
     transactionList = new LinkedHashMap<>();
     schedule = null;
   }

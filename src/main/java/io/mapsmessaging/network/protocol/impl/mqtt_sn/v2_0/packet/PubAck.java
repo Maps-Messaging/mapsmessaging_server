@@ -49,7 +49,7 @@ public class PubAck extends MQTT_SN_2_Packet {
     packet.put((byte) 5);
     packet.put((byte) PUBACK);
     MQTTPacket.writeShort(packet, messageId);
-    packet.put((byte)reasonCode.getValue());
+    packet.put((byte) reasonCode.getValue());
     return 5;
   }
 }

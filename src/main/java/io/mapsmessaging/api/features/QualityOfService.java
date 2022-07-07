@@ -59,24 +59,29 @@ public enum QualityOfService {
   /**
    * Protocol binary format
    */
-  @Getter private final int level;
+  @Getter
+  private final int level;
 
   /**
    * Description of what this quality level means
    */
-  @Getter private final String description;
+  @Getter
+  private final String description;
 
   /**
    * Should events with this level be stored to disk
    */
-  @Getter private final boolean storeOffLine;
+  @Getter
+  private final boolean storeOffLine;
 
   /**
    * Does this level require individual packet identification
    */
-  @Getter private final boolean sendPacketId;
+  @Getter
+  private final boolean sendPacketId;
 
-  @Getter private final ClientAcknowledgement clientAcknowledgement;
+  @Getter
+  private final ClientAcknowledgement clientAcknowledgement;
 
   // This is a false positive, this constructor IS used by the enums above, but it is recorded as unused
   @java.lang.SuppressWarnings("squid:UnusedPrivateMethod")

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class UDPSessionState<T extends Timeoutable> {
+
   @Getter
   @Setter
   private String clientIdentifier;
@@ -15,20 +16,20 @@ public class UDPSessionState<T extends Timeoutable> {
   private long getLastAccess;
 
 
-  public UDPSessionState(T context){
+  public UDPSessionState(T context) {
     this.context = context;
     getLastAccess = System.currentTimeMillis();
   }
 
-  public void updateTimeout(){
+  public void updateTimeout() {
     getLastAccess = System.currentTimeMillis();
   }
 
-  public T getContext(){
+  public T getContext() {
     return context;
   }
 
-  public void setContext(T context){
+  public void setContext(T context) {
     this.context = context;
   }
 

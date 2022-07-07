@@ -49,11 +49,11 @@ public class ConsulManager implements Runnable {
     logger.log(ServerLogMessages.CONSUL_STARTUP);
   }
 
-  public KeyValueClient getKeyValueManager(){
+  public KeyValueClient getKeyValueManager() {
     return client.keyValueClient();
   }
 
-  public void register(Map<String,String> meta){
+  public void register(Map<String, String> meta) {
     List<String> propertyNames = new ArrayList<>();
     meta.put("version", Constants.VERSION);
     logger.log(ServerLogMessages.CONSUL_REGISTER);
@@ -71,8 +71,8 @@ public class ConsulManager implements Runnable {
     scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, Constants.HEALTH_TIME, Constants.HEALTH_TIME, TimeUnit.SECONDS);
   }
 
-  public void stop(){
-    if(scheduledTask != null){
+  public void stop() {
+    if (scheduledTask != null) {
       logger.log(ServerLogMessages.CONSUL_SHUTDOWN);
       scheduledTask.cancel(false);
     }

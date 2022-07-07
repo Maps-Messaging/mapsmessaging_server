@@ -80,7 +80,7 @@ public abstract class EndPoint implements Closeable {
     totalDisconnections.increment();
   }
 
-  public boolean isClient(){
+  public boolean isClient() {
     return isClient;
   }
 
@@ -88,7 +88,7 @@ public abstract class EndPoint implements Closeable {
     readByteAverages.add(read);
     totalReadBytes.add(read);
     lastRead.set(System.currentTimeMillis());
-    if(server != null) {
+    if (server != null) {
       server.updateBytesRead(read);
       server.incrementPacketsRead();
     }
@@ -98,7 +98,7 @@ public abstract class EndPoint implements Closeable {
     writeByteAverages.add(wrote);
     totalWriteBytes.add(wrote);
     lastWrite.set(System.currentTimeMillis());
-    if(server != null) {
+    if (server != null) {
       server.updateBytesSent(wrote);
       server.incrementPacketsSent();
     }
@@ -168,11 +168,11 @@ public abstract class EndPoint implements Closeable {
     return bufferUnderFlow;
   }
 
-  public long getOverFlowTotal(){
+  public long getOverFlowTotal() {
     return bufferOverFlow.getTotal();
   }
 
-  public long getUnderFlowTotal(){
+  public long getUnderFlowTotal() {
     return bufferUnderFlow.getTotal();
   }
 

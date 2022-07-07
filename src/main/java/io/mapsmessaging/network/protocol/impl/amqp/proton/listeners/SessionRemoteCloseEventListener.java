@@ -38,8 +38,8 @@ public class SessionRemoteCloseEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     Session ssn = event.getSession();
     if (ssn.getLocalState() != EndpointState.CLOSED) {
-      io.mapsmessaging.api.Session session = (io.mapsmessaging.api.Session)ssn.getContext();
-      if(session != null){
+      io.mapsmessaging.api.Session session = (io.mapsmessaging.api.Session) ssn.getContext();
+      if (session != null) {
         protocol.getLogger().log(ServerLogMessages.AMQP_CLOSED_SESSION, session.getName());
         try {
           protocol.delSession(session.getName());

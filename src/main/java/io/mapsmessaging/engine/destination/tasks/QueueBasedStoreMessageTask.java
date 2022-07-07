@@ -26,11 +26,12 @@ import io.mapsmessaging.engine.tasks.Response;
 import java.util.concurrent.Future;
 
 public class QueueBasedStoreMessageTask extends StoreMessageTask {
+
   private final DestinationImpl destination;
   private final Message message;
   private final DestinationSubscriptionManager subscriptionManager;
 
-  public QueueBasedStoreMessageTask(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager,  Message message){
+  public QueueBasedStoreMessageTask(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager, Message message) {
     super();
     this.destination = destination;
     this.message = message;

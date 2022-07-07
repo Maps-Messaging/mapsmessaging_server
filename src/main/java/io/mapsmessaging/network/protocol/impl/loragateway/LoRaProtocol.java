@@ -101,7 +101,7 @@ public class LoRaProtocol extends ProtocolImpl {
   @Override
   public void close() throws IOException {
     closed = true;
-    for(LoRaClientStats stats:clientStats.values()){
+    for (LoRaClientStats stats : clientStats.values()) {
       stats.close();
     }
     rateResetFuture.cancel(false);

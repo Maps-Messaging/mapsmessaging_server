@@ -22,7 +22,7 @@ import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 
 public class DefaultMessageTransformation implements ProtocolMessageTransformation {
 
-  public DefaultMessageTransformation(){
+  public DefaultMessageTransformation() {
     // Used by the java services
   }
 

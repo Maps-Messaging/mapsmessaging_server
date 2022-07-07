@@ -64,7 +64,7 @@ public class EndPointConnection extends EndPointServerStatus {
 
   public EndPointConnection(
       EndPointURL url, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings,
-      EndPointConnectionFactory connectionFactory,SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager){
+      EndPointConnectionFactory connectionFactory, SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager) {
     super(url);
     this.properties = properties;
     this.manager = manager;
@@ -74,18 +74,18 @@ public class EndPointConnection extends EndPointServerStatus {
 
     running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
-    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_"+url.toString()+"_"+ properties.getProperty("protocol"));
+    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProperty("protocol"));
     manager.addConnection(this);
     logger.log(ServerLogMessages.END_POINT_CONNECTION_INITIALISED);
   }
 
-  public void close(){
-    if(futureTask != null && !futureTask.isDone()){
+  public void close() {
+    if (futureTask != null && !futureTask.isDone()) {
       futureTask.cancel(false);
     }
     running.set(false);
     manager.delConnection(this);
-    if(endPoint != null){
+    if (endPoint != null) {
       try {
         endPoint.close();
       } catch (IOException ioException) {
@@ -123,10 +123,9 @@ public class EndPointConnection extends EndPointServerStatus {
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
     State stateChange;
-    if(state instanceof Connecting){
+    if (state instanceof Connecting) {
       stateChange = new Connected(this);
-    }
-    else{
+    } else {
       endPoint.close();
       stateChange = new Disconnected(this);
     }
@@ -136,7 +135,7 @@ public class EndPointConnection extends EndPointServerStatus {
   @Override
   public void handleCloseEndPoint(EndPoint endPoint) {
     // If the end point closes and we are not running then just let it go
-    if(running.get()) {
+    if (running.get()) {
       scheduleState(new Delayed(this));
     }
   }
@@ -145,7 +144,7 @@ public class EndPointConnection extends EndPointServerStatus {
     return logger;
   }
 
-  public State getState(){
+  public State getState() {
     return state;
   }
 
@@ -161,12 +160,12 @@ public class EndPointConnection extends EndPointServerStatus {
     return selectorLoadManager;
   }
 
-  public void start(){
+  public void start() {
     setRunState(true, new Disconnected(this));
     logger.log(ServerLogMessages.END_POINT_CONNECTION_STARTING);
   }
 
-  public void stop(){
+  public void stop() {
     setRunState(false, new Shutdown(this));
     logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
   }
@@ -183,29 +182,29 @@ public class EndPointConnection extends EndPointServerStatus {
     return manager.getTypePath();
   }
 
-  private synchronized void setRunState(boolean start, State state){
-    if(running.getAndSet(start) != start) {
+  private synchronized void setRunState(boolean start, State state) {
+    if (running.getAndSet(start) != start) {
       running.set(start);
       scheduleState(state);
     }
   }
 
-  public synchronized void scheduleState(State state){
+  public synchronized void scheduleState(State state) {
     scheduleState(state, SCHEDULE_TIME);
   }
 
-  public synchronized void scheduleState(State newState, long time){
-    if(futureTask != null && !futureTask.isDone()){
+  public synchronized void scheduleState(State newState, long time) {
+    if (futureTask != null && !futureTask.isDone()) {
       futureTask.cancel(false);
     }
-    if(state != null) {
+    if (state != null) {
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
     }
     setState(newState);
     futureTask = SimpleTaskScheduler.getInstance().schedule(newState, time, TimeUnit.MILLISECONDS);
   }
 
-  private void setState(State state){
+  private void setState(State state) {
     this.state = state;
   }
 }

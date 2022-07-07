@@ -31,7 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class LoRaDeviceManager {
 
   private static final LoRaDeviceManager instance = new LoRaDeviceManager();
-  public static LoRaDeviceManager getInstance(){
+
+  public static LoRaDeviceManager getInstance() {
     return instance;
   }
 
@@ -52,7 +53,7 @@ public class LoRaDeviceManager {
         System.loadLibrary("LoRaDevice");
         ConfigurationProperties configMap = ConfigurationManager.getInstance().getProperties("LoRaDevice");
         for (Object obj : configMap.values()) {
-          if(obj instanceof ConfigurationProperties) {
+          if (obj instanceof ConfigurationProperties) {
             ConfigurationProperties properties = (ConfigurationProperties) obj;
             LoRaDeviceConfigBuilder configBuilder = new LoRaDeviceConfigBuilder();
             configBuilder.setName(properties.getProperty("name"))
@@ -76,7 +77,7 @@ public class LoRaDeviceManager {
     }
   }
 
-  public LoRaDevice getDevice(EndPointURL url){
+  public LoRaDevice getDevice(EndPointURL url) {
     synchronized (physicalDevices) {
       for (LoRaDevice device : physicalDevices) {
         if (device.getName().equals(url.getHost())) {

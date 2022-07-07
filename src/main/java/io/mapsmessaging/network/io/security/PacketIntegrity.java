@@ -16,6 +16,7 @@ public interface PacketIntegrity extends Timeoutable {
   boolean isSecure(Packet packet, int offset, int length);
 
   Packet secure(Packet packet);
+
   Packet secure(Packet packet, int offset, int length);
 
   int size();
@@ -23,6 +24,7 @@ public interface PacketIntegrity extends Timeoutable {
   void reset();
 
   @Override
-  default void close(){}
+  default void close() {
+  }
 
 }

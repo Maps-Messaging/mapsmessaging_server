@@ -29,19 +29,20 @@ import java.util.ServiceLoader;
 public class TransformationManager implements ServiceManager {
 
   private static final TransformationManager instance = new TransformationManager();
-  public static TransformationManager getInstance(){
+
+  public static TransformationManager getInstance() {
     return instance;
   }
 
   private final ServiceLoader<ProtocolMessageTransformation> transformations;
 
-  private TransformationManager(){
+  private TransformationManager() {
     transformations = ServiceLoader.load(ProtocolMessageTransformation.class);
   }
 
-  public ProtocolMessageTransformation getTransformation(String protocol, String user){
-    for(ProtocolMessageTransformation transformation:transformations){
-      if(transformation.getName().equalsIgnoreCase(user)){
+  public ProtocolMessageTransformation getTransformation(String protocol, String user) {
+    for (ProtocolMessageTransformation transformation : transformations) {
+      if (transformation.getName().equalsIgnoreCase(user)) {
         return transformation;
       }
     }
@@ -52,7 +53,7 @@ public class TransformationManager implements ServiceManager {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
-    for(ProtocolMessageTransformation transformation:transformations){
+    for (ProtocolMessageTransformation transformation : transformations) {
       service.add(transformation);
     }
     return service.listIterator();

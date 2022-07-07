@@ -22,11 +22,11 @@ public class BooleanResponse implements Response {
 
   private final boolean response;
 
-  public BooleanResponse(boolean value){
+  public BooleanResponse(boolean value) {
     response = value;
   }
 
-  public boolean getResponse(){
+  public boolean getResponse() {
     return response;
   }
 

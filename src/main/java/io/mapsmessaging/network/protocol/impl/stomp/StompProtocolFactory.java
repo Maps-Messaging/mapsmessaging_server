@@ -30,7 +30,7 @@ public class StompProtocolFactory extends ProtocolImplFactory {
   private static final byte[][] stompConnect = {"CONNECT\n".getBytes(), "STOMP\n".getBytes()};
 
   public StompProtocolFactory() {
-    super("STOMP", "STOMP protocol support as per https://stomp.github.io/ ",new MultiByteArrayDetection(stompConnect, 0));
+    super("STOMP", "STOMP protocol support as per https://stomp.github.io/ ", new MultiByteArrayDetection(stompConnect, 0));
   }
 
   @Override

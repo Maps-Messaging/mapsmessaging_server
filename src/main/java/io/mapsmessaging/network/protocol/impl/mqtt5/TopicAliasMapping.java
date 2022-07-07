@@ -43,7 +43,7 @@ public class TopicAliasMapping {
     keyByInteger = new LinkedHashMap<>();
     keyByString = new LinkedHashMap<>();
     aliasMaximum = DefaultConstants.SERVER_RECEIVE_MAXIMUM;
-    available = new BitSet(DefaultConstants.SERVER_RECEIVE_MAXIMUM+1);
+    available = new BitSet(DefaultConstants.SERVER_RECEIVE_MAXIMUM + 1);
     available.set(0); // illegal value
   }
 

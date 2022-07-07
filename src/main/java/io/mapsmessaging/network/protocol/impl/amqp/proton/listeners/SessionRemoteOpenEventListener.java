@@ -44,7 +44,7 @@ public class SessionRemoteOpenEventListener extends BaseEventListener {
         ssn.setContext(sessionManager.getSession());
         ssn.open();
       } catch (LoginException | IOException e) {
-        ssn.setCondition(new ErrorCondition(SESSION_ERROR, "Failed to establish session::"+e.getMessage()));
+        ssn.setCondition(new ErrorCondition(SESSION_ERROR, "Failed to establish session::" + e.getMessage()));
       }
     }
     return true;

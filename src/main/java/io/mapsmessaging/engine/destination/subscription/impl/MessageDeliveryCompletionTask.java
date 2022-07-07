@@ -26,13 +26,13 @@ public class MessageDeliveryCompletionTask implements Runnable {
   private final DestinationSubscription subscription;
   private final AcknowledgementController acknowledgementController;
 
-  public MessageDeliveryCompletionTask(DestinationSubscription subscription,  AcknowledgementController acknowledgementController){
+  public MessageDeliveryCompletionTask(DestinationSubscription subscription, AcknowledgementController acknowledgementController) {
     this.subscription = subscription;
     this.acknowledgementController = acknowledgementController;
   }
 
   @Override
-  public void run(){
+  public void run() {
     subscription.getDestinationImpl().submit(new MessageDeliveredListener(subscription, acknowledgementController));
   }
 }

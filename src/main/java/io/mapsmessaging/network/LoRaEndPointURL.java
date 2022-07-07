@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network;
 
-public class LoRaEndPointURL extends EndPointURL{
+public class LoRaEndPointURL extends EndPointURL {
 
   public LoRaEndPointURL(String url) {
     protocol = parseProtocol(url);

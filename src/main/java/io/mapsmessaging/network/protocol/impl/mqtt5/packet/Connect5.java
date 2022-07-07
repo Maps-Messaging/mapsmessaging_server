@@ -252,7 +252,7 @@ public class Connect5 extends MQTTPacket5 {
       sb.append(" Password Len:").append(password.length);
     }
     MessageProperties props = getProperties();
-    for(MessageProperty property:props.values()){
+    for (MessageProperty property : props.values()) {
       sb.append(property.toString()).append(",");
     }
     return sb.toString();

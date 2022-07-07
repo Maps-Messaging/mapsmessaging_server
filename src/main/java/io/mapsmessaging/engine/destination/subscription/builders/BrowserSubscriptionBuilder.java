@@ -58,13 +58,12 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
       stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       return new DestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager);
     } else {
-      if(selectorHasChanged(parent.getContext().getSelector(), context.getSelector())){
+      if (selectorHasChanged(parent.getContext().getSelector(), context.getSelector())) {
         // Need task to filter the messages from the parent to the current state manager
         stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), false);
         StateManagerFilterTask task = new StateManagerFilterTask(destination, parent.getMessageStateManager(), stateManager, parserExecutor);
         destination.submit(task);
-      }
-      else{
+      } else {
         stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       }
       return new SelectorDestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, parserExecutor);
@@ -73,10 +72,10 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
 
 
   private boolean selectorHasChanged(String parentSelector, String selector) throws IOException {
-    if(selector == null || selector.length() == 0){
+    if (selector == null || selector.length() == 0) {
       return false;
     }
-    if(parentSelector == null || parentSelector.length() == 0){
+    if (parentSelector == null || parentSelector.length() == 0) {
       return true; // Its true, since the selector has in fact been set by the new one
     }
     ParserExecutor executor = compileParser(selector);
@@ -92,14 +91,15 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
     private final MessageStateManager stateManager;
     private final ParserExecutor executor;
 
-    public StateManagerFilterTask(@NonNull @NotNull DestinationImpl destination,@NonNull @NotNull MessageStateManager parent,@NonNull @NotNull MessageStateManager child,@NonNull @NotNull ParserExecutor executor){
+    public StateManagerFilterTask(@NonNull @NotNull DestinationImpl destination, @NonNull @NotNull MessageStateManager parent, @NonNull @NotNull MessageStateManager child,
+        @NonNull @NotNull ParserExecutor executor) {
       this.destination = destination;
       source = parent.getAll().iterator();
       stateManager = child;
       this.executor = executor;
     }
 
-    protected StateManagerFilterTask(StateManagerFilterTask task){
+    protected StateManagerFilterTask(StateManagerFilterTask task) {
       destination = task.destination;
       source = task.source;
       stateManager = task.stateManager;
@@ -110,17 +110,17 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
     public Response taskCall() throws IOException, ParseException {
       long endTime = System.currentTimeMillis() + 100;
       boolean interrupted = false;
-      while(System.currentTimeMillis() < endTime && source.hasNext() && !destination.isClosed() && !interrupted) {
+      while (System.currentTimeMillis() < endTime && source.hasNext() && !destination.isClosed() && !interrupted) {
         long nextMessage = source.next();
         Message message = destination.getMessage(nextMessage);
         if (Filter.getInstance().filterMessage(executor, message, destination)) {
           stateManager.register(message); // Message matches the current selector
         }
-        if(Thread.currentThread().isInterrupted()){
+        if (Thread.currentThread().isInterrupted()) {
           interrupted = true;
         }
       }
-      if(source.hasNext() && !destination.isClosed()){
+      if (source.hasNext() && !destination.isClosed()) {
         destination.submit(new StateManagerFilterTask(this));
       }
       return new VoidResponse();

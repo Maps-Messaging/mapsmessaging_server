@@ -49,6 +49,7 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 public class SessionImpl {
+
   private final Logger logger;
   private final SecurityContext securityContext;
   private final SessionContext context;
@@ -121,12 +122,12 @@ public class SessionImpl {
 
   public void login() throws IOException {
     securityContext.login();
-    ((SessionDestinationManager)destinationManager).setSessionTenantConfig(TenantManagement.build(context.getProtocol(), securityContext));
+    ((SessionDestinationManager) destinationManager).setSessionTenantConfig(TenantManagement.build(context.getProtocol(), securityContext));
     // Only do this once the connection has be authenticated
     this.willTaskImpl = createWill(context);
   }
 
-  public SecurityContext getSecurityContext(){
+  public SecurityContext getSecurityContext() {
     return securityContext;
   }
 
@@ -135,11 +136,11 @@ public class SessionImpl {
   //<editor-fold desc="Destination Control API">
   @SneakyThrows
   public CompletableFuture<DestinationImpl> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    if(isClosed){
+    if (isClosed) {
       throw new IOException("Session is closed");
     }
     String mapped = namespaceMapping.getMapped(destinationName);
-    if(mapped == null){
+    if (mapped == null) {
       mapped = destinationManager.calculateNamespace(destinationName);
       namespaceMapping.addMapped(destinationName, mapped);
     }
@@ -147,20 +148,18 @@ public class SessionImpl {
 
     CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
     DestinationImpl existing = destinationManager.find(mapped).get();
-    if(existing != null){
+    if (existing != null) {
       future.complete(existing);
-    }
-    else {
+    } else {
       Callable<DestinationImpl> callable = () -> {
-        DestinationImpl created =  null;
+        DestinationImpl created = null;
         try {
           CompletableFuture<DestinationImpl> creationFuture = destinationManager.create(finalMapped, destinationType);
           created = creationFuture.get();
           future.complete(created);
         } catch (IOException | ExecutionException e) {
           future.completeExceptionally(e);
-        }
-        catch(InterruptedException e){
+        } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         }
         return created;
@@ -184,7 +183,7 @@ public class SessionImpl {
     this.messageCallback = messageCallback;
   }
 
-  public CompletableFuture<DestinationImpl>  deleteDestination(DestinationImpl destinationImpl) {
+  public CompletableFuture<DestinationImpl> deleteDestination(DestinationImpl destinationImpl) {
     namespaceMapping.removeByMapped(destinationImpl.getFullyQualifiedNamespace());
     return destinationManager.delete(destinationImpl);
   }
@@ -224,7 +223,7 @@ public class SessionImpl {
   }
 
   public WillTaskImpl setWillTask(WillDetails willDetails) {
-    willTaskImpl =  WillTaskManager.getInstance().replace(getName(), willDetails);
+    willTaskImpl = WillTaskManager.getInstance().replace(getName(), willDetails);
     return willTaskImpl;
   }
 
@@ -232,7 +231,7 @@ public class SessionImpl {
 
   //<editor-fold desc="Subscription API">
   public SubscribedEventManager addSubscription(SubscriptionContext context) throws IOException {
-    if(isClosed){
+    if (isClosed) {
       throw new IOException("Session is closed");
     }
     String originalName = context.getDestinationName();
@@ -257,42 +256,42 @@ public class SessionImpl {
   public String absoluteToNormalised(Destination destination) {
     String fqn = destination.getFullyQualifiedNamespace();
     String lookup = namespaceMapping.getOriginal(fqn);
-    if(lookup == null){
+    if (lookup == null) {
       return fqn;
-    }
-    else{
+    } else {
       return lookup;
     }
   }
 
   //</editor-fold>
 
-  private final class NamespaceMap{
+  private final class NamespaceMap {
+
     private final Map<String, String> originalToMapped;
     private final Map<String, String> mappedToOriginal;
 
-    public NamespaceMap(){
+    public NamespaceMap() {
       originalToMapped = new LinkedHashMap<>();
       mappedToOriginal = new LinkedHashMap<>();
     }
 
-    public void clear(){
+    public void clear() {
       originalToMapped.clear();
       mappedToOriginal.clear();
     }
 
-    public void addMapped(String original, String mapped){
+    public void addMapped(String original, String mapped) {
       originalToMapped.put(original, mapped);
       mappedToOriginal.put(mapped, original);
     }
 
-    public String getMapped(String original){
+    public String getMapped(String original) {
       return originalToMapped.get(original);
     }
 
-    public String getOriginal(String mapped){
+    public String getOriginal(String mapped) {
       String located = mappedToOriginal.get(mapped);
-      if(located == null){
+      if (located == null) {
         located = destinationManager.calculateOriginalNamespace(mapped);
         addMapped(located, mapped);
       }
@@ -301,7 +300,7 @@ public class SessionImpl {
 
     public void removeByMapped(String fullyQualifiedNamespace) {
       String found = mappedToOriginal.remove(fullyQualifiedNamespace);
-      if(found != null){
+      if (found != null) {
         originalToMapped.remove(found);
       }
     }

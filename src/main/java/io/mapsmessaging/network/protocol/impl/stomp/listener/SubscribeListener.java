@@ -48,12 +48,12 @@ public class SubscribeListener implements FrameListener {
     SubscriptionContextBuilder builder = new SubscriptionContextBuilder(subscribe.getDestination(), ackManger);
     builder.setSharedName(subscribe.getShareName());
     String selector = subscribe.getSelector();
-    if(selector != null) {
+    if (selector != null) {
       builder.setSelector(selector);
     }
     builder.setAlias(subscribe.getId());
     int inFlight = subscribe.getReceiveMaximum();
-    if(inFlight <= 0){
+    if (inFlight <= 0) {
       inFlight = DefaultConstants.RECEIVE_MAXIMUM;
     }
     builder.setReceiveMaximum(inFlight);

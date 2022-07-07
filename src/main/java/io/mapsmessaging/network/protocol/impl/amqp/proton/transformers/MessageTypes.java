@@ -35,8 +35,8 @@ public enum MessageTypes {
   TEXT(5, "Text Message", new TextMessageTranslator());
 
 
-  public static MessageTypes getInstance(int value){
-    switch (value){
+  public static MessageTypes getInstance(int value) {
+    switch (value) {
       case 1:
         return OBJECT;
       case 2:
@@ -57,7 +57,7 @@ public enum MessageTypes {
   private final String description;
   private final MessageTranslator messageTranslator;
 
-  MessageTypes(int value, String description, MessageTranslator messageTranslator){
+  MessageTypes(int value, String description, MessageTranslator messageTranslator) {
     this.value = value;
     this.description = description;
     this.messageTranslator = messageTranslator;
@@ -71,7 +71,7 @@ public enum MessageTypes {
     return description;
   }
 
-  public MessageTranslator getMessageTranslator(){
+  public MessageTranslator getMessageTranslator() {
     return messageTranslator;
   }
 }

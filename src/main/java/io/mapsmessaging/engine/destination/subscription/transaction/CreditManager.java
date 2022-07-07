@@ -22,7 +22,7 @@ public abstract class CreditManager {
 
   protected int currentCredit;
 
-  protected CreditManager(int initialCredit){
+  protected CreditManager(int initialCredit) {
     currentCredit = initialCredit;
   }
 
@@ -31,7 +31,7 @@ public abstract class CreditManager {
   }
 
   public void setCurrentCredit(int currentCredit) {
-    if(currentCredit != this.currentCredit) {
+    if (currentCredit != this.currentCredit) {
       this.currentCredit = currentCredit;
     }
   }

@@ -5,7 +5,6 @@ import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +18,7 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
 
   private final Map<EndPoint, CoapInterfaceManager> mappedInterfaces;
 
-  public CoapProtocolFactory(){
+  public CoapProtocolFactory() {
     super("CoAP", "Constrained Application Protocol RFC7252", null);
     mappedInterfaces = new ConcurrentHashMap<>();
   }
@@ -38,10 +37,9 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
     int datagramSize = info.getMTU();
     if (datagramSize != -1) {
-      if(info.isLoRa()){
+      if (info.isLoRa()) {
         datagramSize = datagramSize - LORA_DATAGRAM_HEADER_SIZE;
-      }
-      else if (info.isIPV4()) {
+      } else if (info.isIPV4()) {
         datagramSize = datagramSize - IPV4_DATAGRAM_HEADER_SIZE;
       } else {
         datagramSize = datagramSize - IPV6_DATAGRAM_HEADER_SIZE;

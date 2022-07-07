@@ -21,32 +21,33 @@ package io.mapsmessaging.utilities.stats.processors;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class StoredDataProcessor implements DataProcessor{
+public abstract class StoredDataProcessor implements DataProcessor {
 
   protected final List<DataPoint> dataPoints;
 
-  protected StoredDataProcessor(){
+  protected StoredDataProcessor() {
     dataPoints = new ArrayList<>();
   }
 
   @Override
   public long calculate() {
     int size = dataPoints.size();
-    if(size > 0){
+    if (size > 0) {
       long sum = 0;
-      for(DataPoint point:dataPoints){
+      for (DataPoint point : dataPoints) {
         sum += point.data;
       }
       dataPoints.clear();
-      return sum/size;
+      return sum / size;
     }
     return 0;
   }
 
   protected static class DataPoint {
+
     protected final long data;
 
-    public DataPoint(long data){
+    public DataPoint(long data) {
       this.data = data;
     }
   }

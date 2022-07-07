@@ -43,23 +43,23 @@ public class DestinationStateManagerFactory {
     return new MessageStateManagerImpl(name, factory);
   }
 
-  public DelayedMessageManager createDelayed (DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+  public DelayedMessageManager createDelayed(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     BitSetFactory factory = createFactory(destinationImpl, persistent, name);
     return new DelayedMessageManager(factory);
   }
 
-  public TransactionalMessageManager createTransaction (DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+  public TransactionalMessageManager createTransaction(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     BitSetFactory factory = createFactory(destinationImpl, persistent, name);
     return new TransactionalMessageManager(factory);
   }
 
-  private BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name ) throws IOException {
+  private BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     if (persistent && destinationImpl.isPersistent()) {
       String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
       fullyQualifiedPath += "state";
       File directory = new File(fullyQualifiedPath);
       Files.createDirectories(directory.toPath());
-      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath+File.separator + name + ".bin");
+      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
       return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
     } else {
       return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class TransmitPacket {
+
   @Getter
   @Setter
   private boolean imme;

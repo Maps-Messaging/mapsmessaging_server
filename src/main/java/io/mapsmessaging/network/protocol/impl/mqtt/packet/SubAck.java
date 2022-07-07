@@ -51,7 +51,7 @@ public class SubAck extends MQTTPacket {
       throw new MalformedException("SubAck: Remaining Length must be greater than 2");
     }
     packetId = readShort(packet);
-    result = new byte[(int)remainingLen-2];
+    result = new byte[(int) remainingLen - 2];
     packet.get(result);
   }
 

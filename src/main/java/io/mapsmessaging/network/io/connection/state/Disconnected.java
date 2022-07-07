@@ -53,21 +53,21 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
       ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
       ConfigurationProperties properties = endpoint.getConfig().getProperties();
-      if(properties.containsKey("remote")){
+      if (properties.containsKey("remote")) {
         properties = (ConfigurationProperties) properties.get("remote");
       }
 
       String sessionId = properties.getProperty("sessionId");
       String username = properties.getProperty("username");
       String password = properties.getProperty("password");
-      if(properties.containsKey("tokenGenerator")){
+      if (properties.containsKey("tokenGenerator")) {
         String tokenGeneratorName = properties.getProperty("tokenGenerator");
         TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties);
         password = tokenGenerator.generate();
       }
 
       endPointConnection.scheduleState(new Connecting(endPointConnection));
-      ProtocolImpl protocolImpl =  protocolImplFactory.connect(endpoint, sessionId, username, password);
+      ProtocolImpl protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
       endPointConnection.setConnection(protocolImpl);
     } catch (IOException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
@@ -90,7 +90,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
 
   @Override
   public void cancel() {
-    if(activeEndPoint != null){
+    if (activeEndPoint != null) {
       try {
         activeEndPoint.close();
       } catch (IOException ioException) {

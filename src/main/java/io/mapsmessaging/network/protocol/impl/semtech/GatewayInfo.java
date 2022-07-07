@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class GatewayInfo {
+
   @Getter
   private final Destination inbound;
   @Getter
@@ -35,7 +36,7 @@ public class GatewayInfo {
     lastAccess = System.currentTimeMillis();
   }
 
-  public void close(Session session){
+  public void close(Session session) {
     session.removeSubscription(outbound.getContext().getAlias());
     waitingMessages.clear();
   }

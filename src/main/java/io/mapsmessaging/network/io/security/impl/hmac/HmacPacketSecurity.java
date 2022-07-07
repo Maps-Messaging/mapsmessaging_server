@@ -14,7 +14,7 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
   private final SignatureManager stamper;
   private Mac mac;
 
-  protected HmacPacketSecurity(){
+  protected HmacPacketSecurity() {
     stamper = new AppenderSignatureManager();
   }
 
@@ -25,7 +25,7 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
     mac.init(secretKeySpec);
   }
 
-  public void reset(){
+  public void reset() {
     mac.reset();
   }
 
@@ -56,22 +56,22 @@ public abstract class HmacPacketSecurity implements PacketIntegrity {
     return updatePacket(packet);
   }
 
-  private boolean validatePacket(Packet packet){
+  private boolean validatePacket(Packet packet) {
     byte[] computed = mac.doFinal();
     reset();
     byte[] signature = new byte[computed.length];
     signature = stamper.getSignature(packet, signature);
-    for(int x=0;x<computed.length;x++){
-      if(signature[x] != computed[x]){
+    for (int x = 0; x < computed.length; x++) {
+      if (signature[x] != computed[x]) {
         return false;
       }
     }
-    packet.limit(packet.limit()-computed.length);
+    packet.limit(packet.limit() - computed.length);
     packet.position(packet.limit());
     return true;
   }
 
-  private Packet updatePacket(Packet packet){
+  private Packet updatePacket(Packet packet) {
     byte[] computed = mac.doFinal();
     reset();
     return stamper.setSignature(packet, computed);

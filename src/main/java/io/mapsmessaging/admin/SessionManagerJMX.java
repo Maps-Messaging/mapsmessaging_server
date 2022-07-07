@@ -35,28 +35,28 @@ public class SessionManagerJMX {
   private final ObjectInstance mbean;
   private final List<String> typePath;
 
-  public SessionManagerJMX(SessionManager sessionManager){
+  public SessionManagerJMX(SessionManager sessionManager) {
     this.sessionManager = sessionManager;
     typePath = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
     typePath.add("SessionManager=SessionManager");
     mbean = JMXManager.getInstance().register(this, typePath);
   }
 
-  public void close(){
+  public void close() {
     JMXManager.getInstance().unregister(mbean);
   }
 
-  @JMXBeanAttribute(name = "activeSessions", description ="Returns the current number of active sessions")
+  @JMXBeanAttribute(name = "activeSessions", description = "Returns the current number of active sessions")
   public long getActiveSessions() {
     return sessionManager.getConnected();
   }
 
-  @JMXBeanAttribute(name = "disconnectedSessions", description ="Returns the current number of disconnected sessions")
+  @JMXBeanAttribute(name = "disconnectedSessions", description = "Returns the current number of disconnected sessions")
   public long getDisconnectedSessions() {
     return sessionManager.getDisconnected();
   }
 
-  @JMXBeanAttribute(name = "expiredSessions", description ="Returns the total number of sessins that have expired and been closed")
+  @JMXBeanAttribute(name = "expiredSessions", description = "Returns the total number of sessins that have expired and been closed")
   public long getExpiredSessions() {
     return sessionManager.getTotalExpired();
   }

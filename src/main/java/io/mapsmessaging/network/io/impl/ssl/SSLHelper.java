@@ -38,14 +38,15 @@ public class SSLHelper {
 
   private static final SSLHelper instance = new SSLHelper();
 
-  public static SSLHelper getInstance(){
+  public static SSLHelper getInstance() {
     return instance;
   }
 
-  private SSLHelper(){}
+  private SSLHelper() {
+  }
 
-  
-  public SSLContext createContext(ConfigurationProperties configurationProperties, Logger logger) throws IOException{
+
+  public SSLContext createContext(ConfigurationProperties configurationProperties, Logger logger) throws IOException {
     SSLContext sslContext;
     // We have a physical socket bound, so now build up the SSL Context for this interface
     //
@@ -104,11 +105,11 @@ public class SSLHelper {
       // </editor-fold>
 
     } catch (KeyStoreException
-        | IOException
-        | NoSuchAlgorithmException
-        | CertificateException
-        | UnrecoverableKeyException
-        | KeyManagementException e) {
+             | IOException
+             | NoSuchAlgorithmException
+             | CertificateException
+             | UnrecoverableKeyException
+             | KeyManagementException e) {
       IOException exception = new IOException(e.getMessage());
       exception.initCause(e);
       throw exception;

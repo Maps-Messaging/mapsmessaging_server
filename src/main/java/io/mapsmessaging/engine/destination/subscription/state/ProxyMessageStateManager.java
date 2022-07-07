@@ -28,7 +28,7 @@ public class ProxyMessageStateManager implements MessageStateManager {
   private final MessageStateManagerImpl actualStateManager;
   private final BoundedMessageStateManager boundedStateManager;
 
-  public ProxyMessageStateManager(MessageStateManagerImpl actual, BoundedMessageStateManager bounded){
+  public ProxyMessageStateManager(MessageStateManagerImpl actual, BoundedMessageStateManager bounded) {
     actualStateManager = actual;
     boundedStateManager = bounded;
   }

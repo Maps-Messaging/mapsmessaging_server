@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.net.ssl.SSLContext;
 
-public class DTLSEndPointServer extends UDPEndPointServer{
+public class DTLSEndPointServer extends UDPEndPointServer {
 
   private final ProtocolFactory protocolFactory;
   private final List<UDPInterfaceInformation> udpInterfaceInformations;
@@ -50,7 +50,7 @@ public class DTLSEndPointServer extends UDPEndPointServer{
   }
 
   @Override
-  public void deregister()  {
+  public void deregister() {
     // Not required
   }
 
@@ -63,7 +63,7 @@ public class DTLSEndPointServer extends UDPEndPointServer{
         NetworkInterface inetAddress = NetworkInterface.getByInetAddress(interfaceAddress.getAddress());
 
         UDPEndPoint udpEndPoint = new UDPEndPoint(bonded, selectorLoadManager.allocate(), 1, this, authenticationConfig, managerMBean);
-        DTLSSessionManager endPoint = new DTLSSessionManager(udpEndPoint, inetAddress,this, protocolImplFactory, sslContext, acceptHandler, managerMBean);
+        DTLSSessionManager endPoint = new DTLSSessionManager(udpEndPoint, inetAddress, this, protocolImplFactory, sslContext, acceptHandler, managerMBean);
         bondedEndPoints.add(endPoint);
       }
     }

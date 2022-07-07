@@ -24,8 +24,8 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * THis class manages the updating of the last Will task. The Will task is executed if the client is dosconnected
- * rather than closes a session. This enables a message to be sent to notify others of a disruption to message flow
+ * THis class manages the updating of the last Will task. The Will task is executed if the client is dosconnected rather than closes a session. This enables a message to be sent to
+ * notify others of a disruption to message flow
  */
 public class WillTask {
 
@@ -54,9 +54,8 @@ public class WillTask {
   /**
    * Updates the Quality Of Service for the message to be sent
    *
-   * @see QualityOfService
-   *
    * @param qos QualityOfService to be used
+   * @see QualityOfService
    */
   public void updateQoS(@NonNull @NotNull QualityOfService qos) {
     willTaskImpl.updateQoS(qos);

@@ -33,7 +33,7 @@ public class TaskQueueJMX implements HealthMonitor {
   private final ObjectInstance instance;
 
   //<editor-fold desc="Life cycle functions">
-  public TaskQueueJMX(TaskScheduler taskQueue, List<String> typePath){
+  public TaskQueueJMX(TaskScheduler taskQueue, List<String> typePath) {
     this.taskQueue = taskQueue;
     List<String> scheduler = new ArrayList<>(typePath);
     instance = JMXManager.getInstance().register(this, scheduler);
@@ -45,28 +45,28 @@ public class TaskQueueJMX implements HealthMonitor {
   //</editor-fold>
 
   //<editor-fold desc="JMX Bean implementation">
-  @JMXBeanAttribute(name = "Outstanding Tasks", description ="Returns the current number of tasks pending execution")
+  @JMXBeanAttribute(name = "Outstanding Tasks", description = "Returns the current number of tasks pending execution")
   public long getOutstanding() {
     return taskQueue.getOutstanding();
   }
 
-  @JMXBeanAttribute(name = "Total Tasks Queued", description ="Returns the total number of tasks that have been queued")
+  @JMXBeanAttribute(name = "Total Tasks Queued", description = "Returns the total number of tasks that have been queued")
   public long getTotalTasksQueued() {
     return taskQueue.getTotalTasksQueued();
   }
 
-  @JMXBeanAttribute(name = "Maximum outstanding", description ="Returns maximum number of tasks that have been waiting for execution")
+  @JMXBeanAttribute(name = "Maximum outstanding", description = "Returns maximum number of tasks that have been waiting for execution")
   public long getMaxOutstanding() {
     return taskQueue.getMaxOutstanding();
   }
 
-  @JMXBeanAttribute(name = "Thread offload count", description ="Returns the number of times the task queue has been offloaded to a dedicated thread")
+  @JMXBeanAttribute(name = "Thread offload count", description = "Returns the number of times the task queue has been offloaded to a dedicated thread")
   public long getOffloadCount() {
     return taskQueue.getOffloadCount();
   }
 
   @Override
-  @JMXBeanAttribute(name = "Health status", description ="Returns the current HealthStatus for this task queue")
+  @JMXBeanAttribute(name = "Health status", description = "Returns the current HealthStatus for this task queue")
   public HealthStatus checkHealth() {
     return new HealthStatus("TaskQueue", LEVEL.INFO, "Task Queue seems ok", instance.getObjectName().toString());
   }

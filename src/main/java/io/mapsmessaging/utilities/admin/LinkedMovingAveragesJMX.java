@@ -49,11 +49,11 @@ public class LinkedMovingAveragesJMX implements DynamicMBean {
     }
 
     String[] names = movingAverages.getNames();
-    MBeanAttributeInfo[] attributeInfos = new MBeanAttributeInfo[names.length+2];
+    MBeanAttributeInfo[] attributeInfos = new MBeanAttributeInfo[names.length + 2];
     attributeInfos[0] = new MBeanAttributeInfo("total", "java.lang.Long", "Total", true, false, false);
     attributeInfos[1] = new MBeanAttributeInfo("units", "java.lang.String", "Name of the unit", true, false, false);
     for (int x = 0; x < names.length; x++) {
-      attributeInfos[x+2] = new MBeanAttributeInfo(names[x], "java.lang.Long", "Moving Average statistics", true, false, false);
+      attributeInfos[x + 2] = new MBeanAttributeInfo(names[x], "java.lang.Long", "Moving Average statistics", true, false, false);
     }
     MBeanOperationInfo[] operationInfos = new MBeanOperationInfo[1];
     operationInfos[0] = new MBeanOperationInfo("reset", "Resets the current statistics", new MBeanParameterInfo[0], "void", MBeanOperationInfo.ACTION);
@@ -66,36 +66,36 @@ public class LinkedMovingAveragesJMX implements DynamicMBean {
         new MBeanNotificationInfo[0]
     );
     List<String> copy = new ArrayList<>(jmxPath);
-    copy.add("Average="+movingAverages.getName());
+    copy.add("Average=" + movingAverages.getName());
     objectInstance = JMXManager.getInstance().register(this, copy);
     detailedStatisticsJMX = new DetailedStatisticsJMX(copy, movingAverages);
   }
 
-  public void close(){
+  public void close() {
     JMXManager.getInstance().unregister(objectInstance);
     detailedStatisticsJMX.close();
   }
 
   @Override
-  public Object getAttribute(String attribute)  {
-    if(attribute.equals("total")){
+  public Object getAttribute(String attribute) {
+    if (attribute.equals("total")) {
       return movingAverages.getTotal();
     }
-    if(attribute.equals("units")){
+    if (attribute.equals("units")) {
       return movingAverages.getUnits();
     }
     return movingAverages.getAverage(attribute);
   }
 
   @Override
-  public void setAttribute(Attribute attribute){
+  public void setAttribute(Attribute attribute) {
     // There are not attributes to set
   }
 
   @Override
   public AttributeList getAttributes(String[] attributes) {
     AttributeList list = new AttributeList();
-    for(String attribute: attributes){
+    for (String attribute : attributes) {
       list.add(getAttribute(attribute));
     }
     return list;
@@ -108,7 +108,7 @@ public class LinkedMovingAveragesJMX implements DynamicMBean {
 
   @Override
   public Object invoke(String actionName, Object[] params, String[] signature) {
-    if(actionName.equals("reset")){
+    if (actionName.equals("reset")) {
       movingAverages.reset();
     }
     return null;

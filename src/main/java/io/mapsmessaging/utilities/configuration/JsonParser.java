@@ -30,9 +30,10 @@ public class JsonParser {
 
   protected JSONObject json;
 
-  protected JsonParser(){}
+  protected JsonParser() {
+  }
 
-  public JsonParser(JSONObject json){
+  public JsonParser(JSONObject json) {
     this.json = json;
   }
 
@@ -40,21 +41,21 @@ public class JsonParser {
     return json;
   }
 
-  public Map<String, Object> parse()throws IOException {
+  public Map<String, Object> parse() throws IOException {
     Map<String, Object> result = new ObjectMapper().readValue(json.toString(2), LinkedHashMap.class);
     Map<String, Object> map = removeUnnecessaryLists(result);
     return new ConfigurationProperties(map);
   }
 
-  private Map<String, Object> removeUnnecessaryLists(Map<String, Object> map){
-    for(Entry<String, Object> entry:map.entrySet()){
-      if(entry.getValue() instanceof List){
+  private Map<String, Object> removeUnnecessaryLists(Map<String, Object> map) {
+    for (Entry<String, Object> entry : map.entrySet()) {
+      if (entry.getValue() instanceof List) {
         List<Object> list = objectToList(entry.getValue());
-        if(list.size() == 1){
+        if (list.size() == 1) {
           entry.setValue(list.remove(0));
         }
       }
-      if(entry.getValue() instanceof Map){
+      if (entry.getValue() instanceof Map) {
         entry.setValue(removeUnnecessaryLists(objectToMap(entry.getValue())));
       }
     }
@@ -62,11 +63,11 @@ public class JsonParser {
   }
 
 
-  protected List<Object> objectToList(Object list){
+  protected List<Object> objectToList(Object list) {
     return (List<Object>) list;
   }
 
-  protected Map<String, Object> objectToMap(Object list){
+  protected Map<String, Object> objectToMap(Object list) {
     return (Map<String, Object>) list;
   }
 }

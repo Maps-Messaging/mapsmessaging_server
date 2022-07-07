@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-public class DestinationSubscriptionManager implements Subscribable{
+public class DestinationSubscriptionManager implements Subscribable {
 
   private final Logger logger;
   private final Map<String, Subscribable> subscriptions;
@@ -55,11 +55,11 @@ public class DestinationSubscriptionManager implements Subscribable{
     return false;
   }
 
-  public Queue<Long> scanForInterest(Queue<Long> removedQueue){
+  public Queue<Long> scanForInterest(Queue<Long> removedQueue) {
     for (Subscribable subscribable : subscriptions.values()) {
       Queue<Long> interested = subscribable.getAll();
       removedQueue.removeAll(interested);
-      if(removedQueue.isEmpty()){
+      if (removedQueue.isEmpty()) {
         break; // all events seem to have interest, so nothing to do
       }
     }
@@ -88,10 +88,10 @@ public class DestinationSubscriptionManager implements Subscribable{
 
   @Override
   public int register(Message message) {
-    int count =0;
+    int count = 0;
     for (Subscribable subscribable : subscriptions.values()) {
       int updated = subscribable.register(message);
-      if(updated != 0){
+      if (updated != 0) {
         count += updated;
       }
     }
@@ -102,7 +102,7 @@ public class DestinationSubscriptionManager implements Subscribable{
   public boolean hasMessage(long messageIdentifier) {
     boolean response = false;
     for (Subscribable subscribable : subscriptions.values()) {
-      response = subscribable.hasMessage(messageIdentifier)|| response;
+      response = subscribable.hasMessage(messageIdentifier) || response;
     }
     return response;
   }
@@ -117,7 +117,7 @@ public class DestinationSubscriptionManager implements Subscribable{
   }
 
   @Override
-  public int size(){
+  public int size() {
     int size = subscriptions.size();
     for (Subscribable subscribable : subscriptions.values()) {
       size += subscribable.size();
@@ -150,14 +150,14 @@ public class DestinationSubscriptionManager implements Subscribable{
 
   @Override
   public void pause() {
-    for(Subscribable subscribable:subscriptions.values()){
+    for (Subscribable subscribable : subscriptions.values()) {
       subscribable.pause();
     }
   }
 
   @Override
   public void resume() {
-    for(Subscribable subscribable:subscriptions.values()){
+    for (Subscribable subscribable : subscriptions.values()) {
       subscribable.resume();
     }
   }

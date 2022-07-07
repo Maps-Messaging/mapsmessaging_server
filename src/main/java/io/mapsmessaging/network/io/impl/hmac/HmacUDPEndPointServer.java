@@ -21,6 +21,7 @@ import java.util.Map;
 public class HmacUDPEndPointServer extends UDPEndPointServer {
 
   private final Map<String, NodeSecurity> securityMap;
+
   public HmacUDPEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url,
       SelectorLoadManager selectorLoadManager, EndPointManagerJMX managerMBean,
       NetworkConfig config) throws SocketException {
@@ -28,15 +29,15 @@ public class HmacUDPEndPointServer extends UDPEndPointServer {
     securityMap = new LinkedHashMap<>();
     ConfigurationProperties props = getConfig().getProperties();
     Object t = props.get("nodeConfiguration");
-    loadNodeConfig( (List<ConfigurationProperties>) t);
+    loadNodeConfig((List<ConfigurationProperties>) t);
   }
 
-  private void loadNodeConfig(List<ConfigurationProperties> nodes){
-    for(ConfigurationProperties node:nodes){
+  private void loadNodeConfig(List<ConfigurationProperties> nodes) {
+    for (ConfigurationProperties node : nodes) {
       String host = node.getProperty("host");
       int port = node.getIntProperty("port", 0);
       PacketIntegrity packetIntegrity = PacketIntegrityFactory.getInstance().createPacketIntegrity(node);
-      securityMap.put(host+":"+port, new NodeSecurity(host, port, packetIntegrity));
+      securityMap.put(host + ":" + port, new NodeSecurity(host, port, packetIntegrity));
     }
   }
 

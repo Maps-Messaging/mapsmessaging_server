@@ -86,7 +86,7 @@ public abstract class MQTTPacket implements ServerPacket {
 
   public static String readUTF8(Packet packet) throws MalformedException {
     String result = "";
-    if(packet.available()>=2) {
+    if (packet.available() >= 2) {
       int len = readShort(packet);
       if (packet.available() >= len) {
         byte[] str = new byte[len];

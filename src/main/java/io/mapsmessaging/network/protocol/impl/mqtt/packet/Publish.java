@@ -87,8 +87,8 @@ public class Publish extends MQTTPacket {
     }
   }
 
-  boolean topicAllowed(String topicName){
-    return topicName.chars().noneMatch(c -> (c <= 0x1f || (c >=0x7f && c <= 0x9f)) || (c == '#' || (c == '+')));
+  boolean topicAllowed(String topicName) {
+    return topicName.chars().noneMatch(c -> (c <= 0x1f || (c >= 0x7f && c <= 0x9f)) || (c == '#' || (c == '+')));
   }
 
 

@@ -25,7 +25,6 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.NonNull;
@@ -34,24 +33,42 @@ import org.jetbrains.annotations.Nullable;
 
 public class MessageBuilder {
 
-  @Getter private java.util.Map<String, String> meta;
-  @Getter private Map<String, TypedData> dataMap;
-  @Getter private byte[] opaqueData;
-  @Getter private Object correlationData;
-  @Getter private String contentType;
-  @Getter private String responseTopic;
-  @Getter private long id;
-  @Getter private long expiry;
-  @Getter private long delayed;
-  @Getter private Priority priority;
-  @Getter private long creation;
-  @Getter private QualityOfService qualityOfService;
-  @Getter private ProtocolMessageTransformation transformation;
-  @Getter private boolean retain;
-  @Getter private boolean storeOffline;
-  @Getter private boolean payloadUTF8;
-  @Getter private Transformer transformer;
-  @Getter private UUID schemaId;
+  @Getter
+  private java.util.Map<String, String> meta;
+  @Getter
+  private Map<String, TypedData> dataMap;
+  @Getter
+  private byte[] opaqueData;
+  @Getter
+  private Object correlationData;
+  @Getter
+  private String contentType;
+  @Getter
+  private String responseTopic;
+  @Getter
+  private long id;
+  @Getter
+  private long expiry;
+  @Getter
+  private long delayed;
+  @Getter
+  private Priority priority;
+  @Getter
+  private long creation;
+  @Getter
+  private QualityOfService qualityOfService;
+  @Getter
+  private ProtocolMessageTransformation transformation;
+  @Getter
+  private boolean retain;
+  @Getter
+  private boolean storeOffline;
+  @Getter
+  private boolean payloadUTF8;
+  @Getter
+  private Transformer transformer;
+  @Getter
+  private String schemaId;
 
   public MessageBuilder() {
     id = 0;
@@ -112,7 +129,7 @@ public class MessageBuilder {
     return this;
   }
 
-  public @NonNull @NotNull MessageBuilder setMeta(@Nullable  Map<String, String> meta) {
+  public @NonNull @NotNull MessageBuilder setMeta(@Nullable Map<String, String> meta) {
     this.meta = meta;
     return this;
   }
@@ -162,33 +179,33 @@ public class MessageBuilder {
     return this;
   }
 
-  public  @NonNull @NotNull MessageBuilder setTransformation(ProtocolMessageTransformation transformation) {
+  public @NonNull @NotNull MessageBuilder setTransformation(ProtocolMessageTransformation transformation) {
     this.transformation = transformation;
     return this;
   }
 
-  public  @NonNull @NotNull MessageBuilder setDelayed(long delayed) {
+  public @NonNull @NotNull MessageBuilder setDelayed(long delayed) {
     this.delayed = delayed;
     return this;
   }
 
-  public  @NonNull @NotNull MessageBuilder setDestinationTransformer(Transformer transformer) {
+  public @NonNull @NotNull MessageBuilder setDestinationTransformer(Transformer transformer) {
     this.transformer = transformer;
     return this;
   }
 
-  public @NonNull @NotNull MessageBuilder setSchemaId(UUID schemaId) {
+  public @NonNull @NotNull MessageBuilder setSchemaId(String schemaId) {
     this.schemaId = schemaId;
     return this;
   }
 
   public @NonNull @NotNull Message build() {
-    if(transformation != null){
+    if (transformation != null) {
       ProtocolMessageTransformation local = transformation;
       transformation = null;
       local.incoming(this);
     }
-    if(transformer != null){
+    if (transformer != null) {
       transformer.transform(this);
     }
     return new Message(this);

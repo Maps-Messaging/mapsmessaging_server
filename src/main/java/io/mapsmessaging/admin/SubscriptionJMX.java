@@ -57,53 +57,53 @@ public class SubscriptionJMX implements HealthMonitor {
     }
   }
 
-  @JMXBeanOperation(name = "pause", description ="Pauses the subscription from receiving any new messages")
+  @JMXBeanOperation(name = "pause", description = "Pauses the subscription from receiving any new messages")
   public void pause() {
     subscription.pause();
   }
 
-  @JMXBeanOperation(name = "resume", description ="Resumes message delivery to this subscription")
+  @JMXBeanOperation(name = "resume", description = "Resumes message delivery to this subscription")
   public void resume() {
     subscription.resume();
   }
 
-  @JMXBeanAttribute(name = "isHibernating", description ="Indicates if this subscription is hibernating, meaning no client session is active")
-  public boolean isHibernating(){
+  @JMXBeanAttribute(name = "isHibernating", description = "Indicates if this subscription is hibernating, meaning no client session is active")
+  public boolean isHibernating() {
     return subscription.isHibernating();
   }
 
-  @JMXBeanAttribute(name = "atRest", description ="Returns the last total number of messages that are waiting on this subscription")
+  @JMXBeanAttribute(name = "atRest", description = "Returns the last total number of messages that are waiting on this subscription")
   public int getAtRest() {
     return subscription.getDepth();
   }
 
-  @JMXBeanAttribute(name = "inFlight", description ="Returns the last total number of messages that are in movement for this subscription")
+  @JMXBeanAttribute(name = "inFlight", description = "Returns the last total number of messages that are in movement for this subscription")
   public int getInFlight() {
     return subscription.getInFlight();
   }
 
-  @JMXBeanAttribute(name = "isPaused", description ="Indicates if this subscription is currently paused")
+  @JMXBeanAttribute(name = "isPaused", description = "Indicates if this subscription is currently paused")
   public boolean isPaused() {
     return subscription.isPaused();
   }
 
-  @JMXBeanAttribute(name = "sent", description ="Returns the last total number messages sent to the client")
+  @JMXBeanAttribute(name = "sent", description = "Returns the last total number messages sent to the client")
   public long getMessagesSent() {
     return subscription.getMessagesSent();
   }
 
-  @JMXBeanAttribute(name = "acknowledged", description ="Returns the last total number of messages that the client has acknowledged")
+  @JMXBeanAttribute(name = "acknowledged", description = "Returns the last total number of messages that the client has acknowledged")
   public long getMessagesAcked() {
     return subscription.getMessagesAcked();
   }
 
-  @JMXBeanAttribute(name = "rolledBack", description ="Returns the last total number of messages that the client has rolled back for redelivery")
+  @JMXBeanAttribute(name = "rolledBack", description = "Returns the last total number of messages that the client has rolled back for redelivery")
   public long getMessagesRolledback() {
     return subscription.getMessagesRolledBack();
   }
 
   @Override
-  @JMXBeanOperation(name = "checkHealth", description ="Returns the health status for this subscription")
+  @JMXBeanOperation(name = "checkHealth", description = "Returns the health status for this subscription")
   public HealthStatus checkHealth() {
     return new HealthStatus(subscription.getName(), LEVEL.INFO, "Subscription seems ok", mbean.getObjectName().toString());
   }

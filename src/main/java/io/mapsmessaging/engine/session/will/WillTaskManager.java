@@ -46,7 +46,7 @@ public class WillTaskManager {
   }
 
   public WillTaskImpl remove(String id) {
-    if(willTaskMap.containsKey(id)) {
+    if (willTaskMap.containsKey(id)) {
       willTaskMap.remove(id);
     }
     return willActiveTasks.remove(id);
@@ -55,7 +55,7 @@ public class WillTaskManager {
   public WillTaskImpl replace(String id, WillDetails willDetails) {
     willTaskMap.remove(id);
     WillTaskImpl old = willActiveTasks.remove(id);
-    if(old != null){
+    if (old != null) {
       old.cancel();
     }
     return put(id, willDetails);

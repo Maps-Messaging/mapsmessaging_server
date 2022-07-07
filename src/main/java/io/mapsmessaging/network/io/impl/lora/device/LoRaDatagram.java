@@ -26,7 +26,7 @@ public class LoRaDatagram {
   private final byte[] buffer;
   private final int id;
 
-  public LoRaDatagram(int to, int from, int rssi, byte[] buffer, int id){
+  public LoRaDatagram(int to, int from, int rssi, byte[] buffer, int id) {
     this.to = to;
     this.from = from;
     this.rssi = rssi;
@@ -50,7 +50,7 @@ public class LoRaDatagram {
     return buffer;
   }
 
-  public int getId(){
+  public int getId() {
     return id;
   }
 }

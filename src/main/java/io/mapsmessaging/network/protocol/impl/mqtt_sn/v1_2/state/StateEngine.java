@@ -41,11 +41,14 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 public class StateEngine {
+
   private final Logger logger;
 
   private final Map<String, MQTT_SNPacket> subscribeResponseMap;
-  private @Getter final TopicAliasManager topicAliasManager;
-  private @Getter @Setter int maxBufferSize = 0;
+  private @Getter
+  final TopicAliasManager topicAliasManager;
+  private @Getter
+  @Setter int maxBufferSize = 0;
   private State currentState;
   private SessionContextBuilder sessionContextBuilder;
   private final MessagePipeline pipeline;
@@ -53,7 +56,7 @@ public class StateEngine {
   public StateEngine(MQTT_SNProtocol protocol, RegisteredTopicConfiguration registeredTopicConfiguration) {
     logger = LoggerFactory.getLogger(StateEngine.class);
     subscribeResponseMap = new LinkedHashMap<>();
-    pipeline = new MessagePipeline(protocol, this );
+    pipeline = new MessagePipeline(protocol, this);
     currentState = null;
     topicAliasManager = new TopicAliasManager(registeredTopicConfiguration);
   }
@@ -88,18 +91,18 @@ public class StateEngine {
   }
 
   public void setState(State state) {
-    if(currentState != null && state != null) {
+    if (currentState != null && state != null) {
       logger.log(ServerLogMessages.MQTT_SN_STATE_ENGINE_STATE_CHANGE, currentState.getName(), state.getName());
     }
     currentState = state;
   }
 
-  public CompletableFuture<Session> createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol){
+  public CompletableFuture<Session> createSession(SessionContextBuilder scb, MQTT_SNProtocol protocol) {
     scb.setReceiveMaximum(1);
     return SessionManager.getInstance().createAsync(scb.build(), protocol);
   }
 
-  public void queueMessage(@NotNull @NonNull MessageEvent messageEvent){
+  public void queueMessage(@NotNull @NonNull MessageEvent messageEvent) {
     pipeline.queue(messageEvent);
   }
 
@@ -107,11 +110,11 @@ public class StateEngine {
     currentState.sendPublish(protocol, destination, publish);
   }
 
-  public void sendNextPublish(){
+  public void sendNextPublish() {
     pipeline.completed();
   }
 
-  public void sleep(){
+  public void sleep() {
     pipeline.pause();
     getTopicAliasManager().clear();
   }

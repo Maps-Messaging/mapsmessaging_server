@@ -43,7 +43,7 @@ public class SubAck extends MQTT_SNPacket {
     this.msgId = msgId;
     this.topicId = topicId;
     this.status = status;
-    this.flags = (byte)(qualityOfService.getLevel() << 5 | topicIdType & 0b11);
+    this.flags = (byte) (qualityOfService.getLevel() << 5 | topicIdType & 0b11);
   }
 
   @Override
@@ -53,7 +53,7 @@ public class SubAck extends MQTT_SNPacket {
     packet.put(flags); // Only QOS counts
     MQTTPacket.writeShort(packet, topicId);
     MQTTPacket.writeShort(packet, msgId);
-    packet.put((byte)status.getValue());
+    packet.put((byte) status.getValue());
     return 8;
   }
 

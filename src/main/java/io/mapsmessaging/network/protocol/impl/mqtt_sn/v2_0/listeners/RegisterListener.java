@@ -25,10 +25,9 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Register;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.RegisterAck;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
-import java.io.IOException;
 
 public class RegisterListener extends PacketListener {
 
@@ -41,7 +40,7 @@ public class RegisterListener extends PacketListener {
       // Exceeded the maximum number of registered topics
       return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.InvalidTopicAlias);
     }
-    if(session.findDestination(topic, DestinationType.TOPIC).isCompletedExceptionally()){
+    if (session.findDestination(topic, DestinationType.TOPIC).isCompletedExceptionally()) {
       return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.InvalidTopicAlias);
     }
     return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.Success);

@@ -70,7 +70,7 @@ public class SessionContext {
       willTopic = reader.readString();
       int bufferCount = reader.readInt();
       ByteBuffer[] bb = new ByteBuffer[bufferCount];
-      for(int x=0;x<bb.length;x++){
+      for (int x = 0; x < bb.length; x++) {
         bb[x] = ByteBuffer.wrap(reader.readByteArray());
       }
       willMessage = MessageFactory.getInstance().unpack(bb);
@@ -87,7 +87,7 @@ public class SessionContext {
       writer.write(willTopic);
       ByteBuffer[] buffers = MessageFactory.getInstance().pack(willMessage);
       writer.write(buffers.length);
-      for(ByteBuffer buffer:buffers){
+      for (ByteBuffer buffer : buffers) {
         writer.write(buffer.array());
       }
     } else {
@@ -193,7 +193,7 @@ public class SessionContext {
 
   @Override
   public String toString() {
-    return  "SessionContext:" + "Id:" + id
+    return "SessionContext:" + "Id:" + id
         + " Protocol:" + protocol.toString()
         + " ResetState:" + resetState
         + " PersistentSession:" + persistentSession

@@ -28,20 +28,20 @@ public class SessionManager {
   private final Session session;
   private int interestCount;
 
-  public SessionManager(Session session){
+  public SessionManager(Session session) {
     this.session = session;
     interestCount = 1;
   }
 
-  public int increment(){
+  public int increment() {
     return interestCount++;
   }
 
-  public int decrement(){
+  public int decrement() {
     return interestCount--;
   }
 
-  public@NonNull @NotNull Session getSession() {
+  public @NonNull @NotNull Session getSession() {
     return session;
   }
 

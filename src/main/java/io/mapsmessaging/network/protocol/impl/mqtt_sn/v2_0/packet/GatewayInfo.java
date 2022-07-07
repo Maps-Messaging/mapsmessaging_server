@@ -41,13 +41,13 @@ public class GatewayInfo extends MQTT_SN_2_Packet {
   @Override
   public int packFrame(Packet packet) {
     int len = 3;
-    if(gatewayAddress != null){
-      len = 3+ gatewayAddress.length;
+    if (gatewayAddress != null) {
+      len = 3 + gatewayAddress.length;
     }
     packet.put((byte) len);
     packet.put((byte) GWINFO);
     packet.put((byte) gatewayId);
-    if(gatewayAddress != null){
+    if (gatewayAddress != null) {
       packet.put(gatewayAddress);
     }
     return len;

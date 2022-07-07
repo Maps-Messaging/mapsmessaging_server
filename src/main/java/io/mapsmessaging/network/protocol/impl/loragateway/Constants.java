@@ -35,7 +35,7 @@ public class Constants {
   static final byte START_RANGE = 0x12;
   static final byte END_RANGE = 0x19;
 
-  private Constants(){
+  private Constants() {
     // nothing to do
   }
 

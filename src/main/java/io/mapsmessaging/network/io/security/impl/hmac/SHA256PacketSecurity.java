@@ -6,7 +6,9 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 public class SHA256PacketSecurity extends HmacPacketSecurity {
-  public SHA256PacketSecurity(){}
+
+  public SHA256PacketSecurity() {
+  }
 
   protected SHA256PacketSecurity(SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException {
     super(stamper, key);

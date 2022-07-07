@@ -32,20 +32,36 @@ import org.yaml.snakeyaml.Yaml;
 
 @ToString
 public class ResourceProperties {
+
   public static final String RESOURCE_FILE_NAME = "resource.yaml";
 
 
-  @Getter @Setter private Date date;
-  @Getter @Setter private String resourceName;
-  @Getter @Setter private String type;
-  @Getter @Setter private String uuid;
-  @Getter @Setter private String buildDate;
-  @Getter @Setter private String buildVersion;
-  @Getter @Setter private Map<String, Object> schema;
+  @Getter
+  @Setter
+  private Date date;
+  @Getter
+  @Setter
+  private String resourceName;
+  @Getter
+  @Setter
+  private String type;
+  @Getter
+  @Setter
+  private String uuid;
+  @Getter
+  @Setter
+  private String buildDate;
+  @Getter
+  @Setter
+  private String buildVersion;
+  @Getter
+  @Setter
+  private Map<String, Object> schema;
 
-  public ResourceProperties(){}
+  public ResourceProperties() {
+  }
 
-  public ResourceProperties(Date date, String resourceName, String type, String uuid, String buildDate, String buildVersion){
+  public ResourceProperties(Date date, String resourceName, String type, String uuid, String buildDate, String buildVersion) {
     this.date = date;
     this.resourceName = resourceName;
     this.type = type;
@@ -55,7 +71,7 @@ public class ResourceProperties {
     schema = new LinkedHashMap<>();
   }
 
-  public void write(File directoryPath ) throws IOException {
+  public void write(File directoryPath) throws IOException {
     final DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     options.setPrettyFlow(true);

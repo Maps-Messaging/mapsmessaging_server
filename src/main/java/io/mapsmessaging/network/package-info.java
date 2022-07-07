@@ -19,11 +19,9 @@
 /**
  * This package contains support for all the network level operations, as well as the messaging protocols that are supported
  *
- *
- *
- * @since 1.0
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 
 package io.mapsmessaging.network;

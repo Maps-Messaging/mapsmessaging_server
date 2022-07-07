@@ -5,9 +5,9 @@ import io.mapsmessaging.network.io.security.SignatureManager;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-public class SHA1PacketSecurity  extends HmacPacketSecurity {
+public class SHA1PacketSecurity extends HmacPacketSecurity {
 
-  public SHA1PacketSecurity(){
+  public SHA1PacketSecurity() {
   }
 
   protected SHA1PacketSecurity(SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException {

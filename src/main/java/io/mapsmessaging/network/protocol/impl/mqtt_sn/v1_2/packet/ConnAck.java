@@ -37,7 +37,7 @@ public class ConnAck extends MQTT_SNPacket {
   public int packFrame(Packet packet) {
     packet.put((byte) 3);
     packet.put((byte) CONNACK);
-    packet.put((byte)status.getValue());
+    packet.put((byte) status.getValue());
     return 3;
   }
 }

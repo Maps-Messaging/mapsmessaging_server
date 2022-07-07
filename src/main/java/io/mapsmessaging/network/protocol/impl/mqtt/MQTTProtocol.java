@@ -103,9 +103,9 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void connect(@NonNull @NotNull String sessionId,String username,String password) throws IOException {
+  public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
     Connect connect = new Connect();
-    if(username != null) {
+    if (username != null) {
       connect.setUsername(username);
       connect.setPassword(password.trim().toCharArray());
     }
@@ -116,9 +116,9 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull  String mappedResource, @Nullable Transformer transformer){
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
     topicNameMapping.put(resource, mappedResource);
-    if(transformer != null) {
+    if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
     Subscribe subscribe = new Subscribe();
@@ -129,9 +129,10 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource,@Nullable String selector,  @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer)
+      throws IOException {
     topicNameMapping.put(resource, mappedResource);
-    if(transformer != null) {
+    if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
@@ -175,7 +176,7 @@ public class MQTTProtocol extends ProtocolImpl {
         resume = handleMQTTEvent(packet);
         pos = packet.position();
       }
-      if(resume) {
+      if (resume) {
         registerRead();
       }
     } catch (EndOfBufferException eobe) {
@@ -219,9 +220,9 @@ public class MQTTProtocol extends ProtocolImpl {
     ThreadContext.put("version", getVersion());
     logger.log(ServerLogMessages.MQTT_KEEPALIVE_TIMOUT, keepAlive);
     long timeout = System.currentTimeMillis() - (keepAlive + 1000);
-    if(endPoint.isClient()) {
-      writeFrame( new PingReq());
-      timeout = System.currentTimeMillis() - (keepAlive *2);
+    if (endPoint.isClient()) {
+      writeFrame(new PingReq());
+      timeout = System.currentTimeMillis() - (keepAlive * 2);
 
     }
     boolean readTimeOut = endPoint.getLastRead() < timeout;
@@ -253,15 +254,14 @@ public class MQTTProtocol extends ProtocolImpl {
     Message message = processTransformer(destinationName, messageEvent.getMessage());
 
     byte[] payload;
-    if(transformation != null){
+    if (transformation != null) {
       payload = transformation.outgoing(message);
-    }
-    else{
+    } else {
       payload = message.getOpaqueData();
     }
-    if(topicNameMapping != null){
+    if (topicNameMapping != null) {
       String tmp = topicNameMapping.get(destinationName);
-      if(tmp != null){
+      if (tmp != null) {
         destinationName = tmp;
       }
     }

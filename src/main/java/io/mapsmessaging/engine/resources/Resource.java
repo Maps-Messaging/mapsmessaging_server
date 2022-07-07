@@ -43,7 +43,7 @@ public class Resource implements AutoCloseable {
 
   private static final LongAdder totalRetained = new LongAdder();
 
-  public static long getTotalRetained(){
+  public static long getTotalRetained() {
     return totalRetained.sum();
   }
 
@@ -62,15 +62,16 @@ public class Resource implements AutoCloseable {
   private @Getter ResourceProperties resourceProperties;
 
   public Resource() throws IOException {
-    this(null, null, "Internal-Resource:"+INTERNAL_RESOURCE_COUNTER.incrementAndGet(), null);
+    this(null, null, "Internal-Resource:" + INTERNAL_RESOURCE_COUNTER.incrementAndGet(), null);
   }
 
-  public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName, @Nullable ResourceProperties resourceProperties) throws IOException {
+  public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName,
+      @Nullable ResourceProperties resourceProperties) throws IOException {
     keyGen = new AtomicLong(0);
     loaded = false;
     isClosed = false;
     retainedIdentifier = -1;
-    name = fileName+"message.data";
+    name = fileName + "message.data";
     this.resourceProperties = resourceProperties;
     Map<String, String> properties = new LinkedHashMap<>();
     properties.put("basePath", fileName);
@@ -78,17 +79,17 @@ public class Resource implements AutoCloseable {
     long idleTime = 0;
     String type = "Memory";
     Map<String, String> storeProperties = new LinkedHashMap<>();
-    if(pathManager != null) {
+    if (pathManager != null) {
       storeProperties.put("Sync", "" + pathManager.isEnableSync());
-      storeProperties.put("ItemCount", ""+pathManager.getItemCount());
-      storeProperties.put("MaxPartitionSize",""+ pathManager.getPartitionSize());
-      storeProperties.put("ExpiredEventPoll", ""+pathManager.getExpiredEventPoll());
+      storeProperties.put("ItemCount", "" + pathManager.getItemCount());
+      storeProperties.put("MaxPartitionSize", "" + pathManager.getPartitionSize());
+      storeProperties.put("ExpiredEventPoll", "" + pathManager.getExpiredEventPoll());
       idleTime = pathManager.getIdleTime();
       type = pathManager.getType();
-      if(type.equalsIgnoreCase("file")){
+      if (type.equalsIgnoreCase("file")) {
         type = "Partition";
       }
-      if(pathManager.isEnableCache()){
+      if (pathManager.isEnableCache()) {
         builder.setCache(pathManager.getCacheType());
         builder.enableCacheWriteThrough(pathManager.isWriteThrough());
       }
@@ -98,21 +99,21 @@ public class Resource implements AutoCloseable {
         .setFactory(new MessageFactory())
         .setProperties(storeProperties)
         .setStorageType(type);
-    if(messageExpiryHandler != null){
+    if (messageExpiryHandler != null) {
       builder.setExpiredHandler(messageExpiryHandler);
     }
 
     Storage<Message> s = builder.build();
     persistent = !(type.equalsIgnoreCase("Memory"));
     store = new AsyncStorage<>(s);
-    if(idleTime > 0){
+    if (idleTime > 0) {
       store.enableAutoPause(pathManager.getIdleTime() * 1000L); // Convert to milliseconds
     }
   }
 
   @Override
   public void close() throws IOException {
-    if(!isClosed) {
+    if (!isClosed) {
       isClosed = true;
       store.close();
     }
@@ -134,8 +135,8 @@ public class Resource implements AutoCloseable {
   }
 
   protected long getNextIdentifier() {
-    if(!loaded){
-      if(persistent){
+    if (!loaded) {
+      if (persistent) {
         try {
           keyGen.set(store.getLastKey().get());
         } catch (InterruptedException e) {
@@ -163,7 +164,7 @@ public class Resource implements AutoCloseable {
     store.delete();
   }
 
-  public boolean isEmpty(){
+  public boolean isEmpty() {
     return getFromFuture(store.isEmpty());
   }
 
@@ -181,7 +182,7 @@ public class Resource implements AutoCloseable {
   }
 
   @SneakyThrows
-  private <T> T getFromFuture(Future<T> future){
+  private <T> T getFromFuture(Future<T> future) {
     return future.get();
   }
 }

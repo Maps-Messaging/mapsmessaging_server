@@ -33,6 +33,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class MessagePipeline {
+
   private final Logger logger;
   private final Queue<MessageEvent> publishContexts;
   private final StateEngine stateEngine;
@@ -47,7 +48,7 @@ public class MessagePipeline {
 
   private Runnable completion;
 
-  public MessagePipeline(MQTT_SNProtocol protocol, StateEngine stateEngine){
+  public MessagePipeline(MQTT_SNProtocol protocol, StateEngine stateEngine) {
     this.protocol = protocol;
     this.stateEngine = stateEngine;
     this.packetIdManager = protocol.getPacketIdManager();
@@ -60,38 +61,38 @@ public class MessagePipeline {
     dropQoS0 = props.getBooleanProperty("dropQoS0Events", false);
 
     long t = TimeUnit.SECONDS.toMillis(props.getIntProperty("eventQueueTimeout", 0));
-    eventTimeout = t == 0? (Long.MAX_VALUE>>2):t;
+    eventTimeout = t == 0 ? (Long.MAX_VALUE >> 2) : t;
     logger.log(MQTT_SN_PIPELINE_CREATED, protocol.getName(), dropQoS0, maxInFlightEvents, eventTimeout);
   }
 
-  public void pause(){
+  public void pause() {
     paused.set(true);
     logger.log(MQTT_SN_PIPELINE_PAUSED, protocol.getName());
 
   }
 
-  public void resume(){
+  public void resume() {
     paused.set(false);
     logger.log(MQTT_SN_PIPELINE_RESUMED, protocol.getName());
     sendNext();
   }
 
-  public void queue(@NotNull @NonNull MessageEvent messageEvent){
+  public void queue(@NotNull @NonNull MessageEvent messageEvent) {
     QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
-    if(paused.get()){
-      if(dropQoS0 &&
+    if (paused.get()) {
+      if (dropQoS0 &&
           messageEvent.getMessage().getQualityOfService().getLevel() == 0 &&
-          messageEvent.getSubscription().getDepth() > 1){
+          messageEvent.getSubscription().getDepth() > 1) {
         messageEvent.getCompletionTask().run();
-        logger.log(MQTT_SN_PIPELINE_EVENT_DROPPED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), messageEvent.getMessage().getQualityOfService().getLevel());
+        logger.log(MQTT_SN_PIPELINE_EVENT_DROPPED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(),
+            messageEvent.getMessage().getQualityOfService().getLevel());
         return;
       }
       publishContexts.offer(messageEvent);
       logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
 
-    }
-    else {
-      if (publishContexts.size()+1 <= maxInFlightEvents) {
+    } else {
+      if (publishContexts.size() + 1 <= maxInFlightEvents) {
         if (qos.getLevel() > 0) {
           logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
           publishContexts.offer(messageEvent);
@@ -112,11 +113,11 @@ public class MessagePipeline {
     }
   }
 
-  private void sendNext(){
+  private void sendNext() {
     MessageEvent messageEvent = publishContexts.peek();
-    if(messageEvent != null) {
+    if (messageEvent != null) {
       QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
-      if(messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
+      if (messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
         if (qos.getLevel() == 0) {
           empty.decrementAndGet();
           send(messageEvent);
@@ -124,24 +125,23 @@ public class MessagePipeline {
         } else {
           send(messageEvent);
         }
-      }
-      else{
+      } else {
         logger.log(MQTT_SN_PIPELINE_EVENT_TIMED_OUT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), qos.getLevel());
         messageEvent.getCompletionTask().run();
         completed();
       }
     }
-    if(publishContexts.size() == 0 && paused.get()){
+    if (publishContexts.size() == 0 && paused.get()) {
       empty.set(0);
       stateEngine.getTopicAliasManager().clear();
-      if(completion != null) {
+      if (completion != null) {
         completion.run();
         completion = null;
       }
     }
   }
 
-  private void send(MessageEvent messageEvent){
+  private void send(MessageEvent messageEvent) {
     QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
     int messageId = 0;
     if (qos.isSendPacketId()) {
@@ -149,9 +149,9 @@ public class MessagePipeline {
     }
     short topicTypeId = TOPIC_NAME;
     short alias = stateEngine.getTopicAliasManager().findTopicAlias(messageEvent.getDestinationName());
-    if(alias == -1){
-      alias = (short)stateEngine.getTopicAliasManager().findRegisteredTopicAlias(protocol.getAddressKey(), messageEvent.getDestinationName());
-      if(alias != -1){
+    if (alias == -1) {
+      alias = (short) stateEngine.getTopicAliasManager().findRegisteredTopicAlias(protocol.getAddressKey(), messageEvent.getDestinationName());
+      if (alias != -1) {
         topicTypeId = TOPIC_PRE_DEFINED_ID;
       }
     }
@@ -167,24 +167,22 @@ public class MessagePipeline {
       Register register = new Register(alias, TOPIC_NAME, messageEvent.getDestinationName());
       protocol.writeFrame(register);
     }
-    MQTT_SNPacket publish = protocol.buildPublish(alias, messageId,  messageEvent, qos, topicTypeId);
+    MQTT_SNPacket publish = protocol.buildPublish(alias, messageId, messageEvent, qos, topicTypeId);
     stateEngine.sendPublish(protocol, messageEvent.getDestinationName(), publish);
     logger.log(MQTT_SN_PIPELINE_EVENT_SENT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
   }
 
   public void emptyQueue(int sendSize, Runnable task) {
     int size = size();
-    logger.log(MQTT_SN_PIPELINE_WOKEN, protocol.getName(), sendSize,size);
-
+    logger.log(MQTT_SN_PIPELINE_WOKEN, protocol.getName(), sendSize, size);
 
     this.completion = task;
-    if(size == 0){
-      if(completion != null) {
+    if (size == 0) {
+      if (completion != null) {
         completion.run();
         completion = null;
       }
-    }
-    else {
+    } else {
       if (sendSize == 0) {
         empty.set(Integer.MAX_VALUE);
       } else {
@@ -194,14 +192,14 @@ public class MessagePipeline {
     }
   }
 
-  public int size(){
-    int total =0;
+  public int size() {
+    int total = 0;
     Map<String, Long> counters = new LinkedHashMap<>();
-    for(MessageEvent event:publishContexts){
+    for (MessageEvent event : publishContexts) {
       String destination = event.getDestinationName();
-      if(!counters.containsKey(destination)){
+      if (!counters.containsKey(destination)) {
         total += event.getSubscription().getDepth();
-        counters.put(destination, (long)(event.getSubscription().getDepth()));
+        counters.put(destination, (long) (event.getSubscription().getDepth()));
       }
     }
     return total;

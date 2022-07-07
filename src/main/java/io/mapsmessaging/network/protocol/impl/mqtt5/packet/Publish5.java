@@ -66,7 +66,7 @@ public class Publish5 extends MQTTPacket5 {
     }
 
     destinationName = readUTF8(packet);
-    long nonData = destinationName.length() +2L;
+    long nonData = destinationName.length() + 2L;
 
     if (qos.isSendPacketId()) {
       nonData += 2;

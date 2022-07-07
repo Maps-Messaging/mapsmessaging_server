@@ -104,12 +104,12 @@ public class MessageDaemon implements WrapperListener {
     }
     // <editor-fold desc="Persistent code, maybe moved to a separate class">
     dataStore = DBMaker.fileDB(homeDirectory + "/data/messageDaemon.db")
-            .fileMmapEnable()
-            .closeOnJvmShutdown()
-            .allocateStartSize(10L * 1024L * 1024L) // 10MB
-            .allocateIncrement(512L * 1024L * 1024L) // 512MB
-            .checksumHeaderBypass()
-            .make();
+        .fileMmapEnable()
+        .closeOnJvmShutdown()
+        .allocateStartSize(10L * 1024L * 1024L) // 10MB
+        .allocateIncrement(512L * 1024L * 1024L) // 512MB
+        .checksumHeaderBypass()
+        .make();
 
     config = dataStore
         .hashMap("serverConfiguration", Serializer.STRING, Serializer.STRING)
@@ -120,10 +120,9 @@ public class MessageDaemon implements WrapperListener {
       uniqueId = serverId;
     } else {
       serverId = System.getProperty("SERVER_ID");
-      if(serverId == null) {
+      if (serverId == null) {
         uniqueId = generateUniqueId();
-      }
-      else{
+      } else {
         uniqueId = serverId;
       }
       config.put(SERVER_ID, uniqueId);
@@ -137,9 +136,9 @@ public class MessageDaemon implements WrapperListener {
 
     //<editor-fold desc="Now see if we can start the Consul Manager">
     // May block till a consul connection is made, depending on config
-     ConsulManagerFactory.getInstance().start(uniqueId);
+    ConsulManagerFactory.getInstance().start(uniqueId);
     //</editor-fold>
-    ConfigurationManager.getInstance().initialise(uniqueId+"_");
+    ConfigurationManager.getInstance().initialise(uniqueId + "_");
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
     int delayTimer = properties.getIntProperty("DelayedPublishInterval", 1000);
     int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
@@ -147,7 +146,6 @@ public class MessageDaemon implements WrapperListener {
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
-
 
     // Start the Schema manager to it has the defaults and has loaded the required classes
     SchemaManager.getInstance().start();
@@ -164,7 +162,7 @@ public class MessageDaemon implements WrapperListener {
     TransactionManager.getInstance().start();
   }
 
-  private void logServiceManagers(){
+  private void logServiceManagers() {
 
     logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Network Manager");
     logServices(networkManager.getServices());
@@ -180,7 +178,7 @@ public class MessageDaemon implements WrapperListener {
     logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
     ServiceLoader<ProtocolImplFactory> protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
     List<Service> service = new ArrayList<>();
-    for(ProtocolImplFactory parser:protocolServiceLoader){
+    for (ProtocolImplFactory parser : protocolServiceLoader) {
       service.add(parser);
     }
     logServices(service.listIterator());
@@ -188,8 +186,8 @@ public class MessageDaemon implements WrapperListener {
     logServices(TransformerManager.getInstance().getServices());
   }
 
-  private void logServices(Iterator<Service> services){
-    while(services.hasNext()){
+  private void logServices(Iterator<Service> services) {
+    while (services.hasNext()) {
       Service service = services.next();
       logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE, service.getName(), service.getDescription());
     }
@@ -243,19 +241,19 @@ public class MessageDaemon implements WrapperListener {
   @Override
   public Integer start(String[] strings) {
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
-    if(ConsulManagerFactory.getInstance().isStarted()){
-      ConfigurationProperties  map = ConfigurationManager.getInstance().getProperties("NetworkManager");
+    if (ConsulManagerFactory.getInstance().isStarted()) {
+      ConfigurationProperties map = ConfigurationManager.getInstance().getProperties("NetworkManager");
       List<ConfigurationProperties> list = (List<ConfigurationProperties>) map.get("data");
       Map<String, String> meta = new LinkedHashMap<>();
 
-      for(ConfigurationProperties properties:list){
+      for (ConfigurationProperties properties : list) {
 
         String protocol = properties.getProperty("protocol");
         String url = properties.getProperty("url");
-        while(protocol.contains(",")) {
+        while (protocol.contains(",")) {
           protocol = protocol.replace(",", "-");
         }
-        while(protocol.contains(" ")) {
+        while (protocol.contains(" ")) {
           protocol = protocol.replace(" ", "-");
         }
         meta.put(protocol, url);
@@ -294,7 +292,7 @@ public class MessageDaemon implements WrapperListener {
     }
   }
 
-  public boolean isStarted(){
+  public boolean isStarted() {
     return isStarted.get();
   }
 
@@ -302,14 +300,14 @@ public class MessageDaemon implements WrapperListener {
     return uniqueId;
   }
 
-  private String generateUniqueId(){
+  private String generateUniqueId() {
     String env = System.getenv("SERVER_ID");
-    if(env != null){
+    if (env != null) {
       return env;
     }
 
     boolean useUUID = Boolean.parseBoolean(System.getProperty("USE_UUID", "TRUE"));
-    if(useUUID){
+    if (useUUID) {
       return UUID.randomUUID().toString();
     }
 

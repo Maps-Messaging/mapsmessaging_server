@@ -28,14 +28,14 @@ import javax.security.auth.login.LoginException;
 
 public class TestLoginModule extends BaseLoginModule {
 
-  private static final String[] USERNAMES={"user1", "admin", "user2"};
-  private static final char[][] PASSWORDS={"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray()};
+  private static final String[] USERNAMES = {"user1", "admin", "user2"};
+  private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray()};
 
-  public static String[] getUsernames(){
+  public static String[] getUsernames() {
     return USERNAMES;
   }
 
-  public static char[][] getPasswords(){
+  public static char[][] getPasswords() {
     return PASSWORDS;
   }
 
@@ -46,15 +46,15 @@ public class TestLoginModule extends BaseLoginModule {
     callbacks[1] = new PasswordCallback("password: ", false);
     try {
       callbackHandler.handle(callbacks);
-      username = ((NameCallback)callbacks[0]).getName();
-      char[] tmpPassword = ((PasswordCallback)callbacks[1]).getPassword();
+      username = ((NameCallback) callbacks[0]).getName();
+      char[] tmpPassword = ((PasswordCallback) callbacks[1]).getPassword();
       if (tmpPassword == null) {
         // treat a NULL password as an empty password
         tmpPassword = new char[0];
       }
       password = new char[tmpPassword.length];
       System.arraycopy(tmpPassword, 0, password, 0, tmpPassword.length);
-      ((PasswordCallback)callbacks[1]).clearPassword();
+      ((PasswordCallback) callbacks[1]).clearPassword();
 
       succeeded = authorise();
     } catch (IOException ioe) {
@@ -65,9 +65,9 @@ public class TestLoginModule extends BaseLoginModule {
     return succeeded;
   }
 
-  private boolean authorise(){
+  private boolean authorise() {
     boolean found = false;
-    for(int x=0;x<USERNAMES.length;x++){
+    for (int x = 0; x < USERNAMES.length; x++) {
       if (username.equals(USERNAMES[x]) && password.length == PASSWORDS[x].length) {
         for (int y = 0; y < password.length; y++) {
           if (password[y] == PASSWORDS[x][y]) {

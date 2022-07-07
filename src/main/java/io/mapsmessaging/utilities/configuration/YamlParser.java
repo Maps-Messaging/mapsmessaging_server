@@ -18,9 +18,8 @@
 
 package io.mapsmessaging.utilities.configuration;
 
-import org.json.JSONObject;
-
 import java.util.Map;
+import org.json.JSONObject;
 
 public class YamlParser extends JsonParser {
 
@@ -29,7 +28,7 @@ public class YamlParser extends JsonParser {
   }
 
   private JSONObject convertToJson(Object yamlLoad) {
-    if(yamlLoad instanceof Map) {
+    if (yamlLoad instanceof Map) {
       Map<String, Object> map = objectToMap(yamlLoad);
       return new JSONObject(map);
     }

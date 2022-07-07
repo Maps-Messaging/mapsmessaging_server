@@ -29,14 +29,22 @@ import lombok.ToString;
 @ToString
 public class Subscribe extends MQTT_SN_2_Packet {
 
-  @Getter private final int msgId;
-  @Getter private final String topicName;
-  @Getter private final boolean noLocal;
-  @Getter private final QualityOfService QoS;
-  @Getter private final boolean retain;
-  @Getter private final RetainHandler retainHandler;
-  @Getter private final int topicIdType;
-  @Getter private final int topicId;
+  @Getter
+  private final int msgId;
+  @Getter
+  private final String topicName;
+  @Getter
+  private final boolean noLocal;
+  @Getter
+  private final QualityOfService QoS;
+  @Getter
+  private final boolean retain;
+  @Getter
+  private final RetainHandler retainHandler;
+  @Getter
+  private final int topicIdType;
+  @Getter
+  private final int topicId;
 
   public Subscribe(Packet packet) throws IOException {
     super(SUBSCRIBE);

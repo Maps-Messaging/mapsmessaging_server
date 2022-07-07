@@ -28,8 +28,8 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Transaction class that maintains a list of destinations that this transaction has published messages to as well
- * as the unique transaction ID and the internal id used to identify this as a unique transaction
+ * Transaction class that maintains a list of destinations that this transaction has published messages to as well as the unique transaction ID and the internal id used to identify
+ * this as a unique transaction
  */
 public class Transaction {
 
@@ -80,30 +80,28 @@ public class Transaction {
   }
 
   /**
-   * If called before commit, then all messages will automatically be aborted and removed from all the destinations
-   * that have been published previously.
+   * If called before commit, then all messages will automatically be aborted and removed from all the destinations that have been published previously.
    *
    * @throws IOException if the abort call caused any IO errors. This is because it makes changes to the underlying files
    */
   public void close() throws IOException {
     // Schedule task to abort and delete all messages from this transaction across all destinations
-    if(!complete) {
+    if (!complete) {
       abort();
     }
     TransactionManager.getInstance().remove(this);
   }
 
   /**
-   * Aborts all messages published to this transaction, meaning that they are removed from the underlying resource and all reference
-   * to them are removed, freeing up resources.
+   * Aborts all messages published to this transaction, meaning that they are removed from the underlying resource and all reference to them are removed, freeing up resources.
    *
    * @throws IOException If, while, clearing resources any file system exceptions are raised
    */
   public void abort() throws IOException {
-    if(complete){
+    if (complete) {
       throw new TransactionException(EXCEPTION_MESSAGE);
     }
-    if(!list.isEmpty()) {
+    if (!list.isEmpty()) {
       // Schedule task to abort and delete all messages from this transaction across all destinations
       for (Destination destination : list.values()) {
         destination.destinationImpl.abort(internalId);
@@ -114,13 +112,13 @@ public class Transaction {
   }
 
   /**
-   * Allows the messages previously published in this transaction to be visible to all the subscribers on the destinations. Meaning they
-   * will then be delivered to any subscription that matches the destination and message
+   * Allows the messages previously published in this transaction to be visible to all the subscribers on the destinations. Meaning they will then be delivered to any subscription
+   * that matches the destination and message
    *
    * @throws IOException If, while, enabling the message to be seen any file exceptions are raised
    */
   public void commit() throws IOException {
-    if(complete){
+    if (complete) {
       throw new TransactionException(EXCEPTION_MESSAGE);
     }
     for (Destination destination : list.values()) {
@@ -131,23 +129,23 @@ public class Transaction {
   }
 
   /**
-   * Adds a new message within this transaction to the specified destination. This message is stored within the
-   * destination but is not enabled to be delivered. This ensures that the message can be stored within the destination and as such
-   * more likely that there would be no file exceptions during the commit phase since it is a simple state change rather than disk I/O
+   * Adds a new message within this transaction to the specified destination. This message is stored within the destination but is not enabled to be delivered. This ensures that
+   * the message can be stored within the destination and as such more likely that there would be no file exceptions during the commit phase since it is a simple state change
+   * rather than disk I/O
    *
-   * @param destination  Destination that this message is bound to
+   * @param destination Destination that this message is bound to
    * @param message Message to store on the Destination
    * @throws IOException Is raised if unable to store the message to the specified destination
    */
   public void add(@NonNull @NotNull Destination destination, @NonNull @NotNull Message message) throws IOException {
-    if(complete){
+    if (complete) {
       throw new TransactionException(EXCEPTION_MESSAGE);
     }
     long delayed = message.getDelayed();
-    if(delayed > 0){
+    if (delayed > 0) {
       message.setDelayed(delayed - System.currentTimeMillis());
     }
-    if(!list.containsKey(destination.getFullyQualifiedNamespace())){
+    if (!list.containsKey(destination.getFullyQualifiedNamespace())) {
       list.put(destination.getFullyQualifiedNamespace(), destination);
     }
     destination.destinationImpl.storeTransactionalMessage(internalId, message);
@@ -158,7 +156,7 @@ public class Transaction {
    *
    * @return time in milliseconds that this transaction will expire
    */
-  public long getExpiryTime(){
+  public long getExpiryTime() {
     return expiryTime;
   }
 

@@ -36,16 +36,16 @@ public class MessageStateManagerImpl extends BaseMessageStateManager {
 
   //<editor-fold desc="Message state change APIs">
   @Override
-  public synchronized void register(Message message){
+  public synchronized void register(Message message) {
     super.register(message);
-    for(MessageStateManagerListener listener:listeners){
+    for (MessageStateManagerListener listener : listeners) {
       listener.add(message.getIdentifier(), message.getPriority().getValue());
     }
   }
 
   @Override
   public synchronized void rollbackInFlightMessages() {
-    for(MessageStateManagerListener listener:listeners){
+    for (MessageStateManagerListener listener : listeners) {
       listener.addAll(messagesInFlight);
     }
     super.rollbackInFlightMessages();
@@ -54,7 +54,7 @@ public class MessageStateManagerImpl extends BaseMessageStateManager {
   @Override
   public synchronized void commit(long messageId) {
     super.commit(messageId);
-    for(MessageStateManagerListener listener:listeners){
+    for (MessageStateManagerListener listener : listeners) {
       listener.remove(messageId);
     }
   }
@@ -62,11 +62,11 @@ public class MessageStateManagerImpl extends BaseMessageStateManager {
 
 
   //<editor-fold desc="Listener management APIs">
-  public void add(MessageStateManagerListener listener){
+  public void add(MessageStateManagerListener listener) {
     listeners.add(listener);
   }
 
-  public void remove(MessageStateManagerListener listener){
+  public void remove(MessageStateManagerListener listener) {
     listeners.remove(listener);
   }
   //</editor-fold>

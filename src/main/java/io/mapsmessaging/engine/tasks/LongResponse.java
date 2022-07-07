@@ -22,11 +22,11 @@ public class LongResponse implements Response {
 
   private final long response;
 
-  public LongResponse(long value){
+  public LongResponse(long value) {
     response = value;
   }
 
-  public long getResponse(){
+  public long getResponse() {
     return response;
   }
 

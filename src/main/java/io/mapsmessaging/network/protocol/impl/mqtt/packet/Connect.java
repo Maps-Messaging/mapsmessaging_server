@@ -62,11 +62,11 @@ public class Connect extends MQTTPacket {
   private int keepAlive;
   private String sessionId;
 
-  public Connect(){
+  public Connect() {
     super(CONNECT);
   }
-  
-  
+
+
   public Connect(byte fixedHeader, long remainingLen, Packet packet) throws MalformedException, EndOfBufferException {
     super(CONNECT);
     if ((fixedHeader & 0xf) != 0) {
@@ -88,28 +88,26 @@ public class Connect extends MQTTPacket {
     packet.get(header, 0, len);
 
     // Confirm we start with MQ
-    for(int x=0;x<2;x++){
+    for (int x = 0; x < 2; x++) {
       if (header[x] != MQTT311[x]) {
         throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
       }
     }
-    if(header[2] == MQTT31[2]){
+    if (header[2] == MQTT31[2]) {
       for (int x = 2; x < len; x++) {
         if (header[x] != MQTT31[x]) {
           throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
         }
       }
       protocolLevel = packet.get();
-    }
-    else if(header[2] == MQTT311[2]){
+    } else if (header[2] == MQTT311[2]) {
       for (int x = 2; x < len; x++) {
         if (header[x] != MQTT311[x]) {
           throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
         }
       }
       protocolLevel = packet.get();
-    }
-    else{
+    } else {
       throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
     }
 
@@ -322,18 +320,21 @@ public class Connect extends MQTTPacket {
     b.write(4);
 
     byte connectFlag = 0;
-    if(usernameFlag) connectFlag = (byte)(connectFlag + 0x80);
-    if(passwordFlag) connectFlag = (byte)(connectFlag + 0x40);
+    if (usernameFlag) {
+      connectFlag = (byte) (connectFlag + 0x80);
+    }
+    if (passwordFlag) {
+      connectFlag = (byte) (connectFlag + 0x40);
+    }
     b.write(connectFlag);
 
     // Keep Alive
     b.write(0);
-    b.write((byte)60);
-
+    b.write((byte) 60);
 
     // Will never be greater then 2^31
     int size = 10 + sessionId.length() + 2;
-    if(passwordFlag && usernameFlag){
+    if (passwordFlag && usernameFlag) {
       size += password.length + username.length() + 4;
     }
 

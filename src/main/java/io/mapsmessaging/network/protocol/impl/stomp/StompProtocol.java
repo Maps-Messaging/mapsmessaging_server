@@ -60,7 +60,7 @@ public class StompProtocol extends ProtocolImpl {
     logger.log(ServerLogMessages.STOMP_STARTING, endPoint.toString());
     ConfigurationProperties properties = endPoint.getConfig().getProperties();
     int maxBufferSize = DefaultConstants.MAXIMUM_BUFFER_SIZE;
-    maxBufferSize = properties.getIntProperty("maximumBufferSize",  maxBufferSize);
+    maxBufferSize = properties.getIntProperty("maximumBufferSize", maxBufferSize);
     version = "1.2";
     selectorTask = new SelectorTask(this, properties);
     factory = new FrameFactory(maxBufferSize, endPoint.isClient());
@@ -97,9 +97,9 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource,@Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
     stateEngine.addMapping(resource, mappedResource);
-    if(transformer != null) {
+    if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
 
@@ -113,7 +113,7 @@ public class StompProtocol extends ProtocolImpl {
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
     stateEngine.addMapping(resource, mappedResource);
-    if(transformer != null) {
+    if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
     SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 10240);

@@ -42,21 +42,20 @@ public class DestinationPathManager {
   private final @Getter String type;
   private final @Getter String cacheType;
 
-  public DestinationPathManager(ConfigurationProperties properties){
+  public DestinationPathManager(ConfigurationProperties properties) {
     name = properties.getProperty("name");
     type = properties.getProperty("type", "File");
 
-    String propertyNamespace = properties.getProperty("namespace" );
+    String propertyNamespace = properties.getProperty("namespace");
     String tmp = properties.getProperty("directory");
-    if(tmp == null){
+    if (tmp == null) {
       tmp = "";
     }
     directory = tmp;
     remap = (propertyNamespace.endsWith(OPTIONAL_PATH) && directory.contains(OPTIONAL_PATH));
-    if(remap){
+    if (remap) {
       namespaceMapping = propertyNamespace.substring(0, propertyNamespace.indexOf(OPTIONAL_PATH));
-    }
-    else{
+    } else {
       namespaceMapping = propertyNamespace;
     }
     enableSync = properties.getBooleanProperty("sync", false);
@@ -65,13 +64,12 @@ public class DestinationPathManager {
     idleTime = properties.getLongProperty("autoPauseTimeout", 0L);
     expiredEventPoll = properties.getIntProperty("expiredEventPoll", 1);
 
-    if(properties.containsKey("cache")){
-      ConfigurationProperties cacheProps = (ConfigurationProperties)properties.get("cache");
+    if (properties.containsKey("cache")) {
+      ConfigurationProperties cacheProps = (ConfigurationProperties) properties.get("cache");
       enableCache = true;
       cacheType = cacheProps.getProperty("type", "WeakReference");
       writeThrough = cacheProps.getBooleanProperty("writeThrough", false);
-    }
-    else{
+    } else {
       cacheType = "";
       writeThrough = false;
       enableCache = false;
@@ -79,8 +77,8 @@ public class DestinationPathManager {
   }
 
   public String getTrailingPath() {
-    if(remap){
-      return directory.substring(directory.indexOf(OPTIONAL_PATH)+OPTIONAL_PATH.length());
+    if (remap) {
+      return directory.substring(directory.indexOf(OPTIONAL_PATH) + OPTIONAL_PATH.length());
     }
     return "";
   }

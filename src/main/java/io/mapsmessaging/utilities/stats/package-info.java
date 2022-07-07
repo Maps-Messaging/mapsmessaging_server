@@ -17,13 +17,12 @@
  */
 
 /**
- * This package manages the calculation of moving averages for various telemetry data.
- * It manages the different types of data, such as total values that just move forward,
- * values that are current, time based values etc
+ * This package manages the calculation of moving averages for various telemetry data. It manages the different types of data, such as total values that just move forward, values
+ * that are current, time based values etc
  *
- * @since 1.0
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 
 package io.mapsmessaging.utilities.stats;

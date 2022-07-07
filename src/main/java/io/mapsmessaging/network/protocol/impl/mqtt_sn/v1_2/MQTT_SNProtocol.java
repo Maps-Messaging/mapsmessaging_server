@@ -72,7 +72,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       @NonNull @NotNull SelectorTask selectorTask,
       @NonNull @NotNull String loggerName,
       @NonNull @NotNull PacketFactory packetFactory,
-      @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration){
+      @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration) {
     super(endPoint);
     this.logger = LoggerFactory.getLogger(loggerName);
     this.remoteClient = remoteClient;
@@ -112,7 +112,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   protected void finish() throws IOException {
-    if(!session.isClosed()) {
+    if (!session.isClosed()) {
       SessionManager.getInstance().close(session, false);
     }
     factory.close(remoteClient);
@@ -144,7 +144,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
-    if(mqtt != null) {
+    if (mqtt != null) {
       handleMQTTEvent(mqtt);
     }
     return true;
@@ -185,20 +185,20 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     }
   }
 
-  public long getTimeOut(){
+  public long getTimeOut() {
     return keepAlive;
   }
+
   public String getName() {
     return "MQTT_SN 1.2";
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if(stateEngine.getMaxBufferSize() > 0 &&
-        stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9 ) {
+    if (stateEngine.getMaxBufferSize() > 0 &&
+        stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9) {
       messageEvent.getCompletionTask().run();
-    }
-    else {
+    } else {
       stateEngine.queueMessage(messageEvent);
     }
   }
@@ -211,12 +211,12 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     sentMessage();
   }
 
-  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId){
+  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId) {
     byte[] data = messageEvent.getMessage().getOpaqueData();
-    if(transformation != null){
+    if (transformation != null) {
       data = transformation.outgoing(messageEvent.getMessage());
     }
-    Publish publish = new Publish(alias, packetId,  data);
+    Publish publish = new Publish(alias, packetId, data);
     publish.setQoS(qos);
     publish.setCallback(messageEvent.getCompletionTask());
     publish.setTopicIdType(stateEngine.getTopicAliasManager().getTopicAliasType(messageEvent.getDestinationName()));
@@ -227,14 +227,15 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     return packetIdManager;
   }
 
-  public MQTT_SNPacket getPingRequest(){
+  public MQTT_SNPacket getPingRequest() {
     return new PingRequest();
   }
-  private class TimeOutMonitor implements Runnable{
+
+  private class TimeOutMonitor implements Runnable {
 
     @Override
     public void run() {
-      if(packetIdManager.scanForTimeOut()){
+      if (packetIdManager.scanForTimeOut()) {
         try {
           close();
         } catch (IOException e) {

@@ -47,10 +47,11 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   private static final LongAdder totalReceived = new LongAdder();
   private static final LongAdder totalSent = new LongAdder();
 
-  public static long getTotalReceived(){
+  public static long getTotalReceived() {
     return totalReceived.sum();
   }
-  public static long getTotalSent(){
+
+  public static long getTotalSent() {
     return totalSent.sum();
   }
 
@@ -78,7 +79,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   }
 
   public void completedConnection() {
-    if(!completed) {
+    if (!completed) {
       completed = true;
       endPoint.completedConnection();
     }
@@ -100,13 +101,14 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     endPoint.close();
   }
 
-  public void connect(String sessionId, String username, String password) throws IOException{
+  public void connect(String sessionId, String username, String password) throws IOException {
   }
 
-  public void subscribeRemote(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException{
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException {
   }
 
-  public void subscribeLocal(@NonNull @NotNull String resource,@NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer)
+      throws IOException {
   }
 
   @Override
@@ -132,7 +134,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     totalSent.increment();
   }
 
-  public void sendKeepAlive(){
+  public void sendKeepAlive() {
     // by default we don't do anything. A protocol that needs to do something can override this function
   }
 
@@ -146,13 +148,12 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   }
 
   public void setConnected(boolean connected) {
-    if(this.connected != connected){
+    if (this.connected != connected) {
       this.connected = connected;
       try {
-        if(connected) {
+        if (connected) {
           endPoint.getServer().handleNewEndPoint(endPoint);
-        }
-        else{
+        } else {
           endPoint.getServer().handleCloseEndPoint(endPoint);
         }
       } catch (IOException ioException) {
@@ -166,13 +167,13 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     }
   }
 
-  public boolean isConnected(){
+  public boolean isConnected() {
     return connected;
   }
 
   protected Message processTransformer(String normalisedName, Message message) {
     Transformer transformer = destinationTransformerMap.get(normalisedName);
-    if(transformer != null){
+    if (transformer != null) {
       MessageBuilder mb = new MessageBuilder(message);
       mb.setDestinationTransformer(transformer);
       message = mb.build();
@@ -184,14 +185,14 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     return destinationTransformerMap.get(name);
   }
 
-  protected SubscriptionContextBuilder createSubscriptionContextBuilder(String resource, String selector, QualityOfService qos, int receiveMax){
+  protected SubscriptionContextBuilder createSubscriptionContextBuilder(String resource, String selector, QualityOfService qos, int receiveMax) {
     ClientAcknowledgement ackManger = qos.getClientAcknowledgement();
     SubscriptionContextBuilder builder = new SubscriptionContextBuilder(resource, ackManger);
     builder.setAlias(resource);
     builder.setQos(qos);
     builder.setAllowOverlap(true);
     builder.setReceiveMaximum(receiveMax);
-    if(selector != null && selector.length() > 0) {
+    if (selector != null && selector.length() > 0) {
       builder.setSelector(selector);
     }
     return builder;

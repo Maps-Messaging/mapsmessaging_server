@@ -27,7 +27,8 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeo
   private final EndPointJMX mbean;
   private final String name;
 
-  public DTLSEndPoint(DTLSSessionManager manager, long id, SocketAddress clientId, EndPointServer server,  StateEngine stateEngine, EndPointManagerJMX managerMBean) throws IOException {
+  public DTLSEndPoint(DTLSSessionManager manager, long id, SocketAddress clientId, EndPointServer server, StateEngine stateEngine, EndPointManagerJMX managerMBean)
+      throws IOException {
     super(id, server);
     this.stateEngine = stateEngine;
     this.manager = manager;
@@ -40,15 +41,15 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeo
   }
 
   @Override
-  public void close(){
+  public void close() {
     mbean.close();
     manager.close(clientId);
-    if(server != null) {
+    if (server != null) {
       server.handleCloseEndPoint(this);
     }
   }
 
-  public String getClientId(){
+  public String getClientId() {
     return clientId.toString();
   }
 
@@ -73,10 +74,10 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeo
 
   @Override
   public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) throws IOException {
-    if((selectionKey & SelectionKey.OP_READ) != 0) {
+    if ((selectionKey & SelectionKey.OP_READ) != 0) {
       stateEngine.setSelectableTask(runner);
     }
-    if((selectionKey & SelectionKey.OP_WRITE) != 0) {
+    if ((selectionKey & SelectionKey.OP_WRITE) != 0) {
       stateEngine.setWriteTask(runner);
       runner.selected(runner, null, SelectionKey.OP_WRITE);
     }

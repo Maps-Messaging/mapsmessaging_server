@@ -27,11 +27,12 @@ import io.mapsmessaging.engine.tasks.Response;
 import java.util.concurrent.Future;
 
 public class NonDelayedStoreMessageTask extends StoreMessageTask {
+
   private final DestinationImpl destination;
   private final Message message;
   private final DestinationSubscriptionManager subscriptionManager;
 
-  public NonDelayedStoreMessageTask(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager,  Message message){
+  public NonDelayedStoreMessageTask(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager, Message message) {
     super();
     this.destination = destination;
     this.message = message;
@@ -40,7 +41,7 @@ public class NonDelayedStoreMessageTask extends StoreMessageTask {
 
   @Override
   public Response taskCall() throws Exception {
-    if(subscriptionManager.hasSubscriptions()){
+    if (subscriptionManager.hasSubscriptions()) {
       storeMessage(destination, message);
       destination.getStats().messagePublished();
       Future<Response> response = destination.submit(new SubscriptionUpdateTask(destination, subscriptionManager, message));

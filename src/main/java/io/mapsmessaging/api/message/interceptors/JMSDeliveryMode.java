@@ -24,7 +24,7 @@ public class JMSDeliveryMode implements Interceptor {
 
   @Override
   public Object get(Message message) {
-    switch(message.getQualityOfService()){
+    switch (message.getQualityOfService()) {
       case AT_MOST_ONCE:
         return "NON_PERSISTENT";
 

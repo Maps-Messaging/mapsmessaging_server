@@ -27,16 +27,19 @@ import lombok.ToString;
 @ToString
 public class Connect extends MQTT_SNPacket {
 
-  @Getter private final short protocolId;
-  @Getter private final int duration;
-  @Getter private final String clientId;
+  @Getter
+  private final short protocolId;
+  @Getter
+  private final int duration;
+  @Getter
+  private final String clientId;
 
   private final byte flags;
 
   public Connect(Packet packet, int length) throws IOException {
     super(CONNECT);
     flags = packet.get();
-    if((flags & 0b11110011) != 0){
+    if ((flags & 0b11110011) != 0) {
       throw new IOException("Malformed flags");
     }
     protocolId = packet.get();

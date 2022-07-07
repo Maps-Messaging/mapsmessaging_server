@@ -41,7 +41,7 @@ public class ConnectListener extends BaseConnectListener {
     // No version header supplied
     String versionHeader = connect.getAcceptedVersion();
     float version = processVersion(engine, versionHeader);
-    if(Float.isNaN(version)){
+    if (Float.isNaN(version)) {
       return; // Unable to process the versioning
     }
     HeartBeat hb = connect.getHeartBeat();
@@ -67,14 +67,14 @@ public class ConnectListener extends BaseConnectListener {
       return null;
     });
 
-    try{
+    try {
       future.get();
     } catch (Exception failedAuth) {
 //      handleFailedAuth(failedAuth, engine);
     }
   }
 
-  private CompletableFuture<Session> createSession( StateEngine engine, Connect connect, HeartBeat hb) {
+  private CompletableFuture<Session> createSession(StateEngine engine, Connect connect, HeartBeat hb) {
     SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), engine.getProtocol());
     String username = connect.getLogin();
     if (username == null) {
@@ -85,7 +85,7 @@ public class ConnectListener extends BaseConnectListener {
     scb.setPersistentSession(false);
     scb.setKeepAlive(hb.getPreferred());
     int inFlight = connect.getReceiveMaximum();
-    if(inFlight <= 0){
+    if (inFlight <= 0) {
       inFlight = DefaultConstants.RECEIVE_MAXIMUM;
     }
     scb.setReceiveMaximum(inFlight);

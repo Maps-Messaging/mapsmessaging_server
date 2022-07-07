@@ -24,9 +24,10 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.tasks.VoidResponse;
 
 public class MessageDeliveryTask extends EngineTask {
+
   private final Subscription subscription;
 
-  public MessageDeliveryTask(Subscription subscription){
+  public MessageDeliveryTask(Subscription subscription) {
     super();
     this.subscription = subscription;
   }

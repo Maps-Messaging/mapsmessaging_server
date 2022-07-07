@@ -34,5 +34,6 @@ public class DefaultConstants {
   public static final int KEEPALIVE_MINIMUM = 60;
   public static final int BITSET_BLOCK_SIZE = 4096;
 
-  private DefaultConstants(){}
+  private DefaultConstants() {
+  }
 }

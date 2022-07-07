@@ -16,8 +16,8 @@
  *
  */
 /**
- * This package contains the public API for the messaging engine. All access to the messaging engine should be done
- * through these API classes, this ensures that the state of the engine and all destinations can be guaranteed.
+ * This package contains the public API for the messaging engine. All access to the messaging engine should be done through these API classes, this ensures that the state of the
+ * engine and all destinations can be guaranteed.
  *
  * It also keeps the api clean and allows a simple layer over a complex set of classes
  */

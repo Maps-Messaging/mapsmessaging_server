@@ -25,7 +25,7 @@ import lombok.Getter;
  */
 public enum CreditHandler {
 
-  AUTO(0,"Auto", "Automatically manages the credit based on the number of unacknowledged events and the initial max outstanding"),
+  AUTO(0, "Auto", "Automatically manages the credit based on the number of unacknowledged events and the initial max outstanding"),
   CLIENT(1, "Client", "The client needs to top up the credit on a regular basis, once it gets to 0 no more events will be sent");
 
 
@@ -37,15 +37,18 @@ public enum CreditHandler {
         return CLIENT;
 
       default:
-        throw new IllegalArgumentException("Invalid handler value supplied :: "+value);
+        throw new IllegalArgumentException("Invalid handler value supplied :: " + value);
     }
   }
 
-  @Getter private final int value;
-  @Getter private final String name;
-  @Getter private final String description;
+  @Getter
+  private final int value;
+  @Getter
+  private final String name;
+  @Getter
+  private final String description;
 
-  CreditHandler(int value, String name, String description){
+  CreditHandler(int value, String name, String description) {
     this.value = value;
     this.name = name;
     this.description = description;

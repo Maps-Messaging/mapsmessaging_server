@@ -35,7 +35,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
-    if(endPoint instanceof TCPEndPoint){
+    if (endPoint instanceof TCPEndPoint) {
       Packet packet = new Packet(ByteBuffer.allocate(256));
       packet.put("?WATCH={\"enable\":true,\"nmea\":true}".getBytes(StandardCharsets.UTF_8));
       packet.flip();

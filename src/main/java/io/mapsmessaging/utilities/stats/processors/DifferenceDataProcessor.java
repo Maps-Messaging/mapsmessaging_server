@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.utilities.stats.processors;
 
-public class DifferenceDataProcessor extends StoredDataProcessor{
+public class DifferenceDataProcessor extends StoredDataProcessor {
 
   @Override
   public long add(long current, long previous) {
@@ -28,7 +28,7 @@ public class DifferenceDataProcessor extends StoredDataProcessor{
   }
 
   @Override
-  public void reset(){
+  public void reset() {
     dataPoints.clear();
   }
 

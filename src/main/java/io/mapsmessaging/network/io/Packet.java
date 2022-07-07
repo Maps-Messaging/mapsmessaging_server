@@ -44,7 +44,8 @@ public class Packet {
       buffer = ByteBuffer.allocate(size);
     }
   }
-  public Packet(ByteBuffer  buffer) {
+
+  public Packet(ByteBuffer buffer) {
     this.buffer = buffer;
   }
 
@@ -82,7 +83,7 @@ public class Packet {
     return buffer.capacity();
   }
 
-  public boolean hasData(){
+  public boolean hasData() {
     return buffer.position() != buffer.limit() && buffer.position() != 0;
   }
 
@@ -106,6 +107,7 @@ public class Packet {
   public byte get() {
     return buffer.get();
   }
+
   public int getByte() {
     return buffer.get() & 0xff;
   }
@@ -115,16 +117,16 @@ public class Packet {
   }
 
   public void putByte(int b) {
-    buffer.put((byte) (b&0xff));
+    buffer.put((byte) (b & 0xff));
   }
 
   public void putShort(int b) {
-    buffer.put((byte) ((b>>8 )&0xff));
-    buffer.put((byte) (b &0xff));
+    buffer.put((byte) ((b >> 8) & 0xff));
+    buffer.put((byte) (b & 0xff));
   }
 
   public int getShort() {
-    return (buffer.get()& 0xff) << 8 | (buffer.get() & 0xff);
+    return (buffer.get() & 0xff) << 8 | (buffer.get() & 0xff);
   }
 
 

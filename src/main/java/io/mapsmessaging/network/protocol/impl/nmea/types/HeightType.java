@@ -39,12 +39,12 @@ public class HeightType implements Type {
 
   @Override
   public String toString() {
-    return "" + height+ "," + unit;
+    return "" + height + "," + unit;
   }
 
   @Override
   public Object jsonPack() {
-    return height+" "+unit;
+    return height + " " + unit;
   }
 
 }

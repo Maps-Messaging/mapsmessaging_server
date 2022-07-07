@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 
 public class PrependerSignatureManager implements SignatureManager {
 
-  public PrependerSignatureManager(){
+  public PrependerSignatureManager() {
     // Required to be loaded
   }
 
@@ -18,7 +18,7 @@ public class PrependerSignatureManager implements SignatureManager {
 
   @Override
   public Packet setSignature(Packet packet, byte[] signature) {
-    byte[] tmp = new byte[packet.limit()+signature.length];
+    byte[] tmp = new byte[packet.limit() + signature.length];
     Packet p = new Packet(ByteBuffer.wrap(tmp));
     p.put(signature);
     packet.flip();
@@ -33,7 +33,7 @@ public class PrependerSignatureManager implements SignatureManager {
     return packet;
   }
 
-  public String toString(){
+  public String toString() {
     return "Prepender";
   }
 

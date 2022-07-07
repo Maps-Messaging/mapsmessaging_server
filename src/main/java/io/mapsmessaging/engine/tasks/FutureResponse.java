@@ -24,11 +24,11 @@ public class FutureResponse implements Response {
 
   private final Future<Response> response;
 
-  public FutureResponse(Future<Response> value){
+  public FutureResponse(Future<Response> value) {
     response = value;
   }
 
-  public Future<Response>  getResponse(){
+  public Future<Response> getResponse() {
     return response;
   }
 

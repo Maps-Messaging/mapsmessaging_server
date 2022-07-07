@@ -37,11 +37,11 @@ public class LinkLocalCloseEventListener extends BaseEventListener {
   @Override
   public boolean handleEvent(Event event) {
     Session session = (Session) event.getSession().getContext();
-    if(session != null) {
+    if (session != null) {
       Link link = event.getLink();
       SubscribedEventManager eventManager = (SubscribedEventManager) link.getContext();
       if (eventManager != null) {
-        if(!eventManager.getContexts().isEmpty()) {
+        if (!eventManager.getContexts().isEmpty()) {
           String alias = eventManager.getContext().getAlias();
           session.removeSubscription(alias);
           engine.removeSubscription(alias);

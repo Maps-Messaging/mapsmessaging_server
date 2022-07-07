@@ -12,12 +12,8 @@ import lombok.ToString;
  *
  * That packet type is used by the server to send RF packets and associated metadata that will have to be emitted by the gateway.
  *
- * Bytes  | Function
- * :------:|---------------------------------------------------------------------
- * 0      | protocol version = 2
- * 1-2    | random token
- * 3      | PULL_RESP identifier 0x03
- * 4-end  | JSON object, starting with {, ending with }, see section 6
+ * Bytes  | Function :------:|--------------------------------------------------------------------- 0      | protocol version = 2 1-2    | random token 3      | PULL_RESP
+ * identifier 0x03 4-end  | JSON object, starting with {, ending with }, see section 6
  */
 @ToString
 public class PullResponse extends SemTechPacket {
@@ -25,7 +21,7 @@ public class PullResponse extends SemTechPacket {
   private final int token;
   private final byte[] jsonObject;
 
-  public PullResponse(int token,  byte[] jsonObject, SocketAddress fromAddress) {
+  public PullResponse(int token, byte[] jsonObject, SocketAddress fromAddress) {
     super(fromAddress);
     this.token = token;
     this.jsonObject = jsonObject;

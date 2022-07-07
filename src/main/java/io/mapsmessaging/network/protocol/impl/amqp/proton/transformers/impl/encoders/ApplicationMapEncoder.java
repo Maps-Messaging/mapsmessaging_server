@@ -28,9 +28,9 @@ import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 
 public class ApplicationMapEncoder {
 
-  public static void unpackApplicationMap( Map<String, TypedData> dataMap, org.apache.qpid.proton.message.Message protonMessage){
+  public static void unpackApplicationMap(Map<String, TypedData> dataMap, org.apache.qpid.proton.message.Message protonMessage) {
     ApplicationProperties applicationProperties = protonMessage.getApplicationProperties();
-    if(applicationProperties != null) {
+    if (applicationProperties != null) {
       Map<String, Object> map = applicationProperties.getValue();
       for (Map.Entry<String, Object> entry : map.entrySet()) {
         dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
@@ -38,22 +38,21 @@ public class ApplicationMapEncoder {
     }
   }
 
-  public static void packApplicationMap(Message message, org.apache.qpid.proton.message.Message protonMessage){
+  public static void packApplicationMap(Message message, org.apache.qpid.proton.message.Message protonMessage) {
     Map<String, Object> applicationMap = new LinkedHashMap<>();
     Map<String, TypedData> dataMap = message.getDataMap();
-    for(Map.Entry<String, TypedData> entry:dataMap.entrySet()){
+    for (Map.Entry<String, TypedData> entry : dataMap.entrySet()) {
       boolean add = true;
-      for(String testKey:PropertiesEncoder.propertyNames){
-        if(testKey.equals(entry.getKey())){
+      for (String testKey : PropertiesEncoder.propertyNames) {
+        if (testKey.equals(entry.getKey())) {
           add = false;
           break;
         }
       }
-      if(add) {
-        if(entry.getValue().getType() == TYPE.BYTE_ARRAY){
-          applicationMap.put(entry.getKey(), new Binary((byte[])entry.getValue().getData()));
-        }
-        else {
+      if (add) {
+        if (entry.getValue().getType() == TYPE.BYTE_ARRAY) {
+          applicationMap.put(entry.getKey(), new Binary((byte[]) entry.getValue().getData()));
+        } else {
           applicationMap.put(entry.getKey(), entry.getValue().getData());
         }
       }
@@ -61,5 +60,6 @@ public class ApplicationMapEncoder {
     protonMessage.setApplicationProperties(new ApplicationProperties(applicationMap));
   }
 
-  private ApplicationMapEncoder(){}
+  private ApplicationMapEncoder() {
+  }
 }

@@ -22,17 +22,14 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This interface needs to be implemented and passed in for each Session to enable any messages that
- * match a subscription to be delivered to the Session.
+ * This interface needs to be implemented and passed in for each Session to enable any messages that match a subscription to be delivered to the Session.
  *
- * Please note: This may mean multiple simultaneous threads hit this function and any implementation will
- * need to handle the threading.
- *
+ * Please note: This may mean multiple simultaneous threads hit this function and any implementation will need to handle the threading.
  */
 public interface MessageListener {
 
   /**
-   * @param messageEvent
+   *
    */
   void sendMessage(@NotNull @NonNull MessageEvent messageEvent);
 

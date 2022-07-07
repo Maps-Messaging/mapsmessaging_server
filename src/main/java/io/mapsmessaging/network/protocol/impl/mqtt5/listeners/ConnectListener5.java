@@ -79,8 +79,8 @@ public class ConnectListener5 extends PacketListener5 {
     }
 
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, protocol);
-    scb.setReceiveMaximum( ((MQTT5Protocol)protocol).getClientReceiveMaximum());
-    boolean sendResponseInfo = parseProperties((MQTT5Protocol)protocol, connect, scb);
+    scb.setReceiveMaximum(((MQTT5Protocol) protocol).getClientReceiveMaximum());
+    boolean sendResponseInfo = parseProperties((MQTT5Protocol) protocol, connect, scb);
 
     if (!connect.isCleanSession() && sessionId.length() == 0) {
       connAck.setStatusCode(StatusCode.CLIENT_IDENTIFIER_NOT_VALID);
@@ -105,7 +105,8 @@ public class ConnectListener5 extends PacketListener5 {
     return connAck;
   }
 
-  private void handleSessionCreation(ProtocolImpl protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint) throws MalformedException {
+  private void handleSessionCreation(ProtocolImpl protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint)
+      throws MalformedException {
     Session session = null;
     try {
       session = createSession((MQTT5Protocol) protocol, sessionId, connect, scb);
@@ -138,11 +139,11 @@ public class ConnectListener5 extends PacketListener5 {
     connAck.setStatusCode(StatusCode.SUCCESS);
     connAck.setRestoredFlag(session.isRestored());
     connAck.add(
-        new ServerReference(
-            "Build Date:"
-                + BuildInfo.getInstance().getBuildDate()
-                + " BuildVersion:"
-                + BuildInfo.getInstance().getBuildVersion()))
+            new ServerReference(
+                "Build Date:"
+                    + BuildInfo.getInstance().getBuildDate()
+                    + " BuildVersion:"
+                    + BuildInfo.getInstance().getBuildVersion()))
         .add(new RetainAvailable(true))
         .add(new SubscriptionIdentifiersAvailable(true))
         .add(new WildcardSubscriptionsAvailable(true))
@@ -203,7 +204,7 @@ public class ConnectListener5 extends PacketListener5 {
     return SessionManager.getInstance().create(scb.build(), protocol);
   }
 
-  private boolean parseProperties(MQTT5Protocol protocol, Connect5 connect, SessionContextBuilder scb){
+  private boolean parseProperties(MQTT5Protocol protocol, Connect5 connect, SessionContextBuilder scb) {
     boolean sendResponseInfo = false;
     scb.setSessionExpiry(DefaultConstants.SESSION_TIME_OUT);
     scb.setReceiveMaximum(DefaultConstants.CLIENT_RECEIVE_MAXIMUM);

@@ -46,7 +46,8 @@ public class SessionManagerPipeLine {
   private final LongAdder expiredSessions;
   private final WillTaskManager willTaskManager;
 
-  SessionManagerPipeLine(DestinationManager destinationManager,SubscriptionStoreLookup lookup,SecurityManager security, LongAdder connected, LongAdder disconnected, LongAdder expired) {
+  SessionManagerPipeLine(DestinationManager destinationManager, SubscriptionStoreLookup lookup, SecurityManager security, LongAdder connected, LongAdder disconnected,
+      LongAdder expired) {
     subscriptionManagerFactory = new LinkedHashMap<>();
     sessions = new LinkedHashMap<>();
     this.destinationManager = destinationManager;
@@ -58,35 +59,36 @@ public class SessionManagerPipeLine {
     willTaskManager = WillTaskManager.getInstance();
   }
 
-  public void stop(){
-    for(SessionImpl session:sessions.values()){
+  public void stop() {
+    for (SessionImpl session : sessions.values()) {
       session.close();
     }
   }
 
-  public boolean hasSessions(){
+  public boolean hasSessions() {
     return !sessions.isEmpty();
   }
 
-  public List<SessionImpl> getSessions(){
+  public List<SessionImpl> getSessions() {
     return new ArrayList<>(sessions.values());
   }
 
-  public boolean hasSubscriptions(){
+  public boolean hasSubscriptions() {
     return subscriptionManagerFactory.isEmpty();
   }
 
-  public Set<String> getSessionIds(){
+  public Set<String> getSessionIds() {
     return subscriptionManagerFactory.keySet();
   }
 
-  protected void setSecurityManager(SecurityManager manager){
+  protected void setSecurityManager(SecurityManager manager) {
     securityManager = manager;
   }
 
-  public Future<?> submit(Callable<?> task){
+  public Future<?> submit(Callable<?> task) {
     return taskScheduler.submit(task);
   }
+
   SessionImpl create(SessionContext sessionContext) throws LoginException {
     SessionImpl sessionImpl;
     logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
@@ -154,14 +156,14 @@ public class SessionManagerPipeLine {
     connectedSessions.decrement();
   }
 
-  void addDisconnectedSession(String sessionId, Map<String, SubscriptionContext> map){
+  void addDisconnectedSession(String sessionId, Map<String, SubscriptionContext> map) {
     SubscriptionController subscriptionManager = new SubscriptionController(sessionId, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
   }
 
-  void closeSubscriptionController(SubscriptionController subscriptionController){
-    if(subscriptionController.getTimeout() != null){
+  void closeSubscriptionController(SubscriptionController subscriptionController) {
+    if (subscriptionController.getTimeout() != null) {
       expiredSessions.increment();
     }
     subscriptionManagerFactory.remove(subscriptionController.getSessionId());
@@ -193,7 +195,7 @@ public class SessionManagerPipeLine {
         subscriptionManagerFactory.put(context.getId(), subscriptionManager);
       }
     } else {
-      if(clearAndIsTimeOut(subscriptionManager)){
+      if (clearAndIsTimeOut(subscriptionManager)) {
         return loadSubscriptionManager(context);
       }
 
@@ -216,7 +218,7 @@ public class SessionManagerPipeLine {
     return subscriptionManager;
   }
 
-  private boolean clearAndIsTimeOut(SubscriptionController subscriptionManager){
+  private boolean clearAndIsTimeOut(SubscriptionController subscriptionManager) {
     Future<?> timeout = subscriptionManager.getTimeout();
     if (timeout != null) {
       boolean fired = timeout.isDone();

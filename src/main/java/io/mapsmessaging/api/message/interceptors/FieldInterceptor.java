@@ -26,14 +26,14 @@ public class FieldInterceptor {
 
   private static final FieldInterceptor instance = new FieldInterceptor();
 
-  public static FieldInterceptor getInstance(){
+  public static FieldInterceptor getInstance() {
     return instance;
   }
 
 
   private final LinkedHashMap<String, Interceptor> mapLookup;
 
-  private FieldInterceptor(){
+  private FieldInterceptor() {
     mapLookup = new LinkedHashMap<>();
     mapLookup.put("JMSPriority", new JMSPriorityInterceptor());
     mapLookup.put("JMSTimestamp", new JMSTimestamp());
@@ -43,9 +43,9 @@ public class FieldInterceptor {
 
   public TypedData lookup(Message message, String key) {
     Interceptor interceptor = mapLookup.get(key);
-    if(interceptor != null){
+    if (interceptor != null) {
       Object val = interceptor.get(message);
-      if(val != null){
+      if (val != null) {
         return new TypedData(val);
       }
     }

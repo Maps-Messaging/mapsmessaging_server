@@ -50,12 +50,11 @@ public class NetworkManager implements ServiceManager {
     endPointManagers = new LinkedHashMap<>();
 
     properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
-    Object obj =  properties.get("data");
+    Object obj = properties.get("data");
     adapters = new ArrayList<>();
-    if(obj instanceof List){
+    if (obj instanceof List) {
       adapters.addAll((List<ConfigurationProperties>) obj);
-    }
-    else if(obj instanceof ConfigurationProperties){
+    } else if (obj instanceof ConfigurationProperties) {
       adapters.add((ConfigurationProperties) obj);
     }
     logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
@@ -73,18 +72,17 @@ public class NetworkManager implements ServiceManager {
     }
   }
 
-  private void initialiseInstance( EndPointURL endPointURL, NetworkConfig networkConfig){
+  private void initialiseInstance(EndPointURL endPointURL, NetworkConfig networkConfig) {
     for (EndPointServerFactory endPointServerFactory : endPointServers) {
       if (endPointServerFactory.getName().equals(endPointURL.getProtocol())) {
-        if(endPointServerFactory.active()) {
+        if (endPointServerFactory.active()) {
           try {
             EndPointManager endPointManager = new EndPointManager(endPointURL, endPointServerFactory, networkConfig, bean);
             endPointManagers.put(endPointURL.toString(), endPointManager);
           } catch (IOException iox) {
             logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());
           }
-        }
-        else{
+        } else {
           logger.log(ServerLogMessages.NETWORK_MANAGER_DEVICE_NOT_LOADED, endPointServerFactory.getName());
         }
       }
@@ -156,7 +154,7 @@ public class NetworkManager implements ServiceManager {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
-    for(EndPointServerFactory endPointServer:endPointServers){
+    for (EndPointServerFactory endPointServer : endPointServers) {
       service.add(endPointServer);
     }
     return service.listIterator();

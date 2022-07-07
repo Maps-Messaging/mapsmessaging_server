@@ -12,17 +12,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TopicAliasManager {
+
   private final HashMap<String, Short> topicAlias;
   private final RegisteredTopicConfiguration registeredTopicConfiguration;
   private final AtomicInteger aliasGenerator;
 
-  public TopicAliasManager(RegisteredTopicConfiguration registeredTopicConfiguration){
+  public TopicAliasManager(RegisteredTopicConfiguration registeredTopicConfiguration) {
     topicAlias = new LinkedHashMap<>();
     aliasGenerator = new AtomicInteger(1);
     this.registeredTopicConfiguration = registeredTopicConfiguration;
   }
 
-  public void clear(){
+  public void clear() {
     topicAlias.clear();
   }
 
@@ -48,14 +49,13 @@ public class TopicAliasManager {
   }
 
   public String getTopic(SocketAddress address, int alias, int topicType) {
-    if(topicType == TOPIC_NAME) {
+    if (topicType == TOPIC_NAME) {
       for (Map.Entry<String, Short> entries : topicAlias.entrySet()) {
         if (entries.getValue() == alias) {
           return entries.getKey();
         }
       }
-    }
-    else{
+    } else {
       return registeredTopicConfiguration.getTopic(address, alias);
     }
     return null;
@@ -70,7 +70,7 @@ public class TopicAliasManager {
   }
 
   public int getTopicAliasType(String destinationName) {
-    if(topicAlias.containsKey(destinationName)){
+    if (topicAlias.containsKey(destinationName)) {
       return TOPIC_NAME;
     }
     return TOPIC_PRE_DEFINED_ID;

@@ -43,9 +43,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.FutureTask;
 
-public class LoRaEndPoint extends EndPoint  {
+public class LoRaEndPoint extends EndPoint {
 
-  private volatile  boolean isQueued;
+  private volatile boolean isQueued;
   private final LoRaDevice loRaDevice;
   private final int nodeId;
   private final Queue<LoRaDatagram> incoming;
@@ -73,7 +73,7 @@ public class LoRaEndPoint extends EndPoint  {
     super.close();
   }
 
-  public int getRSSI(){
+  public int getRSSI() {
     return lastRSSI;
   }
 
@@ -88,24 +88,24 @@ public class LoRaEndPoint extends EndPoint  {
   }
 
 
-  public Collection<LoRaClientStats> getStats(){
+  public Collection<LoRaClientStats> getStats() {
     return clientStats.values();
   }
 
   @Override
-  public int sendPacket(Packet packet)  {
+  public int sendPacket(Packet packet) {
     InetSocketAddress inetSocketAddress = (InetSocketAddress) packet.getFromAddress();
     byte[] ipAddress = inetSocketAddress.getAddress().getAddress();
     int len = packet.available();
     byte[] buffer = new byte[len];
     packet.get(buffer);
-    loRaDevice.write(buffer, len, (byte)(nodeId & 0xff), ipAddress[3]);
+    loRaDevice.write(buffer, len, (byte) (nodeId & 0xff), ipAddress[3]);
     return len;
   }
 
   @Override
   public int readPacket(Packet packet) {
-    int read =0;
+    int read = 0;
     synchronized (this) {
       LoRaDatagram datagram = incoming.poll();
       if (datagram != null) {
@@ -122,7 +122,7 @@ public class LoRaEndPoint extends EndPoint  {
   public SocketAddress getSocketAddress(int loraId) {
 
     // Reserved Link Local IP Address which is really what Lora Wan is in this case
-    byte[] mythical = {(byte) 169, (byte) 254, (byte)(nodeId & 0xff), (byte) loraId};
+    byte[] mythical = {(byte) 169, (byte) 254, (byte) (nodeId & 0xff), (byte) loraId};
     try {
       InetAddress inetAddress = InetAddress.getByAddress(mythical);
       return new InetSocketAddress(inetAddress, 1);
@@ -133,13 +133,13 @@ public class LoRaEndPoint extends EndPoint  {
   }
 
   @Override
-  public FutureTask<SelectionKey>  register(int selectionKey, Selectable runner) {
+  public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) {
     logger.log(ServerLogMessages.LORA_REGISTER_NETWORK_ACTIVITY, selectionKey);
     selectable = runner;
-    if ( (selectionKey & SelectionKey.OP_READ) != 0) {
+    if ((selectionKey & SelectionKey.OP_READ) != 0) {
       SimpleTaskScheduler.getInstance().submit(new LoRaReader(runner));
     }
-    if ( (selectionKey & SelectionKey.OP_WRITE) != 0) {
+    if ((selectionKey & SelectionKey.OP_WRITE) != 0) {
       SimpleTaskScheduler.getInstance().submit(new LoRaWriter(runner));
     }
     return null;
@@ -157,7 +157,7 @@ public class LoRaEndPoint extends EndPoint  {
 
   @Override
   public String getName() {
-    return "LoRa_"+nodeId;
+    return "LoRa_" + nodeId;
   }
 
   @Override
@@ -178,7 +178,7 @@ public class LoRaEndPoint extends EndPoint  {
       int from = datagram.getFrom();
       LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
       stats.update(datagram);
-      if(!isQueued && selectable != null){
+      if (!isQueued && selectable != null) {
         isQueued = true;
         register(SelectionKey.OP_READ, selectable);
       }
@@ -196,7 +196,7 @@ public class LoRaEndPoint extends EndPoint  {
     public void run() {
       try {
         synchronized (LoRaEndPoint.this) {
-          if(incoming.isEmpty()){
+          if (incoming.isEmpty()) {
             return; // Nothing to do
           }
         }
@@ -205,8 +205,7 @@ public class LoRaEndPoint extends EndPoint  {
         synchronized (LoRaEndPoint.this) {
           if (!incoming.isEmpty()) {
             register(SelectionKey.OP_READ, runner);
-          }
-          else {
+          } else {
             isQueued = false;
           }
         }
@@ -223,7 +222,7 @@ public class LoRaEndPoint extends EndPoint  {
     }
 
     public void run() {
-      runner.selected(runner,null, SelectionKey.OP_WRITE);
+      runner.selected(runner, null, SelectionKey.OP_WRITE);
     }
   }
 

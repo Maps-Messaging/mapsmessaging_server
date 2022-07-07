@@ -7,10 +7,10 @@ import java.util.zip.Checksum;
 
 public class Adler32PacketSecurity extends ChecksumPacketSecurity {
 
-  public Adler32PacketSecurity(){
+  public Adler32PacketSecurity() {
   }
 
-  protected Adler32PacketSecurity(SignatureManager stamper){
+  protected Adler32PacketSecurity(SignatureManager stamper) {
     super(stamper);
   }
 
@@ -24,7 +24,7 @@ public class Adler32PacketSecurity extends ChecksumPacketSecurity {
     return "Adler32";
   }
 
-  protected Checksum getChecksum(){
+  protected Checksum getChecksum() {
     return new Adler32();
   }
 

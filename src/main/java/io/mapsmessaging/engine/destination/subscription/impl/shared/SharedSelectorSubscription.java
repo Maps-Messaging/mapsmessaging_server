@@ -27,6 +27,7 @@ import io.mapsmessaging.engine.destination.subscription.transaction.Acknowledgem
 import io.mapsmessaging.selector.operators.ParserExecutor;
 
 public class SharedSelectorSubscription extends SharedSubscription {
+
   private final ParserExecutor parserExecutor;
 
   public SharedSelectorSubscription(DestinationImpl destinationImpl,
@@ -42,7 +43,7 @@ public class SharedSelectorSubscription extends SharedSubscription {
 
   @Override
   public int register(Message message) {
-    if(Filter.getInstance().filterMessage(parserExecutor, message, getDestinationImpl())) {
+    if (Filter.getInstance().filterMessage(parserExecutor, message, getDestinationImpl())) {
       return super.register(message);
     }
     return 0;

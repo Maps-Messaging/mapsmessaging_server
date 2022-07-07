@@ -30,11 +30,11 @@ import io.mapsmessaging.engine.destination.subscription.transaction.Acknowledgem
 import io.mapsmessaging.engine.session.SessionImpl;
 import java.io.IOException;
 
-public class StandardSubscriptionBuilder  extends SubscriptionBuilder {
+public class StandardSubscriptionBuilder extends SubscriptionBuilder {
 
   private final boolean isPersistent;
 
-  public StandardSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, boolean isPersistent)  throws IOException {
+  public StandardSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, boolean isPersistent) throws IOException {
     super(destination, context);
     this.isPersistent = isPersistent;
   }

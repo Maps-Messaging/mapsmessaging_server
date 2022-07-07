@@ -125,7 +125,7 @@ public abstract class Event extends Frame {
       byteArrayOutputStream = new ByteArrayOutputStream();
     }
   }
-  
+
   @Override
   public void scanFrame(Packet packet) throws IOException {
 

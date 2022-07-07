@@ -26,17 +26,17 @@ public class SentenceFactory {
 
   private final Map<String, SentenceParser> parserMap;
 
-  public SentenceFactory(ConfigurationProperties properties){
+  public SentenceFactory(ConfigurationProperties properties) {
     parserMap = new LinkedHashMap<>();
-    for(Map.Entry<String, Object> configEntry:properties.entrySet()){
+    for (Map.Entry<String, Object> configEntry : properties.entrySet()) {
       SentenceParser sentenceParser = new SentenceParser(configEntry.getKey(), (ConfigurationProperties) configEntry.getValue());
       parserMap.put(configEntry.getKey(), sentenceParser);
     }
   }
 
-  public Sentence parse(String id, Iterator<String> entries){
+  public Sentence parse(String id, Iterator<String> entries) {
     SentenceParser parser = parserMap.get(id);
-    if(parser != null){
+    if (parser != null) {
       return parser.parse(entries);
     }
     return null;

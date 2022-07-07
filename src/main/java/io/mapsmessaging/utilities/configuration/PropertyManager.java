@@ -28,7 +28,7 @@ public abstract class PropertyManager {
 
   protected final ConfigurationProperties properties;
 
-  protected PropertyManager(){
+  protected PropertyManager() {
     properties = new ConfigurationProperties();
   }
 
@@ -40,16 +40,14 @@ public abstract class PropertyManager {
 
   public @NonNull @NotNull JSONObject getPropertiesJSON(@NonNull @NotNull String name) {
     Object config = properties.get(name);
-    if(config instanceof Map){
+    if (config instanceof Map) {
       Map<String, Object> root = (Map<String, Object>) config;
       Object jsonValue = root.get("JSON");
-      if(jsonValue instanceof JSONObject){
+      if (jsonValue instanceof JSONObject) {
         return (JSONObject) jsonValue;
-      }
-      else if(jsonValue instanceof String){
+      } else if (jsonValue instanceof String) {
         return new JSONObject(jsonValue);
-      }
-      else if(jsonValue == null){
+      } else if (jsonValue == null) {
         return new JSONObject(root);
       }
     }
@@ -58,8 +56,8 @@ public abstract class PropertyManager {
 
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     Object obj = properties.get(name);
-    if(obj instanceof ConfigurationProperties){
-      return (ConfigurationProperties)obj;
+    if (obj instanceof ConfigurationProperties) {
+      return (ConfigurationProperties) obj;
     }
     return new ConfigurationProperties();
   }

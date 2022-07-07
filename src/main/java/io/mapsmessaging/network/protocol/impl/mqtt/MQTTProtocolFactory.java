@@ -30,7 +30,7 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
   private static final byte[][] PROTOCOL;
 
   static {
-    PROTOCOL = new byte[][]{{'M', 'Q', 'T', 'T', 4},{'M','Q','I','s','d','p'}};
+    PROTOCOL = new byte[][]{{'M', 'Q', 'T', 'T', 4}, {'M', 'Q', 'I', 's', 'd', 'p'}};
   }
 
   public MQTTProtocolFactory() {

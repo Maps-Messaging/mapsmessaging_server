@@ -89,7 +89,7 @@ public class InitialWillMessageState implements State {
   }
 
 
-  private void sendErrorResponse(MQTT_SNProtocol protocol){
+  private void sendErrorResponse(MQTT_SNProtocol protocol) {
     ConnAck response = new ConnAck(ReasonCodes.NotSupported);
     response.setCallback(() -> {
       try {

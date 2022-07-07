@@ -40,29 +40,28 @@ public class AuthListener5 extends PacketListener5 {
     // Need to push this until we have finished our auth
     AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
     AuthenticationContext context;
-    if(mqttPacket instanceof Connect5){
+    if (mqttPacket instanceof Connect5) {
       try {
         context = new AuthenticationContext(authMethod.getAuthenticationMethod(), endPoint.getConfig().getProperties(), mqttPacket);
-        ((MQTT5Protocol)protocol).setAuthenticationContext(context);
+        ((MQTT5Protocol) protocol).setAuthenticationContext(context);
         mqttPacket.getProperties().remove(MessagePropertyFactory.AUTHENTICATION_METHOD);
       } catch (IOException e) {
         throw new MalformedException("Exception raised creating Authentication Server", e);
       }
-    }
-    else{
-      context = ((MQTT5Protocol)protocol).getAuthenticationContext();
+    } else {
+      context = ((MQTT5Protocol) protocol).getAuthenticationContext();
     }
 
     //
     // OK we have done the initialization above, lets process the auth packet
-    if(context != null) {
+    if (context != null) {
       AuthenticationData clientData = (AuthenticationData) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_DATA);
       try {
         byte[] clientChallenge = context.evaluateResponse(clientData.getAuthenticationData());
         if (context.isComplete()) {
-          ((MQTT5Protocol)protocol).setAuthenticationContext(null);
+          ((MQTT5Protocol) protocol).setAuthenticationContext(null);
           MQTTPacket5 initial = context.getParkedConnect();
-          return ((MQTT5Protocol)protocol).getPacketListenerFactory().getListener(initial.getControlPacketId()).handlePacket(initial, session, endPoint, protocol);
+          return ((MQTT5Protocol) protocol).getPacketListenerFactory().getListener(initial.getControlPacketId()).handlePacket(initial, session, endPoint, protocol);
         }
         Auth5 auth = new Auth5(context.getAuthMethod(), clientChallenge);
         auth.setReasonCode(StatusCode.CONTINUE_AUTHENTICATION.getValue());
@@ -70,8 +69,7 @@ public class AuthListener5 extends PacketListener5 {
       } catch (IOException e) {
         throw new MalformedException("Exception raised in processing Auth challenge", e);
       }
-    }
-    else{
+    } else {
       throw new MalformedException("Expected Authentication Context but none found");
     }
   }

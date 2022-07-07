@@ -74,7 +74,7 @@ public class DestinationSubscription extends Subscription {
       MessageStateManager messageStateManager) {
     super(sessionImpl, context);
     logger = LoggerFactory.getLogger(DestinationSubscription.class);
-    this.eventStateManager = new ClientSubscribedEventManager(destinationImpl,this);
+    this.eventStateManager = new ClientSubscribedEventManager(destinationImpl, this);
     this.destinationImpl = destinationImpl;
     this.messageStateManager = messageStateManager;
     this.acknowledgementController = acknowledgementController;
@@ -143,7 +143,7 @@ public class DestinationSubscription extends Subscription {
 
 
   @Override
-  public int size(){
+  public int size() {
     return 1;
   }
 
@@ -182,7 +182,7 @@ public class DestinationSubscription extends Subscription {
   }
 
   @Override
-  public String getAcknowledgementType(){
+  public String getAcknowledgementType() {
     return acknowledgementController.getType();
   }
 
@@ -200,7 +200,7 @@ public class DestinationSubscription extends Subscription {
     return destinationImpl;
   }
 
-  public boolean hasAtRestMessages(){
+  public boolean hasAtRestMessages() {
     return messageStateManager.hasAtRestMessages();
   }
 
@@ -235,14 +235,14 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public void updateCredit(int credit) {
-    if(acknowledgementController.setMaxOutstanding(credit)) {
+    if (acknowledgementController.setMaxOutstanding(credit)) {
       destinationImpl.scanForDelivery(this);
     }
   }
 
   @Override
   public boolean isEmpty() {
-    return !(messageStateManager.hasAtRestMessages()  || messageStateManager.hasMessagesInFlight());
+    return !(messageStateManager.hasAtRestMessages() || messageStateManager.hasMessagesInFlight());
   }
 
   @Override
@@ -250,7 +250,7 @@ public class DestinationSubscription extends Subscription {
     handleTransaction(false, messageId);
   }
 
-  public MessageStateManager getMessageStateManager(){
+  public MessageStateManager getMessageStateManager() {
     return messageStateManager;
   }
 
@@ -282,7 +282,7 @@ public class DestinationSubscription extends Subscription {
     //
     // Update state in an atomic fashion and then send the message
     //
-    if(!hasAtRestMessages()){
+    if (!hasAtRestMessages()) {
       message.setLastMessage(true);
     }
     acknowledgementController.sent(message);
@@ -306,7 +306,7 @@ public class DestinationSubscription extends Subscription {
     if (metaData != null) {
       String messageSession = metaData.get("sessionId");
       SubscriptionContext context = getContext();
-      if ( context != null
+      if (context != null
           && messageSession != null
           && context.noLocalMessages()
           && messageSession.equals(sessionId)) {
@@ -370,7 +370,7 @@ public class DestinationSubscription extends Subscription {
     schedule();
   }
 
-  public void completeMessage(long messageId){
+  public void completeMessage(long messageId) {
     messageStateManager.commit(messageId);
     messagesAcked++;
     destinationImpl.complete(messageId);
@@ -412,15 +412,15 @@ public class DestinationSubscription extends Subscription {
   // So we have a message to send, but we are not scheduled to run
   //
   public boolean schedule() {
-    if (isReady()){
+    if (isReady()) {
       destinationImpl.scanForDelivery(this);
       return true;
     }
     return false;
   }
 
-  protected boolean isReady(){
-    return (!isPaused && !hibernating && messageStateManager.hasAtRestMessages() && !getContexts().isEmpty()  && acknowledgementController.canSend() );
+  protected boolean isReady() {
+    return (!isPaused && !hibernating && messageStateManager.hasAtRestMessages() && !getContexts().isEmpty() && acknowledgementController.canSend());
   }
 
   // </editor-fold>

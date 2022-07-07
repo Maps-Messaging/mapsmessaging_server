@@ -21,21 +21,20 @@ public class DoubleType implements Type {
 
   private final double value;
 
-  public DoubleType(String value){
-    if(value.length() > 0) {
+  public DoubleType(String value) {
+    if (value.length() > 0) {
       this.value = Double.parseDouble(value);
-    }
-    else{
+    } else {
       this.value = 0.0;
     }
   }
 
-  public double getValue(){
+  public double getValue() {
     return value;
   }
 
   @Override
-  public String toString(){
+  public String toString() {
     return Double.toString(value);
   }
 

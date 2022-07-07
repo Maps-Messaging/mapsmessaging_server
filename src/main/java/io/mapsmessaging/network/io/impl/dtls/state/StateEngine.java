@@ -26,17 +26,21 @@ public class StateEngine {
   @Getter
   private long lastAccess;
 
-  @Getter @Setter
+  @Getter
+  @Setter
   private Selectable selectableTask;
-  @Getter @Setter
+  @Getter
+  @Setter
   private Selectable writeTask;
-  @Getter @Setter
+  @Getter
+  @Setter
   private State currentState;
-  @Getter @Setter
+  @Getter
+  @Setter
   private StateChangeListener listener;
 
 
-  public StateEngine(SocketAddress clientId, SSLEngine engine, DTLSSessionManager manager){
+  public StateEngine(SocketAddress clientId, SSLEngine engine, DTLSSessionManager manager) {
     this.sslEngine = engine;
     this.manager = manager;
     this.clientId = clientId;
@@ -55,7 +59,7 @@ public class StateEngine {
     return currentState.outbound(packet);
   }
 
-  public int fromNetwork(Packet packet) throws IOException{
+  public int fromNetwork(Packet packet) throws IOException {
     lastAccess = System.currentTimeMillis();
     return currentState.inbound(packet);
   }
@@ -65,9 +69,9 @@ public class StateEngine {
     return manager.sendPacket(packet);
   }
 
-  public int read(Packet packet){
+  public int read(Packet packet) {
     Packet in = inboundQueue.poll();
-    if(in != null){
+    if (in != null) {
       packet.put(in);
       packet.setFromAddress(in.getFromAddress());
       return in.position();
@@ -75,13 +79,15 @@ public class StateEngine {
     return 0;
   }
 
-  void pushToInBoundQueue(Packet packet){
+  void pushToInBoundQueue(Packet packet) {
     inboundQueue.add(packet);
-    if(selectableTask != null) selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
+    if (selectableTask != null) {
+      selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
+    }
   }
 
-  void handshakeComplete(){
-    if(listener != null){
+  void handshakeComplete() {
+    if (listener != null) {
       listener.handshakeComplete();
     }
   }

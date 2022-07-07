@@ -22,7 +22,7 @@ public class Constants {
 
   static final String NAME = "tcp";
 
-  private Constants(){
+  private Constants() {
     // hide the default constructor
   }
 

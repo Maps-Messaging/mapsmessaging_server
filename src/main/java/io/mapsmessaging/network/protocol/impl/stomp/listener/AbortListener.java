@@ -36,7 +36,7 @@ public class AbortListener implements FrameListener {
       transaction.abort();
       engine.getSession().closeTransaction(transaction);
     } catch (IOException e) {
-      engine.getProtocol().getLogger().log(ServerLogMessages.TRANSACTION_EXCEPTION, transaction,  e);
+      engine.getProtocol().getLogger().log(ServerLogMessages.TRANSACTION_EXCEPTION, transaction, e);
     }
   }
 }

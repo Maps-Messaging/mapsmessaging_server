@@ -56,13 +56,13 @@ public abstract class EventListener implements FrameListener {
         .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setTransformation(engine.getProtocol().getTransformation())
         .setDelayed(event.getDelay())
-        .setMessageExpiryInterval(event.getExpiry(),  TimeUnit.SECONDS)
+        .setMessageExpiryInterval(event.getExpiry(), TimeUnit.SECONDS)
         .build();
     processEvent(engine, event, message);
   }
 
-  protected void handleMessageStoreToDestination( Destination destination, StateEngine engine, Event event, Message message) throws IOException {
-    if(destination != null) {
+  protected void handleMessageStoreToDestination(Destination destination, StateEngine engine, Event event, Message message) throws IOException {
+    if (destination != null) {
       if (event.getTransaction() != null) {
         Transaction transaction = engine.getSession().getTransaction(event.getTransaction());
         if (transaction == null) {
@@ -80,5 +80,5 @@ public abstract class EventListener implements FrameListener {
     }
   }
 
-  protected abstract void processEvent( StateEngine engine, Event event, Message message) throws IOException;
+  protected abstract void processEvent(StateEngine engine, Event event, Message message) throws IOException;
 }

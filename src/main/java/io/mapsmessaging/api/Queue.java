@@ -23,8 +23,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Simple wrapper class that indicates that the destination is of type Queue.
- * This means that the reads are destructive and messages can only be delivered once to a single
+ * Simple wrapper class that indicates that the destination is of type Queue. This means that the reads are destructive and messages can only be delivered once to a single
  * destination.
  */
 public class Queue extends Destination {

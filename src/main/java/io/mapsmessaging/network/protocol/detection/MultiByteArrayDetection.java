@@ -53,7 +53,7 @@ public class MultiByteArrayDetection implements Detection {
       try {
         boolean found = detection.detected(packet);
         packet.position(start);
-        if(found){
+        if (found) {
           return true;
         }
       } catch (EndOfBufferException e) {

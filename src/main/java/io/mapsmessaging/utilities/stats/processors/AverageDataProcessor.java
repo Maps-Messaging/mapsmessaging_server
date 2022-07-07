@@ -25,7 +25,7 @@ public class AverageDataProcessor implements DataProcessor {
   private final LongAdder value;
   private final LongAdder count;
 
-  public AverageDataProcessor(){
+  public AverageDataProcessor() {
     value = new LongAdder();
     count = new LongAdder();
   }
@@ -41,10 +41,9 @@ public class AverageDataProcessor implements DataProcessor {
   public long calculate() {
     long average = value.sum();
     long counter = count.sum();
-    if(counter != 0) {
+    if (counter != 0) {
       average = average / counter;
-    }
-    else{
+    } else {
       average = 0;
     }
     reset();

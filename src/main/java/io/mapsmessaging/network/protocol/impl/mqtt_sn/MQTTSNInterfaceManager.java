@@ -113,25 +113,25 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       return true; // Ignoring packet since unknown client
     }
     UDPSessionState<MQTT_SNProtocol> state = currentSessions.getState(packet.getFromAddress());
-    if(state != null && state.getContext() != null){
+    if (state != null && state.getContext() != null) {
       MQTT_SNProtocol protocol = state.getContext();
-        // OK we have an existing protocol, so simply hand over the packet for processing
+      // OK we have an existing protocol, so simply hand over the packet for processing
       protocol.processPacket(packet);
     } else {
       int offset = 0;
-      if(packet.get(0) == 1){
+      if (packet.get(0) == 1) {
         offset = 2;
       }
       int version = -1;
-      boolean isConnect = packet.get(1+offset) == MQTT_SNPacket.CONNECT;
-      if(isConnect && (packet.get(2+offset) & 0b11111000) == 0){
-        version = packet.get(3+offset);
+      boolean isConnect = packet.get(1 + offset) == MQTT_SNPacket.CONNECT;
+      if (isConnect && (packet.get(2 + offset) & 0b11111000) == 0) {
+        version = packet.get(3 + offset);
       }
       //
       // OK so this is either a new connection request or an admin request
       //
       PacketFactory factory = packetFactory[0];
-      if(version == 2){
+      if (version == 2) {
         factory = packetFactory[1];
       }
 
@@ -155,30 +155,27 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       currentSessions.addState(packet.getFromAddress(), state);
-    }
-    else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
+    } else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
-      io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect)mqttSn;
+      io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) mqttSn;
       MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       currentSessions.addState(packet.getFromAddress(), state);
-    }else if (mqttSn instanceof SearchGateway) {
+    } else if (mqttSn instanceof SearchGateway) {
       handleSearch(packet);
     } else if (mqttSn instanceof Publish) {
       handlePublish(packet, (Publish) mqttSn);
-    }
-    else if(mqttSn instanceof Advertise){
+    } else if (mqttSn instanceof Advertise) {
       handleAdvertise(packet, (Advertise) mqttSn);
-    }
-    else if(mqttSn instanceof ConnAck || mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck){
+    } else if (mqttSn instanceof ConnAck || mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck) {
       Packet error = new Packet(32, false);
       mqttSn.packFrame(error);
       error.setFromAddress(packet.getFromAddress());
       error.flip();
       endPoint.sendPacket(error);
-    }else {
+    } else {
       packet.flip();
     }
   }
@@ -206,7 +203,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     }
   }
 
-  private void handleAdvertise(Packet packet, Advertise advertise ){
+  private void handleAdvertise(Packet packet, Advertise advertise) {
     logger.log(ServerLogMessages.MQTT_SN_GATEWAY_DETECTED, advertise.getGatewayId(), packet.getFromAddress().toString());
   }
 
@@ -226,14 +223,14 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     messageBuilder.setOpaqueData(publish.getMessage());
     try {
       SessionManager.getInstance().publish(topic, messageBuilder.build()).get();
-    } catch (ExecutionException|InterruptedException e) {
+    } catch (ExecutionException | InterruptedException e) {
       throw new IOException(e);
     }
   }
 
   @Override
   public void close() {
-    if(advertiserTask != null) {
+    if (advertiserTask != null) {
       advertiserTask.stop();
     }
     currentSessions.close();

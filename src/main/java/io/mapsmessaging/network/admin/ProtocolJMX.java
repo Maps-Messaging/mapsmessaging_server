@@ -55,50 +55,50 @@ public class ProtocolJMX implements HealthMonitor {
 
   public void close() {
     JMXManager.getInstance().unregister(mbean);
-    for(LinkedMovingAveragesJMX movingAveragesJMX:movingAveragesJMXList){
+    for (LinkedMovingAveragesJMX movingAveragesJMX : movingAveragesJMXList) {
       movingAveragesJMX.close();
     }
   }
 
-  private void registerMovingAverage(LinkedMovingAverages movingAverages, List<String> path){
+  private void registerMovingAverage(LinkedMovingAverages movingAverages, List<String> path) {
     movingAveragesJMXList.add(new LinkedMovingAveragesJMX(path, movingAverages));
   }
   //</editor-fold>
 
   //<editor-fold desc="JMX Bean functions">
-  @JMXBeanAttribute(name = "name", description ="Returns the name of the End Point that this protocol instance is bound to")
+  @JMXBeanAttribute(name = "name", description = "Returns the name of the End Point that this protocol instance is bound to")
   public String getEndPointName() {
     return protocol.getEndPoint().getName();
   }
 
-  @JMXBeanAttribute(name = "version", description ="Returns the version of the protocol being used")
+  @JMXBeanAttribute(name = "version", description = "Returns the version of the protocol being used")
   public String getVersion() {
     return protocol.getVersion();
   }
 
-  @JMXBeanAttribute(name = "session", description ="Returns the session identifier")
+  @JMXBeanAttribute(name = "session", description = "Returns the session identifier")
   public String getSessionId() {
     return protocol.getSessionId();
   }
 
-  @JMXBeanAttribute(name = "received", description ="Returns total number of protocol specific packets received")
+  @JMXBeanAttribute(name = "received", description = "Returns total number of protocol specific packets received")
   public long getTotalReceivedMessages() {
     return protocol.getReceivedMessages().getTotal();
   }
 
-  @JMXBeanAttribute(name = "sent", description ="Returns total number of protocol specific packets sent")
+  @JMXBeanAttribute(name = "sent", description = "Returns total number of protocol specific packets sent")
   public long getTotalSentMessages() {
     return protocol.getSentMessages().getTotal();
   }
   //</editor-fold>
 
-  @JMXBeanOperation(name="close", description = "Closes the connection with the client")
+  @JMXBeanOperation(name = "close", description = "Closes the connection with the client")
   public void closeProtocol() throws IOException {
     protocol.close();
   }
 
   @Override
-  @JMXBeanOperation(name = "checkHealth", description ="Returns the current health state")
+  @JMXBeanOperation(name = "checkHealth", description = "Returns the current health state")
   public HealthStatus checkHealth() {
     return new HealthStatus(protocol.getName(), LEVEL.WARN, "Protocol seems to have an issue", mbean.getObjectName().toString());
   }

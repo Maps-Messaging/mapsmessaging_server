@@ -28,7 +28,7 @@ public class Constants {
   public static final char TAG = 0x5c;
   public static final char CODE = 0x5e;
 
-  private Constants(){
+  private Constants() {
     // nothing to do
   }
 }

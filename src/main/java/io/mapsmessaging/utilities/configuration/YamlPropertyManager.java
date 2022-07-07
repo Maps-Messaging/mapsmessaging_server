@@ -36,12 +36,13 @@ import java.util.regex.Pattern;
 import org.yaml.snakeyaml.Yaml;
 
 public class YamlPropertyManager extends PropertyManager {
+
   private static final String GLOBAL = "global";
 
   private final Logger logger = LoggerFactory.getLogger(YamlPropertyManager.class);
 
   @Override
-  protected void load(){
+  protected void load() {
     try {
       Collection<String> knownProperties = ResourceList.getResources(Pattern.compile(".*yaml"));
       for (String propertyName : knownProperties) {
@@ -58,8 +59,8 @@ public class YamlPropertyManager extends PropertyManager {
       propertyName = propertyName.substring(0, propertyName.indexOf(".yaml"));
       Map<String, Object> map = loadFile(propertyName);
       Object objRoot = map.get(propertyName);
-      if(objRoot instanceof ConfigurationProperties) {
-        ConfigurationProperties root = (ConfigurationProperties)objRoot;
+      if (objRoot instanceof ConfigurationProperties) {
+        ConfigurationProperties root = (ConfigurationProperties) objRoot;
         Object global = root.get(GLOBAL);
         Object data = root.get("data");
         if (data != null && global instanceof ConfigurationProperties) {
@@ -80,7 +81,7 @@ public class YamlPropertyManager extends PropertyManager {
     }
   }
 
-  private  Map<String, Object> loadFile(String propertyName) throws IOException {
+  private Map<String, Object> loadFile(String propertyName) throws IOException {
     String propResourceName = "/" + propertyName;
     while (propResourceName.contains(".")) {
       propResourceName = propResourceName.replace('.', File.separatorChar);
@@ -94,7 +95,7 @@ public class YamlPropertyManager extends PropertyManager {
       is.close();
       response = parser.parse();
       Object topLevel = response.get(propertyName);
-      if(topLevel instanceof Map){
+      if (topLevel instanceof Map) {
         Map<String, Object> root = (Map<String, Object>) topLevel;
         root.put("JSON", parser.getJson());
         root.put("loaded", System.currentTimeMillis());
@@ -108,10 +109,10 @@ public class YamlPropertyManager extends PropertyManager {
   @Override
   protected void store(String name) throws IOException {
     HashMap<String, Object> data = new LinkedHashMap<>(properties);
-    if(properties.getGlobal() != null) {
+    if (properties.getGlobal() != null) {
       data.put(GLOBAL, new LinkedHashMap<>(properties.getGlobal()));
     }
-    try(PrintWriter writer = new PrintWriter(name)) {
+    try (PrintWriter writer = new PrintWriter(name)) {
       Yaml yaml = new Yaml();
       yaml.dump(data, writer);
     }

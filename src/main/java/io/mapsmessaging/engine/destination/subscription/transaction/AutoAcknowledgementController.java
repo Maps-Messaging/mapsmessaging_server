@@ -29,7 +29,7 @@ public class AutoAcknowledgementController implements AcknowledgementController 
   private final CreditManager creditManager;
 
   public AutoAcknowledgementController(CreditManager creditManager) {
-    this.creditManager =creditManager;
+    this.creditManager = creditManager;
     standardReturn = new ArrayList<>();
   }
 
@@ -73,7 +73,7 @@ public class AutoAcknowledgementController implements AcknowledgementController 
 
   @Override
   public void ack(long messageId) {
-    if(!standardReturn.isEmpty()) {
+    if (!standardReturn.isEmpty()) {
       standardReturn.remove(0);
     }
   }

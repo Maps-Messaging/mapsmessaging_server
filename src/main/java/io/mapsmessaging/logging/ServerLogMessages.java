@@ -21,8 +21,8 @@ package io.mapsmessaging.logging;
 import lombok.Getter;
 
 /**
- * This enum contains all log messages and the configuration around the log message. This enables log messages to be modified in one place without searching for the log message
- * it also enables the log messages to be translated into other languages if required
+ * This enum contains all log messages and the configuration around the log message. This enables log messages to be modified in one place without searching for the log message it
+ * also enables the log messages to be translated into other languages if required
  */
 
 public enum ServerLogMessages implements LogMessage {
@@ -44,8 +44,8 @@ public enum ServerLogMessages implements LogMessage {
   MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Messaging Daemon Unique Id has been assigned to {}"),
 
   MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The supplied home directory, {}, does not exist"),
-  MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "\t\tLoaded service {}, {}" ),
-  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Service Manager {} loaded" ),
+  MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "\t\tLoaded service {}, {}"),
+  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Service Manager {} loaded"),
 
   // </editor-fold>
 
@@ -82,7 +82,8 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_MANAGER_RESUME(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resume called on {}"),
   END_POINT_MANAGER_CLOSE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Closing end point on closed server"),
   END_POINT_MANAGER_NEW_SELECTOR(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Created thread safe selector implementation due to the JDK support on interface"),
-  END_POINT_MANAGER_OLD_SELECTOR(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Created queue based selector implementation due to the JDK not supporting thread safe java.nio.Selector on interface"),
+  END_POINT_MANAGER_OLD_SELECTOR(LEVEL.INFO, SERVER_CATEGORY.ENGINE,
+      "Created queue based selector implementation due to the JDK not supporting thread safe java.nio.Selector on interface"),
   END_POINT_MANAGER_ACCEPT_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Exception raised during accept handling of the new connection"),
   END_POINT_MANAGER_CLOSE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on accept server raised exception"),
   END_POINT_MANAGER_CLOSE_EXCEPTION_1(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Closing end point on closed server raised exception"),
@@ -322,7 +323,7 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_CONNECT_LISTENER_SECOND_CONNECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "[MQTT-3.1.0-2] Received a second CONNECT packet"),
   MQTT_CONNECT_LISTENER_SESSION_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to construct a session for {}"),
   MQTT_BAD_USERNAME_PASSWORD(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Invalid username or password combination supplied"),
-  MQTT_DUPLICATE_EVENT_RECEIVED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Detected duplicate events from the client, id {}" ),
+  MQTT_DUPLICATE_EVENT_RECEIVED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Detected duplicate events from the client, id {}"),
   MQTT_DISCONNECT_CLOSE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Closing MQTT Session"),
   MQTT_PING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MQTT Ping Request received"),
   MQTT_PUBLISH_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Close raised an exception "),
@@ -404,7 +405,7 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Destination Manager log messages">
   DESTINATION_MANAGER_RELOADED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Reloaded {} out of {}"),
-  DESTINATION_MANAGER_RELOAD_INTERRUPTED(LEVEL.WARN,SERVER_CATEGORY.ENGINE, "The reloading of server resources was interrupted during reload" ),
+  DESTINATION_MANAGER_RELOAD_INTERRUPTED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "The reloading of server resources was interrupted during reload"),
   //</editor-fold>
 
   //<editor-fold desc="Destination Subscription log messages">
@@ -490,24 +491,24 @@ public enum ServerLogMessages implements LogMessage {
   //</editor-fold>
 
   //<editor-fold desc="Jolokia log messages">
-  JOLOKIA_SHUTDOWN_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE , "Jolokia failed to shutdown the HTTP server"),
-  JOLOKIA_STARTUP_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE , "Jolokia failed to load the HTTP server"),
+  JOLOKIA_SHUTDOWN_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia failed to shutdown the HTTP server"),
+  JOLOKIA_STARTUP_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia failed to load the HTTP server"),
   //</editor-fold>
 
   //<editor-fold desc="AMQP Log messages">
   AMQP_REMOTE_CLIENT_PROPERTIES(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Remote AMQP client property {} - {}"),
   AMQP_RECEIVED_EVENT(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Received event {}"),
   AMQP_DETECTED_JMS_CLIENT(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Detected remote client is a JMS client"),
-  AMQP_CREATED_SESSION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL , "Session {} created"),
-  AMQP_CLOSED_SESSION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL , "Session {} closed"),
-  AMQP_CREATED_SUBSCRIPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL , "Created subscription on {} with alias {}" ),
-  AMQP_DELETED_SUBSCRIPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL , "Deleted subscription with alias {}" ),
+  AMQP_CREATED_SESSION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Session {} created"),
+  AMQP_CLOSED_SESSION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Session {} closed"),
+  AMQP_CREATED_SUBSCRIPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created subscription on {} with alias {}"),
+  AMQP_DELETED_SUBSCRIPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Deleted subscription with alias {}"),
   AMQP_ENGINE_TRANSPORT_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised on Proton Engine Transport, {}"),
   AMQP_REMOTE_LINK_ERROR(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Remote link closed with error message {}"),
   //</editor-fold>
 
   //<editor-fold desc="Transaction Manager log messages">
-  TRANSACTION_MANAGER_SCANNING(LEVEL.TRACE, SERVER_CATEGORY.ENGINE , "Transaction Manager expiry scan started"),
+  TRANSACTION_MANAGER_SCANNING(LEVEL.TRACE, SERVER_CATEGORY.ENGINE, "Transaction Manager expiry scan started"),
   TRANSACTION_MANAGER_CLOSE_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Transaction Manager detected exception when closing transaction id:{}"),
   TRANSACTION_MANAGER_TIMEOUT_DETECTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Transaction Manager detected expired transaction id:{}"),
   //</editor-fold>
@@ -536,9 +537,9 @@ public enum ServerLogMessages implements LogMessage {
   //</editor-fold>
 
   //<editor-fold desc="NameSpace mapping used to support multi tenancy">
-  NAMESPACE_MAPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE,"Mapping {} to namespace {}"),
-  NAMESPACE_MAPPING_FOUND(LEVEL.INFO, SERVER_CATEGORY.ENGINE,    "Found entry for  {} mapping to {}"),
-  NAMESPACE_MAPPING_DEFAULT(LEVEL.INFO, SERVER_CATEGORY.ENGINE,    "Using default mapping {}"),
+  NAMESPACE_MAPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Mapping {} to namespace {}"),
+  NAMESPACE_MAPPING_FOUND(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Found entry for  {} mapping to {}"),
+  NAMESPACE_MAPPING_DEFAULT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Using default mapping {}"),
   //</editor-fold>
 
   // <editor-fold desc="MQTT-SN log messages">
@@ -549,7 +550,7 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_SN_ADVERTISER_SENT_PACKET(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Sent advertise packet {}"),
   MQTT_SN_ADVERTISE_PACKET_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "An exception occurred while send an advertise packet"),
   MQTT_SN_PACKET_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised processing frame {}"),
-  MQTT_SN_GATEWAY_DETECTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Detected MQTT-SN service advertise packet for Gateway Id {}, from {}" ),
+  MQTT_SN_GATEWAY_DETECTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Detected MQTT-SN service advertise packet for Gateway Id {}, from {}"),
   MQTT_SN_REGISTERED_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Registered Event processed for {}"),
   MQTT_SN_REGISTERED_EVENT_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Registered Event packet detected but no configuration found for host:{} topic Id:{}"),
   MQTT_SN_INVALID_QOS_PACKET_DETECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Publish packet received from {}, but incorrect QoS should be 3 but found {}"),
@@ -611,7 +612,7 @@ public enum ServerLogMessages implements LogMessage {
 
     private final @Getter String description;
 
-    public String getDivision(){
+    public String getDivision() {
       return "Messaging";
     }
 

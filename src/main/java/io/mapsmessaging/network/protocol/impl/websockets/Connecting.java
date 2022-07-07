@@ -39,7 +39,7 @@ public class Connecting {
 
   private static final int PROTOCOL_NAME = 0;
   private static final int IANA_NAME = 1;
-  private static final String[][] SUB_PROTOCOL_MAP = { {STOMP,"v10.stomp"}, {STOMP,"v11.stomp"}, {STOMP,"v12.stomp"}, {MQTT,"mqtt"}, {AMQP,"amqp"}};
+  private static final String[][] SUB_PROTOCOL_MAP = {{STOMP, "v10.stomp"}, {STOMP, "v11.stomp"}, {STOMP, "v12.stomp"}, {MQTT, "mqtt"}, {AMQP, "amqp"}};
 
   /*
     https://en.wikipedia.org/wiki/WebSocket
@@ -74,33 +74,32 @@ public class Connecting {
     return null;
   }
 
-  private void processProtocols( EndPoint endPoint, Map<String, String> headers){
+  private void processProtocols(EndPoint endPoint, Map<String, String> headers) {
     String protocols = endPoint.getServer().getConfig().getProtocols();
     String clientProtocols = getFrame.getHeaders().get("sec-websocket-protocol");
     String subProtocol = "";
     int isList = clientProtocols.indexOf(',');
-    if(isList > 0){
+    if (isList > 0) {
       StringTokenizer st = new StringTokenizer(clientProtocols, ",");
       boolean found = false;
-      while(!found && st.hasMoreElements()){
-        String result = isSupported((String)st.nextElement(), protocols);
-        if(result != null){
+      while (!found && st.hasMoreElements()) {
+        String result = isSupported((String) st.nextElement(), protocols);
+        if (result != null) {
           found = true;
           subProtocol = result;
         }
       }
-    }
-    else{
+    } else {
       clientProtocols = clientProtocols.trim();
-      subProtocol  = isSupported(clientProtocols, protocols);
+      subProtocol = isSupported(clientProtocols, protocols);
     }
     headers.put("Sec-WebSocket-Protocol", subProtocol);
   }
 
-  private String isSupported(String ianaName, String protocols){
-    for(String[] protocol:SUB_PROTOCOL_MAP){
-      if(protocol[IANA_NAME].equalsIgnoreCase(ianaName) &&
-         protocols.toLowerCase().contains(protocol[PROTOCOL_NAME])) {
+  private String isSupported(String ianaName, String protocols) {
+    for (String[] protocol : SUB_PROTOCOL_MAP) {
+      if (protocol[IANA_NAME].equalsIgnoreCase(ianaName) &&
+          protocols.toLowerCase().contains(protocol[PROTOCOL_NAME])) {
         return protocol[IANA_NAME];
       }
     }

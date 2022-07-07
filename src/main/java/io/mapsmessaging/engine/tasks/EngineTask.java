@@ -36,16 +36,14 @@ public abstract class EngineTask implements Callable<Response> {
 
   @Override
   public Response call() throws Exception {
-    if(logContext != null) {
+    if (logContext != null) {
       ThreadContext.putAll(logContext);
-    }
-    else{
+    } else {
       ThreadContext.clearAll();
     }
-    try{
+    try {
       return taskCall();
-    }
-    finally{
+    } finally {
       ThreadContext.clearAll();
     }
   }

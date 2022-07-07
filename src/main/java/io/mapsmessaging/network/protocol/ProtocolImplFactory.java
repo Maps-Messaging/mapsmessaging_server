@@ -41,7 +41,7 @@ public abstract class ProtocolImplFactory implements Service {
     return name;
   }
 
-  public String getDescription(){
+  public String getDescription() {
     return description;
   }
 
@@ -49,9 +49,11 @@ public abstract class ProtocolImplFactory implements Service {
 
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
 
-  public void create(EndPoint endPoint, InterfaceInformation info) throws IOException { }
+  public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
+  }
 
-  public void closed(EndPoint endPoint)  { }
+  public void closed(EndPoint endPoint) {
+  }
 
   public boolean detect(Packet packet) throws EndOfBufferException {
     int pos = packet.position();

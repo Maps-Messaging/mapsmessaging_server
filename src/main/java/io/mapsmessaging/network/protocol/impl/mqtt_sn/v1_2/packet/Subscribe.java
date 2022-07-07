@@ -27,11 +27,16 @@ import lombok.ToString;
 @ToString
 public class Subscribe extends MQTT_SNPacket {
 
-  @Getter private final int msgId;
-  @Getter private String topicName;
-  @Getter private short topicId;
-  @Getter private final boolean dup;
-  @Getter private final int topicIdType;
+  @Getter
+  private final int msgId;
+  @Getter
+  private String topicName;
+  @Getter
+  private short topicId;
+  @Getter
+  private final boolean dup;
+  @Getter
+  private final int topicIdType;
 
   private final int QoS;
 
@@ -59,9 +64,9 @@ public class Subscribe extends MQTT_SNPacket {
     return (flags & 0b10000000) != 0;
   }
 
-  public void setDup(boolean set){
-    if(set){
-      flags = (byte)(flags | 0b10000000);
+  public void setDup(boolean set) {
+    if (set) {
+      flags = (byte) (flags | 0b10000000);
     }
   }
 

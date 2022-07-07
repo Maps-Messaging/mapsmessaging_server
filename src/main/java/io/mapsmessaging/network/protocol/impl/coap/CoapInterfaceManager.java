@@ -54,7 +54,7 @@ public class CoapInterfaceManager implements SelectorCallback {
     }
 
     BasePacket basePacket = packetFactory.parseFrame(packet);
-    if(basePacket != null) {
+    if (basePacket != null) {
       System.err.println(basePacket);
     }
     return true;
@@ -63,7 +63,7 @@ public class CoapInterfaceManager implements SelectorCallback {
 
   @Override
   public void close() {
-    for(CoapProtocol protocol:currentSessions.values()){
+    for (CoapProtocol protocol : currentSessions.values()) {
       try {
         protocol.close();
       } catch (IOException e) {

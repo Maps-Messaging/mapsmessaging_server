@@ -23,9 +23,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Simple wrapper class that indicates that the destination is aof type Topic.
- * This means that the reads are not destructive and messages can be delivered to multiple
- * destinations
+ * Simple wrapper class that indicates that the destination is aof type Topic. This means that the reads are not destructive and messages can be delivered to multiple destinations
  */
 public class Topic extends Destination {
 

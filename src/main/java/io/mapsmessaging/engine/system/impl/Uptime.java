@@ -22,7 +22,6 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import java.io.IOException;
-import java.util.UUID;
 
 public class Uptime extends SystemTopic {
 
@@ -34,7 +33,7 @@ public class Uptime extends SystemTopic {
   }
 
   @Override
-  public UUID getSchemaUUID() {
+  public String getSchemaUUID() {
     return SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA;
   }
 

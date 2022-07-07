@@ -22,7 +22,7 @@ public class EnumType implements Type {
   private final String id;
   private final String description;
 
-  public EnumType(String id, String description){
+  public EnumType(String id, String description) {
     this.id = id;
     this.description = description;
   }
@@ -37,7 +37,7 @@ public class EnumType implements Type {
 
 
   @Override
-  public String toString(){
+  public String toString() {
     return id;
   }
 

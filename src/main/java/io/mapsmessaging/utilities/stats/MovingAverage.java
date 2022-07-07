@@ -23,13 +23,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Manages a single moving average, accumulates data over the period and then provides an average that moves with time.
- * https://en.wikipedia.org/wiki/Moving_average
- * @since 1.0
+ * Manages a single moving average, accumulates data over the period and then provides an average that moves with time. https://en.wikipedia.org/wiki/Moving_average
+ *
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
-public class MovingAverage  {
+public class MovingAverage {
 
   private final List<DataPoint> dataPoints;
   private final long timePeriod;
@@ -38,11 +38,12 @@ public class MovingAverage  {
 
   /**
    * Creates a new instance over the period of time in TimeUnits
+   *
    * @param time Time span to use for the moving average
    * @param unit The time unit that describes the time
    */
-  public MovingAverage(int time, TimeUnit unit){
-    this.name = time+"_"+unit.toString();
+  public MovingAverage(int time, TimeUnit unit) {
+    this.name = time + "_" + unit.toString();
     timePeriod = unit.toMillis(time);
     dataPoints = new ArrayList<>();
     expectedEntries = time;
@@ -51,7 +52,7 @@ public class MovingAverage  {
   /**
    * @return The name of this Moving Average
    */
-  public String getName(){
+  public String getName() {
     return name;
   }
 
@@ -60,22 +61,22 @@ public class MovingAverage  {
    *
    * @param data to be added to the MovingAverage
    */
-  public void add(long data){
+  public void add(long data) {
     long now = System.currentTimeMillis();
-    dataPoints.add(new DataPoint(data, now +  + timePeriod));
+    dataPoints.add(new DataPoint(data, now + +timePeriod));
     clearData(now);
   }
 
   /***
    * @return The current moving average for the current data set
    */
-  public long getAverage(){
+  public long getAverage() {
     clearData(System.currentTimeMillis());
     long ave = 0;
-    for(DataPoint dataPoint:dataPoints){
+    for (DataPoint dataPoint : dataPoints) {
       ave += dataPoint.data;
     }
-    return ave/expectedEntries;
+    return ave / expectedEntries;
   }
 
   /**
@@ -86,15 +87,16 @@ public class MovingAverage  {
   }
 
 
-  protected void clearData(long now){
+  protected void clearData(long now) {
     dataPoints.removeIf(dataPoint -> dataPoint.expiry < now);
   }
 
   protected static class DataPoint {
+
     protected final long data;
     protected final long expiry;
 
-    public DataPoint(long data, long delay){
+    public DataPoint(long data, long delay) {
       this.data = data;
       expiry = delay;
     }

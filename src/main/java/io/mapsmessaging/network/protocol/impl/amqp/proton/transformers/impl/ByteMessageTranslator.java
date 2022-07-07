@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 public class ByteMessageTranslator extends BaseMessageTranslator {
 
   @Override
-  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Data data = (Data) protonMessage.getBody();
     messageBuilder.setOpaqueData(data.getValue().getArray());
@@ -45,7 +45,7 @@ public class ByteMessageTranslator extends BaseMessageTranslator {
   }
 
   @Override
-  protected byte getType(){
+  protected byte getType() {
     return (byte) MessageTypes.BYTES.getValue();
   }
 

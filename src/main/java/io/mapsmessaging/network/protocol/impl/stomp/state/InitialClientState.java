@@ -29,7 +29,7 @@ import java.io.IOException;
 public class InitialClientState implements State {
 
   public void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException {
-    if(frame instanceof Connected){
+    if (frame instanceof Connected) {
       FrameListener listener = frame.getFrameListener();
       listener.frameEvent(frame, engine, endOfBuffer);
       listener.postFrameHandling(frame, engine);

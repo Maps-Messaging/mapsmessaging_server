@@ -23,6 +23,7 @@ public class DefaultConstants {
   public static final int LORA_MAXIMUM_TX_RATE = 10;
   public static final int RATE_RESET_INTERVAL = 1000;
 
-  private DefaultConstants(){}
+  private DefaultConstants() {
+  }
 
 }

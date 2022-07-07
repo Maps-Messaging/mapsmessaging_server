@@ -72,7 +72,7 @@ public class ProtocolFactory implements ServiceManager {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
-    for(ProtocolImplFactory parser:protocolServiceLoader){
+    for (ProtocolImplFactory parser : protocolServiceLoader) {
       service.add(parser);
     }
     return service.listIterator();

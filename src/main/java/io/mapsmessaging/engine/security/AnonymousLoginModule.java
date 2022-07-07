@@ -72,7 +72,7 @@ public class AnonymousLoginModule extends BaseLoginModule {
   }
 
   @Override
-  public boolean commit()  {
+  public boolean commit() {
     if (!succeeded) {
       return false;
     } else {

@@ -41,12 +41,12 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
   @Override
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
-    if(link instanceof Receiver){
+    if (link instanceof Receiver) {
       Receiver receiver = (Receiver) link;
       receiver.setSource(receiver.getRemoteSource());
       receiver.setTarget(receiver.getRemoteTarget());
       Target target = receiver.getTarget();
-      if(target instanceof org.apache.qpid.proton.amqp.messaging.Target ) {
+      if (target instanceof org.apache.qpid.proton.amqp.messaging.Target) {
         org.apache.qpid.proton.amqp.messaging.Target messagingTarget = (org.apache.qpid.proton.amqp.messaging.Target) receiver.getTarget();
         handleDynamicTarget(event, link, messagingTarget);
       }
@@ -55,7 +55,8 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     }
     return false;
   }
-  private void handleDynamicTarget(Event event, Link link, org.apache.qpid.proton.amqp.messaging.Target messagingTarget){
+
+  private void handleDynamicTarget(Event event, Link link, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
     if (messagingTarget.getDynamic()) {
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
       UUID uuid = UUID.randomUUID();
@@ -78,7 +79,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
     }
   }
 
-  private boolean scanForQueue(org.apache.qpid.proton.amqp.messaging.Target messagingTarget){
+  private boolean scanForQueue(org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
     Symbol[] capabilities = messagingTarget.getCapabilities();
     if (capabilities != null) {
       for (Symbol capability : capabilities) {

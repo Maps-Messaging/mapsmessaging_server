@@ -17,13 +17,15 @@ public enum ReasonCodes {
   PayloadFormatInvalid(0x99),
   Unsupported(0x84);
 
-  @Getter private final int value;
-  ReasonCodes(int val){
+  @Getter
+  private final int value;
+
+  ReasonCodes(int val) {
     value = val;
   }
 
-  public static ReasonCodes lookup(int val){
-    switch(val){
+  public static ReasonCodes lookup(int val) {
+    switch (val) {
       case 0x0:
         return Success;
       case 0x1:

@@ -28,14 +28,14 @@ public class EnumTypeFactory {
 
   private final Map<String, Map<String, String>> configuration;
 
-  public static EnumTypeFactory getInstance(){
+  public static EnumTypeFactory getInstance() {
     return instance;
   }
 
-  public synchronized void register(String name, String jsonObjectOptions){
+  public synchronized void register(String name, String jsonObjectOptions) {
     JSONArray jsonArray = new JSONArray(jsonObjectOptions);
     Map<String, String> map = new LinkedHashMap<>();
-    for(int x=0;x<jsonArray.length();x++) {
+    for (int x = 0; x < jsonArray.length(); x++) {
       JSONObject jsonObject = jsonArray.getJSONObject(x);
       for (String key : jsonObject.keySet()) {
         map.put(key, jsonObject.get(key).toString());
@@ -44,9 +44,9 @@ public class EnumTypeFactory {
     configuration.put(name, map);
   }
 
-  public synchronized EnumType getEnum(String name, String id){
+  public synchronized EnumType getEnum(String name, String id) {
     Map<String, String> map = configuration.get(name);
-    if(map != null){
+    if (map != null) {
       String desc = map.get(id);
       return new EnumType(id, desc);
     }
@@ -54,7 +54,7 @@ public class EnumTypeFactory {
   }
 
 
-  private EnumTypeFactory(){
+  private EnumTypeFactory() {
     configuration = new LinkedHashMap<>();
   }
 

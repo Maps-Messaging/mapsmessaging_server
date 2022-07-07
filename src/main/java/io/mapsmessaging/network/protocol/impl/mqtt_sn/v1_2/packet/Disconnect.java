@@ -25,6 +25,7 @@ import lombok.ToString;
 
 @ToString
 public class Disconnect extends MQTT_SNPacket {
+
   @Getter
   private final int duration;
 

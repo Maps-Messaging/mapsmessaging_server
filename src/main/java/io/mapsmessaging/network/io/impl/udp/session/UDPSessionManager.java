@@ -22,17 +22,17 @@ public class UDPSessionManager<T extends Timeoutable> {
   private final Map<SocketAddress, UDPSessionState<T>> sessionStateMap;
   private final ScheduledFuture<?> monitor;
 
-  public UDPSessionManager(long timeout){
+  public UDPSessionManager(long timeout) {
     sessionStateMap = new ConcurrentHashMap<>();
     this.timeout = TimeUnit.SECONDS.toMillis(timeout);
     monitor = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new StateTimeoutMonitor<T>(this), 10, 10, TimeUnit.SECONDS);
   }
 
-  public void close(){
+  public void close() {
     monitor.cancel(false);
     List<UDPSessionState<T>> closingSessions = new ArrayList<>(sessionStateMap.values());
-    for(UDPSessionState<T> state:closingSessions){
-      if(state.getContext() != null){
+    for (UDPSessionState<T> state : closingSessions) {
+      if (state.getContext() != null) {
         try {
           state.getContext().close();
         } catch (IOException e) {
@@ -43,30 +43,30 @@ public class UDPSessionManager<T extends Timeoutable> {
     sessionStateMap.clear();
   }
 
-  public void addState(@NotNull @NonNull SocketAddress address,@NotNull @NonNull UDPSessionState<T> state){
+  public void addState(@NotNull @NonNull SocketAddress address, @NotNull @NonNull UDPSessionState<T> state) {
     sessionStateMap.put(address, state);
     state.updateTimeout();
   }
 
-  public @Nullable UDPSessionState<T> getState(@NotNull @NonNull SocketAddress address){
+  public @Nullable UDPSessionState<T> getState(@NotNull @NonNull SocketAddress address) {
     UDPSessionState<T> response = sessionStateMap.get(address);
-    if(response != null){
+    if (response != null) {
       response.updateTimeout();
     }
     return response;
   }
 
-  public void deleteState(@NotNull @NonNull SocketAddress address){
+  public void deleteState(@NotNull @NonNull SocketAddress address) {
     sessionStateMap.remove(address);
   }
 
-  protected void scanForTimeouts(){
+  protected void scanForTimeouts() {
     List<SocketAddress> expiredKeys = new ArrayList<>();
-    if(!sessionStateMap.isEmpty()) {
+    if (!sessionStateMap.isEmpty()) {
       long now = System.currentTimeMillis();
       for (Entry<SocketAddress, UDPSessionState<T>> entry : sessionStateMap.entrySet()) {
         long expiry = now - timeout;
-        if(entry.getValue().getContext().getTimeOut() != 0 ){
+        if (entry.getValue().getContext().getTimeOut() != 0) {
           expiry = now - entry.getValue().getContext().getTimeOut();
         }
         if (entry.getValue().getGetLastAccess() < expiry) {
@@ -76,7 +76,7 @@ public class UDPSessionManager<T extends Timeoutable> {
       for (SocketAddress key : expiredKeys) {
         UDPSessionState<T> state = sessionStateMap.get(key);
         sessionStateMap.remove(key);
-        if(state.getContext() != null){
+        if (state.getContext() != null) {
           try {
             state.getContext().close();
           } catch (IOException e) {

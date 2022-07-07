@@ -22,22 +22,21 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import java.util.List;
 
 /**
- * This interface represents a class that a user of the messaging engine can use to signal completion
- * of event delivery for a subscription. It contains the ability to interegate the context of the subscription.
+ * This interface represents a class that a user of the messaging engine can use to signal completion of event delivery for a subscription. It contains the ability to interegate
+ * the context of the subscription.
  */
 public interface SubscribedEventManager {
 
   /**
-   * Rolls back the specified message specified in the call. Once the message is rolled back
-   * it becomes availabe once more, of it a queue, could be delivered to another client
+   * Rolls back the specified message specified in the call. Once the message is rolled back it becomes availabe once more, of it a queue, could be delivered to another client
    *
    * @param messageId The message identifier to roll back
    */
   void rollbackReceived(long messageId);
 
   /**
-   * Acknowledges the specified message so that the reference to the message is removed and if no other
-   * subscription has interest in the message then it is deleted from the destination
+   * Acknowledges the specified message so that the reference to the message is removed and if no other subscription has interest in the message then it is deleted from the
+   * destination
    *
    * @param messageId The message identifier to acknowledge
    */
@@ -58,8 +57,7 @@ public interface SubscribedEventManager {
   List<SubscriptionContext> getContexts();
 
   /**
-   * Updates the "Credit" count for this subscription, used only by CreditHandler.Client, else the
-   * server will manage this value automatically
+   * Updates the "Credit" count for this subscription, used only by CreditHandler.Client, else the server will manage this value automatically
    *
    * @param credit The change to the current credit state, can be both positive and negative
    */
@@ -68,6 +66,7 @@ public interface SubscribedEventManager {
 
   /**
    * Returns true if the subscription has no current messages pending
+   *
    * @return boolean flag indicating if the subscription has any pending messages
    */
   boolean isEmpty();

@@ -18,10 +18,9 @@
 package io.mapsmessaging.network.protocol.impl.nmea.sentences;
 
 import io.mapsmessaging.network.protocol.impl.nmea.types.Type;
-import org.json.JSONObject;
-
 import java.util.List;
 import java.util.Map;
+import org.json.JSONObject;
 
 public class Sentence {
 
@@ -30,7 +29,7 @@ public class Sentence {
   private final Map<String, Type> values;
   private final List<String> order;
 
-  public Sentence(String name, String description, List<String> order, Map<String, Type> values){
+  public Sentence(String name, String description, List<String> order, Map<String, Type> values) {
     this.name = name;
     this.description = description;
     this.values = values;
@@ -45,18 +44,18 @@ public class Sentence {
     return description;
   }
 
-  public Type get(String key){
+  public Type get(String key) {
     return values.get(key);
   }
 
-  public String toJSON(){
+  public String toJSON() {
     JSONObject response = new JSONObject();
     response.put(name, packObject());
     response.put("description", description);
     return response.toString(4);
   }
 
-  private JSONObject packObject(){
+  private JSONObject packObject() {
     JSONObject jsonObject = new JSONObject();
     values.keySet().forEach(key -> {
       Type type = values.get(key);
@@ -65,12 +64,12 @@ public class Sentence {
     return jsonObject;
   }
 
-  public String toString(){
+  public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("$").append(name).append(",");
-    for(int x=0;x<order.size();x++){
+    for (int x = 0; x < order.size(); x++) {
       sb.append(values.get(order.get(x)));
-      if( x != order.size() -1){
+      if (x != order.size() - 1) {
         sb.append(",");
       }
     }

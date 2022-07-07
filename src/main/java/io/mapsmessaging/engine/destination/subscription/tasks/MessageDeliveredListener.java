@@ -30,7 +30,7 @@ public class MessageDeliveredListener extends EngineTask {
   private final DestinationSubscription subscription;
   private final AcknowledgementController acknowledgementController;
 
-  public MessageDeliveredListener(DestinationSubscription subscription, AcknowledgementController acknowledgementController){
+  public MessageDeliveredListener(DestinationSubscription subscription, AcknowledgementController acknowledgementController) {
     this.subscription = subscription;
     this.acknowledgementController = acknowledgementController;
   }

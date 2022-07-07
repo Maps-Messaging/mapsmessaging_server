@@ -22,7 +22,7 @@ public class Constants {
 
   public static final String JMX_DOMAIN = "io.mapsmessaging";
 
-  private Constants(){
+  private Constants() {
     // nothing to do
   }
 

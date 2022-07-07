@@ -72,13 +72,13 @@ public class DeliveryEventListener extends BaseEventListener {
     if (deliveryLink instanceof Sender) {
       delivery.settle();
     } else {
-      handleReceiveEvent(event,delivery, (Receiver) deliveryLink);
+      handleReceiveEvent(event, delivery, (Receiver) deliveryLink);
     }
     processFlowControl(event);
     return true;
   }
 
-  private void processFlowControl(Event event){
+  private void processFlowControl(Event event) {
     // Check to see if the remote end is acknowledged delivery of the event, in which case ack the event ID
     Link eventLink = event.getLink();
     Delivery dlv = event.getDelivery();
@@ -86,8 +86,8 @@ public class DeliveryEventListener extends BaseEventListener {
       dlv.settle();
       long id = engine.unpackLong(dlv.getTag());
       Object context = dlv.getContext();
-      if(context instanceof SubscribedEventManager) {
-        SubscribedEventManager manager = (SubscribedEventManager)context;
+      if (context instanceof SubscribedEventManager) {
+        SubscribedEventManager manager = (SubscribedEventManager) context;
         manager.ackReceived(id);
       }
     } else if (eventLink instanceof Receiver) {
@@ -95,7 +95,7 @@ public class DeliveryEventListener extends BaseEventListener {
     }
   }
 
-  private void handleReceiveEvent(Event event,Delivery delivery,  Receiver receiver){
+  private void handleReceiveEvent(Event event, Delivery delivery, Receiver receiver) {
     // Check the remote target and see if it is of type Coordinator, if so, then we have a transactional event
     Target remoteTarget = receiver.getRemoteTarget();
     if (remoteTarget instanceof Coordinator) {
@@ -130,7 +130,7 @@ public class DeliveryEventListener extends BaseEventListener {
     // add it to the context and see how we go
     if (transactionEvent instanceof Declare) {
       Session session = (Session) event.getSession().getContext();
-      if(session == null){
+      if (session == null) {
         io.mapsmessaging.network.protocol.impl.amqp.SessionManager sessionManager = createOrReuseSession(event.getConnection());
         session = sessionManager.getSession();
         event.getSession().setContext(session);
@@ -172,19 +172,18 @@ public class DeliveryEventListener extends BaseEventListener {
     Transaction transaction = (Transaction) receiver.getContext();
     byte[] txId = null;
     // Validate the state here
-    if(transaction == null){
-      errorMsg ="Transaction context not set";
+    if (transaction == null) {
+      errorMsg = "Transaction context not set";
     }
-    if(discharge.getTxnId() != null){
+    if (discharge.getTxnId() != null) {
       txId = discharge.getTxnId().getArray();
-    }
-    else{
+    } else {
       errorMsg += " No Transaction ID supplied";
     }
 
     // If we have everything, then lets  continue with either commit / abort
     boolean success = false;
-    if ( txId != null && transaction != null && transaction.getTransactionId().equals(new String(txId))) {
+    if (txId != null && transaction != null && transaction.getTransactionId().equals(new String(txId))) {
       try {
         dischargeTransaction(discharge, transaction);
         success = true;

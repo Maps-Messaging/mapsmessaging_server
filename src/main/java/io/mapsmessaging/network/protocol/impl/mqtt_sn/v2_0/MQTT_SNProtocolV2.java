@@ -82,9 +82,9 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   }
 
   @Override
-  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId){
+  public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId) {
     byte[] data = messageEvent.getMessage().getOpaqueData();
-    if(transformation != null){
+    if (transformation != null) {
       data = transformation.outgoing(messageEvent.getMessage());
     }
     Publish publish = new Publish(alias, packetId, data);
@@ -95,7 +95,7 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   }
 
   @Override
-  public MQTT_SNPacket getPingRequest(){
+  public MQTT_SNPacket getPingRequest() {
     return new PingRequest();
   }
 }

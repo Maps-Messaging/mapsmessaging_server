@@ -51,9 +51,9 @@ public class ConfigurationManager {
     return instance;
   }
 
-  public void initialise(@NonNull @NotNull String serverId){
+  public void initialise(@NonNull @NotNull String serverId) {
     ConsulPropertyManager defaultConsulManager = null;
-    if(ConsulManagerFactory.getInstance().isStarted()){
+    if (ConsulManagerFactory.getInstance().isStarted()) {
       authoritative = new ConsulPropertyManager(serverId);
       authoritative.load();
       defaultConsulManager = new ConsulPropertyManager("default_");
@@ -62,29 +62,29 @@ public class ConfigurationManager {
     }
     YamlPropertyManager yamlPropertyManager = new YamlPropertyManager();
     propertyManagers.add(yamlPropertyManager);
-    for(PropertyManager manager:propertyManagers){
+    for (PropertyManager manager : propertyManagers) {
       manager.load();
     }
 
     // We have a consul link but there is no config loaded, so load up the configuration into the
     // consul server to bootstrap the server
-    if(defaultConsulManager != null && defaultConsulManager.properties.size() == 0){
+    if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
       defaultConsulManager.copy(yamlPropertyManager);
     }
   }
 
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     ConfigurationProperties config;
-    if(authoritative != null){
+    if (authoritative != null) {
       config = authoritative.getProperties(name);
-      if(!config.isEmpty()){
+      if (!config.isEmpty()) {
         return config;
       }
     }
 
-    for(PropertyManager manager:propertyManagers) {
+    for (PropertyManager manager : propertyManagers) {
       config = manager.getProperties(name);
-      if(!config.isEmpty()){
+      if (!config.isEmpty()) {
         return config;
       }
     }

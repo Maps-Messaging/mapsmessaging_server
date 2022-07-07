@@ -36,7 +36,7 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   }
 
   @Override
-  public void close(){
+  public void close() {
     super.close();
     cacheMap.close();
   }
@@ -44,7 +44,7 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   @Override
   public int sendPacket(Packet packet) throws IOException {
     PacketIntegrity packetIntegrity = lookup((InetSocketAddress) packet.getFromAddress());
-    if(packetIntegrity == null){
+    if (packetIntegrity == null) {
       packet.clear();
       return 0;
     }
@@ -57,11 +57,10 @@ public class HmacUDPEndPoint extends UDPEndPoint {
     int res = super.readPacket(packet);
     packet.flip();
     PacketIntegrity packetIntegrity = lookup((InetSocketAddress) packet.getFromAddress());
-    if(packetIntegrity == null){
+    if (packetIntegrity == null) {
       packet.clear();
       res = 0;
-    }
-    else {
+    } else {
       if (packet.hasRemaining()) {
         if (!packetIntegrity.isSecure(packet)) {
           packet.clear();
@@ -77,26 +76,26 @@ public class HmacUDPEndPoint extends UDPEndPoint {
     return "hmac";
   }
 
-  private PacketIntegrity lookup(InetSocketAddress address){
-    if(address == null){
+  private PacketIntegrity lookup(InetSocketAddress address) {
+    if (address == null) {
       return null;
     }
     UDPSessionState<PacketIntegrity> state = cacheMap.getState(address);
-    if(state != null) {
+    if (state != null) {
       PacketIntegrity packetIntegrity = state.getContext();
       if (packetIntegrity != null) {
         return packetIntegrity;
       }
     }
     List<String> potentialKeys = new ArrayList<>();
-    potentialKeys.add(address.getAddress().getHostName()+":"+address.getPort());
-    potentialKeys.add(address.getAddress().getHostName()+":0");
-    potentialKeys.add(address.getAddress().getHostAddress()+":"+address.getPort());
-    potentialKeys.add(address.getAddress().getHostAddress()+":0");
+    potentialKeys.add(address.getAddress().getHostName() + ":" + address.getPort());
+    potentialKeys.add(address.getAddress().getHostName() + ":0");
+    potentialKeys.add(address.getAddress().getHostAddress() + ":" + address.getPort());
+    potentialKeys.add(address.getAddress().getHostAddress() + ":0");
 
-    for(String key:potentialKeys){
+    for (String key : potentialKeys) {
       PacketIntegrity packetIntegrity = lookup(key);
-      if(packetIntegrity != null){
+      if (packetIntegrity != null) {
         cacheMap.addState(address, new UDPSessionState<>(packetIntegrity));
         return packetIntegrity;
       }
@@ -105,9 +104,9 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   }
 
 
-  private PacketIntegrity lookup(String key){
+  private PacketIntegrity lookup(String key) {
     NodeSecurity lookup = securityMap.get(key);
-    if(lookup != null){
+    if (lookup != null) {
       return lookup.getPacketIntegrity();
     }
     return null;

@@ -59,12 +59,12 @@ public class ConnectedState implements State {
       case MQTT_SNPacket.DISCONNECT:
         Disconnect disconnect = (Disconnect) mqtt;
         String reason = "Disconnected";
-        if(disconnect.getExpiry() > 0){
+        if (disconnect.getExpiry() > 0) {
           reason = "Sleeping";
         }
         MQTT_SNPacket response = new Disconnect(ReasonCodes.Success, disconnect.getExpiry(), reason);
         if (disconnect.getExpiry() > 0) {
-          stateEngine.setState(new SleepState((int)disconnect.getExpiry(), protocol));
+          stateEngine.setState(new SleepState((int) disconnect.getExpiry(), protocol));
           stateEngine.sleep();
         } else {
           response.setCallback(() -> {

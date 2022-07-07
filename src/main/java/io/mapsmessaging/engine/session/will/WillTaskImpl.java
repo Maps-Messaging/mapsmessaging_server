@@ -101,7 +101,7 @@ public class WillTaskImpl implements Runnable {
   public void updateQoS(QualityOfService qos) {
     Message previous = details.getMsg();
     MessageBuilder messageBuilder = new MessageBuilder();
-    if(previous != null){
+    if (previous != null) {
       messageBuilder = new MessageBuilder(previous);
     }
     messageBuilder.setQoS(qos);
@@ -117,7 +117,7 @@ public class WillTaskImpl implements Runnable {
   }
 
   void updateManager() {
-    if(details.getSessionId() != null) {
+    if (details.getSessionId() != null) {
       WillTaskManager.getInstance().remove(details.getSessionId());
       WillTaskManager.getInstance().put(details.getSessionId(), details);
     }
@@ -131,7 +131,7 @@ public class WillTaskImpl implements Runnable {
   public void updateRetain(boolean flag) {
     Message previous = details.getMsg();
     MessageBuilder messageBuilder = new MessageBuilder();
-    if(previous != null){
+    if (previous != null) {
       messageBuilder = new MessageBuilder(previous);
     }
     messageBuilder.setRetain(flag);

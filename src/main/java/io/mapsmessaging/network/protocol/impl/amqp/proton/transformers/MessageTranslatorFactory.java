@@ -28,31 +28,32 @@ import org.jetbrains.annotations.Nullable;
 
 public class MessageTranslatorFactory {
 
-  public static @NonNull @NotNull MessageTranslator getMessageTranslator(@Nullable MessageAnnotations annotations){
+  public static @NonNull @NotNull MessageTranslator getMessageTranslator(@Nullable MessageAnnotations annotations) {
     MessageTypes messageType = MessageTypes.MESSAGE;
 
     Map<Symbol, Object> maps;
-    if(annotations != null) {
+    if (annotations != null) {
       maps = annotations.getValue();
       Object type = maps.get(Symbol.getSymbol("x-opt-jms-msg-type"));
-      if(type instanceof Byte){
-        messageType = MessageTypes.getInstance((Byte)type);
+      if (type instanceof Byte) {
+        messageType = MessageTypes.getInstance((Byte) type);
       }
     }
     return messageType.getMessageTranslator();
   }
 
-  public static @NonNull @NotNull MessageTranslator getMessageTranslator(@NonNull @NotNull Message message){
+  public static @NonNull @NotNull MessageTranslator getMessageTranslator(@NonNull @NotNull Message message) {
     MessageTypes messageType = MessageTypes.BYTES;
     Map<String, String> metaData = message.getMeta();
-    if(metaData != null && metaData.containsKey("type")) {
-       String val = metaData.get("type");
-       byte lookup = Byte.decode(val);
-       messageType = MessageTypes.getInstance(lookup);
+    if (metaData != null && metaData.containsKey("type")) {
+      String val = metaData.get("type");
+      byte lookup = Byte.decode(val);
+      messageType = MessageTypes.getInstance(lookup);
     }
     return messageType.getMessageTranslator();
   }
 
-  private MessageTranslatorFactory(){}
+  private MessageTranslatorFactory() {
+  }
 
 }

@@ -25,12 +25,13 @@ import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
 
 public class DelayedStoreMessageTask extends StoreMessageTask {
+
   private final DestinationImpl destination;
   private final Message message;
   private final MessageManager messageManager;
   private final long bucketId;
 
-  public DelayedStoreMessageTask(DestinationImpl destination,  Message message, MessageManager messageManager, long bucketId){
+  public DelayedStoreMessageTask(DestinationImpl destination, Message message, MessageManager messageManager, long bucketId) {
     super();
     this.destination = destination;
     this.message = message;

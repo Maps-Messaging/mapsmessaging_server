@@ -36,12 +36,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class LoRaEndPointServer extends EndPointServer {
+
   private final EndPointManagerJMX managerMBean;
 
   private final ProtocolFactory protocolFactory;
   private final int gatewayId;
 
-  public LoRaEndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config, EndPointManagerJMX managerMBean)  {
+  public LoRaEndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config, EndPointManagerJMX managerMBean) {
     super(accept, url, config);
     protocolFactory = new ProtocolFactory(config.getProtocols());
     gatewayId = url.getPort();
@@ -62,7 +63,7 @@ public class LoRaEndPointServer extends EndPointServer {
   public void start() throws IOException {
     ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
     LoRaDevice loRaDevice = LoRaDeviceManager.getInstance().getDevice(getUrl());
-    if(loRaDevice != null) {
+    if (loRaDevice != null) {
       LoRaEndPoint endPoint = new LoRaEndPoint(loRaDevice, gatewayId, this, managerMBean);
       InetSocketAddress socketAddress = (InetSocketAddress) endPoint.getSocketAddress(0xff);
       InterfaceInformation interfaceInformation = new LoRaInterfaceInformation(endPoint.getDatagramSize(), socketAddress.getAddress());

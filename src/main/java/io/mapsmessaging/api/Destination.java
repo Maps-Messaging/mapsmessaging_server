@@ -27,7 +27,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Generic destination class 
+ * Generic destination class
  */
 public class Destination implements BaseDestination {
 

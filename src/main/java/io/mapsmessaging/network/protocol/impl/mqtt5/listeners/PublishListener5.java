@@ -63,7 +63,8 @@ import lombok.SneakyThrows;
 
 public class PublishListener5 extends PacketListener5 {
 
-  public static Message createMessage(String sessionId, Collection<MessageProperty> properties, Priority priority, boolean isRetain, byte[] payload, QualityOfService qos, ProtocolMessageTransformation transformation) {
+  public static Message createMessage(String sessionId, Collection<MessageProperty> properties, Priority priority, boolean isRetain, byte[] payload, QualityOfService qos,
+      ProtocolMessageTransformation transformation) {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "5");
@@ -88,7 +89,7 @@ public class PublishListener5 extends PacketListener5 {
 
         case MessagePropertyFactory.MESSAGE_EXPIRY_INTERVAL:
           mb.setMessageExpiryInterval(
-              ((MessageExpiryInterval) property).getMessageExpiryInterval(),  TimeUnit.SECONDS);
+              ((MessageExpiryInterval) property).getMessageExpiryInterval(), TimeUnit.SECONDS);
           break;
 
         case MessagePropertyFactory.CONTENT_TYPE:
@@ -200,7 +201,7 @@ public class PublishListener5 extends PacketListener5 {
       try {
         Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).get();
         int sent = 0;
-        if(destination != null) {
+        if (destination != null) {
           Message message =
               createMessage(
                   session.getName(),
@@ -216,8 +217,7 @@ public class PublishListener5 extends PacketListener5 {
         if (response != null) {
           if (sent == 0) {
             response.setStatusCode(StatusCode.NO_MATCHING_SUBSCRIBERS);
-          }
-          else if(sent < 0){
+          } else if (sent < 0) {
             response.setStatusCode(StatusCode.PACKET_IDENTIFIER_INUSE);
           }
         }
@@ -238,22 +238,21 @@ public class PublishListener5 extends PacketListener5 {
   }
 
   private int processMessage(Message message, Publish5 publish, Session session, MQTTPacket response, Destination destination) throws IOException {
-    if(response != null){
+    if (response != null) {
       Transaction transaction;
       try {
 
-        transaction = session.startTransaction(session.getName()+"_"+publish.getPacketId());
+        transaction = session.startTransaction(session.getName() + "_" + publish.getPacketId());
       } catch (TransactionException e) {
         logger.log(ServerLogMessages.MQTT_DUPLICATE_EVENT_RECEIVED, publish.getPacketId());
         return -1;
       }
       transaction.add(destination, message);
-      if(publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)){
+      if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {
         transaction.commit();
       }
       return 1;
-    }
-    else {
+    } else {
       return destination.storeMessage(message);
     }
   }

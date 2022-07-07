@@ -14,13 +14,8 @@ import lombok.ToString;
  * That packet type is used by the gateway to send a feedback to the server to inform if a downlink request has been accepted or rejected by the gateway. The datagram may
  * optionnaly contain a JSON string to give more details on acknoledge. If no JSON is present (empty string), this means than no error occured.
  *
- * Bytes  | Function
- * :------:|---------------------------------------------------------------------
- * 0      | protocol version = 2
- * 1-2    | same token as the PULL_RESP packet to acknowledge
- * 3      | TX_ACK identifier 0x05
- * 4-11   | Gateway unique identifier (MAC address)
- * 12-end | [optional] JSON object, starting with {, ending with }, see section 6
+ * Bytes  | Function :------:|--------------------------------------------------------------------- 0      | protocol version = 2 1-2    | same token as the PULL_RESP packet to
+ * acknowledge 3      | TX_ACK identifier 0x05 4-11   | Gateway unique identifier (MAC address) 12-end | [optional] JSON object, starting with {, ending with }, see section 6
  */
 @ToString
 public class TxAcknowledge extends SemTechPacket {

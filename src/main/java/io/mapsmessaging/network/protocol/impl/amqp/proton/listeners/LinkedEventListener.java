@@ -29,7 +29,7 @@ public class LinkedEventListener implements EventListener {
   private final List<EventListener> listeners;
   private final EventType type;
 
-  public LinkedEventListener(EventListener... list){
+  public LinkedEventListener(EventListener... list) {
     this.listeners = new ArrayList<>();
     Collections.addAll(listeners, list);
     this.type = listeners.get(0).getType();
@@ -38,8 +38,8 @@ public class LinkedEventListener implements EventListener {
   @Override
   public boolean handleEvent(Event event) {
     boolean response = false;
-    for(EventListener listener:listeners){
-      if(listener.handleEvent(event)){
+    for (EventListener listener : listeners) {
+      if (listener.handleEvent(event)) {
         response = true;
       }
     }

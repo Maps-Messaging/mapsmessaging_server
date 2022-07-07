@@ -38,10 +38,10 @@ public class PushDataHandler extends Handler {
           builder.setMeta(meta);
           Message message = builder.build();
           GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier());
-          if(info != null) {
+          if (info != null) {
             info.getInbound().storeMessage(message);
           }
-        } catch(JSONException | IOException jsonParseException){
+        } catch (JSONException | IOException jsonParseException) {
           // Catch & ignore
         }
       }

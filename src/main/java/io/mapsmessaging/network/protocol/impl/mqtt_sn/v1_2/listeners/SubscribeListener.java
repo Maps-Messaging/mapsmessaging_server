@@ -41,13 +41,13 @@ public class SubscribeListener extends PacketListener {
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
-    short topicId =0;
+    short topicId = 0;
     String topicName;
     if (subscribe.getTopicId() == TOPIC_NAME) {
       topicName = subscribe.getTopicName();
     } else {
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
-      if(subscribe.getTopicIdType() == TOPIC_PRE_DEFINED_ID){
+      if (subscribe.getTopicIdType() == TOPIC_PRE_DEFINED_ID) {
         topicId = subscribe.getTopicId();
       }
     }

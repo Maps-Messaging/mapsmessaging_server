@@ -40,7 +40,8 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
   // We need to open a socket, its a socket library so we can ignore this issue
   @java.lang.SuppressWarnings({"squid:S4818", "squid:S2095"})
   @Override
-  public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath) throws IOException {
+  public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)
+      throws IOException {
     SSLContext context = SSLHelper.getInstance().createContext(endPointServerStatus.getConfig().getProperties(), logger);
     SSLEngine engine = context.createSSLEngine();
     SocketChannel channel = SocketChannel.open();

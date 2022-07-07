@@ -63,7 +63,7 @@ public class InitialConnectionState implements State {
         return topicRequest;
       } else {
         CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
-        sessionFuture.thenApply(session ->{
+        sessionFuture.thenApply(session -> {
           protocol.setSession(session);
           ConnAck response = new ConnAck(ReasonCodes.Success);
           response.setCallback(session::resumeState);
@@ -86,7 +86,7 @@ public class InitialConnectionState implements State {
     return null;
   }
 
-  private void sendErrorResponse(MQTT_SNProtocol protocol){
+  private void sendErrorResponse(MQTT_SNProtocol protocol) {
     ConnAck response = new ConnAck(ReasonCodes.NotSupported);
     response.setCallback(() -> {
       try {

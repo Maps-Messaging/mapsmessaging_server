@@ -35,21 +35,20 @@ import org.jetbrains.annotations.NotNull;
 public class StreamMessageTranslator extends BaseMessageTranslator {
 
   @Override
-  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
-    if(body instanceof AmqpSequence){
-      AmqpSequence sequence = (AmqpSequence)body;
+    if (body instanceof AmqpSequence) {
+      AmqpSequence sequence = (AmqpSequence) body;
       List<?> list = sequence.getValue();
       Map<String, TypedData> dataMap = messageBuilder.getDataMap();
-      for(int x =0;x<list.size();x++){
+      for (int x = 0; x < list.size(); x++) {
         Object val = list.get(x);
-        if(val instanceof Binary){
-          Binary binary = (Binary)val;
-          dataMap.put(""+x, new TypedData(binary.getArray()));
-        }
-        else {
-          dataMap.put(""+x, new TypedData(list.get(x)));
+        if (val instanceof Binary) {
+          Binary binary = (Binary) val;
+          dataMap.put("" + x, new TypedData(binary.getArray()));
+        } else {
+          dataMap.put("" + x, new TypedData(list.get(x)));
         }
       }
     }
@@ -60,15 +59,14 @@ public class StreamMessageTranslator extends BaseMessageTranslator {
   public @NonNull @NotNull Message encode(@NonNull @NotNull io.mapsmessaging.api.message.Message message) {
     Message protonMessage = super.encode(message);
 
-    int x=0;
+    int x = 0;
     Map<String, TypedData> dataMap = message.getDataMap();
     List<Object> list = new ArrayList<>();
-    while(dataMap.containsKey(""+x)){
-      TypedData data = dataMap.get(""+x);
-      if(data.getType().equals(TYPE.BYTE_ARRAY)){
+    while (dataMap.containsKey("" + x)) {
+      TypedData data = dataMap.get("" + x);
+      if (data.getType().equals(TYPE.BYTE_ARRAY)) {
         list.add(new Binary((byte[]) data.getData()));
-      }
-      else {
+      } else {
         list.add(data.getData());
       }
       x++;
@@ -79,7 +77,7 @@ public class StreamMessageTranslator extends BaseMessageTranslator {
   }
 
   @Override
-  protected byte getType(){
+  protected byte getType() {
     return (byte) MessageTypes.STREAM.getValue();
   }
 

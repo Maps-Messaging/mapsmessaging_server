@@ -203,7 +203,7 @@ public class MQTT5Protocol extends ProtocolImpl {
       receivedMessageAverages.increment();
 
       boolean initialAuth = false;
-      if(mqtt instanceof Connect5){
+      if (mqtt instanceof Connect5) {
         // We may have an auth / sasl request so lets check first, if so we need to park the connect until after
         // we have authenticated
         Connect5 connect5 = (Connect5) mqtt;
@@ -211,17 +211,16 @@ public class MQTT5Protocol extends ProtocolImpl {
         initialAuth = (authMethod != null && authMethod.getName() != null && authMethod.getName().length() > 0);
       }
       MQTTPacket5 response;
-      if(initialAuth || authenticationContext != null){
+      if (initialAuth || authenticationContext != null) {
         response = packetListenerFactory.getListener(MQTTPacket5.AUTH).handlePacket(mqtt, null, endPoint, this);
-      }
-      else {
+      } else {
         response = packetListenerFactory.getListener(mqtt.getControlPacketId()).handlePacket(mqtt, session, endPoint, this);
       }
       handleResponse(response);
     }
   }
 
-  private void handleResponse(MQTTPacket5 response){
+  private void handleResponse(MQTTPacket5 response) {
     if (response != null) {
       sentMessageAverages.increment();
       if (logger.isInfoEnabled()) {
@@ -235,7 +234,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     }
   }
 
-  public PacketListenerFactory5 getPacketListenerFactory(){
+  public PacketListenerFactory5 getPacketListenerFactory() {
     return packetListenerFactory;
   }
 
@@ -285,7 +284,8 @@ public class MQTT5Protocol extends ProtocolImpl {
     }
   }
 
-  private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull  SubscribedEventManager subscription,@NonNull @NotNull  Message message,@NonNull @NotNull  Runnable completionTask){
+  private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
+      @NonNull @NotNull Runnable completionTask) {
     SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
     int packetId = getPacketId(qos, subscription, message);
@@ -314,18 +314,17 @@ public class MQTT5Protocol extends ProtocolImpl {
     writeFrame(publish);
   }
 
-  private int getPacketId(QualityOfService qos, SubscribedEventManager subscription, Message message){
+  private int getPacketId(QualityOfService qos, SubscribedEventManager subscription, Message message) {
     if (qos.isSendPacketId()) {
       return packetIdManager.nextPacketIdentifier(subscription, message.getIdentifier());
     }
     return 0;
   }
 
-  private byte[] createPayload(Message message){
-    if(transformation != null){
+  private byte[] createPayload(Message message) {
+    if (transformation != null) {
       return transformation.outgoing(message);
-    }
-    else{
+    } else {
       return message.getOpaqueData();
     }
   }
@@ -341,7 +340,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     if (message.getCorrelationData() != null) {
       publish.add(new CorrelationData(message.getCorrelationData()));
     }
-    long expiryInSeconds = (message.getExpiry()-System.currentTimeMillis())/1000;
+    long expiryInSeconds = (message.getExpiry() - System.currentTimeMillis()) / 1000;
     if (expiryInSeconds > 0) {
       publish.add(new MessageExpiryInterval(expiryInSeconds));
     }

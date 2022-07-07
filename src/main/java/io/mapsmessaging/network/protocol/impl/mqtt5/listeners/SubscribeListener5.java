@@ -50,7 +50,7 @@ public class SubscribeListener5 extends PacketListener5 {
     builder.setRetainAsPublish(info.isRetainAsPublished());
     builder.setRetainHandler(info.getRetainHandling());
     builder.setReceiveMaximum(receiveMaximum);
-    if(selector != null) {
+    if (selector != null) {
       builder.setSelector(selector);
     }
     if (info.getSubscriptionIdentifier() != null) {
@@ -65,13 +65,13 @@ public class SubscribeListener5 extends PacketListener5 {
     List<SubscriptionInfo> subscriptionInfos = subscribe.getSubscriptionList();
     StatusCode[] result = new StatusCode[subscriptionInfos.size()];
     String selector = null;
-    if(mqttPacket.getProperties() != null){
-      for(MessageProperty property: mqttPacket.getProperties().values()){
-        if(property instanceof UserProperty){
-           UserProperty userProperty = (UserProperty)property;
-           if(userProperty.getUserPropertyName().equalsIgnoreCase("selector")){
-             selector = userProperty.getUserPropertyValue();
-           }
+    if (mqttPacket.getProperties() != null) {
+      for (MessageProperty property : mqttPacket.getProperties().values()) {
+        if (property instanceof UserProperty) {
+          UserProperty userProperty = (UserProperty) property;
+          if (userProperty.getUserPropertyName().equalsIgnoreCase("selector")) {
+            selector = userProperty.getUserPropertyValue();
+          }
         }
       }
     }

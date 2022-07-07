@@ -13,13 +13,8 @@ import lombok.Getter;
  *
  * That packet type is used by the gateway mainly to forward the RF packets received, and associated metadata, to the server.
  *
- * Bytes  | Function
- * :------:|---------------------------------------------------------------------
- * 0      | protocol version = 2
- * 1-2    | random token
- * 3      | PUSH_DATA identifier 0x00
- * 4-11   | Gateway unique identifier (MAC address)
- * 12-end | JSON object, starting with {, ending with }, see section 4
+ * Bytes  | Function :------:|--------------------------------------------------------------------- 0      | protocol version = 2 1-2    | random token 3      | PUSH_DATA
+ * identifier 0x00 4-11   | Gateway unique identifier (MAC address) 12-end | JSON object, starting with {, ending with }, see section 4
  */
 
 public class PushData extends SemTechPacket {
@@ -61,14 +56,14 @@ public class PushData extends SemTechPacket {
     return PUSH_DATA;
   }
 
-  public String toString(){
-    return "PushData(token="+token+", gatewayIdentier=["+(dumpIdentifier())+"], jsonObject="+jsonObject+")";
+  public String toString() {
+    return "PushData(token=" + token + ", gatewayIdentier=[" + (dumpIdentifier()) + "], jsonObject=" + jsonObject + ")";
   }
 
-  public String dumpIdentifier(){
+  public String dumpIdentifier() {
     StringBuilder sb = new StringBuilder();
-    for(byte b:gatewayIdentifier){
-      sb.append(Integer.toHexString(b&0xff)).append(",");
+    for (byte b : gatewayIdentifier) {
+      sb.append(Integer.toHexString(b & 0xff)).append(",");
     }
     return sb.toString();
   }

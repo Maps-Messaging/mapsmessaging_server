@@ -112,12 +112,12 @@ public class MQTT_SNPacket implements ServerPacket {
     }
   }
 
-  public int packLength(Packet packet, int len){
+  public int packLength(Packet packet, int len) {
     if (len < 256) {
       packet.put((byte) len);
     } else {
       packet.put((byte) 1);
-      MQTTPacket.writeShort(packet, len+2);
+      MQTTPacket.writeShort(packet, len + 2);
     }
     return len;
   }

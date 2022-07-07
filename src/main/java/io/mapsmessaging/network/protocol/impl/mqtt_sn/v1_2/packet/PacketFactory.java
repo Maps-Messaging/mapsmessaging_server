@@ -29,15 +29,13 @@ public class PacketFactory {
     int dif;
     if (packetLength == 1) { // Special case so the next 2 bytes indicates the length
       packetLength = MQTTPacket.readShort(packet);
-      dif = packet.available() -(packetLength-3);
+      dif = packet.available() - (packetLength - 3);
+    } else {
+      dif = packet.available() - (packetLength - 1);
     }
-    else{
-      dif = packet.available() - (packetLength-1);
-    }
-    if(dif < 0){
+    if (dif < 0) {
       throw new IOException("Truncated Packet received");
-    }
-    else if(dif > 0){
+    } else if (dif > 0) {
       throw new IOException("Extended Packet received");
     }
 
@@ -120,7 +118,7 @@ public class PacketFactory {
     return null;
   }
 
-  public MQTT_SNPacket getConnectError(ReasonCodes reasonCode){
+  public MQTT_SNPacket getConnectError(ReasonCodes reasonCode) {
     return new ConnAck(reasonCode);
   }
 }

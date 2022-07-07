@@ -30,7 +30,7 @@ public class SubscriptionTransactionTask extends EngineTask {
   private final long messageId;
   private final boolean ack;
 
-  public SubscriptionTransactionTask(SubscribedEventManager subscription,  long messageId, final boolean ack){
+  public SubscriptionTransactionTask(SubscribedEventManager subscription, long messageId, final boolean ack) {
     this.subscription = subscription;
     this.messageId = messageId;
     this.ack = ack;
@@ -38,10 +38,9 @@ public class SubscriptionTransactionTask extends EngineTask {
 
   @Override
   public Response taskCall() {
-    if(ack){
+    if (ack) {
       subscription.ackReceived(messageId);
-    }
-    else{
+    } else {
       subscription.rollbackReceived(messageId);
     }
     return new VoidResponse();

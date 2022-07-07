@@ -23,12 +23,13 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public abstract class BaseConnectListener implements FrameListener {
+
   private static final float MIN_VERSION = 1.0f;
   private static final float MAX_VERSION = 1.2f;
 
   protected static final String CONTENT_TYPE_TEXT = "text/plain";
 
-  protected float processVersion(StateEngine engine, String versionHeader){
+  protected float processVersion(StateEngine engine, String versionHeader) {
     if (versionHeader == null || versionHeader.length() == 0) {
       io.mapsmessaging.network.protocol.impl.stomp.frames.Error error = new io.mapsmessaging.network.protocol.impl.stomp.frames.Error();
       error.setContentType(CONTENT_TYPE_TEXT);
@@ -57,7 +58,7 @@ public abstract class BaseConnectListener implements FrameListener {
     engine.send(error);
   }
 
-  private float calculateVersion(String versionHeader){
+  private float calculateVersion(String versionHeader) {
     ArrayList<Float> versions = new ArrayList<>();
     StringTokenizer versionList = new StringTokenizer(versionHeader, ",");
     while (versionList.hasMoreElements()) {

@@ -42,8 +42,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class Session {
 
-  private static final String SCHEMA_NAME="$schema/";
-  private static final String METRICS_NAME="$metrics/";
+  private static final String SCHEMA_NAME = "$schema/";
+  private static final String METRICS_NAME = "$metrics/";
 
   private final SessionImpl sessionImpl;
   private final MessageListener listener;
@@ -76,17 +76,16 @@ public class Session {
     }
   }
 
-  public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName,@NonNull @NotNull DestinationType type) {
+  public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType type) {
     CompletableFuture<Destination> future = new CompletableFuture<>();
     Destination result = destinations.get(destinationName);
     if (result == null) {
       String tmp = destinationName;
       DestinationType tmpMeta = type;
-      if(tmp.startsWith(SCHEMA_NAME)) {
+      if (tmp.startsWith(SCHEMA_NAME)) {
         tmp = tmp.substring(SCHEMA_NAME.length());
         tmpMeta = DestinationType.SCHEMA;
-      }
-      else if(tmp.startsWith(METRICS_NAME)){
+      } else if (tmp.startsWith(METRICS_NAME)) {
         tmp = tmp.substring(METRICS_NAME.length());
         tmpMeta = DestinationType.METRICS;
       }
@@ -96,7 +95,9 @@ public class Session {
         CompletableFuture<DestinationImpl> destinationCompletableFuture = sessionImpl.findDestination(name, type);
         DestinationImpl destination = destinationCompletableFuture.get();
         Destination end = buildDestination(destination, meta);
-        if(end != null) destinations.put(end.getFullyQualifiedNamespace(), end);
+        if (end != null) {
+          destinations.put(end.getFullyQualifiedNamespace(), end);
+        }
         future.complete(end);
         return end;
       };
@@ -107,17 +108,16 @@ public class Session {
           throw new RuntimeException(e);
         }
       });
-    }
-    else{
+    } else {
       future.complete(result);
     }
     return future;
   }
 
-  private Destination buildDestination(DestinationImpl destination, DestinationType meta){
+  private Destination buildDestination(DestinationImpl destination, DestinationType meta) {
     Destination end = null;
     if (destination != null) {
-      switch(meta){
+      switch (meta) {
         case TOPIC:
           end = new Topic(destination);
           break;
@@ -144,8 +144,8 @@ public class Session {
   public CompletableFuture<Void> deleteDestination(Destination destination) {
     CompletableFuture<Void> result = new CompletableFuture<>();
     CompletableFuture<DestinationImpl> future = sessionImpl.deleteDestination(destination.destinationImpl);
-    future.thenApply(deleted ->{
-      if(deleted != null) {
+    future.thenApply(deleted -> {
+      if (deleted != null) {
         destinations.remove(deleted.getFullyQualifiedNamespace());
       }
       result.complete(null);
@@ -156,7 +156,7 @@ public class Session {
 
   //</editor-fold>
 
-  public @NonNull @NotNull SecurityContext getSecurityContext(){
+  public @NonNull @NotNull SecurityContext getSecurityContext() {
     return sessionImpl.getSecurityContext();
   }
 
@@ -186,7 +186,7 @@ public class Session {
   }
 
   public @Nullable WillTask getWillTask() {
-    if(sessionImpl.getWillTaskImpl() == null){
+    if (sessionImpl.getWillTaskImpl() == null) {
       return null;
     }
     return new WillTask(sessionImpl.getWillTaskImpl());
@@ -234,15 +234,16 @@ public class Session {
   private final class MessageCallbackImpl implements MessageCallback {
 
     @Override
-    public void sendMessage(@NonNull @NotNull DestinationImpl destinationImpl, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message, @NonNull @NotNull Runnable completionTask) {
+    public void sendMessage(@NonNull @NotNull DestinationImpl destinationImpl, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
+        @NonNull @NotNull Runnable completionTask) {
       Destination destination = destinations.get(destinationImpl.getFullyQualifiedNamespace());
       if (destination == null) {
         destination = new Destination(destinationImpl);
         destinations.put(destination.getFullyQualifiedNamespace(), destination);
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
-      if(subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA)){
-        normalisedName = SCHEMA_NAME+normalisedName;
+      if (subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA)) {
+        normalisedName = SCHEMA_NAME + normalisedName;
       }
       MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);
       listener.sendMessage(event);

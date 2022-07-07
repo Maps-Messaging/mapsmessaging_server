@@ -38,7 +38,7 @@ public class WillMessageUpdateListener extends PacketListener {
     WillTask task = session.getWillTask();
     byte[] payload = willMessageUpdate.getMessage();
     ReasonCodes status = ReasonCodes.Success;
-    if(task == null){
+    if (task == null) {
       WillDetails willDetails = new WillDetails();
       willDetails.setSessionId(session.getName());
       willDetails.setVersion(protocol.getVersion());
@@ -47,8 +47,7 @@ public class WillMessageUpdateListener extends PacketListener {
       messageBuilder.setOpaqueData(payload);
       willDetails.setMsg(messageBuilder.build());
       session.updateWillTopic(willDetails);
-    }
-    else{
+    } else {
       task.updateMessage(payload);
     }
     return new WillMessageResponse(status);

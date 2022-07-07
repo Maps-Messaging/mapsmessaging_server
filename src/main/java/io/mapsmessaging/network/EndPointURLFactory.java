@@ -22,21 +22,20 @@ public class EndPointURLFactory {
 
   private static final EndPointURLFactory instance = new EndPointURLFactory();
 
-  public static EndPointURLFactory getInstance(){
+  public static EndPointURLFactory getInstance() {
     return instance;
   }
 
-  EndPointURLFactory(){}
+  EndPointURLFactory() {
+  }
 
-  public EndPointURL create(String urlString){
+  public EndPointURL create(String urlString) {
     EndPointURL endPoint;
-    if(urlString.toLowerCase().startsWith("lora")){
+    if (urlString.toLowerCase().startsWith("lora")) {
       endPoint = new LoRaEndPointURL(urlString);
-    }
-    else if(urlString.toLowerCase().startsWith("serial")){
+    } else if (urlString.toLowerCase().startsWith("serial")) {
       endPoint = new SerialEndPointURL(urlString);
-    }
-    else{
+    } else {
       endPoint = new EndPointURL(urlString);
     }
     return endPoint;

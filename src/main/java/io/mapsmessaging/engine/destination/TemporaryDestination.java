@@ -38,26 +38,27 @@ public class TemporaryDestination extends DestinationImpl {
     ownerDisconnected = false;
   }
 
-  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource,
+      @NonNull @NotNull DestinationType destinationType) throws IOException {
     super(name, directory, resource, destinationType);
     ownerDisconnected = false;
   }
 
-  public void setOwnerDisconnected(){
+  public void setOwnerDisconnected() {
     ownerDisconnected = true;
   }
 
   @Override
-  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) throws IOException {
+  public Subscribable removeSubscription(@NonNull @NotNull String subscriptionId) throws IOException {
     Subscribable subscribable = super.removeSubscription(subscriptionId);
     checkForDeletion();
     return subscribable;
   }
 
-  public void checkForDeletion(){
+  public void checkForDeletion() {
     // No longer have subscriptions here, so we have no readers, lets see if the owner is still around
-    if(!super.subscriptionManager.hasSubscriptions() && ownerDisconnected ||
-        ownerDisconnected && super.getResourceType().isTemporary() && super.getResourceType().isQueue()){
+    if (!super.subscriptionManager.hasSubscriptions() && ownerDisconnected ||
+        ownerDisconnected && super.getResourceType().isTemporary() && super.getResourceType().isQueue()) {
       MessageDaemon.getInstance().getDestinationManager().delete(this);
     }
   }

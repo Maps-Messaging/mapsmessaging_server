@@ -32,13 +32,19 @@ import lombok.ToString;
 @ToString
 public class WillDetails implements MapSerializable {
 
-  private @Getter @Setter long delay;
-  private @Getter @Setter String sessionId;
-  private @Getter @Setter String protocol;
-  private @Getter @Setter String version;
+  private @Getter
+  @Setter long delay;
+  private @Getter
+  @Setter String sessionId;
+  private @Getter
+  @Setter String protocol;
+  private @Getter
+  @Setter String version;
 
-  private @Getter @Setter String destination;
-  private @Getter @Setter Message msg;
+  private @Getter
+  @Setter String destination;
+  private @Getter
+  @Setter Message msg;
 
   public WillDetails() {
   }
@@ -51,6 +57,7 @@ public class WillDetails implements MapSerializable {
     this.protocol = protocol;
     this.version = version;
   }
+
   public WillDetails(ObjectReader reader) throws IOException {
     read(reader);
   }
@@ -63,7 +70,7 @@ public class WillDetails implements MapSerializable {
     version = reader.readString();
     int bufferCount = reader.readInt();
     ByteBuffer[] bb = new ByteBuffer[bufferCount];
-    for(int x=0;x<bb.length;x++){
+    for (int x = 0; x < bb.length; x++) {
       bb[x] = ByteBuffer.wrap(reader.readByteArray());
     }
     msg = MessageFactory.getInstance().unpack(bb);
@@ -77,7 +84,7 @@ public class WillDetails implements MapSerializable {
     writer.write(version);
     ByteBuffer[] buffers = MessageFactory.getInstance().pack(msg);
     writer.write(buffers.length);
-    for(ByteBuffer buffer:buffers){
+    for (ByteBuffer buffer : buffers) {
       writer.write(buffer.array());
     }
   }

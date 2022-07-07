@@ -7,7 +7,8 @@ import java.security.NoSuchAlgorithmException;
 
 public class SHA224PacketSecurity extends HmacPacketSecurity {
 
-  public SHA224PacketSecurity(){}
+  public SHA224PacketSecurity() {
+  }
 
   protected SHA224PacketSecurity(SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException {
     super(stamper, key);

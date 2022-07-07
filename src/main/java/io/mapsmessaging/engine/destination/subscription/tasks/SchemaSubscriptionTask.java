@@ -28,7 +28,7 @@ public class SchemaSubscriptionTask extends SubscriptionTask {
     Subscription subscription = null;
     try {
       SchemaConfig config = SchemaManager.getInstance().getSchema(destination.getSchema().getUniqueId());
-      if(config != null) {
+      if (config != null) {
         subscription = controller.getSchema(destination);
         if (subscription != null) {
           subscription.addContext(context);

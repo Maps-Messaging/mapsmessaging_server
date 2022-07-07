@@ -37,7 +37,7 @@ public class LoRaClientStats {
   private static final String PACKETS = "Packets";
   private static final String RSSI = "RSSI";
 
-  private static final int[] MOVING_AVERAGE={1, 5, 10, 15};
+  private static final int[] MOVING_AVERAGE = {1, 5, 10, 15};
   private static final TimeUnit TIME_UNIT = TimeUnit.MINUTES;
 
   private final LinkedMovingAverages rssiStats;
@@ -48,17 +48,17 @@ public class LoRaClientStats {
   private final int nodeId;
   private long lastPacketId;
 
-  public LoRaClientStats(List<String> parent, int clientId){
+  public LoRaClientStats(List<String> parent, int clientId) {
     rssiStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, RSSI, MOVING_AVERAGE, TIME_UNIT, RSSI);
-    missedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, PACKETS,MOVING_AVERAGE, TIME_UNIT, PACKETS);
-    receivedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, "Missed",MOVING_AVERAGE, TIME_UNIT, PACKETS);
+    missedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, PACKETS, MOVING_AVERAGE, TIME_UNIT, PACKETS);
+    receivedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, "Missed", MOVING_AVERAGE, TIME_UNIT, PACKETS);
     lastPacketId = -1;
     nodeId = clientId;
     movingAveragesJMXList = new ArrayList<>();
 
     List<String> jmxPath = new ArrayList<>(parent);
     jmxPath.add("name=RadioStatus");
-    jmxPath.add("NodeId="+clientId);
+    jmxPath.add("NodeId=" + clientId);
     mbean = JMXManager.getInstance().register(this, jmxPath);
 
     List<String> rssiPath = new ArrayList<>(jmxPath);
@@ -71,8 +71,8 @@ public class LoRaClientStats {
     movingAveragesJMXList.add(new LinkedMovingAveragesJMX(received, receivedStats));
   }
 
-  public void close(){
-    for(LinkedMovingAveragesJMX jmx:movingAveragesJMXList){
+  public void close() {
+    for (LinkedMovingAveragesJMX jmx : movingAveragesJMXList) {
       jmx.close();
     }
     JMXManager.getInstance().unregister(mbean);
@@ -98,7 +98,7 @@ public class LoRaClientStats {
     return missedStats.getTotal();
   }
 
-  public void update(LoRaDatagram datagram){
+  public void update(LoRaDatagram datagram) {
     receivedStats.increment();
     rssiStats.add(datagram.getRssi());
     int id = datagram.getId();
@@ -111,7 +111,7 @@ public class LoRaClientStats {
     lastPacketId = id + 1L;
   }
 
-  public void update(int id, int rssi){
+  public void update(int id, int rssi) {
     receivedStats.increment();
     rssiStats.add(rssi);
     if (lastPacketId != -1 && id != 0) { // Rolled so ignore

@@ -85,7 +85,7 @@ public class UDPEndPointServer extends EndPointServer {
   }
 
   @Override
-  public void deregister()  {
+  public void deregister() {
     // Not required
   }
 
@@ -104,7 +104,7 @@ public class UDPEndPointServer extends EndPointServer {
   }
 
 
-  protected UDPEndPoint createEndPoint( InetSocketAddress bonded ) throws IOException {
+  protected UDPEndPoint createEndPoint(InetSocketAddress bonded) throws IOException {
     return new UDPEndPoint(
         bonded,
         selectorLoadManager.allocate(),
@@ -114,6 +114,7 @@ public class UDPEndPointServer extends EndPointServer {
         managerMBean
     );
   }
+
   @Override
   protected Logger createLogger(String url) {
     return LoggerFactory.getLogger(UDPEndPointServer.class.getName() + "_" + url);

@@ -43,22 +43,22 @@ public class NMEAPacket {
         packet.position(pos);
         throw e;
       }
-    }
-    else{
+    } else {
       name = "";
-      sentence="";
+      sentence = "";
       entries = new ArrayList<>();
     }
   }
 
-  public String getName(){
+  public String getName() {
     return name;
   }
+
   public String getSentence() {
-    return  sentence;
+    return sentence;
   }
 
-  public Iterator<String> getEntries(){
+  public Iterator<String> getEntries() {
     return entries.iterator();
   }
 
@@ -94,7 +94,7 @@ public class NMEAPacket {
           throw new IOException("Invalid Checksum calculated");
         }
       } else {
-        sentenceBuilder.append((char)val);
+        sentenceBuilder.append((char) val);
         checksum ^= val;
       }
       if (!packet.hasRemaining()) {

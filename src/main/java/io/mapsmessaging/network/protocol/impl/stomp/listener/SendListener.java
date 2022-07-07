@@ -28,11 +28,11 @@ import java.util.concurrent.CompletableFuture;
 
 public class SendListener extends EventListener {
 
-  protected void processEvent( StateEngine engine, Event event, Message message) throws IOException {
+  protected void processEvent(StateEngine engine, Event event, Message message) throws IOException {
     CompletableFuture<Destination> future = engine.getSession().findDestination(engine.getMapping(event.getDestination()), DestinationType.TOPIC);
     future.thenApply(destination -> {
       try {
-        if(destination != null) {
+        if (destination != null) {
           handleMessageStoreToDestination(destination, engine, event, message);
         }
       } catch (IOException e) {

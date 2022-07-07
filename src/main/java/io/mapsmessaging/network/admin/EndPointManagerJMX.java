@@ -54,59 +54,59 @@ public class EndPointManagerJMX implements HealthMonitor {
   //</editor-fold>
 
   //<editor-fold desc="JMX Bean operation functions">
-  @JMXBeanOperation(name = "Starts the manager", description ="Starts the end point manager and will start accepting incoming connections")
+  @JMXBeanOperation(name = "Starts the manager", description = "Starts the end point manager and will start accepting incoming connections")
   public void start() throws IOException {
     endPointManager.start();
   }
 
-  @JMXBeanOperation(name = "Close the manager", description ="Stops all new incoming connections and closes all resources")
+  @JMXBeanOperation(name = "Close the manager", description = "Stops all new incoming connections and closes all resources")
   public void close() throws IOException {
     endPointManager.close();
   }
 
-  @JMXBeanOperation(name = "Pause the manager", description ="Stops accepting new incoming connections, current connections are not impacted")
+  @JMXBeanOperation(name = "Pause the manager", description = "Stops accepting new incoming connections, current connections are not impacted")
   public void pause() throws IOException {
     endPointManager.pause();
   }
 
-  @JMXBeanOperation(name = "Resume the manager", description ="Resumes accepting new incoming connections")
+  @JMXBeanOperation(name = "Resume the manager", description = "Resumes accepting new incoming connections")
   public void resume() throws IOException {
     endPointManager.resume();
   }
 
-  @JMXBeanOperation(name = "healthStatus", description ="Returns the total number of bytes sent")
+  @JMXBeanOperation(name = "healthStatus", description = "Returns the total number of bytes sent")
   public HealthStatus checkHealth() {
     return new HealthStatus(endPointManager.getName(), LEVEL.INFO, "End Point manager seems ok", mbean.getObjectName().toString());
   }
   //</editor-fold>
 
   //<editor-fold desc="JMX Bean Attributes functions">
-  @JMXBeanAttribute(name = "Protocols", description ="Returns a list of supported protocols on this end point")
+  @JMXBeanAttribute(name = "Protocols", description = "Returns a list of supported protocols on this end point")
   public String getProtocols() {
     return endPointManager.getProtocols();
   }
 
-  @JMXBeanAttribute(name = "Connected", description ="Returns current active number of end points")
+  @JMXBeanAttribute(name = "Connected", description = "Returns current active number of end points")
   public int getConnectedEndPoints() {
     return endPointManager.getEndPointServer().size();
   }
 
-  @JMXBeanAttribute(name = "Packets Read", description ="Returns the total number of packets read from all end points")
+  @JMXBeanAttribute(name = "Packets Read", description = "Returns the total number of packets read from all end points")
   public long getTotalPacketsRead() {
     return endPointManager.getEndPointServer().getTotalPacketsRead();
   }
 
-  @JMXBeanAttribute(name = "Packets Sent", description ="Returns the total number of packets sent from all end points")
+  @JMXBeanAttribute(name = "Packets Sent", description = "Returns the total number of packets sent from all end points")
   public long getTotalPacketsSent() {
     return endPointManager.getEndPointServer().getTotalPacketsSent();
   }
 
-  @JMXBeanAttribute(name = "Bytes Read", description ="Returns the total number of bytes read")
+  @JMXBeanAttribute(name = "Bytes Read", description = "Returns the total number of bytes read")
   public long getTotalBytesRead() {
     return endPointManager.getEndPointServer().getTotalBytesRead();
   }
 
-  @JMXBeanAttribute(name = "Bytes Sent", description ="Returns the total number of bytes sent")
+  @JMXBeanAttribute(name = "Bytes Sent", description = "Returns the total number of bytes sent")
   public long getTotalBytesSent() {
     return endPointManager.getEndPointServer().getTotalBytesSent();
   }

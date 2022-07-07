@@ -18,17 +18,17 @@
 
 package io.mapsmessaging.engine.destination.subscription.transaction;
 
-public class ClientCreditManager extends CreditManager{
+public class ClientCreditManager extends CreditManager {
 
-  public ClientCreditManager(int initialCredit){
+  public ClientCreditManager(int initialCredit) {
     super(initialCredit);
   }
 
-  public void increment(){
+  public void increment() {
     // This is not auto incremented, we need the client to specifically refresh the credit value
   }
 
-  public void decrement(){
+  public void decrement() {
     currentCredit--;
   }
 

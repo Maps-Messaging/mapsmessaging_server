@@ -35,19 +35,20 @@ public class SessionDestinationManager implements DestinationFactory {
   private SessionTenantConfig sessionTenantConfig = new SessionTenantConfig("", null);
   private final DestinationManager manager;
 
-  public SessionDestinationManager(DestinationManager manager){
+  public SessionDestinationManager(DestinationManager manager) {
     this.manager = manager;
   }
 
-  public String calculateNamespace(String destinationName){
+  public String calculateNamespace(String destinationName) {
     return sessionTenantConfig.calculateDestinationName(destinationName);
   }
-  public String calculateOriginalNamespace(String fqn){
+
+  public String calculateOriginalNamespace(String fqn) {
     return sessionTenantConfig.calculateOriginalName(fqn);
   }
 
 
-  public void setSessionTenantConfig(SessionTenantConfig config){
+  public void setSessionTenantConfig(SessionTenantConfig config) {
     sessionTenantConfig = config;
   }
 

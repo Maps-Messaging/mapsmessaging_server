@@ -46,14 +46,14 @@ public class LinkRemoteDetachEventListener extends BaseEventListener {
       if (eventManager != null) {
         event.getSession().setContext(null);
         SubscriptionContext context = eventManager.getContext();
-        if(context != null) {
+        if (context != null) {
           String alias = context.getAlias();
           session.hibernateSubscription(alias);
         }
         link.setContext(null);
         link.detach();
         ErrorCondition errorCondition = link.getRemoteCondition();
-        if(errorCondition != null){
+        if (errorCondition != null) {
           protocol.getLogger().log(ServerLogMessages.AMQP_REMOTE_LINK_ERROR, errorCondition);
         }
       }

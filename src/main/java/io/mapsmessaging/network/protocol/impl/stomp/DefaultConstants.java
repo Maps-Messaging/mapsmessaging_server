@@ -23,5 +23,6 @@ public class DefaultConstants {
   public static final int MAXIMUM_BUFFER_SIZE = 65535;
   public static final int RECEIVE_MAXIMUM = 1000;
 
-  private DefaultConstants(){}
+  private DefaultConstants() {
+  }
 }

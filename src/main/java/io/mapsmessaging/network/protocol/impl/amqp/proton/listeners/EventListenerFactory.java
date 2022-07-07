@@ -30,7 +30,7 @@ public class EventListenerFactory {
   private final Map<EventType, EventListener> listeners;
 
 
-  public EventListenerFactory(AMQPProtocol protocol, ProtonEngine engine){
+  public EventListenerFactory(AMQPProtocol protocol, ProtonEngine engine) {
     listeners = new LinkedHashMap<>();
     register(new DeliveryEventListener(protocol, engine));
     register(new LinkFlowEventListener(protocol, engine));
@@ -44,7 +44,7 @@ public class EventListenerFactory {
     );
     register(linkLocalOpenList);
 
-    register(new LinkLocalCloseEventListener(protocol,engine));
+    register(new LinkLocalCloseEventListener(protocol, engine));
 
     register(new LinkRemoteOpenEventListener(protocol, engine));
     register(new LinkRemoteCloseEventListener(protocol, engine));
@@ -59,14 +59,14 @@ public class EventListenerFactory {
     register(new SessionRemoteCloseEventListener(protocol, engine));
   }
 
-  public void handleEvent(Event event){
+  public void handleEvent(Event event) {
     EventListener listener = listeners.get(event.getEventType());
     if (listener != null) {
       listener.handleEvent(event);
     }
   }
 
-  private void register(EventListener listener){
+  private void register(EventListener listener) {
     listeners.put(listener.getType(), listener);
   }
 

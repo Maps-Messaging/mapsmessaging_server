@@ -24,10 +24,10 @@ public class DateType implements Type {
 
   private final LocalDate localDate;
 
-  public DateType(String date){
+  public DateType(String date) {
     int numeric = Integer.parseInt(date);
     int day = (numeric / 10000) % 100;
-    int month = ( numeric / 100) % 100;
+    int month = (numeric / 100) % 100;
     int year = numeric % 100 + 2000;
 
     localDate = LocalDate.of(year, month, day);
@@ -38,7 +38,7 @@ public class DateType implements Type {
   }
 
   @Override
-  public String toString(){
+  public String toString() {
     return localDate.toString();
   }
 

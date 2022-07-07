@@ -30,6 +30,7 @@ import org.jolokia.jvmagent.JolokiaServer;
 import org.jolokia.jvmagent.JolokiaServerConfig;
 
 public class JolokaManager {
+
   private final Logger logger = LoggerFactory.getLogger(JolokaManager.class);
 
   private final ConfigurationProperties properties;
@@ -50,8 +51,8 @@ public class JolokaManager {
     }
   }
 
-  public void stop(){
-    if(startup != null){
+  public void stop() {
+    if (startup != null) {
       startup.stop();
     }
   }
@@ -60,19 +61,19 @@ public class JolokaManager {
 
     private JolokiaServer jolokiaServer;
 
-    public void stop(){
+    public void stop() {
       if (jolokiaServer != null) {
         try {
           jolokiaServer.stop();
         } catch (Exception e) {
-         // Do not log this, Jolokia throws a NPE every time we shut down
+          // Do not log this, Jolokia throws a NPE every time we shut down
         }
       }
     }
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      for(Entry<String, Object> entry: properties.entrySet()){
+      for (Entry<String, Object> entry : properties.entrySet()) {
         map.put(entry.getKey(), entry.getValue().toString());
       }
       JolokiaServerConfig config = new JolokiaServerConfig(map);

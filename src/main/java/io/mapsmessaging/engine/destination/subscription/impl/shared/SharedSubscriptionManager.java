@@ -34,7 +34,7 @@ public class SharedSubscriptionManager {
     completionHandlerMap = new BoundedMessageStateManager();
   }
 
-  public String getName(){
+  public String getName() {
     return name;
   }
 
@@ -44,7 +44,7 @@ public class SharedSubscriptionManager {
     }
   }
 
-  public BoundedMessageStateManager getMessageStateManager(){
+  public BoundedMessageStateManager getMessageStateManager() {
     return completionHandlerMap;
   }
 
@@ -60,12 +60,12 @@ public class SharedSubscriptionManager {
     return activeSubscriptions.remove(name);
   }
 
-  public boolean isEmpty(){
+  public boolean isEmpty() {
     return activeSubscriptions.isEmpty();
   }
 
-  public void complete(long messageIdentifier){
-    for(SharedSubscription sharedSubscription:activeSubscriptions.values()){
+  public void complete(long messageIdentifier) {
+    for (SharedSubscription sharedSubscription : activeSubscriptions.values()) {
       sharedSubscription.expired(messageIdentifier);
     }
   }

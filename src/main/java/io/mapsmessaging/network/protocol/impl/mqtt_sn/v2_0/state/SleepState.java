@@ -66,7 +66,7 @@ public class SleepState implements State {
 
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.CONNECT:
-        Connect connect = (Connect)mqtt;
+        Connect connect = (Connect) mqtt;
         MQTT_SNPacket response = new ConnAck(ReasonCodes.Success, connect.getSessionExpiry(), session.getName(), session.isRestored());
         sleepDuration = 0;
         clearReaper();
@@ -77,7 +77,7 @@ public class SleepState implements State {
       case MQTT_SNPacket.DISCONNECT:
         Disconnect disconnect = (Disconnect) mqtt;
         if (disconnect.getExpiry() > 0) {
-          sleepDuration = (int)disconnect.getExpiry();
+          sleepDuration = (int) disconnect.getExpiry();
           clearReaper();
         } else {
           mqtt.setCallback(() -> {
@@ -96,7 +96,7 @@ public class SleepState implements State {
           clearReaper();
           reaperRunner = SimpleTaskScheduler.getInstance().schedule(new Reaper(), sleepDuration, TimeUnit.SECONDS);
         }
-        int maxMessages = ((PingRequest)mqtt).getMaxMessages();
+        int maxMessages = ((PingRequest) mqtt).getMaxMessages();
         stateEngine.emptyQueue(maxMessages, () ->
             protocol.writeFrame(new PingResponse(stateEngine.getQueueSize()))
         );
@@ -123,6 +123,7 @@ public class SleepState implements State {
   }
 
   public final class Reaper implements Runnable {
+
     @Override
     public void run() {
       try {

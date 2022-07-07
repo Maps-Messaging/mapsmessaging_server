@@ -39,7 +39,7 @@ public class ConnAckListener extends BaseConnectionListener {
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sess, false, 30000, user, pass.toCharArray());
     protocol.setKeepAlive(30000);
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
-    sessionFuture.thenApply(session1 ->{
+    sessionFuture.thenApply(session1 -> {
       session1.resumeState();
       protocol.setConnected(true);
       return session1;
@@ -52,7 +52,7 @@ public class ConnAckListener extends BaseConnectionListener {
         endPoint.close();
         protocol.setConnected(false);
       } catch (IOException e) {
-        MalformedException malformedException =  new MalformedException();
+        MalformedException malformedException = new MalformedException();
         malformedException.initCause(e);
         throw malformedException;
       }

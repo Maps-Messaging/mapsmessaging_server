@@ -97,7 +97,8 @@ public class SessionSharedSubscription extends Subscription {
   public int getPending() {
     return sharedSubscription.getPending();
   }
-  public boolean canSend(){
+
+  public boolean canSend() {
     return acknowledgementController.canSend();
   }
 
@@ -194,7 +195,7 @@ public class SessionSharedSubscription extends Subscription {
     ThreadContext.put("endpoint", endpoint);
     ThreadContext.put("version", version);
     acknowledgementController.sent(message);
-    if(!sharedSubscription.hasAtRestMessages()){
+    if (!sharedSubscription.hasAtRestMessages()) {
       message.setLastMessage(true);
     }
     sessionImpl.getMessageCallback().sendMessage(sharedSubscription.getDestinationImpl(), this, message, completionTask);

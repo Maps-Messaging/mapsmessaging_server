@@ -8,7 +8,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class MD5PacketSecurity extends HmacPacketSecurity {
 
-  public MD5PacketSecurity(){
+  public MD5PacketSecurity() {
   }
 
   protected MD5PacketSecurity(SignatureManager stamper, byte[] key) throws NoSuchAlgorithmException, InvalidKeyException {

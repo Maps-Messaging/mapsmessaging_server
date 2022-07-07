@@ -44,16 +44,15 @@ public class SubscribeListener extends PacketListener {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
     String topicName;
-    short topicId =0;
+    short topicId = 0;
 
-    if(subscribe.getTopicIdType() == LONG_TOPIC_NAME ||
-        subscribe.getTopicIdType() == TOPIC_NAME){
+    if (subscribe.getTopicIdType() == LONG_TOPIC_NAME ||
+        subscribe.getTopicIdType() == TOPIC_NAME) {
       topicName = subscribe.getTopicName();
-    }
-    else{
+    } else {
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
-      if(subscribe.getTopicIdType() == TOPIC_PRE_DEFINED_ID){
-        topicId = (short)subscribe.getTopicIdType();
+      if (subscribe.getTopicIdType() == TOPIC_PRE_DEFINED_ID) {
+        topicId = (short) subscribe.getTopicIdType();
       }
     }
     if (topicName != null) {
@@ -80,7 +79,7 @@ public class SubscribeListener extends PacketListener {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
         SubAck subAck = new SubAck(
-            topicId,  (short) subscribe.getTopicIdType(),
+            topicId, (short) subscribe.getTopicIdType(),
             subscribe.getQoS(),
             subscribe.getMsgId(),
             ReasonCodes.Success);
@@ -89,7 +88,7 @@ public class SubscribeListener extends PacketListener {
         return subAck;
       } catch (IOException e) {
         SubAck subAck = new SubAck(
-            topicId,  TOPIC_NAME,
+            topicId, TOPIC_NAME,
             subscribe.getQoS(),
             subscribe.getMsgId(),
             ReasonCodes.InvalidTopicAlias);
@@ -98,7 +97,7 @@ public class SubscribeListener extends PacketListener {
       }
     } else {
       SubAck subAck = new SubAck(
-          (short)0,  TOPIC_NAME,
+          (short) 0, TOPIC_NAME,
           subscribe.getQoS(),
           subscribe.getMsgId(),
           ReasonCodes.InvalidTopicAlias);

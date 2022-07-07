@@ -32,7 +32,7 @@ public class NoOpEndPointConnectionFactory implements EndPointConnectionFactory 
   @Override
   public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)
       throws IOException {
-    EndPoint endPoint = new NoOpEndPoint(generateID(),endPointServerStatus, jmxPath);
+    EndPoint endPoint = new NoOpEndPoint(generateID(), endPointServerStatus, jmxPath);
     callback.connected(endPoint);
     return endPoint;
   }

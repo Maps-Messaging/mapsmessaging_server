@@ -32,7 +32,7 @@ public abstract class MessageProcessor extends SubscriptionTask {
   protected final DestinationSubscriptionManager subscriptionManager;
   private final long bucketId;
 
-  protected MessageProcessor(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager,MessageManager messageManager, long bucketId){
+  protected MessageProcessor(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager, MessageManager messageManager, long bucketId) {
     super();
     this.destination = destination;
     this.messageManager = messageManager;
@@ -45,16 +45,15 @@ public abstract class MessageProcessor extends SubscriptionTask {
   @Override
   public Response taskCall() throws Exception {
     long counter = 0;
-    while(true) {
-      long messageId =messageManager.getNext(bucketId);
-      if(messageId > -1) {
+    while (true) {
+      long messageId = messageManager.getNext(bucketId);
+      if (messageId > -1) {
         Message message = destination.getMessage(messageId);
-        if(message != null){
+        if (message != null) {
           counter += processMessage(message);
         }
         messageManager.remove(bucketId, messageId);
-      }
-      else{
+      } else {
         break;
       }
     }

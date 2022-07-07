@@ -32,9 +32,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This is a helper class to load resources from the classpath
  *
- *  * @since 1.0
- *  * @author Matthew Buckton
- *  * @version 1.0
+ * * @since 1.0 * @author Matthew Buckton * @version 1.0
  */
 public class ResourceList {
 
@@ -46,7 +44,7 @@ public class ResourceList {
    *
    * @param pattern the pattern to match
    * @return the resources in the order they are found
-   * @throws IOException  if there was an issue loading values from the resource bundle
+   * @throws IOException if there was an issue loading values from the resource bundle
    */
   public static Collection<String> getResources(@NonNull @NotNull final Pattern pattern) throws IOException {
     final ArrayList<String> returnValue = new ArrayList<>();

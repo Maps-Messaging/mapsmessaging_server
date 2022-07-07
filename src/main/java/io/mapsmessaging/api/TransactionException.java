@@ -23,8 +23,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Raised if any transactional exceptions are raised due to invalid contexts, like transaction already exists or its
- * been completed so no further actions can occur
+ * Raised if any transactional exceptions are raised due to invalid contexts, like transaction already exists or its been completed so no further actions can occur
  */
 public class TransactionException extends IOException {
 

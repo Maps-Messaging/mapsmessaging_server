@@ -17,11 +17,11 @@
  */
 
 /**
- * The utilities package contains a range of classes and sub packages that can be used in a generic way and are not
- * specific to a messaging server. Things like collections, bitsets, locks and JMX node registration, to name a few
+ * The utilities package contains a range of classes and sub packages that can be used in a generic way and are not specific to a messaging server. Things like collections,
+ * bitsets, locks and JMX node registration, to name a few
  *
- * @since 1.0
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 package io.mapsmessaging.utilities;

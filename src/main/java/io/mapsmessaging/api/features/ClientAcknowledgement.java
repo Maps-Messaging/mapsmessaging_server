@@ -32,27 +32,27 @@ public enum ClientAcknowledgement {
       "Server side acknowledgement"
   ),
   /**
-   * Each message MUST be manually acknowledged by calling the SubscribedEventManager.ackReceived or
-   * SubscribedEventManager.rollbackReceived. Once the number of in-flight messages is exceeded the
-   * messaging engine will stop delivering messages.
+   * Each message MUST be manually acknowledged by calling the SubscribedEventManager.ackReceived or SubscribedEventManager.rollbackReceived. Once the number of in-flight messages
+   * is exceeded the messaging engine will stop delivering messages.
    */
   INDIVIDUAL(
       1,
       "Individual messages need to be acknowledged"
   ),
   /**
-   * This is similar to INDIVIDUAL, except, that ALL messages from the MessageId, supplied in the ackReceived or the
-   * rollbackReceived, to the lowest Message ID will be processed. Say you have 10 events in-flight such as
-   * 1, 2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 and 10. A call to ackReceived(5) is made then messages 1,2,3,4 and 5 will be acknowledged
-   * rather than just 5.
+   * This is similar to INDIVIDUAL, except, that ALL messages from the MessageId, supplied in the ackReceived or the rollbackReceived, to the lowest Message ID will be processed.
+   * Say you have 10 events in-flight such as 1, 2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 and 10. A call to ackReceived(5) is made then messages 1,2,3,4 and 5 will be acknowledged rather than just
+   * 5.
    */
   BLOCK(
       2,
       "All messages up to an known point are acknowledged"
   );
 
-  @Getter private final int value;
-  @Getter private final String description;
+  @Getter
+  private final int value;
+  @Getter
+  private final String description;
 
   ClientAcknowledgement(int value, String description) {
     this.value = value;

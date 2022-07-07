@@ -55,7 +55,7 @@ public class WriteTask implements Selectable {
     coalesceSize = 100;
   }
 
-  public int getCoalesceSize(){
+  public int getCoalesceSize() {
     return coalesceSize;
   }
 
@@ -98,26 +98,25 @@ public class WriteTask implements Selectable {
       packet = new Packet(bufferSize, false);
     }
 
-    private void processSelection(){
-      if(!packet.hasData()){
-        int count =0;
+    private void processSelection() {
+      if (!packet.hasData()) {
+        int count = 0;
         ServerPacket serverPacket = outboundFrame.poll();
-        while(count < coalesceSize && serverPacket != null){
+        while (count < coalesceSize && serverPacket != null) {
           int startPos = packet.position();
           try {
             serverPacket.packFrame(packet);
             completedFrames.add(serverPacket);
             count++;
-          }
-          catch(BufferOverflowException overflow){
+          } catch (BufferOverflowException overflow) {
             selectorCallback.getEndPoint().incrementOverFlow();
             coalesceSize = count;
             packet.position(startPos);
-            ((LinkedList<ServerPacket>)outboundFrame).addFirst(serverPacket);
+            ((LinkedList<ServerPacket>) outboundFrame).addFirst(serverPacket);
             serverPacket = null;
             count = coalesceSize;
           }
-          if(count < coalesceSize) {
+          if (count < coalesceSize) {
             serverPacket = outboundFrame.poll();
           }
         }
@@ -125,13 +124,13 @@ public class WriteTask implements Selectable {
       }
       // Outstanding data in packet so lets empty it
       writeBuffer();
-      if(!packet.hasData()){
+      if (!packet.hasData()) {
         packet.clear();
-        while(!completedFrames.isEmpty()){
+        while (!completedFrames.isEmpty()) {
           completedFrames.poll().complete();
         }
         // Completed the packet and the queue is empty, so cancel the write
-        if(outboundFrame.isEmpty()){
+        if (outboundFrame.isEmpty()) {
           cancel();
         }
       }

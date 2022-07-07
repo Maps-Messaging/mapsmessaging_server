@@ -40,19 +40,18 @@ public class ConnectedListener extends BaseConnectListener {
     // No version header supplied
     String versionHeader = connected.getHeader().get("version");
     float version = processVersion(engine, versionHeader);
-    if(Float.isNaN(version)){
+    if (Float.isNaN(version)) {
       return; // Unable to process the versioning
     }
 
     CompletableFuture<Session> future = createSession(engine).thenApply(session -> {
-      try{
+      try {
         session.login();
         engine.setSession(session);
         engine.getProtocol().setTransformation(TransformationManager.getInstance().getTransformation(engine.getProtocol().getName(), session.getSecurityContext().getUsername()));
         engine.changeState(new ClientConnectedState());
         session.resumeState();
-      }
-      catch (Exception failedAuth) {
+      } catch (Exception failedAuth) {
         handleFailedAuth(failedAuth, engine);
       }
       return null;
@@ -60,12 +59,12 @@ public class ConnectedListener extends BaseConnectListener {
 
     try {
       future.get();
-    } catch (InterruptedException|ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private CompletableFuture<Session> createSession( StateEngine engine) {
+  private CompletableFuture<Session> createSession(StateEngine engine) {
     SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), engine.getProtocol());
     scb.setPersistentSession(false);
     scb.setKeepAlive(120);

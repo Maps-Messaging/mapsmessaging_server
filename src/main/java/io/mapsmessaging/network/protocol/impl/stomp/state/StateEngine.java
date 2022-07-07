@@ -55,10 +55,9 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     this.protocolImpl = protocolImpl;
     destinationMap = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
-    if(protocolImpl.getEndPoint().isClient()){
+    if (protocolImpl.getEndPoint().isClient()) {
       currentState = new InitialClientState();
-    }
-    else{
+    } else {
       currentState = new InitialServerState();
     }
     activeSubscriptions = new LinkedHashMap<>();
@@ -142,7 +141,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
   }
 
   public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
-    if(context.getFilter().startsWith("/queue") || context.getFilter().startsWith("queue")){
+    if (context.getFilter().startsWith("/queue") || context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE); // See if we have a queue
     }
     SubscribedEventManager subscription = getSession().addSubscription(context);
@@ -169,15 +168,15 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     }
   }
 
-  public String getMapping(String destinationName){
+  public String getMapping(String destinationName) {
     String mappedDestination = destinationMap.get(destinationName);
-    if(mappedDestination == null){
+    if (mappedDestination == null) {
       mappedDestination = destinationName;
     }
     return mappedDestination;
   }
 
-  public Map<String, String> getMap(){
+  public Map<String, String> getMap() {
     return destinationMap;
   }
 

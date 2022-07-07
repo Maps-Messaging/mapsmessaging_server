@@ -60,12 +60,12 @@ public class SessionManager {
 
   public SessionManager(SecurityManager security, DestinationManager destinationManager, DB dataStore, int pipelineSize) {
     this.dataStore = dataStore;
-    disconnectedSessions =  new LongAdder();
+    disconnectedSessions = new LongAdder();
     connectedSessions = new LongAdder();
     expiredSessions = new LongAdder();
     sessionPipeLines = new SessionManagerPipeLine[pipelineSize];
     storeLookup = new SubscriptionStoreLookup(dataStore);
-    Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, security, connectedSessions, disconnectedSessions, expiredSessions ));
+    Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, security, connectedSessions, disconnectedSessions, expiredSessions));
     securityManager = security;
     willTaskManager = WillTaskManager.getInstance();
     willTaskManager.setMap(dataStore.hashMap(WILLTASKS, Serializer.STRING, new MapDBSerializer<>(WillDetails.class)).createOrOpen());
@@ -109,7 +109,7 @@ public class SessionManager {
     sessionManagerJMX.close();
   }
 
-  public Future<?> submit(String sessionId,  Callable<?> task){
+  public Future<?> submit(String sessionId, Callable<?> task) {
     return sessionPipeLines[getPipeLineIndex(sessionId)].submit(task);
   }
 
@@ -135,7 +135,7 @@ public class SessionManager {
   //<editor-fold desc="Session status API">
   public boolean hasSessions() {
     for (SessionManagerPipeLine pipeLine : sessionPipeLines) {
-      if(pipeLine.hasSessions()){
+      if (pipeLine.hasSessions()) {
         return true;
       }
     }
@@ -206,19 +206,19 @@ public class SessionManager {
   }
 
   SubscriptionController getIdleSubscriptions(String sessionId) {
-    return sessionPipeLines[ getPipeLineIndex(sessionId)].getIdleSubscriptions(sessionId);
+    return sessionPipeLines[getPipeLineIndex(sessionId)].getIdleSubscriptions(sessionId);
   }
   //</editor-fold>
 
-  public long getConnected(){
+  public long getConnected() {
     return connectedSessions.sum();
   }
 
-  public long getDisconnected(){
+  public long getDisconnected() {
     return disconnectedSessions.sum();
   }
 
-  public long getTotalExpired(){
+  public long getTotalExpired() {
     return expiredSessions.sum();
   }
 

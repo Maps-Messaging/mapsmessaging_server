@@ -37,7 +37,7 @@ public class PropertiesEncoder {
   private static final List<JMSProperty> encodingList;
   protected static final List<String> propertyNames;
 
-  static{
+  static {
     encodingList = new ArrayList<>();
     encodingList.add(new JMSReplyToGroupId());
     encodingList.add(new JMSXUserID());
@@ -49,41 +49,41 @@ public class PropertiesEncoder {
     encodingList.add(new JMSXGroupID());
     encodingList.add(new JMSCorrelationID());
     propertyNames = new ArrayList<>();
-    for(JMSProperty jmsProperty:encodingList){
+    for (JMSProperty jmsProperty : encodingList) {
       propertyNames.add(jmsProperty.getName());
     }
   }
 
-  public static void unpackProperties(@NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map, @NonNull @NotNull MessageBuilder messageBuilder){
-    if(properties.getContentType() != null){
+  public static void unpackProperties(@NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map, @NonNull @NotNull MessageBuilder messageBuilder) {
+    if (properties.getContentType() != null) {
       messageBuilder.setContentType(properties.getContentType().toString());
     }
-    if(properties.getAbsoluteExpiryTime() != null){
+    if (properties.getAbsoluteExpiryTime() != null) {
       long expiry = properties.getAbsoluteExpiryTime().getTime();
       expiry = (expiry - System.currentTimeMillis());
       messageBuilder.setMessageExpiryInterval(expiry, TimeUnit.MILLISECONDS);
     }
 
-    if(properties.getCreationTime() != null){
+    if (properties.getCreationTime() != null) {
       messageBuilder.setCreation(properties.getCreationTime().getTime());
-    }
-    else{
+    } else {
       messageBuilder.setCreation(System.currentTimeMillis());
     }
-    
-    for(JMSProperty jmsProperty:encodingList) {
+
+    for (JMSProperty jmsProperty : encodingList) {
       jmsProperty.unpack(messageBuilder, properties, map);
     }
   }
 
-  public static void packProperties(@NonNull @NotNull Properties properties, @NonNull @NotNull Message message){
+  public static void packProperties(@NonNull @NotNull Properties properties, @NonNull @NotNull Message message) {
     for (JMSProperty jmsProperty : encodingList) {
       jmsProperty.pack(message, properties);
     }
     properties.setCreationTime(new Date(message.getCreation()));
   }
 
-  private PropertiesEncoder(){}
+  private PropertiesEncoder() {
+  }
 
   static class JMSReplyToGroupId implements JMSProperty {
 
@@ -114,21 +114,22 @@ public class PropertiesEncoder {
     }
   }
 
-  static class JMSXUserID implements JMSProperty{
+  static class JMSXUserID implements JMSProperty {
+
     private static final String PROPERTY = "JMSXUserID";
 
-    public JMSXUserID(){
+    public JMSXUserID() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getUserId() != null){
+      if (properties.getUserId() != null) {
         map.put(PROPERTY, new TypedData(new String(properties.getUserId().getArray())));
       }
     }
@@ -137,26 +138,27 @@ public class PropertiesEncoder {
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map.containsKey(PROPERTY)) {
-        properties.setUserId(new Binary( ((String)map.get(PROPERTY).getData()).getBytes()));
+        properties.setUserId(new Binary(((String) map.get(PROPERTY).getData()).getBytes()));
       }
     }
   }
-  
-  static class JMSType implements JMSProperty{
+
+  static class JMSType implements JMSProperty {
+
     private static final String PROPERTY = "JMSType";
 
-    public JMSType(){
+    public JMSType() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getSubject() != null){
+      if (properties.getSubject() != null) {
         map.put(PROPERTY, new TypedData(properties.getSubject()));
       }
     }
@@ -165,26 +167,27 @@ public class PropertiesEncoder {
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map.containsKey(PROPERTY)) {
-        properties.setSubject((String)map.get(PROPERTY).getData());
+        properties.setSubject((String) map.get(PROPERTY).getData());
       }
     }
   }
-  
-  static class JMSDestination implements JMSProperty{
+
+  static class JMSDestination implements JMSProperty {
+
     private static final String PROPERTY = "JMSDestination";
 
-    public JMSDestination(){
+    public JMSDestination() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getTo() != null){
+      if (properties.getTo() != null) {
         map.put(PROPERTY, new TypedData(properties.getTo()));
       }
     }
@@ -193,26 +196,27 @@ public class PropertiesEncoder {
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map.containsKey(PROPERTY)) {
-        properties.setTo((String)map.get(PROPERTY).getData());
+        properties.setTo((String) map.get(PROPERTY).getData());
       }
     }
   }
-  
-  static class JMSReplyTo implements JMSProperty{
+
+  static class JMSReplyTo implements JMSProperty {
+
     private static final String PROPERTY = "JMSReplyTo";
 
-    public JMSReplyTo(){
+    public JMSReplyTo() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getReplyTo() != null){
+      if (properties.getReplyTo() != null) {
         map.put(PROPERTY, new TypedData(properties.getReplyTo()));
       }
     }
@@ -221,27 +225,27 @@ public class PropertiesEncoder {
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
       if (map.containsKey(PROPERTY)) {
-        properties.setReplyTo((String)map.get(PROPERTY).getData());
+        properties.setReplyTo((String) map.get(PROPERTY).getData());
       }
     }
   }
-  
-  static class JMSMessageID implements JMSProperty{
+
+  static class JMSMessageID implements JMSProperty {
 
     private static final String PROPERTY = "JMSMessageID";
 
-    public JMSMessageID(){
+    public JMSMessageID() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getMessageId() != null){
+      if (properties.getMessageId() != null) {
         map.put(PROPERTY, new TypedData(properties.getMessageId()));
       }
     }
@@ -249,27 +253,28 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if ( map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setMessageId(map.get(PROPERTY).getData());
       }
     }
   }
 
-  static class JMSXGroupSeq implements JMSProperty{
+  static class JMSXGroupSeq implements JMSProperty {
+
     private static final String PROPERTY = "JMSXGroupSeq";
 
-    public JMSXGroupSeq(){
+    public JMSXGroupSeq() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getGroupSequence() != null){
+      if (properties.getGroupSequence() != null) {
         map.put(PROPERTY, new TypedData(properties.getGroupSequence().intValue()));
       }
     }
@@ -282,22 +287,23 @@ public class PropertiesEncoder {
       }
     }
   }
-  
-  static class JMSXGroupID implements JMSProperty{
+
+  static class JMSXGroupID implements JMSProperty {
+
     private static final String PROPERTY = "JMSXGroupID";
 
-    public JMSXGroupID(){
+    public JMSXGroupID() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getGroupId() != null){
+      if (properties.getGroupId() != null) {
         map.put(PROPERTY, new TypedData(properties.getGroupId()));
       }
     }
@@ -305,33 +311,33 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       Map<String, TypedData> map = message.getDataMap();
-      if ( map.containsKey(PROPERTY)) {
+      if (map.containsKey(PROPERTY)) {
         properties.setGroupId(map.get(PROPERTY).getData().toString());
       }
     }
   }
-  
-  static class JMSCorrelationID implements JMSProperty{
+
+  static class JMSCorrelationID implements JMSProperty {
+
     private static final String PROPERTY = "JMSCorrelationID";
-    
-    public JMSCorrelationID(){
+
+    public JMSCorrelationID() {
       //static function
     }
 
     @Override
-    public String getName(){
+    public String getName() {
       return PROPERTY;
     }
 
     @Override
     public void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map) {
-      if(properties.getCorrelationId() != null){
+      if (properties.getCorrelationId() != null) {
         Object obj = properties.getCorrelationId();
-        if(obj instanceof Binary){
-          Binary binary = (Binary)obj;
+        if (obj instanceof Binary) {
+          Binary binary = (Binary) obj;
           messageBuilder.setCorrelationData(binary.getArray());
-        }
-        else {
+        } else {
           messageBuilder.setCorrelationData(obj.toString());
         }
       }
@@ -340,20 +346,22 @@ public class PropertiesEncoder {
     @Override
     public void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties) {
       byte[] correlation = message.getCorrelationData();
-      if(correlation != null) {
-        if(message.isCorrelationDataByteArray()) {
+      if (correlation != null) {
+        if (message.isCorrelationDataByteArray()) {
           properties.setCorrelationId(new Binary(correlation));
-        }
-        else{
+        } else {
           properties.setCorrelationId(new String(correlation));
         }
       }
     }
   }
 
-  interface JMSProperty{
+  interface JMSProperty {
+
     void unpack(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull Properties properties, @NonNull @NotNull Map<String, TypedData> map);
+
     void pack(@NonNull @NotNull Message message, @NonNull @NotNull Properties properties);
+
     String getName();
   }
 }

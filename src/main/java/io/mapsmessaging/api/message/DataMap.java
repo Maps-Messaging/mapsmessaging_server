@@ -29,7 +29,7 @@ public class DataMap extends LinkedHashMap<String, TypedData> {
 
   private transient Message message;
 
-  public DataMap(){
+  public DataMap() {
     super();
   }
 
@@ -37,18 +37,18 @@ public class DataMap extends LinkedHashMap<String, TypedData> {
     super(dataMap);
   }
 
-  protected void setMessage(Message message){
+  protected void setMessage(Message message) {
     this.message = message;
   }
 
   @Override
-  public int hashCode(){
+  public int hashCode() {
     return super.hashCode() + message.hashCode();
   }
 
   @Override
-  public boolean equals(Object val){
-    if(val instanceof DataMap){
+  public boolean equals(Object val) {
+    if (val instanceof DataMap) {
       return super.equals(val);
     }
     return false;
@@ -57,13 +57,13 @@ public class DataMap extends LinkedHashMap<String, TypedData> {
   @Override
   public TypedData get(Object key) {
     TypedData val = super.get(key);
-    if(val == null && message != null){
-      return lookup(message, (String)key);
+    if (val == null && message != null) {
+      return lookup(message, (String) key);
     }
     return val;
   }
 
-  private TypedData lookup(@NonNull @NotNull Message message, String key){
+  private TypedData lookup(@NonNull @NotNull Message message, String key) {
     return FieldInterceptor.getInstance().lookup(message, key);
   }
 

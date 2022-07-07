@@ -25,7 +25,7 @@ import io.mapsmessaging.network.io.Packet;
  */
 public class PingReq extends MQTTPacket {
 
-  public PingReq(){
+  public PingReq() {
     super(PINGREQ);
   }
 

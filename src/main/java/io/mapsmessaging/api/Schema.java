@@ -34,6 +34,6 @@ public class Schema extends Destination {
 
   @Override
   public String getFullyQualifiedNamespace() {
-    return "$schema/"+super.getFullyQualifiedNamespace();
+    return "$schema/" + super.getFullyQualifiedNamespace();
   }
 }

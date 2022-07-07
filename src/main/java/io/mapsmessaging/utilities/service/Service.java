@@ -20,9 +20,10 @@ package io.mapsmessaging.utilities.service;
 
 /**
  * Generic interface that all services can implement and provides a generic mechanism to query them
- * @since 1.0
+ *
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 public interface Service {
 

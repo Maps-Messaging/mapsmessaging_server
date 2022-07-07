@@ -33,17 +33,19 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.ObjectInstance;
 
 public class NetworkConfigJMX implements DynamicMBean {
+
   protected final ObjectInstance mbean;
   protected final List<String> typePath;
   private final NetworkConfig networkConfig;
   private final MBeanInfo mBeanInfo;
 
-  public NetworkConfigJMX(){
+  public NetworkConfigJMX() {
     mbean = null;
     typePath = null;
     networkConfig = null;
     mBeanInfo = null;
   }
+
   //<editor-fold desc="Life cycle functions">
   public NetworkConfigJMX(List<String> parent, NetworkConfig networkConfig) {
     this.networkConfig = networkConfig;
@@ -58,7 +60,7 @@ public class NetworkConfigJMX implements DynamicMBean {
     List<String> keyList = new ArrayList<>(networkConfig.getProperties().keySet());
 
     MBeanAttributeInfo[] attributeInfos = new MBeanAttributeInfo[keyList.size()];
-    for(int x=0;x<keyList.size();x++){
+    for (int x = 0; x < keyList.size(); x++) {
       String key = keyList.get(x);
       attributeInfos[x] = new MBeanAttributeInfo(key, "java.lang.String", "Configuration Entry", true, false, false);
     }
@@ -74,23 +76,22 @@ public class NetworkConfigJMX implements DynamicMBean {
     mbean = JMXManager.getInstance().register(this, typePath);
   }
 
-  public void close(){
+  public void close() {
     JMXManager.getInstance().unregister(mbean);
   }
 
   @Override
-  public Object getAttribute(String attribute)  {
-    if(attribute.toLowerCase().contains("pass")){
+  public Object getAttribute(String attribute) {
+    if (attribute.toLowerCase().contains("pass")) {
       return "**********";
-    }
-    else {
+    } else {
       return networkConfig.getProperties().get(attribute);
     }
   }
 
   @Override
   public void setAttribute(Attribute attribute) throws AttributeNotFoundException {
-    throw new AttributeNotFoundException("Attribute not writable "+attribute.getName());
+    throw new AttributeNotFoundException("Attribute not writable " + attribute.getName());
   }
 
   @Override
@@ -112,7 +113,7 @@ public class NetworkConfigJMX implements DynamicMBean {
   }
 
   @Override
-  public Object invoke(String actionName, Object[] params, String[] signature)  {
+  public Object invoke(String actionName, Object[] params, String[] signature) {
     return null;
   }
 

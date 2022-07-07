@@ -50,33 +50,33 @@ public class NetworkManagerJMX implements HealthMonitor {
   }
 
   //<editor-fold desc="JMX Bean functions">
-  @JMXBeanOperation(name = "start", description ="Starts all End Point manager and will start accepting incoming connections")
+  @JMXBeanOperation(name = "start", description = "Starts all End Point manager and will start accepting incoming connections")
   public void start() {
     networkManager.startAll();
   }
 
-  @JMXBeanOperation(name = "stop", description ="Stops all the End Point managers")
+  @JMXBeanOperation(name = "stop", description = "Stops all the End Point managers")
   public void stop() {
     networkManager.stopAll();
   }
 
-  @JMXBeanOperation(name = "pause", description ="Pauses all the End Point managers")
+  @JMXBeanOperation(name = "pause", description = "Pauses all the End Point managers")
   public void pause() {
     networkManager.pauseAll();
   }
 
-  @JMXBeanOperation(name = "resume", description ="Resumes all the End Point managers")
+  @JMXBeanOperation(name = "resume", description = "Resumes all the End Point managers")
   public void resume() {
     networkManager.resumeAll();
   }
 
-  @JMXBeanAttribute(name = "size", description ="The total number of End Points that have been configured")
+  @JMXBeanAttribute(name = "size", description = "The total number of End Points that have been configured")
   public int size() {
     return networkManager.size();
   }
   //</editor-fold>
 
-  @JMXBeanAttribute(name = "checkHealth", description ="Returns the total number of bytes sent")
+  @JMXBeanAttribute(name = "checkHealth", description = "Returns the total number of bytes sent")
   public HealthStatus checkHealth() {
     return new HealthStatus("Network Controller", LEVEL.INFO, "Network Controller seems ok", mbean.getObjectName().toString());
   }

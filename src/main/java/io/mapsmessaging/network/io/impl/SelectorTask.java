@@ -63,9 +63,9 @@ public class SelectorTask implements Selectable {
       int readDelay = -1;
       int readFragmentation = -1;
       boolean readDelayEnabled = properties.getBooleanProperty("enableReadDelayOnFragmentation", DefaultConstants.TCP_READ_DELAY_ENABLED);
-      if(readDelayEnabled){
+      if (readDelayEnabled) {
         readDelay = properties.getIntProperty("readDelayOnFragmentation", DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION);
-        if(readDelay <= 0){
+        if (readDelay <= 0) {
           readDelay = DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION;
         }
         readFragmentation = properties.getIntProperty("enableReadDelayOnFragmentation", DefaultConstants.TCP_READ_FRAGMENTATION_LIMIT);
@@ -108,7 +108,7 @@ public class SelectorTask implements Selectable {
 
   public void push(ServerPacket frame) {
     writeTask.push(frame);
-    if(logger.isInfoEnabled()) {
+    if (logger.isInfoEnabled()) {
       logger.log(ServerLogMessages.SELECTOR_PUSH_WRITE, frame.getClass(), writeTask.size());
     }
   }
@@ -168,7 +168,7 @@ public class SelectorTask implements Selectable {
       }
       if ((selection & OP_WRITE) != 0) {
         logger.log(ServerLogMessages.SELECTOR_WRITE_TASK);
-        writeTask.selected(selectable,selector, OP_WRITE);
+        writeTask.selected(selectable, selector, OP_WRITE);
       }
     }
   }

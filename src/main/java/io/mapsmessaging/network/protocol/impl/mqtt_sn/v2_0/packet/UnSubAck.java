@@ -43,7 +43,7 @@ public class UnSubAck extends MQTT_SNPacket {
     packet.put((byte) 5);
     packet.put((byte) UNSUBACK);
     MQTTPacket.writeShort(packet, msgId);
-    packet.put((byte)reasonCode.getValue());
+    packet.put((byte) reasonCode.getValue());
     return 5;
   }
 }

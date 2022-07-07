@@ -29,8 +29,8 @@ import io.mapsmessaging.network.io.impl.Selector;
 import java.io.IOException;
 
 /**
- * This class is simply a place holder where an EndPointServer object is required but we don't have
- * an end point. For example, locally connected protocols that have no network requirements
+ * This class is simply a place holder where an EndPointServer object is required but we don't have an end point. For example, locally connected protocols that have no network
+ * requirements
  */
 public class NoOpEndPointServer extends EndPointServer {
 

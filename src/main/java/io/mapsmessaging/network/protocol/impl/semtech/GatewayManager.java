@@ -27,31 +27,31 @@ public class GatewayManager {
   private final int maxQueued;
   private final Future<?> scheduledTask;
 
-  public GatewayManager(Session session, String inbound, String outbound, int maxQueued){
+  public GatewayManager(Session session, String inbound, String outbound, int maxQueued) {
     gatewayMap = new ConcurrentHashMap<>();
     this.session = session;
     this.inbound = inbound;
     this.outbound = outbound;
     this.maxQueued = maxQueued;
-    scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new TimeoutManager(),30, 30, TimeUnit.SECONDS);
+    scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new TimeoutManager(), 30, 30, TimeUnit.SECONDS);
   }
 
-  public void close(){
+  public void close() {
     scheduledTask.cancel(true);
   }
 
   public GatewayInfo getInfo(byte[] gatewayIdentifier) throws IOException {
     GatewayInfo info = gatewayMap.get(dumpIdentifier(gatewayIdentifier));
-    if(info == null){
+    if (info == null) {
       info = createInfo(gatewayIdentifier);
     }
     info.setLastAccess(System.currentTimeMillis());
     return info;
   }
 
-  public GatewayInfo getInfo(String gatewayIdentifier){
+  public GatewayInfo getInfo(String gatewayIdentifier) {
     GatewayInfo info = gatewayMap.get(gatewayIdentifier);
-    if(info != null){
+    if (info != null) {
       info.setLastAccess(System.currentTimeMillis());
     }
     return info;
@@ -87,25 +87,26 @@ public class GatewayManager {
     StringBuilder sb = new StringBuilder();
     for (byte b : gatewayIdentifier) {
       String t = Integer.toHexString(b & 0xff);
-      if(t.length() == 1){
-        t = "0"+t;
+      if (t.length() == 1) {
+        t = "0" + t;
       }
       sb.append(t);
     }
     return sb.toString();
   }
-  private final class TimeoutManager implements Runnable{
+
+  private final class TimeoutManager implements Runnable {
 
     @Override
     public void run() {
       long timeout = System.currentTimeMillis() - 600000;
       List<GatewayInfo> timedOut = new ArrayList<>();
-      for(GatewayInfo info:gatewayMap.values()){
-        if(info.getLastAccess() < timeout){
+      for (GatewayInfo info : gatewayMap.values()) {
+        if (info.getLastAccess() < timeout) {
           timedOut.add(info);
         }
       }
-      for(GatewayInfo old:timedOut){
+      for (GatewayInfo old : timedOut) {
         old.close(session);
         gatewayMap.remove(old.getName());
       }

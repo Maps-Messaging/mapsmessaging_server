@@ -91,7 +91,7 @@ public class ReadTask implements Selectable {
         }
       }
     } catch (IOException e) {
-      if(!(e.getMessage().equalsIgnoreCase("Socket closed") || e.getMessage().equalsIgnoreCase("Connection reset"))) {
+      if (!(e.getMessage().equalsIgnoreCase("Socket closed") || e.getMessage().equalsIgnoreCase("Connection reset"))) {
         logger.log(READ_TASK_PACKET_EXCEPTION, e);
       }
       closeProtocol();
@@ -106,7 +106,7 @@ public class ReadTask implements Selectable {
   void handleDataToProcess(int response) throws IOException {
     packet.flip();
     logger.log(READ_TASK_READ_PROCESSING, response, packet);
-    if(!selectorCallback.processPacket(packet) && packet.hasData()){
+    if (!selectorCallback.processPacket(packet) && packet.hasData()) {
       endPoint.incrementUnderFlow();
       underflow++;
     }
@@ -163,15 +163,16 @@ public class ReadTask implements Selectable {
     }
   }
 
-  class ScheduledRead implements Runnable{
+  class ScheduledRead implements Runnable {
+
     private final Selectable selectable;
 
 
-    ScheduledRead(Selectable selectable){
+    ScheduledRead(Selectable selectable) {
       this.selectable = selectable;
     }
 
-    public void run(){
+    public void run() {
       try {
         endPoint.register(SelectionKey.OP_READ, selectable);
       } catch (IOException e) {

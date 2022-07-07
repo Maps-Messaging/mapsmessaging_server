@@ -34,17 +34,16 @@ public class SessionSubscriptionJMX {
   private final ObjectInstance mbean;
   private final DestinationSubscription subscription;
 
-  public SessionSubscriptionJMX(List<String> parent, DestinationImpl destination, DestinationSubscription subscription){
+  public SessionSubscriptionJMX(List<String> parent, DestinationImpl destination, DestinationSubscription subscription) {
     List<String> local = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
-    local.add("destination="+destination.getFullyQualifiedNamespace());
+    local.add("destination=" + destination.getFullyQualifiedNamespace());
     this.subscription = subscription;
     mbean = JMXManager.getInstance().register(this, local);
   }
 
-  public void close(){
+  public void close() {
     JMXManager.getInstance().unregister(mbean);
   }
-
 
 
 }

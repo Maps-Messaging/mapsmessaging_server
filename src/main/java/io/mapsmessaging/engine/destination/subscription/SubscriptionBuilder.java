@@ -37,19 +37,20 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 
 public abstract class SubscriptionBuilder {
+
   private static final Logger logger = LoggerFactory.getLogger(SubscriptionBuilder.class);
 
   protected final SubscriptionContext context;
   protected final DestinationImpl destination;
   protected final ParserExecutor parserExecutor;
 
-  protected SubscriptionBuilder( DestinationImpl destination, SubscriptionContext context) throws IOException {
+  protected SubscriptionBuilder(DestinationImpl destination, SubscriptionContext context) throws IOException {
     this.context = context;
     this.destination = destination;
     this.parserExecutor = compileParser(context.getSelector());
   }
 
-  protected SubscriptionBuilder( DestinationImpl destination, SubscriptionContext context, SubscriptionContext parent) throws IOException {
+  protected SubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, SubscriptionContext parent) throws IOException {
     this.context = context;
     this.destination = destination;
     String selector = context.getSelector();
@@ -57,17 +58,17 @@ public abstract class SubscriptionBuilder {
     this.parserExecutor = compileParser(combineSelectors(selector, parentSelector));
   }
 
-  private String combineSelectors(String lhs, String rhs){
+  private String combineSelectors(String lhs, String rhs) {
     StringBuilder sb = new StringBuilder();
     boolean hasLhs = false;
-    if(lhs != null && lhs.length() > 0){
+    if (lhs != null && lhs.length() > 0) {
       sb.append(lhs).append(" ");
       hasLhs = true;
     }
 
-    if(rhs != null && rhs.length() > 0){
-      if(hasLhs){
-        sb.append( " and ");
+    if (rhs != null && rhs.length() > 0) {
+      if (hasLhs) {
+        sb.append(" and ");
       }
       sb.append(rhs);
     }
@@ -91,8 +92,8 @@ public abstract class SubscriptionBuilder {
     }
   }
 
-  protected CreditManager createCreditManager(SubscriptionContext context){
-    switch(context.getCreditHandler()){
+  protected CreditManager createCreditManager(SubscriptionContext context) {
+    switch (context.getCreditHandler()) {
       case CLIENT:
         return new ClientCreditManager(context.getReceiveMaximum());
 
@@ -111,8 +112,7 @@ public abstract class SubscriptionBuilder {
         logger.log(ServerLogMessages.SUBSCRIPTION_MGR_SELECTOR_EXCEPTION, context.getSelector(), e);
         throw new IOException("Failed to parse selector", e);
       }
-    }
-    else{
+    } else {
       parser = null;
     }
     return parser;

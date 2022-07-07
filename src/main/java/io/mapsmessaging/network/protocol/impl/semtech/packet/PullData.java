@@ -17,12 +17,8 @@ import lombok.ToString;
  * When the gateway initialize the exchange, the network route towards the server will open and will allow for packets to flow both directions. The gateway must periodically send
  * PULL_DATA packets to be sure the network route stays open for the server to be used at any time.
  *
- * Bytes  | Function
- * :------:|---------------------------------------------------------------------
- * 0      | protocol version = 2
- * 1-2    | random token
- * 3      | PULL_DATA identifier 0x02
- * 4-11   | Gateway unique identifier (MAC address)
+ * Bytes  | Function :------:|--------------------------------------------------------------------- 0      | protocol version = 2 1-2    | random token 3      | PULL_DATA
+ * identifier 0x02 4-11   | Gateway unique identifier (MAC address)
  */
 
 @ToString

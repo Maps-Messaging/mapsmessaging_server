@@ -25,7 +25,7 @@ import javax.net.ssl.SSLParameters;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class DTLSSessionManager  implements Closeable, SelectorCallback {
+public class DTLSSessionManager implements Closeable, SelectorCallback {
 
   private final AtomicLong uniqueId = new AtomicLong(0);
   private final UDPSessionManager<DTLSEndPoint> sessionMapping;
@@ -63,7 +63,7 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     UDPSessionState<DTLSEndPoint> state = sessionMapping.getState(packet.getFromAddress());
     DTLSEndPoint endPoint;
-    if(state == null){
+    if (state == null) {
       StateEngine stateEngine;
       SSLEngine sslEngine = sslContext.createSSLEngine();
       SSLParameters paras = sslEngine.getSSLParameters();
@@ -72,10 +72,9 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
       paras.setMaximumPacketSize(mtu);
       sslEngine.setSSLParameters(paras);
       stateEngine = new StateEngine(packet.getFromAddress(), sslEngine, this);
-      endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(),  server, stateEngine, managerMBean );
+      endPoint = new DTLSEndPoint(this, uniqueId.incrementAndGet(), packet.getFromAddress(), server, stateEngine, managerMBean);
       sessionMapping.addState(packet.getFromAddress(), new UDPSessionState<>(endPoint));
-    }
-    else{
+    } else {
       endPoint = state.getContext();
     }
 
@@ -88,15 +87,15 @@ public class DTLSSessionManager  implements Closeable, SelectorCallback {
     return true;
   }
 
-  public void close(SocketAddress clientId){
+  public void close(SocketAddress clientId) {
     UDPSessionState<DTLSEndPoint> state = sessionMapping.getState(clientId);
-    if(state != null && state.getContext() != null) {
+    if (state != null && state.getContext() != null) {
       protocolImplFactory.closed(state.getContext());
     }
   }
 
   @Override
-  public void close()  {
+  public void close() {
     sessionMapping.close();
     udpEndPoint.close();
   }

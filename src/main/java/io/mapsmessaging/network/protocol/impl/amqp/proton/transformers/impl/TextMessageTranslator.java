@@ -29,13 +29,13 @@ import org.jetbrains.annotations.NotNull;
 public class TextMessageTranslator extends BaseMessageTranslator {
 
   @Override
-  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage){
+  public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
-    if(body instanceof AmqpValue){
-      AmqpValue amqpBody = (AmqpValue)body;
+    if (body instanceof AmqpValue) {
+      AmqpValue amqpBody = (AmqpValue) body;
       Object data = amqpBody.getValue();
-      if(data instanceof String){
+      if (data instanceof String) {
         messageBuilder.setOpaqueData(data.toString().getBytes());
       }
     }
@@ -45,7 +45,7 @@ public class TextMessageTranslator extends BaseMessageTranslator {
   @Override
   public @NonNull @NotNull Message encode(@NonNull @NotNull io.mapsmessaging.api.message.Message message) {
     Message protonMessage = super.encode(message);
-    if(message.getOpaqueData() != null) {
+    if (message.getOpaqueData() != null) {
       AmqpValue body = new AmqpValue(new String(message.getOpaqueData()));
       protonMessage.setBody(body);
     }
@@ -53,7 +53,7 @@ public class TextMessageTranslator extends BaseMessageTranslator {
   }
 
   @Override
-  protected byte getType(){
+  protected byte getType() {
     return (byte) MessageTypes.TEXT.getValue();
   }
 

@@ -40,10 +40,9 @@ public class LinkFlowEventListener extends BaseEventListener {
     Link link = event.getLink();
     if (link instanceof Receiver) {
       topUp((Receiver) link);
-    }
-    else if (link instanceof Sender) {
+    } else if (link instanceof Sender) {
       Sender snd = (Sender) link;
-      if(snd.getSource() instanceof Source) {
+      if (snd.getSource() instanceof Source) {
         SubscribedEventManager eventManager = (SubscribedEventManager) snd.getContext();
         if (eventManager != null) {
           eventManager.updateCredit(snd.getCredit());

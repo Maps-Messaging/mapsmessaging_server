@@ -14,11 +14,12 @@ import java.util.ServiceLoader;
 public class PacketIntegrityFactory {
 
   private static final PacketIntegrityFactory instance = new PacketIntegrityFactory();
-  public static PacketIntegrityFactory getInstance(){
+
+  public static PacketIntegrityFactory getInstance() {
     return instance;
   }
 
-  public List<String> getAlgorithms(){
+  public List<String> getAlgorithms() {
     return new ArrayList<>(implementations.keySet());
   }
 
@@ -28,9 +29,9 @@ public class PacketIntegrityFactory {
     return implementations.get(algoritm).initialise(stamper, key);
   }
 
-  public PacketIntegrity createPacketIntegrity(ConfigurationProperties properties){
+  public PacketIntegrity createPacketIntegrity(ConfigurationProperties properties) {
     String hmacAlgorithm = properties.getProperty("HmacAlgorithm");
-    if(hmacAlgorithm != null) {
+    if (hmacAlgorithm != null) {
       String managerName = properties.getProperty("HmacManager", "Appender");
       SignatureManager manager;
       if (managerName.equalsIgnoreCase("appender")) {
@@ -48,10 +49,10 @@ public class PacketIntegrityFactory {
     return null;
   }
 
-  private PacketIntegrityFactory(){
+  private PacketIntegrityFactory() {
     implementations = new LinkedHashMap<>();
     ServiceLoader<PacketIntegrity> instanceList = ServiceLoader.load(PacketIntegrity.class);
-    for(PacketIntegrity packetIntegrity:instanceList){
+    for (PacketIntegrity packetIntegrity : instanceList) {
       implementations.put(packetIntegrity.getName(), packetIntegrity);
     }
   }

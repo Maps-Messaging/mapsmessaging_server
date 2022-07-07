@@ -35,7 +35,7 @@ public abstract class PacketListener {
   }
 
   void checkState(Session session) throws MalformedException {
-    if(session == null){
+    if (session == null) {
       throw new MalformedException("Connection has not yet been established");
     }
   }

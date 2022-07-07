@@ -50,9 +50,9 @@ public class MessageProperties {
     return this;
   }
 
-  public MessageProperty get(int propertyId){
-    for(MessageProperty property:properties){
-      if(property.getId() == propertyId){
+  public MessageProperty get(int propertyId) {
+    for (MessageProperty property : properties) {
+      if (property.getId() == propertyId) {
         return property;
       }
     }
@@ -86,9 +86,9 @@ public class MessageProperties {
   }
 
   @Override
-  public String toString(){
+  public String toString() {
     StringBuilder sb = new StringBuilder("Properties > ");
-    for(MessageProperty property:properties){
+    for (MessageProperty property : properties) {
       sb.append(property.toString()).append(", ");
     }
     return sb.toString();

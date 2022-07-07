@@ -22,7 +22,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import java.io.IOException;
 
-public class ReceiptListener  implements FrameListener {
+public class ReceiptListener implements FrameListener {
 
   @Override
   public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {

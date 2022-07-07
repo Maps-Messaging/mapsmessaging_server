@@ -18,11 +18,11 @@ public abstract class Handler {
 
   private static final Random TokenGenerator = new SecureRandom();
 
-  abstract void process(@NotNull @NonNull SemTechProtocol protocol,@NotNull @NonNull SemTechPacket packet);
+  abstract void process(@NotNull @NonNull SemTechProtocol protocol, @NotNull @NonNull SemTechPacket packet);
 
   public void sendMessage(SemTechProtocol protocol, GatewayInfo info, SocketAddress socketAddress) {
     MessageEvent messageEvent = info.getWaitingMessages().poll();
-    if(messageEvent != null) {
+    if (messageEvent != null) {
       byte[] raw = messageEvent.getMessage().getOpaqueData();
       if (protocol.getTransformation() != null) {
         raw = protocol.getTransformation().outgoing(messageEvent.getMessage());
@@ -40,7 +40,7 @@ public abstract class Handler {
     }
   }
 
-  private static int nextToken(){
+  private static int nextToken() {
     return (TokenGenerator.nextInt() % 0xffff);
   }
 }

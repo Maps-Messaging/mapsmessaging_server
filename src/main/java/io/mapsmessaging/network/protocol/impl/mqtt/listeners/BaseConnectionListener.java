@@ -35,8 +35,8 @@ public abstract class BaseConnectionListener extends PacketListener {
 
   protected CompletableFuture<Session> createSession(EndPoint endPoint, ProtocolImpl protocol, SessionContextBuilder scb, String sessionId) {
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(scb.build(), protocol);
-    future.thenApply(session ->{
-      try{
+    future.thenApply(session -> {
+      try {
         ((MQTTProtocol) protocol).setSession(session);
         session.login();
         protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
@@ -55,7 +55,7 @@ public abstract class BaseConnectionListener extends PacketListener {
     return future;
   }
 
-  protected SessionContextBuilder getBuilder(EndPoint endPoint, ProtocolImpl protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass){
+  protected SessionContextBuilder getBuilder(EndPoint endPoint, ProtocolImpl protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, protocol);
     scb.setPersistentSession(true)
         .setResetState(isClean)

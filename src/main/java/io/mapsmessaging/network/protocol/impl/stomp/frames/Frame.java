@@ -62,9 +62,9 @@ public abstract class Frame implements ServerPacket {
 
   protected String getHeader(String key) {
     String val = header.get(key);
-    if(val == null){
+    if (val == null) {
       String keyLookup = caseHeader.get(key.toLowerCase());
-      if(keyLookup != null){
+      if (keyLookup != null) {
         val = header.get(keyLookup);
       }
     }
@@ -85,7 +85,7 @@ public abstract class Frame implements ServerPacket {
     return header.remove(caseKey);
   }
 
-  protected boolean headerContainsKey(String key){
+  protected boolean headerContainsKey(String key) {
     return header.containsKey(key.toLowerCase());
   }
 
@@ -122,7 +122,7 @@ public abstract class Frame implements ServerPacket {
     return packet.position() - start;
   }
 
-  void packBody(Packet packet){
+  void packBody(Packet packet) {
     // requires the extending class to provide this mechanism, if one is required
   }
 
@@ -169,7 +169,7 @@ public abstract class Frame implements ServerPacket {
     for (Map.Entry<String, String> entry : header.entrySet()) {
       sb.append(entry.getKey()).append(":").append(entry.getValue()).append(",");
     }
-    if(receipt != null){
+    if (receipt != null) {
       sb.append("Receipt:").append(receipt);
     }
     return sb.toString();
@@ -234,7 +234,7 @@ public abstract class Frame implements ServerPacket {
   }
 
 
-  protected int parseHeaderInt(String key, int def){
+  protected int parseHeaderInt(String key, int def) {
     String value = getHeader(key);
     if (value != null) {
       try {
@@ -247,9 +247,9 @@ public abstract class Frame implements ServerPacket {
   }
 
 
-  public int getReceiveMaximum(){
+  public int getReceiveMaximum() {
     String val = getHeader("receivemaximum");
-    if(val != null){
+    if (val != null) {
       try {
         return Integer.parseInt(val.trim());
       } catch (NumberFormatException e) {
@@ -259,7 +259,7 @@ public abstract class Frame implements ServerPacket {
     return 0;
   }
 
-  protected long parseHeaderLong(String key, long def){
+  protected long parseHeaderLong(String key, long def) {
     String value = getHeader(key);
     if (value != null) {
       try {
@@ -270,12 +270,15 @@ public abstract class Frame implements ServerPacket {
     }
     return def;
   }
+
   // This class doesn't throw it, however, extending classes do
   @java.lang.SuppressWarnings("squid:RedundantThrowsDeclarationCheck")
   public void parseCompleted() throws IOException {
     receipt = removeHeader("receipt");
   }
+
   public abstract boolean isValid();
+
   public void resume(Packet packet) throws EndOfBufferException, StompProtocolException {
   }
 

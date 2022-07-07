@@ -234,7 +234,9 @@
 
       <!-- Create a directory with all the dependencies in and move it into the lib directory -->
       <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.3.0</version>
           <executions>
               <execution>
                   <phase>package</phase>
@@ -422,7 +424,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Schemas</artifactId>
-      <version>1.2.0</version>
+      <version>2.0.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/tanukisoft/wrapper -->

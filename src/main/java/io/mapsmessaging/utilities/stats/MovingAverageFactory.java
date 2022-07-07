@@ -31,16 +31,16 @@ import java.util.concurrent.TimeUnit;
 /**
  * Creates a MovingAverage instance that manages the data summing based on the ACCUMULATOR allocated to the MovingAverage
  *
- * @since 1.0
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 
 public class MovingAverageFactory {
 
   private static final MovingAverageFactory instance = new MovingAverageFactory();
 
-  public static MovingAverageFactory getInstance(){
+  public static MovingAverageFactory getInstance() {
     return instance;
   }
 
@@ -69,16 +69,16 @@ public class MovingAverageFactory {
   protected final List<LinkedMovingAverages> movingAverages;
   private ScheduledFuture<?> scheduledTask;
 
-  public MovingAverageFactory(){
+  public MovingAverageFactory() {
     movingAverages = new ArrayList<>();
   }
 
   /**
    * Closes and cancels the scheduler for the moving average
-  */
-  public void close(LinkedMovingAverages movingAverage){
+   */
+  public void close(LinkedMovingAverages movingAverage) {
     movingAverages.remove(movingAverage);
-    if(movingAverages.isEmpty()){
+    if (movingAverages.isEmpty()) {
       scheduledTask.cancel(false);
     }
   }
@@ -97,13 +97,13 @@ public class MovingAverageFactory {
    */
   public LinkedMovingAverages createLinked(ACCUMULATOR accumulator, String name, int startPeriod, int periodIncrements, int totalPeriods, TimeUnit timeUnit, String unitName) {
     int[] entries = new int[totalPeriods];
-    for(int x=0;x<totalPeriods;x++){
-      entries[x] = startPeriod +(periodIncrements*x);
+    for (int x = 0; x < totalPeriods; x++) {
+      entries[x] = startPeriod + (periodIncrements * x);
     }
     return createLinked(accumulator, name, entries, timeUnit, unitName);
   }
 
-  public LinkedMovingAverages createLinked (ACCUMULATOR accumulator, String name, int[] entries, TimeUnit timeUnit, String unitName){
+  public LinkedMovingAverages createLinked(ACCUMULATOR accumulator, String name, int[] entries, TimeUnit timeUnit, String unitName) {
     DataProcessor processor;
     switch (accumulator) {
       case DIFF:
@@ -123,17 +123,18 @@ public class MovingAverageFactory {
     // The first entry needs to deal with the incoming data, the "linked" moving averages are all SUM based
     //
     LinkedMovingAverages movingAverage = new LinkedMovingAverages(processor, name, entries, timeUnit, unitName);
-    if(movingAverages.isEmpty()){
+    if (movingAverages.isEmpty()) {
       scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new ScheduleRunner(), 1, 1, TimeUnit.MINUTES);
     }
     movingAverages.add(movingAverage);
     return movingAverage;
   }
 
-  private final class ScheduleRunner implements Runnable{
+  private final class ScheduleRunner implements Runnable {
+
     @Override
     public void run() {
-      for(LinkedMovingAverages movingAverage: movingAverages){
+      for (LinkedMovingAverages movingAverage : movingAverages) {
         movingAverage.update();
       }
     }

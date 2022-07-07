@@ -13,10 +13,10 @@ public class MessageEvent {
   private final @Getter Runnable completionTask;
 
   public MessageEvent(
-  @NonNull @NotNull String destinationName,
-  @NonNull @NotNull SubscribedEventManager subscription,
-  @NonNull @NotNull Message message,
-  @NonNull @NotNull Runnable completionTask){
+      @NonNull @NotNull String destinationName,
+      @NonNull @NotNull SubscribedEventManager subscription,
+      @NonNull @NotNull Message message,
+      @NonNull @NotNull Runnable completionTask) {
     this.destinationName = destinationName;
     this.subscription = subscription;
     this.message = message;

@@ -40,26 +40,41 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
   private static final int ALLOW_OVERLAP = 2;
   private static final int BROWSER_FLAG = 3;
 
-  @Getter private String destinationName;
-  @Getter private BitSet flags;
-  @Getter private String rootPath;
-  @Getter private ClientAcknowledgement acknowledgementController;
-  @Getter private String sharedName;
-  @Getter private String selector;
-  @Getter private String alias;
-  @Getter private long subscriptionId;
-  @Getter private int receiveMaximum;
-  @Getter private RetainHandler retainHandler;
-  @Getter private QualityOfService qualityOfService;
-  @Getter private CreditHandler creditHandler;
-  @Getter private DestinationMode destinationMode;
+  @Getter
+  private String destinationName;
+  @Getter
+  private BitSet flags;
+  @Getter
+  private String rootPath;
+  @Getter
+  private ClientAcknowledgement acknowledgementController;
+  @Getter
+  private String sharedName;
+  @Getter
+  private String selector;
+  @Getter
+  private String alias;
+  @Getter
+  private long subscriptionId;
+  @Getter
+  private int receiveMaximum;
+  @Getter
+  private RetainHandler retainHandler;
+  @Getter
+  private QualityOfService qualityOfService;
+  @Getter
+  private CreditHandler creditHandler;
+  @Getter
+  private DestinationMode destinationMode;
 
   //
   // Server Only flag
   //
-  @Getter private boolean replaced;
+  @Getter
+  private boolean replaced;
 
-  public SubscriptionContext(){}
+  public SubscriptionContext() {
+  }
 
   public SubscriptionContext(String destinationName) {
     this.destinationName = destinationName;
@@ -110,13 +125,13 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
   }
 
   public void write(ObjectWriter writer) throws IOException {
-    writer.write((byte)retainHandler.getHandler());
+    writer.write((byte) retainHandler.getHandler());
     writer.write((byte) creditHandler.getValue());
     writer.write((byte) qualityOfService.getLevel());
     writer.write((byte) acknowledgementController.getValue());
     writer.write(subscriptionId);
 
-    writer.write(destinationMode.getNamespace()+destinationName);
+    writer.write(destinationMode.getNamespace() + destinationName);
     writer.write(sharedName);
     writer.write(selector);
     writer.write(alias);
@@ -126,14 +141,14 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
 
   public SubscriptionContext setRootPath(String rootPath) {
     this.rootPath = Objects.requireNonNullElse(rootPath, "");
-    if(rootPath.length()>1 && !rootPath.endsWith("/")){
-      this.rootPath = this.rootPath+"/";
+    if (rootPath.length() > 1 && !rootPath.endsWith("/")) {
+      this.rootPath = this.rootPath + "/";
     }
     return this;
   }
 
-  public SubscriptionContext setDestinationName(String destinationName){
-    if(alias.equals(destinationName)){
+  public SubscriptionContext setDestinationName(String destinationName) {
+    if (alias.equals(destinationName)) {
       alias = destinationName;
     }
     this.destinationName = destinationName;
@@ -239,8 +254,8 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
   }
 
 
-  private String getCorrectedPath(){
-    String lookup = rootPath+destinationName;
+  private String getCorrectedPath() {
+    String lookup = rootPath + destinationName;
     return lookup.replace("//", "/");
   }
 
@@ -262,16 +277,14 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     return super.hashCode();
   }
 
-  private void parseName(){
-    if(destinationName.startsWith(DestinationMode.SCHEMA.getNamespace())){
+  private void parseName() {
+    if (destinationName.startsWith(DestinationMode.SCHEMA.getNamespace())) {
       destinationMode = DestinationMode.SCHEMA;
       destinationName = destinationName.substring(DestinationMode.SCHEMA.getNamespace().length());
-    }
-    else if(destinationName.startsWith(DestinationMode.METRICS.getNamespace())){
+    } else if (destinationName.startsWith(DestinationMode.METRICS.getNamespace())) {
       destinationMode = DestinationMode.METRICS;
       destinationName = destinationName.substring(DestinationMode.METRICS.getNamespace().length());
-    }
-    else {
+    } else {
       destinationMode = DestinationMode.NORMAL;
     }
   }

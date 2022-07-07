@@ -29,12 +29,13 @@ import io.mapsmessaging.engine.tasks.SubscriptionResponse;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SubscriptionTask extends EngineTask {
+
   protected final DestinationImpl destination;
   protected final SubscriptionController controller;
   protected final SubscriptionContext context;
   protected final AtomicLong counter;
 
-  public SubscriptionTask(SubscriptionController controller, SubscriptionContext context,  DestinationImpl destination, AtomicLong counter){
+  public SubscriptionTask(SubscriptionController controller, SubscriptionContext context, DestinationImpl destination, AtomicLong counter) {
     super();
     this.controller = controller;
     this.destination = destination;
@@ -46,11 +47,10 @@ public class SubscriptionTask extends EngineTask {
   public Response taskCall() throws Exception {
     Subscription subscription;
     try {
-      if(context.isBrowser() && destination.getResourceType().isQueue()){
+      if (context.isBrowser() && destination.getResourceType().isQueue()) {
         // We are now looking at the base queue so we need to find "shared_<Name Of Queue>_normal"
         subscription = controller.createBrowserSubscription(context, destination.getSubscription(destination.getFullyQualifiedNamespace()), destination);
-      }
-      else {
+      } else {
         subscription = controller.get(destination);
         if (subscription != null) {
           subscription.addContext(context);
@@ -61,6 +61,6 @@ public class SubscriptionTask extends EngineTask {
     } finally {
       counter.decrementAndGet();
     }
-    return new SubscriptionResponse( new ClientSubscribedEventManager(destination, subscription));
+    return new SubscriptionResponse(new ClientSubscribedEventManager(destination, subscription));
   }
 }

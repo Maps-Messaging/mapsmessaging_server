@@ -31,22 +31,23 @@ import java.io.IOException;
 public class SubscriptionFactory {
 
   private static final SubscriptionFactory instance;
-  static{
+
+  static {
     instance = new SubscriptionFactory();
   }
 
-  public static SubscriptionFactory getInstance(){
+  public static SubscriptionFactory getInstance() {
     return instance;
   }
 
   public SubscriptionBuilder getBuilder(DestinationImpl destination, SubscriptionContext context, boolean isPersist) throws IOException {
-    if(context.getDestinationMode().equals(DestinationMode.SCHEMA)){
+    if (context.getDestinationMode().equals(DestinationMode.SCHEMA)) {
       return new SchemaSubscriptionBuilder(destination, context);
     }
     if (context.isSharedSubscription()) {
       return new SharedSubscriptionBuilder(destination, context);
     }
-    if(destination.getResourceType().isQueue()){ // We have Temporary Queue or a Queue
+    if (destination.getResourceType().isQueue()) { // We have Temporary Queue or a Queue
       return new QueueSubscriptionBuilder(destination, context);
     }
     return new StandardSubscriptionBuilder(destination, context, isPersist);
@@ -56,5 +57,6 @@ public class SubscriptionFactory {
     return new BrowserSubscriptionBuilder(destination, context, parent);
   }
 
-  private SubscriptionFactory(){}
+  private SubscriptionFactory() {
+  }
 }

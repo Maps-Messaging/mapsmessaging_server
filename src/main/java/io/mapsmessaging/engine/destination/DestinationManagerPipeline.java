@@ -43,7 +43,7 @@ public class DestinationManagerPipeline {
   private final ExecutorService taskScheduler;
 
 
-  DestinationManagerPipeline(DestinationPathManager rootPath, Map<String, DestinationPathManager> properties, DestinationUpdateManager destinationManagerListeners){
+  DestinationManagerPipeline(DestinationPathManager rootPath, Map<String, DestinationPathManager> properties, DestinationUpdateManager destinationManagerListeners) {
     this.rootPath = rootPath;
     this.properties = properties;
     this.destinationManagerListeners = destinationManagerListeners;
@@ -60,7 +60,7 @@ public class DestinationManagerPipeline {
     Callable<DestinationImpl> task = () -> {
       try {
         DestinationImpl result = destinationList.get(name);
-        if(result == null) {
+        if (result == null) {
           result = createInternal(name, destinationType);
         }
         future.complete(result);
@@ -74,7 +74,7 @@ public class DestinationManagerPipeline {
     return future;
   }
 
-  public CompletableFuture<DestinationImpl> delete(@NonNull @NotNull DestinationImpl destination){
+  public CompletableFuture<DestinationImpl> delete(@NonNull @NotNull DestinationImpl destination) {
     CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
     Callable<DestinationImpl> task = () -> {
       DestinationImpl result = deleteInternal(destination);
@@ -95,7 +95,7 @@ public class DestinationManagerPipeline {
     return future;
   }
 
-  public synchronized  CompletableFuture<Integer> size(){
+  public synchronized CompletableFuture<Integer> size() {
     CompletableFuture<Integer> future = new CompletableFuture<>();
     Callable<Void> task = () -> {
       future.complete(destinationList.size());
@@ -127,19 +127,18 @@ public class DestinationManagerPipeline {
   }
 
   @SneakyThrows
-  public void scan(){
+  public void scan() {
     Map<String, DestinationImpl> workingCopy = new LinkedHashMap<>();
     CompletableFuture<Map<String, DestinationImpl>> future = copy(null, workingCopy);
     workingCopy = future.get();
-    for(DestinationImpl destination:workingCopy.values()) {
+    for (DestinationImpl destination : workingCopy.values()) {
       DelayedMessageManager messageProcessor = destination.getDelayedStatus();
-      if (messageProcessor != null && !messageProcessor.isEmpty() ){
+      if (messageProcessor != null && !messageProcessor.isEmpty()) {
         List<Long> waiting = messageProcessor.getBucketIds();
-        for(Long expiry:waiting){
-          if(expiry < System.currentTimeMillis()){
-            destination.submit(new DelayedMessageProcessor(destination, destination.subscriptionManager,messageProcessor, expiry));
-          }
-          else{
+        for (Long expiry : waiting) {
+          if (expiry < System.currentTimeMillis()) {
+            destination.submit(new DelayedMessageProcessor(destination, destination.subscriptionManager, messageProcessor, expiry));
+          } else {
             break;
           }
         }
@@ -153,19 +152,18 @@ public class DestinationManagerPipeline {
     if (destinationImpl == null) {
       UUID destinationUUID = UUID.randomUUID();
       DestinationPathManager pathManager = rootPath;
-      String namespace="";
+      String namespace = "";
       for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
         if (name.startsWith(entry.getKey())) {
-          if(namespace.length() < entry.getKey().length()){
+          if (namespace.length() < entry.getKey().length()) {
             pathManager = entry.getValue();
             namespace = entry.getKey();
           }
         }
       }
-      if(destinationType.isTemporary()) {
+      if (destinationType.isTemporary()) {
         destinationImpl = new TemporaryDestination(name, pathManager, destinationUUID, destinationType);
-      }
-      else{
+      } else {
         destinationImpl = new DestinationImpl(name, pathManager, destinationUUID, destinationType);
       }
       logger.log(AuditEvent.DESTINATION_CREATED, destinationImpl.getFullyQualifiedNamespace());
@@ -178,7 +176,7 @@ public class DestinationManagerPipeline {
     // even if we have no subscriptions. This is different to Topics since we only store
     // messages when we have subscriptions.
     //-------------------------------------------------------------------------------------
-    if(destinationType.isQueue()){
+    if (destinationType.isQueue()) {
       SubscriptionContext context = new SubscriptionContext(name);
       context.setAcknowledgementController(ClientAcknowledgement.INDIVIDUAL);
       context.setCreditHandler(CreditHandler.CLIENT);
@@ -199,33 +197,32 @@ public class DestinationManagerPipeline {
     return destinationImpl;
   }
 
-  private DestinationImpl deleteInternal(@NonNull @NotNull DestinationImpl destination){
+  private DestinationImpl deleteInternal(@NonNull @NotNull DestinationImpl destination) {
     DestinationImpl delete = destinationList.remove(destination.getFullyQualifiedNamespace());
     StoreMessageTask deleteDestinationTask = new ShutdownPhase1Task(delete, destinationManagerListeners, logger);
-    Future<Response> response = destination.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE-1);
+    Future<Response> response = destination.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE - 1);
     long timeout = System.currentTimeMillis() + 10000; // ToDo: make configurable
-    while(!response.isDone() && timeout > System.currentTimeMillis()){
+    while (!response.isDone() && timeout > System.currentTimeMillis()) {
       LockSupport.parkNanos(10000000);
     }
     logger.log(AuditEvent.DESTINATION_DELETED, delete.getFullyQualifiedNamespace());
     return delete;
   }
 
-  private void stopInternal(){
+  private void stopInternal() {
     for (DestinationImpl destinationImpl : destinationList.values()) {
       try {
         destinationImpl.close();
       } catch (IOException e) {
-        logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING,e);
+        logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING, e);
       }
     }
   }
 
   private Map<String, DestinationImpl> copyInternal(DestinationFilter filter, Map<String, DestinationImpl> response) {
-    if(filter == null){
+    if (filter == null) {
       response.putAll(destinationList);
-    }
-    else {
+    } else {
       destinationList.forEach((s, destination) -> {
         if (filter.matches(s)) {
           response.put(s, destination);

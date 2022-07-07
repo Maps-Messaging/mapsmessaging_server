@@ -13,7 +13,7 @@ import javax.net.ssl.SSLEngineResult;
 
 public class HandShakeState extends State {
 
-  public HandShakeState(StateEngine stateEngine){
+  public HandShakeState(StateEngine stateEngine) {
     super(stateEngine);
   }
 
@@ -25,9 +25,9 @@ public class HandShakeState extends State {
   @Override
   int inbound(Packet packet) throws IOException {
     handshake(packet);
-    while(stateEngine.getSslEngine().getHandshakeStatus() != NEED_UNWRAP) {
+    while (stateEngine.getSslEngine().getHandshakeStatus() != NEED_UNWRAP) {
       handshake(packet);
-      if(stateEngine.getSslEngine().getHandshakeStatus() == NOT_HANDSHAKING){
+      if (stateEngine.getSslEngine().getHandshakeStatus() == NOT_HANDSHAKING) {
         stateEngine.setCurrentState(new NormalState(stateEngine));
         stateEngine.handshakeComplete();
         return 0;
@@ -85,7 +85,7 @@ public class HandShakeState extends State {
   }
 
   // produce handshake packets
-  boolean produceHandshakePackets( List<Packet> packets) throws IOException {
+  boolean produceHandshakePackets(List<Packet> packets) throws IOException {
     ByteBuffer oNet = ByteBuffer.allocate(32768);
     ByteBuffer oApp = ByteBuffer.allocate(0);
     SSLEngineResult r = stateEngine.getSslEngine().wrap(oApp, oNet);

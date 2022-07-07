@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.ToString;
 
-@ToString(callSuper=true)
+@ToString(callSuper = true)
 
 public class TypedData {
 
@@ -34,11 +34,10 @@ public class TypedData {
 
   public TypedData(Object data) {
     TYPE testType = getType(data);
-    if(testType == TYPE.UNKNOWN){
+    if (testType == TYPE.UNKNOWN) {
       this.data = data.toString();
       type = TYPE.STRING;
-    }
-    else {
+    } else {
       this.data = data;
       type = testType;
     }
@@ -53,11 +52,10 @@ public class TypedData {
     writer.write(type.value);
     switch (type) {
       case BOOLEAN:
-        if( ((boolean)data)){
-          writer.write((byte)1);
-        }
-        else{
-          writer.write((byte)0);
+        if (((boolean) data)) {
+          writer.write((byte) 1);
+        } else {
+          writer.write((byte) 0);
         }
         break;
 
@@ -201,7 +199,7 @@ public class TypedData {
     if (data instanceof Double) {
       return TYPE.DOUBLE;
     }
-    if(data instanceof Boolean){
+    if (data instanceof Boolean) {
       return TYPE.BOOLEAN;
     }
     if (data instanceof String) {
@@ -243,7 +241,7 @@ public class TypedData {
   private static Object readType(TYPE type, ObjectReader reader) throws IOException {
     switch (type) {
       case BOOLEAN:
-        return  (reader.readByte() == 1);
+        return (reader.readByte() == 1);
 
       case BYTE:
         return reader.readByte();

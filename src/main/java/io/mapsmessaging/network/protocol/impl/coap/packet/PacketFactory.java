@@ -15,8 +15,8 @@ public class PacketFactory {
   private static final int IPATCH = 7;
 
 
-  public BasePacket parseFrame(Packet packet) throws EndOfBufferException{
-    byte val = packet.get(packet.position()+1);
+  public BasePacket parseFrame(Packet packet) throws EndOfBufferException {
+    byte val = packet.get(packet.position() + 1);
     int code = val & 0b11111;
     BasePacket basePacket;
     switch (code) {

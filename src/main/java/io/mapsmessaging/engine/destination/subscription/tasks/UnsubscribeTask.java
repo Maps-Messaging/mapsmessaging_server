@@ -29,12 +29,13 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class UnsubscribeTask extends EngineTask {
+
   private final DestinationImpl destination;
   private final SubscriptionController controller;
   private final DestinationSet destinationSet;
   private final AtomicLong counter;
 
-  public UnsubscribeTask(SubscriptionController controller, DestinationImpl destination, DestinationSet destinationSet, AtomicLong counter){
+  public UnsubscribeTask(SubscriptionController controller, DestinationImpl destination, DestinationSet destinationSet, AtomicLong counter) {
     super();
     this.controller = controller;
     this.destination = destination;
@@ -47,7 +48,7 @@ public class UnsubscribeTask extends EngineTask {
     Subscription subscription;
     try {
       subscription = controller.get(destination);
-      if(subscription != null) {
+      if (subscription != null) {
         subscription.removeContext(destinationSet.getContext());
         if (subscription.getContexts().isEmpty()) {
           controller.remove(destination);

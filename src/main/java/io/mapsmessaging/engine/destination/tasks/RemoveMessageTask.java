@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
 
 public class RemoveMessageTask extends EngineTask {
+
   private final long messageId;
   private final DestinationImpl destination;
 

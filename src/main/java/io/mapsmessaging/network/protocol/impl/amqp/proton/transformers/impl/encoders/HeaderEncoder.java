@@ -29,53 +29,52 @@ import org.apache.qpid.proton.amqp.messaging.Header;
 
 public class HeaderEncoder {
 
-  public static void unpackHeader( MessageBuilder messageBuilder, Header header){
-    if(header != null){
+  public static void unpackHeader(MessageBuilder messageBuilder, Header header) {
+    if (header != null) {
       // Get the priority of the message
-      if(header.getPriority() != null) {
+      if (header.getPriority() != null) {
         messageBuilder.setPriority(Priority.getInstance(header.getPriority().intValue()));
-      }
-      else{
+      } else {
         // This is the default value for JMS messages and if not present should be set to 4
         messageBuilder.setPriority(Priority.NORMAL);
       }
 
       // Process the TTL of the message
-      if(header.getTtl() != null) {
+      if (header.getTtl() != null) {
         // Convert to seconds
         messageBuilder.setMessageExpiryInterval(header.getTtl().longValue(), TimeUnit.MILLISECONDS);
       }
 
       // Process the durable flag
-      if(Boolean.TRUE.equals(header.getDurable())){
+      if (Boolean.TRUE.equals(header.getDurable())) {
         messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
-      }
-      else{
+      } else {
         messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
       }
     }
   }
 
 
-  public static boolean packHeader(Message message, Header header){
+  public static boolean packHeader(Message message, Header header) {
     boolean addHeader = false;
-    if(!message.getPriority().equals(Priority.NORMAL)) {
+    if (!message.getPriority().equals(Priority.NORMAL)) {
       header.setPriority(new UnsignedByte((byte) message.getPriority().getValue()));
       addHeader = true;
     }
 
-    if(message.getExpiry() != 0){
+    if (message.getExpiry() != 0) {
       long expiry = (message.getExpiry()) - System.currentTimeMillis();
-      header.setTtl(new UnsignedInteger((int)(expiry)));
+      header.setTtl(new UnsignedInteger((int) (expiry)));
       addHeader = true;
     }
 
-    if(!message.getQualityOfService().equals(QualityOfService.AT_MOST_ONCE)){
+    if (!message.getQualityOfService().equals(QualityOfService.AT_MOST_ONCE)) {
       header.setDurable(true);
       addHeader = true;
     }
     return addHeader;
   }
 
-  private HeaderEncoder(){}
+  private HeaderEncoder() {
+  }
 }

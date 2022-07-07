@@ -49,7 +49,7 @@ public class UDPInterfaceInformation implements InterfaceInformation {
     return netint.isUp();
   }
 
-  public boolean isLoRa(){
+  public boolean isLoRa() {
     return false;
   }
 

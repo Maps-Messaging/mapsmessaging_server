@@ -39,6 +39,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
 public class Auth0JwtLoginModule extends BaseLoginModule {
+
   private String domain;
 
   @Override
@@ -48,7 +49,7 @@ public class Auth0JwtLoginModule extends BaseLoginModule {
       Map<String, ?> sharedState,
       Map<String, ?> options) {
     super.initialize(subject, callbackHandler, sharedState, options);
-    domain = (String)options.get("auth0Domain");
+    domain = (String) options.get("auth0Domain");
   }
 
   @Override
@@ -73,7 +74,7 @@ public class Auth0JwtLoginModule extends BaseLoginModule {
       String token = new String(tmpPassword);
       ((PasswordCallback) callbacks[1]).clearPassword();
       // Password should be a valid JWT
-      JwkProvider provider = new UrlJwkProvider("https://"+domain+"/");
+      JwkProvider provider = new UrlJwkProvider("https://" + domain + "/");
       DecodedJWT jwt = JWT.decode(token);
       // Get the kid from received JWT token
       Jwk jwk = provider.get(jwt.getKeyId());
@@ -81,7 +82,7 @@ public class Auth0JwtLoginModule extends BaseLoginModule {
       Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
 
       JWTVerifier verifier = JWT.require(algorithm)
-          .withIssuer("https://"+domain+"/")
+          .withIssuer("https://" + domain + "/")
           .build();
 
       verifier.verify(token);

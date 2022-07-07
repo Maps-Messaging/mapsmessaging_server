@@ -39,7 +39,7 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
   @Override
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
-    if(link != null) {
+    if (link != null) {
       if (link instanceof Sender) {
         handleSenderOpen((Sender) link);
       } else if (link instanceof Receiver) {
@@ -56,11 +56,11 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
   }
 
 
-  private void handleReceiverOpen(Receiver receiver){
+  private void handleReceiverOpen(Receiver receiver) {
     receiver.open();
   }
 
-  private void handleSenderOpen(Sender sender){
+  private void handleSenderOpen(Sender sender) {
     // Setup the local source/target
     if (sender.getSource() == null) {
       // We don't have the source, but we can reattach to the name given
@@ -69,8 +69,7 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
       source.setAddress(name);
       source.setDurable(TerminusDurability.UNSETTLED_STATE);
       sender.setSource(source);
-    }
-    else {
+    } else {
       sender.setSource(sender.getRemoteSource());
     }
     sender.setTarget(sender.getRemoteTarget());

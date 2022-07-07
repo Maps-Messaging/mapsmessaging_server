@@ -31,7 +31,7 @@ public class ClientAcknowledgementController implements AcknowledgementControlle
   protected final CreditManager creditManager;
 
   public ClientAcknowledgementController(CreditManager creditManager) {
-    this.creditManager =creditManager;
+    this.creditManager = creditManager;
     outstanding = new TreeMap<>();
   }
 

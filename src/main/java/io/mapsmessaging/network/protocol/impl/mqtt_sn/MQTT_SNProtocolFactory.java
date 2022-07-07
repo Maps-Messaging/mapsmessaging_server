@@ -40,7 +40,7 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   private final Map<EndPoint, MQTTSNInterfaceManager> mappedInterfaces;
 
   public MQTT_SNProtocolFactory() {
-    super("MQTT-SN", "MQTT-SN UDP based protocol as per http://mqtt.org/mqtt-specification/",null);
+    super("MQTT-SN", "MQTT-SN UDP based protocol as per http://mqtt.org/mqtt-specification/", null);
     mappedInterfaces = new ConcurrentHashMap<>();
   }
 
@@ -57,7 +57,7 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   @Override
   public void closed(EndPoint endPoint) {
     MQTTSNInterfaceManager manager = mappedInterfaces.remove(endPoint);
-    if(manager != null){
+    if (manager != null) {
       manager.close();
     }
   }

@@ -32,6 +32,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 public class SaslAuthenticationMechanism implements AuthenticationMechanism {
+
   private final String mechanism;
   private final SaslServer saslServer;
 

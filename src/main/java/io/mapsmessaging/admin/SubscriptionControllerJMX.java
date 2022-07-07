@@ -30,39 +30,40 @@ import javax.management.ObjectInstance;
 
 @JMXBean(description = "Session JMX Bean")
 public class SubscriptionControllerJMX {
+
   private final ObjectInstance mbean;
   private final SubscriptionController subscription;
 
 
-  public SubscriptionControllerJMX(SubscriptionController subscription){
+  public SubscriptionControllerJMX(SubscriptionController subscription) {
     this.subscription = subscription;
     List<String> local = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
     local.add("SessionManager=SessionManager");
-    local.add("session="+subscription.getSessionId());
+    local.add("session=" + subscription.getSessionId());
     mbean = JMXManager.getInstance().register(this, local);
 
   }
 
-  public void close(){
+  public void close() {
     JMXManager.getInstance().unregister(mbean);
   }
 
 
-  @JMXBeanAttribute(name = "isPersistent", description ="Indicates if the session is persisted to a file store or is only in memory")
-  public boolean isPersistent(){
+  @JMXBeanAttribute(name = "isPersistent", description = "Indicates if the session is persisted to a file store or is only in memory")
+  public boolean isPersistent() {
     return subscription.isPersistent();
   }
 
-  @JMXBeanAttribute(name = "State", description ="Returns the current state of this session")
-  public String getState(){
-    if(subscription.isHibernating()){
+  @JMXBeanAttribute(name = "State", description = "Returns the current state of this session")
+  public String getState() {
+    if (subscription.isHibernating()) {
       return "Disconnected";
     }
     return "Active";
   }
 
-  @JMXBeanOperation (name = "Close", description = "Closes and clears all state for this session")
-  public void closeSession(){
+  @JMXBeanOperation(name = "Close", description = "Closes and clears all state for this session")
+  public void closeSession() {
     MessageDaemon.getInstance().getSessionManager().closeSubscriptionController(subscription);
   }
 }

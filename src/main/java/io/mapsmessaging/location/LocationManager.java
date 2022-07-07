@@ -21,27 +21,27 @@ public class LocationManager {
 
   private static final LocationManager instance = new LocationManager();
 
-  public static LocationManager getInstance(){
+  public static LocationManager getInstance() {
     return instance;
   }
 
   private double longitude;
   private double latitude;
 
-  public synchronized void setPosition(double latitude, double longitude){
+  public synchronized void setPosition(double latitude, double longitude) {
     this.latitude = (latitude);
     this.longitude = (longitude);
   }
 
-  public synchronized double getLatitude(){
+  public synchronized double getLatitude() {
     return latitude;
   }
 
-  public synchronized double getLongitude(){
+  public synchronized double getLongitude() {
     return longitude;
   }
 
-  private LocationManager(){
+  private LocationManager() {
     longitude = Double.NaN;
     latitude = Double.NaN;
   }

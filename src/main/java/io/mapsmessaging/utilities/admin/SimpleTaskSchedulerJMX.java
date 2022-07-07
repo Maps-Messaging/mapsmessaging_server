@@ -27,23 +27,23 @@ import java.util.List;
 @JMXBean(description = "JMX Bean to monitor the internal task scheduler and thread pool")
 public class SimpleTaskSchedulerJMX {
 
-  public SimpleTaskSchedulerJMX(List<String> typePath){
+  public SimpleTaskSchedulerJMX(List<String> typePath) {
     List<String> scheduler = new ArrayList<>(typePath);
     scheduler.add("scheduler=scheduler");
     JMXManager.getInstance().register(this, scheduler);
   }
 
-  @JMXBeanAttribute(name = "Total Scheduled", description ="Returns the total number of tasks that have been scheduled")
+  @JMXBeanAttribute(name = "Total Scheduled", description = "Returns the total number of tasks that have been scheduled")
   public long getTotalScheduled() {
     return SimpleTaskScheduler.getInstance().getTotalScheduled();
   }
 
-  @JMXBeanAttribute(name = "Total Executed", description ="Returns the total number of tasks that have been executed")
+  @JMXBeanAttribute(name = "Total Executed", description = "Returns the total number of tasks that have been executed")
   public long getTotalExecuted() {
     return SimpleTaskScheduler.getInstance().getTotalExecuted();
   }
 
-  @JMXBeanAttribute(name = "Queue depth", description ="Returns the current depth of tasks that need to be executed")
+  @JMXBeanAttribute(name = "Queue depth", description = "Returns the current depth of tasks that need to be executed")
   public int getDepth() {
     return SimpleTaskScheduler.getInstance().getDepth();
   }

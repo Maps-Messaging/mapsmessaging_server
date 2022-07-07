@@ -22,17 +22,17 @@ public class FixedCreditManager extends CreditManager {
 
   public FixedCreditManager(int initialCredit) {
     super(initialCredit);
-    if(initialCredit < 1){
+    if (initialCredit < 1) {
       // We can not have fixed credit less than 1 since that would make the subscription never receive any messages
       currentCredit = 32;
     }
   }
 
-  public void increment(){
+  public void increment() {
     // This is a fixed credit based manager, so this doesn't change
   }
 
-  public void decrement(){
+  public void decrement() {
     // This is a fixed credit based manager, so this doesn't change
   }
 

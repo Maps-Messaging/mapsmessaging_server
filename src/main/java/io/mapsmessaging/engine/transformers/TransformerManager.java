@@ -28,30 +28,32 @@ import java.util.ServiceLoader;
 
 public class TransformerManager implements ServiceManager {
 
-  public static TransformerManager getInstance(){
+  public static TransformerManager getInstance() {
     return instance;
   }
+
   private static final TransformerManager instance;
+
   static {
-    instance =new TransformerManager();
+    instance = new TransformerManager();
   }
 
   private final Map<String, Service> transformerMap;
 
-  public Transformer get(String transformer){
+  public Transformer get(String transformer) {
     return (Transformer) transformerMap.get(transformer);
   }
 
-  private TransformerManager(){
+  private TransformerManager() {
     ServiceLoader<Transformer> transformerServiceLoader = ServiceLoader.load(Transformer.class);
     transformerMap = new LinkedHashMap<>();
-    for(Transformer transformer:transformerServiceLoader){
+    for (Transformer transformer : transformerServiceLoader) {
       transformerMap.put(transformer.getName(), transformer);
     }
   }
 
   @Override
   public Iterator<Service> getServices() {
-    return  transformerMap.values().iterator();
+    return transformerMap.values().iterator();
   }
 }

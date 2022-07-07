@@ -168,7 +168,6 @@ public class SubscriptionController implements DestinationManagerListener {
    *
    * @param context new subscription context to add
    * @return true if a change to subscription occurred
-   *
    * @throws IOException if the add subscription failed, typically this is fatal since it means the server can not allocate resources
    */
   public SubscribedEventManager addSubscription(SubscriptionContext context) throws IOException {
@@ -185,10 +184,12 @@ public class SubscriptionController implements DestinationManagerListener {
     if (!subscriptions.containsKey(filter)) {
       if (!context.containsWildcard()) {
         CompletableFuture<DestinationImpl> future = destinationManager.findOrCreate(filter);
-        if(future == null && filter.toLowerCase().startsWith("$sys")){
+        if (future == null && filter.toLowerCase().startsWith("$sys")) {
           future = destinationManager.find("$SYS/notImplemented");
         }
-        if(future != null) future.get();
+        if (future != null) {
+          future.get();
+        }
       }
       DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
       DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
@@ -196,7 +197,7 @@ public class SubscriptionController implements DestinationManagerListener {
       //
       // Now compare the active subscription destinations with the ones in this new subscriptionSet
       //
-      if(!destinationSet.isEmpty()) {
+      if (!destinationSet.isEmpty()) {
         subscription = processSubscriptions(context, destinationSet, isReload);
       }
     } else {
@@ -227,7 +228,7 @@ public class SubscriptionController implements DestinationManagerListener {
     if (!isReload) {
       try {
         List<Response> response = responses.getResponse();
-        if(!response.isEmpty()){
+        if (!response.isEmpty()) {
           subscription = ((SubscriptionResponse) response.get(0)).getSubscription();
         }
       } catch (InterruptedException e) {
@@ -242,14 +243,15 @@ public class SubscriptionController implements DestinationManagerListener {
 
   /**
    * Now scan the destinations that this subscription had and remove any context, if its the last context then we need to delete and close the subscription and all data
+   *
    * @param id the specific subscription id used to create the subscription, could be the destination name or an alias
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
-    if(id.startsWith("$schema")){
-      String destinationName = id.substring("$schema".length()+1);
-      for(Entry<DestinationImpl, Subscription> entry:schemaSubscriptions.entrySet()){
-        if(entry.getKey().getFullyQualifiedNamespace().equals(destinationName)){
+    if (id.startsWith("$schema")) {
+      String destinationName = id.substring("$schema".length() + 1);
+      for (Entry<DestinationImpl, Subscription> entry : schemaSubscriptions.entrySet()) {
+        if (entry.getKey().getFullyQualifiedNamespace().equals(destinationName)) {
           schemaSubscriptions.remove(entry.getKey());
           return true;
         }
@@ -265,13 +267,13 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
 
-  private void handleUnsubscribeSet(String id, DestinationSet destinationSet){
+  private void handleUnsubscribeSet(String id, DestinationSet destinationSet) {
     contextMap.remove(id);
     List<DestinationImpl> lostInterest = new ArrayList<>(destinationSet);
     AtomicLong counter = new AtomicLong(lostInterest.size());
     for (DestinationImpl destinationImpl : lostInterest) {
-      UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl,  destinationSet, counter);
-      if(destinationImpl.submit(task).isCancelled()){
+      UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl, destinationSet, counter);
+      if (destinationImpl.submit(task).isCancelled()) {
         counter.decrementAndGet();
       }
     }
@@ -285,7 +287,6 @@ public class SubscriptionController implements DestinationManagerListener {
 
   /**
    * Called when a new destination is created, we see if any wildcards match the new destination
-   *
    */
   @Override
   public void created(DestinationImpl destinationImpl) {
@@ -348,7 +349,7 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
-  public void wake(SessionImpl sessionImpl){
+  public void wake(SessionImpl sessionImpl) {
     if (schedule != null) {
       schedule.cancel(false);
     }
@@ -357,9 +358,9 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
-  public SubscribedEventManager wake(SessionImpl sessionImpl, DestinationImpl destination){
+  public SubscribedEventManager wake(SessionImpl sessionImpl, DestinationImpl destination) {
     for (Subscription subscription : activeSubscriptions.values()) {
-      if(subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getFullyQualifiedNamespace())){
+      if (subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getFullyQualifiedNamespace())) {
         subscription.wakeUp(sessionImpl);
         if (subscription instanceof DestinationSubscription && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
           queueRetainedMessage(((DestinationSubscription) subscription).getDestinationImpl(), subscription);
@@ -393,9 +394,9 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
-  private Future<Response> scheduleSubscription(SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter){
+  private Future<Response> scheduleSubscription(SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter) {
     SubscriptionTask task = null;
-    switch (context.getDestinationMode()){
+    switch (context.getDestinationMode()) {
       case SCHEMA:
         task = new SchemaSubscriptionTask(this, context, destinationImpl, counter);
         break;
@@ -410,14 +411,14 @@ public class SubscriptionController implements DestinationManagerListener {
     return destinationImpl.submit(task);
   }
 
-  public Subscription createSchemaSubscription( @NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
+  public Subscription createSchemaSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, false); // Schema subscriptions have no persistence
     Subscription subscription = builder.construct(sessionImpl, sessionId);
     schemaSubscriptions.put(destinationImpl, subscription);
     return subscription;
   }
 
-  public Subscription createSubscription( @NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
+  public Subscription createSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, isPersistent);
     Subscription subscription = builder.construct(sessionImpl, sessionId);
 
@@ -428,7 +429,8 @@ public class SubscriptionController implements DestinationManagerListener {
     return subscription;
   }
 
-  public Subscription createBrowserSubscription( @NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
+  public Subscription createBrowserSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent,
+      @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBrowserBuilder(destinationImpl, context, parent);
     Subscription subscription = builder.construct(sessionImpl, sessionId);
     activeSubscriptions.put(destinationImpl, subscription);
@@ -451,7 +453,7 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   public void setTimeout(Future<?> schedule) {
-    if(this.schedule != null && !this.schedule.isCancelled()) {
+    if (this.schedule != null && !this.schedule.isCancelled()) {
       this.schedule.cancel(true);
     }
     this.schedule = schedule;
@@ -475,8 +477,8 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public void hibernateSubscription(String subscriptionId) {
     //ToDo this needs to be queued via the task queue
-    for(Entry<DestinationImpl, Subscription> entry:activeSubscriptions.entrySet()){
-      if(entry.getKey().getFullyQualifiedNamespace().equals(subscriptionId)){
+    for (Entry<DestinationImpl, Subscription> entry : activeSubscriptions.entrySet()) {
+      if (entry.getKey().getFullyQualifiedNamespace().equals(subscriptionId)) {
         entry.getValue().hibernate();
       }
     }

@@ -35,7 +35,7 @@ public abstract class EndPointServerStatus {
   private final LongAdder totalBytesRead;
   protected final EndPointURL url;
 
-  protected EndPointServerStatus(EndPointURL url){
+  protected EndPointServerStatus(EndPointURL url) {
     this.url = url;
     totalPacketsSent = new LongAdder();
     totalPacketsRead = new LongAdder();
@@ -53,37 +53,37 @@ public abstract class EndPointServerStatus {
 
   public abstract void handleCloseEndPoint(EndPoint endPoint);
 
-  public long getTotalPacketsRead(){
+  public long getTotalPacketsRead() {
     return totalPacketsRead.sum();
   }
 
-  public long getTotalPacketsSent(){
+  public long getTotalPacketsSent() {
     return totalPacketsSent.sum();
   }
 
-  public long getTotalBytesSent(){
+  public long getTotalBytesSent() {
     return totalBytesSent.sum();
   }
 
-  public long getTotalBytesRead(){
+  public long getTotalBytesRead() {
     return totalBytesRead.sum();
   }
 
-  public void incrementPacketsSent(){
+  public void incrementPacketsSent() {
     totalPacketsSent.increment();
     SystemTotalPacketsSent.increment();
   }
 
-  public void incrementPacketsRead(){
+  public void incrementPacketsRead() {
     totalPacketsRead.increment();
     SystemTotalPacketsReceived.increment();
   }
 
-  public void updateBytesSent(int count){
+  public void updateBytesSent(int count) {
     totalBytesSent.add(count);
   }
 
-  public void updateBytesRead(int count){
+  public void updateBytesRead(int count) {
     totalBytesRead.add(count);
   }
 

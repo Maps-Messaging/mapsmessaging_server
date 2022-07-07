@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class JMSProtocolMessageTransformation implements ProtocolMessageTransformation {
 
-  public JMSProtocolMessageTransformation(){
+  public JMSProtocolMessageTransformation() {
     // Used by the java services
   }
 
@@ -64,9 +64,9 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
 
     WritableBuffer sizingBuffer = new DroppingWritableBuffer();
     protonMsg.encode(sizingBuffer);
-    byte[] data = new byte[sizingBuffer.position()+10];
+    byte[] data = new byte[sizingBuffer.position() + 10];
     int size = protonMsg.encode(data, 0, data.length);
-    if(size != data.length){
+    if (size != data.length) {
       byte[] tmp = new byte[size];
       System.arraycopy(data, 0, tmp, 0, size);
       data = tmp;

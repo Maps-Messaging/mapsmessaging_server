@@ -24,7 +24,7 @@ public class TemporaryDestinationDeletionTask implements ClosureTask {
 
   private final TemporaryDestination temporaryDestination;
 
-  public TemporaryDestinationDeletionTask(TemporaryDestination temporaryDestination){
+  public TemporaryDestinationDeletionTask(TemporaryDestination temporaryDestination) {
     this.temporaryDestination = temporaryDestination;
   }
 

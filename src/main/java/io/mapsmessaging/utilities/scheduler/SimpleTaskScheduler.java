@@ -16,14 +16,14 @@ public class SimpleTaskScheduler implements ScheduledExecutorService {
 
   private static final SimpleTaskScheduler instance = new SimpleTaskScheduler();
 
-  public static SimpleTaskScheduler getInstance(){
+  public static SimpleTaskScheduler getInstance() {
     return instance;
   }
 
 
   private final ScheduledThreadPoolExecutor scheduler;
 
-  private SimpleTaskScheduler(){
+  private SimpleTaskScheduler() {
     scheduler = new ScheduledThreadPoolExecutor(10);
     scheduler.setRemoveOnCancelPolicy(true);
     scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
@@ -128,37 +128,39 @@ public class SimpleTaskScheduler implements ScheduledExecutorService {
   }
 
   public long getTotalScheduled() {
-      return scheduler.getTaskCount();
+    return scheduler.getTaskCount();
   }
 
   public long getTotalExecuted() {
-      return scheduler.getCompletedTaskCount();
+    return scheduler.getCompletedTaskCount();
   }
 
   public int getDepth() {
     return scheduler.getQueue().size();
   }
 
-  public static final class InterceptedRunnable implements Runnable{
+  public static final class InterceptedRunnable implements Runnable {
 
     private final Runnable runnable;
 
-    public InterceptedRunnable(Runnable runnable){
+    public InterceptedRunnable(Runnable runnable) {
       this.runnable = runnable;
     }
+
     @Override
     public void run() {
       runnable.run();
     }
   }
 
-  public static final class InterceptedCallable<T> implements Callable<T>{
+  public static final class InterceptedCallable<T> implements Callable<T> {
 
     private final Callable<T> callable;
 
-    public InterceptedCallable(Callable<T> callable){
+    public InterceptedCallable(Callable<T> callable) {
       this.callable = callable;
     }
+
     @Override
     public T call() throws Exception {
       return callable.call();

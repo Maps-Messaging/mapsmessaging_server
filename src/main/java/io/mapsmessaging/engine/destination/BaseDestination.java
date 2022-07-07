@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 public interface BaseDestination {
 
   int storeMessage(@NonNull @NotNull Message message) throws IOException;
+
   String getFullyQualifiedNamespace();
 
 }

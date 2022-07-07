@@ -35,13 +35,12 @@ public class TransactionalMessageProcessor extends MessageProcessor {
   protected long processMessage(Message message) {
     destination.getStats().getTransactedPublishedMessageAverages().increment();
     long delayed = message.getDelayed();
-    if(delayed > 0){
+    if (delayed > 0) {
       delayed = System.currentTimeMillis() + delayed;
       message.setDelayed(delayed);
       destination.getDelayedStatus().register(delayed, message);
       return 0;
-    }
-    else {
+    } else {
       return processSubscription(destination, subscriptionManager, message);
     }
   }

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class ReceivePacket {
+
   @Getter
   @Setter
   private String time;

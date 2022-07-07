@@ -26,7 +26,8 @@ import org.jetbrains.annotations.NotNull;
 
 public interface MessageCallback {
 
-  default void sendMessage(@NonNull @NotNull DestinationImpl destination, @NonNull @NotNull SubscribedEventManager subscription,@NonNull @NotNull Message message,@NonNull @NotNull Runnable completionTask) {
+  default void sendMessage(@NonNull @NotNull DestinationImpl destination, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
+      @NonNull @NotNull Runnable completionTask) {
 
   }
 

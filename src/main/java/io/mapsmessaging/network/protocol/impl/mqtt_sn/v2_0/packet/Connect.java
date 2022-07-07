@@ -52,8 +52,8 @@ public class Connect extends MQTT_SN_2_Packet {
 
     cleanStart = (val & 0b00000001) != 0;
     will = (val & 0b00000010) != 0;
-    authentication =(val & 0b00000100) != 0;
-    if( val >> 3 != 0){
+    authentication = (val & 0b00000100) != 0;
+    if (val >> 3 != 0) {
       throw new IOException("3.1.4.2 - Malformed Packet received");
     }
 
@@ -61,17 +61,15 @@ public class Connect extends MQTT_SN_2_Packet {
     keepAlive = MQTTPacket.readShort(packet);
     sessionExpiry = MQTTPacket.readInt(packet);
     maxPacketSize = MQTTPacket.readShort(packet);
-    if(packet.hasRemaining()) {
+    if (packet.hasRemaining()) {
       try {
         clientId = MQTTPacket.readUTF8(packet);
       } catch (MalformedException e) {
         throw new IOException(e);
       }
-    }
-    else if(cleanStart){
+    } else if (cleanStart) {
       clientId = UUID.randomUUID().toString();
-    }
-    else{
+    } else {
       throw new IOException("Must supply a client Id");
     }
   }

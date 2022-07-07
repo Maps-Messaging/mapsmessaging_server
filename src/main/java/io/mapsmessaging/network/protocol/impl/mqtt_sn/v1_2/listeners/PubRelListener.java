@@ -43,8 +43,8 @@ public class PubRelListener extends PacketListener {
     PubComp event = new PubComp(pubRel.getMessageId());
 
     event.setCallback(() -> {
-      Transaction tx = session.getTransaction(session.getName()+":"+event.getMessageId());
-      if(tx != null){
+      Transaction tx = session.getTransaction(session.getName() + ":" + event.getMessageId());
+      if (tx != null) {
         try {
           tx.commit();
           session.closeTransaction(tx);

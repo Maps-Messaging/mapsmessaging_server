@@ -29,7 +29,7 @@ public class CreditUpdateTask extends EngineTask {
   private final SubscribedEventManager subscription;
   private final int credit;
 
-  public CreditUpdateTask(SubscribedEventManager subscription,  int credit){
+  public CreditUpdateTask(SubscribedEventManager subscription, int credit) {
     this.subscription = subscription;
     this.credit = credit;
   }

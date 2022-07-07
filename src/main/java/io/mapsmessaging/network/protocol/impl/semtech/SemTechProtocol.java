@@ -41,7 +41,7 @@ public class SemTechProtocol extends ProtocolImpl {
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
 
     int maxQueued = endPoint.getConfig().getProperties().getIntProperty("MaxQueueSize", 10);
-    SessionContext sessionContext = new SessionContext("SemTech-Gateway:"+endPoint.getName(), this);
+    SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), this);
     sessionContext.setPersistentSession(false);
     sessionContext.setResetState(true);
     sessionContext.setReceiveMaximum(maxQueued);
@@ -51,7 +51,7 @@ public class SemTechProtocol extends ProtocolImpl {
       String outboundTopicName = endPoint.getConfig().getProperties().getProperty("outbound", "/semtech/outbound");
       gatewayManager = new GatewayManager(session, inboundTopicName, outboundTopicName, maxQueued);
     } catch (InterruptedException | ExecutionException e) {
-      if(Thread.currentThread().isInterrupted()){
+      if (Thread.currentThread().isInterrupted()) {
         endPoint.close();
         Thread.currentThread().interrupt();
       }
@@ -61,7 +61,7 @@ public class SemTechProtocol extends ProtocolImpl {
 
   public void close() throws IOException {
     logger.log(ServerLogMessages.SEMTECH_CLOSE, endPoint.toString());
-    SessionManager.getInstance().close(session,true);
+    SessionManager.getInstance().close(session, true);
     endPoint.close();
   }
 
@@ -76,7 +76,7 @@ public class SemTechProtocol extends ProtocolImpl {
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
     SemTechPacket semTechPacket = packetFactory.parse(packet);
-    if(semTechPacket != null) {
+    if (semTechPacket != null) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, semTechPacket);
       PacketHandler.getInstance().handle(this, semTechPacket);
     }
@@ -90,7 +90,7 @@ public class SemTechProtocol extends ProtocolImpl {
     sentMessage();
   }
 
-  public Logger getLogger(){
+  public Logger getLogger() {
     return logger;
   }
 

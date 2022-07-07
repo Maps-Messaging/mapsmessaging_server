@@ -32,21 +32,36 @@ import org.jetbrains.annotations.NotNull;
 @ToString
 public class SubscriptionContextBuilder {
 
-  @Getter private final String name;
-  @Getter private final ClientAcknowledgement acknowledgementController;
-  @Getter private RetainHandler retainHandler;
-  @Getter private CreditHandler creditHandler;
-  @Getter private boolean noLocalMessages;
-  @Getter private String sharedName;
-  @Getter private String alias;
-  @Getter private String selector;
-  @Getter private QualityOfService qos;
-  @Getter private boolean retainAsPublish;
-  @Getter private boolean allowOverlap;
-  @Getter private boolean isBrowser;
-  @Getter private long subscriptionId;
-  @Getter private int receiveMaximum;
-  @Getter private DestinationMode mode;
+  @Getter
+  private final String name;
+  @Getter
+  private final ClientAcknowledgement acknowledgementController;
+  @Getter
+  private RetainHandler retainHandler;
+  @Getter
+  private CreditHandler creditHandler;
+  @Getter
+  private boolean noLocalMessages;
+  @Getter
+  private String sharedName;
+  @Getter
+  private String alias;
+  @Getter
+  private String selector;
+  @Getter
+  private QualityOfService qos;
+  @Getter
+  private boolean retainAsPublish;
+  @Getter
+  private boolean allowOverlap;
+  @Getter
+  private boolean isBrowser;
+  @Getter
+  private long subscriptionId;
+  @Getter
+  private int receiveMaximum;
+  @Getter
+  private DestinationMode mode;
 
   public SubscriptionContextBuilder(@NonNull @NotNull String name, @NonNull @NotNull ClientAcknowledgement acknowledgementController) {
     this.name = name;

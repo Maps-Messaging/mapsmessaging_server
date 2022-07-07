@@ -30,11 +30,11 @@ public interface ProtocolMessageTransformation extends Service {
   @Override
   String getDescription();
 
-  default void incoming (MessageBuilder messageBuilder){
+  default void incoming(MessageBuilder messageBuilder) {
     // nothing to do here
   }
 
-  default byte[] outgoing(Message message){
+  default byte[] outgoing(Message message) {
     return message.getOpaqueData();
   }
 }

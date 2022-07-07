@@ -24,14 +24,18 @@ import lombok.ToString;
 @ToString
 public class HealthStatus {
 
-  public enum LEVEL{INFO, WARN, ERROR, CRITICAL}
+  public enum LEVEL {INFO, WARN, ERROR, CRITICAL}
 
-  @Getter private final String healthId;
-  @Getter private final LEVEL level;
-  @Getter private final String message;
-  @Getter private final String resource;
+  @Getter
+  private final String healthId;
+  @Getter
+  private final LEVEL level;
+  @Getter
+  private final String message;
+  @Getter
+  private final String resource;
 
-  public HealthStatus(String healthId, LEVEL level, String message, String resource){
+  public HealthStatus(String healthId, LEVEL level, String message, String resource) {
     this.healthId = healthId;
     this.level = level;
     this.message = message;

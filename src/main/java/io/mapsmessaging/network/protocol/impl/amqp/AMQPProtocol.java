@@ -71,16 +71,16 @@ public class AMQPProtocol extends ProtocolImpl {
     protonEngine.close();
     selectorTask.close();
     super.close();
-    for(SessionManager sessionManager:activeSessions.values()){
+    for (SessionManager sessionManager : activeSessions.values()) {
       sessionManager.close();
     }
   }
 
-  public SessionManager getSession(String sessionId){
+  public SessionManager getSession(String sessionId) {
     return activeSessions.get(sessionId);
   }
 
-  public SessionManager addSession(String sessionId, Session session){
+  public SessionManager addSession(String sessionId, Session session) {
     completedConnection();
     SessionManager sessionManager = new SessionManager(session);
     activeSessions.put(sessionId, sessionManager);
@@ -96,7 +96,7 @@ public class AMQPProtocol extends ProtocolImpl {
   }
 
   public void registerRead() throws IOException {
-    if(selectorTask != null) {
+    if (selectorTask != null) {
       selectorTask.register(SelectionKey.OP_READ);
     }
   }
@@ -121,7 +121,7 @@ public class AMQPProtocol extends ProtocolImpl {
     return true;
   }
 
-  public @NonNull @NotNull Logger getLogger(){
+  public @NonNull @NotNull Logger getLogger() {
     return logger;
   }
 
@@ -151,7 +151,7 @@ public class AMQPProtocol extends ProtocolImpl {
     return sessionId;
   }
 
-  public void setSessionId(String sessionId){
+  public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
   }
 

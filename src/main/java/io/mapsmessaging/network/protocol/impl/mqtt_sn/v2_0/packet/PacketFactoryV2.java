@@ -48,8 +48,7 @@ public class PacketFactoryV2 extends PacketFactory {
       case MQTT_SNPacket.PINGREQ:
         try {
           return new PingRequest(packet, length);
-        }
-        catch(Exception e){
+        } catch (Exception e) {
           return new PingResponse();
         }
 
@@ -75,13 +74,13 @@ public class PacketFactoryV2 extends PacketFactory {
         return new Auth(packet, length);
 
       default:
-        return super.create( type,  length,  packet);
+        return super.create(type, length, packet);
     }
   }
 
 
   @Override
-  public MQTT_SNPacket getConnectError(ReasonCodes reasonCode){
+  public MQTT_SNPacket getConnectError(ReasonCodes reasonCode) {
     return new ConnAck(reasonCode, 0, "", false);
   }
 }

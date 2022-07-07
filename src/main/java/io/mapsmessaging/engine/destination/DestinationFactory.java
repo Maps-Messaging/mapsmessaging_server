@@ -27,11 +27,11 @@ import org.jetbrains.annotations.NotNull;
 
 public interface DestinationFactory {
 
-  default String calculateNamespace(String destinationName){
+  default String calculateNamespace(String destinationName) {
     return destinationName;
   }
 
-  default String calculateOriginalNamespace(String destinationName){
+  default String calculateOriginalNamespace(String destinationName) {
     return destinationName;
   }
 

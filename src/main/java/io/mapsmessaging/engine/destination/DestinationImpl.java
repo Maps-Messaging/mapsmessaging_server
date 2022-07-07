@@ -75,10 +75,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This class represents a mechanism for clients to publish to a known point, subscribe to this point and the complex mechanisms around that, including
- * transactional publishing, transactional subscribing, delayed publishing, statistics etc. It does not perform any of these operations it is basically
- * a container for structures that do. As such this class provides the API for all functions around subscribing and publishing to a single destination. It does not
- * understand about other destinations or protocols etc, just what a single destination needs to do.
+ * This class represents a mechanism for clients to publish to a known point, subscribe to this point and the complex mechanisms around that, including transactional publishing,
+ * transactional subscribing, delayed publishing, statistics etc. It does not perform any of these operations it is basically a container for structures that do. As such this class
+ * provides the API for all functions around subscribing and publishing to a single destination. It does not understand about other destinations or protocols etc, just what a
+ * single destination needs to do.
  */
 public class DestinationImpl implements BaseDestination {
 
@@ -121,9 +121,9 @@ public class DestinationImpl implements BaseDestination {
   //</editor-fold>
 
   //<editor-fold desc="Constructors">
+
   /**
-   * This constructor builds a destination from scratch, including all the meta data and other files required for a normal
-   * running destination
+   * This constructor builds a destination from scratch, including all the meta data and other files required for a normal running destination
    *
    * @param name a client unique name to use for the destination, typically supplied via an API
    * @param pathManager the physical location to store the files for this destination
@@ -131,7 +131,8 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of resource that this destination represents
    * @throws IOException if, at anytime, the file system was unable to construct, read or write to the required files
    */
-  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull  DestinationPathManager pathManager, @NonNull @NotNull  UUID uuid, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationPathManager pathManager, @NonNull @NotNull UUID uuid,
+      @NonNull @NotNull DestinationType destinationType) throws IOException {
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = computePath(pathManager, uuid);
@@ -150,20 +151,21 @@ public class DestinationImpl implements BaseDestination {
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
-    transactionMessageManager= DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
+    transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     closed = false;
     loadSchema();
   }
 
   /**
-   * This constructor is used during the restart of the server where a resource has already been found and loaded, we now continue with the
-   * loading of the other structures required for the destionation to function correctly
+   * This constructor is used during the restart of the server where a resource has already been found and loaded, we now continue with the loading of the other structures required
+   * for the destionation to function correctly
    *
    * @param resource preloaded resource found during restart
    * @param destinationType the resource type detected during the reload
    * @throws IOException if, at any point, the underlying file structures are corrupt or unable to be used
    */
-  public DestinationImpl( @NonNull @NotNull String name,@NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType)
+      throws IOException {
     this.fullyQualifiedNamespace = name;
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     fullyQualifiedDirectoryRoot = directory;
@@ -185,20 +187,20 @@ public class DestinationImpl implements BaseDestination {
     // Delayed Messages are automatically dealt with once the structure has been reloaded
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
 
-    transactionMessageManager= DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
+    transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
     loadSchema();
   }
 
   /**
-   * This constructor is only used for internal topics, typically $SYS topics and as such have a limited feature set, like no delayed publishing, no transactional publishing
-   * and things like that, they are simply in memory resources that manage the system statistics
+   * This constructor is only used for internal topics, typically $SYS topics and as such have a limited feature set, like no delayed publishing, no transactional publishing and
+   * things like that, they are simply in memory resources that manage the system statistics
    *
-    * @param name of the destination
+   * @param name of the destination
    * @param destinationType the type of the destination
    */
-  public DestinationImpl( @NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = "";
@@ -217,7 +219,7 @@ public class DestinationImpl implements BaseDestination {
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
-    transactionMessageManager= null;
+    transactionMessageManager = null;
     closed = false;
   }
   //</editor-fold>
@@ -226,17 +228,17 @@ public class DestinationImpl implements BaseDestination {
   public void close() throws IOException {
     closed = true;
     resource.close();
-    if(delayedMessageManager != null) {
+    if (delayedMessageManager != null) {
       delayedMessageManager.close();
     }
-    if(transactionMessageManager != null) {
+    if (transactionMessageManager != null) {
       transactionMessageManager.close();
     }
   }
 
-  private void loadSchema(){
+  private void loadSchema() {
     ConfigurationProperties props = new ConfigurationProperties(resource.getResourceProperties().getSchema());
-    if(!props.isEmpty()){
+    if (!props.isEmpty()) {
       SchemaConfig config = null;
       try {
         config = SchemaConfigFactory.getInstance().constructConfig(props);
@@ -251,16 +253,15 @@ public class DestinationImpl implements BaseDestination {
 
   public void updateSchema(@NonNull @NotNull SchemaConfig config, @Nullable Message message) throws IOException {
     SchemaConfig loaded = SchemaManager.getInstance().getSchema(config.getUniqueId());
-    if(loaded != null){
+    if (loaded != null) {
       config = loaded;
-    }
-    else{
+    } else {
       config = SchemaManager.getInstance().addSchema(getFullyQualifiedNamespace(), config);
     }
     Schema newSchema = new Schema(config);
     ResourceProperties resourceProperties = resource.getResourceProperties();
 
-    if(schema.update(newSchema) && resourceProperties != null){
+    if (schema.update(newSchema) && resourceProperties != null) {
       resourceProperties.setSchema(config.toMap());
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
       if (message != null && schemaSubscriptionManager.hasSubscriptions()) {
@@ -270,29 +271,30 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  private static String computePath(@NonNull @NotNull  DestinationPathManager pathManager, UUID uuid){
+  private static String computePath(@NonNull @NotNull DestinationPathManager pathManager, UUID uuid) {
     return FilePathHelper.cleanPath(pathManager.getDirectory() + File.separator + uuid.toString() + File.separator);
   }
+
   //
   // We now need to roll back all events found in the transaction manager
   //
   private void rollbackTransactionsOnReload() throws IOException {
     List<Long> transactionIds = transactionMessageManager.getTransactions();
-    for(Long transaction:transactionIds){
+    for (Long transaction : transactionIds) {
       abort(transaction);
     }
   }
 
-  public void stopSubscriptions(){
+  public void stopSubscriptions() {
     subscriptionTaskQueue.shutdown();
   }
 
-  public void pauseClientRequests(){
+  public void pauseClientRequests() {
     subscriptionManager.pause();
   }
 
   public void delete() throws IOException {
-    if(!closed) {
+    if (!closed) {
       closed = true;
       subscriptionManager.close();
       schemaSubscriptionManager.close();
@@ -323,8 +325,7 @@ public class DestinationImpl implements BaseDestination {
       for (File file : failed) {
         try {
           Files.delete(file.toPath());
-        }
-        catch (IOException io){
+        } catch (IOException io) {
           failedFiles.append(file.getAbsolutePath()).append(",");
         }
       }
@@ -333,7 +334,7 @@ public class DestinationImpl implements BaseDestination {
       Files.delete(directoryToBeDeleted.toPath());
     } catch (IOException e) {
       failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
-      throw new IOException("Failed to delete the following files: "+failedFiles, e);
+      throw new IOException("Failed to delete the following files: " + failedFiles, e);
     }
   }
 
@@ -368,13 +369,13 @@ public class DestinationImpl implements BaseDestination {
    *
    * @return ResourceType for this destination
    */
-  public DestinationType getResourceType(){
+  public DestinationType getResourceType() {
     return destinationType;
   }
 
   /**
-   * All destinations have a physical location within the file system, this can be configured based on the namespace. This returns the
-   * root directory for this specific destination
+   * All destinations have a physical location within the file system, this can be configured based on the namespace. This returns the root directory for this specific destination
+   *
    * @return File path for this destination
    */
   public String getPhysicalLocation() {
@@ -382,8 +383,8 @@ public class DestinationImpl implements BaseDestination {
   }
 
   /**
-   * All destinations have the ability to store a specific message Id as a "retained" message, meaning on new subscriptions this message
-   * is delivered first. This function returns the message Id that represents the current "retained" message
+   * All destinations have the ability to store a specific message Id as a "retained" message, meaning on new subscriptions this message is delivered first. This function returns
+   * the message Id that represents the current "retained" message
    *
    * @return message Id of the retained message or -1 indicating no retained message
    */
@@ -405,38 +406,35 @@ public class DestinationImpl implements BaseDestination {
   }
 
   /**
-   * Returns the stats object for this destination. All metrics about this destination are
-   * maintained in this class
+   * Returns the stats object for this destination. All metrics about this destination are maintained in this class
    *
    * @return DestinationStats for this instance
    */
-  public DestinationStats getStats(){
+  public DestinationStats getStats() {
     return stats;
   }
 
   /**
-   * There are 2 types of messages, ones that are visible to subscribers, normal message flow, and then ones that we have but are not
-   * able to release to the clients yet. This could be because they are delayed publishes or they are part of a transaction that has
-   * yet to be committed
+   * There are 2 types of messages, ones that are visible to subscribers, normal message flow, and then ones that we have but are not able to release to the clients yet. This could
+   * be because they are delayed publishes or they are part of a transaction that has yet to be committed
    *
    * @return the current number of messages that are waiting a state change so they can be delivered to any subscribers
    */
-  public long getDelayedMessages(){
-    if(delayedMessageManager != null) {
+  public long getDelayedMessages() {
+    if (delayedMessageManager != null) {
       return delayedMessageManager.size();
     }
     return 0;
   }
 
   /**
-   * There are 2 types of messages, ones that are visible to subscribers, normal message flow, and then ones that we have but are not
-   * able to release to the clients yet. This could be because they are delayed publishes or they are part of a transaction that has
-   * yet to be committed
+   * There are 2 types of messages, ones that are visible to subscribers, normal message flow, and then ones that we have but are not able to release to the clients yet. This could
+   * be because they are delayed publishes or they are part of a transaction that has yet to be committed
    *
    * @return the current number of messages that are waiting a state change so they can be delivered to any subscribers
    */
-  public long getPendingTransactions(){
-    if(transactionMessageManager != null) {
+  public long getPendingTransactions() {
+    if (transactionMessageManager != null) {
       return transactionMessageManager.size();
     }
     return 0;
@@ -461,26 +459,26 @@ public class DestinationImpl implements BaseDestination {
    *
    * @param subscription subscription object to be added
    */
-  public void addSubscription( @NonNull @NotNull Subscription subscription) {
+  public void addSubscription(@NonNull @NotNull Subscription subscription) {
     stats.subscriptionAdded();
     subscriptionManager.put(subscription.getSessionId(), subscription);
   }
 
   /**
-   * Removes the indicated subscription ID and will delete any messages that are held by this subscription and are not required
-   * by any other subscription. Once this is completed messages are, potentially, gone forever.
+   * Removes the indicated subscription ID and will delete any messages that are held by this subscription and are not required by any other subscription. Once this is completed
+   * messages are, potentially, gone forever.
    *
-   * @param subscriptionId  Subscription identifier to remove
+   * @param subscriptionId Subscription identifier to remove
    * @return the subscription that was removed
    */
-  public Subscribable removeSubscription( @NonNull @NotNull String subscriptionId) throws IOException {
+  public Subscribable removeSubscription(@NonNull @NotNull String subscriptionId) throws IOException {
     stats.subscriptionRemoved();
     Subscribable subscription = subscriptionManager.remove(subscriptionId);
-    if(subscription != null) {
+    if (subscription != null) {
       Queue<Long> eventQueue = subscription.getAllAtRest();
       // We now need to filter this queue against other subscriptions. If they have interest we MUST NOT remove the event
       // If no other subscriptions have any interest in the event, we must remove it
-      if(!eventQueue.isEmpty()) {
+      if (!eventQueue.isEmpty()) {
         eventQueue = subscriptionManager.scanForInterest(eventQueue);
         if (!eventQueue.isEmpty()) {
           stats.getStoredMessageAverages().subtract(eventQueue.size());
@@ -492,13 +490,10 @@ public class DestinationImpl implements BaseDestination {
   }
   //</editor-fold>
 
-  public void addSchemaSubscription( @NonNull @NotNull Subscription subscription) {
+  public void addSchemaSubscription(@NonNull @NotNull Subscription subscription) {
     stats.subscriptionAdded();
     schemaSubscriptionManager.put(subscription.getSessionId(), subscription);
   }
-
-
-
 
   //<editor-fold desc="Message delivery and completion APIs">
 
@@ -513,7 +508,7 @@ public class DestinationImpl implements BaseDestination {
     long nano = System.nanoTime();
     Message message = resource.get(messageId);
     if (message != null) {
-      nano = (System.nanoTime() - nano)/1000;
+      nano = (System.nanoTime() - nano) / 1000;
       getStats().getReadTimeAverages().add(nano);
       long expiry = message.getExpiry();
       if (expiry > 0 && expiry < System.currentTimeMillis()) {
@@ -521,8 +516,7 @@ public class DestinationImpl implements BaseDestination {
         subscriptionManager.expired(messageId);
         message = null;
         stats.expiredMessage();
-      }
-      else{
+      } else {
         stats.retrievedMessage();
       }
     }
@@ -530,8 +524,8 @@ public class DestinationImpl implements BaseDestination {
   }
 
   /**
-   * Called when the completion task for the message delivery is called, we than scan to see if any other subscriptions require the message, if not, then
-   * we simply schedule a removal of the message from the destination
+   * Called when the completion task for the message delivery is called, we than scan to see if any other subscriptions require the message, if not, then we simply schedule a
+   * removal of the message from the destination
    *
    * @param messageId that the delivery is complete
    */
@@ -547,24 +541,22 @@ public class DestinationImpl implements BaseDestination {
   //<editor-fold desc="Non transactional publishing">
 
   /**
-   * Queue a task to store the supplied message directly to the resource. If the message is indicated to be delivered in the future
-   * then a delayed task is run to ensure the correct handling of the event, else it is handled immediately
+   * Queue a task to store the supplied message directly to the resource. If the message is indicated to be delivered in the future then a delayed task is run to ensure the correct
+   * handling of the event, else it is handled immediately
    *
    * @param message to store
    * @return the number of subscribers that are interested in this message
    * @throws IOException If, at any point, a file I/O exception was raised while storing this message
    */
   @Override
-  public int storeMessage( @NonNull @NotNull Message message) throws IOException {
+  public int storeMessage(@NonNull @NotNull Message message) throws IOException {
     Callable<Response> task;
-    if(message.getDelayed() > 0 && delayedMessageManager != null){
+    if (message.getDelayed() > 0 && delayedMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, delayedMessageManager, message.getDelayed());
-    }
-    else {
-      if(getResourceType().isTopic()) {
+    } else {
+      if (getResourceType().isTopic()) {
         task = new NonDelayedStoreMessageTask(this, subscriptionManager, message);
-      }
-      else{
+      } else {
         task = new QueueBasedStoreMessageTask(this, subscriptionManager, message);
       }
     }
@@ -575,8 +567,8 @@ public class DestinationImpl implements BaseDestination {
   //<editor-fold desc="Transactional publishing APIs">
 
   /**
-   * Removes ALL messages that this transaction Id references. Typically called if the client disconnected before a commit was called or if another exception
-   * was raised during the processing of another part of the transaction
+   * Removes ALL messages that this transaction Id references. Typically called if the client disconnected before a commit was called or if another exception was raised during the
+   * processing of another part of the transaction
    *
    * @param transactionId This is the internal transaction id that we are to use
    * @throws IOException If the file system raises any File I/O exceptions during the operation
@@ -586,8 +578,7 @@ public class DestinationImpl implements BaseDestination {
   }
 
   /**
-   * Commits all messages that are referenced by this transaction id. Basically this function makes the messages visible to any
-   * subscribers and can now be delivered.
+   * Commits all messages that are referenced by this transaction id. Basically this function makes the messages visible to any subscribers and can now be delivered.
    *
    * @param transactionId The transaction id to use to release the messages
    * @throws IOException If the file system raises any File I/O exceptions during the operation
@@ -605,10 +596,9 @@ public class DestinationImpl implements BaseDestination {
    */
   public void storeTransactionalMessage(long transactionId, @NonNull @NotNull Message message) throws IOException {
     Callable<Response> task;
-    if(transactionMessageManager != null){
+    if (transactionMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, transactionMessageManager, transactionId);
-    }
-    else {
+    } else {
       task = new NonDelayedStoreMessageTask(this, subscriptionManager, message);
     }
     handleTask(task);
@@ -616,15 +606,15 @@ public class DestinationImpl implements BaseDestination {
   //</editor-fold>
 
   //<editor-fold desc="Specific shred subscription functions">
-  public void addShareRegistry ( @NonNull @NotNull SharedSubscriptionManager shareRegistry) {
+  public void addShareRegistry(@NonNull @NotNull SharedSubscriptionManager shareRegistry) {
     sharedSubscriptionRegistry.add(shareRegistry.getName(), shareRegistry);
   }
 
-  public SharedSubscriptionManager findShareRegister( @NonNull @NotNull String sharedName) {
+  public SharedSubscriptionManager findShareRegister(@NonNull @NotNull String sharedName) {
     return sharedSubscriptionRegistry.get(sharedName);
   }
 
-  public void delShareRegistry ( @NonNull @NotNull String sharedName) {
+  public void delShareRegistry(@NonNull @NotNull String sharedName) {
     sharedSubscriptionRegistry.del(sharedName);
   }
   //</editor-fold>
@@ -642,31 +632,31 @@ public class DestinationImpl implements BaseDestination {
    *
    * @param subscription to initiate the scan on
    */
-  public void scanForDelivery( @NonNull @NotNull Subscription subscription) {
+  public void scanForDelivery(@NonNull @NotNull Subscription subscription) {
     MessageDeliveryTask deliveryTask = new MessageDeliveryTask(subscription);
     submit(deliveryTask);
   }
 
   /**
-   * Submits a task to update the subscription structures, this could be an add subscription, remove, ack, rollback etc. Basically
-   * anything that updates the state of a subscription
+   * Submits a task to update the subscription structures, this could be an add subscription, remove, ack, rollback etc. Basically anything that updates the state of a
+   * subscription
    *
    * @param task to add on the subscription task queue.
    * @return the future response of the task that has been queued
    */
-  public Future<Response> submit( @NonNull @NotNull Callable<Response> task){
+  public Future<Response> submit(@NonNull @NotNull Callable<Response> task) {
     return subscriptionTaskQueue.submit(task);
   }
 
   /**
-   * Submits a generic task to update the resource of this destination, typically Message addition or deletion are queued here since there
-   * is no subscription structure changes they can occur in parallel to the subscription queue
+   * Submits a generic task to update the resource of this destination, typically Message addition or deletion are queued here since there is no subscription structure changes they
+   * can occur in parallel to the subscription queue
    *
    * @param task to queue on the resource task queue
    * @param priority the priority to process this task, some tasks can be done before other tasks
    * @return the future response of the task that has been queued
    */
-  public Future<Response> submit( @NonNull @NotNull  Callable<Response> task, int priority){
+  public Future<Response> submit(@NonNull @NotNull Callable<Response> task, int priority) {
     return resourceTaskQueue.submit(task, priority);
   }
 
@@ -677,7 +667,7 @@ public class DestinationImpl implements BaseDestination {
    * @return the number of times the message was delivered to subscribers
    * @throws IOException if, at any point, an exception was raised because of file I/O exceptions
    */
-  public int handleTask(@NonNull @NotNull Callable<Response> task)throws IOException {
+  public int handleTask(@NonNull @NotNull Callable<Response> task) throws IOException {
     Future<Response> future = submit(task, PUBLISH_PRIORITY);
     try {
       Response response = future.get(60, TimeUnit.SECONDS);
@@ -690,9 +680,9 @@ public class DestinationImpl implements BaseDestination {
         }
       }
       return 0;
-    } catch (CancellationException exception){
+    } catch (CancellationException exception) {
       // We have a cancelled task..
-      if(!isClosed()){
+      if (!isClosed()) {
         throw exception;
       }
       return 0;
@@ -708,6 +698,7 @@ public class DestinationImpl implements BaseDestination {
   //</editor-fold>
 
   //<editor-fold desc="Resource operations">
+
   /**
    * Physically removes a message from the resource, should not be used directly
    *
@@ -717,7 +708,7 @@ public class DestinationImpl implements BaseDestination {
   public void removeMessage(long messageId) throws IOException {
     long nano = System.nanoTime();
     resource.remove(messageId);
-    nano = (System.nanoTime() - nano)/1000; // Make it micro seconds
+    nano = (System.nanoTime() - nano) / 1000; // Make it micro seconds
     getStats().getDeleteTimeAverages().add(nano);
   }
 
@@ -730,14 +721,14 @@ public class DestinationImpl implements BaseDestination {
   public void addMessage(Message message) throws IOException {
     long nano = System.nanoTime();
     resource.add(message);
-    nano = (System.nanoTime() - nano)/1000;
+    nano = (System.nanoTime() - nano) / 1000;
     getStats().getWriteTimeAverages().add(nano);
   }
 
   public DestinationSubscription getSubscription(String subscriptionName) {
     Subscribable subscribable = subscriptionManager.getSubscription(subscriptionName);
-    if(subscribable instanceof DestinationSubscription){
-      return (DestinationSubscription)subscribable;
+    if (subscribable instanceof DestinationSubscription) {
+      return (DestinationSubscription) subscribable;
     }
     return null;
   }

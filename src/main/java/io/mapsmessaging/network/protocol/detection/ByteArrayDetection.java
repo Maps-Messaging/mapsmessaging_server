@@ -52,11 +52,11 @@ public class ByteArrayDetection implements Detection {
     int originPoint = start;
     int shifted = 0;
     boolean found = false;
-    while(!found) {
+    while (!found) {
       packet.position(originPoint);
       packet.get(test, 0, checkArray.length);
       if (test[0] != checkArray[0]) {
-        if(shifted == range){
+        if (shifted == range) {
           return false;
         }
         originPoint++;
@@ -64,8 +64,7 @@ public class ByteArrayDetection implements Detection {
         if (packet.limit() - originPoint < checkArray.length) {
           throw new EndOfBufferException();
         }
-      }
-      else{
+      } else {
         found = true;
       }
     }

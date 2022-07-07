@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.security.sasl.Sasl;
 
 public class AuthenticationContext {
+
   private final String authMethod;
   private final MQTTPacket5 parkedConnect;
   private final SaslAuthenticationMechanism mechanism;
@@ -41,11 +42,11 @@ public class AuthenticationContext {
     mechanism = new SaslAuthenticationMechanism(authMethod, props);
   }
 
-  public String getAuthMethod(){
+  public String getAuthMethod() {
     return authMethod;
   }
 
-  public MQTTPacket5 getParkedConnect(){
+  public MQTTPacket5 getParkedConnect() {
     return parkedConnect;
   }
 

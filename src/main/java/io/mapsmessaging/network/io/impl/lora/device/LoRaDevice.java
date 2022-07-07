@@ -36,7 +36,7 @@ public class LoRaDevice {
   private boolean isInitialised;
   private PacketReader packetReader;
 
-  protected LoRaDevice(LoRaDeviceConfig config){
+  protected LoRaDevice(LoRaDeviceConfig config) {
     logger = LoggerFactory.getLogger(LoRaDevice.class);
     this.config = config;
     isInitialised = false;
@@ -44,7 +44,7 @@ public class LoRaDevice {
   }
 
   public synchronized void registerEndPoint(LoRaEndPoint endPoint) throws IOException {
-    if (!isInitialised && !init((int)endPoint.getId())) {
+    if (!isInitialised && !init((int) endPoint.getId())) {
       logger.log(ServerLogMessages.LORA_DEVICE_NOT_INITIALISED, config.getName(), config.getRadio());
     } else if (radioHandle < 0) {
       logger.log(ServerLogMessages.LORA_DEVICE_INIT_FAILED, config.getName(), config.getRadio());
@@ -56,7 +56,7 @@ public class LoRaDevice {
     }
   }
 
-  public void close(){
+  public void close() {
     packetReader.close();
   }
 
@@ -67,55 +67,54 @@ public class LoRaDevice {
   private boolean init(int addr) throws IOException {
     isInitialised = true;
     int result = init(addr, config.getFrequency(), config.getCs(), config.getIrq(), config.getRst());
-    if(result >= 0){
+    if (result >= 0) {
       setPower(result, config.getPower(), false);
-      if(config.getCadTimeout() > 0){
+      if (config.getCadTimeout() > 0) {
         setCADTimeout(result, config.getCadTimeout());
       }
       setPromiscuous(radioHandle, true);
       packetReader = new PacketReader(this);
     }
     radioHandle = result;
-    return radioHandle >=0;
+    return radioHandle >= 0;
   }
 
-  public void log(String message){
+  public void log(String message) {
     logger.log(ServerLogMessages.LORA_DEVICE_DRIVER_LOG, config.getName(), config.getRadio(), message);
   }
 
-  void handleIncomingPacket(LoRaDatagram datagram){
+  void handleIncomingPacket(LoRaDatagram datagram) {
     LoRaEndPoint endPoint = registeredEndPoint.get(datagram.getTo());
-    if(endPoint != null){
+    if (endPoint != null) {
       endPoint.queue(datagram);
-    }
-    else{
+    } else {
       logger.log(ServerLogMessages.LORA_DEVICE_NO_REGISTERED_ENDPOINT, datagram.getTo());
     }
   }
 
-  public synchronized boolean write (byte[] buffer, int length, byte from, byte to){
-    if(radioHandle >= 0) {
+  public synchronized boolean write(byte[] buffer, int length, byte from, byte to) {
+    if (radioHandle >= 0) {
       return write(radioHandle, buffer, length, from, to);
     }
     return false;
   }
 
-  public synchronized long read(byte[] buffer, int length){
-    if(radioHandle >= 0) {
+  public synchronized long read(byte[] buffer, int length) {
+    if (radioHandle >= 0) {
       return read(radioHandle, buffer, length);
     }
     return -1;
   }
 
-  public int available(){
-    if(radioHandle >= 0) {
+  public int available() {
+    if (radioHandle >= 0) {
       return available(radioHandle);
     }
     return 0;
   }
 
-  public int getPacketSize(){
-    if(radioHandle >= 0) {
+  public int getPacketSize() {
+    if (radioHandle >= 0) {
       return getPacketSize(radioHandle);
     }
     return 0;
@@ -124,7 +123,7 @@ public class LoRaDevice {
   //
   // Supply the GPIO pins for ChipSelect, Interrupt and Reset
   //
-  private native int init( int nodeAddress, float frequency, int cs, int irq, int rst) throws IOException;
+  private native int init(int nodeAddress, float frequency, int cs, int irq, int rst) throws IOException;
 
   //
   // Set the power output for the radio
@@ -139,7 +138,7 @@ public class LoRaDevice {
   //
   // Write the buffer to the host specified
   //
-  private native boolean write (int radioHandle, byte[] buffer, int length, byte from, byte to);
+  private native boolean write(int radioHandle, byte[] buffer, int length, byte from, byte to);
 
   //
   // Read buffer, the return long contains

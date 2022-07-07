@@ -40,11 +40,10 @@ public class PingRequest extends MQTT_SN_2_Packet {
     super(PINGREQ);
     if (length > 2) {
       maxMessages = packet.get();
-      if(length > 4) {
+      if (length > 4) {
         clientId = MQTTPacket.readUTF8(packet);
       }
-    }
-    else{
+    } else {
       maxMessages = 0;
       clientId = "";
     }

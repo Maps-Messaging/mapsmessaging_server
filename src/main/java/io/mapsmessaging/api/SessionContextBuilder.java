@@ -32,21 +32,36 @@ import org.jetbrains.annotations.NotNull;
 @ToString
 public class SessionContextBuilder {
 
-  @Getter private final String id;
-  @Getter private final ProtocolImpl protocol;
-  @Getter private final Map<String, String> userData;
-  @Getter private String authenticationMethod;
-  @Getter private byte[] authenticationData;
-  @Getter private String username;
-  @Getter private char[] password;
-  @Getter private boolean resetState;
-  @Getter private String willTopic;
-  @Getter private Message willMessage;
-  @Getter private long willDelay;
-  @Getter private boolean persistentSession;
-  @Getter private long sessionExpiry;
-  @Getter private int receiveMaximum;
-  @Getter private int duration;
+  @Getter
+  private final String id;
+  @Getter
+  private final ProtocolImpl protocol;
+  @Getter
+  private final Map<String, String> userData;
+  @Getter
+  private String authenticationMethod;
+  @Getter
+  private byte[] authenticationData;
+  @Getter
+  private String username;
+  @Getter
+  private char[] password;
+  @Getter
+  private boolean resetState;
+  @Getter
+  private String willTopic;
+  @Getter
+  private Message willMessage;
+  @Getter
+  private long willDelay;
+  @Getter
+  private boolean persistentSession;
+  @Getter
+  private long sessionExpiry;
+  @Getter
+  private int receiveMaximum;
+  @Getter
+  private int duration;
 
   public SessionContextBuilder(@NonNull @NotNull String id, @NonNull @NotNull ProtocolImpl protocol) {
     this.id = id;

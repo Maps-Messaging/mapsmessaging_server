@@ -23,6 +23,7 @@ import java.io.IOException;
 public interface AuthenticationMechanism {
 
   byte[] challenge(byte[] challenge) throws IOException;
+
   boolean complete();
 
 }

@@ -32,7 +32,7 @@ public class Subscribe extends MQTTPacket {
   private final List<SubscriptionInfo> subscriptionList;
   private int messageId;
 
-  public Subscribe(){
+  public Subscribe() {
     super(SUBSCRIBE);
     subscriptionList = new ArrayList<>();
     messageId = 0;
@@ -86,13 +86,13 @@ public class Subscribe extends MQTTPacket {
 
   public int packFrame(Packet packet) {
     int length = 2;
-    for(SubscriptionInfo info : subscriptionList) {
-      length += info.length()+2;
+    for (SubscriptionInfo info : subscriptionList) {
+      length += info.length() + 2;
     }
     packControlByte(packet, 2);
     writeVariableInt(packet, length);
     writeShort(packet, messageId);
-    for(SubscriptionInfo info : subscriptionList){
+    for (SubscriptionInfo info : subscriptionList) {
       writeUTF8(packet, info.getTopicName());
       packet.put((byte) info.getQualityOfService().getLevel());
     }

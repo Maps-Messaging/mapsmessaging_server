@@ -30,7 +30,7 @@ public class SubscriptionUpdateTask extends SubscriptionTask {
   private final DestinationImpl destination;
   private final Message message;
 
-  public SubscriptionUpdateTask(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager, Message message){
+  public SubscriptionUpdateTask(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager, Message message) {
     super();
     this.destination = destination;
     this.message = message;

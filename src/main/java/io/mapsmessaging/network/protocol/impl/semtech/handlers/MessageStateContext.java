@@ -11,18 +11,18 @@ public class MessageStateContext {
   private final Map<Integer, MessageEvent> inflight;
 
 
-  public MessageStateContext(){
+  public MessageStateContext() {
     inflight = new ConcurrentHashMap<>();
   }
 
-  public void complete(int token){
+  public void complete(int token) {
     MessageEvent messageEvent = inflight.remove(token);
-    if(messageEvent != null){
+    if (messageEvent != null) {
       messageEvent.getCompletionTask().run();
     }
   }
 
-  public void push(int token, @NotNull @NonNull MessageEvent messageEvent){
+  public void push(int token, @NotNull @NonNull MessageEvent messageEvent) {
     inflight.put(token, messageEvent);
   }
 }

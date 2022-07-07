@@ -50,16 +50,15 @@ public class JMXManager {
     logger.log(ServerLogMessages.JMX_MANAGER_REGISTER, objectId);
     try {
       ObjectName objectName = new ObjectName(objectId);
-      if(obj instanceof HealthMonitor){
-        healthMonitorMap.put(objectName, (HealthMonitor)obj);
+      if (obj instanceof HealthMonitor) {
+        healthMonitorMap.put(objectName, (HealthMonitor) obj);
       }
       //Test to see if it is an annotated JMX bean, else assume its a normal JMXBean
       Class<?> beanClass = obj.getClass();
       JMXBean jmxBean = beanClass.getAnnotation(JMXBean.class);
-      if(jmxBean == null) {
+      if (jmxBean == null) {
         return mbs.registerMBean(obj, objectName);
-      }
-      else{
+      } else {
         return mbs.registerMBean(new JMXBeanWrapper(obj), objectName);
       }
     } catch (Exception e) {
@@ -79,6 +78,7 @@ public class JMXManager {
       }
     }
   }
+
   public List<HealthMonitor> getHealthList() {
     return new ArrayList<>(healthMonitorMap.values());
   }

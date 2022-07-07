@@ -69,7 +69,7 @@ public class NetworkConnectionManager implements ServiceManager {
   public void initialise() {
     for (ConfigurationProperties properties : connectionConfiguration) {
       String urlString = properties.getProperty("url");
-      if(urlString == null){
+      if (urlString == null) {
         urlString = "noop://localhost/";
         properties.put("protocol", "loop");
       }
@@ -77,11 +77,10 @@ public class NetworkConnectionManager implements ServiceManager {
       EndPointURL endPointURL = new EndPointURL(urlString);
       List<ConfigurationProperties> destinationMappings = new ArrayList<>();
       Object linkReference = properties.get("links");
-      if(linkReference instanceof ConfigurationProperties){
+      if (linkReference instanceof ConfigurationProperties) {
         destinationMappings.add((ConfigurationProperties) linkReference);
-      }
-      else if(linkReference instanceof List){
-        destinationMappings.addAll((List<ConfigurationProperties>)linkReference);
+      } else if (linkReference instanceof List) {
+        destinationMappings.addAll((List<ConfigurationProperties>) linkReference);
       }
       if (!destinationMappings.isEmpty()) {
         for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
@@ -100,13 +99,13 @@ public class NetworkConnectionManager implements ServiceManager {
 
   public void start() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
-    for(EndPointConnection endPointConnection : endPointConnectionList){
+    for (EndPointConnection endPointConnection : endPointConnectionList) {
       endPointConnection.start();
     }
   }
 
   public void stop() {
-    for(EndPointConnection endPointConnection : endPointConnectionList){
+    for (EndPointConnection endPointConnection : endPointConnectionList) {
       endPointConnection.stop();
     }
   }
@@ -114,7 +113,7 @@ public class NetworkConnectionManager implements ServiceManager {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
-    for(EndPointConnectionFactory endPointConnectionFactory:endPointConnections){
+    for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
       service.add(endPointConnectionFactory);
     }
     return service.listIterator();

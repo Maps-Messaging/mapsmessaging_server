@@ -27,26 +27,26 @@ public class ListResponse implements Response {
 
   private final List<Future<Response>> responses;
 
-  public ListResponse(){
+  public ListResponse() {
     responses = new ArrayList<>();
   }
 
-  public void addResponse(Future<Response> response){
+  public void addResponse(Future<Response> response) {
     responses.add(response);
   }
 
-  public boolean isDone(){
-    for(Future<Response> future:responses){
-      if(!future.isDone()){
+  public boolean isDone() {
+    for (Future<Response> future : responses) {
+      if (!future.isDone()) {
         return false;
       }
     }
     return true;
   }
 
-  public  List<Response> getResponse() throws ExecutionException, InterruptedException {
+  public List<Response> getResponse() throws ExecutionException, InterruptedException {
     List<Response> returnList = new ArrayList<>();
-    for(Future<Response> future:responses){
+    for (Future<Response> future : responses) {
       returnList.add(future.get());
     }
     return returnList;

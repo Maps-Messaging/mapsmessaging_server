@@ -20,12 +20,13 @@ package io.mapsmessaging.network.io.impl;
 
 public class DefaultConstants {
 
-  static final int TCP_READ_BUFFER_SIZE  = 1000000;
+  static final int TCP_READ_BUFFER_SIZE = 1000000;
   static final int TCP_WRITE_BUFFER_SIZE = 1000000;
 
   static final int TCP_READ_FRAGMENTATION_LIMIT = 5;
   static final int TCP_READ_DELAY_ON_FRAGMENTATION = 100; // ms
   static final boolean TCP_READ_DELAY_ENABLED = true;
 
-  private DefaultConstants(){}
+  private DefaultConstants() {
+  }
 }

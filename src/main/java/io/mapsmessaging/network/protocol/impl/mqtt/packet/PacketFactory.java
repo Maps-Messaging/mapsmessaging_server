@@ -56,10 +56,9 @@ public class PacketFactory {
   protected MQTTPacket create(int packetId, byte fixedHeader, long remainingLen, Packet packet)
       throws MalformedException, EndOfBufferException {
 
-    if(protocolImpl.getEndPoint().isClient()){
+    if (protocolImpl.getEndPoint().isClient()) {
       return createClientPacket(packetId, fixedHeader, remainingLen, packet);
-    }
-    else{
+    } else {
       return createServerPacket(packetId, fixedHeader, remainingLen, packet);
     }
   }
@@ -79,7 +78,7 @@ public class PacketFactory {
         return new Publish(fixedHeader, remainingLen, packet, protocolImpl.getMaximumBufferSize());
 
       default:
-        throw new MalformedException("Unexpected packet received::"+packetId);
+        throw new MalformedException("Unexpected packet received::" + packetId);
     }
   }
 

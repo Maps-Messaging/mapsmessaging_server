@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class PacketIdManager  {
+public class PacketIdManager {
 
   private final Map<Integer, PacketIdentifierMap> outstandingPacketId;
 
@@ -34,7 +34,7 @@ public class PacketIdManager  {
     outstandingPacketId = new TreeMap<>();
   }
 
-  public void close(){
+  public void close() {
     outstandingPacketId.clear();
   }
 
@@ -69,7 +69,7 @@ public class PacketIdManager  {
   }
 
   public boolean scanForTimeOut() {
-    long timeout = System.currentTimeMillis()-20000;
+    long timeout = System.currentTimeMillis() - 20000;
     List<PacketIdentifierMap> tmp = new ArrayList<>(outstandingPacketId.values());
     return tmp.stream().anyMatch(map -> map.getTime() < timeout);
   }

@@ -26,7 +26,7 @@ public class DTLSEndPointServerFactory extends UDPEndPointServerFactory {
     InetAddress bindAddress = InetAddress.getByName(url.getHost());
     InetSocketAddress inetSocketAddress = new InetSocketAddress(bindAddress, url.getPort());
     ProtocolFactory protocolFactory = new ProtocolFactory(config.getProtocols());
-    return new DTLSEndPointServer(inetSocketAddress, protocolFactory, url, selector,acceptHandler, managerMBean, config);
+    return new DTLSEndPointServer(inetSocketAddress, protocolFactory, url, selector, acceptHandler, managerMBean, config);
   }
 
   @Override

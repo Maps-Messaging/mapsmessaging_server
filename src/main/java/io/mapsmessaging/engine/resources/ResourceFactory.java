@@ -30,6 +30,7 @@ import java.util.UUID;
 import org.yaml.snakeyaml.Yaml;
 
 public class ResourceFactory {
+
   public static final String RESOURCE_FILE_NAME = "resource.yaml";
 
   private static final ResourceFactory instance = new ResourceFactory();
@@ -42,7 +43,8 @@ public class ResourceFactory {
     return instance;
   }
 
-  public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationPathManager pathManager, String fullyQualifiedPath, UUID uuid, DestinationType destinationType) throws IOException {
+  public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationPathManager pathManager, String fullyQualifiedPath, UUID uuid,
+      DestinationType destinationType) throws IOException {
     if (resourceName.toLowerCase().startsWith("$sys")) {
       return new Resource();
     } else {
@@ -53,7 +55,7 @@ public class ResourceFactory {
 
   public ResourceProperties scanForProperties(File directory) throws IOException {
     File props = new File(directory, RESOURCE_FILE_NAME);
-    if(!props.exists()){
+    if (!props.exists()) {
       return null;
     }
     try (FileInputStream fis = new FileInputStream(props)) {

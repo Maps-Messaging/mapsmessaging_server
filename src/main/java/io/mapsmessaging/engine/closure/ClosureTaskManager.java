@@ -26,21 +26,21 @@ public class ClosureTaskManager implements Closeable {
 
   private final List<ClosureTask> closureTasks;
 
-  public ClosureTaskManager(){
+  public ClosureTaskManager() {
     closureTasks = new ArrayList<>();
   }
 
-  public synchronized boolean add(ClosureTask closureTask){
+  public synchronized boolean add(ClosureTask closureTask) {
     return closureTasks.add(closureTask);
   }
 
-  public synchronized boolean remove(ClosureTask closureTask){
+  public synchronized boolean remove(ClosureTask closureTask) {
     return closureTasks.remove(closureTask);
   }
 
   @Override
-  public void close(){
-   for(ClosureTask task:closureTasks){
+  public void close() {
+    for (ClosureTask task : closureTasks) {
       task.run();
     }
     closureTasks.clear();

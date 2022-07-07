@@ -27,7 +27,7 @@ import java.io.IOException;
 
 public class LocalLoopProtocolFactory extends ProtocolImplFactory {
 
-  public LocalLoopProtocolFactory(){
+  public LocalLoopProtocolFactory() {
     super("loop", "Provides a connection to the messaging engine with the need for a network connection", new NoOpDetection());
   }
 
