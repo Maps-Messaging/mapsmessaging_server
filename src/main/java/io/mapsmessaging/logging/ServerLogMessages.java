@@ -582,9 +582,11 @@ public enum ServerLogMessages implements LogMessage {
   SEMTECH_QUEUE_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for delivery {}"),
   // </editor-fold>
 
+  DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to start" ),
+  DISCOVERY_FAILED_TO_REGISTER(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to register {}" ),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more"),
-  DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "The discovery engine failed to start" ),
 
   ;
 
@@ -612,6 +614,7 @@ public enum ServerLogMessages implements LogMessage {
     AUTHENTICATION("Authentication"),
     NETWORK("Network"),
     PROTOCOL("Protocol"),
+    DISCOVERY("Discovery"),
     ENGINE("Engine");
 
     private final @Getter String description;

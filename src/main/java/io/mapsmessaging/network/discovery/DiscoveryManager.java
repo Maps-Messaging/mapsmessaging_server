@@ -70,7 +70,7 @@ public class DiscoveryManager {
             service = "_" + protocol + "._udp.local.";
           serviceInfo.add(register(service, serverName + " " + interfaceName, url.getPort(), "/"));
         } catch (IOException e) {
-          e.printStackTrace();
+          logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER, e);
         }
       }
     };
@@ -103,11 +103,13 @@ public class DiscoveryManager {
     if (!enabled)
       return;
     mDNSAgent.unregisterService(info);
+    services.remove(info);
   }
 
   public synchronized void deregisterAll() {
     if (!enabled)
       return;
     mDNSAgent.unregisterAllServices();
+    services.clear();
   }
 }
