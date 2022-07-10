@@ -554,6 +554,7 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_SN_REGISTERED_EVENT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Registered Event processed for {}"),
   MQTT_SN_REGISTERED_EVENT_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Registered Event packet detected but no configuration found for host:{} topic Id:{}"),
   MQTT_SN_INVALID_QOS_PACKET_DETECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Publish packet received from {}, but incorrect QoS should be 3 but found {}"),
+  MQTT_SN_EXCEPTION_RASIED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "An exception was raised during the processing of an MQTT-SN packet {}"),
 
   MQTT_SN_START(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN protocol instance started {}"),
   MQTT_SN_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MQTT-SN protocol closed"),

@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -138,7 +139,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       try {
         processIncomingPacket(packet, factory);
       } catch (IOException ioException) {
-
+        logger.log( ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, ioException);
       }
     }
     selectorTask.register(SelectionKey.OP_READ);
@@ -224,6 +225,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     try {
       SessionManager.getInstance().publish(topic, messageBuilder.build()).get();
     } catch (ExecutionException | InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw new IOException(e);
     }
   }

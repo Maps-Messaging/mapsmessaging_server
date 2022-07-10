@@ -60,7 +60,7 @@ public class ConnectedListener extends BaseConnectListener {
     try {
       future.get();
     } catch (InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
+     Thread.currentThread().interrupt();
     }
   }
 

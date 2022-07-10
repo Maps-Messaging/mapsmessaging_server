@@ -124,6 +124,7 @@ public class StateEngine implements CloseHandler, CompletionHandler {
     try {
       future.get();
     } catch (InterruptedException | ExecutionException e) {
+      Thread.currentThread().interrupt();
       throw new IOException(e);
     }
   }

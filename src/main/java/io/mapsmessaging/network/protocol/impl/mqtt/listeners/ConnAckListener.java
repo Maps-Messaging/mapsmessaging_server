@@ -48,6 +48,7 @@ public class ConnAckListener extends BaseConnectionListener {
     try {
       sessionFuture.get();
     } catch (Exception ioException) {
+      Thread.currentThread().interrupt();
       try {
         endPoint.close();
         protocol.setConnected(false);

@@ -31,6 +31,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class ConnectListener extends BaseConnectListener {
 
@@ -69,8 +70,10 @@ public class ConnectListener extends BaseConnectListener {
 
     try {
       future.get();
-    } catch (Exception failedAuth) {
-//      handleFailedAuth(failedAuth, engine);
+    } catch (InterruptedException failedAuth) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      // We have handled it in the method
     }
   }
 
