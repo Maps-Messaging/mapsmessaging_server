@@ -1,5 +1,8 @@
 package io.mapsmessaging.network.discovery;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -16,6 +19,7 @@ import javax.jmdns.ServiceInfo;
 
 public class DiscoveryManager {
 
+  private final Logger logger;
   private final String serverName;
   private final boolean enabled;
   private final JmDNS mDNSAgent;
@@ -24,6 +28,7 @@ public class DiscoveryManager {
 
   public DiscoveryManager(String serverName) {
     this.serverName = serverName;
+    logger = LoggerFactory.getLogger(DiscoveryManager.class);
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
     if (properties.getBooleanProperty("enabled", false)) {
       enabled = true;
@@ -36,7 +41,7 @@ public class DiscoveryManager {
         }
         agent = JmDNS.create(homeAddress, serverName);
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
       }
       mDNSAgent = agent;
     } else {

@@ -583,7 +583,10 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
 
   //-------------------------------------------------------------------------------------------------------------
-  LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
+  LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more"),
+  DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "The discovery engine failed to start" ),
+
+  ;
 
   private final @Getter String message;
   private final @Getter LEVEL level;
