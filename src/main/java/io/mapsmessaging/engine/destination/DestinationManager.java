@@ -294,25 +294,24 @@ public class DestinationManager implements DestinationFactory {
         }
       }
     }
-  }
-
-  private boolean process(ResourceLoader[] loaders) {
-    boolean complete = true;
-    for (ResourceLoader loader : loaders) {
-      if (!loader.complete.get()) {
-        complete = false;
-        try {
-          loader.join(10);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          if (Thread.currentThread().isInterrupted()) {
-            logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOAD_INTERRUPTED);
-            return complete;
+    private boolean process(ResourceLoader[] loaders) {
+      boolean complete = true;
+      for (ResourceLoader loader : loaders) {
+        if (!loader.complete.get()) {
+          complete = false;
+          try {
+            loader.join(10);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            if (Thread.currentThread().isInterrupted()) {
+              logger.log(ServerLogMessages.DESTINATION_MANAGER_RELOAD_INTERRUPTED);
+              return complete;
+            }
           }
         }
       }
+      return complete;
     }
-    return complete;
   }
 
   public class ResourceLoader extends Thread {
