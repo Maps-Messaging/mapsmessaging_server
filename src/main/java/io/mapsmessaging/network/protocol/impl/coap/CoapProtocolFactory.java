@@ -34,6 +34,11 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
+  public String getTransportType() {
+    return "udp";
+  }
+
+  @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
     int datagramSize = info.getMTU();
     if (datagramSize != -1) {

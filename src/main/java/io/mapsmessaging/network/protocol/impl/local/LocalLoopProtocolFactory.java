@@ -39,6 +39,11 @@ public class LocalLoopProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
+  public String getTransportType() {
+    return "loop";
+  }
+
+  @Override
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     // We do not create an endpoint based on an incoming connection, since this is a local looped connection
   }

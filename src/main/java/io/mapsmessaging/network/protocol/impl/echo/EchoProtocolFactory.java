@@ -41,4 +41,10 @@ public class EchoProtocolFactory extends io.mapsmessaging.network.protocol.Proto
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new EchoProtocol(endPoint, packet);
   }
+
+  @Override
+  public String getTransportType() {
+    return "tcp";
+  }
+
 }

@@ -49,6 +49,8 @@ public abstract class ProtocolImplFactory implements Service {
 
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
 
+  public abstract String getTransportType();
+
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
   }
 

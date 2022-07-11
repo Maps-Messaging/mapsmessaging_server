@@ -43,4 +43,10 @@ public class StompProtocolFactory extends ProtocolImplFactory {
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new StompProtocol(endPoint, packet);
   }
+
+  @Override
+  public String getTransportType() {
+    return "tcp";
+  }
+
 }

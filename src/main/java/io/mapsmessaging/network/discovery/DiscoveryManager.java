@@ -5,11 +5,15 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.protocol.ProtocolFactory;
+import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,21 +57,37 @@ public class DiscoveryManager {
   }
 
   public void register(EndPointServer endPointServer) {
-    if (!enabled)
+    if (!enabled || !endPointServer.getConfig().getProperties().getBooleanProperty("discoverable", false))
       return;
+
     EndPointURL url = endPointServer.getUrl();
     boolean isUDP = (url.getProtocol().equals("udp") || url.getProtocol().equals("hmac"));
-    String protocolList = endPointServer.getConfig().getProtocols();
-    String[] protocols = protocolList.split(",");
+    String transport = isUDP ? "udp" : "tcp";
+
+    String protocolConfig = endPointServer.getConfig().getProtocols();
+    String[] protocols = protocolConfig.split(",");
+    List<String> protocolList = new ArrayList<>();
+    for(String protocol:protocols){
+      if(protocol.equalsIgnoreCase("all")){
+        ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
+        for (Iterator<Service> it = protocolFactory.getServices(); it.hasNext(); ) {
+          ProtocolImplFactory impl = (ProtocolImplFactory)it.next();
+          if(impl.getTransportType().equals(transport)) {
+            protocolList.add(impl.getName());
+          }
+        }
+      }
+      else{
+        protocolList.add(protocol);
+      }
+    }
     String interfaceName = endPointServer.getConfig().getProperties().getProperty("name", "");
     List<ServiceInfo> serviceInfo = new ArrayList<>();
     endPointList.put(endPointServer, serviceInfo);
     Runnable r = () -> {
-      for (String protocol : protocols) {
+      for (String protocol : protocolList) {
         try {
-          String service = "_" + protocol + "._tcp.local.";
-          if (isUDP)
-            service = "_" + protocol + "._udp.local.";
+          String service = "_" + protocol + "._"+transport+".local.";
           serviceInfo.add(register(service, serverName + " " + interfaceName, url.getPort(), "/"));
         } catch (IOException e) {
           logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER, e);
