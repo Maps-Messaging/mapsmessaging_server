@@ -80,6 +80,11 @@ NetworkManager:
         eventQueueTimeout: 0
         advertiseGateway: false
 
+      # ---------------------------------------------------------------------------------------------------------
+      # Global configuration
+      # ---------------------------------------------------------------------------------------------------------
+        discoverable: false             # If the server registers a mdns entry for the adapter
+
     data:
       -
         url: tcp://0.0.0.0:1882/
@@ -185,6 +190,7 @@ NetworkManager:
         url: tcp://0.0.0.0:8888/
         protocol : all
         auth : public
+        discoverable: true
 
       -
         url: udp://0.0.0.0:1700/

@@ -55,6 +55,7 @@ public enum ServerLogMessages implements LogMessage {
   HAWTIO_WAR_FILE_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio WAR file not found, at location {}"),
   HAWTIO_NOT_CONFIGURED_TO_RUN(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio interface not configured to run"),
   HAWTIO_INITIALISATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio initialisation started using file {} "),
+  HAWTIO_REGISTRATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio failed to register with the mDNS server" ),
   // </editor-fold>
 
   // <editor-fold desc="Network Manager log messages">
@@ -584,11 +585,12 @@ public enum ServerLogMessages implements LogMessage {
 
   DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to start" ),
   DISCOVERY_FAILED_TO_REGISTER(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to register {}" ),
+  DISCOVERY_REGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Registered new mDNS service {}"),
+  DISCOVERY_DEREGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Deregistered mDNS service {}"),
+  DISCOVERY_DEREGISTERED_ALL(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed all registered mDNS services"),
 
   //-------------------------------------------------------------------------------------------------------------
-  LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more"),
-
-  ;
+  LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
   private final @Getter String message;
   private final @Getter LEVEL level;

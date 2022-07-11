@@ -47,4 +47,10 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new MQTTProtocol(endPoint, packet);
   }
+
+  @Override
+  public String getTransportType() {
+    return "tcp";
+  }
+
 }

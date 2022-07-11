@@ -50,7 +50,9 @@ public class ProtocolFactory implements ServiceManager {
     int potential = 0;
     int failed = 0;
     for (ProtocolImplFactory protocol : protocolServiceLoader) {
-      if ((protocols.contains("all") || protocols.contains(protocol.getName().toLowerCase()))) {
+      if ( (!protocol.getName().equals("echo") &&
+            ( protocols.contains("all")) ||
+          protocols.contains(protocol.getName().toLowerCase()))) {
         potential++;
         try {
           if (protocol.detect(packet)) {

@@ -26,6 +26,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_WAR_FILE_NOT_FOU
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.File;
@@ -62,17 +63,21 @@ public class HawtioManager {
       Thread runner = new Thread(new Startup());
       runner.setDaemon(true);
       runner.start();
-      String service = "_http._tcp.local.";
-      try{
-        MessageDaemon.getInstance().getDiscoveryManager().register(service, "hawtio", 8080, "/hawtio/");
-      }
-      catch (Exception e){
-        e.printStackTrace();
-      }
     }
   }
 
   private class Startup implements Runnable {
+
+    private void register(){
+      if(properties.getBooleanProperty("discoverable", false)) {
+        String service = "_http._tcp.local.";
+        try {
+          MessageDaemon.getInstance().getDiscoveryManager().register( properties.getProperty("hostname", "0.0.0.0"), service, "hawtio", 8080, "/hawtio/");
+        } catch (Exception e) {
+          logger.log(ServerLogMessages.HAWTIO_REGISTRATION_FAILED, e);
+        }
+      }
+    }
 
     public void run() {
       if (properties.getProperty("enable").equalsIgnoreCase("true")) {
@@ -86,6 +91,7 @@ public class HawtioManager {
             logger.log(HAWTIO_INITIALISATION, warFile);
             Method run = hawtioMain.getMethod("run");
             run.invoke(main);
+            register();
           } catch (Exception e) {
             logger.log(HAWTIO_STARTUP_FAILURE, e);
           }

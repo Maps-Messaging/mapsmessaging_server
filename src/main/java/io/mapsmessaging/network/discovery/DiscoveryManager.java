@@ -5,15 +5,16 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.protocol.ProtocolFactory;
+import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
 
@@ -21,95 +22,109 @@ public class DiscoveryManager {
 
   private final Logger logger;
   private final String serverName;
-  private final boolean enabled;
-  private final JmDNS mDNSAgent;
-  private final List<ServiceInfo> services;
-  private final Map<EndPointServer, List<ServiceInfo>> endPointList;
+  private final List<AdapterManager> boundedNetworks;
 
   public DiscoveryManager(String serverName) {
     this.serverName = serverName;
     logger = LoggerFactory.getLogger(DiscoveryManager.class);
+    boundedNetworks = new ArrayList<>();
+
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
     if (properties.getBooleanProperty("enabled", false)) {
-      enabled = true;
-      JmDNS agent = null;
+      boolean stampMeta = properties.getBooleanProperty("addTxtRecords", false);
+      String hostnames = properties.getProperty("hostnames");
       try {
-        InetAddress homeAddress = InetAddress.getLocalHost();
-        String hostname = properties.getProperty("hostname");
-        if (hostname != null) {
-          homeAddress = InetAddress.getByName(hostname);
+        if(hostnames != null){
+          String[] hostnameList = hostnames.split(",");
+          for(String hostname: hostnameList){
+            InetAddress address = InetAddress.getByName(hostname.trim());
+            boundedNetworks.add(bindInterface(hostname, address, stampMeta));
+          }
         }
-        agent = JmDNS.create(homeAddress, serverName);
+        else{
+          InetAddress address = InetAddress.getLocalHost();
+          boundedNetworks.add(bindInterface(address.getHostName(), address, stampMeta));
+        }
       } catch (IOException e) {
         logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
       }
-      mDNSAgent = agent;
-    } else {
-      enabled = false;
-      mDNSAgent = null;
     }
-    services = new CopyOnWriteArrayList<>();
-    endPointList = new LinkedHashMap<>();
   }
+
+  private AdapterManager bindInterface(String hostname, InetAddress homeAddress, boolean stampMeta) throws IOException {
+    return new AdapterManager(hostname, serverName, JmDNS.create(homeAddress, serverName), stampMeta);
+  }
+
 
   public void register(EndPointServer endPointServer) {
-    if (!enabled)
+    if(!endPointServer.getConfig().getProperties().getBooleanProperty("discoverable", false)){
       return;
+    }
     EndPointURL url = endPointServer.getUrl();
     boolean isUDP = (url.getProtocol().equals("udp") || url.getProtocol().equals("hmac"));
-    String protocolList = endPointServer.getConfig().getProtocols();
-    String[] protocols = protocolList.split(",");
-    String interfaceName = endPointServer.getConfig().getProperties().getProperty("name", "");
-    List<ServiceInfo> serviceInfo = new ArrayList<>();
-    endPointList.put(endPointServer, serviceInfo);
-    Runnable r = () -> {
-      for (String protocol : protocols) {
-        try {
-          String service = "_" + protocol + "._tcp.local.";
-          if (isUDP)
-            service = "_" + protocol + "._udp.local.";
-          serviceInfo.add(register(service, serverName + " " + interfaceName, url.getPort(), "/"));
-        } catch (IOException e) {
-          logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER, e);
-        }
+    String transport = isUDP ? "udp" : "tcp";
+    String protocolConfig = endPointServer.getConfig().getProtocols();
+    List<String> protocolList = createProtocolList(protocolConfig, transport);
+    String endPointHostName = endPointServer.getUrl().getHost();
+    for(AdapterManager manager:boundedNetworks){
+      if(endPointHostName.equals("0.0.0.0") || endPointHostName.equals(manager.getAdapter())){
+        manager.register(endPointServer, transport, protocolList);
       }
-    };
-    Thread t = new Thread(r);
-    t.start();
+    }
   }
 
-  public synchronized ServiceInfo register(String type, String name, int port, String text) throws IOException {
-    if (!enabled)
-      return null;
-    ServiceInfo serviceInfo = ServiceInfo.create(type, name, port, text);
-    mDNSAgent.registerService(serviceInfo);
-    services.add(serviceInfo);
-    return serviceInfo;
+  private List<String> createProtocolList(String protocolConfig, String transport){
+    String[] protocols = protocolConfig.split(",");
+    List<String> protocolList = new ArrayList<>();
+    for(String protocol:protocols){
+      if(protocol.equalsIgnoreCase("all")){
+        createProtocolList(protocol, transport, protocolList);
+      }
+      else{
+        protocolList.add(protocol);
+      }
+    }
+    return protocolList;
+  }
+
+  private void createProtocolList(String protocol, String transport, List<String> protocolList){
+    ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
+    for (Iterator<Service> it = protocolFactory.getServices(); it.hasNext(); ) {
+      ProtocolImplFactory impl = (ProtocolImplFactory) it.next();
+      if (!impl.getName().equals("echo") &&
+          impl.getTransportType().equals(transport)) {
+        protocolList.add(impl.getName());
+      }
+    }
+  }
+
+  public synchronized List<ServiceInfo> register(String host, String type, String name, int port, String text) throws IOException {
+    List<ServiceInfo> list = new ArrayList<>();
+    for(AdapterManager manager:boundedNetworks) {
+      if (host.equals("0.0.0.0") || host.equals(manager.getAdapter())) {
+        ServiceInfo serviceInfo = ServiceInfo.create(type, name, port, text);
+        manager.register(serviceInfo);
+        list.add(serviceInfo);
+      }
+    }
+    return list;
   }
 
   public synchronized void deregister(EndPointServer endPointServer) {
-    if (!enabled)
-      return;
-    List<ServiceInfo> list = endPointList.remove(endPointServer);
-    if (list != null) {
-      for (ServiceInfo info : list) {
-        deregister(info);
-      }
+    for(AdapterManager manager:boundedNetworks){
+      manager.deregister(endPointServer);
     }
   }
 
-
   public synchronized void deregister(ServiceInfo info) {
-    if (!enabled)
-      return;
-    mDNSAgent.unregisterService(info);
-    services.remove(info);
+    for(AdapterManager manager:boundedNetworks){
+      manager.deregister(info);
+    }
   }
 
   public synchronized void deregisterAll() {
-    if (!enabled)
-      return;
-    mDNSAgent.unregisterAllServices();
-    services.clear();
+    for(AdapterManager manager:boundedNetworks){
+      manager.deregisterAll();
+    }
   }
 }

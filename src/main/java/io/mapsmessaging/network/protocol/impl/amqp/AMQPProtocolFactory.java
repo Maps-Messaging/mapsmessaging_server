@@ -39,4 +39,10 @@ public class AMQPProtocolFactory extends io.mapsmessaging.network.protocol.Proto
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new AMQPProtocol(endPoint, packet);
   }
+
+  @Override
+  public String getTransportType() {
+    return "tcp";
+  }
+
 }

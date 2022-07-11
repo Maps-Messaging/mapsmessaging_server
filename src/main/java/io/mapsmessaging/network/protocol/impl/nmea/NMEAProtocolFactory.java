@@ -58,4 +58,10 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
     }
     return null;
   }
+
+  @Override
+  public String getTransportType() {
+    return "serial";
+  }
+
 }

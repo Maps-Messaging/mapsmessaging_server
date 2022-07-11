@@ -40,4 +40,10 @@ public class WebSocketProtocolFactory extends ProtocolImplFactory {
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new WebSocketProtocol(endPoint, packet);
   }
+
+  @Override
+  public String getTransportType() {
+    return "tcp";
+  }
+
 }

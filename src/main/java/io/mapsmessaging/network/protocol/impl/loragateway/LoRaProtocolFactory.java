@@ -40,5 +40,11 @@ public class LoRaProtocolFactory extends ProtocolImplFactory {
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new LoRaProtocol(endPoint);
   }
+
+  @Override
+  public String getTransportType() {
+    return "lora";
+  }
+
 }
 

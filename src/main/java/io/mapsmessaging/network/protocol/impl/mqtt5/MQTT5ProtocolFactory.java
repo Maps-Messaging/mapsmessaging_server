@@ -45,8 +45,13 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
   @Override
   public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     return null;
-
   }
+
+  @Override
+  public String getTransportType() {
+    return "tcp";
+  }
+
 
   public void create(EndPoint endPoint, Packet packet) throws IOException {
     new MQTT5Protocol(endPoint, packet);
