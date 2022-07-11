@@ -89,10 +89,4 @@ public class AnonymousLoginModule extends BaseLoginModule {
       return true;
     }
   }
-
-  @Override
-  public boolean logout() throws LoginException {
-    return super.logout();
-  }
-
 }

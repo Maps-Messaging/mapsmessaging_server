@@ -114,20 +114,4 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
     sslPrincipal = null;
     return super.abort();
   }
-
-  /**
-   * Logout the user.
-   *
-   * <p>This method removes the <code>SamplePrincipal</code> that was added by the <code>commit
-   * </code> method.
-   *
-   * <p>
-   *
-   * @return true in all cases since this <code>LoginModule</code> should not be ignored.
-   * @throws LoginException if the logout fails.
-   */
-  @Override
-  public boolean logout() throws LoginException {
-    return super.logout();
-  }
 }

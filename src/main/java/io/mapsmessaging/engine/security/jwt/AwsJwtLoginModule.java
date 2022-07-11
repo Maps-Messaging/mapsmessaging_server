@@ -94,10 +94,4 @@ public class AwsJwtLoginModule extends BaseLoginModule {
   public boolean commit() throws LoginException {
     return false;
   }
-
-  @Override
-  public boolean logout() throws LoginException {
-    return super.logout();
-  }
-
 }
