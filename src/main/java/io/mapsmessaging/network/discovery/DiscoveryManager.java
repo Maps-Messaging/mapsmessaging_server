@@ -78,19 +78,24 @@ public class DiscoveryManager {
     List<String> protocolList = new ArrayList<>();
     for(String protocol:protocols){
       if(protocol.equalsIgnoreCase("all")){
-        ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
-        for (Iterator<Service> it = protocolFactory.getServices(); it.hasNext(); ) {
-          ProtocolImplFactory impl = (ProtocolImplFactory)it.next();
-          if(impl.getTransportType().equals(transport)) {
-            protocolList.add(impl.getName());
-          }
-        }
+        createProtocolList(protocol, transport, protocolList);
       }
       else{
         protocolList.add(protocol);
       }
     }
     return protocolList;
+  }
+
+  private void createProtocolList(String protocol, String transport, List<String> protocolList){
+    ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
+    for (Iterator<Service> it = protocolFactory.getServices(); it.hasNext(); ) {
+      ProtocolImplFactory impl = (ProtocolImplFactory) it.next();
+      if (!impl.getName().equals("echo") &&
+          impl.getTransportType().equals(transport)) {
+        protocolList.add(impl.getName());
+      }
+    }
   }
 
   public synchronized List<ServiceInfo> register(String host, String type, String name, int port, String text) throws IOException {
