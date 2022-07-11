@@ -63,7 +63,13 @@ public class HawtioManager {
       Thread runner = new Thread(new Startup());
       runner.setDaemon(true);
       runner.start();
-      if(properties.getBooleanProperty("register", false)) {
+    }
+  }
+
+  private class Startup implements Runnable {
+
+    private void register(){
+      if(properties.getBooleanProperty("discoverable", false)) {
         String service = "_http._tcp.local.";
         try {
           MessageDaemon.getInstance().getDiscoveryManager().register(service, "hawtio", 8080, "/hawtio/");
@@ -72,9 +78,6 @@ public class HawtioManager {
         }
       }
     }
-  }
-
-  private class Startup implements Runnable {
 
     public void run() {
       if (properties.getProperty("enable").equalsIgnoreCase("true")) {
@@ -88,6 +91,7 @@ public class HawtioManager {
             logger.log(HAWTIO_INITIALISATION, warFile);
             Method run = hawtioMain.getMethod("run");
             run.invoke(main);
+            register();
           } catch (Exception e) {
             logger.log(HAWTIO_STARTUP_FAILURE, e);
           }
