@@ -19,13 +19,18 @@ public class SemTechProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
+  public void closed(EndPoint endPoint) {
+    mappedInterfaces.remove(endPoint);
+  }
+
+  @Override
   public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     return null;
   }
 
   @Override
   public void create(EndPoint endPoint, Packet packet) throws IOException {
-
+    // No Op since this is a UDP transport
   }
 
   @Override

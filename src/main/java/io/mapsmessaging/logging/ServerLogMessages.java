@@ -585,11 +585,12 @@ public enum ServerLogMessages implements LogMessage {
 
   DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to start" ),
   DISCOVERY_FAILED_TO_REGISTER(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to register {}" ),
+  DISCOVERY_REGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Registered new mDNS service {}"),
+  DISCOVERY_DEREGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Deregistered mDNS service {}"),
+  DISCOVERY_DEREGISTERED_ALL(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed all registered mDNS services"),
 
   //-------------------------------------------------------------------------------------------------------------
-  LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more"),
-
-  ;
+  LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
   private final @Getter String message;
   private final @Getter LEVEL level;

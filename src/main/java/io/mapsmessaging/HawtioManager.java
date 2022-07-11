@@ -72,7 +72,7 @@ public class HawtioManager {
       if(properties.getBooleanProperty("discoverable", false)) {
         String service = "_http._tcp.local.";
         try {
-          MessageDaemon.getInstance().getDiscoveryManager().register(service, "hawtio", 8080, "/hawtio/");
+          MessageDaemon.getInstance().getDiscoveryManager().register( properties.getProperty("hostname", "0.0.0.0"), service, "hawtio", 8080, "/hawtio/");
         } catch (Exception e) {
           logger.log(ServerLogMessages.HAWTIO_REGISTRATION_FAILED, e);
         }

@@ -59,6 +59,7 @@ public class SemTechProtocol extends ProtocolImpl {
     }
   }
 
+  @Override
   public void close() throws IOException {
     logger.log(ServerLogMessages.SEMTECH_CLOSE, endPoint.toString());
     SessionManager.getInstance().close(session, true);
