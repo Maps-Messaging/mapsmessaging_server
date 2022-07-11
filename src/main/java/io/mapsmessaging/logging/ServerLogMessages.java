@@ -55,6 +55,7 @@ public enum ServerLogMessages implements LogMessage {
   HAWTIO_WAR_FILE_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio WAR file not found, at location {}"),
   HAWTIO_NOT_CONFIGURED_TO_RUN(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio interface not configured to run"),
   HAWTIO_INITIALISATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio initialisation started using file {} "),
+  HAWTIO_REGISTRATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio failed to register with the mDNS server" ),
   // </editor-fold>
 
   // <editor-fold desc="Network Manager log messages">

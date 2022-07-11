@@ -22,3 +22,4 @@ hawtio:
     host: 0.0.0.0                   # Host name / ip address to bind to
     port: 8080                      # Port for the hawtio service to bind to
     warFileLocation: C:/Users/matthew/Downloads/hawtio-default-2.10.1.war # Path to the war file to load for the hawtio service
+    discoverable: false             # If the server registers a mdns entry for hawtio

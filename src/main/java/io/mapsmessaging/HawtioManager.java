@@ -26,6 +26,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_WAR_FILE_NOT_FOU
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.File;
@@ -62,12 +63,13 @@ public class HawtioManager {
       Thread runner = new Thread(new Startup());
       runner.setDaemon(true);
       runner.start();
-      String service = "_http._tcp.local.";
-      try{
-        MessageDaemon.getInstance().getDiscoveryManager().register(service, "hawtio", 8080, "/hawtio/");
-      }
-      catch (Exception e){
-        e.printStackTrace();
+      if(properties.getBooleanProperty("register", false)) {
+        String service = "_http._tcp.local.";
+        try {
+          MessageDaemon.getInstance().getDiscoveryManager().register(service, "hawtio", 8080, "/hawtio/");
+        } catch (Exception e) {
+          logger.log(ServerLogMessages.HAWTIO_REGISTRATION_FAILED, e);
+        }
       }
     }
   }
