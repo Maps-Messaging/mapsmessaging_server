@@ -6,6 +6,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,7 +66,7 @@ public class TenantManagement {
     }
     logger.log(ServerLogMessages.NAMESPACE_MAPPING, username, tenantPath);
     if (tenantPath.length() > 1 && !tenantPath.endsWith("/")) {
-      tenantPath = tenantPath + "/";
+      tenantPath = tenantPath + File.pathSeparator;
     }
     return new SessionTenantConfig(tenantPath, configuration.get("global"));
   }
