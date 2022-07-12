@@ -36,7 +36,7 @@ class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     while(receiveCount.get() == 0 && timeout > System.currentTimeMillis()){
       delay(1);
     }
-    Assertions.assertEquals(receiveCount.get(), 1);
+    Assertions.assertEquals(1,receiveCount.get());
     client.disconnect();
     delay(500);
   }
@@ -65,7 +65,7 @@ class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     while(receiveCount.get() == 0 && timeout > System.currentTimeMillis()){
       delay(1);
     }
-    Assertions.assertEquals(receiveCount.get(), 1);
+    Assertions.assertEquals(1, receiveCount.get());
     client.disconnect();
     delay(500);
   }
