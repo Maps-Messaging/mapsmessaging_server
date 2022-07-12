@@ -185,6 +185,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     }
   }
 
+  @Override
   public long getTimeOut() {
     return keepAlive;
   }

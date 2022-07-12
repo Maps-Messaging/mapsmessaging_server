@@ -131,7 +131,7 @@ public class MessagePipeline {
         completed();
       }
     }
-    if (publishContexts.size() == 0 && paused.get()) {
+    if (publishContexts.isEmpty() && paused.get()) {
       empty.set(0);
       stateEngine.getTopicAliasManager().clear();
       if (completion != null) {
@@ -193,15 +193,16 @@ public class MessagePipeline {
   }
 
   public int size() {
-    int total = 0;
+    AtomicInteger total = new AtomicInteger(0);
     Map<String, Long> counters = new LinkedHashMap<>();
     for (MessageEvent event : publishContexts) {
       String destination = event.getDestinationName();
-      if (!counters.containsKey(destination)) {
-        total += event.getSubscription().getDepth();
-        counters.put(destination, (long) (event.getSubscription().getDepth()));
-      }
+      counters.computeIfAbsent(destination, s -> {
+        int depth = event.getSubscription().getDepth();
+        total.addAndGet(depth);
+        return (long) (depth);
+      });
     }
-    return total;
+    return total.get();
   }
 }

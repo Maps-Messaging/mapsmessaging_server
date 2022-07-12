@@ -47,6 +47,7 @@ public class Disconnect5 extends MQTTPacket5 {
     disconnectReason = reasonCode;
   }
 
+  @Override
   public String toString() {
     return "MQTTv5 Disconnect[]";
   }
