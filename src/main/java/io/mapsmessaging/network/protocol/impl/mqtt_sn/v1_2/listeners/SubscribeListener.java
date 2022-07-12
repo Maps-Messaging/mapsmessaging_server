@@ -73,17 +73,17 @@ public class SubscribeListener extends PacketListener {
       try {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
-        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), ReasonCodes.Success);
+        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), ReasonCodes.SUCCESS);
         subAck.setQoS(subscribe.getQoS());
         stateEngine.addSubscribeResponse(topicName, subAck);
         return subAck;
       } catch (IOException e) {
-        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), ReasonCodes.InvalidTopicAlias);
+        SubAck subAck = new SubAck(topicId, subscribe.getMsgId(), ReasonCodes.INVALID_TOPIC_ALIAS);
         subAck.setQoS(subscribe.getQoS());
         return subAck;
       }
     } else {
-      SubAck subAck = new SubAck((short) 0, subscribe.getMsgId(), ReasonCodes.InvalidTopicAlias);
+      SubAck subAck = new SubAck((short) 0, subscribe.getMsgId(), ReasonCodes.INVALID_TOPIC_ALIAS);
       subAck.setQoS(subscribe.getQoS());
       return subAck;
     }

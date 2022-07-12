@@ -68,7 +68,7 @@ public class InitialConnectionState implements State {
         CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
         sessionFuture.thenApply(session -> {
           protocol.setSession(session);
-          ConnAck response = new ConnAck(ReasonCodes.Success, 0, scb.getId(), session.isRestored());
+          ConnAck response = new ConnAck(ReasonCodes.SUCCESS, 0, scb.getId(), session.isRestored());
           response.setCallback(session::resumeState);
           protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
           try {
@@ -90,7 +90,7 @@ public class InitialConnectionState implements State {
   }
 
   private void sendErrorResponse(MQTT_SNProtocol protocol) {
-    io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck response = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck(ReasonCodes.NotSupported);
+    io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck response = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck(ReasonCodes.NOT_SUPPORTED);
     response.setCallback(() -> {
       try {
         protocol.close();

@@ -1,7 +1,7 @@
 package io.mapsmessaging.engine.system.impl.load;
 
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
-import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.io.EndPointServerStatus;
 import java.io.IOException;
 
 public class MessagesSent extends SystemTopicWithAverage {
@@ -12,6 +12,6 @@ public class MessagesSent extends SystemTopicWithAverage {
 
   @Override
   public long getData() {
-    return EndPointServer.SystemTotalPacketsSent.sum();
+    return EndPointServerStatus.SystemTotalPacketsSent.sum();
   }
 }

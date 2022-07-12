@@ -65,7 +65,7 @@ public class Disconnect extends MQTT_SN_2_Packet {
     } else {
       expiry = 0;
       reasonString = "";
-      reasonCode = ReasonCodes.Success;
+      reasonCode = ReasonCodes.SUCCESS;
     }
   }
 

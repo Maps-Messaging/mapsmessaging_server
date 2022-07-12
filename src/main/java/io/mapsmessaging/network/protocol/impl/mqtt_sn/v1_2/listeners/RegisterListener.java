@@ -37,10 +37,10 @@ public class RegisterListener extends PacketListener {
     short topicId = stateEngine.getTopicAliasManager().getTopicAlias(topic);
     if (topicId == -1) {
       // Exceeded the maximum number of registered topics
-      return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.NotSupported);
+      return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.NOT_SUPPORTED);
     }
     session.findDestination(topic, DestinationType.TOPIC);
     // We don't need to do anything with this destination at present
-    return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.Success);
+    return new RegisterAck(topicId, register.getMessageId(), ReasonCodes.SUCCESS);
   }
 }

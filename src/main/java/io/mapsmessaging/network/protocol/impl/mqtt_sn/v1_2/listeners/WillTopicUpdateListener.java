@@ -35,7 +35,7 @@ public class WillTopicUpdateListener extends PacketListener {
   @Override
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
     WillTopicUpdate willTopicUpdate = (WillTopicUpdate) mqttPacket;
-    ReasonCodes status = ReasonCodes.Success;
+    ReasonCodes status = ReasonCodes.SUCCESS;
     WillTask task = session.getWillTask();
     if (task == null) {
       WillDetails willDetails = new WillDetails();

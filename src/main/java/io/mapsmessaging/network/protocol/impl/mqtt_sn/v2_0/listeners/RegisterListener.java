@@ -38,11 +38,11 @@ public class RegisterListener extends PacketListener {
     short topicId = stateEngine.getTopicAliasManager().getTopicAlias(topic);
     if (topicId == -1) {
       // Exceeded the maximum number of registered topics
-      return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.InvalidTopicAlias);
+      return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS);
     }
     if (session.findDestination(topic, DestinationType.TOPIC).isCompletedExceptionally()) {
-      return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.InvalidTopicAlias);
+      return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS);
     }
-    return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.Success);
+    return new RegisterAck(topicId, 0, register.getMessageId(), ReasonCodes.SUCCESS);
   }
 }

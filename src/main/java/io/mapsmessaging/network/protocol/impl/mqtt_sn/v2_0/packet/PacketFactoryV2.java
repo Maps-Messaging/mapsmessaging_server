@@ -33,7 +33,7 @@ public class PacketFactoryV2 extends PacketFactory {
         try {
           return new Connect(packet, length);
         } catch (Exception e) {
-          return getConnectError(ReasonCodes.NotSupported);
+          return getConnectError(ReasonCodes.NOT_SUPPORTED);
         }
 
       case MQTT_SNPacket.DISCONNECT:

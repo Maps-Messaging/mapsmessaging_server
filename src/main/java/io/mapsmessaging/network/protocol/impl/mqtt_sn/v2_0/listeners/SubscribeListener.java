@@ -82,7 +82,7 @@ public class SubscribeListener extends PacketListener {
             topicId, (short) subscribe.getTopicIdType(),
             subscribe.getQoS(),
             subscribe.getMsgId(),
-            ReasonCodes.Success);
+            ReasonCodes.SUCCESS);
         subAck.setQoS(subscribe.getQoS());
         stateEngine.addSubscribeResponse(topicName, subAck);
         return subAck;
@@ -91,7 +91,7 @@ public class SubscribeListener extends PacketListener {
             topicId, TOPIC_NAME,
             subscribe.getQoS(),
             subscribe.getMsgId(),
-            ReasonCodes.InvalidTopicAlias);
+            ReasonCodes.INVALID_TOPIC_ALIAS);
         subAck.setQoS(subscribe.getQoS());
         return subAck;
       }
@@ -100,7 +100,7 @@ public class SubscribeListener extends PacketListener {
           (short) 0, TOPIC_NAME,
           subscribe.getQoS(),
           subscribe.getMsgId(),
-          ReasonCodes.InvalidTopicAlias);
+          ReasonCodes.INVALID_TOPIC_ALIAS);
       subAck.setQoS(subscribe.getQoS());
       return subAck;
     }

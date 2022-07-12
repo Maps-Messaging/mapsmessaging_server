@@ -42,8 +42,8 @@ public class UnsubscribeListener extends PacketListener {
     if (topicName != null) {
       stateEngine.removeSubscribeResponse(topicName);
       session.removeSubscription(topicName);
-      return new UnSubAck(unsubscribe.getMsgId(), ReasonCodes.Success);
+      return new UnSubAck(unsubscribe.getMsgId(), ReasonCodes.SUCCESS);
     }
-    return new UnSubAck(unsubscribe.getMsgId(), ReasonCodes.InvalidTopicAlias);
+    return new UnSubAck(unsubscribe.getMsgId(), ReasonCodes.INVALID_TOPIC_ALIAS);
   }
 }

@@ -37,7 +37,7 @@ public class WillMessageUpdateListener extends PacketListener {
     WillMessageUpdate willMessageUpdate = (WillMessageUpdate) mqttPacket;
     WillTask task = session.getWillTask();
     byte[] payload = willMessageUpdate.getMessage();
-    ReasonCodes status = ReasonCodes.Success;
+    ReasonCodes status = ReasonCodes.SUCCESS;
     if (task == null) {
       WillDetails willDetails = new WillDetails();
       willDetails.setSessionId(session.getName());

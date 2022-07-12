@@ -63,7 +63,7 @@ public class SleepState implements State {
 
     switch (mqtt.getControlPacketId()) {
       case MQTT_SNPacket.CONNECT:
-        MQTT_SNPacket response = new ConnAck(ReasonCodes.Success);
+        MQTT_SNPacket response = new ConnAck(ReasonCodes.SUCCESS);
         sleepDuration = 0;
         clearReaper();
         stateEngine.setState(new ConnectedState(response));

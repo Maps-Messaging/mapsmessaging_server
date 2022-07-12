@@ -81,15 +81,15 @@ public class PublishListener extends PacketListener {
               destination.storeMessage(message);
             }
           } catch (IOException e) {
-            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
+            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS));
           }
           if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
-            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.Success));
+            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.SUCCESS));
           } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
             ((MQTT_SNProtocol) protocol).writeFrame(new PubRec(publish.getMessageId()));
           }
         } else {
-          ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.InvalidTopicAlias));
+          ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS));
         }
         return destination;
       });
