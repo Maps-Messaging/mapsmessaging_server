@@ -16,7 +16,7 @@ public class CoapProtocol extends ProtocolImpl {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-
+    throw new UnsupportedOperationException("Not Yet Implemented");
   }
 
   @Override
