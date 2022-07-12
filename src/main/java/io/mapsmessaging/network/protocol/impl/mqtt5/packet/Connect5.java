@@ -226,6 +226,7 @@ public class Connect5 extends MQTTPacket5 {
     return username;
   }
 
+  @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("MQTTv5 Connect [Protocol Level:").append(protocolLevel);

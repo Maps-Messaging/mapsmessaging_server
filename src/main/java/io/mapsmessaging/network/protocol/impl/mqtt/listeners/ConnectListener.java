@@ -66,12 +66,13 @@ public class ConnectListener extends BaseConnectionListener {
     return connAck;
   }
 
+  @Override
   public boolean resumeRead() {
     return false;
   }
 
   @SneakyThrows
-  void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, ProtocolImpl protocol) {
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
       Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null);
