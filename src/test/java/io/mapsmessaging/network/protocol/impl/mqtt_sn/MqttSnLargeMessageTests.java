@@ -1,27 +1,21 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
-import org.slj.mqtt.sn.model.IMqttsnContext;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.spi.IMqttsnMessage;
-import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
-import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
 import org.slj.mqtt.sn.spi.MqttsnException;
-import org.slj.mqtt.sn.utils.TopicPath;
 
-public class MqttSnLargeMessageTests extends BaseMqttSnConfig {
+class MqttSnLargeMessageTests extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
-  public void subscribeWithLargeTopicName(int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+  void subscribeWithLargeTopicName(int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
     MqttSnClient client = new MqttSnClient("connectWithOutFlags", "localhost", 1884, version);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
@@ -50,7 +44,7 @@ public class MqttSnLargeMessageTests extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
-  public void publishWithLargeData(int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+  void publishWithLargeData(int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
     MqttSnClient client = new MqttSnClient("connectWithOutFlags", "localhost", 1884, version);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
