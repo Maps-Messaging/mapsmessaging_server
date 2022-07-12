@@ -95,11 +95,7 @@ public class DestinationSubscription extends Subscription {
     mbean.close();
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
-    try {
-      destinationImpl.removeSubscription(sessionId);
-    } catch (IOException ioException) {
-      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_ON_CLOSE, ioException);
-    }
+    destinationImpl.removeSubscription(sessionId);
 
     // We need to see if any other subscriptions have interest in these events, and if not then simply
     // remove the events. Just like when we deliver all the events in a subscription

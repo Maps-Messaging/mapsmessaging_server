@@ -471,7 +471,7 @@ public class DestinationImpl implements BaseDestination {
    * @param subscriptionId Subscription identifier to remove
    * @return the subscription that was removed
    */
-  public Subscribable removeSubscription(@NonNull @NotNull String subscriptionId) throws IOException {
+  public Subscribable removeSubscription(@NonNull @NotNull String subscriptionId) {
     stats.subscriptionRemoved();
     Subscribable subscription = subscriptionManager.remove(subscriptionId);
     if (subscription != null) {

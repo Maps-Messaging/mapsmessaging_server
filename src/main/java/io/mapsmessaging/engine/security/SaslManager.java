@@ -26,14 +26,16 @@ import javax.security.sasl.SaslServer;
 
 public class SaslManager {
 
-  private static final SaslManager instance = new SaslManager();
+  private static final SaslManager instance;
+  static{
+    instance = new SaslManager();
+  }
 
-  private static SaslManager getInstance() {
+  public static SaslManager getInstance() {
     return instance;
   }
 
-
-  SaslServer getServer(String mechanism, String protocol, String serverName, Map<String, ?> props, CallbackHandler serverHandler) throws SaslException {
+  public SaslServer getServer(String mechanism, String protocol, String serverName, Map<String, ?> props, CallbackHandler serverHandler) throws SaslException {
     return Sasl.createSaslServer(mechanism, protocol, serverName, props, serverHandler);
   }
 

@@ -26,6 +26,7 @@ import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.engine.serializer.MapSerializable;
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Objects;
@@ -142,7 +143,7 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
   public SubscriptionContext setRootPath(String rootPath) {
     this.rootPath = Objects.requireNonNullElse(rootPath, "");
     if (rootPath.length() > 1 && !rootPath.endsWith("/")) {
-      this.rootPath = this.rootPath + "/";
+      this.rootPath = this.rootPath + File.separator;
     }
     return this;
   }

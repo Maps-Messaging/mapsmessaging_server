@@ -66,7 +66,7 @@ public class TenantManagement {
     }
     logger.log(ServerLogMessages.NAMESPACE_MAPPING, username, tenantPath);
     if (tenantPath.length() > 1 && !tenantPath.endsWith("/")) {
-      tenantPath = tenantPath + File.pathSeparator;
+      tenantPath = tenantPath + File.separator;
     }
     return new SessionTenantConfig(tenantPath, configuration.get("global"));
   }

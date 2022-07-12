@@ -55,7 +55,7 @@ public class DestinationManagerPipeline {
     destinationList.put(destinationImpl.getFullyQualifiedNamespace(), destinationImpl);
   }
 
-  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public CompletableFuture<DestinationImpl> create(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) {
     CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
     Callable<DestinationImpl> task = () -> {
       try {
@@ -154,11 +154,10 @@ public class DestinationManagerPipeline {
       DestinationPathManager pathManager = rootPath;
       String namespace = "";
       for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
-        if (name.startsWith(entry.getKey())) {
-          if (namespace.length() < entry.getKey().length()) {
-            pathManager = entry.getValue();
-            namespace = entry.getKey();
-          }
+        if (name.startsWith(entry.getKey()) &&
+            namespace.length() < entry.getKey().length()) {
+          pathManager = entry.getValue();
+          namespace = entry.getKey();
         }
       }
       if (destinationType.isTemporary()) {

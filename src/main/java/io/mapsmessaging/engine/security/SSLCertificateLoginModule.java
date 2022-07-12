@@ -48,7 +48,7 @@ public class SSLCertificateLoginModule extends BaseLoginModule {
   @Override
   public boolean login() throws LoginException {
 
-    // prompt for a user name and password
+    // prompt for a username and password
     if (callbackHandler == null) {
       throw new LoginException(
           "Error: no CallbackHandler available to garner authentication information from the user");
