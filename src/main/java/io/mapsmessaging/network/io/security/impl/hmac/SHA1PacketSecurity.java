@@ -28,12 +28,4 @@ public class SHA1PacketSecurity extends HmacPacketSecurity {
   public String getName() {
     return "HmacSHA1";
   }
-
 }
-
-/*
-     HMAC_SHA_224("HmacSHA224", 28),
-        HMAC_SHA_256("HmacSHA256", 32),
-        HMAC_SHA_384("HmacSHA384", 48),
-        HMAC_SHA_512("HmacSHA512", 64);
- */
