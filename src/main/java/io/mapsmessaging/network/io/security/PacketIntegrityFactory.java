@@ -44,6 +44,7 @@ public class PacketIntegrityFactory {
       try {
         return PacketIntegrityFactory.getInstance().getPacketIntegrity(hmacAlgorithm, manager, key);
       } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+        // ToDo: Log Message Here
       }
     }
     return null;

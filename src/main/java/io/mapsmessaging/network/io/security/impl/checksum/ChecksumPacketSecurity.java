@@ -64,7 +64,7 @@ public abstract class ChecksumPacketSecurity implements PacketIntegrity {
 
   private boolean validatePacket(Checksum checksum, Packet packet) {
     long crcL = checksum.getValue();
-    byte[] crc32 = new byte[size()]; //32 bits;
+    byte[] crc32 = new byte[size()]; //32 bit CRC
     crc32 = stamper.getSignature(packet, crc32);
     for (int x = 0; x < 4; x++) {
       if (crc32[x] != (byte) ((crcL >> x) & 0xff)) {
@@ -76,7 +76,7 @@ public abstract class ChecksumPacketSecurity implements PacketIntegrity {
 
   private Packet updatePacket(Checksum checksum, Packet packet) {
     long crcL = checksum.getValue();
-    byte[] crc32 = new byte[size()]; //32 bits;
+    byte[] crc32 = new byte[size()]; //32 bit CRC
     for (int x = 0; x < 4; x++) {
       crc32[x] = (byte) ((crcL >> x) & 0xff);
     }
