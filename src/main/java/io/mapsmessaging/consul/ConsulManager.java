@@ -81,7 +81,7 @@ public class ConsulManager implements Runnable {
   public void run() {
     agentClient.ping();
     try {
-      agentClient.pass(serviceId.toString());
+      agentClient.pass(serviceId);
     } catch (NotRegisteredException e) {
       logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
     }

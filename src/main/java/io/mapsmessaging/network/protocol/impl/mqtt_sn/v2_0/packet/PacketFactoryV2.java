@@ -65,7 +65,7 @@ public class PacketFactoryV2 extends PacketFactory {
         return new RegisterAck(packet, length);
 
       case MQTT_SNPacket.PUBLISH:
-        return new Publish(packet, length);
+        return new Publish(packet);
 
       case MQTT_SNPacket.PUBACK:
         return new PubAck(packet);

@@ -30,7 +30,7 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, Packet packet) throws IOException {
-
+    throw new IOException("Unexpected function called");
   }
 
   @Override

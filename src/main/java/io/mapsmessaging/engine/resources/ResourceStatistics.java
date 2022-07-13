@@ -4,15 +4,17 @@ import io.mapsmessaging.engine.stats.Statistics;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.cache.CacheStatistics;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class ResourceStatistics extends Statistics implements AutoCloseable, Runnable {
 
-  private Future<?> future;
+  private final Future<?> future;
   private final Resource resource;
   private final List<StorageStats> storeStats;
   private final List<CacheStats> cacheStats;
@@ -23,7 +25,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     cacheStats = new ArrayList<>();
     tierStats = new ArrayList<>();
     this.resource = resource;
-    // future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
+    future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
 
     io.mapsmessaging.storage.Statistics statistics = resource.getStatistics();
     if (statistics instanceof CacheStatistics) {

@@ -22,7 +22,6 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
-import java.io.IOException;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -46,7 +45,7 @@ public class Subscribe extends MQTT_SN_2_Packet {
   @Getter
   private final int topicId;
 
-  public Subscribe(Packet packet) throws IOException {
+  public Subscribe(Packet packet) {
     super(SUBSCRIBE);
     byte flags = packet.get();
     noLocal = (flags & 0b10000000) != 0;

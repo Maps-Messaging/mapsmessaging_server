@@ -20,7 +20,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
-import java.io.IOException;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -30,11 +29,11 @@ public class Unsubscribe extends MQTT_SN_2_Packet {
   @Getter
   private final int msgId;
   @Getter
-  private int topicId;
+  private final int topicId;
   @Getter
-  private String topicName;
+  private final String topicName;
 
-  public Unsubscribe(Packet packet) throws IOException {
+  public Unsubscribe(Packet packet) {
     super(UNSUBSCRIBE);
     byte flags = packet.get();
     msgId = MQTTPacket.readShort(packet);

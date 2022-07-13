@@ -56,28 +56,40 @@ public class RegisteredTopicConfiguration {
   }
 
   public String getTopic(SocketAddress from, int id) {
+    String topic = null;
     List<TopicConfiguration> list = topicConfigById.get(id);
     if (list != null) {
       // Search for explicit address mapping
-      for (TopicConfiguration tc : list) {
-        if (from instanceof InetSocketAddress) {
-          InetSocketAddress inetAddress = (InetSocketAddress) from;
-          if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
-            return tc.topic;
-          }
-        }
-      }
+      topic = searchForExplicitMapping(from, list);
 
       // OK we have no address match, lets now check for a "*"
-      for (TopicConfiguration tc : list) {
-        if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
-          return tc.topic; // No checks
-        }
+      if(topic == null){
+        topic = searchForWildcard(list);
+      }
+    }
+    return topic;
+  }
+
+  private String searchForWildcard(List<TopicConfiguration> list){
+    for (TopicConfiguration tc : list) {
+      if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
+        return tc.topic; // No checks
       }
     }
     return null;
   }
 
+  private String searchForExplicitMapping(SocketAddress from, List<TopicConfiguration> list){
+    for (TopicConfiguration tc : list) {
+      if (from instanceof InetSocketAddress) {
+        InetSocketAddress inetAddress = (InetSocketAddress) from;
+        if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
+          return tc.topic;
+        }
+      }
+    }
+    return null;
+  }
 
   private void parse(String config) {
     StringTokenizer st = new StringTokenizer(config, ":");
@@ -89,28 +101,39 @@ public class RegisteredTopicConfiguration {
   }
 
   public int getRegisteredTopicAliasType(SocketAddress from, String destinationName) {
+    int id = -1;
     List<TopicConfiguration> list = topicConfigByName.get(destinationName);
-
     if (list != null) {
-      for (TopicConfiguration tc : list) {
-        if (from instanceof InetSocketAddress) {
-          InetSocketAddress inetAddress = (InetSocketAddress) from;
-          if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
-            return tc.id;
-          }
-        }
+      id = searchForTopicId(from, list);
+      if(id == -1){
+        id = searchForWildcardTopicId(list);
       }
+    }
+    return id;
+  }
 
-      // OK we have no address match, lets now check for a "*"
-      for (TopicConfiguration tc : list) {
-        if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
-          return tc.id; // No checks
+  private int searchForTopicId(SocketAddress from, List<TopicConfiguration> list) {
+    for (TopicConfiguration tc : list) {
+      if (from instanceof InetSocketAddress) {
+        InetSocketAddress inetAddress = (InetSocketAddress) from;
+        if (inetAddress.getAddress().getHostAddress().equals(tc.address) || inetAddress.getHostName().equals(tc.address)) {
+          return tc.id;
         }
       }
     }
     return -1;
   }
 
+  private int searchForWildcardTopicId(List<TopicConfiguration> list) {
+    // OK we have no address match, lets now check for a "*"
+    for (TopicConfiguration tc : list) {
+      if (tc.address.equals("*") || tc.address.equals("0.0.0.0")) {
+        return tc.id; // No checks
+      }
+    }
+
+    return -1;
+  }
 
   private static final class TopicConfiguration {
 

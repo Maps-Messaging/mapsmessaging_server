@@ -61,11 +61,9 @@ public class HmacUDPEndPoint extends UDPEndPoint {
       packet.clear();
       res = 0;
     } else {
-      if (packet.hasRemaining()) {
-        if (!packetIntegrity.isSecure(packet)) {
-          packet.clear();
-          return 0;
-        }
+      if (packet.hasRemaining() && !packetIntegrity.isSecure(packet)) {
+        packet.clear();
+        return 0;
       }
     }
     return res;

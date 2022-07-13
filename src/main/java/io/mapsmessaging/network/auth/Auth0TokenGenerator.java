@@ -53,16 +53,20 @@ public class Auth0TokenGenerator implements TokenGenerator {
 
   private static final class Auth0TokenBody {
 
-    private final @Getter String client_id;
-    private final @Getter String client_secret;
-    private final @Getter String audience;
-    private final @Getter String grant_type;
+    @Getter
+    private final String clientId;
+    @Getter
+    private final String clientSecret;
+    @Getter
+    private final String audience;
+    @Getter
+    private final String grantType;
 
     public Auth0TokenBody(ConfigurationProperties properties) {
-      client_id = properties.getProperty("client_id").trim();
-      client_secret = properties.getProperty("client_secret").trim();
+      clientId = properties.getProperty("client_id").trim();
+      clientSecret = properties.getProperty("client_secret").trim();
       audience = "https://" + properties.getProperty("domain").trim() + "/api/v2/";
-      grant_type = properties.getProperty("grant_type").trim();
+      grantType = properties.getProperty("grant_type").trim();
     }
   }
 

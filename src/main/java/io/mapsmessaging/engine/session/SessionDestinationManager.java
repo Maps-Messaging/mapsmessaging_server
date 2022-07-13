@@ -39,10 +39,12 @@ public class SessionDestinationManager implements DestinationFactory {
     this.manager = manager;
   }
 
+  @Override
   public String calculateNamespace(String destinationName) {
     return sessionTenantConfig.calculateDestinationName(destinationName);
   }
 
+  @Override
   public String calculateOriginalNamespace(String fqn) {
     return sessionTenantConfig.calculateOriginalName(fqn);
   }
