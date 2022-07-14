@@ -1,7 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.EndOfBufferException;
+import java.io.IOException;
 
 public class PacketFactory {
 
@@ -15,7 +15,7 @@ public class PacketFactory {
   private static final int IPATCH = 7;
 
 
-  public BasePacket parseFrame(Packet packet) throws EndOfBufferException {
+  public BasePacket parseFrame(Packet packet) throws IOException {
     byte val = packet.get(packet.position() + 1);
     int code = val & 0b11111;
     BasePacket basePacket;
@@ -48,6 +48,10 @@ public class PacketFactory {
       default:
         basePacket = new BasePacket(packet);
     }
+    System.err.println(basePacket.getClass().toString());
+    basePacket.readOptions(packet);
+    basePacket.readPayload(packet);
+
     return basePacket;
   }
 }

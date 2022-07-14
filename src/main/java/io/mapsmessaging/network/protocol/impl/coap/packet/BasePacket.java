@@ -2,10 +2,14 @@ package io.mapsmessaging.network.protocol.impl.coap.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
+import java.io.IOException;
 import java.net.SocketAddress;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
 
 @ToString
 public class BasePacket implements ServerPacket {
@@ -46,6 +50,13 @@ public class BasePacket implements ServerPacket {
   @Setter
   int messageId;
 
+  @Getter
+  OptionSet options;
+
+  @Getter
+  @Setter
+  byte[] payload;
+
   public BasePacket(Packet packet) {
     byte val = packet.get();
     version = (val >> 6 & 0b11);
@@ -60,6 +71,8 @@ public class BasePacket implements ServerPacket {
     messageId += (packet.get() & 0xff);
     token = new byte[tokenLength];
     packet.get(token);
+
+    options = new OptionSet();
   }
 
 
@@ -84,4 +97,39 @@ public class BasePacket implements ServerPacket {
     }
   }
 
+  protected void readOptions(@NotNull Packet packet) throws IOException{
+    int optionNumber = 0;
+    while(packet.hasData()){
+      int val = packet.get() & 0xff;
+      if(val == 0xFF) return; // Found payload flag
+      optionNumber += readVariableInt(packet, val >> 4);
+      int optionLength = readVariableInt(packet, val & 0xf);
+      byte[] data = new byte[optionLength];
+      packet.get(data);
+      Option option = options.getOption(optionNumber);
+      option.update(data);
+    }
+  }
+
+
+  private static int readVariableInt(Packet packet, int val) throws IOException {
+    if (val <= 12) {
+      return val;
+    } else if (val == 13) {
+      return (packet.get()& 0xff) + 13;
+    } else if (val == 14) {
+      val = (packet.get() & 0xff) << 8;
+      val = val | (packet.get() & 0xff);
+      return val + 269;
+    } else {
+      throw new IOException("Invalid variable int header found");
+    }
+  }
+
+  public void readPayload(Packet packet) {
+    // The 0xff has already been stripped
+    int size = packet.available();
+    payload = new byte[size];
+    packet.get(payload);
+  }
 }
