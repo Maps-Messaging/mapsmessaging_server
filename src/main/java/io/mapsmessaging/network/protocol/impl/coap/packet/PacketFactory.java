@@ -5,14 +5,14 @@ import java.io.IOException;
 
 public class PacketFactory {
 
-  private static final int EMPTY = 0;
-  private static final int GET = 1;
-  private static final int POST = 2;
-  private static final int PUT = 3;
-  private static final int DELETE = 4;
-  private static final int FETCH = 5;
-  private static final int PATCH = 6;
-  private static final int IPATCH = 7;
+  public static final int EMPTY = 0;
+  public static final int GET = 1;
+  public static final int POST = 2;
+  public static final int PUT = 3;
+  public static final int DELETE = 4;
+  public static final int FETCH = 5;
+  public static final int PATCH = 6;
+  public static final int IPATCH = 7;
 
 
   public BasePacket parseFrame(Packet packet) throws IOException {
@@ -21,7 +21,7 @@ public class PacketFactory {
     BasePacket basePacket;
     switch (code) {
       case EMPTY:
-        basePacket = new Empty(packet);
+        basePacket = new Empty( packet);
         break;
       case GET:
         basePacket = new Get(packet);
@@ -46,12 +46,11 @@ public class PacketFactory {
         break;
 
       default:
-        basePacket = new BasePacket(packet);
+        basePacket = new BasePacket(0, packet);
     }
-    System.err.println(basePacket.getClass().toString());
     basePacket.readOptions(packet);
     basePacket.readPayload(packet);
-
+    basePacket.setFromAddress(packet.getFromAddress());
     return basePacket;
   }
 }

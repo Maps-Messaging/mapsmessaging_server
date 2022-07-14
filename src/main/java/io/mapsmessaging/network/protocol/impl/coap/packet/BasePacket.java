@@ -15,6 +15,9 @@ import org.jetbrains.annotations.NotNull;
 public class BasePacket implements ServerPacket {
 
   @Getter
+  private final int id;
+
+  @Getter
   @Setter
   private byte[] token;
 
@@ -57,7 +60,8 @@ public class BasePacket implements ServerPacket {
   @Setter
   byte[] payload;
 
-  public BasePacket(Packet packet) {
+  public BasePacket(int id, Packet packet) {
+    this.id = id;
     byte val = packet.get();
     version = (val >> 6 & 0b11);
     type = TYPE.valueOf((val >> 4) & 0b11);

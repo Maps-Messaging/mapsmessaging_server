@@ -8,8 +8,6 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
-import io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -23,22 +21,11 @@ public class CoapInterfaceManager implements SelectorCallback {
   private final SelectorTask selectorTask;
   private final EndPoint endPoint;
   private final HashMap<SocketAddress, CoapProtocol> currentSessions;
-  private final PacketFactory packetFactory;
   private final ProtocolMessageTransformation transformation;
-
-  public CoapInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
-    logger = LoggerFactory.getLogger("CoAP Protocol on " + endPoint.getName());
-    this.selectorTask = selectorTask;
-    packetFactory = new PacketFactory();
-    this.endPoint = endPoint;
-    currentSessions = new LinkedHashMap<>();
-    transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
-  }
 
   public CoapInterfaceManager(InterfaceInformation info, EndPoint endPoint) throws IOException {
     logger = LoggerFactory.getLogger("CoAP Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
-    packetFactory = new PacketFactory();
     currentSessions = new LinkedHashMap<>();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
@@ -52,12 +39,8 @@ public class CoapInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
-
-    BasePacket basePacket = packetFactory.parseFrame(packet);
-    if (basePacket != null) {
-      System.err.println(basePacket);
-    }
-    return true;
+    CoapProtocol protocol = currentSessions.computeIfAbsent(packet.getFromAddress(), k -> new CoapProtocol(endPoint));
+    return protocol.processPacket(packet);
   }
 
 
