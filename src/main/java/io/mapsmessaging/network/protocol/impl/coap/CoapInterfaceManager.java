@@ -14,6 +14,7 @@ import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import javax.security.auth.login.LoginException;
 
 public class CoapInterfaceManager implements SelectorCallback {
 
@@ -39,7 +40,15 @@ public class CoapInterfaceManager implements SelectorCallback {
     if (packet.getFromAddress() == null) {
       return true; // Ignoring packet since unknown client
     }
-    CoapProtocol protocol = currentSessions.computeIfAbsent(packet.getFromAddress(), k -> new CoapProtocol(endPoint));
+    CoapProtocol protocol = currentSessions.computeIfAbsent(packet.getFromAddress(), k -> {
+      try {
+        return new CoapProtocol(endPoint);
+      } catch (LoginException e) {
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
     return protocol.processPacket(packet);
   }
 

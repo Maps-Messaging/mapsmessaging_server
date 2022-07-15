@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
 import static io.mapsmessaging.network.protocol.impl.coap.packet.Clazz.ERROR;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.Clazz.REQUEST;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.Clazz.SERVER_ERROR;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.Clazz.SUCCESS;
 
@@ -34,6 +35,8 @@ import lombok.Getter;
             +------+------------------------------+-----------+
  */
 public enum Code {
+
+  EMPTY(REQUEST, 0, "Empty"),
 
   CREATED(SUCCESS, 1, "Created"),
   DELETED(SUCCESS, 2, "Deleted"),

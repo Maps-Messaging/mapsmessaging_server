@@ -83,6 +83,10 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     flags = new BitSet(8);
     receiveMaximum = 1;
     rootPath = "";
+    creditHandler = CreditHandler.AUTO;
+    retainHandler = RetainHandler.SEND_ALWAYS;
+    qualityOfService = QualityOfService.AT_MOST_ONCE;
+    acknowledgementController = ClientAcknowledgement.AUTO;
     parseName();
   }
 

@@ -1,5 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.EMPTY;
+
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
@@ -85,16 +87,21 @@ public class BasePacket implements ServerPacket {
   }
 
 
-  public BasePacket buildAckResponse(Code code) throws IOException {
-    if(code.getClazz().equals(Clazz.REQUEST)) throw new IOException("Can not respond to a request with a request");
-    return new BasePacket(id, TYPE.ACK, code, 1, messageId, token );
+  public BasePacket buildAckResponse(Code code) {
+    TYPE responseType =type.equals(TYPE.CON) ? TYPE.ACK : TYPE.NON;
+    return new BasePacket(id,responseType, code, 1, messageId, token );
+  }
+
+  public BasePacket buildWaitResponse() {
+    TYPE responseType = type.equals(TYPE.CON) ? TYPE.ACK : TYPE.NON;
+    return new BasePacket(EMPTY,responseType, Code.EMPTY, 1, messageId, new byte[0] );
   }
 
   @Override
   public int packFrame(Packet packet) {
     int tokenLength = token != null ? token.length:0;
     packet.put((byte) ((version & 0b11) << 6 | ((type.getValue() & 0b11) << 4) | (tokenLength & 0b1111)));
-    packet.put((byte) (code.getValue()));
+    packet.put(code.getValue());
     packet.put((byte) (messageId >> 8 & 0xff));
     packet.put((byte) (messageId & 0xff));
 
