@@ -20,6 +20,7 @@ import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionSta
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.LoginException;
 import lombok.Getter;
 import lombok.NonNull;
@@ -35,14 +36,18 @@ public class CoapProtocol extends ProtocolImpl {
   @Getter
   private final SubscriptionState subscriptionState;
 
+  private final AtomicLong messageId;
+
   protected CoapProtocol(@NonNull @NotNull EndPoint endPoint) throws LoginException, IOException {
     super(endPoint);
     listenerFactory = new ListenerFactory();
     packetFactory = new PacketFactory();
+    messageId = new AtomicLong(System.nanoTime());
+    subscriptionState = new SubscriptionState();
+
     SessionContext context = new SessionContext(endPoint.getName(), this);
     context.setPersistentSession(false);
     context.setDuration(120);
-    subscriptionState = new SubscriptionState();
     session = SessionManager.getInstance().create(context, this);
     session.start();
   }
@@ -54,7 +59,7 @@ public class CoapProtocol extends ProtocolImpl {
       BasePacket response = context.getRequest().buildAckResponse(Code.CONTENT);
       response.setType(TYPE.CON);
       response.setPayload(messageEvent.getMessage().getOpaqueData());
-      response.setMessageId((int)(System.currentTimeMillis() & 0x7fff));
+      response.setMessageId((int)(messageId.incrementAndGet() & 0xffff));
       ContentFormat format = new ContentFormat(Format.TEXT_PLAIN);
       response.getOptions().putOption(format);
       try {
@@ -72,7 +77,7 @@ public class CoapProtocol extends ProtocolImpl {
     if(basePacket != null){
       Listener listener = listenerFactory.getListener(basePacket.getId());
       if(listener != null){
-        BasePacket response = null;
+        BasePacket response;
         try {
           response = listener.handle(basePacket, this);
           if(response != null) {
