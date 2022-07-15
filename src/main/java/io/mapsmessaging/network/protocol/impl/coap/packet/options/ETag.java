@@ -19,4 +19,9 @@ public class ETag extends Option{
   public void update(byte[] value) throws IOException {
     etags.add(value);
   }
+
+  @Override
+  public byte[] pack() {
+    return new byte[0];
+  }
 }

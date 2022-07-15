@@ -20,4 +20,7 @@ public abstract class Option {
   }
 
   public abstract void update(byte[] value) throws IOException;
+
+  public abstract byte[] pack();
+
 }

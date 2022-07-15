@@ -34,10 +34,15 @@ public class CoapProtocol extends ProtocolImpl {
     if(basePacket != null){
       Listener listener = listenerFactory.getListener(basePacket.getId());
       if(listener != null){
-        listener.handle(basePacket, this);
-        System.err.println("Handled>>"+basePacket);
+        BasePacket response = listener.handle(basePacket, this);
+        if(response != null) {
+          Packet responsePacket = new Packet(1024, false);
+          response.packFrame(responsePacket);
+          responsePacket.setFromAddress(packet.getFromAddress());
+          responsePacket.flip();
+          endPoint.sendPacket(responsePacket);
+        }
       }
-
     }
     return true;
   }

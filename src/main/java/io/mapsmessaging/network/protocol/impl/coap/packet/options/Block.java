@@ -39,4 +39,9 @@ public class Block extends Option {
       size += ((packed[packed.length - x - 1] & 0xff) << (x * 8 - 4));
     }
   }
+
+  @Override
+  public byte[] pack() {
+    return new byte[0];
+  }
 }

@@ -16,6 +16,11 @@ public class ContentFormat extends BinaryOption {
     super(Constants.CONTENT_FORMAT);
   }
 
+  public ContentFormat(Format format) {
+    super(Constants.CONTENT_FORMAT);
+    this.format = format;
+  }
+
   @Override
   public void update(byte[] data) throws IOException {
     super.update(data);

@@ -46,6 +46,10 @@ public class OptionSet {
     return optionList.computeIfAbsent(id, this::createOption);
   }
 
+  public void putOption(Option option){
+    optionList.put(option.getId(), option);
+  }
+
   private Option createOption(int id) {
     switch (id) {
       case Constants.ACCEPT:

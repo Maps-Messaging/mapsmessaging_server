@@ -3,10 +3,11 @@ package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import lombok.Getter;
 
 public class PackedOption extends Option {
 
-
+  @Getter
   private final List<String> path;
   private final String delimiter;
 
@@ -28,6 +29,11 @@ public class PackedOption extends Option {
 
   public void update(byte[] data) {
     path.add(new String(data));
+  }
+
+  @Override
+  public byte[] pack() {
+    return new byte[0];
   }
 
   @Override

@@ -31,4 +31,9 @@ public class GenericOption extends Option {
   public void update(byte[] value) {
     this.value = value;
   }
+
+  @Override
+  public byte[] pack() {
+    return value;
+  }
 }

@@ -4,8 +4,11 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.PathOption;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.util.Queue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -35,19 +38,11 @@ public class BasePacket implements ServerPacket {
 
   @Getter
   @Setter
-  Clazz clazz;
+  Code code;
 
   @Getter
   @Setter
   TYPE type;
-
-  @Getter
-  @Setter
-  int tokenLength;
-
-  @Getter
-  @Setter
-  int code;
 
   @Getter
   @Setter
@@ -60,16 +55,26 @@ public class BasePacket implements ServerPacket {
   @Setter
   byte[] payload;
 
+
+  public BasePacket(int id, TYPE type, Code code, int version, int messageId, byte[] token){
+    this.id = id;
+    this.type = type;
+    this.code = code;
+    this.token = token;
+    this.version = version;
+    this.messageId = messageId;
+    options = new OptionSet();
+  }
+
   public BasePacket(int id, Packet packet) {
     this.id = id;
     byte val = packet.get();
     version = (val >> 6 & 0b11);
     type = TYPE.valueOf((val >> 4) & 0b11);
-    tokenLength = (val) & 0b1111;
+    int tokenLength = (val) & 0b1111;
 
     val = packet.get();
-    clazz = Clazz.valueOf((val >> 5) & 0b111);
-    code = val & 0b11111;
+    code = Code.valueOf(val);
 
     messageId = (packet.get() & 0xff) << 8;
     messageId += (packet.get() & 0xff);
@@ -80,13 +85,61 @@ public class BasePacket implements ServerPacket {
   }
 
 
+  public BasePacket buildAckResponse(Code code) throws IOException {
+    if(code.getClazz().equals(Clazz.REQUEST)) throw new IOException("Can not respond to a request with a request");
+    return new BasePacket(id, TYPE.ACK, code, 1, messageId, token );
+  }
+
   @Override
   public int packFrame(Packet packet) {
+    int tokenLength = token != null ? token.length:0;
     packet.put((byte) ((version & 0b11) << 6 | ((type.getValue() & 0b11) << 4) | (tokenLength & 0b1111)));
-    packet.put((byte) (((clazz.getValue() & 0b111) << 5) | (code & 0b11111)));
+    packet.put((byte) (code.getValue()));
     packet.put((byte) (messageId >> 8 & 0xff));
     packet.put((byte) (messageId & 0xff));
-    return 4;
+
+    Queue<Long> optionKeys = new NaturalOrderedLongQueue();
+    options.getOptionList().keySet().forEach(integer -> {
+      long optionId = integer;
+      optionKeys.add(optionId);
+    });
+
+    int currentOptionId = 0;
+    int currentDelta;
+    while(!optionKeys.isEmpty()){
+      long optionId = optionKeys.remove();
+      Option option = options.getOption((int) optionId);
+      currentDelta = (int) optionId - currentOptionId;
+      currentOptionId = (int) optionId;
+      if(option instanceof PathOption){
+        PathOption pathOption = (PathOption) option;
+        for(String path:pathOption.getPath()){
+          byte[] packed = path.getBytes();
+          packOption(packet, currentDelta, packed);
+          currentDelta = (int) optionId - currentOptionId;
+          currentOptionId = (int) optionId;
+        }
+      }
+      else {
+        packOption(packet, currentDelta, option.pack());
+      }
+    }
+    if(payload != null){
+      int payloadMarker = 0xff;
+      packet.put((byte)payloadMarker);
+      packet.put(payload);
+    }
+    return packet.position();
+  }
+
+  private void packOption(Packet packet, int optionId, byte[] data){
+    int optionIdSize = computeVariableValue(optionId);
+    int optionSize = computeVariableValue(data.length);
+    byte optionHeader = (byte) ((optionIdSize << 4) | (optionSize & 0xf));
+    packet.put(optionHeader);
+    writeVariableInt(packet, optionIdSize, optionId); // Write the option ID, if any to send
+    writeVariableInt(packet, optionHeader, optionSize);      // Write the option size, if any to send
+    packet.put(data);
   }
 
   @Override
@@ -115,8 +168,30 @@ public class BasePacket implements ServerPacket {
     }
   }
 
+  private int computeVariableValue(int totalSize){
+    if(totalSize <= 12){
+      return totalSize;
+    }
+    else if (totalSize > (256+13)){
+      return 13;
+    }
+    else return 14;
+  }
 
-  private static int readVariableInt(Packet packet, int val) throws IOException {
+  private void writeVariableInt(Packet packet, int nibble, long val) {
+    if(nibble <= 12){
+      return;
+    }
+    if(nibble == 13){
+      packet.put((byte)((val -13) & 0xff));
+    }
+    else if(nibble == 14){
+      packet.put((byte)( (val -13)&0xff));
+      packet.put((byte)(val>>8 & 0xff));
+    }
+  }
+
+  private int readVariableInt(Packet packet, int val) throws IOException {
     if (val <= 12) {
       return val;
     } else if (val == 13) {

@@ -4,23 +4,23 @@ import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 
-public class ProxyScheme extends Option {
+public class StringOption extends Option {
 
   @Getter
   @Setter
-  private String proxyScheme;
+  private String value;
 
-  public ProxyScheme(){
-    super(Constants.PROXY_SCHEME);
+  public StringOption(int id){
+    super(id);
   }
 
   @Override
   public void update(byte[] value) throws IOException {
-    proxyScheme = new String(value);
+    this.value = new String(value);
   }
 
   @Override
   public byte[] pack() {
-    return proxyScheme.getBytes();
+    return value.getBytes();
   }
 }

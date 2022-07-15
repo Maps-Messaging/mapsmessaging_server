@@ -4,9 +4,9 @@ import lombok.Getter;
 
 public enum Clazz {
   REQUEST(0, "Request", "Request packet"),
-  SUCCESS_RESPONSE(2, "Success", "Successful response packet"),
-  ERROR_RESPONSE(4, "Error", "Error response packet"),
-  SERVER_ERROR_RESPONSE(5, "ServerError", "Server error response packet"),
+  SUCCESS(2, "Success", "Successful response packet"),
+  ERROR(4, "Error", "Error response packet"),
+  SERVER_ERROR(5, "ServerError", "Server error response packet"),
   SIGNAL(7, "Signal", "Signal packet");
 
 
@@ -28,11 +28,11 @@ public enum Clazz {
       case 0:
         return REQUEST;
       case 2:
-        return SUCCESS_RESPONSE;
+        return SUCCESS;
       case 4:
-        return ERROR_RESPONSE;
+        return ERROR;
       case 5:
-        return SERVER_ERROR_RESPONSE;
+        return SERVER_ERROR;
       case 7:
         return SIGNAL;
       default:
