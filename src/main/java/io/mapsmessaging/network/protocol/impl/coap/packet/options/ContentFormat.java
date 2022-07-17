@@ -19,6 +19,7 @@ public class ContentFormat extends BinaryOption {
   public ContentFormat(Format format) {
     super(Constants.CONTENT_FORMAT);
     this.format = format;
+    value = format.getId();
   }
 
   @Override

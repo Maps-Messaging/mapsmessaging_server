@@ -6,7 +6,7 @@ import lombok.Getter;
 public class BinaryOption extends Option {
 
   @Getter
-  private long value;
+  protected long value;
 
   public BinaryOption(int id) {
     super(id);

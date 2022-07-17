@@ -33,6 +33,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -179,6 +180,14 @@ public class DestinationManager implements DestinationFactory {
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.stop();
     }
+  }
+
+  public List<String> getWellKnown(String filter){
+    List<String> response = new ArrayList<>();
+    for (DestinationManagerPipeline pipeline : creatorPipelines) {
+      response.addAll(pipeline.getKnown());
+    }
+    return response;
   }
 
   public void addListener(DestinationManagerListener listener) {

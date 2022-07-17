@@ -20,6 +20,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,6 +125,14 @@ public class DestinationManagerPipeline {
     };
     taskScheduler.submit(task);
     return future;
+  }
+
+  public List<String> getKnown(){
+    List<String> response = new ArrayList<>();
+    for(DestinationImpl destination:destinationList.values()){
+      response.add(destination.getFullyQualifiedNamespace());
+    }
+    return response;
   }
 
   @SneakyThrows
