@@ -7,10 +7,11 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.schema.LinkFormat;
+import io.mapsmessaging.engine.schema.LinkFormatManager;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
-import io.mapsmessaging.network.protocol.impl.coap.packet.Get;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ContentFormat;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Format;
@@ -59,17 +60,11 @@ public class GetListener extends Listener {
     return response;
   }
 
-  private BasePacket sendWellKnown(BasePacket getRequest){
-    List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getWellKnown("");
-    StringBuilder sb = new StringBuilder();
-    for(String destination:destinations){
-      if(!destination.toLowerCase().startsWith("$sys") && !destination.equalsIgnoreCase(".well-known/core")) {
-        sb.append("<").append(destination).append(">;if=\"sensor\"");
-      }
-    }
-    System.err.println(sb.toString());
+  private BasePacket sendWellKnown(BasePacket getRequest) {
+    List<LinkFormat> linkFormatList = MessageDaemon.getInstance().getDestinationManager().getWellKnown();
+    String linkContent = LinkFormatManager.getInstance().buildLinkFormatString("", linkFormatList);
     BasePacket response = getRequest.buildAckResponse(Code.CONTENT);
-    response.setPayload(sb.toString().getBytes());
+    response.setPayload(linkContent.getBytes());
     ContentFormat format = new ContentFormat(Format.LINK_FORMAT);
     response.getOptions().putOption(format);
     return response;

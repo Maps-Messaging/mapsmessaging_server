@@ -23,6 +23,7 @@ import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.resources.ResourceProperties;
+import io.mapsmessaging.engine.schema.LinkFormat;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.logging.Logger;
@@ -182,8 +183,8 @@ public class DestinationManager implements DestinationFactory {
     }
   }
 
-  public List<String> getWellKnown(String filter){
-    List<String> response = new ArrayList<>();
+  public List<LinkFormat> getWellKnown() {
+    List<LinkFormat> response = new ArrayList<>();
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       response.addAll(pipeline.getKnown());
     }

@@ -153,7 +153,7 @@ NetworkManager:
         ssl_SSLContext: DTLS
 
       -
-        url: udp://0.0.0.0:5684/
+        url: udp://0.0.0.0:5683/
         name: "CoAP Interface"
         protocol: coap
 
