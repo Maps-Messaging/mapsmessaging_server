@@ -14,16 +14,12 @@ import io.mapsmessaging.engine.destination.subscription.builders.QueueSubscripti
 import io.mapsmessaging.engine.destination.tasks.DelayedMessageProcessor;
 import io.mapsmessaging.engine.destination.tasks.ShutdownPhase1Task;
 import io.mapsmessaging.engine.destination.tasks.StoreMessageTask;
-import io.mapsmessaging.engine.schema.LinkFormat;
-import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,22 +124,6 @@ public class DestinationManagerPipeline {
     };
     taskScheduler.submit(task);
     return future;
-  }
-
-  public List<LinkFormat> getKnown() {
-    List<LinkFormat> response = new ArrayList<>();
-    for (DestinationImpl destination : destinationList.values()) {
-      SchemaConfig schemaConfig = SchemaManager.getInstance().getSchema(destination.getSchema().getUniqueId());
-      if (schemaConfig != null) {
-        LinkFormat linkFormat = new LinkFormat(
-            destination.getFullyQualifiedNamespace(),
-            schemaConfig.getInterfaceDescription(),
-            schemaConfig.getResourceType()
-        );
-        response.add(linkFormat);
-      }
-    }
-    return response;
   }
 
   @SneakyThrows

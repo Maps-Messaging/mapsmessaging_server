@@ -8,9 +8,11 @@ import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 public class SchemaManager implements SchemaRepository {
@@ -33,19 +35,20 @@ public class SchemaManager implements SchemaRepository {
   private final Map<String, MessageFormatter> loadedFormatter;
 
   @Override
-  public synchronized SchemaConfig addSchema(String s, SchemaConfig schemaConfig) {
+  public synchronized SchemaConfig addSchema(String path, SchemaConfig schemaConfig) {
     try {
-      MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
-      loadedFormatter.put(schemaConfig.getUniqueId(), messageFormatter);
+      if(!loadedFormatter.containsKey(schemaConfig.getUniqueId())){
+        MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
+        loadedFormatter.put(schemaConfig.getUniqueId(), messageFormatter);
+      }
     } catch (Exception e) {
       // Unable to load the formatter
     }
-    return repository.addSchema(s, schemaConfig);
+    return repository.addSchema(path, schemaConfig);
   }
 
   public MessageFormatter getMessageFormatter(String uniqueId) {
     return loadedFormatter.get(uniqueId);
-
   }
 
   @Override
@@ -69,6 +72,11 @@ public class SchemaManager implements SchemaRepository {
   }
 
   @Override
+  public Map<String, List<SchemaConfig>> getMappedSchemas() {
+    return repository.getMappedSchemas();
+  }
+
+  @Override
   public synchronized void removeSchema(String uniqueId) {
     repository.removeSchema(uniqueId);
     loadedFormatter.remove(uniqueId);
@@ -78,6 +86,23 @@ public class SchemaManager implements SchemaRepository {
   public synchronized void removeAllSchemas() {
     loadedFormatter.clear();
     repository.removeAllSchemas();
+  }
+
+  public synchronized List<LinkFormat> buildLinkFormatList() {
+    List<LinkFormat> response = new ArrayList<>();
+    for(Entry<String, List<SchemaConfig>> entry: repository.getMappedSchemas().entrySet()){
+      String path = entry.getKey();
+      List<SchemaConfig> schemas = entry.getValue();
+      for(SchemaConfig schemaConfig:schemas) {
+        response.add(new LinkFormat(path, schemaConfig.getInterfaceDescription(), schemaConfig.getResourceType()));
+      }
+    }
+    return response;
+  }
+
+  public String buildLinkFormatResponse(){
+    List<LinkFormat> linkFormatList = buildLinkFormatList();
+    return LinkFormatManager.getInstance().buildLinkFormatString("", linkFormatList);
   }
 
   public void start() {

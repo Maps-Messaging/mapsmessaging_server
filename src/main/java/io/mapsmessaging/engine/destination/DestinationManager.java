@@ -23,7 +23,6 @@ import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.resources.ResourceProperties;
-import io.mapsmessaging.engine.schema.LinkFormat;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.logging.Logger;
@@ -34,7 +33,6 @@ import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -181,14 +179,6 @@ public class DestinationManager implements DestinationFactory {
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.stop();
     }
-  }
-
-  public List<LinkFormat> getWellKnown() {
-    List<LinkFormat> response = new ArrayList<>();
-    for (DestinationManagerPipeline pipeline : creatorPipelines) {
-      response.addAll(pipeline.getKnown());
-    }
-    return response;
   }
 
   public void addListener(DestinationManagerListener listener) {

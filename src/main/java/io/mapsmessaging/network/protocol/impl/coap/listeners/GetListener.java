@@ -2,13 +2,11 @@ package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.URI_PATH;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.engine.schema.LinkFormat;
-import io.mapsmessaging.engine.schema.LinkFormatManager;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
@@ -18,7 +16,6 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.Format;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class GetListener extends Listener {
@@ -61,8 +58,7 @@ public class GetListener extends Listener {
   }
 
   private BasePacket sendWellKnown(BasePacket getRequest) {
-    List<LinkFormat> linkFormatList = MessageDaemon.getInstance().getDestinationManager().getWellKnown();
-    String linkContent = LinkFormatManager.getInstance().buildLinkFormatString("", linkFormatList);
+    String linkContent = SchemaManager.getInstance().buildLinkFormatResponse();
     BasePacket response = getRequest.buildAckResponse(Code.CONTENT);
     response.setPayload(linkContent.getBytes());
     ContentFormat format = new ContentFormat(Format.LINK_FORMAT);
