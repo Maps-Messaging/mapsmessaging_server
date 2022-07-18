@@ -1,7 +1,12 @@
 package io.mapsmessaging.network.protocol.impl.coap.subscriptions;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE;
+
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Observe;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,9 +22,21 @@ public class Context {
   @Setter
   private SubscribedEventManager subscribedEventManager;
 
+  @Getter
+  private final boolean observe;
+
+
   public Context(String path, BasePacket request){
     this.path = path;
     this.request = request;
+    OptionSet optionSet = request.getOptions();
+    Option observeOption = optionSet.getOption(OBSERVE);
+    if(observeOption == null) {
+      observe = false;
+    }
+    else{
+      observe = ((Observe)observeOption).register();
+    }
   }
 
 }

@@ -50,7 +50,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -276,11 +275,6 @@ public class SubscriptionController implements DestinationManagerListener {
       if (destinationImpl.submit(task).isCancelled()) {
         counter.decrementAndGet();
       }
-    }
-    int timeout = 1000;
-    while (counter.get() > 0 && timeout > 0) {
-      LockSupport.parkNanos(10000000);
-      timeout--;
     }
   }
 

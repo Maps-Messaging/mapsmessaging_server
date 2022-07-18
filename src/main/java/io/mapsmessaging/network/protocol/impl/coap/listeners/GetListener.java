@@ -1,5 +1,6 @@
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.URI_PATH;
 
 import io.mapsmessaging.api.Destination;
@@ -13,6 +14,8 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ContentFormat;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Format;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Observe;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
@@ -22,7 +25,7 @@ public class GetListener extends Listener {
 
   @Override
   public BasePacket handle(BasePacket request, CoapProtocol protocol) throws ExecutionException, InterruptedException {
-    BasePacket response = null;
+    BasePacket response;
     OptionSet optionSet = request.getOptions();
     String path = "/";
     UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
@@ -37,6 +40,19 @@ public class GetListener extends Listener {
       Destination destination = session.findDestination(path, DestinationType.TOPIC).get();
       if (destination != null) {
         response = request.buildWaitResponse();
+        if (request.getType().equals(TYPE.NON)) {
+          request.setType(TYPE.NON);
+        }
+        if(request.getOptions().hasOption(OBSERVE)) {
+          Option observe = request.getOptions().getOption(OBSERVE);
+          if (((Observe) observe).register()) {
+            Observe option = new Observe(0);
+            response.getOptions().putOption(option);
+            response.setToken(request.getToken());
+          }
+        }
+        protocol.sendResponse(response, request.getFromAddress());
+        response = null;
         SubscriptionContext context = new SubscriptionContext(path);
         context.setReceiveMaximum(1);
         context.setBrowserFlag(true);

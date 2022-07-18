@@ -2,10 +2,12 @@ package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 
 import java.io.IOException;
 import lombok.Getter;
+import lombok.Setter;
 
 public class BinaryOption extends Option {
 
   @Getter
+  @Setter
   protected long value;
 
   public BinaryOption(int id) {

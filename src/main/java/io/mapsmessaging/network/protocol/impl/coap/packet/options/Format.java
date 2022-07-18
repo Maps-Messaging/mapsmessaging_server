@@ -34,6 +34,24 @@ public enum Format {
     this.name = name;
   }
 
+  public static Format stringValueOf(String value) {
+    switch (value) {
+      case "text/plain":
+        return TEXT_PLAIN;
+      case "application/link-format":
+        return LINK_FORMAT;
+      case "application/xml":
+        return XML;
+      case "application/exi":
+        return EXI;
+      case "application/json":
+        return JSON;
+      case "application/octet-stream":
+      default:
+        return OCTET_STREAM;
+    }
+  }
+
   public static Format valueOf(int value) {
     switch(value){
       case 0:

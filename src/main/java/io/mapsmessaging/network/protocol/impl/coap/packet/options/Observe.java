@@ -6,6 +6,11 @@ public class Observe extends BinaryOption {
     super(Constants.OBSERVE);
   }
 
+  public Observe(int val) {
+    super(Constants.OBSERVE);
+    this.value = val;
+  }
+
   public boolean register(){
     return getValue() == 0;
   }

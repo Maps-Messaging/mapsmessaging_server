@@ -530,7 +530,7 @@ public class DestinationImpl implements BaseDestination {
    * @param messageId that the delivery is complete
    */
   public void complete(long messageId) {
-    if (!subscriptionManager.hasInterest(messageId)) {
+    if (!subscriptionManager.hasInterest(messageId) && resource.getRetainedIdentifier() != messageId) {
       stats.removedMessage();
       submit(new RemoveMessageTask(this, messageId), DELETE_PRIORITY);
     }

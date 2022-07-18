@@ -92,7 +92,7 @@ public class BasePacket implements ServerPacket {
     return new BasePacket(id,responseType, code, 1, messageId, token );
   }
 
-  public BasePacket buildWaitResponse() {
+  public @NotNull BasePacket buildWaitResponse() {
     TYPE responseType = type.equals(TYPE.CON) ? TYPE.ACK : TYPE.NON;
     return new BasePacket(EMPTY,responseType, Code.EMPTY, 1, messageId, new byte[0] );
   }
@@ -104,6 +104,7 @@ public class BasePacket implements ServerPacket {
     packet.put(code.getValue());
     packet.put((byte) (messageId >> 8 & 0xff));
     packet.put((byte) (messageId & 0xff));
+    if(tokenLength > 0) packet.put(token);
 
     Queue<Long> optionKeys = new NaturalOrderedLongQueue();
     options.getOptionList().keySet().forEach(integer -> {
@@ -202,7 +203,7 @@ public class BasePacket implements ServerPacket {
     if (val <= 12) {
       return val;
     } else if (val == 13) {
-      return (packet.get()& 0xff) + 13;
+      return (packet.get() & 0xff) + 13;
     } else if (val == 14) {
       val = (packet.get() & 0xff) << 8;
       val = val | (packet.get() & 0xff);

@@ -42,6 +42,10 @@ public class OptionSet {
     optionList.put(option.getId(), option);
   }
 
+  public boolean hasOption(int id){
+    return optionList.containsKey(id);
+  }
+
   public Option getOption(int id){
     return optionList.computeIfAbsent(id, this::createOption);
   }
@@ -77,7 +81,7 @@ public class OptionSet {
         return new ProxyScheme();
 
       case Constants.OBSERVE:
-        return new Observe();
+        return new Observe(1);
 
       case Constants.SIZE1:
         return new Size1();
