@@ -88,13 +88,17 @@ public class BasePacket implements ServerPacket {
 
 
   public BasePacket buildAckResponse(Code code) {
-    TYPE responseType =type.equals(TYPE.CON) ? TYPE.ACK : TYPE.NON;
-    return new BasePacket(id,responseType, code, 1, messageId, token );
+    TYPE responseType = type.equals(TYPE.CON) ? TYPE.ACK : TYPE.NON;
+    BasePacket response = new BasePacket(id, responseType, code, 1, messageId, token);
+    response.setFromAddress(getFromAddress());
+    return response;
   }
 
   public @NotNull BasePacket buildWaitResponse() {
     TYPE responseType = type.equals(TYPE.CON) ? TYPE.ACK : TYPE.NON;
-    return new BasePacket(EMPTY,responseType, Code.EMPTY, 1, messageId, new byte[0] );
+    BasePacket response = new BasePacket(EMPTY, responseType, Code.EMPTY, 1, messageId, new byte[0]);
+    response.setFromAddress(getFromAddress());
+    return response;
   }
 
   @Override

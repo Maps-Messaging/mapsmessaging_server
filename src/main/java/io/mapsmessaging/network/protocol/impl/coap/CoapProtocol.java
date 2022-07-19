@@ -22,7 +22,6 @@ import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionSta
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -83,7 +82,7 @@ public class CoapProtocol extends ProtocolImpl {
       response.getOptions().putOption(contentFormat);
       try {
         transactionState.sent(context.getRequest().getToken(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
-        sendResponse(response, context.getRequest().getFromAddress());
+        sendResponse(response);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -102,7 +101,7 @@ public class CoapProtocol extends ProtocolImpl {
     try {
       BasePacket basePacket = packetFactory.parseFrame(packet);
       if (basePacket != null) {
-        callListener(listenerFactory.getListener(basePacket.getId()), basePacket, packet);
+        callListener(listenerFactory.getListener(basePacket.getId()), basePacket);
       }
     }
     catch(IOException ex){
@@ -115,13 +114,13 @@ public class CoapProtocol extends ProtocolImpl {
     return true;
   }
 
-  private void callListener( Listener listener, BasePacket basePacket, Packet packet) throws IOException {
+  private void callListener(Listener listener, BasePacket basePacket) throws IOException {
     if (listener != null) {
       BasePacket response;
       try {
         response = listener.handle(basePacket, this);
         if (response != null) {
-          sendResponse(response, packet.getFromAddress());
+          sendResponse(response);
         }
       } catch (ExecutionException e) {
         close();
@@ -132,10 +131,10 @@ public class CoapProtocol extends ProtocolImpl {
     }
   }
 
-  public void sendResponse(BasePacket response, SocketAddress fromAddress) throws IOException {
+  public void sendResponse(BasePacket response) throws IOException {
     Packet responsePacket = new Packet(1024, false);
     response.packFrame(responsePacket);
-    responsePacket.setFromAddress(fromAddress);
+    responsePacket.setFromAddress(response.getFromAddress());
     responsePacket.flip();
     endPoint.sendPacket(responsePacket);
   }

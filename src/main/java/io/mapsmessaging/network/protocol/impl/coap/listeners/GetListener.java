@@ -51,7 +51,7 @@ public class GetListener extends Listener {
             response.setToken(request.getToken());
           }
         }
-        protocol.sendResponse(response, request.getFromAddress());
+        protocol.sendResponse(response);
         response = null;
         SubscriptionContext context = new SubscriptionContext(path);
         context.setReceiveMaximum(1);
