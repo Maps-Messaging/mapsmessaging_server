@@ -22,6 +22,7 @@ import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionSta
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,16 +44,23 @@ public class CoapProtocol extends ProtocolImpl {
   @Getter
   private final SubscriptionState subscriptionState;
 
+  private final PacketPipeline outboundPipeline;
+  private final DuplicationManager duplicationManager;
   private final AtomicLong messageId;
+  private final SocketAddress socketAddress;
+  private final CoapInterfaceManager coapInterfaceManager;
 
-  protected CoapProtocol(@NonNull @NotNull EndPoint endPoint) throws LoginException, IOException {
+  protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress) throws LoginException, IOException {
     super(endPoint);
     listenerFactory = new ListenerFactory();
     packetFactory = new PacketFactory();
     messageId = new AtomicLong(System.nanoTime());
     subscriptionState = new SubscriptionState();
     transactionState = new TransactionState();
-
+    outboundPipeline = new PacketPipeline(this);
+    duplicationManager = new DuplicationManager(1);
+    this.socketAddress = socketAddress;
+    this.coapInterfaceManager = coapInterfaceManager;
     SessionContext context = new SessionContext(endPoint.getName(), this);
     context.setPersistentSession(false);
     context.setDuration(120);
@@ -64,10 +72,15 @@ public class CoapProtocol extends ProtocolImpl {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Context context = subscriptionState.find(messageEvent.getDestinationName());
     if(context != null){
-      BasePacket response = context.getRequest().buildAckResponse(Code.CONTENT);
-      response.setType(TYPE.CON);
+      BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
+      response.setFromAddress(context.getRequest().getFromAddress());
       response.setPayload(messageEvent.getMessage().getOpaqueData());
-      response.setMessageId((int)(messageId.incrementAndGet() & 0xffff));
+      if(context.getRequest().getType().equals(TYPE.NON)){
+        response.setMessageId(context.getRequest().getMessageId());
+      }
+      else {
+        response.setMessageId((int) (messageId.incrementAndGet() & 0xffff));
+      }
       List<SchemaConfig> schemas = SchemaManager.getInstance().getSchemaByContext(messageEvent.getDestinationName());
       ContentFormat contentFormat = new ContentFormat(Format.TEXT_PLAIN);
       if(!schemas.isEmpty()){
@@ -82,7 +95,7 @@ public class CoapProtocol extends ProtocolImpl {
       response.getOptions().putOption(contentFormat);
       try {
         transactionState.sent(context.getRequest().getToken(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
-        sendResponse(response);
+        outboundPipeline.send(response);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -101,7 +114,17 @@ public class CoapProtocol extends ProtocolImpl {
     try {
       BasePacket basePacket = packetFactory.parseFrame(packet);
       if (basePacket != null) {
-        callListener(listenerFactory.getListener(basePacket.getId()), basePacket);
+        if(basePacket.getType() == TYPE.RST){
+          close();
+          return false;
+        }
+        BasePacket duplicateResponse = duplicationManager.getResponse(basePacket.getMessageId());
+        if(duplicateResponse != null){
+          outboundPipeline.send(duplicateResponse);
+        }
+        else {
+          callListener(listenerFactory.getListener(basePacket.getId()), basePacket);
+        }
       }
     }
     catch(IOException ex){
@@ -114,13 +137,16 @@ public class CoapProtocol extends ProtocolImpl {
     return true;
   }
 
-  private void callListener(Listener listener, BasePacket basePacket) throws IOException {
+  private void callListener(Listener listener, BasePacket request) throws IOException {
     if (listener != null) {
       BasePacket response;
       try {
-        response = listener.handle(basePacket, this);
+        response = listener.handle(request, this);
         if (response != null) {
-          sendResponse(response);
+          if(request.getType().equals(TYPE.CON) || request.getType().equals(TYPE.NON)) {
+            duplicationManager.put(response);
+          }
+          outboundPipeline.send(response);
         }
       } catch (ExecutionException e) {
         close();
@@ -132,6 +158,11 @@ public class CoapProtocol extends ProtocolImpl {
   }
 
   public void sendResponse(BasePacket response) throws IOException {
+    outboundPipeline.send(response);
+    duplicationManager.put(response);
+  }
+
+  protected void send(BasePacket response) throws IOException {
     Packet responsePacket = new Packet(1024, false);
     response.packFrame(responsePacket);
     responsePacket.setFromAddress(response.getFromAddress());
@@ -142,6 +173,8 @@ public class CoapProtocol extends ProtocolImpl {
   @Override
   public void close() throws IOException {
     SessionManager.getInstance().close(session, true);
+    outboundPipeline.close();
+    coapInterfaceManager.close(socketAddress);
     super.close();
   }
 
@@ -160,7 +193,10 @@ public class CoapProtocol extends ProtocolImpl {
     return "RFC7252";
   }
 
-  public void ackToken(byte[] token) {
-    transactionState.ack(token);
+  public void ack(int messageId, byte[] token) throws IOException {
+    if(token != null) {
+      transactionState.ack(token);
+    }
+    outboundPipeline.ack(messageId);
   }
 }

@@ -55,4 +55,8 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
     CoapInterfaceManager manager = new CoapInterfaceManager(info, endPoint);
     mappedInterfaces.put(endPoint, manager);
   }
+  public void closed(EndPoint endPoint) {
+    mappedInterfaces.remove(endPoint);
+  }
+
 }

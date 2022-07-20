@@ -7,11 +7,11 @@ import java.io.IOException;
 public class EmptyListener extends Listener {
 
   @Override
-  public BasePacket handle(BasePacket request, CoapProtocol protocol) {
+  public BasePacket handle(BasePacket request, CoapProtocol protocol) throws IOException {
     switch (request.getType()) {
       case ACK:
         if (request.getToken() != null) {
-          protocol.ackToken(request.getToken());
+          protocol.ack(request.getMessageId(), request.getToken());
         }
         break;
 

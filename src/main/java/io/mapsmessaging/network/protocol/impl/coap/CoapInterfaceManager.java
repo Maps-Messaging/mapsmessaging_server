@@ -42,7 +42,7 @@ public class CoapInterfaceManager implements SelectorCallback {
     }
     CoapProtocol protocol = currentSessions.computeIfAbsent(packet.getFromAddress(), k -> {
       try {
-        return new CoapProtocol(endPoint);
+        return new CoapProtocol(endPoint, this, packet.getFromAddress());
       } catch (LoginException e) {
         throw new RuntimeException(e);
       } catch (IOException e) {
@@ -51,7 +51,6 @@ public class CoapInterfaceManager implements SelectorCallback {
     });
     return protocol.processPacket(packet);
   }
-
 
   @Override
   public void close() {

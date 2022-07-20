@@ -19,12 +19,30 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
-import java.util.concurrent.ExecutionException;
+import java.io.IOException;
 
 public class GetListener extends Listener {
 
   @Override
-  public BasePacket handle(BasePacket request, CoapProtocol protocol) throws ExecutionException, InterruptedException {
+  public BasePacket handle(BasePacket request, CoapProtocol protocol) throws IOException {
+    switch(request.getType()){
+      case CON:
+      case NON:
+        return handleGetRequest(request, protocol);
+
+      case ACK:
+        if (request.getToken() != null) {
+          protocol.ack(request.getMessageId(), request.getToken());
+        }
+        break;
+
+      case RST:
+        protocol.close();
+    }
+    return null;
+  }
+
+  private BasePacket handleGetRequest(BasePacket request, CoapProtocol protocol){
     BasePacket response;
     OptionSet optionSet = request.getOptions();
     String path = "/";
@@ -33,8 +51,20 @@ public class GetListener extends Listener {
       path = uriPath.toString();
     }
     if(path.equals(".well-known/core")){
-      return sendWellKnown(request);
+      response = sendWellKnown(request);
     }
+    else{
+      response = buildSubscription(path, request, protocol);
+    }
+
+    if (request.getType().equals(TYPE.NON) && response != null) {
+      request.setType(TYPE.NON);
+    }
+    return response;
+  }
+
+  private BasePacket buildSubscription(String path, BasePacket request, CoapProtocol protocol){
+    BasePacket response;
     try {
       Session session = protocol.getSession();
       Destination destination = session.findDestination(path, DestinationType.TOPIC).get();
@@ -51,7 +81,9 @@ public class GetListener extends Listener {
             response.setToken(request.getToken());
           }
         }
-        protocol.sendResponse(response);
+        if(request.getType().equals(TYPE.CON)) {
+          protocol.sendResponse(response);
+        }
         response = null;
         SubscriptionContext context = new SubscriptionContext(path);
         context.setReceiveMaximum(1);
@@ -66,9 +98,6 @@ public class GetListener extends Listener {
     catch(Exception exception){
       exception.printStackTrace();
       response = request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
-    }
-    if (request.getType().equals(TYPE.NON) && response != null) {
-      request.setType(TYPE.NON);
     }
     return response;
   }

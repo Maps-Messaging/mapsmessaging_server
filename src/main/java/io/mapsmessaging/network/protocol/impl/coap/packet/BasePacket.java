@@ -44,19 +44,24 @@ public class BasePacket implements ServerPacket {
 
   @Getter
   @Setter
-  TYPE type;
+  private TYPE type;
 
   @Getter
   @Setter
-  int messageId;
+  private int messageId;
 
   @Getter
-  OptionSet options;
+  private OptionSet options;
 
   @Getter
   @Setter
-  byte[] payload;
+  private byte[] payload;
 
+  @Getter
+  @Setter
+  private long timeSent;
+
+  private int resentCount;
 
   public BasePacket(int id, TYPE type, Code code, int version, int messageId, byte[] token){
     this.id = id;
@@ -86,6 +91,13 @@ public class BasePacket implements ServerPacket {
     options = new OptionSet();
   }
 
+  public int incrementResendCount(){
+    return resentCount++;
+  }
+  public BasePacket buildUpdatePacket(Code code) {
+    TYPE responseType =type.equals(TYPE.CON) ? TYPE.CON : TYPE.NON;
+    return new BasePacket(id,responseType, code, 1, messageId, token );
+  }
 
   public BasePacket buildAckResponse(Code code) {
     TYPE responseType = type.equals(TYPE.CON) ? TYPE.ACK : TYPE.NON;
