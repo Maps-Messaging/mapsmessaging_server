@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.engine.system.impl.messages;
 
-import io.mapsmessaging.engine.resources.Resource;
+import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
 import java.io.IOException;
 
@@ -35,6 +35,6 @@ public class RetainedCount extends SystemTopicWithAverage {
 
   @Override
   public long getData() {
-    return Resource.getTotalRetained();
+    return DestinationImpl.getTotalRetained();
   }
 }

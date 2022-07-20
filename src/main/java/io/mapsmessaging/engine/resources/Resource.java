@@ -33,19 +33,12 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class Resource implements AutoCloseable {
-
-  private static final LongAdder totalRetained = new LongAdder();
-
-  public static long getTotalRetained() {
-    return totalRetained.sum();
-  }
 
   private static final AtomicLong INTERNAL_RESOURCE_COUNTER = new AtomicLong(0);
 
@@ -57,7 +50,6 @@ public class Resource implements AutoCloseable {
   private volatile boolean loaded;
   private final AsyncStorage<Message> store;
 
-  private @Getter long retainedIdentifier;
   private boolean isClosed;
   private @Getter ResourceProperties resourceProperties;
 
@@ -70,7 +62,6 @@ public class Resource implements AutoCloseable {
     keyGen = new AtomicLong(0);
     loaded = false;
     isClosed = false;
-    retainedIdentifier = -1;
     name = fileName + "message.data";
     this.resourceProperties = resourceProperties;
     Map<String, String> properties = new LinkedHashMap<>();
@@ -122,15 +113,6 @@ public class Resource implements AutoCloseable {
   public void add(Message message) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
     message.setIdentifier(getNextIdentifier());
-    if (message.isRetain()) {
-      if (message.getOpaqueData() == null || message.getOpaqueData().length == 0) {
-        retainedIdentifier = -1;
-        totalRetained.decrement();
-      } else {
-        retainedIdentifier = message.getIdentifier();
-        totalRetained.increment();
-      }
-    }
     store.add(message);
   }
 
@@ -153,10 +135,6 @@ public class Resource implements AutoCloseable {
 
   public void remove(long key) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
-    if (key == retainedIdentifier) {
-      totalRetained.decrement();
-      retainedIdentifier = -1;
-    }
     getFromFuture(store.remove(key));
   }
 

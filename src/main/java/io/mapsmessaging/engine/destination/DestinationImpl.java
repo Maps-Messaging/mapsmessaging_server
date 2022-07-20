@@ -69,6 +69,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -81,6 +82,13 @@ import org.jetbrains.annotations.Nullable;
  * single destination needs to do.
  */
 public class DestinationImpl implements BaseDestination {
+
+  private static final LongAdder totalRetained = new LongAdder();
+
+  public static long getTotalRetained() {
+    return totalRetained.sum();
+  }
+
 
   //<editor-fold desc="Global static final fields used by all destinations">
   public static final int TASK_QUEUE_PRIORITY_SIZE = 2;
@@ -96,6 +104,7 @@ public class DestinationImpl implements BaseDestination {
   protected final DestinationSubscriptionManager subscriptionManager;
   protected final DestinationSubscriptionManager schemaSubscriptionManager;
   private final SharedSubscriptionRegister sharedSubscriptionRegistry;
+  private final RetainManager retainManager;
 
   protected final DestinationJMX destinationJMXBean;
 
@@ -153,6 +162,7 @@ public class DestinationImpl implements BaseDestination {
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
     transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     closed = false;
+    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
     loadSchema();
   }
 
@@ -190,6 +200,7 @@ public class DestinationImpl implements BaseDestination {
     transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
+    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
     loadSchema();
   }
 
@@ -221,6 +232,7 @@ public class DestinationImpl implements BaseDestination {
     delayedMessageManager = null;
     transactionMessageManager = null;
     closed = false;
+    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
   }
   //</editor-fold>
 
@@ -239,7 +251,7 @@ public class DestinationImpl implements BaseDestination {
   private void loadSchema() {
     ConfigurationProperties props = new ConfigurationProperties(resource.getResourceProperties().getSchema());
     if (!props.isEmpty()) {
-      SchemaConfig config = null;
+      SchemaConfig config;
       try {
         config = SchemaConfigFactory.getInstance().constructConfig(props);
       } catch (IOException e) {
@@ -389,7 +401,7 @@ public class DestinationImpl implements BaseDestination {
    * @return message Id of the retained message or -1 indicating no retained message
    */
   public long getRetainedIdentifier() {
-    return resource.getRetainedIdentifier();
+    return retainManager.current();
   }
 
   /**
@@ -530,7 +542,7 @@ public class DestinationImpl implements BaseDestination {
    * @param messageId that the delivery is complete
    */
   public void complete(long messageId) {
-    if (!subscriptionManager.hasInterest(messageId) && resource.getRetainedIdentifier() != messageId) {
+    if (!subscriptionManager.hasInterest(messageId) && retainManager.current() != messageId) {
       stats.removedMessage();
       submit(new RemoveMessageTask(this, messageId), DELETE_PRIORITY);
     }
@@ -708,6 +720,11 @@ public class DestinationImpl implements BaseDestination {
   public void removeMessage(long messageId) throws IOException {
     long nano = System.nanoTime();
     resource.remove(messageId);
+    if (messageId == retainManager.current()) {
+      totalRetained.decrement();
+      retainManager.replace(-1);
+    }
+
     nano = (System.nanoTime() - nano) / 1000; // Make it micro seconds
     getStats().getDeleteTimeAverages().add(nano);
   }
@@ -721,6 +738,16 @@ public class DestinationImpl implements BaseDestination {
   public void addMessage(Message message) throws IOException {
     long nano = System.nanoTime();
     resource.add(message);
+    if (message.isRetain()) {
+      if (message.getOpaqueData() == null || message.getOpaqueData().length == 0) {
+        retainManager.replace(-1);
+        totalRetained.decrement();
+      } else {
+        retainManager.replace(message.getIdentifier());
+        totalRetained.increment();
+      }
+    }
+
     nano = (System.nanoTime() - nano) / 1000;
     getStats().getWriteTimeAverages().add(nano);
   }

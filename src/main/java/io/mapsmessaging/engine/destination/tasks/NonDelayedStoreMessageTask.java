@@ -41,7 +41,7 @@ public class NonDelayedStoreMessageTask extends StoreMessageTask {
 
   @Override
   public Response taskCall() throws Exception {
-    if (subscriptionManager.hasSubscriptions()) {
+    if (subscriptionManager.hasSubscriptions() || message.isRetain()) {
       storeMessage(destination, message);
       destination.getStats().messagePublished();
       Future<Response> response = destination.submit(new SubscriptionUpdateTask(destination, subscriptionManager, message));
