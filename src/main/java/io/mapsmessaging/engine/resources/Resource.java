@@ -117,9 +117,6 @@ public class Resource implements AutoCloseable {
   public void add(Message message) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
     message.setIdentifier(getNextIdentifier());
-    if(message.getIdentifier() % 10000 == 0){
-      System.err.println("Message Id:"+message.getIdentifier());
-    }
     getFromFuture(store.add(message));
   }
 
