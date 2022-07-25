@@ -108,6 +108,11 @@ public class SchemaSubscription extends Subscription {
   }
 
   @Override
+  public void delete() throws IOException {
+
+  }
+
+  @Override
   public void cancel() throws IOException {
     // A Schema subscription is a simple deliver a single message when it changes
   }

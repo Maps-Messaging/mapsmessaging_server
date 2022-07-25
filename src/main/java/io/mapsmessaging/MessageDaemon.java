@@ -268,8 +268,9 @@ public class MessageDaemon implements WrapperListener {
       ConsulManagerFactory.getInstance().getManager().register(meta);
     }
     jolokaManager.start();
-    destinationManager.start();
+    destinationManager.initialise();
     sessionManager.start();
+    destinationManager.start();
     networkManager.initialise();
     networkManager.startAll();
     hawtioManager.start();
@@ -281,15 +282,21 @@ public class MessageDaemon implements WrapperListener {
 
   @Override
   public int stop(int i) {
+    Thread t = new Thread(discoveryManager::deregisterAll);
+    t.start();
     isStarted.set(false);
     networkConnectionManager.stop();
     jolokaManager.stop();
     networkManager.stopAll();
     sessionManager.stop();
-    destinationManager.stop();
     systemTopicManager.stop();
+    destinationManager.stop();
     mBean.close();
-    discoveryManager.deregisterAll();
+    try {
+      t.join(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     return i;
   }
 

@@ -52,7 +52,7 @@ public class UnsubscribeTask extends EngineTask {
         subscription.removeContext(destinationSet.getContext());
         if (subscription.getContexts().isEmpty()) {
           controller.remove(destination);
-          subscription.close();
+          subscription.delete();
         }
       }
     } finally {

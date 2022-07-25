@@ -6,8 +6,8 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CoapProtocolFactory extends ProtocolImplFactory {
 
@@ -16,11 +16,11 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
   private static final int IPV6_DATAGRAM_HEADER_SIZE = 40;
   private static final int LORA_DATAGRAM_HEADER_SIZE = 4;
 
-  private final Map<EndPoint, CoapInterfaceManager> mappedInterfaces;
+  private final List<CoapInterfaceManager> managers;
 
   public CoapProtocolFactory() {
     super("CoAP", "Constrained Application Protocol RFC7252", null);
-    mappedInterfaces = new ConcurrentHashMap<>();
+    managers = new ArrayList<>();
   }
 
   @Override
@@ -53,10 +53,17 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
       endPoint.getConfig().getProperties().put("serverWriteBufferSize", "" + datagramSize);
     }
     CoapInterfaceManager manager = new CoapInterfaceManager(info, endPoint);
-    mappedInterfaces.put(endPoint, manager);
+    managers.add(manager);
   }
+
+  @Override
   public void closed(EndPoint endPoint) {
-    mappedInterfaces.remove(endPoint);
+    for(CoapInterfaceManager manager:managers){
+      if(manager.getEndPoint().equals(endPoint)){
+        managers.remove(manager);
+        break;
+      }
+    }
   }
 
 }

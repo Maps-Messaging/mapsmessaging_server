@@ -135,6 +135,7 @@ public class PublishListener extends PacketListener {
         transaction.add(destination, message);
         if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {
           transaction.commit();
+          session.closeTransaction(transaction);
         }
       }
     } else {

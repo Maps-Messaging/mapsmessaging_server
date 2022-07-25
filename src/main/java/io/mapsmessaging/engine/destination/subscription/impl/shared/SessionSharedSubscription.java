@@ -67,6 +67,12 @@ public class SessionSharedSubscription extends Subscription {
     cancel();
   }
 
+
+  @Override
+  public void delete() throws IOException {
+    cancel();
+  }
+
   @Override
   public void hibernate() {
     for (OutstandingEventDetails outstanding : acknowledgementController.getOutstanding()) {

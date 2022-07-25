@@ -29,6 +29,7 @@ import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -42,16 +43,19 @@ public class Resource implements AutoCloseable {
 
   private static final AtomicLong INTERNAL_RESOURCE_COUNTER = new AtomicLong(0);
 
-
-  private final @Getter String name;
-  private final @Getter boolean persistent;
+  @Getter
+  private final String name;
+  @Getter
+  private final boolean persistent;
 
   private final AtomicLong keyGen;
   private volatile boolean loaded;
   private final AsyncStorage<Message> store;
 
   private boolean isClosed;
-  private @Getter ResourceProperties resourceProperties;
+
+  @Getter
+  private  final ResourceProperties resourceProperties;
 
   public Resource() throws IOException {
     this(null, null, "Internal-Resource:" + INTERNAL_RESOURCE_COUNTER.incrementAndGet(), null);
@@ -113,10 +117,18 @@ public class Resource implements AutoCloseable {
   public void add(Message message) throws IOException {
     ThreadLocalContext.checkDomain(DestinationImpl.RESOURCE_TASK_KEY);
     message.setIdentifier(getNextIdentifier());
-    store.add(message);
+    if(message.getIdentifier() % 10000 == 0){
+      System.err.println("Message Id:"+message.getIdentifier());
+    }
+    getFromFuture(store.add(message));
   }
 
-  protected long getNextIdentifier() {
+  public void keepOnly(List<Long> validKeys) throws IOException {
+    checkLoaded();
+    store.keepOnly(validKeys);
+  }
+
+  private synchronized void checkLoaded(){
     if (!loaded) {
       if (persistent) {
         try {
@@ -130,6 +142,10 @@ public class Resource implements AutoCloseable {
       }
       loaded = true;
     }
+  }
+
+  protected long getNextIdentifier() {
+    checkLoaded();
     return keyGen.incrementAndGet();
   }
 
@@ -149,6 +165,14 @@ public class Resource implements AutoCloseable {
 
   public Message get(long key) throws IOException {
     return getFromFuture(store.get(key));
+  }
+
+  public boolean contains(Long id) throws IOException {
+    return getFromFuture(store.contains(id));
+  }
+
+  public List<Long> getKeys() throws IOException{
+    return getFromFuture(store.getKeys());
   }
 
   public long size() throws IOException {

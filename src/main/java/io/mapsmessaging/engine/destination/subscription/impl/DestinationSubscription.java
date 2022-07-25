@@ -95,6 +95,20 @@ public class DestinationSubscription extends Subscription {
     mbean.close();
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
+
+    // We need to see if any other subscriptions have interest in these events, and if not then simply
+    // remove the events. Just like when we deliver all the events in a subscription
+    try {
+      messageStateManager.close();
+    } catch (IOException e) {
+      logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_ON_CLOSE, e);
+    }
+  }
+
+  public void delete() {
+    mbean.close();
+    acknowledgementController.close();
+    messageStateManager.rollbackInFlightMessages();
     destinationImpl.removeSubscription(sessionId);
 
     // We need to see if any other subscriptions have interest in these events, and if not then simply
@@ -105,6 +119,7 @@ public class DestinationSubscription extends Subscription {
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_EXCEPTION_ON_CLOSE, e);
     }
   }
+
 
   @Override
   public void hibernate() {
@@ -307,6 +322,7 @@ public class DestinationSubscription extends Subscription {
           && context.noLocalMessages()
           && messageSession.equals(sessionId)) {
         messagesIgnored++;
+        System.err.println("Not registering.. no local "+message.getIdentifier());
         return 0;
       }
     }
@@ -316,6 +332,7 @@ public class DestinationSubscription extends Subscription {
       schedule();
       return 1;
     }
+    System.err.println("Not registering.. hibernating or not store offline "+message.getIdentifier());
     messagesIgnored++;
     return 0;
   }

@@ -22,6 +22,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.admin.DestinationJMX;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
 import io.mapsmessaging.engine.destination.subscription.DestinationSubscriptionManager;
@@ -51,6 +52,8 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
@@ -240,11 +243,18 @@ public class DestinationImpl implements BaseDestination {
   public void close() throws IOException {
     closed = true;
     resource.close();
+    retainManager.close();
     if (delayedMessageManager != null) {
       delayedMessageManager.close();
     }
     if (transactionMessageManager != null) {
       transactionMessageManager.close();
+    }
+    if(subscriptionManager != null){
+      subscriptionManager.close();
+    }
+    if(schemaSubscriptionManager != null){
+      schemaSubscriptionManager.close();
     }
   }
 
@@ -294,6 +304,28 @@ public class DestinationImpl implements BaseDestination {
     List<Long> transactionIds = transactionMessageManager.getTransactions();
     for (Long transaction : transactionIds) {
       abort(transaction);
+    }
+  }
+
+  //
+  // Builds a list of message Ids that the server has interest in, any
+  // not in the list should be removed from the underlying store
+  //
+  public void scanForOrphanedMessages() throws IOException{
+    if(fullyQualifiedNamespace.startsWith("$SYS"))return;
+    List<Long> list = new NaturalOrderedLongList(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
+    long retain = retainManager.current();
+    if(retain > -1) {
+      list.add(retainManager.current()); // we only have 1 retain event
+    }
+    list.addAll(subscriptionManager.getAll());
+    if(list.size() != resource.size()) {
+      resource.keepOnly(list);
+      for(Long subId:list){
+        if(!resource.contains(subId)){
+          subscriptionManager.expired(subId);
+        }
+      }
     }
   }
 

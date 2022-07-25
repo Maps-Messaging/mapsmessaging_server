@@ -47,6 +47,8 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     return null;
   }
 
+  public abstract void delete() throws IOException;
+
   public void addContext(SubscriptionContext context) {
     contextList.add(context);
   }

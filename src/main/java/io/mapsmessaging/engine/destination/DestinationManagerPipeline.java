@@ -105,6 +105,19 @@ public class DestinationManagerPipeline {
     return future;
   }
 
+
+  public CompletableFuture<Void> start() {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    Callable<Void> task = () -> {
+      startInternal();
+      future.complete(null);
+      return null;
+    };
+    taskScheduler.submit(task);
+    return future;
+  }
+
+
   public CompletableFuture<Void> stop() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     Callable<Void> task = () -> {
@@ -207,6 +220,17 @@ public class DestinationManagerPipeline {
     logger.log(AuditEvent.DESTINATION_DELETED, delete.getFullyQualifiedNamespace());
     return delete;
   }
+
+  private void startInternal() {
+    for (DestinationImpl destinationImpl : destinationList.values()) {
+      try {
+        destinationImpl.scanForOrphanedMessages();
+      } catch (IOException e) {
+        logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING, e);
+      }
+    }
+  }
+
 
   private void stopInternal() {
     for (DestinationImpl destinationImpl : destinationList.values()) {

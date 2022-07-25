@@ -2,6 +2,7 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.utils.FilePathHelper;
+import io.mapsmessaging.utilities.collections.NaturalOrderedCollection;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
@@ -43,5 +44,9 @@ public class RetainManager {
     } else {
       return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
     }
+  }
+
+  public void close() {
+    ((NaturalOrderedCollection)retainIndex).close();
   }
 }

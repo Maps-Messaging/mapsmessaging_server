@@ -250,6 +250,7 @@ public class PublishListener5 extends PacketListener5 {
       transaction.add(destination, message);
       if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {
         transaction.commit();
+        session.closeTransaction(transaction);
       }
       return 1;
     } else {

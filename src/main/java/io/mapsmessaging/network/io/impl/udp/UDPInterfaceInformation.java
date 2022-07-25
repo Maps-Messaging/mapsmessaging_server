@@ -38,7 +38,12 @@ public class UDPInterfaceInformation implements InterfaceInformation {
 
   public UDPInterfaceInformation(UDPInterfaceInformation info, InetAddress broadcast) {
     this.netint = info.netint;
-    bcast = broadcast;
+    if(broadcast != null && !broadcast.isAnyLocalAddress()) {
+      bcast = broadcast;
+    }
+    else{
+      bcast = null;
+    }
   }
 
   public boolean isLoopback() throws SocketException {

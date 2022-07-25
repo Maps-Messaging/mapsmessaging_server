@@ -33,6 +33,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,8 +41,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -164,7 +167,7 @@ public class DestinationManager implements DestinationFactory {
     return size;
   }
 
-  public void start() {
+  public void initialise() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
     for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
       DestinationPathManager mapManager = entry.getValue();
@@ -173,13 +176,29 @@ public class DestinationManager implements DestinationFactory {
       processFileList(destinationLocator.getValid(), mapManager);
     }
   }
-
-  public void stop() {
+  public void start() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
-      pipeline.stop();
+      pipeline.start();
     }
   }
+
+    public void stop() {
+    logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    for (DestinationManagerPipeline pipeline : creatorPipelines) {
+      futures.add(pipeline.stop());
+    }
+    CompletableFuture[] cfs = futures.toArray(new CompletableFuture[futures.size()]);
+      try {
+        CompletableFuture.allOf(cfs).thenApply(ignored -> futures.stream()
+              .map(CompletableFuture::join)
+              .collect(Collectors.toList())
+          ).get();
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
+      }
+    }
 
   public void addListener(DestinationManagerListener listener) {
     destinationManagerListeners.add(listener);
@@ -213,6 +232,7 @@ public class DestinationManager implements DestinationFactory {
           logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
         }
       } catch (IOException error) {
+        error.printStackTrace();
         logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEPTION_ON_START, error);
       }
     }

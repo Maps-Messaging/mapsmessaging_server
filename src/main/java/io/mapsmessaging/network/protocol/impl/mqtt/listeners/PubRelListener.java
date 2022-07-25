@@ -45,6 +45,16 @@ public class PubRelListener extends PacketListener {
         }
       }
     }
-    return new PubComp(pubRel.getPacketIdentifier());
+    PubComp pubComp = new PubComp(pubRel.getPacketIdentifier());
+    pubComp.setCallback(()-> {
+      if (transaction != null) {
+        try {
+          session.closeTransaction(transaction);
+        } catch (IOException e) {
+          // catch & ignore
+        }
+      }
+    });
+    return pubComp;
   }
 }

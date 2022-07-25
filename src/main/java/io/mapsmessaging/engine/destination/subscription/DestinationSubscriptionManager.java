@@ -19,9 +19,12 @@
 package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -140,7 +143,12 @@ public class DestinationSubscriptionManager implements Subscribable {
 
   @Override
   public Queue<Long> getAll() {
-    return new ArrayDeque<>();
+    Queue<Long> keepList = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
+    for (Subscribable subscribable : subscriptions.values()) {
+      Queue<Long> interested = subscribable.getAll();
+      keepList.addAll(interested);
+    }
+    return keepList;
   }
 
   @Override

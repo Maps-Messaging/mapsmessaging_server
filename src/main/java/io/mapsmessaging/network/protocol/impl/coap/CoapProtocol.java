@@ -104,9 +104,6 @@ public class CoapProtocol extends ProtocolImpl {
         session.removeSubscription(context.getPath());
       }
     }
-    else{
-      System.err.println("No Context Found");
-    }
   }
 
   @Override
