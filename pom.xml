@@ -22,7 +22,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>message_daemon</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>2.2.2</version>
+  <version>2.3.0</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -405,7 +405,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.0.12</version>
+      <version>1.1.0</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
@@ -418,7 +418,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>DynamicStorage</artifactId>
-      <version>2.3.0</version>
+      <version>2.3.1</version>
     </dependency>
 
     <dependency>
@@ -517,7 +517,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.261</version>
+      <version>1.12.268</version>
       <scope>test</scope>
     </dependency>
 
