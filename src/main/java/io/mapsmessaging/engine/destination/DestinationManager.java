@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -176,6 +177,7 @@ public class DestinationManager implements DestinationFactory {
       processFileList(destinationLocator.getValid(), mapManager);
     }
   }
+
   public void start() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
@@ -194,8 +196,8 @@ public class DestinationManager implements DestinationFactory {
         CompletableFuture.allOf(cfs).thenApply(ignored -> futures.stream()
               .map(CompletableFuture::join)
               .collect(Collectors.toList())
-          ).get();
-      } catch (InterruptedException | ExecutionException e) {
+          ).get(60, TimeUnit.SECONDS);
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
         e.printStackTrace();
       }
     }
