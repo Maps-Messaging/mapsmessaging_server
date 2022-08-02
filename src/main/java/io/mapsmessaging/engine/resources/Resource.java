@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -61,6 +62,7 @@ public class Resource implements AutoCloseable {
     this(null, null, "Internal-Resource:" + INTERNAL_RESOURCE_COUNTER.incrementAndGet(), null);
   }
 
+  @SneakyThrows
   public Resource(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName,
       @Nullable ResourceProperties resourceProperties) throws IOException {
     keyGen = new AtomicLong(0);
@@ -102,7 +104,7 @@ public class Resource implements AutoCloseable {
     persistent = !(type.equalsIgnoreCase("Memory"));
     store = new AsyncStorage<>(s);
     if (idleTime > 0) {
-      store.enableAutoPause(pathManager.getIdleTime() * 1000L); // Convert to milliseconds
+      store.enableAutoPause(TimeUnit.SECONDS.toMillis(pathManager.getIdleTime()));  // Convert to milliseconds
     }
   }
 

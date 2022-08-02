@@ -191,7 +191,7 @@ public class DestinationManager implements DestinationFactory {
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       futures.add(pipeline.stop());
     }
-    CompletableFuture[] cfs = futures.toArray(new CompletableFuture[futures.size()]);
+    CompletableFuture<Void>[] cfs = futures.toArray(new CompletableFuture[futures.size()]);
       try {
         CompletableFuture.allOf(cfs).thenApply(ignored -> futures.stream()
               .map(CompletableFuture::join)
