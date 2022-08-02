@@ -93,7 +93,14 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     if (startAdvertiseTask(info)) {
-      advertiserTask = new AdvertiserTask(gatewayId, endPoint, info, info.getBroadcast(), DefaultConstants.ADVERTISE_INTERVAL);
+      AdvertiserTask tmp = null;
+      try {
+        tmp = new AdvertiserTask(gatewayId, endPoint, info, info.getBroadcast(), DefaultConstants.ADVERTISE_INTERVAL);
+      } catch (IOException e) {
+        logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, e);
+        // unable to run the advertiser task on this endpoint
+      }
+      advertiserTask = tmp;
     } else {
       advertiserTask = null;
     }
