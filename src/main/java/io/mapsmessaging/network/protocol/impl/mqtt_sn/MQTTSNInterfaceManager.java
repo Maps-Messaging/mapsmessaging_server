@@ -46,6 +46,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MQTT_SNProtocolV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PacketFactoryV2;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SelectionKey;
@@ -96,7 +97,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       AdvertiserTask tmp = null;
       try {
         tmp = new AdvertiserTask(gatewayId, endPoint, info, info.getBroadcast(), DefaultConstants.ADVERTISE_INTERVAL);
-      } catch (IOException e) {
+      } catch (UncheckedIOException e) {
         logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, e);
         // unable to run the advertiser task on this endpoint
       }
