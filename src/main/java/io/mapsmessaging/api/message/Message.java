@@ -19,6 +19,7 @@
 package io.mapsmessaging.api.message;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.selector.IdentifierResolver;
@@ -34,6 +35,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +48,7 @@ public class Message implements IdentifierResolver, Storable {
   private static final int UTF8_BIT = 1;
   private static final int CORRELATION_BYTE_ARRAY_BIT = 2;
   private static final int SCHEMA_ID_PRESENT = 3;
+  private static final int COMPRESSED_PACK = 4;
 
 
   @Getter
@@ -182,7 +187,22 @@ public class Message implements IdentifierResolver, Storable {
     }
 
     if ((containsBuffers & 0x4) != 0) {
-      opaqueData = packed[idx].array();
+      byte[] tmp = packed[idx].array();
+      if(flags.get(COMPRESSED_PACK)){
+        flags.set(COMPRESSED_PACK, false);
+        Inflater inflater = new Inflater();
+        int len = packed[idx].getInt();
+        opaqueData = new byte[len];
+        inflater.setInput(tmp, 4, tmp.length-4 );
+        try {
+          inflater.inflate(opaqueData);
+        } catch (DataFormatException e) {
+          // Log this
+        }
+      }
+      else{
+        opaqueData = tmp;
+      }
     } else {
       opaqueData = null;
     }
@@ -217,6 +237,9 @@ public class Message implements IdentifierResolver, Storable {
       bufferCount++;
       containsBuffers = (byte) (containsBuffers | 0x4);
     }
+
+    boolean compress = Constants.getInstance().isEnableMessageStoreCompression() &&  opaqueData != null && opaqueData.length > Constants.getInstance().getMinimumMessageSize();
+    flags.set(COMPRESSED_PACK, compress);
     ByteArrayOutputStream optional = new ByteArrayOutputStream(1024);
     StreamObjectWriter optionalWriter = new StreamObjectWriter(optional);
     optionalWriter.write(flags.toByteArray());
@@ -247,7 +270,21 @@ public class Message implements IdentifierResolver, Storable {
       idx++;
     }
     if (opaqueData != null) {
-      packed[idx] = ByteBuffer.wrap(opaqueData);
+      if(compress){
+        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
+        deflater.setInput(opaqueData);
+        deflater.finish();
+        byte[] tmp = new byte[opaqueData.length+10];
+        int len = deflater.deflate(tmp);
+        ByteBuffer packedBuffer = ByteBuffer.allocate(len+4);
+        packedBuffer.putInt(opaqueData.length);
+        packedBuffer.put(tmp, 0, len);
+        packed[idx] = packedBuffer;
+        packedBuffer.flip();
+      }
+      else {
+        packed[idx] = ByteBuffer.wrap(opaqueData);
+      }
     }
     return packed;
   }
@@ -406,4 +443,33 @@ public class Message implements IdentifierResolver, Storable {
 
   // </editor-fold>
 
+  public static void main(String[] args){
+    try {
+      // Encode a String into bytes
+      String inputString = "blahblahblah";
+      byte[] input = inputString.getBytes("UTF-8");
+
+      // Compress the bytes
+      byte[] output = new byte[100];
+      Deflater compresser = new Deflater();
+      compresser.setInput(input);
+      compresser.finish();
+      int compressedDataLength = compresser.deflate(output);
+      compresser.end();
+
+      // Decompress the bytes
+      Inflater decompresser = new Inflater();
+      decompresser.setInput(output, 0, compressedDataLength);
+      byte[] result = new byte[100];
+      int resultLength = decompresser.inflate(result);
+      decompresser.end();
+
+      // Decode the bytes into a String
+      String outputString = new String(result, 0, resultLength, "UTF-8");
+    } catch(java.io.UnsupportedEncodingException ex) {
+      // handle
+    } catch (java.util.zip.DataFormatException ex) {
+      // handle
+    }
+  }
 }

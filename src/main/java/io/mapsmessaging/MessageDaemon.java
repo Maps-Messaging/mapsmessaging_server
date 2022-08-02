@@ -21,6 +21,7 @@ package io.mapsmessaging;
 import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_BOOTSTRAP;
 
 import io.mapsmessaging.admin.MessageDaemonJMX;
+import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
@@ -148,6 +149,9 @@ public class MessageDaemon implements WrapperListener {
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
+
+    Constants.getInstance().setEnableMessageStoreCompression(properties.getBooleanProperty("CompressMessagesInStores", false));
+    Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
 
     // Start the Schema manager to it has the defaults and has loaded the required classes
     SchemaManager.getInstance().start();

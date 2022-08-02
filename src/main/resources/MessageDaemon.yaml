@@ -36,8 +36,20 @@ MessageDaemon:
     TransactionExpiry: 3600000
 
     #
-    # Transaction expiry scan. The interval between scans for expired transactins
+    # Transaction expiry scan. The interval between scans for expired transactions
     # in Milliseconds
     #
     # Default 1 Second
     TransactionScan: 5000
+
+    #
+    # Flag to compress messages written to the underlying resource
+    #
+    # Default False
+    CompressMessagesInStores: false
+
+    #
+    # Minimum size of opaque data that the server will compress
+    #
+    # Default 1024
+    CompressMessageMinSize: 1024
