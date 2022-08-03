@@ -15,12 +15,23 @@ public class Constants {
   }
 
   @Getter
-  @Setter
-  private boolean enableMessageStoreCompression = false;
+  private CompressionMode messageCompression = CompressionMode.NONE;
 
   @Getter
   @Setter
   private int minimumMessageSize = 1024;
+
+  public void setMessageCompression(String name){
+    switch(name.toLowerCase()){
+      case "inflator":
+        messageCompression = CompressionMode.INFLATOR;
+        break;
+
+      case "none":
+      default:
+        messageCompression = CompressionMode.NONE;
+    }
+  }
 
   private Constants(){}
 

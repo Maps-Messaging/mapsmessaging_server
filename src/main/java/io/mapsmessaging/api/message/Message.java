@@ -35,7 +35,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 import lombok.Getter;
@@ -187,21 +186,12 @@ public class Message implements IdentifierResolver, Storable {
     }
 
     if ((containsBuffers & 0x4) != 0) {
-      byte[] tmp = packed[idx].array();
       if(flags.get(COMPRESSED_PACK)){
         flags.set(COMPRESSED_PACK, false);
-        Inflater inflater = new Inflater();
-        int len = packed[idx].getInt();
-        opaqueData = new byte[len];
-        inflater.setInput(tmp, 4, tmp.length-4 );
-        try {
-          inflater.inflate(opaqueData);
-        } catch (DataFormatException e) {
-          // Log this
-        }
+        opaqueData = Constants.getInstance().getMessageCompression().decompress(packed[idx]);
       }
       else{
-        opaqueData = tmp;
+        opaqueData = packed[idx].array();
       }
     } else {
       opaqueData = null;
@@ -238,7 +228,7 @@ public class Message implements IdentifierResolver, Storable {
       containsBuffers = (byte) (containsBuffers | 0x4);
     }
 
-    boolean compress = Constants.getInstance().isEnableMessageStoreCompression() &&  opaqueData != null && opaqueData.length > Constants.getInstance().getMinimumMessageSize();
+    boolean compress = Constants.getInstance().getMessageCompression().isCompresses() &&  opaqueData != null && opaqueData.length > Constants.getInstance().getMinimumMessageSize();
     flags.set(COMPRESSED_PACK, compress);
     ByteArrayOutputStream optional = new ByteArrayOutputStream(1024);
     StreamObjectWriter optionalWriter = new StreamObjectWriter(optional);
@@ -271,16 +261,7 @@ public class Message implements IdentifierResolver, Storable {
     }
     if (opaqueData != null) {
       if(compress){
-        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-        deflater.setInput(opaqueData);
-        deflater.finish();
-        byte[] tmp = new byte[opaqueData.length+10];
-        int len = deflater.deflate(tmp);
-        ByteBuffer packedBuffer = ByteBuffer.allocate(len+4);
-        packedBuffer.putInt(opaqueData.length);
-        packedBuffer.put(tmp, 0, len);
-        packed[idx] = packedBuffer;
-        packedBuffer.flip();
+        packed[idx] = Constants.getInstance().getMessageCompression().compress(opaqueData);
       }
       else {
         packed[idx] = ByteBuffer.wrap(opaqueData);

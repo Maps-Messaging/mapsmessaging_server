@@ -29,7 +29,7 @@ MessageDaemon:
     SessionPipeLines: 48
 
     #
-    # Incomplete transaction life time that the server will hold onto the transaction before aborting it
+    # Incomplete transaction life-time that the server will hold onto the transaction before aborting it
     # in Milliseconds
     #
     # Default 1 hour
@@ -44,9 +44,10 @@ MessageDaemon:
 
     #
     # Flag to compress messages written to the underlying resource
+    # Options are : None, inflator
     #
-    # Default False
-    CompressMessagesInStores: false
+    # Default None
+    CompressionName: inflator
 
     #
     # Minimum size of opaque data that the server will compress

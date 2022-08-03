@@ -150,7 +150,7 @@ public class MessageDaemon implements WrapperListener {
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
 
-    Constants.getInstance().setEnableMessageStoreCompression(properties.getBooleanProperty("CompressMessagesInStores", false));
+    Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
 
     // Start the Schema manager to it has the defaults and has loaded the required classes
