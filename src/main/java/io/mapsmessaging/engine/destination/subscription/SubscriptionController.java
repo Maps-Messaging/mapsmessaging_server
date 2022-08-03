@@ -123,7 +123,7 @@ public class SubscriptionController implements DestinationManagerListener {
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
   }
 
-  public void close() {
+  public void shutdown(){
     logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
     List<Subscription> closeList = new ArrayList<>(activeSubscriptions.values());
@@ -132,6 +132,31 @@ public class SubscriptionController implements DestinationManagerListener {
     for (Subscription subscription : closeList) {
       try {
         subscription.close();
+      } catch (IOException e) {
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
+      }
+    }
+
+    closeList = new ArrayList<>(schemaSubscriptions.values());
+    for (Subscription subscription : closeList) {
+      try {
+        subscription.close();
+      } catch (IOException e) {
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
+      }
+    }
+    subscriptionControllerJMX.close();
+  }
+
+  public void close() {
+    logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
+    destinationManager.removeListener(this);
+    List<Subscription> closeList = new ArrayList<>(activeSubscriptions.values());
+    subscriptions.clear();
+    activeSubscriptions.clear();
+    for (Subscription subscription : closeList) {
+      try {
+        subscription.delete();
       } catch (IOException e) {
         logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
       }

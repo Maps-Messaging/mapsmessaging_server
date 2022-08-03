@@ -63,6 +63,9 @@ public class SessionManagerPipeLine {
     for (SessionImpl session : sessions.values()) {
       session.close();
     }
+    for(SubscriptionController controller:subscriptionManagerFactory.values()){
+      controller.shutdown();
+    }
   }
 
   public boolean hasSessions() {

@@ -322,7 +322,6 @@ public class DestinationSubscription extends Subscription {
           && context.noLocalMessages()
           && messageSession.equals(sessionId)) {
         messagesIgnored++;
-        System.err.println("Not registering.. no local "+message.getIdentifier());
         return 0;
       }
     }
@@ -332,7 +331,6 @@ public class DestinationSubscription extends Subscription {
       schedule();
       return 1;
     }
-    System.err.println("Not registering.. hibernating or not store offline "+message.getIdentifier());
     messagesIgnored++;
     return 0;
   }
