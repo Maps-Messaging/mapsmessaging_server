@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.resources;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.DestinationPathManager;
+import io.mapsmessaging.schemas.config.SchemaConfig;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,11 +45,11 @@ public class ResourceFactory {
   }
 
   public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationPathManager pathManager, String fullyQualifiedPath, UUID uuid,
-      DestinationType destinationType) throws IOException {
+      DestinationType destinationType,  SchemaConfig config) throws IOException {
     if (resourceName.toLowerCase().startsWith("$sys")) {
       return new Resource();
     } else {
-      ResourceProperties props = createMetaData(pathManager, resourceName, uuid, destinationType);
+      ResourceProperties props = createMetaData(pathManager, resourceName, uuid, destinationType, config);
       return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath, props);
     }
   }
@@ -83,7 +84,7 @@ public class ResourceFactory {
     return null;
   }
 
-  private ResourceProperties createMetaData(DestinationPathManager path, String resourceName, UUID uuid, DestinationType destinationType) throws IOException {
+  private ResourceProperties createMetaData(DestinationPathManager path, String resourceName, UUID uuid, DestinationType destinationType, SchemaConfig config) throws IOException {
     File directoryPath = new File(path.getDirectory() + File.separator + uuid.toString() + File.separator);
     if (!directoryPath.exists()) {
       if (!directoryPath.mkdirs()) {
@@ -97,6 +98,9 @@ public class ResourceFactory {
           BuildInfo.getInstance().getBuildDate(),
           BuildInfo.getInstance().getBuildVersion()
       );
+      if(config != null) {
+        properties.setSchema(config.toMap());
+      }
       properties.write(directoryPath);
       return properties;
     }

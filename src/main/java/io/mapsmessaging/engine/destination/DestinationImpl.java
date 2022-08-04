@@ -153,7 +153,9 @@ public class DestinationImpl implements BaseDestination {
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
-    resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType);
+    SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
+    resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType, config);
+    resource.getResourceProperties().setSchema(config.toMap());
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
@@ -180,7 +182,6 @@ public class DestinationImpl implements BaseDestination {
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType)
       throws IOException {
     this.fullyQualifiedNamespace = name;
-    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     fullyQualifiedDirectoryRoot = directory;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
@@ -196,7 +197,15 @@ public class DestinationImpl implements BaseDestination {
       destinationJMXBean = null;
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
+    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
 
+    if(resource.getResourceProperties().getSchema() == null || resource.getResourceProperties().getSchema().isEmpty()){
+      SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
+      updateSchema(config, null);
+    }
+    else{
+      loadSchema();
+    }
     // Delayed Messages are automatically dealt with once the structure has been reloaded
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
 
@@ -204,7 +213,7 @@ public class DestinationImpl implements BaseDestination {
     rollbackTransactionsOnReload();
     closed = false;
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
-    loadSchema();
+
   }
 
   /**
@@ -274,16 +283,11 @@ public class DestinationImpl implements BaseDestination {
   }
 
   public void updateSchema(@NonNull @NotNull SchemaConfig config, @Nullable Message message) throws IOException {
-    SchemaConfig loaded = SchemaManager.getInstance().getSchema(config.getUniqueId());
-    if (loaded != null) {
-      config = loaded;
-    } else {
-      config = SchemaManager.getInstance().addSchema(getFullyQualifiedNamespace(), config);
-    }
+    config = SchemaManager.getInstance().addSchema(getFullyQualifiedNamespace(), config);
     Schema newSchema = new Schema(config);
     ResourceProperties resourceProperties = resource.getResourceProperties();
 
-    if (schema.update(newSchema) && resourceProperties != null) {
+    if (schema == null || schema.update(newSchema) && resourceProperties != null) {
       resourceProperties.setSchema(config.toMap());
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
       if (message != null && schemaSubscriptionManager.hasSubscriptions()) {
