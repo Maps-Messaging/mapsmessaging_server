@@ -7,7 +7,7 @@ public class PutListener extends Listener {
 
   @Override
   public BasePacket handle(BasePacket request, CoapProtocol protocol) {
-    super.publishMessage(request, protocol);
+    super.publishMessage(request, protocol, false);
     return null;
   }
 }

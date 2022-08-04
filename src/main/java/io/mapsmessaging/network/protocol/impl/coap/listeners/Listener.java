@@ -1,5 +1,6 @@
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.MAX_AGE;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.URI_PATH;
 
 import io.mapsmessaging.api.Destination;
@@ -16,6 +17,7 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ETag;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.IfMatch;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.IfNoneMatch;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.MaxAge;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public abstract class Listener {
 
@@ -33,7 +36,7 @@ public abstract class Listener {
   public abstract BasePacket handle(BasePacket request, CoapProtocol protocol) throws IOException, ExecutionException, InterruptedException;
 
 
-  protected void publishMessage(BasePacket request,CoapProtocol protocol ){
+  protected void publishMessage(BasePacket request,CoapProtocol protocol, boolean isDelete ){
 
     OptionSet optionSet = request.getOptions();
     String path = "/";
@@ -49,15 +52,15 @@ public abstract class Listener {
         if (destination != null) {
           try {
             Code code = Boolean.TRUE.equals(exists) ? Code.CHANGED : Code.CREATED;
-            if(canProcess(destination, request)) {
-              destination.storeMessage(build(request));
-            }
-            else{
-              code = Code.VALID;
-            }
+            if(isDelete)code = Code.DELETED;
+
             if(request.getType().equals(TYPE.CON)){
               BasePacket response = request.buildAckResponse(code);
               protocol.sendResponse(response);
+            }
+
+            if(canProcess(destination, request)) {
+              destination.storeMessage(build(request));
             }
           } catch (IOException e) {
 //            logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
@@ -125,12 +128,21 @@ public abstract class Listener {
     return true;
   }
 
-  private Message build(BasePacket request){
+  protected Message build(BasePacket request){
     MessageBuilder messageBuilder = new MessageBuilder();
 
     messageBuilder.setOpaqueData(request.getPayload());
-    messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
+    messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
     messageBuilder.setRetain(true);
+
+    OptionSet optionSet = request.getOptions();
+    if(optionSet != null){
+      MaxAge maxAge = (MaxAge) optionSet.getOption(MAX_AGE);
+      if(maxAge != null){
+        messageBuilder.setMessageExpiryInterval(maxAge.getValue(), TimeUnit.SECONDS);
+      }
+    }
+
     if(request.getToken() != null && request.getToken().length > 0){
       messageBuilder.setCorrelationData(request.getToken());
     }
