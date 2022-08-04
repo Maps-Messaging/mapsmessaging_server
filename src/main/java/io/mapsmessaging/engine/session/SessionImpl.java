@@ -134,6 +134,30 @@ public class SessionImpl {
   //</editor-fold>
 
   //<editor-fold desc="Destination Control API">
+  public CompletableFuture<DestinationImpl> destinationExists(@NonNull @NotNull String destinationName) {
+    String mapped = namespaceMapping.getMapped(destinationName);
+    if (mapped == null) {
+      mapped = destinationManager.calculateNamespace(destinationName);
+      namespaceMapping.addMapped(destinationName, mapped);
+    }
+    String finalMapped = mapped;
+
+    CompletableFuture<DestinationImpl> future = new CompletableFuture<>();
+    future.completeAsync(() -> {
+      try {
+        return destinationManager.find(finalMapped).get();
+      } catch (InterruptedException e){
+        Thread.currentThread().interrupt();
+        future.completeExceptionally(e);
+      }
+      catch (ExecutionException e) {
+        future.completeExceptionally(e);
+      }
+      return null;
+    });
+    return future;
+  }
+
   @SneakyThrows
   public CompletableFuture<DestinationImpl> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType destinationType) throws IOException {
     if (isClosed) {

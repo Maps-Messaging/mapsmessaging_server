@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +75,22 @@ public class Session {
     for (Transaction transaction : clientTransactions.values()) {
       transaction.close();
     }
+  }
+
+  public CompletableFuture<Boolean> destinationExists(@NonNull @NotNull String destinationName){
+    CompletableFuture<Boolean> future = new CompletableFuture<>();
+    future.completeAsync(() -> {
+      try {
+        return sessionImpl.destinationExists(destinationName).get() != null;
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        future.completeExceptionally(e);
+      } catch (ExecutionException e) {
+        future.completeExceptionally(e);
+      }
+      return false;
+    });
+    return future;
   }
 
   public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType type) {
