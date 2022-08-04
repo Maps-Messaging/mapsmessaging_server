@@ -83,11 +83,11 @@ public abstract class Listener {
     IfMatch ifMatch = (IfMatch)optionSet.getOption(Constants.IF_MATCH);
     IfNoneMatch ifNoneMatch = (IfNoneMatch) optionSet.getOption(Constants.IF_NONE_MATCH);
 
-    if(ifMatch != null || ifNoneMatch != null){
+    if (!ifMatch.getList().isEmpty() || !ifNoneMatch.getList().isEmpty()) {
       Message message = destination.getRetained();
-      if(message != null){
+      if (message != null) {
         List<byte[]> etags = extractTags(message);
-        if(ifMatch != null){
+        if (ifMatch != null) {
           return compareTags(etags, ifMatch.getList());
         }
         return !compareTags(etags, ifNoneMatch.getList());
