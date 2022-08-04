@@ -56,6 +56,12 @@ public class OptionSet {
 
   private Option createOption(int id) {
     switch (id) {
+      case Constants.IF_MATCH:
+        return new IfMatch();
+
+      case Constants.IF_NONE_MATCH:
+        return new IfNoneMatch();
+
       case Constants.ACCEPT:
         return new Accept();
 

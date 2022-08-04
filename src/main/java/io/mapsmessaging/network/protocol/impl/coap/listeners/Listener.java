@@ -2,18 +2,29 @@ package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.URI_PATH;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.ETag;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.IfMatch;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.IfNoneMatch;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 public abstract class Listener {
@@ -23,10 +34,7 @@ public abstract class Listener {
 
 
   protected void publishMessage(BasePacket request,CoapProtocol protocol ){
-    HashMap<String, String> meta = new LinkedHashMap<>();
-    meta.put("protocol", "CoAP");
-    meta.put("version", "1");
-    meta.put("time_ms", "" + System.currentTimeMillis());
+
     OptionSet optionSet = request.getOptions();
     String path = "/";
     UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
@@ -36,24 +44,21 @@ public abstract class Listener {
 
     String finalPath = path;
     protocol.getSession().destinationExists(path).thenApply(exists->{
-      MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(request.getPayload());
-      messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
-      messageBuilder.setRetain(true);
-      messageBuilder.setCorrelationData(request.getToken());
-      messageBuilder.setMeta(meta);
-      messageBuilder.setDataMap( new LinkedHashMap<>());
+
       protocol.getSession().findDestination(finalPath, DestinationType.TOPIC).thenApply(destination -> {
         if (destination != null) {
           try {
-            destination.storeMessage(messageBuilder.build());
+            Code code = Boolean.TRUE.equals(exists) ? Code.CHANGED : Code.CREATED;
+            if(canProcess(destination, request)) {
+              destination.storeMessage(build(request));
+            }
+            else{
+              code = Code.VALID;
+            }
             if(request.getType().equals(TYPE.CON)){
-              // Need to create a response here!!!
-              Code code = Boolean.TRUE.equals(exists) ? Code.CHANGED : Code.CREATED;
               BasePacket response = request.buildAckResponse(code);
               protocol.sendResponse(response);
             }
-
           } catch (IOException e) {
 //            logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
             try {
@@ -68,5 +73,84 @@ public abstract class Listener {
 
       return exists;
     });
+  }
+
+  private boolean canProcess(Destination destination, BasePacket request) throws IOException {
+    OptionSet optionSet = request.getOptions();
+    IfMatch ifMatch = (IfMatch)optionSet.getOption(Constants.IF_MATCH);
+    IfNoneMatch ifNoneMatch = (IfNoneMatch) optionSet.getOption(Constants.IF_NONE_MATCH);
+
+    if(ifMatch != null || ifNoneMatch != null){
+      Message message = destination.getRetained();
+      if(message != null){
+        List<byte[]> etags = extractTags(message);
+        if(ifMatch != null){
+          return compareTags(etags, ifMatch.getEtags());
+        }
+        return !compareTags(etags, ifNoneMatch.getEtags());
+      }
+    }
+    return true;
+  }
+
+  private boolean compareTags(List<byte[]> etags, List<byte[]> matching){
+    for(byte[] match:matching){
+      for(byte[] etag:etags){
+        if(checkTag(match, etag)){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private List<byte[]> extractTags(Message message){
+    List<byte[]> etags = new ArrayList<>();
+    Map<String, TypedData> map = message.getDataMap();
+    for(Entry<String, TypedData> entry:map.entrySet()){
+      if(entry.getKey().startsWith("etag_")){
+        etags.add((byte[])entry.getValue().getData());
+      }
+    }
+    return etags;
+  }
+
+  private boolean checkTag(byte[] lhs, byte[] rhs){
+    if(lhs.length != rhs.length) return false;
+    for(int x=0;x<lhs.length;x++){
+      if(rhs[x] != lhs[x]){
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private Message build(BasePacket request){
+    MessageBuilder messageBuilder = new MessageBuilder();
+
+    messageBuilder.setOpaqueData(request.getPayload());
+    messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
+    messageBuilder.setRetain(true);
+    if(request.getToken() != null && request.getToken().length > 0){
+      messageBuilder.setCorrelationData(request.getToken());
+    }
+
+    HashMap<String, String> meta = new LinkedHashMap<>();
+    meta.put("protocol", "CoAP");
+    meta.put("version", "1");
+    meta.put("time_ms", "" + System.currentTimeMillis());
+    messageBuilder.setMeta(meta);
+
+    Map<String, TypedData> map = new LinkedHashMap<>();
+    ETag eTags = (ETag) request.getOptions().getOption(Constants.ETAG);
+    if(eTags != null){
+      List<byte[]> tagList =eTags.getEtags();
+      for(int x=0;x<tagList.size();x++){
+        map.put("etag_"+x, new TypedData(tagList.get(x)));
+      }
+    }
+    messageBuilder.setDataMap(map);
+
+    return messageBuilder.build();
   }
 }

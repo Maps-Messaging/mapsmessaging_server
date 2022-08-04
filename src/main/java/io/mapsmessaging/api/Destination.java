@@ -54,4 +54,8 @@ public class Destination implements BaseDestination {
   public DestinationType getResourceType() {
     return destinationImpl.getResourceType();
   }
+
+  public Message getRetained() throws IOException {
+    return destinationImpl.getMessage(destinationImpl.getRetainedIdentifier());
+  }
 }
