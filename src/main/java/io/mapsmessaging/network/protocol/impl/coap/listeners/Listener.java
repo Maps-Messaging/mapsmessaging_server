@@ -59,7 +59,7 @@ public abstract class Listener {
               protocol.sendResponse(response);
             }
 
-            if(canProcess(destination, request)) {
+            if(isDelete || canProcess(destination, request)) {
               destination.storeMessage(build(request));
             }
           } catch (IOException e) {
@@ -88,9 +88,9 @@ public abstract class Listener {
       if(message != null){
         List<byte[]> etags = extractTags(message);
         if(ifMatch != null){
-          return compareTags(etags, ifMatch.getEtags());
+          return compareTags(etags, ifMatch.getList());
         }
-        return !compareTags(etags, ifNoneMatch.getEtags());
+        return !compareTags(etags, ifNoneMatch.getList());
       }
     }
     return true;
@@ -156,7 +156,7 @@ public abstract class Listener {
     Map<String, TypedData> map = new LinkedHashMap<>();
     ETag eTags = (ETag) request.getOptions().getOption(Constants.ETAG);
     if(eTags != null){
-      List<byte[]> tagList =eTags.getEtags();
+      List<byte[]> tagList =eTags.getList();
       for(int x=0;x<tagList.size();x++){
         map.put("etag_"+x, new TypedData(tagList.get(x)));
       }

@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.coap;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.network.io.EndPoint;
@@ -15,8 +16,12 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ContentFormat;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.ETag;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Format;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.MaxAge;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Observe;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionState;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
@@ -24,6 +29,8 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.LoginException;
@@ -73,6 +80,27 @@ public class CoapProtocol extends ProtocolImpl {
     Context context = subscriptionState.find(messageEvent.getDestinationName());
     if(context != null){
       BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
+      OptionSet optionSet = response.getOptions();
+      UriPath uriPath = new UriPath();
+      uriPath.setPath(messageEvent.getDestinationName());
+      optionSet.putOption(uriPath);
+      long expiry = messageEvent.getMessage().getExpiry();
+      if(expiry > 0){
+        expiry = (expiry - System.currentTimeMillis())/1000;
+        MaxAge maxAge = new MaxAge();
+        maxAge.setValue(expiry);
+        optionSet.putOption(maxAge);
+      }
+      Map<String, TypedData> map = messageEvent.getMessage().getDataMap();
+      ETag eTag = new ETag();
+      for(Entry<String, TypedData> entry:map.entrySet()){
+        if(entry.getKey().toLowerCase().startsWith("etag") && entry.getValue().getData() instanceof byte[]){
+          eTag.update((byte[])entry.getValue().getData());
+        }
+      }
+      if(!eTag.getList().isEmpty()){
+        optionSet.add(eTag);
+      }
       response.setFromAddress(context.getRequest().getFromAddress());
       response.setPayload(messageEvent.getMessage().getOpaqueData());
       if(context.getRequest().getType().equals(TYPE.NON)){
@@ -85,14 +113,16 @@ public class CoapProtocol extends ProtocolImpl {
       ContentFormat contentFormat = new ContentFormat(Format.TEXT_PLAIN);
       if(!schemas.isEmpty()){
         String mime = schemas.get(0).getMimeType();
-        Format format = Format.stringValueOf(mime);
-        contentFormat = new ContentFormat(format);
+        if(mime != null) {
+          Format format = Format.stringValueOf(mime);
+          contentFormat = new ContentFormat(format);
+        }
       }
       if(context.isObserve()){
         Observe option = new Observe(0);
-        response.getOptions().putOption(option);
+        optionSet.putOption(option);
       }
-      response.getOptions().putOption(contentFormat);
+      optionSet.putOption(contentFormat);
       try {
         transactionState.sent(context.getRequest().getToken(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
         outboundPipeline.send(response);

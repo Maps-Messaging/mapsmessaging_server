@@ -98,17 +98,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
     }
     close(publisher);
 
-    // OK we have 2 subscribers with different selectors, each take 50% of all events so the store should have 100%
+    // OK we have 2 subscribers with different selectors, 1 takes 100%, the other should have 0%
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
 
-    //
-    // OK lets disconnect one of the subscriptions
-    //
-    Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
+
     close(session2);
 
-    // Now we wait for the 5 second disconnect and expiry of the session
-    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> destination.getStoredMessages() == EVENT_COUNT);
+    // Now we wait for the 5 seconds disconnect and expiry of the session
+    WaitForState.waitFor(5, TimeUnit.SECONDS, () -> destination.getStoredMessages() == EVENT_COUNT);
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
 
     close(session1);

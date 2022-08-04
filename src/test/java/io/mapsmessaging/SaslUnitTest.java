@@ -24,8 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.Provider;
-import java.security.Provider.Service;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.callback.Callback;
@@ -41,12 +39,13 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class SaslUnitTest {
+class SaslUnitTest {
 
-  private static final String MECHANISM = "DIGEST-MD5";
+  private static final String MECHANISM = "CRAM-MD5";
   private static final String SERVER_NAME = "myServer";
-  private static final String PROTOCOL = "myProtocol";
+  private static final String PROTOCOL = "amqp";
   private static final String AUTHORIZATION_ID = null;
   private static final String QOP_LEVEL = "auth-conf";
 
@@ -67,38 +66,29 @@ public class SaslUnitTest {
 
   }
 
-  public void givenHandlers_whenStarted_thenAutenticationWorks() throws SaslException {
-
-    Provider[] providers = java.security.Security.getProviders();
-    for(Provider provider:providers){
-      System.err.println(provider.toString());
-      for(Service service:provider.getServices()){
-        System.err.println("\t"+service.toString());
-      }
-    }
+  @Test
+  void givenHandlers_whenStarted_thenAutenticationWorks() throws SaslException {
 
     byte[] challenge;
-    byte[] response;
+    byte[] response = new byte[0];
 
-    challenge = saslServer.evaluateResponse(new byte[0]);
-    response = saslClient.evaluateChallenge(challenge);
-
+    while(!saslClient.isComplete()) {
+      challenge = saslServer.evaluateResponse(response);
+      response = saslClient.evaluateChallenge(challenge);
+    }
     challenge = saslServer.evaluateResponse(response);
-    response = saslClient.evaluateChallenge(challenge);
-    System.err.println(saslServer.getAuthorizationID());
-
     assertTrue(saslServer.isComplete());
     assertTrue(saslClient.isComplete());
 
     String qop = (String) saslClient.getNegotiatedProperty(Sasl.QOP);
-    assertEquals("auth-conf", qop);
+    if(qop.equalsIgnoreCase("auth-conf")){
+      byte[] outgoing = "Baeldung".getBytes();
+      byte[] secureOutgoing = saslClient.wrap(outgoing, 0, outgoing.length);
 
-    byte[] outgoing = "Baeldung".getBytes();
-    byte[] secureOutgoing = saslClient.wrap(outgoing, 0, outgoing.length);
-
-    byte[] secureIncoming = secureOutgoing;
-    byte[] incoming = saslServer.unwrap(secureIncoming, 0, secureIncoming.length);
-    assertEquals("Baeldung", new String(incoming, StandardCharsets.UTF_8));
+      byte[] secureIncoming = secureOutgoing;
+      byte[] incoming = saslServer.unwrap(secureIncoming, 0, secureIncoming.length);
+      assertEquals("Baeldung", new String(incoming, StandardCharsets.UTF_8));
+    }
   }
 
   @AfterEach
@@ -112,12 +102,13 @@ public class SaslUnitTest {
     @Override
     public void handle(Callback[] cbs) throws IOException, UnsupportedCallbackException {
       for (Callback cb : cbs) {
+        System.err.println("Client Callback::"+cb.getClass().toString());
         if (cb instanceof NameCallback) {
           NameCallback nc = (NameCallback) cb;
-          nc.setName("userName");
+          nc.setName("fred@google.com");
         } else if (cb instanceof PasswordCallback) {
           PasswordCallback pc = (PasswordCallback) cb;
-          pc.setPassword("password1".toCharArray());
+          pc.setPassword("password2".toCharArray());
         } else if (cb instanceof RealmCallback) {
           RealmCallback rc = (RealmCallback) cb;
           rc.setText("myServer");
@@ -126,11 +117,12 @@ public class SaslUnitTest {
     }
   }
 
-  class ServerCallbackHandler implements CallbackHandler {
+  static class ServerCallbackHandler implements CallbackHandler {
 
     @Override
     public void handle(Callback[] cbs) throws IOException, UnsupportedCallbackException {
       for (Callback cb : cbs) {
+        System.err.println("Server Callback::"+cb.getClass().toString());
         if (cb instanceof AuthorizeCallback) {
           AuthorizeCallback ac = (AuthorizeCallback) cb;
           ac.setAuthorized(true);
@@ -143,6 +135,9 @@ public class SaslUnitTest {
         } else if (cb instanceof RealmCallback) {
           RealmCallback rc = (RealmCallback) cb;
           rc.setText("myServer");
+        }
+        else{
+          System.err.println(cb.toString());
         }
       }
     }

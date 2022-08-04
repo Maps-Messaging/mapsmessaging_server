@@ -4,6 +4,7 @@ import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.E
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.ListOption;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.PathOption;
@@ -140,6 +141,14 @@ public class BasePacket implements ServerPacket {
         for(String path:pathOption.getPath()){
           byte[] packed = path.getBytes();
           packOption(packet, currentDelta, packed);
+          currentDelta = (int) optionId - currentOptionId;
+          currentOptionId = (int) optionId;
+        }
+      }
+      else if(option instanceof ListOption){
+        ListOption listOption = (ListOption)option;
+        for(byte[] opt:listOption.getList()){
+          packOption(packet, currentDelta, opt);
           currentDelta = (int) optionId - currentOptionId;
           currentOptionId = (int) optionId;
         }
