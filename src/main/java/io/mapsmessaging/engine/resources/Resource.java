@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -127,7 +128,13 @@ public class Resource implements AutoCloseable {
     store.keepOnly(validKeys);
   }
 
-  private synchronized void checkLoaded(){
+  public void removeAll(Queue<Long> deletionList) throws IOException {
+    for (Long id : deletionList) {
+      store.remove(id);
+    }
+  }
+
+  private synchronized void checkLoaded() {
     if (!loaded) {
       if (persistent) {
         try {
@@ -186,4 +193,6 @@ public class Resource implements AutoCloseable {
   private <T> T getFromFuture(Future<T> future) {
     return future.get();
   }
+
+
 }

@@ -169,6 +169,11 @@ public class DestinationStats extends Statistics {
     storedMessageAverages.decrement();
   }
 
+
+  public void removedMessages(int count) {
+    storedMessageAverages.add(count * -1L);
+  }
+
   public void deliveredMessage() {
     deliveredMessagesAverages.increment();
     totalDeliveredMessages.increment();

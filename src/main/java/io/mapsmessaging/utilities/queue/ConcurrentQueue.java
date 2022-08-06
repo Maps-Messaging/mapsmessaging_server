@@ -2,8 +2,9 @@ package io.mapsmessaging.utilities.queue;
 
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConcurrentQueue {
@@ -37,12 +38,15 @@ public class ConcurrentQueue {
   }
 
   public Queue<Long> getAndClear() {
-    Queue<Long> result = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(8192));
-    for (ThreadLocalQueue threadLocalQueue : localQueue) {
-      Queue<Long> tQueue = threadLocalQueue.getAndClear();
-      result.addAll(tQueue);
+    if (Arrays.stream(localQueue).anyMatch(threadLocalQueue -> !threadLocalQueue.queue.isEmpty())) {
+      Queue<Long> result = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(8192));
+      for (ThreadLocalQueue threadLocalQueue : localQueue) {
+        Queue<Long> tQueue = threadLocalQueue.getAndClear();
+        result.addAll(tQueue);
+      }
+      return result;
     }
-    return result;
+    return new LinkedList<>();
   }
 
   private static final class ThreadLocalQueue {
@@ -61,28 +65,6 @@ public class ConcurrentQueue {
       Queue<Long> copy = queue;
       queue = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(8192));
       return copy;
-    }
-  }
-
-  public static void main(String[] args) throws InterruptedException {
-    ConcurrentQueue queue = new ConcurrentQueue();
-    for (int x = 0; x < 64; x++) {
-      Thread t = new Thread(new Runnable() {
-        long counter = 0;
-
-        @Override
-        public void run() {
-          for (long x = 0; x < 10_000_000L; x++) {
-            queue.add(counter++);
-          }
-        }
-      });
-      t.start();
-    }
-    while (true) {
-      TimeUnit.SECONDS.sleep(1);
-      Queue<Long> current = queue.getAndClear();
-      System.err.println("Size::" + current);
     }
   }
 }
