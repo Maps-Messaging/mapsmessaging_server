@@ -279,7 +279,7 @@ public class DestinationImpl implements BaseDestination {
   }
 
   private ScheduledFuture<?> queueReaper() {
-    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 20, 5, TimeUnit.SECONDS);
+    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 5, 5, TimeUnit.SECONDS);
   }
 
   private void loadSchema() {
@@ -821,6 +821,7 @@ public class DestinationImpl implements BaseDestination {
         Queue<Long> interested = subscriptionManager.getAll();
         completedQueue.removeAll(interested);
         if (!completedQueue.isEmpty()) {
+          System.err.println("Running removal for " + completedQueue);
           BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
           subscriptionTaskQueue.submit(bulkRemoveMessageTask);
         }

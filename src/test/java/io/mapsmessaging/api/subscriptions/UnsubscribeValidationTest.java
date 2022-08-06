@@ -156,7 +156,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
       WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     }
 
-    WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
+    WaitForState.waitFor(7, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     Assertions.assertEquals(0, destination.getStoredMessages());
     close(publisher);
   }
