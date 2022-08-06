@@ -25,9 +25,9 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
@@ -74,11 +74,11 @@ public class TransactionManager implements Runnable {
    *
    * @param transaction object that is currently active
    */
-  public synchronized void add(@NonNull @NotNull Transaction transaction) {
+  public void add(@NonNull @NotNull Transaction transaction) {
     transactionList.put(transaction.getTransactionId(), transaction);
   }
 
-  public synchronized Transaction find(@NonNull @NotNull String transactionId) {
+  public Transaction find(@NonNull @NotNull String transactionId) {
     return transactionList.get(transactionId);
   }
 
@@ -88,7 +88,7 @@ public class TransactionManager implements Runnable {
    * @param transaction object to remove
    * @return true of the transaction object was removed from the list, else false if not found
    */
-  public synchronized boolean remove(@NonNull @NotNull Transaction transaction) {
+  public boolean remove(@NonNull @NotNull Transaction transaction) {
     return transactionList.remove(transaction.getTransactionId()) != null;
   }
 
@@ -96,7 +96,7 @@ public class TransactionManager implements Runnable {
    * Task function that simply scans to see if the transaction has timed out
    */
   @Override
-  public synchronized void run() {
+  public void run() {
     logger.log(ServerLogMessages.TRANSACTION_MANAGER_SCANNING);
     long now = System.currentTimeMillis();
     List<Transaction> currentList = new ArrayList<>(transactionList.values());
@@ -112,14 +112,14 @@ public class TransactionManager implements Runnable {
     }
   }
 
-  public synchronized void start() {
+  public void start() {
     if (schedule != null) {
       schedule.cancel(false);
     }
     schedule = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, timeOutInterval, timeOutInterval, TimeUnit.MILLISECONDS);
   }
 
-  public synchronized void stop() {
+  public void stop() {
     if (schedule != null) {
       schedule.cancel(false);
     }
@@ -129,7 +129,7 @@ public class TransactionManager implements Runnable {
    * Hidden constructor, since this is a singleton that simply manages the timeouts of transactions and cleans up any mess left over.
    */
   private TransactionManager() {
-    transactionList = new LinkedHashMap<>();
+    transactionList = new ConcurrentSkipListMap<>();
     schedule = null;
   }
 
