@@ -55,7 +55,7 @@ import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.queue.ConcurrentQueue;
+import io.mapsmessaging.utilities.queue.EventReaperQueue;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
@@ -122,7 +122,7 @@ public class DestinationImpl implements BaseDestination {
   private final TransactionalMessageManager transactionMessageManager;
   private final DestinationStats stats;
 
-  private final ConcurrentQueue completionQueue;
+  private final EventReaperQueue completionQueue;
 
   @Getter
   private final ResourceStatistics resourceStatistics;
@@ -173,7 +173,7 @@ public class DestinationImpl implements BaseDestination {
     transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     closed = false;
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
-    completionQueue = new ConcurrentQueue();
+    completionQueue = new EventReaperQueue();
     loadSchema();
     reaperFuture = queueReaper();
   }
@@ -205,7 +205,7 @@ public class DestinationImpl implements BaseDestination {
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
-    completionQueue = new ConcurrentQueue();
+    completionQueue = new EventReaperQueue();
 
     if(resource.getResourceProperties().getSchema() == null || resource.getResourceProperties().getSchema().isEmpty()){
       SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
@@ -253,7 +253,7 @@ public class DestinationImpl implements BaseDestination {
     transactionMessageManager = null;
     closed = false;
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
-    completionQueue = new ConcurrentQueue();
+    completionQueue = new EventReaperQueue();
     reaperFuture = queueReaper();
   }
   //</editor-fold>

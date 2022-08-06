@@ -7,13 +7,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConcurrentQueue {
+public class EventReaperQueue {
 
   private final AtomicInteger indexGenerator;
   private final ThreadLocalQueue[] localQueue;
   private final ThreadLocal<Integer> threadIndex;
 
-  public ConcurrentQueue() {
+  public EventReaperQueue() {
     indexGenerator = new AtomicInteger(0);
     threadIndex = new ThreadLocal<>();
     int numberOfCPUs = Runtime.getRuntime().availableProcessors();
