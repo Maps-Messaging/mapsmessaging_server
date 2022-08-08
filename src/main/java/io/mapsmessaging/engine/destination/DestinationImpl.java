@@ -161,6 +161,8 @@ public class DestinationImpl implements BaseDestination {
     SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
     resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType, config);
     resource.getResourceProperties().setSchema(config.toMap());
+    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
+
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
@@ -172,7 +174,6 @@ public class DestinationImpl implements BaseDestination {
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
     transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     closed = false;
-    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
     completionQueue = new ConcurrentQueue();
     loadSchema();
     reaperFuture = queueReaper();
@@ -196,6 +197,8 @@ public class DestinationImpl implements BaseDestination {
     subscriptionManager = new DestinationSubscriptionManager(name);
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
     this.resource = resource;
+    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
+
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
@@ -220,7 +223,6 @@ public class DestinationImpl implements BaseDestination {
     transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
-    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
     reaperFuture = queueReaper();
   }
 
@@ -241,6 +243,8 @@ public class DestinationImpl implements BaseDestination {
     subscriptionManager = new DestinationSubscriptionManager(name);
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
     resource = new Resource();
+    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
+
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
     if (MessageDaemon.getInstance() != null) {
@@ -252,7 +256,6 @@ public class DestinationImpl implements BaseDestination {
     delayedMessageManager = null;
     transactionMessageManager = null;
     closed = false;
-    retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
     completionQueue = new ConcurrentQueue();
     reaperFuture = queueReaper();
   }
@@ -821,7 +824,6 @@ public class DestinationImpl implements BaseDestination {
         Queue<Long> interested = subscriptionManager.getAll();
         completedQueue.removeAll(interested);
         if (!completedQueue.isEmpty()) {
-          System.err.println("Running removal for " + completedQueue);
           BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
           subscriptionTaskQueue.submit(bulkRemoveMessageTask);
         }
