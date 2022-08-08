@@ -11,24 +11,40 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class RetainManager {
 
-  protected final Queue<Long> retainIndex;
+  private final Queue<Long> retainIndex;
+  private final AtomicLong retainId;
+
 
   public RetainManager(boolean isPersistent, String path) throws IOException {
     BitSetFactory bitSetFactory = createFactory(path, isPersistent);
     retainIndex = new NaturalOrderedLongQueue(0, bitSetFactory);
+    retainId = new AtomicLong(-2);
   }
 
   public long current() {
-    Long result = retainIndex.peek();
-    return result != null ? result : -1;
+    long res = retainId.get();
+    if(res < -1) {
+      Long result = retainIndex.peek();
+      if(result != null) {
+        retainId.set(result);
+        return result;
+      }
+      else{
+        retainId.set(-1);
+        return -1;
+      }
+    }
+    return res;
   }
 
   public long replace(long newRetainId) {
     Long old = retainIndex.poll();
     if (newRetainId != -1) {
+      retainId.set(newRetainId);
       retainIndex.offer(newRetainId);
     }
     return old != null ? old : -1;

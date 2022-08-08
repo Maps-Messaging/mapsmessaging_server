@@ -41,9 +41,9 @@ public abstract class ConnectionTest extends BaseTestConfig {
 
   @Test
   void connectToServer() throws IOException {
-    SelectorLoadManager selectorLoadManager = new SelectorLoadManager(1);
     EndPointConnectionFactory factory = getFactory();
     EndPointURL url = getURL();
+    SelectorLoadManager selectorLoadManager = new SelectorLoadManager(1, url.toString());
     AtomicBoolean connected = new AtomicBoolean(false);
     EndPoint endPoint = factory.connect(url, selectorLoadManager, endpoint -> connected.set(true),
         new EndPointServerStatus(url) {
