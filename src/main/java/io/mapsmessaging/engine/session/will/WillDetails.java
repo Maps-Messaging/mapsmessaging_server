@@ -20,7 +20,6 @@ package io.mapsmessaging.engine.session.will;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
-import io.mapsmessaging.engine.serializer.MapSerializable;
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.IOException;
@@ -30,7 +29,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @ToString
-public class WillDetails implements MapSerializable {
+public class WillDetails {
 
   private @Getter
   @Setter long delay;
