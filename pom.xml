@@ -448,26 +448,6 @@
       <version>3.6.1</version>
     </dependency>
 
-
-    <!-- Map based disk store -->
-    <dependency>
-      <groupId>org.mapdb</groupId>
-      <artifactId>mapdb</artifactId>
-      <version>3.0.8</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-stdlib</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-stdlib</artifactId>
-      <version>1.6.21</version>
-    </dependency>
-
     <!-- Consul client API -->
     <dependency>
       <groupId>com.orbitz.consul</groupId>
