@@ -22,8 +22,6 @@ import io.mapsmessaging.admin.SessionManagerJMX;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
-import io.mapsmessaging.engine.serializer.MapDBSerializer;
-import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -36,8 +34,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 import javax.security.auth.login.LoginException;
-import org.mapdb.DB;
-import org.mapdb.Serializer;
 
 public class SessionManager {
 
@@ -46,10 +42,10 @@ public class SessionManager {
 
   private final Logger logger = LoggerFactory.getLogger(SessionManager.class);
   private final SessionManagerPipeLine[] sessionPipeLines;
-  private final DB dataStore;
+  private final  String dataPath;
   private final WillTaskManager willTaskManager;
   private final SessionManagerJMX sessionManagerJMX;
-  private final SubscriptionStoreLookup storeLookup;
+  private final PersistentSessionManager storeLookup;
 
   private SecurityManager securityManager;
 
@@ -58,17 +54,17 @@ public class SessionManager {
   private final LongAdder expiredSessions;
 
 
-  public SessionManager(SecurityManager security, DestinationManager destinationManager, DB dataStore, int pipelineSize) {
-    this.dataStore = dataStore;
+  public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath, int pipelineSize) {
+    this.dataPath = dataPath;
     disconnectedSessions = new LongAdder();
     connectedSessions = new LongAdder();
     expiredSessions = new LongAdder();
     sessionPipeLines = new SessionManagerPipeLine[pipelineSize];
-    storeLookup = new SubscriptionStoreLookup(dataStore);
+    storeLookup = new PersistentSessionManager(dataPath);
     Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, security, connectedSessions, disconnectedSessions, expiredSessions));
     securityManager = security;
     willTaskManager = WillTaskManager.getInstance();
-    willTaskManager.setMap(dataStore.hashMap(WILLTASKS, Serializer.STRING, new MapDBSerializer<>(WillDetails.class)).createOrOpen());
+    //willTaskManager.setMap(dataStore.hashMap(WILLTASKS, Serializer.STRING, new MapDBSerializer<>(WillDetails.class)).createOrOpen());
     sessionManagerJMX = new SessionManagerJMX(this);
   }
 
@@ -80,7 +76,7 @@ public class SessionManager {
     //
     // Reload any persistent subscriptions from the file backing
     //
-    for (String name : dataStore.getAllNames()) {
+    for (String name : storeLookup.getSessionNames()) {
       if (name.startsWith(SUBSCRIPTION)) {
         String sessionId = name.substring(SUBSCRIPTION.length());
         Map<String, SubscriptionContext> map = storeLookup.getSubscriptionContextMap(sessionId, true);

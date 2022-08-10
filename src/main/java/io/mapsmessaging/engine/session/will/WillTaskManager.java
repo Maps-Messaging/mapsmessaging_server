@@ -27,7 +27,7 @@ public class WillTaskManager {
   /**
    * Static storage
    */
-  private Map<String, WillDetails> willTaskMap;
+  private Map<String, WillDetails> willTaskMap = new LinkedHashMap<>();
   /**
    * Dynamic operation
    */

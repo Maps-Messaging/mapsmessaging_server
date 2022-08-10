@@ -23,7 +23,11 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
 
 public class SelectorLoadManager {
 
@@ -32,9 +36,9 @@ public class SelectorLoadManager {
   private final Executor selectorExecutor;
   private int index;
 
-  public SelectorLoadManager(int poolSize) throws IOException {
+  public SelectorLoadManager(int poolSize, String name) throws IOException {
     logger = LoggerFactory.getLogger(SelectorLoadManager.class.getName());
-    selectorExecutor = Executors.newFixedThreadPool(poolSize);
+    selectorExecutor = createThreadPool(poolSize, name);
     selectors = new Selector[poolSize];
     for (int x = 0; x < poolSize; x++) {
       selectors[x] = create();
@@ -59,5 +63,24 @@ public class SelectorLoadManager {
     return selector;
   }
 
+  private Executor createThreadPool(int poolSize, String name){
+    return new ThreadPoolExecutor(poolSize,
+    poolSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+        new ThreadFactoryImpl(name)) ;
+  }
 
+  private static class ThreadFactoryImpl implements ThreadFactory{
+
+    private final ThreadGroup threadGroup;
+
+    public ThreadFactoryImpl(String name){
+      threadGroup = new ThreadGroup(name);
+    }
+
+    @Override
+    public Thread newThread(@NotNull Runnable r) {
+      Thread t = new Thread(threadGroup, r);
+      return t;
+    }
+  }
 }

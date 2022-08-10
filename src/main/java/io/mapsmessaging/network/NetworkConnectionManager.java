@@ -61,7 +61,7 @@ public class NetworkConnectionManager implements ServiceManager {
     }
     endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
-    selectorLoadManager = new SelectorLoadManager(10);
+    selectorLoadManager = new SelectorLoadManager(10,networkConnectionProperties.getProperty("name", "Network Connection") );
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
   }

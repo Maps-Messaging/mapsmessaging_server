@@ -23,18 +23,15 @@ import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
-import io.mapsmessaging.engine.serializer.MapSerializable;
-import io.mapsmessaging.storage.impl.streams.ObjectReader;
-import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import java.io.File;
-import java.io.IOException;
 import java.util.BitSet;
 import java.util.Objects;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 @ToString
-public class SubscriptionContext implements Comparable<SubscriptionContext>, MapSerializable {
+public class SubscriptionContext implements Comparable<SubscriptionContext> {
 
   private static final int NO_LOCAL_MESSAGES = 0;
   private static final int RETAIN_AS_PUBLISH = 1;
@@ -44,34 +41,45 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
   @Getter
   private String destinationName;
   @Getter
+  @Setter
   private BitSet flags;
   @Getter
   private String rootPath;
+
   @Getter
+  @Setter
   private ClientAcknowledgement acknowledgementController;
   @Getter
   private String sharedName;
   @Getter
+  @Setter
   private String selector;
   @Getter
   private String alias;
   @Getter
+  @Setter
   private long subscriptionId;
   @Getter
+  @Setter
   private int receiveMaximum;
   @Getter
+  @Setter
   private RetainHandler retainHandler;
   @Getter
+  @Setter
   private QualityOfService qualityOfService;
   @Getter
+  @Setter
   private CreditHandler creditHandler;
   @Getter
+  @Setter
   private DestinationMode destinationMode;
 
   //
   // Server Only flag
   //
   @Getter
+  @Setter
   private boolean replaced;
 
   public SubscriptionContext() {
@@ -104,46 +112,6 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     parseName();
   }
 
-  public SubscriptionContext(ObjectReader reader) throws IOException {
-    read(reader);
-  }
-
-  public void read(ObjectReader reader) throws IOException {
-    retainHandler = RetainHandler.getInstance(reader.readByte());
-    creditHandler = CreditHandler.getInstance(reader.readByte());
-    qualityOfService = QualityOfService.getInstance(reader.readByte());
-    acknowledgementController = ClientAcknowledgement.getInstance(reader.readByte());
-
-    subscriptionId = reader.readLong();
-
-    destinationName = reader.readString();
-    sharedName = reader.readString();
-    selector = reader.readString();
-    alias = reader.readString();
-    flags = BitSet.valueOf(reader.readByteArray());
-    rootPath = reader.readString();
-
-    if (alias == null) {
-      alias = destinationName;
-    }
-    parseName();
-  }
-
-  public void write(ObjectWriter writer) throws IOException {
-    writer.write((byte) retainHandler.getHandler());
-    writer.write((byte) creditHandler.getValue());
-    writer.write((byte) qualityOfService.getLevel());
-    writer.write((byte) acknowledgementController.getValue());
-    writer.write(subscriptionId);
-
-    writer.write(destinationMode.getNamespace() + destinationName);
-    writer.write(sharedName);
-    writer.write(selector);
-    writer.write(alias);
-    writer.write(flags.toByteArray());
-    writer.write(rootPath);
-  }
-
   public SubscriptionContext setRootPath(String rootPath) {
     this.rootPath = Objects.requireNonNullElse(rootPath, "");
     if (rootPath.length() > 1 && !rootPath.endsWith("/")) {
@@ -152,82 +120,31 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     return this;
   }
 
-  public SubscriptionContext setDestinationName(String destinationName) {
+  public void setDestinationName(String destinationName) {
     if (alias.equals(destinationName)) {
       alias = destinationName;
     }
     this.destinationName = destinationName;
-    return this;
   }
 
-  public SubscriptionContext setQualityOfService(QualityOfService qos) {
-    this.qualityOfService = qos;
-    return this;
-  }
-
-  public SubscriptionContext setRetainAsPublish(boolean retainAsPublish) {
-    flags.set(RETAIN_AS_PUBLISH, retainAsPublish);
-    return this;
-  }
-
-  public SubscriptionContext setRetainHandler(RetainHandler retainHandler) {
-    this.retainHandler = retainHandler;
-    return this;
-  }
-
-  public SubscriptionContext setAcknowledgementController(ClientAcknowledgement clientAcknowledgement) {
-    this.acknowledgementController = clientAcknowledgement;
-    return this;
-  }
-
-  public SubscriptionContext setSelector(String selector) {
-    this.selector = selector;
-    return this;
-  }
-
-  public SubscriptionContext setSubscriptionId(long subscriptionId) {
-    this.subscriptionId = subscriptionId;
-    return this;
-  }
-
-  public SubscriptionContext setReceiveMaximum(int receiveMaximum) {
-    this.receiveMaximum = receiveMaximum;
-    return this;
-  }
-
-  public SubscriptionContext setAlias(String alias) {
+  public void setAlias(String alias) {
     this.alias = Objects.requireNonNullElseGet(alias, this::getCorrectedPath);
-    return this;
   }
 
-  public SubscriptionContext setReplaced(boolean flag) {
-    replaced = flag;
-    return this;
-  }
-
-  public SubscriptionContext setNoLocalMessages(boolean noLocalMessages) {
+  public void setNoLocalMessages(boolean noLocalMessages) {
     flags.set(NO_LOCAL_MESSAGES, noLocalMessages);
-    return this;
   }
 
-  public SubscriptionContext setSharedName(String sharedName) {
+  public void setSharedName(String sharedName) {
     this.sharedName = sharedName;
-    return this;
   }
 
-  public SubscriptionContext setAllowOverlap(boolean allowOverlap) {
+  public void setAllowOverlap(boolean allowOverlap) {
     flags.set(ALLOW_OVERLAP, allowOverlap);
-    return this;
   }
 
-  public SubscriptionContext setBrowserFlag(boolean isBrowser) {
+  public void setBrowserFlag(boolean isBrowser) {
     flags.set(BROWSER_FLAG, isBrowser);
-    return this;
-  }
-
-  public SubscriptionContext setCreditHandler(CreditHandler creditHandler) {
-    this.creditHandler = creditHandler;
-    return this;
   }
 
   public boolean isSharedSubscription() {
@@ -246,6 +163,11 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     return flags.get(RETAIN_AS_PUBLISH);
   }
 
+  public void setRetainAsPublish(boolean flag) {
+    setFlag(RETAIN_AS_PUBLISH, flag);
+  }
+
+
   public boolean noLocalMessages() {
     return flags.get(NO_LOCAL_MESSAGES);
   }
@@ -258,6 +180,10 @@ public class SubscriptionContext implements Comparable<SubscriptionContext>, Map
     return flags.get(BROWSER_FLAG);
   }
 
+
+  private void setFlag(int index, boolean flag){
+    flags.set(index, flag);
+  }
 
   private String getCorrectedPath() {
     String lookup = rootPath + destinationName;
