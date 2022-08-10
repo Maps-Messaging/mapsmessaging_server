@@ -24,19 +24,8 @@ public class PersistentSession extends SessionImpl{
     super(context, securityContext, destinationManager, subscriptionManager);
     this.storeLookup = storeLookup;
     sessionDetails = storeLookup.getSessionDetails(context.getId());
-    String tmp = context.getId();
-    tmp = replaceAll(tmp, ".", "_");
-    tmp = replaceAll(tmp, ":", "_");
-    tmp = replaceAll(tmp, "/", "_");
-    tmp = replaceAll(tmp, "\\", "_");
-    storeName = storeLookup.getDataPath()+"/"+tmp+".yaml";
-  }
-
-  private String replaceAll(String tmp, String target, String replacement){
-    while(tmp.contains(target)){
-      tmp = tmp.replace(target, replacement);
-    }
-    return tmp;
+    context.setUniqueId(sessionDetails.getUniqueId());
+    storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".yaml";
   }
 
   @Override

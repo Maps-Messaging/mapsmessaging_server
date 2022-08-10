@@ -19,37 +19,81 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.storage.impl.streams.ObjectReader;
-import io.mapsmessaging.storage.impl.streams.ObjectWriter;
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
+@ToString
 public class SessionContext {
 
   // <editor-fold desc="These fields are persisted and on reload describes the session">
+  @Getter
   private final String id;
+
+  @Getter
+  @Setter
+  private String uniqueId;
+
+  @Getter
+  @Setter
   private String willTopic;
+
+  @Getter
+  @Setter
   private Message willMessage;
+
+  @Getter
+  @Setter
   private long willDelay;
+
+  @Getter
+  @Setter
   private long expiry;
   // </editor-fold>
 
   // <editor-fold desc="These are volatile fields and must not be persisted since they change at run
   // time">
-  private ProtocolImpl protocol;
 
+  @Getter
+  private final ProtocolImpl protocol;
+
+
+  @Getter
+  @Setter
   private String authenticationMethod;
+
+  @Getter
+  @Setter
   private byte[] authenticationData;
+
+  @Getter
+  @Setter
   private String username;
+
+  @Getter
+  @Setter
   private char[] password;
 
+  @Getter
+  @Setter
   private int receiveMaximum;
+
+  @Getter
+  @Setter
   private int duration;
 
+  @Getter
+  @Setter
   private boolean isRestored;
+
+  @Getter
+  @Setter
   private boolean resetState;
+
+  @Getter
+  @Setter
   private boolean persistentSession;
   // </editor-fold>
 
@@ -60,163 +104,6 @@ public class SessionContext {
     receiveMaximum = (1 << 16) - 1;
     isRestored = false;
     duration = -1;
-  }
-
-  public SessionContext(ObjectReader reader) throws IOException {
-    id = reader.readString();
-    expiry = reader.readLong();
-    if (reader.readByte() != 0) {
-      willDelay = reader.readLong();
-      willTopic = reader.readString();
-      int bufferCount = reader.readInt();
-      ByteBuffer[] bb = new ByteBuffer[bufferCount];
-      for (int x = 0; x < bb.length; x++) {
-        bb[x] = ByteBuffer.wrap(reader.readByteArray());
-      }
-      willMessage = MessageFactory.getInstance().unpack(bb);
-    }
-    isRestored = false;
-  }
-
-  public void write(ObjectWriter writer) throws IOException {
-    writer.write(id);
-    writer.write(expiry);
-    if (willMessage != null) {
-      writer.write((byte) 1);
-      writer.write(willDelay);
-      writer.write(willTopic);
-      ByteBuffer[] buffers = MessageFactory.getInstance().pack(willMessage);
-      writer.write(buffers.length);
-      for (ByteBuffer buffer : buffers) {
-        writer.write(buffer.array());
-      }
-    } else {
-      writer.write((byte) 0);
-    }
-  }
-
-  public String getUsername() {
-    return username;
-  }
-
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-  public char[] getPassword() {
-    return password;
-  }
-
-  public void setPassword(char[] password) {
-    this.password = password;
-  }
-
-  public ProtocolImpl getProtocol() {
-    return protocol;
-  }
-
-  public boolean isResetState() {
-    return resetState;
-  }
-
-  public void setResetState(boolean resetState) {
-    this.resetState = resetState;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public String getWillTopic() {
-    return willTopic;
-  }
-
-  public void setWillTopic(String willTopic) {
-    this.willTopic = willTopic;
-  }
-
-  public Message getWillMessage() {
-    return willMessage;
-  }
-
-  public void setWillMessage(Message willMessage) {
-    this.willMessage = willMessage;
-  }
-
-  public boolean isPersistentSession() {
-    return persistentSession;
-  }
-
-  public void setPersistentSession(boolean persistentSession) {
-    this.persistentSession = persistentSession;
-  }
-
-  public long getWillDelay() {
-    return willDelay;
-  }
-
-  public void setWillDelay(long willDelay) {
-    this.willDelay = willDelay;
-  }
-
-  public boolean isRestored() {
-    return isRestored;
-  }
-
-  public void setRestored(boolean restored) {
-    isRestored = restored;
-  }
-
-  public long getSessionExpiry() {
-    return expiry;
-  }
-
-  public void setSessionExpiry(long expiry) {
-    this.expiry = expiry;
-  }
-
-  public int getReceiveMaximum() {
-    return receiveMaximum;
-  }
-
-  public void setReceiveMaximum(int receiveMaximum) {
-    this.receiveMaximum = receiveMaximum;
-  }
-
-  public int getDuration() {
-    return duration;
-  }
-
-  public void setDuration(int duration) {
-    this.duration = duration;
-  }
-
-  @Override
-  public String toString() {
-    return "SessionContext:" + "Id:" + id
-        + " Protocol:" + protocol.toString()
-        + " ResetState:" + resetState
-        + " PersistentSession:" + persistentSession
-        + " WillDelay:" + willDelay
-        + " Expiry:" + expiry
-        + " ReceiveMaximum:" + receiveMaximum
-        + " Restored:" + isRestored
-        + " KeepAlive:" + duration;
-  }
-
-  public void setAuthenticationMethod(String authenticationMethod) {
-    this.authenticationMethod = authenticationMethod;
-  }
-
-  public void setAuthenticationData(byte[] authenticationData) {
-    this.authenticationData = authenticationData;
-  }
-
-  public String getAuthenticationMethod() {
-    return authenticationMethod;
-  }
-
-  public byte[] getAuthenticationData() {
-    return authenticationData;
+    uniqueId = UUID.randomUUID().toString();
   }
 }

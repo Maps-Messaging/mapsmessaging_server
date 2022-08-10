@@ -76,10 +76,10 @@ public class SessionImpl {
     closureTaskManager = new ClosureTaskManager();
     namespaceMapping = new NamespaceMap();
     isClosed = false;
-    if (context.getSessionExpiry() == -1) {
+    if (context.getExpiry() == -1) {
       expiry = 24L * 60L * 60L; // One Day
     } else {
-      expiry = context.getSessionExpiry();
+      expiry = context.getExpiry();
     }
     //
     // Schedule a keep alive

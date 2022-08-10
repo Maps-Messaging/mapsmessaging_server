@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import lombok.Getter;
 import org.yaml.snakeyaml.Yaml;
 
@@ -30,7 +31,7 @@ public class PersistentSessionManager {
   }
 
   public SessionDetails getSessionDetails(String sessionId){
-    return persistentMap.computeIfAbsent(sessionId, k -> new SessionDetails(sessionId));
+    return persistentMap.computeIfAbsent(sessionId, k -> new SessionDetails(sessionId, UUID.randomUUID().toString()));
   }
 
   public Map<String, SubscriptionContext> getSubscriptionContextMap(String sessionId, boolean isPersistent) {

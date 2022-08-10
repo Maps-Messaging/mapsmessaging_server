@@ -14,18 +14,21 @@ public class SessionDetails {
 
   @Getter
   @Setter
+  private String uniqueId;
+
+  @Getter
+  @Setter
   private List<SubscriptionContext> subscriptionContextList = new ArrayList<>();
 
   @Getter
   @Setter
   private WillData willDetails;
 
-
-  public SessionDetails(){
-
+  public SessionDetails() {
   }
 
-  public SessionDetails(String sessionName){
+  public SessionDetails(String sessionName, String uniqueId) {
     this.sessionName = sessionName;
+    this.uniqueId = uniqueId;
   }
 }

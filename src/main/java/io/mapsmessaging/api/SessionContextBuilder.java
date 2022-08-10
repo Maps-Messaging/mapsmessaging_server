@@ -154,7 +154,7 @@ public class SessionContextBuilder {
     sc.setResetState(resetState);
     sc.setPersistentSession(persistentSession);
     sc.setWillDelay(willDelay);
-    sc.setSessionExpiry(sessionExpiry);
+    sc.setExpiry(sessionExpiry);
     sc.setReceiveMaximum(receiveMaximum);
     sc.setDuration(duration);
     sc.setAuthenticationMethod(authenticationMethod);
