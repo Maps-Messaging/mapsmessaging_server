@@ -148,19 +148,19 @@ public class SubscriptionContextBuilder {
 
   public SubscriptionContext build() {
     SubscriptionContext context = new SubscriptionContext(name);
-    context.setAcknowledgementController(acknowledgementController)
-        .setAllowOverlap(allowOverlap)
-        .setNoLocalMessages(noLocalMessages)
-        .setQualityOfService(qos)
-        .setRetainAsPublish(retainAsPublish)
-        .setSelector(selector)
-        .setSharedName(sharedName)
-        .setRetainHandler(retainHandler)
-        .setSubscriptionId(subscriptionId)
-        .setReceiveMaximum(receiveMaximum)
-        .setAlias(alias)
-        .setCreditHandler(creditHandler)
-        .setBrowserFlag(isBrowser);
+    context.setAcknowledgementController(acknowledgementController);
+    context.setAllowOverlap(allowOverlap);
+    context.setNoLocalMessages(noLocalMessages);
+    context.setQualityOfService(qos);
+    context.setRetainAsPublish(retainAsPublish);
+    context.setSelector(selector);
+    context.setSharedName(sharedName);
+    context.setRetainHandler(retainHandler);
+    context.setSubscriptionId(subscriptionId);
+    context.setReceiveMaximum(receiveMaximum);
+    context.setAlias(alias);
+    context.setCreditHandler(creditHandler);
+    context.setBrowserFlag(isBrowser);
     return context;
   }
 }

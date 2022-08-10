@@ -57,16 +57,11 @@ import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.HTreeMap;
-import org.mapdb.Serializer;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 public class MessageDaemon implements WrapperListener {
 
-  private static final String SERVER_ID = "serverId";
   private static final String PID_FILE = "pid";
 
   private static MessageDaemon instance;
@@ -83,8 +78,6 @@ public class MessageDaemon implements WrapperListener {
   private final SystemTopicManager systemTopicManager;
   private final String uniqueId;
   private final MessageDaemonJMX mBean;
-  private final DB dataStore;
-  private final HTreeMap<String, String> config;
   private final String homeDirectory;
   private final AtomicBoolean isStarted;
 
@@ -105,20 +98,11 @@ public class MessageDaemon implements WrapperListener {
     if (!data.exists()) {
       Files.createDirectories(data.toPath());
     }
-    // <editor-fold desc="Persistent code, maybe moved to a separate class">
-    dataStore = DBMaker.fileDB(homeDirectory + "/data/messageDaemon.db")
-        .fileMmapEnable()
-        .closeOnJvmShutdown()
-        .allocateStartSize(10L * 1024L * 1024L) // 10MB
-        .allocateIncrement(512L * 1024L * 1024L) // 512MB
-        .checksumHeaderBypass()
-        .make();
+    String path = homeDirectory + "/data/";
 
-    config = dataStore
-        .hashMap("serverConfiguration", Serializer.STRING, Serializer.STRING)
-        .createOrOpen();
-
-    String serverId = config.get(SERVER_ID);
+    InstanceConfig instanceConfig = new InstanceConfig(path);
+    instanceConfig.loadState();
+    String serverId = instanceConfig.getServerName();
     if (serverId != null) {
       uniqueId = serverId;
     } else {
@@ -128,8 +112,8 @@ public class MessageDaemon implements WrapperListener {
       } else {
         uniqueId = serverId;
       }
-      config.put(SERVER_ID, uniqueId);
-      dataStore.atomicString(SERVER_ID, uniqueId);
+      instanceConfig.setServerName(uniqueId);
+      instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
     }
     // </editor-fold>
@@ -162,7 +146,7 @@ public class MessageDaemon implements WrapperListener {
     securityManager = new SecurityManager();
     destinationManager = new DestinationManager(delayTimer);
     systemTopicManager = new SystemTopicManager(destinationManager);
-    sessionManager = new SessionManager(securityManager, destinationManager, dataStore, pipeLineSize);
+    sessionManager = new SessionManager(securityManager, destinationManager, path, pipeLineSize);
     jolokaManager = new JolokaManager();
     hawtioManager = new HawtioManager();
     logServiceManagers();
@@ -206,7 +190,7 @@ public class MessageDaemon implements WrapperListener {
 
   // Start the application.  If the JVM was launched from the native
   //  Wrapper then the application will wait for the native Wrapper to
-  //  call the application's start method.  Otherwise the start method
+  //  call the application's start method.  Otherwise, the start method
   //  will be called immediately.
   public static void main(String[] args) throws IOException {
     File pidFile = new File(PID_FILE);
@@ -299,6 +283,7 @@ public class MessageDaemon implements WrapperListener {
     try {
       t.join(10000);
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       e.printStackTrace();
     }
     return i;

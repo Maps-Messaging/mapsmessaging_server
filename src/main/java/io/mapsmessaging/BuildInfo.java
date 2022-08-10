@@ -18,30 +18,24 @@
 
 package io.mapsmessaging;
 
+import lombok.Getter;
+import lombok.ToString;
+
+@ToString
 public class BuildInfo {
 
   private static final BuildInfo instance = new BuildInfo();
+
+  @Getter
   private final String buildDate;
+  @Getter
   private final String buildVersion;
 
   private BuildInfo() {
     buildDate = "dd-mmm-yyyy";
     buildVersion = "BuildVersionSetAtBuildTime";
   }
-
   public static BuildInfo getInstance() {
     return instance;
-  }
-
-  public String getBuildDate() {
-    return buildDate;
-  }
-
-  public String getBuildVersion() {
-    return buildVersion;
-  }
-
-  public String toString() {
-    return "Build Date:" + buildDate + "\nBuild Version:" + buildVersion + "\n";
   }
 }

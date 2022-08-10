@@ -35,7 +35,7 @@ public class SessionManagerPipeLine {
   private final Map<String, SubscriptionController> subscriptionManagerFactory;
   private final Map<String, SessionImpl> sessions;
   private final DestinationManager destinationManager;
-  private final SubscriptionStoreLookup storeLookup;
+  private final PersistentSessionManager storeLookup;
 
   private final ExecutorService taskScheduler = new SingleConcurrentTaskScheduler("SessionManagerPipeLine");
 
@@ -46,7 +46,7 @@ public class SessionManagerPipeLine {
   private final LongAdder expiredSessions;
   private final WillTaskManager willTaskManager;
 
-  SessionManagerPipeLine(DestinationManager destinationManager, SubscriptionStoreLookup lookup, SecurityManager security, LongAdder connected, LongAdder disconnected,
+  SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, SecurityManager security, LongAdder connected, LongAdder disconnected,
       LongAdder expired) {
     subscriptionManagerFactory = new LinkedHashMap<>();
     sessions = new LinkedHashMap<>();
@@ -113,7 +113,12 @@ public class SessionManagerPipeLine {
     //
     SubscriptionController subscriptionManager = loadSubscriptionManager(sessionContext);
     SessionDestinationManager sessionDestinationManager = new SessionDestinationManager(destinationManager);
-    sessionImpl = new SessionImpl(sessionContext, securityContext, sessionDestinationManager, subscriptionManager);
+    if(sessionContext.isPersistentSession()) {
+      sessionImpl = new PersistentSession(sessionContext, securityContext, sessionDestinationManager, subscriptionManager, storeLookup);
+    }
+    else{
+      sessionImpl = new SessionImpl(sessionContext, securityContext, sessionDestinationManager, subscriptionManager);
+    }
 
     //
     // Either reload or create a new subscription manager

@@ -247,8 +247,7 @@ public class SessionImpl {
   }
 
   public WillTaskImpl setWillTask(WillDetails willDetails) {
-    willTaskImpl = WillTaskManager.getInstance().replace(getName(), willDetails);
-    return willTaskImpl;
+    return WillTaskManager.getInstance().replace(getName(), willDetails);
   }
 
   //</editor-fold>
@@ -343,7 +342,7 @@ public class SessionImpl {
               sessionContext.getProtocol().getName(),
               sessionContext.getProtocol().getVersion());
       logger.log(ServerLogMessages.SESSION_MANAGER_WILL_TASK, sessionContext.getId(), willDetails.toString());
-      return WillTaskManager.getInstance().replace(sessionContext.getId(), willDetails);
+      return this.setWillTask(willDetails);
     }
     return null;
   }
