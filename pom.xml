@@ -22,12 +22,12 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>message_daemon</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>2.3.1</version>
+  <version>3.0.1</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
   <description>A multi adapter and protocol server</description>
-  <url>http://www.mapsmessaging.io</url>
+  <url>https://www.mapsmessaging.io</url>
 
   <licenses>
     <license>
@@ -480,27 +480,6 @@
       <version>0.21.1</version>
     </dependency>
 
-    <!-- Authentication via Amazon Cognito -->
-    <dependency>
-      <scope>test</scope>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>cognitoidentity</artifactId>
-    </dependency>
-
-    <dependency>
-      <scope>test</scope>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>cognitoidentityprovider</artifactId>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.277</version>
-      <scope>test</scope>
-    </dependency>
-
     <!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
     <dependency>
       <groupId>com.mashape.unirest</groupId>
@@ -608,9 +587,32 @@
       <version>1.7.1</version>
     </dependency>
 
-    <!-- ***********************  -->
+    <!-- *********************** -->
     <!-- Test Dependency Imports -->
-    <!-- ***********************  -->
+    <!-- *********************** -->
+
+    <!-- Authentication via Amazon Cognito -->
+    <dependency>
+      <scope>test</scope>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>cognitoidentity</artifactId>
+    </dependency>
+
+    <dependency>
+      <scope>test</scope>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>cognitoidentityprovider</artifactId>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-cognitoidp</artifactId>
+      <version>1.12.277</version>
+      <scope>test</scope>
+    </dependency>
+
+
     <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
     <dependency>
       <groupId>org.projectodd.stilts</groupId>
@@ -730,14 +732,6 @@
       <version>1.35</version>
       <scope>test</scope>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>3.21.4</version>
-    </dependency>
-
   </dependencies>
 
 </project>
