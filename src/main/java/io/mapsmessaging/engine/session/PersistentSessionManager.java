@@ -39,9 +39,7 @@ public class PersistentSessionManager {
     if (isPersistent) {
        SessionDetails sessionDetails = persistentMap.get(sessionId);
        if(sessionDetails != null){
-         for(SubscriptionContext context:sessionDetails.getSubscriptionContextList()){
-           map.put(context.getAlias(), context); // Pre-populate with persistent data
-         }
+         return sessionDetails.getSubscriptionContextMap();
        }
      }
     return map;
@@ -68,5 +66,4 @@ public class PersistentSessionManager {
       }
     }
   }
-
 }

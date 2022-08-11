@@ -26,6 +26,9 @@ public class PersistentSession extends SessionImpl{
     sessionDetails = storeLookup.getSessionDetails(context.getId());
     context.setUniqueId(sessionDetails.getUniqueId());
     storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".yaml";
+    if(context.isResetState()){
+      saveState();
+    }
   }
 
   @Override

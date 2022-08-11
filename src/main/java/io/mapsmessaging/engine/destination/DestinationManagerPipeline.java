@@ -198,7 +198,7 @@ public class DestinationManagerPipeline {
       context.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
       context.setSharedName(name);
       CommonSubscriptionBuilder builder = new QueueSubscriptionBuilder(destinationImpl, context);
-      builder.construct(null, name);
+      builder.construct(null, name, name);
     }
 
     //

@@ -64,6 +64,7 @@ public class SubscriptionController implements DestinationManagerListener {
 
   private final DestinationFactory destinationManager;
   private final String sessionId;
+  private final String uniqueSessionId;
   private final boolean isPersistent;
 
   private final SubscriptionControllerJMX subscriptionControllerJMX;
@@ -92,6 +93,7 @@ public class SubscriptionController implements DestinationManagerListener {
     this.sessionId = sessionContext.getId();
     this.destinationManager = destinationManager;
     this.contextMap = contextMap;
+    uniqueSessionId = sessionContext.getUniqueId();
     subscriptions = new ConcurrentHashMap<>();
     destinationManager.addListener(this);
     activeSubscriptions = new LinkedHashMap<>();
@@ -100,8 +102,9 @@ public class SubscriptionController implements DestinationManagerListener {
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
   }
 
-  public SubscriptionController(String sessionId, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
+  public SubscriptionController(String sessionId, String uniqueSessionId, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
     this.sessionId = sessionId;
+    this.uniqueSessionId = uniqueSessionId;
     this.destinationManager = destinationManager;
     this.contextMap = contextMap;
     subscriptions = new LinkedHashMap<>();
@@ -432,14 +435,14 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public Subscription createSchemaSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, false); // Schema subscriptions have no persistence
-    Subscription subscription = builder.construct(sessionImpl, sessionId);
+    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId);
     schemaSubscriptions.put(destinationImpl, subscription);
     return subscription;
   }
 
   public Subscription createSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, isPersistent);
-    Subscription subscription = builder.construct(sessionImpl, sessionId);
+    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId);
 
     if (!context.isReplaced() || context.getRetainHandler().equals(RetainHandler.SEND_ALWAYS)) {
       queueRetainedMessage(destinationImpl, subscription);
@@ -451,7 +454,7 @@ public class SubscriptionController implements DestinationManagerListener {
   public Subscription createBrowserSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent,
       @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBrowserBuilder(destinationImpl, context, parent);
-    Subscription subscription = builder.construct(sessionImpl, sessionId);
+    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId);
     activeSubscriptions.put(destinationImpl, subscription);
     return subscription;
   }

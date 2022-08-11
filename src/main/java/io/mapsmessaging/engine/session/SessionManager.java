@@ -22,6 +22,7 @@ import io.mapsmessaging.admin.SessionManagerJMX;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -79,7 +80,8 @@ public class SessionManager {
     for (String name : storeLookup.getSessionNames()) {
       if (name.startsWith(SUBSCRIPTION)) {
         String sessionId = name.substring(SUBSCRIPTION.length());
-        Map<String, SubscriptionContext> map = storeLookup.getSubscriptionContextMap(sessionId, true);
+        SessionDetails sessionDetails = storeLookup.getSessionDetails(sessionId);
+        Map<String, SubscriptionContext> map = sessionDetails.getSubscriptionContextMap();
         if (logger.isInfoEnabled()) {
           logger.log(ServerLogMessages.SESSION_MANAGER_LOADING_SESSION, sessionId, map.size());
         }
@@ -87,7 +89,7 @@ public class SessionManager {
         // Register the subscription info with the specific pipeline
         //
         if (!map.isEmpty()) {
-          sessionPipeLines[getPipeLineIndex(sessionId)].addDisconnectedSession(sessionId, map);
+          sessionPipeLines[getPipeLineIndex(sessionId)].addDisconnectedSession(sessionId, sessionDetails.getUniqueId(), map);
         }
       }
     }

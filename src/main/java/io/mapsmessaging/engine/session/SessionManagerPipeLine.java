@@ -3,6 +3,7 @@ package io.mapsmessaging.engine.session;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.engine.session.will.WillTaskImpl;
 import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
@@ -164,8 +165,8 @@ public class SessionManagerPipeLine {
     connectedSessions.decrement();
   }
 
-  void addDisconnectedSession(String sessionId, Map<String, SubscriptionContext> map) {
-    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, destinationManager, map);
+  void addDisconnectedSession(String sessionId, String uniqueSessionId, Map<String, SubscriptionContext> map) {
+    SubscriptionController subscriptionManager = new SubscriptionController(sessionId, uniqueSessionId, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
   }
@@ -193,10 +194,12 @@ public class SessionManagerPipeLine {
   //
   private SubscriptionController loadSubscriptionManager(SessionContext context) {
     context.setRestored(false);
+    SessionDetails sessionDetails = storeLookup.getSessionDetails(context.getId());
+    context.setUniqueId(sessionDetails.getUniqueId());
     SubscriptionController subscriptionManager = subscriptionManagerFactory.get(context.getId());
     if (subscriptionManager == null) {
       logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
-      Map<String, SubscriptionContext> contextMap = storeLookup.getSubscriptionContextMap(context.getId(), context.isPersistentSession());
+      Map<String, SubscriptionContext> contextMap = sessionDetails.getSubscriptionContextMap();
       subscriptionManager = new SubscriptionController(context, destinationManager, contextMap);
       if (context.isPersistentSession()) {
         logger.log(ServerLogMessages.SESSION_MANAGER_ADDING_SUBSCRIPTION, context.getId());
@@ -212,9 +215,8 @@ public class SessionManagerPipeLine {
         logger.log(ServerLogMessages.SESSION_MANAGER_FOUND_EXISTING, context.getId(), context.isResetState());
         subscriptionManagerFactory.remove(context.getId());
         subscriptionManager.close();
-        Map<String, SubscriptionContext> contextMap = storeLookup.getSubscriptionContextMap(context.getId(), context.isPersistentSession());
-        contextMap.clear();
-        subscriptionManager = new SubscriptionController(context, destinationManager, contextMap);
+        sessionDetails.clearSubscriptions();
+        subscriptionManager = new SubscriptionController(context, destinationManager, new LinkedHashMap<>());
         if (context.isPersistentSession()) {
           subscriptionManagerFactory.put(context.getId(), subscriptionManager);
         }

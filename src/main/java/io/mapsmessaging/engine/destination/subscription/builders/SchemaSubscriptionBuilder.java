@@ -14,7 +14,7 @@ public class SchemaSubscriptionBuilder extends SubscriptionBuilder {
     super(destination, context);
   }
 
-  public Subscription construct(SessionImpl session, String sessionId) throws IOException {
+  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
     return new SchemaSubscription(session, destination, context);
   }
 }

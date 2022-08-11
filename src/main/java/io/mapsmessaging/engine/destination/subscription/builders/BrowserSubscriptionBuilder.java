@@ -51,7 +51,7 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
   }
 
   @Override
-  public Subscription construct(SessionImpl session, String sessionId) throws IOException {
+  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
     AcknowledgementController acknowledgementController = createAcknowledgementController(context.getAcknowledgementController());
     MessageStateManager stateManager;
     if (parserExecutor == null) {
@@ -76,7 +76,7 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
       return false;
     }
     if (parentSelector == null || parentSelector.length() == 0) {
-      return true; // Its true, since the selector has in fact been set by the new one
+      return true; // It's true, since the selector has in fact been set by the new one
     }
     ParserExecutor executor = compileParser(selector);
     ParserExecutor parentExecutor = compileParser(parentSelector);
