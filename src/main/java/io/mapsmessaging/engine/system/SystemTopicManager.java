@@ -19,6 +19,7 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -29,34 +30,44 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 
 public class SystemTopicManager implements Runnable, ServiceManager {
+
+  @Getter
+  private static boolean enableStatistics = true;
 
   private final ServiceLoader<SystemTopic> systemTopics;
   private final Future<?> scheduledFuture;
   private final List<SystemTopic> completeList;
 
-  public SystemTopicManager(DestinationManager destinationManager) throws IOException {
+  public SystemTopicManager(DestinationManager destinationManager, ConfigurationProperties properties) throws IOException {
     systemTopics = ServiceLoader.load(SystemTopic.class);
     completeList = new ArrayList<>();
-    for (SystemTopic systemTopic : systemTopics) {
-      systemTopic.start();
-      destinationManager.addSystemTopic(systemTopic);
-      String[] aliases = systemTopic.aliases();
-      completeList.add(systemTopic);
-      for (String alias : aliases) {
-        SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
-        destinationManager.addSystemTopic(aliasTopic);
-      }
-      List<SystemTopic> children = systemTopic.getChildren();
-      if (children != null) {
-        for (SystemTopic child : children) {
-          destinationManager.addSystemTopic(child);
-          completeList.add(child);
+    if(properties.getBooleanProperty("EnableSystemTopics", true)) {
+      enableStatistics = properties.getBooleanProperty("EnableSystemTopicAverages", true);
+      for (SystemTopic systemTopic : systemTopics) {
+        systemTopic.start();
+        destinationManager.addSystemTopic(systemTopic);
+        String[] aliases = systemTopic.aliases();
+        completeList.add(systemTopic);
+        for (String alias : aliases) {
+          SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
+          destinationManager.addSystemTopic(aliasTopic);
+        }
+        List<SystemTopic> children = systemTopic.getChildren();
+        if (children != null) {
+          for (SystemTopic child : children) {
+            destinationManager.addSystemTopic(child);
+            completeList.add(child);
+          }
         }
       }
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
     }
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
+    else{
+      scheduledFuture = null;
+    }
   }
 
   @Override

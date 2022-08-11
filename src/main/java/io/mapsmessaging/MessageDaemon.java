@@ -145,7 +145,7 @@ public class MessageDaemon implements WrapperListener {
     networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());
     securityManager = new SecurityManager();
     destinationManager = new DestinationManager(delayTimer);
-    systemTopicManager = new SystemTopicManager(destinationManager);
+    systemTopicManager = new SystemTopicManager(destinationManager, properties);
     sessionManager = new SessionManager(securityManager, destinationManager, path, pipeLineSize);
     jolokaManager = new JolokaManager();
     hawtioManager = new HawtioManager();

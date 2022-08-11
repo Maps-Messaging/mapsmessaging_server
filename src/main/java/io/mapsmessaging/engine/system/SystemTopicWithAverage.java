@@ -34,10 +34,12 @@ public abstract class SystemTopicWithAverage extends SystemTopic implements Data
     super(name);
     updateSchema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_NUMERIC_STRING_SCHEMA), null);
     movingAverageTopics = new ArrayList<>();
-    movingAverageTopics.add(new MovingAverageTopic(name + "/1", 1, TimeUnit.MINUTES, this, diff));
-    movingAverageTopics.add(new MovingAverageTopic(name + "/5", 5, TimeUnit.MINUTES, this, diff));
-    movingAverageTopics.add(new MovingAverageTopic(name + "/10", 10, TimeUnit.MINUTES, this, diff));
-    movingAverageTopics.add(new MovingAverageTopic(name + "/15", 15, TimeUnit.MINUTES, this, diff));
+    if(SystemTopicManager.isEnableStatistics()) {
+      movingAverageTopics.add(new MovingAverageTopic(name + "/1", 1, TimeUnit.MINUTES, this, diff));
+      movingAverageTopics.add(new MovingAverageTopic(name + "/5", 5, TimeUnit.MINUTES, this, diff));
+      movingAverageTopics.add(new MovingAverageTopic(name + "/10", 10, TimeUnit.MINUTES, this, diff));
+      movingAverageTopics.add(new MovingAverageTopic(name + "/15", 15, TimeUnit.MINUTES, this, diff));
+    }
     lastUpdate = 0;
   }
 
