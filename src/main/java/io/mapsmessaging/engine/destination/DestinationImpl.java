@@ -824,7 +824,6 @@ public class DestinationImpl implements BaseDestination {
         Queue<Long> interested = subscriptionManager.getAll();
         completedQueue.removeAll(interested);
         if (!completedQueue.isEmpty()) {
-          System.err.println("Running removal for " + completedQueue);
           BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
           subscriptionTaskQueue.submit(bulkRemoveMessageTask);
         }
