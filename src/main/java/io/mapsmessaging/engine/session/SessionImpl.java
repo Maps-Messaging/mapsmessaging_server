@@ -50,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SessionImpl {
 
-  private final Logger logger;
+  protected final Logger logger;
   private final SecurityContext securityContext;
   private final SessionContext context;
   private final Future<?> scheduledFuture;

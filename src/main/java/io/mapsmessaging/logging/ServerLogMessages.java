@@ -257,6 +257,10 @@ public enum ServerLogMessages implements LogMessage {
   SESSION_MANAGER_CLOSING_SESSION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Cleaning up session {}"),
   // </editor-fold>
 
+  SESSION_SAVE_STATE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to save state for {} at {}"),
+  SESSION_LOAD_STATE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to load state for file {}"),
+  SESSION_INIT_ERROR(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed create directory for session state at {}"),
+
   // <editor-fold desc="Will message processing log messages">
   WILL_TASK_SENDING(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Sending Will Message {}"),
   WILL_TASK_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Exception raised during sending of will message:{}"),

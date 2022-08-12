@@ -1,7 +1,12 @@
 package io.mapsmessaging.engine.session;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_INIT_ERROR;
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_LOAD_STATE_ERROR;
+
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -17,6 +22,8 @@ import lombok.Getter;
 
 public class PersistentSessionManager {
 
+  private final Logger logger = LoggerFactory.getLogger(PersistentSessionManager.class);
+
   @Getter
   private final String dataPath;
 
@@ -29,7 +36,7 @@ public class PersistentSessionManager {
       try {
         Files.createDirectories(testFile.toPath());
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(SESSION_INIT_ERROR, this.dataPath);
       }
     }
     persistentMap = new ConcurrentSkipListMap<>();
@@ -67,7 +74,7 @@ public class PersistentSessionManager {
           SessionDetails details = new SessionDetails(fileInputStream);
           persistentMap.put(details.getSessionName(), details);
         } catch (IOException ex) {
-          ex.printStackTrace();
+          logger.log(SESSION_LOAD_STATE_ERROR, child.getAbsolutePath(), ex);
         }
       }
     }

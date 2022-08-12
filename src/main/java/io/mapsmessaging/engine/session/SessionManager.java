@@ -38,12 +38,8 @@ import javax.security.auth.login.LoginException;
 
 public class SessionManager {
 
-  private static final String SUBSCRIPTION = "subscription_";
-  private static final String WILLTASKS = "WILL_TASKS";
-
   private final Logger logger = LoggerFactory.getLogger(SessionManager.class);
   private final SessionManagerPipeLine[] sessionPipeLines;
-  private final  String dataPath;
   private final WillTaskManager willTaskManager;
   private final SessionManagerJMX sessionManagerJMX;
   private final PersistentSessionManager storeLookup;
@@ -56,7 +52,6 @@ public class SessionManager {
 
 
   public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath, int pipelineSize) {
-    this.dataPath = dataPath;
     disconnectedSessions = new LongAdder();
     connectedSessions = new LongAdder();
     expiredSessions = new LongAdder();
@@ -65,7 +60,6 @@ public class SessionManager {
     Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, security, connectedSessions, disconnectedSessions, expiredSessions));
     securityManager = security;
     willTaskManager = WillTaskManager.getInstance();
-    //willTaskManager.setMap(dataStore.hashMap(WILLTASKS, Serializer.STRING, new MapDBSerializer<>(WillDetails.class)).createOrOpen());
     sessionManagerJMX = new SessionManagerJMX(this);
   }
 
@@ -77,20 +71,17 @@ public class SessionManager {
     //
     // Reload any persistent subscriptions from the file backing
     //
-    for (String name : storeLookup.getSessionNames()) {
-      if (name.startsWith(SUBSCRIPTION)) {
-        String sessionId = name.substring(SUBSCRIPTION.length());
-        SessionDetails sessionDetails = storeLookup.getSessionDetails(sessionId);
-        Map<String, SubscriptionContext> map = sessionDetails.getSubscriptionContextMap();
-        if (logger.isInfoEnabled()) {
-          logger.log(ServerLogMessages.SESSION_MANAGER_LOADING_SESSION, sessionId, map.size());
-        }
-        //
-        // Register the subscription info with the specific pipeline
-        //
-        if (!map.isEmpty()) {
-          sessionPipeLines[getPipeLineIndex(sessionId)].addDisconnectedSession(sessionId, sessionDetails.getUniqueId(), map);
-        }
+    for (String sessionId : storeLookup.getSessionNames()) {
+      SessionDetails sessionDetails = storeLookup.getSessionDetails(sessionId);
+      Map<String, SubscriptionContext> map = sessionDetails.getSubscriptionContextMap();
+      if (logger.isInfoEnabled()) {
+        logger.log(ServerLogMessages.SESSION_MANAGER_LOADING_SESSION, sessionId, map.size());
+      }
+      //
+      // Register the subscription info with the specific pipeline
+      //
+      if (!map.isEmpty()) {
+        sessionPipeLines[getPipeLineIndex(sessionId)].addDisconnectedSession(sessionId, sessionDetails.getUniqueId(), map);
       }
     }
     willTaskManager.start();
