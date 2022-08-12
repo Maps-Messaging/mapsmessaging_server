@@ -96,8 +96,8 @@ public class GetListener extends Listener {
       }
     }
     catch(Exception exception){
-      exception.printStackTrace();
       response = request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
+      Thread.currentThread().interrupt();
     }
     return response;
   }
