@@ -198,7 +198,8 @@ public class DestinationManager implements DestinationFactory {
               .collect(Collectors.toList())
           ).get(60, TimeUnit.SECONDS);
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
-        e.printStackTrace();
+        Thread.currentThread().interrupt();
+        // We are being interrupted while shutting down. just exit
       }
     }
 
