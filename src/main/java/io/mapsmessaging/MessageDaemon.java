@@ -144,6 +144,8 @@ public class MessageDaemon implements WrapperListener {
       JMXManager.setEnableJMXStatistics(false);
     }
 
+    SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopicAverages", true));
+
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
 
@@ -155,7 +157,7 @@ public class MessageDaemon implements WrapperListener {
     networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());
     securityManager = new SecurityManager();
     destinationManager = new DestinationManager(delayTimer);
-    systemTopicManager = new SystemTopicManager(destinationManager, properties);
+    systemTopicManager = new SystemTopicManager(destinationManager);
     sessionManager = new SessionManager(securityManager, destinationManager, path, pipeLineSize);
     jolokaManager = new JolokaManager();
     hawtioManager = new HawtioManager();

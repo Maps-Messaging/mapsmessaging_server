@@ -26,10 +26,6 @@ public class SessionDetails extends PersistentObject {
   @Setter
   private List<SubscriptionContext> subscriptionContextList = new ArrayList<>();
 
-  @Getter
-  @Setter
-  private WillData willDetails;
-
   public SessionDetails() {
   }
 

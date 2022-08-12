@@ -19,7 +19,6 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.engine.destination.DestinationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -31,21 +30,22 @@ import java.util.ServiceLoader;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
+import lombok.Setter;
 
 public class SystemTopicManager implements Runnable, ServiceManager {
 
   @Getter
+  @Setter
   private static boolean enableStatistics = true;
 
   private final ServiceLoader<SystemTopic> systemTopics;
   private final Future<?> scheduledFuture;
   private final List<SystemTopic> completeList;
 
-  public SystemTopicManager(DestinationManager destinationManager, ConfigurationProperties properties) throws IOException {
+  public SystemTopicManager(DestinationManager destinationManager) throws IOException {
     systemTopics = ServiceLoader.load(SystemTopic.class);
     completeList = new ArrayList<>();
-    if(properties.getBooleanProperty("EnableSystemTopics", true)) {
-      enableStatistics = properties.getBooleanProperty("EnableSystemTopicAverages", true);
+    if(enableStatistics) {
       for (SystemTopic systemTopic : systemTopics) {
         systemTopic.start();
         destinationManager.addSystemTopic(systemTopic);

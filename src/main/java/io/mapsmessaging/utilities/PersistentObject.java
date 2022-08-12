@@ -3,6 +3,7 @@ package io.mapsmessaging.utilities;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.jetbrains.annotations.Nullable;
 
 public class PersistentObject {
 
@@ -39,7 +40,7 @@ public class PersistentObject {
     if(len >=0){
       return new String(readFullBuffer(inputStream, len));
     }
-    return null;
+    return "";
   }
 
   protected void writeByteArray(OutputStream outputStream, byte[] buffer) throws IOException {
@@ -47,12 +48,12 @@ public class PersistentObject {
       writeInt(outputStream, -1);
     }
     else{
-      writeInt(outputStream, buffer.length);;
+      writeInt(outputStream, buffer.length);
       outputStream.write(buffer);
     }
   }
 
-  protected byte[] readByteArray(InputStream inputStream) throws IOException {
+  protected @Nullable byte[] readByteArray(InputStream inputStream) throws IOException {
     int len = readInt(inputStream);
     if(len >=0){
       return readFullBuffer(inputStream, len);

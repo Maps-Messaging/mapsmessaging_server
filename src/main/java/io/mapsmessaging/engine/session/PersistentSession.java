@@ -1,5 +1,6 @@
 package io.mapsmessaging.engine.session;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE;
 import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE_ERROR;
 
 import io.mapsmessaging.api.SubscribedEventManager;
@@ -44,9 +45,10 @@ public class PersistentSession extends SessionImpl{
   private void saveState(){
     try(FileOutputStream fileOutputStream = new FileOutputStream(storeName)) {
       sessionDetails.save(fileOutputStream);
+      logger.log(SESSION_SAVE_STATE, sessionDetails.getSessionName(), storeName);
     }
     catch(IOException ioException){
-      logger.log(SESSION_SAVE_STATE_ERROR, sessionDetails.getSessionName(), storeName);
+      logger.log(SESSION_SAVE_STATE_ERROR, sessionDetails.getSessionName(), storeName, ioException);
     }
   }
 
