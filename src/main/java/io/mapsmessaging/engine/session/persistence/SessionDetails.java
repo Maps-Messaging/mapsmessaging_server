@@ -1,6 +1,10 @@
 package io.mapsmessaging.engine.session.persistence;
 
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.utilities.PersistentObject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -8,7 +12,7 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
-public class SessionDetails {
+public class SessionDetails extends PersistentObject {
 
   @Getter
   @Setter
@@ -29,6 +33,16 @@ public class SessionDetails {
   public SessionDetails() {
   }
 
+
+  public SessionDetails(InputStream inputStream) throws IOException {
+    sessionName = readString(inputStream);
+    uniqueId = readString(inputStream);
+    int subListSize = readInt(inputStream);
+    for(int x=0;x<subListSize;x++){
+      subscriptionContextList.add(new SubscriptionContext(inputStream));
+    }
+  }
+
   public SessionDetails(String sessionName, String uniqueId) {
     this.sessionName = sessionName;
     this.uniqueId = uniqueId;
@@ -45,4 +59,14 @@ public class SessionDetails {
   public void clearSubscriptions() {
     subscriptionContextList.clear();
   }
+
+  public void save(OutputStream outputStream) throws IOException {
+    writeString(outputStream, sessionName);
+    writeString(outputStream, uniqueId);
+    writeInt(outputStream, subscriptionContextList.size());
+    for(SubscriptionContext subscriptionContext:subscriptionContextList){
+      subscriptionContext.save(outputStream);
+    }
+  }
+
 }

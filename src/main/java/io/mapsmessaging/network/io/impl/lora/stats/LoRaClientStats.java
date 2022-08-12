@@ -61,14 +61,15 @@ public class LoRaClientStats {
     jmxPath.add("NodeId=" + clientId);
     mbean = JMXManager.getInstance().register(this, jmxPath);
 
-    List<String> rssiPath = new ArrayList<>(jmxPath);
-    movingAveragesJMXList.add(new LinkedMovingAveragesJMX(rssiPath, rssiStats));
+    if(JMXManager.isEnableJMXStatistics()) {
+      List<String> rssiPath = new ArrayList<>(jmxPath);
+      List<String> missed = new ArrayList<>(jmxPath);
+      List<String> received = new ArrayList<>(jmxPath);
 
-    List<String> missed = new ArrayList<>(jmxPath);
-    movingAveragesJMXList.add(new LinkedMovingAveragesJMX(missed, missedStats));
-
-    List<String> received = new ArrayList<>(jmxPath);
-    movingAveragesJMXList.add(new LinkedMovingAveragesJMX(received, receivedStats));
+      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(rssiPath, rssiStats));
+      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(missed, missedStats));
+      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(received, receivedStats));
+    }
   }
 
   public void close() {

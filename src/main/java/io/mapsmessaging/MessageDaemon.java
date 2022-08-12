@@ -38,6 +38,7 @@ import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -118,8 +119,6 @@ public class MessageDaemon implements WrapperListener {
     }
     // </editor-fold>
 
-    mBean = new MessageDaemonJMX(this);
-    new SimpleTaskSchedulerJMX(mBean.getTypePath());
 
     //<editor-fold desc="Now see if we can start the Consul Manager">
     // May block till a consul connection is made, depending on config
@@ -133,6 +132,17 @@ public class MessageDaemon implements WrapperListener {
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
+
+    mBean = new MessageDaemonJMX(this);
+    if(properties.getBooleanProperty("EnableJMX", true)){
+      JMXManager.setEnableJMX(true);
+      new SimpleTaskSchedulerJMX(mBean.getTypePath());
+      JMXManager.setEnableJMXStatistics(properties.getBooleanProperty("EnableJMXStatistics", true));
+    }
+    else{
+      JMXManager.setEnableJMX(false);
+      JMXManager.setEnableJMXStatistics(false);
+    }
 
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));

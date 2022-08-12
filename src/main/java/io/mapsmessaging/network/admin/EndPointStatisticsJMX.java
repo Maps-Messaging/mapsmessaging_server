@@ -41,10 +41,12 @@ public class EndPointStatisticsJMX {
     statsPath.add("name=Stats");
     statsBean = JMXManager.getInstance().register(this, statsPath);
     movingAveragesJMXList = new ArrayList<>();
-    registerMovingAverage(endPoint.getReadBytes(), statsPath);
-    registerMovingAverage(endPoint.getWriteBytes(), statsPath);
-    registerMovingAverage(endPoint.getOverFlow(), statsPath);
-    registerMovingAverage(endPoint.getUnderFlow(), statsPath);
+    if(JMXManager.isEnableJMXStatistics()) {
+      registerMovingAverage(endPoint.getReadBytes(), statsPath);
+      registerMovingAverage(endPoint.getWriteBytes(), statsPath);
+      registerMovingAverage(endPoint.getOverFlow(), statsPath);
+      registerMovingAverage(endPoint.getUnderFlow(), statsPath);
+    }
   }
 
   public void close() {

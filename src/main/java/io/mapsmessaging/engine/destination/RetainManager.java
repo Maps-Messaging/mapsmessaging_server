@@ -54,7 +54,9 @@ public class RetainManager {
     if (persistent) {
       String fullyQualifiedPath = FilePathHelper.cleanPath(path);
       File directory = new File(fullyQualifiedPath);
-      Files.createDirectories(directory.toPath());
+      if(!directory.exists()) {
+        Files.createDirectories(directory.toPath());
+      }
       fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + "retain.bin");
       return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
     } else {

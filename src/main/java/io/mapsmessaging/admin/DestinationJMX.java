@@ -56,7 +56,7 @@ public class DestinationJMX implements HealthMonitor {
     parseName(destinationImpl.getFullyQualifiedNamespace());
     mbean = JMXManager.getInstance().register(this, typePath);
     movingAveragesJMXList = new ArrayList<>();
-    if (!destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
+    if(JMXManager.isEnableJMXStatistics() && !destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
       DestinationStats stats = destinationImpl.getStats();
       for (LinkedMovingAverages linkedMovingAverages : stats.getAverageList()) {
         movingAveragesJMXList.add(new LinkedMovingAveragesJMX(typePath, linkedMovingAverages));

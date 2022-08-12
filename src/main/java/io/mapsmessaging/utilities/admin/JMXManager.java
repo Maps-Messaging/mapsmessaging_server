@@ -32,8 +32,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import lombok.Getter;
+import lombok.Setter;
 
 public class JMXManager {
+
+  @Getter
+  @Setter
+  private static boolean enableJMX = true;
+  @Getter
+  @Setter
+  private static boolean enableJMXStatistics = true;
 
   private static final JMXManager instance = new JMXManager();
   private final MBeanServer mbs;
@@ -46,6 +55,7 @@ public class JMXManager {
   }
 
   public ObjectInstance register(Object obj, List<String> nameList) {
+    if(!enableJMX) return null;
     String objectId = JMXHelper.buildObjectName(Constants.JMX_DOMAIN, nameList);
     logger.log(ServerLogMessages.JMX_MANAGER_REGISTER, objectId);
     try {

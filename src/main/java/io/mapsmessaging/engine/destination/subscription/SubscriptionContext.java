@@ -23,7 +23,11 @@ import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
+import io.mapsmessaging.utilities.PersistentObject;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.BitSet;
 import java.util.Objects;
 import lombok.Getter;
@@ -31,7 +35,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @ToString
-public class SubscriptionContext implements Comparable<SubscriptionContext> {
+public class SubscriptionContext  extends PersistentObject implements Comparable<SubscriptionContext> {
 
   private static final int NO_LOCAL_MESSAGES = 0;
   private static final int RETAIN_AS_PUBLISH = 1;
@@ -110,6 +114,43 @@ public class SubscriptionContext implements Comparable<SubscriptionContext> {
     qualityOfService = rhs.qualityOfService;
     flags = BitSet.valueOf(rhs.flags.toByteArray());
     parseName();
+  }
+
+  public SubscriptionContext(InputStream inputStream) throws IOException {
+    destinationName = readString(inputStream);
+    alias = readString(inputStream);
+    sharedName = readString(inputStream);
+    selector = readString(inputStream);
+    rootPath = readString(inputStream);
+
+    acknowledgementController = ClientAcknowledgement.getInstance( readInt(inputStream));
+    destinationMode = DestinationMode.getInstance(readInt(inputStream));
+    retainHandler = RetainHandler.getInstance(readInt(inputStream));
+    qualityOfService = QualityOfService.getInstance(readInt(inputStream));
+    creditHandler = CreditHandler.getInstance(readInt(inputStream));
+
+    subscriptionId = readLong(inputStream);
+    receiveMaximum = readInt(inputStream);
+    flags = BitSet.valueOf(readByteArray(inputStream));
+  }
+
+
+  public void save(OutputStream outputStream) throws IOException {
+    writeString(outputStream, destinationName);
+    writeString(outputStream, alias);
+    writeString(outputStream, sharedName);
+    writeString(outputStream, selector);
+    writeString(outputStream, rootPath);
+
+    writeInt(outputStream, acknowledgementController.getValue());
+    writeInt(outputStream, destinationMode.getId());
+    writeInt(outputStream, retainHandler.getHandler());
+    writeInt(outputStream, qualityOfService.getLevel());
+    writeInt(outputStream, creditHandler.getValue());
+
+    writeLong(outputStream, subscriptionId);
+    writeInt(outputStream, receiveMaximum);
+    writeByteArray(outputStream, getFlags().toByteArray());
   }
 
   public SubscriptionContext setRootPath(String rootPath) {

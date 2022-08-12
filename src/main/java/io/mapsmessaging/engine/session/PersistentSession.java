@@ -5,13 +5,10 @@ import io.mapsmessaging.engine.destination.DestinationFactory;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
-import io.mapsmessaging.engine.session.persistence.WillData;
 import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.engine.session.will.WillTaskImpl;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import org.yaml.snakeyaml.Yaml;
 
 public class PersistentSession extends SessionImpl{
 
@@ -25,7 +22,7 @@ public class PersistentSession extends SessionImpl{
     this.storeLookup = storeLookup;
     sessionDetails = storeLookup.getSessionDetails(context.getId());
     context.setUniqueId(sessionDetails.getUniqueId());
-    storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".yaml";
+    storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".session";
     if(context.isResetState()){
       saveState();
     }
@@ -48,20 +45,20 @@ public class PersistentSession extends SessionImpl{
 
   @Override
   public WillTaskImpl setWillTask(WillDetails willDetails) {
+/*
     try {
       sessionDetails.setWillDetails(new WillData(willDetails));
       saveState();
     } catch (IOException e) {
       // ignore
     }
+*/
     return super.setWillTask(willDetails);
   }
 
   private void saveState(){
-    Yaml yaml = new Yaml();
     try(FileOutputStream fileOutputStream = new FileOutputStream(storeName)) {
-      OutputStreamWriter writer = new OutputStreamWriter(fileOutputStream);
-      yaml.dump(sessionDetails, writer);
+      sessionDetails.save(fileOutputStream);
     }
     catch(IOException ioException){
 

@@ -48,7 +48,6 @@ public class MessageDaemonJMX implements HealthMonitor {
   private final MessageDaemonEntryJMX entryJMX;
   private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
 
-
   public MessageDaemonJMX(MessageDaemon daemon) {
     this.daemon = daemon;
     typePath = new ArrayList<>();

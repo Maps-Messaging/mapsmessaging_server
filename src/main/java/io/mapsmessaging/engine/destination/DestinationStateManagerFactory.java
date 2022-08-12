@@ -58,7 +58,9 @@ public class DestinationStateManagerFactory {
       String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
       fullyQualifiedPath += "state";
       File directory = new File(fullyQualifiedPath);
-      Files.createDirectories(directory.toPath());
+      if(!directory.exists()) {
+        Files.createDirectories(directory.toPath());
+      }
       fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
       return new FileBitSetFactoryImpl(fullyQualifiedPath, Constants.BITSET_BLOCK_SIZE);
     } else {
