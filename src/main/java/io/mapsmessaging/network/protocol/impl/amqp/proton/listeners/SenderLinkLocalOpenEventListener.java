@@ -31,7 +31,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import io.mapsmessaging.selector.TokenMgrError;
+import io.mapsmessaging.selector.TokenMgrException;
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
 import lombok.SneakyThrows;
@@ -119,7 +119,7 @@ public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener
     } catch (IOException e) {
       ErrorCondition errorCondition = new ErrorCondition(SUBSCRIPTION_ERROR, "Failed to establish subscription::" + e.getMessage());
       Throwable throwable = e.getCause();
-      if (throwable instanceof TokenMgrError) {
+      if (throwable instanceof TokenMgrException) {
         errorCondition = new ErrorCondition(SELECTOR_ERROR, "Selector exception raised::" + throwable.getMessage());
       }
       link.setCondition(errorCondition);

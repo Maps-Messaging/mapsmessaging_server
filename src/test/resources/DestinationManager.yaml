@@ -4,7 +4,7 @@ DestinationManager:
    data:
       -
          name: root
-         directory: ./target/dataDirectory
+         directory: ./target/dataDirectory/destination
          namespace: /
          type: File # could be either File or Memory
          sync: disable # Enable or Disable

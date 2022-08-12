@@ -32,7 +32,7 @@
 #              map to the namespace
 #  namespace:  The start of the namespace path that is used to match for the
 #              mapping
-#  type:       The type of the backing store, support are Partition or memory backing
+#  type:       The type of the backing store, support are File or memory backing
 #  sync:       If File backing then enabling sync will flush buffers to the underlying hardware on each write
 #              or update of the data structures. This reduces throughput but also reduces the loss of data on
 #              system failure. ( System failure here means OS failure or catastrophic hardware failure, not application crash )
@@ -56,7 +56,7 @@ DestinationManager:
    data:
       -
          name: root
-         directory: ./data
+         directory: ./data/destinations
          namespace: /
          type: Partition # could be either Partition, Memory or MemoryTier
          sync: disable # Enable or Disable
