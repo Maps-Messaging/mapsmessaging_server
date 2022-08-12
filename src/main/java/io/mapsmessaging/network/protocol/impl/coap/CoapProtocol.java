@@ -158,7 +158,7 @@ public class CoapProtocol extends ProtocolImpl {
       try {
         close();
       } catch (IOException e) {
-
+        //ignore, we are closing and this is really non-recoverable
       }
     }
     return true;

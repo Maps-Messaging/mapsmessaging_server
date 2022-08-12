@@ -5,42 +5,37 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EventReaperQueue {
 
-  private final AtomicInteger indexGenerator;
-  private final ThreadLocalQueue[] localQueue;
-  private final ThreadLocal<Integer> threadIndex;
+  private final EventQueue[] localQueue;
+  private final AtomicLong index;
 
   public EventReaperQueue() {
-    indexGenerator = new AtomicInteger(0);
-    threadIndex = new ThreadLocal<>();
+    index = new AtomicLong(0);
     int numberOfCPUs = Runtime.getRuntime().availableProcessors();
-    localQueue = new ThreadLocalQueue[numberOfCPUs];
+    localQueue = new EventQueue[numberOfCPUs];
     for (int x = 0; x < numberOfCPUs; x++) {
-      localQueue[x] = new ThreadLocalQueue();
+      localQueue[x] = new EventQueue();
     }
   }
 
   public void close() {
-    for (ThreadLocalQueue threadLocalQueue : localQueue) {
+    for (EventQueue threadLocalQueue : localQueue) {
       threadLocalQueue.getAndClear();
     }
   }
 
   public void add(long id) {
-    Integer index = threadIndex.get();
-    if (index == null) {
-      index = indexGenerator.incrementAndGet() % localQueue.length;
-    }
-    localQueue[index].add(id);
+    int idx = (int) index.incrementAndGet() % localQueue.length;
+    localQueue[idx].add(id);
   }
 
   public Queue<Long> getAndClear() {
     if (Arrays.stream(localQueue).anyMatch(threadLocalQueue -> !threadLocalQueue.queue.isEmpty())) {
       Queue<Long> result = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(8192));
-      for (ThreadLocalQueue threadLocalQueue : localQueue) {
+      for (EventQueue threadLocalQueue : localQueue) {
         Queue<Long> tQueue = threadLocalQueue.getAndClear();
         result.addAll(tQueue);
       }
@@ -49,11 +44,11 @@ public class EventReaperQueue {
     return new LinkedList<>();
   }
 
-  private static final class ThreadLocalQueue {
+  private static final class EventQueue {
 
     private Queue<Long> queue;
 
-    public ThreadLocalQueue() {
+    public EventQueue() {
       queue = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(8192));
     }
 
