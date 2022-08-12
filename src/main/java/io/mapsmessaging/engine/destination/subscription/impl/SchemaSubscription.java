@@ -109,7 +109,7 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public void delete() throws IOException {
-
+    // There is nothing to delete here,
   }
 
   @Override

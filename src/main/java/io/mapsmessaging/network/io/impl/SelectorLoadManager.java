@@ -65,10 +65,11 @@ public class SelectorLoadManager {
 
   private Executor createThreadPool(int poolSize, String name){
     return new ThreadPoolExecutor(poolSize,
-    poolSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-        new ThreadFactoryImpl(name)) ;
+    poolSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new ThreadFactoryImpl(name)) ;
   }
 
+  // The use of thread groups here is soley to group these threads together in any thread dumps
+  @SuppressWarnings("java:S3014")
   private static class ThreadFactoryImpl implements ThreadFactory{
 
     private final ThreadGroup threadGroup;
@@ -79,8 +80,7 @@ public class SelectorLoadManager {
 
     @Override
     public Thread newThread(@NotNull Runnable r) {
-      Thread t = new Thread(threadGroup, r);
-      return t;
+      return new Thread(threadGroup, r);
     }
   }
 }
