@@ -24,6 +24,13 @@ class CoapSimpleInteractionTest extends BaseTestConfig {
   }
 
   @Test
+  void simplePing(){
+    CoapClient client = new CoapClient(getUri());
+    Assertions.assertTrue(client.ping());
+
+  }
+
+  @Test
   void simplePutGetCheck() throws ConnectorException, IOException {
     CoapClient client = new CoapClient(getUri());
     CoapResponse response =client.put("this is simply bytes".getBytes(), 0);
@@ -33,7 +40,6 @@ class CoapSimpleInteractionTest extends BaseTestConfig {
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
-    Assertions.assertTrue(client.ping());
   }
 
   @Test
