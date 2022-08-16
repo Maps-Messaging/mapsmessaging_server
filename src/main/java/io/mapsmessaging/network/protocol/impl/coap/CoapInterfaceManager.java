@@ -51,6 +51,10 @@ public class CoapInterfaceManager implements SelectorCallback {
         throw new RuntimeException(e);
       }
     });
+    if (protocol.getSession().isClosed()) {
+      currentSessions.remove(packet.getFromAddress());
+      return processPacket(packet);
+    }
     return protocol.processPacket(packet);
   }
 

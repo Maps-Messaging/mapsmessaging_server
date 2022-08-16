@@ -27,7 +27,6 @@ class CoapSimpleInteractionTest extends BaseTestConfig {
   void simplePing(){
     CoapClient client = new CoapClient(getUri());
     Assertions.assertTrue(client.ping());
-
   }
 
   @Test

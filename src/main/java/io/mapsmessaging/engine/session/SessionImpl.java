@@ -109,14 +109,6 @@ public class SessionImpl {
     }
     closureTaskManager.close();
     namespaceMapping.clear();
-    if(context.getProtocol() != null){
-      try {
-        ProtocolImpl protocol = context.getProtocol();
-        protocol.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
   }
 
   public void resumeState() {
