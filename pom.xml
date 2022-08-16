@@ -732,6 +732,15 @@
       <version>1.35</version>
       <scope>test</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.eclipse.californium/californium-core -->
+    <dependency>
+      <groupId>org.eclipse.californium</groupId>
+      <artifactId>californium-core</artifactId>
+      <version>3.6.0</version>
+      <scope>test</scope>
+    </dependency>
+
+
   </dependencies>
 
 </project>

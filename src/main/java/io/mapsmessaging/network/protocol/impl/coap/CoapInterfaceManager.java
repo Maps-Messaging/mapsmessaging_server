@@ -44,8 +44,10 @@ public class CoapInterfaceManager implements SelectorCallback {
       try {
         return new CoapProtocol(endPoint, this, packet.getFromAddress());
       } catch (LoginException e) {
+        e.printStackTrace();
         throw new RuntimeException(e);
       } catch (IOException e) {
+        e.printStackTrace();
         throw new RuntimeException(e);
       }
     });

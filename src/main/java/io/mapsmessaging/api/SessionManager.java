@@ -102,6 +102,11 @@ public class SessionManager {
   }
 
   public @NonNull @NotNull CompletableFuture<Session> closeAsync(@NonNull @NotNull Session session, boolean clearWillTask) {
+    if(!session.isClosed()){
+      CompletableFuture<Session> future = new CompletableFuture<>();
+      future.complete(session);
+      return future;
+    }
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
     Callable<Void> task = () -> {
       try {

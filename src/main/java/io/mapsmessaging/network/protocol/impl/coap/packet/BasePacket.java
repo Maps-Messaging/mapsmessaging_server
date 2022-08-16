@@ -157,7 +157,7 @@ public class BasePacket implements ServerPacket {
         packOption(packet, currentDelta, option.pack());
       }
     }
-    if(payload != null){
+    if(payload != null && payload.length > 0){
       int payloadMarker = 0xff;
       packet.put((byte)payloadMarker);
       packet.put(payload);

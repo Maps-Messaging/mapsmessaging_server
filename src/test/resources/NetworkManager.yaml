@@ -158,6 +158,11 @@ NetworkManager:
         auth: public
 
       -
+        url: udp://0.0.0.0:5683/
+        name: "CoAP Interface"
+        protocol: coap
+
+      -
         url: ssl://0.0.0.0:9999/
         name: "bad SSL interface to test"
         protocol: stomp,mqtt,all

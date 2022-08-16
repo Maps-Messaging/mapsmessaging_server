@@ -56,9 +56,11 @@ public class CoapProtocol extends ProtocolImpl {
   private final AtomicLong messageId;
   private final SocketAddress socketAddress;
   private final CoapInterfaceManager coapInterfaceManager;
+  private boolean isClosed;
 
   protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress) throws LoginException, IOException {
     super(endPoint);
+    isClosed = false;
     listenerFactory = new ListenerFactory();
     packetFactory = new PacketFactory();
     messageId = new AtomicLong(System.nanoTime());
@@ -155,6 +157,7 @@ public class CoapProtocol extends ProtocolImpl {
       }
     }
     catch(IOException ex){
+      ex.printStackTrace();
       try {
         close();
       } catch (IOException e) {
@@ -176,8 +179,10 @@ public class CoapProtocol extends ProtocolImpl {
           outboundPipeline.send(response);
         }
       } catch (ExecutionException e) {
+        e.printStackTrace();
         close();
       } catch (InterruptedException e) {
+        e.printStackTrace();
         close();
         Thread.currentThread().interrupt();
       }
@@ -199,6 +204,13 @@ public class CoapProtocol extends ProtocolImpl {
 
   @Override
   public void close() throws IOException {
+    if(isClosed){
+      return;
+    }
+    isClosed = true;
+    Exception ex = new Exception();
+    ex.fillInStackTrace();
+    ex.printStackTrace();
     SessionManager.getInstance().close(session, true);
     outboundPipeline.close();
     coapInterfaceManager.close(socketAddress);

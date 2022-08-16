@@ -47,7 +47,6 @@ public abstract class Listener {
 
     String finalPath = path;
     protocol.getSession().destinationExists(path).thenApply(exists->{
-
       protocol.getSession().findDestination(finalPath, DestinationType.TOPIC).thenApply(destination -> {
         if (destination != null) {
           try {
@@ -63,6 +62,7 @@ public abstract class Listener {
               destination.storeMessage(build(request));
             }
           } catch (IOException e) {
+            e.printStackTrace();
 //            logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
             try {
               protocol.close();
@@ -73,7 +73,6 @@ public abstract class Listener {
         }
         return destination;
       });
-
       return exists;
     });
   }
@@ -83,7 +82,7 @@ public abstract class Listener {
     IfMatch ifMatch = (IfMatch)optionSet.getOption(Constants.IF_MATCH);
     IfNoneMatch ifNoneMatch = (IfNoneMatch) optionSet.getOption(Constants.IF_NONE_MATCH);
 
-    if (!ifMatch.getList().isEmpty() || !ifNoneMatch.getList().isEmpty()) {
+    if ((ifMatch != null &&!ifMatch.getList().isEmpty()) || (ifNoneMatch != null && !ifNoneMatch.getList().isEmpty())) {
       Message message = destination.getRetained();
       if (message != null) {
         List<byte[]> etags = extractTags(message);

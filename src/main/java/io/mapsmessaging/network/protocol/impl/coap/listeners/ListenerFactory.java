@@ -4,7 +4,7 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory;
 
 public class ListenerFactory {
 
-  private Listener[] listeners;
+  private final Listener[] listeners;
 
 
   public Listener getListener(int id){

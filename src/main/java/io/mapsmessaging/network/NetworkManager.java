@@ -41,7 +41,6 @@ public class NetworkManager implements ServiceManager {
   private final Logger logger = LoggerFactory.getLogger(NetworkManager.class);
   private final ServiceLoader<EndPointServerFactory> endPointServers;
   private final LinkedHashMap<String, EndPointManager> endPointManagers;
-  private final ConfigurationProperties properties;
   private final NetworkManagerJMX bean;
   private final List<ConfigurationProperties> adapters;
 
@@ -49,7 +48,7 @@ public class NetworkManager implements ServiceManager {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
 
-    properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
+    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
     Object obj = properties.get("data");
     adapters = new ArrayList<>();
     if (obj instanceof List) {

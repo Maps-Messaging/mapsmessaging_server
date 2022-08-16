@@ -44,6 +44,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -56,12 +57,14 @@ public class SessionImpl {
   private final Future<?> scheduledFuture;
   private final SubscriptionController subscriptionManager;
   private final DestinationFactory destinationManager;
-  private WillTaskImpl willTaskImpl;
+  private final NamespaceMap namespaceMapping;
   private final ClosureTaskManager closureTaskManager;
+
+  private WillTaskImpl willTaskImpl;
   private MessageCallback messageCallback;
+  @Getter
   private boolean isClosed;
   private long expiry;
-  private final NamespaceMap namespaceMapping;
 
   //<editor-fold desc="Life cycle API">
   SessionImpl(SessionContext context,
@@ -106,6 +109,14 @@ public class SessionImpl {
     }
     closureTaskManager.close();
     namespaceMapping.clear();
+    if(context.getProtocol() != null){
+      try {
+        ProtocolImpl protocol = context.getProtocol();
+        protocol.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   public void resumeState() {

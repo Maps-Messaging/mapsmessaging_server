@@ -2,6 +2,7 @@ package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
+import io.mapsmessaging.network.protocol.impl.coap.packet.Empty;
 import java.io.IOException;
 
 public class EmptyListener extends Listener {
@@ -24,6 +25,10 @@ public class EmptyListener extends Listener {
         break;
 
       case CON:
+        BasePacket pingResponse = new Empty(request.getMessageId());
+        pingResponse.setFromAddress(request.getFromAddress());
+        protocol.sendResponse(pingResponse);
+        break;
       case NON:
         break;
 
