@@ -44,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -62,7 +61,6 @@ public class SessionImpl {
 
   private WillTaskImpl willTaskImpl;
   private MessageCallback messageCallback;
-  @Getter
   private boolean isClosed;
   private long expiry;
 
