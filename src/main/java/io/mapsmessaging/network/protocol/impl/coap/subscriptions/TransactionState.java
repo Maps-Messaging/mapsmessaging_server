@@ -6,22 +6,27 @@ import java.util.Map;
 
 public class TransactionState {
 
-  private Map<Long, TransactionContext> outstandingEvents;
+  private final Map<Long, TransactionContext> outstandingEvents;
+  private final Map<Integer, Long> messageIdToToken;
+
 
   public TransactionState(){
     outstandingEvents = new LinkedHashMap<>();
+    messageIdToToken = new LinkedHashMap<>();
   }
 
-  public void sent(byte[] token, long messageId, SubscribedEventManager subscription){
+  public void sent(byte[] token, int coapMessageId, long messageId, SubscribedEventManager subscription){
+    long key = 0;
     if(token.length > 0) {
-      long key = tokenToLong(token);
+      key = tokenToLong(token);
       outstandingEvents.put(key, new TransactionContext(messageId, subscription));
     }
+    messageIdToToken.put(coapMessageId, key);
   }
 
-  public void ack(byte[] token){
-    if(token.length > 0) {
-      long key = tokenToLong(token);
+  public void ack(int coapMessageId, byte[] token){
+    Long key = messageIdToToken.remove(coapMessageId);
+    if(token.length > 0 || key != null) {
       TransactionContext transactionContext = outstandingEvents.remove(key);
       if (transactionContext != null) {
         transactionContext.ack();

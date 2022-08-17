@@ -3,7 +3,9 @@ package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
 
 
 /*
@@ -46,7 +48,7 @@ public class OptionSet {
     return optionList.containsKey(id);
   }
 
-  public Option getOption(int id){
+  public @NonNull @NotNull Option getOption(int id){
     return optionList.computeIfAbsent(id, this::createOption);
   }
 

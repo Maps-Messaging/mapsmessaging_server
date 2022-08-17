@@ -121,12 +121,12 @@ public class CoapProtocol extends ProtocolImpl {
         }
       }
       if(context.isObserve()){
-        Observe option = new Observe(0);
+        Observe option = new Observe((int)(messageEvent.getMessage().getIdentifier() % 0xffff));
         optionSet.putOption(option);
       }
       optionSet.putOption(contentFormat);
       try {
-        transactionState.sent(context.getRequest().getToken(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
+        transactionState.sent(context.getRequest().getToken(), response.getMessageId(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
         outboundPipeline.send(response);
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -234,7 +234,7 @@ public class CoapProtocol extends ProtocolImpl {
 
   public void ack(int messageId, byte[] token) throws IOException {
     if(token != null) {
-      transactionState.ack(token);
+      transactionState.ack(messageId, token);
     }
     outboundPipeline.ack(messageId);
   }

@@ -1,11 +1,13 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapHandler;
-import org.eclipse.californium.core.CoapObserveRelation;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.elements.exception.ConnectorException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class CoapObserverTest extends BaseCoapTest {
@@ -14,26 +16,30 @@ class CoapObserverTest extends BaseCoapTest {
   @Test
   void testObserver() throws ConnectorException, IOException, InterruptedException {
     CoapClient client = new CoapClient(getUri());
-    client.put("Test payload...".getBytes(), 0);
-
-    CoapObserveRelation relation = client.observe(new CoapHandler() {
+    AtomicLong counter = new AtomicLong(0);
+    client.observe(new CoapHandler() {
       @Override
       public void onLoad(CoapResponse coapResponse) {
-        System.err.println("onload");
+        System.err.println("onload>>"+coapResponse);
+        counter.incrementAndGet();
       }
 
       @Override
       public void onError() {
         System.err.println("on-error");
       }
-    });
+    }, 4);
 
-    relation.setNotificationListener((request, response) -> System.err.println(request + " >> " + response));
-    relation.waitForResponse(10000);
     client.put("Test payload...".getBytes(), 0);
     client.put("Test payload...".getBytes(), 0);
     client.put("Test payload...".getBytes(), 0);
-    Thread.sleep(2000);
+    client.put("Test payload...".getBytes(), 0);
+    int count = 0;
+    while(counter.get() != 4 && count < 10){
+      TimeUnit.SECONDS.sleep(1);
+      count++;
+    }
+    Assertions.assertEquals(4, counter.get());
     client.shutdown();
   }
 }

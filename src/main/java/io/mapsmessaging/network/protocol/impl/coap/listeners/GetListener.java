@@ -47,9 +47,7 @@ public class GetListener extends Listener {
     OptionSet optionSet = request.getOptions();
     String path = "/";
     UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
-    if(uriPath != null){
-      path = uriPath.toString();
-    }
+    path = uriPath.toString();
     if(path.equals(".well-known/core")){
       response = sendWellKnown(request);
     }

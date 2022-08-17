@@ -8,7 +8,7 @@ public class BinaryOption extends Option {
 
   @Getter
   @Setter
-  protected long value;
+  protected long value = 0;
 
   public BinaryOption(int id) {
     super(id);

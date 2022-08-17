@@ -16,7 +16,6 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ETag;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.IfMatch;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.IfNoneMatch;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.MaxAge;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
@@ -79,17 +78,17 @@ public abstract class Listener {
 
   private boolean canProcess(Destination destination, BasePacket request) throws IOException {
     OptionSet optionSet = request.getOptions();
-    IfMatch ifMatch = (IfMatch)optionSet.getOption(Constants.IF_MATCH);
-    IfNoneMatch ifNoneMatch = (IfNoneMatch) optionSet.getOption(Constants.IF_NONE_MATCH);
+    if(optionSet.hasOption(Constants.IF_NONE_MATCH)){
+      return destination.getRetained() == null;
+    }
 
-    if ((ifMatch != null &&!ifMatch.getList().isEmpty()) || (ifNoneMatch != null && !ifNoneMatch.getList().isEmpty())) {
+
+    IfMatch ifMatch = (IfMatch)optionSet.getOption(Constants.IF_MATCH);
+    if ((!ifMatch.getList().isEmpty())) {
       Message message = destination.getRetained();
       if (message != null) {
         List<byte[]> etags = extractTags(message);
-        if (ifMatch != null) {
-          return compareTags(etags, ifMatch.getList());
-        }
-        return !compareTags(etags, ifNoneMatch.getList());
+        return compareTags(etags, ifMatch.getList());
       }
     }
     return true;

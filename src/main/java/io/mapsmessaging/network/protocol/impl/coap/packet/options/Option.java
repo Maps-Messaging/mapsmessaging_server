@@ -10,7 +10,7 @@ public abstract class Option {
   @Setter
   private int id;
 
-  public Option(int id){
+  protected Option(int id){
     this.id = id;
   }
 

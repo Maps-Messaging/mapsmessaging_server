@@ -96,4 +96,48 @@ class CoapSimpleInteractionTest extends BaseCoapTest {
     client.shutdown();
   }
 
+
+  @Test
+  void simplePutIfNoneMatchCheck() throws ConnectorException, IOException {
+    CoapClient client = new CoapClient(getUri());
+    CoapResponse response = client.put("this is simply bytes".getBytes(), 0);
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+
+
+    response = client.get();
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
+
+    client.putIfNoneMatch("This should NOT change", 0);
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+
+    response = client.get();
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
+
+
+    response = client.delete();
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+
+
+    client.putIfNoneMatch("This should change since it was deleted", 0);
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+
+    response = client.get();
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    Assertions.assertArrayEquals("This should change since it was deleted".getBytes(), response.getPayload());
+
+
+    response = client.delete();
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    client.shutdown();
+  }
 }
