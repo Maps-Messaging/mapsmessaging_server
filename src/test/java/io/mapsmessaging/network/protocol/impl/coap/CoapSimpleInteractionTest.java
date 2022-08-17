@@ -2,9 +2,7 @@ package io.mapsmessaging.network.protocol.impl.coap;
 
 import static org.eclipse.californium.core.coap.CoAP.CodeClass.SUCCESS_RESPONSE;
 
-import io.mapsmessaging.test.BaseTestConfig;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.CoAP.Code;
@@ -14,19 +12,13 @@ import org.eclipse.californium.elements.exception.ConnectorException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class CoapSimpleInteractionTest extends BaseTestConfig {
-
-  private static final String uri="coap://127.0.0.1:5683/fred-";
-  private static final AtomicLong counter= new AtomicLong(0);
-
-  private static String getUri(){
-    return uri+counter.incrementAndGet();
-  }
+class CoapSimpleInteractionTest extends BaseCoapTest {
 
   @Test
-  void simplePing(){
+  void simplePing() {
     CoapClient client = new CoapClient(getUri());
     Assertions.assertTrue(client.ping());
+    client.shutdown();
   }
 
   @Test
@@ -39,6 +31,7 @@ class CoapSimpleInteractionTest extends BaseTestConfig {
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
+    client.shutdown();
   }
 
   @Test
@@ -54,6 +47,7 @@ class CoapSimpleInteractionTest extends BaseTestConfig {
     response = client.delete();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    client.shutdown();
   }
 
   @Test
@@ -71,7 +65,6 @@ class CoapSimpleInteractionTest extends BaseTestConfig {
     CoapResponse response = client.advanced(request);
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
-
 
     response = client.get();
     Assertions.assertNotNull(response);
@@ -100,6 +93,7 @@ class CoapSimpleInteractionTest extends BaseTestConfig {
     response = client.delete();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    client.shutdown();
   }
 
 }
