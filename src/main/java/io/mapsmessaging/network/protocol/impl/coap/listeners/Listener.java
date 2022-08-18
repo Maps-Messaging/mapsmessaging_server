@@ -51,13 +51,15 @@ public abstract class Listener {
           try {
             Code code = Boolean.TRUE.equals(exists) ? Code.CHANGED : Code.CREATED;
             if(isDelete)code = Code.DELETED;
+            boolean process = canProcess(destination, request);
 
             if(request.getType().equals(TYPE.CON)){
               BasePacket response = request.buildAckResponse(code);
+              response.setCode(process?code:Code.PRECONDITION_FAILED);
               protocol.sendResponse(response);
             }
 
-            if(isDelete || canProcess(destination, request)) {
+            if(isDelete || process) {
               destination.storeMessage(build(request));
             }
           } catch (IOException e) {

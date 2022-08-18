@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.CoAP.Code;
+import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.elements.exception.ConnectorException;
@@ -71,9 +72,12 @@ class CoapSimpleInteractionTest extends BaseCoapTest {
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
 
-    client.putIfMatch("This should NOT change", 0, "tag5".getBytes());
+    System.err.println("No storing");
+    response = client.putIfMatch("This should NOT change", 0, "tag5".getBytes());
     Assertions.assertNotNull(response);
-    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeClass, response.getCode().codeClass);
+    Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeDetail, response.getCode().codeDetail);
+
 
     response = client.get();
     Assertions.assertNotNull(response);
@@ -110,9 +114,10 @@ class CoapSimpleInteractionTest extends BaseCoapTest {
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
 
-    client.putIfNoneMatch("This should NOT change", 0);
+    response = client.putIfNoneMatch("This should NOT change", 0);
     Assertions.assertNotNull(response);
-    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeClass, response.getCode().codeClass);
+    Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeDetail, response.getCode().codeDetail);
 
     response = client.get();
     Assertions.assertNotNull(response);
