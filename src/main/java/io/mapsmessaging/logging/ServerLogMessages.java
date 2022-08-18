@@ -600,6 +600,11 @@ public enum ServerLogMessages implements LogMessage {
   DISCOVERY_DEREGISTERED_ALL(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed all registered mDNS services"),
   //</editor-fold>
 
+  COAP_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created new CoAP protocol handler for {}"),
+  COAP_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Closed CoAP protocol handler for {}"),
+  COAP_PACKET_PROCESSED(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Handling CoAP packet {} for {}"),
+  COAP_PACKET_SENT(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Sent CoAP packet {} for {}"),
+
   COAP_FAILED_TO_SEND(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoAP failed to send packet to {}"),
   COAP_FAILED_TO_PROCESS(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoAP failed to process packet from {}"),
 

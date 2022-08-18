@@ -1,7 +1,10 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_CLOSED;
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_CREATED;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_PACKET_SENT;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -84,6 +87,21 @@ public class CoapProtocol extends ProtocolImpl {
     context.setDuration(120);
     session = SessionManager.getInstance().create(context, this);
     session.start();
+    logger.log(COAP_CREATED, socketAddress);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if(isClosed){
+      return;
+    }
+    logger.log(COAP_CLOSED, socketAddress);
+
+    isClosed = true;
+    SessionManager.getInstance().close(session, true);
+    outboundPipeline.close();
+    coapInterfaceManager.close(socketAddress);
+    super.close();
   }
 
   @Override
@@ -159,6 +177,7 @@ public class CoapProtocol extends ProtocolImpl {
     try {
       BasePacket basePacket = packetFactory.parseFrame(packet);
       if (basePacket != null) {
+        logger.log(COAP_PACKET_SENT, basePacket, packet.getFromAddress());
         if(basePacket.getType() == TYPE.RST){
           close();
           return false;
@@ -215,18 +234,7 @@ public class CoapProtocol extends ProtocolImpl {
     responsePacket.setFromAddress(response.getFromAddress());
     responsePacket.flip();
     endPoint.sendPacket(responsePacket);
-  }
-
-  @Override
-  public void close() throws IOException {
-    if(isClosed){
-      return;
-    }
-    isClosed = true;
-    SessionManager.getInstance().close(session, true);
-    outboundPipeline.close();
-    coapInterfaceManager.close(socketAddress);
-    super.close();
+    logger.log(COAP_PACKET_SENT, responsePacket, responsePacket.getFromAddress());
   }
 
   @Override
