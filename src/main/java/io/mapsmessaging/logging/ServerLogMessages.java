@@ -592,11 +592,16 @@ public enum ServerLogMessages implements LogMessage {
   SEMTECH_QUEUE_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for delivery {}"),
   // </editor-fold>
 
+  //<editor-fold desc="Server Discovery, mDNS, log messages">
   DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to start" ),
   DISCOVERY_FAILED_TO_REGISTER(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to register {}" ),
   DISCOVERY_REGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Registered new mDNS service {}"),
   DISCOVERY_DEREGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Deregistered mDNS service {}"),
   DISCOVERY_DEREGISTERED_ALL(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed all registered mDNS services"),
+  //</editor-fold>
+
+  COAP_FAILED_TO_SEND(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoAP failed to send packet to {}"),
+  COAP_FAILED_TO_PROCESS(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoAP failed to process packet from {}"),
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
