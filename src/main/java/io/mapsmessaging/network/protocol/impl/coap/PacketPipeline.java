@@ -1,5 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import static io.mapsmessaging.network.protocol.impl.coap.Constants.MAX_RETRANSMIT;
+
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
@@ -66,11 +68,11 @@ public class PacketPipeline {
       long now = System.currentTimeMillis();
       for(BasePacket packet: outstandingQueue.values()){
         if(packet.getTimeSent() < (now- 2000)){
-          if(packet.incrementResendCount() < 4){
+          if(packet.incrementResendCount() <  MAX_RETRANSMIT){
             try {
               send(packet);
             } catch (IOException e) {
-
+              // ToDo Add log message
             }
             packet.setTimeSent(now);
           }

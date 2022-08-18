@@ -80,62 +80,69 @@ public class CoapProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Context context = subscriptionState.find(messageEvent.getDestinationName());
-    if(context != null){
-      BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
-      OptionSet optionSet = response.getOptions();
-      UriPath uriPath = new UriPath();
-      uriPath.setPath(messageEvent.getDestinationName());
-      optionSet.putOption(uriPath);
-      long expiry = messageEvent.getMessage().getExpiry();
-      if(expiry > 0){
-        expiry = (expiry - System.currentTimeMillis())/1000;
-        MaxAge maxAge = new MaxAge();
-        maxAge.setValue(expiry);
-        optionSet.putOption(maxAge);
-      }
-      Map<String, TypedData> map = messageEvent.getMessage().getDataMap();
-      ETag eTag = new ETag();
-      for(Entry<String, TypedData> entry:map.entrySet()){
-        if(entry.getKey().toLowerCase().startsWith("etag") && entry.getValue().getData() instanceof byte[]){
-          eTag.update((byte[])entry.getValue().getData());
-        }
-      }
-      if(!eTag.getList().isEmpty()){
-        optionSet.add(eTag);
-      }
-      response.setFromAddress(context.getRequest().getFromAddress());
-      response.setPayload(messageEvent.getMessage().getOpaqueData());
-      if(context.getRequest().getType().equals(TYPE.NON)){
-        response.setMessageId(context.getRequest().getMessageId());
-      }
-      else {
-        response.setMessageId((int) (messageId.incrementAndGet() & 0xffff));
-      }
-      List<SchemaConfig> schemas = SchemaManager.getInstance().getSchemaByContext(messageEvent.getDestinationName());
-      ContentFormat contentFormat = new ContentFormat(Format.TEXT_PLAIN);
-      if(!schemas.isEmpty()){
-        String mime = schemas.get(0).getMimeType();
-        if(mime != null) {
-          Format format = Format.stringValueOf(mime);
-          contentFormat = new ContentFormat(format);
-        }
-      }
-      if(context.isObserve()){
-        Observe option = new Observe((int)(messageEvent.getMessage().getIdentifier() % 0xffff));
-        optionSet.putOption(option);
-      }
-      optionSet.putOption(contentFormat);
+    if (context == null)
+      return;
+    BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
+    response.setFromAddress(context.getRequest().getFromAddress());
+    response.setPayload(messageEvent.getMessage().getOpaqueData());
+    setOptions(messageEvent, context, response.getOptions());
+    if (context.getRequest().getType().equals(TYPE.NON)) {
+      response.setMessageId(context.getRequest().getMessageId());
+    } else {
+      response.setMessageId((int) (messageId.incrementAndGet() & 0xffff));
+    }
+    try {
+      transactionState.sent(context.getRequest().getToken(), response.getMessageId(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
+      outboundPipeline.send(response);
+    } catch (IOException e) {
       try {
-        transactionState.sent(context.getRequest().getToken(), response.getMessageId(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
-        outboundPipeline.send(response);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      if(!context.isObserve()) {
-        subscriptionState.remove(messageEvent.getDestinationName());
-        session.removeSubscription(context.getPath());
+        // ToDo add log here
+        close();
+      } catch (IOException ex) {
+        // Ignore, we are closing currently
       }
     }
+    if (!context.isObserve()) {
+      subscriptionState.remove(messageEvent.getDestinationName());
+      session.removeSubscription(context.getPath());
+    }
+  }
+
+  private void setOptions(@NotNull @NonNull MessageEvent messageEvent, Context context, OptionSet optionSet){
+    UriPath uriPath = new UriPath();
+    uriPath.setPath(messageEvent.getDestinationName());
+    optionSet.putOption(uriPath);
+    long expiry = messageEvent.getMessage().getExpiry();
+    if (expiry > 0) {
+      expiry = (expiry - System.currentTimeMillis()) / 1000;
+      MaxAge maxAge = new MaxAge();
+      maxAge.setValue(expiry);
+      optionSet.putOption(maxAge);
+    }
+    Map<String, TypedData> map = messageEvent.getMessage().getDataMap();
+    ETag eTag = new ETag();
+    for (Entry<String, TypedData> entry : map.entrySet()) {
+      if (entry.getKey().toLowerCase().startsWith("etag") && entry.getValue().getData() instanceof byte[]) {
+        eTag.update((byte[]) entry.getValue().getData());
+      }
+    }
+    if (!eTag.getList().isEmpty()) {
+      optionSet.add(eTag);
+    }
+    if (context.isObserve()) {
+      Observe option = new Observe((int) (messageEvent.getMessage().getIdentifier() % 0xffff));
+      optionSet.putOption(option);
+    }
+    List<SchemaConfig> schemas = SchemaManager.getInstance().getSchemaByContext(messageEvent.getDestinationName());
+    ContentFormat contentFormat = new ContentFormat(Format.TEXT_PLAIN);
+    if (!schemas.isEmpty()) {
+      String mime = schemas.get(0).getMimeType();
+      if (mime != null) {
+        Format format = Format.stringValueOf(mime);
+        contentFormat = new ContentFormat(format);
+      }
+    }
+    optionSet.putOption(contentFormat);
   }
 
   @Override
@@ -157,7 +164,7 @@ public class CoapProtocol extends ProtocolImpl {
       }
     }
     catch(IOException ex){
-      ex.printStackTrace();
+      // ToDo Add log here
       try {
         close();
       } catch (IOException e) {
@@ -179,10 +186,10 @@ public class CoapProtocol extends ProtocolImpl {
           outboundPipeline.send(response);
         }
       } catch (ExecutionException e) {
-        e.printStackTrace();
+        // ToDo Add log here
         close();
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        // ToDo Add log here
         close();
         Thread.currentThread().interrupt();
       }
@@ -208,9 +215,6 @@ public class CoapProtocol extends ProtocolImpl {
       return;
     }
     isClosed = true;
-    Exception ex = new Exception();
-    ex.fillInStackTrace();
-    ex.printStackTrace();
     SessionManager.getInstance().close(session, true);
     outboundPipeline.close();
     coapInterfaceManager.close(socketAddress);
@@ -224,7 +228,7 @@ public class CoapProtocol extends ProtocolImpl {
 
   @Override
   public String getSessionId() {
-    return null;
+    return session.getName();
   }
 
   @Override

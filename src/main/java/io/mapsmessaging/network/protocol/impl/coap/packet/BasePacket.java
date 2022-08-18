@@ -52,7 +52,7 @@ public class BasePacket implements ServerPacket {
   private int messageId;
 
   @Getter
-  private OptionSet options;
+  private final OptionSet options;
 
   @Getter
   @Setter

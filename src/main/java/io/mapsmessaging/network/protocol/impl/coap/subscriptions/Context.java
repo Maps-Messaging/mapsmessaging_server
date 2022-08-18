@@ -30,12 +30,12 @@ public class Context {
     this.path = path;
     this.request = request;
     OptionSet optionSet = request.getOptions();
-    Option observeOption = optionSet.getOption(OBSERVE);
-    if(observeOption == null) {
-      observe = false;
-    }
-    else{
+    if(optionSet.hasOption(OBSERVE)){
+      Option observeOption = optionSet.getOption(OBSERVE);
       observe = ((Observe)observeOption).register();
+    }
+    else {
+      observe = false;
     }
   }
 
