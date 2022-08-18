@@ -1,5 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.ETAG;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.MAX_AGE;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.URI_PATH;
 
@@ -35,36 +37,22 @@ public abstract class Listener {
   public abstract BasePacket handle(BasePacket request, CoapProtocol protocol) throws IOException, ExecutionException, InterruptedException;
 
 
-  protected void publishMessage(BasePacket request,CoapProtocol protocol, boolean isDelete ){
-
+  protected void publishMessage(BasePacket request, CoapProtocol protocol, boolean isDelete) {
     OptionSet optionSet = request.getOptions();
     String path = "/";
-    UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
-    if(uriPath != null){
+    if (optionSet.hasOption(URI_PATH)) {
+      UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
       path = uriPath.toString();
     }
 
     String finalPath = path;
-    protocol.getSession().destinationExists(path).thenApply(exists->{
+    protocol.getSession().destinationExists(path).thenApply(exists -> {
       protocol.getSession().findDestination(finalPath, DestinationType.TOPIC).thenApply(destination -> {
         if (destination != null) {
           try {
-            Code code = Boolean.TRUE.equals(exists) ? Code.CHANGED : Code.CREATED;
-            if(isDelete)code = Code.DELETED;
-            boolean process = canProcess(destination, request);
-
-            if(request.getType().equals(TYPE.CON)){
-              BasePacket response = request.buildAckResponse(code);
-              response.setCode(process?code:Code.PRECONDITION_FAILED);
-              protocol.sendResponse(response);
-            }
-
-            if(isDelete || process) {
-              destination.storeMessage(build(request));
-            }
+            handleEvent(isDelete, exists, destination, request, protocol);
           } catch (IOException e) {
-            e.printStackTrace();
-//            logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
+            protocol.getLogger().log(COAP_FAILED_TO_PROCESS, request.getFromAddress(), e);
             try {
               protocol.close();
             } catch (IOException ioException) {
@@ -78,14 +66,28 @@ public abstract class Listener {
     });
   }
 
+  private void handleEvent(boolean isDelete, Boolean exists, Destination destination, BasePacket request, CoapProtocol protocol) throws IOException {
+    Code code = Boolean.TRUE.equals(exists) ? Code.CHANGED : Code.CREATED;
+    if (isDelete) {
+      code = Code.DELETED;
+    }
+    boolean process = canProcess(destination, request);
+    if (request.getType().equals(TYPE.CON)) {
+      BasePacket response = request.buildAckResponse(code);
+      response.setCode(process ? code : Code.PRECONDITION_FAILED);
+      protocol.sendResponse(response);
+    }
+    if (isDelete || process) {
+      destination.storeMessage(build(request));
+    }
+  }
+
   private boolean canProcess(Destination destination, BasePacket request) throws IOException {
     OptionSet optionSet = request.getOptions();
-    if(optionSet.hasOption(Constants.IF_NONE_MATCH)){
+    if (optionSet.hasOption(Constants.IF_NONE_MATCH)) {
       return destination.getRetained() == null;
     }
-
-
-    IfMatch ifMatch = (IfMatch)optionSet.getOption(Constants.IF_MATCH);
+    IfMatch ifMatch = (IfMatch) optionSet.getOption(Constants.IF_MATCH);
     if ((!ifMatch.getList().isEmpty())) {
       Message message = destination.getRetained();
       if (message != null) {
@@ -136,11 +138,9 @@ public abstract class Listener {
     messageBuilder.setRetain(true);
 
     OptionSet optionSet = request.getOptions();
-    if(optionSet != null){
+    if (optionSet != null && optionSet.hasOption(MAX_AGE)) {
       MaxAge maxAge = (MaxAge) optionSet.getOption(MAX_AGE);
-      if(maxAge != null){
-        messageBuilder.setMessageExpiryInterval(maxAge.getValue(), TimeUnit.SECONDS);
-      }
+      messageBuilder.setMessageExpiryInterval(maxAge.getValue(), TimeUnit.SECONDS);
     }
 
     if(request.getToken() != null && request.getToken().length > 0){
@@ -154,15 +154,14 @@ public abstract class Listener {
     messageBuilder.setMeta(meta);
 
     Map<String, TypedData> map = new LinkedHashMap<>();
-    ETag eTags = (ETag) request.getOptions().getOption(Constants.ETAG);
-    if(eTags != null){
-      List<byte[]> tagList =eTags.getList();
-      for(int x=0;x<tagList.size();x++){
-        map.put("etag_"+x, new TypedData(tagList.get(x)));
+    if (request.getOptions().hasOption(ETAG)) {
+      ETag eTags = (ETag) request.getOptions().getOption(Constants.ETAG);
+      List<byte[]> tagList = eTags.getList();
+      for (int x = 0; x < tagList.size(); x++) {
+        map.put("etag_" + x, new TypedData(tagList.get(x)));
       }
     }
     messageBuilder.setDataMap(map);
-
     return messageBuilder.build();
   }
 }
