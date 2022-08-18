@@ -71,9 +71,9 @@ RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
 #----------------------------------------------------------------------------------------------
 RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
     mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
-    sed 's|C:/Users/matthew/Downloads/hawtio-default-2.10.1.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.10.1.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
+    sed 's|C:/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.15.0.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
-    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.10.1/hawtio-default-2.10.1.war
+    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.15.0/hawtio-default-2.15.0.war
 
 #----------------------------------------------------------------------------------------------
 # Define the data directory in the install as a volume so destination data is stored external

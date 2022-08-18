@@ -31,12 +31,13 @@ RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
 #   f) Register the command to start the server
 #----------------------------------------------------------------------------------------------
 # Expose the protocol ports
-# MQTT      1882, 1883
-# MQTT-SN   1884
-# AMQP      5672
-# Stomp     8675
-# Admin     8080
-# SemTech   1700
+# MQTT      1882, 1883  TCP
+# MQTT-SN   1884        UDP
+# AMQP      5672        TCP
+# Stomp     8675        TCP
+# Admin     8080        TCP
+# SemTech   1700        UDP
+# CoAP      5683        UDP
 #----------------------------------------------------------------------------------------------
 EXPOSE 1882/tcp
 EXPOSE 1883/tcp
@@ -45,6 +46,7 @@ EXPOSE 5672/tcp
 EXPOSE 8675/tcp
 EXPOSE 8080/tcp
 EXPOSE 1700/udp
+EXPOSE 5683/udp
 
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
@@ -67,9 +69,9 @@ RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
 #----------------------------------------------------------------------------------------------
 RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
     mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
-    sed 's|C:/Users/matthew/Downloads/hawtio-default-2.10.1.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.10.1.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
+    sed 's|C:/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.15.0.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
-    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.10.1/hawtio-default-2.10.1.war
+    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.15.0/hawtio-default-2.15.0.war
 
 #----------------------------------------------------------------------------------------------
 # Define the data directory in the install as a volume so destination data is stored external
