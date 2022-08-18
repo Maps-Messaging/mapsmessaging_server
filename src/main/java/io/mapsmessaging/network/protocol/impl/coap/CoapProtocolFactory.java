@@ -52,7 +52,7 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
       endPoint.getConfig().getProperties().put("serverReadBufferSize", "" + datagramSize);
       endPoint.getConfig().getProperties().put("serverWriteBufferSize", "" + datagramSize);
     }
-    CoapInterfaceManager manager = new CoapInterfaceManager(info, endPoint);
+    CoapInterfaceManager manager = new CoapInterfaceManager(endPoint);
     managers.add(manager);
   }
 
