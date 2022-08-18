@@ -45,7 +45,7 @@ public class GetListener extends Listener {
   private BasePacket handleGetRequest(BasePacket request, CoapProtocol protocol){
     BasePacket response;
     OptionSet optionSet = request.getOptions();
-    String path = "/";
+    String path;
     UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
     path = uriPath.toString();
     if(path.equals(".well-known/core")){
