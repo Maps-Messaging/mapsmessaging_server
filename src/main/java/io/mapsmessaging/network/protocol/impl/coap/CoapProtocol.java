@@ -1,11 +1,16 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SessionContext;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
@@ -39,6 +44,9 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class CoapProtocol extends ProtocolImpl {
+
+  @Getter
+  private final Logger logger;
   private final ListenerFactory listenerFactory;
   private final PacketFactory packetFactory;
 
@@ -60,6 +68,7 @@ public class CoapProtocol extends ProtocolImpl {
 
   protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress) throws LoginException, IOException {
     super(endPoint);
+    logger = LoggerFactory.getLogger(CoapProtocol.class);
     isClosed = false;
     listenerFactory = new ListenerFactory();
     packetFactory = new PacketFactory();
@@ -96,7 +105,7 @@ public class CoapProtocol extends ProtocolImpl {
       outboundPipeline.send(response);
     } catch (IOException e) {
       try {
-        // ToDo add log here
+        logger.log(COAP_FAILED_TO_SEND, response.getFromAddress(), e);
         close();
       } catch (IOException ex) {
         // Ignore, we are closing currently
@@ -164,7 +173,7 @@ public class CoapProtocol extends ProtocolImpl {
       }
     }
     catch(IOException ex){
-      // ToDo Add log here
+      logger.log(COAP_FAILED_TO_PROCESS, packet.getFromAddress(), ex);
       try {
         close();
       } catch (IOException e) {
@@ -186,10 +195,9 @@ public class CoapProtocol extends ProtocolImpl {
           outboundPipeline.send(response);
         }
       } catch (ExecutionException e) {
-        // ToDo Add log here
+        logger.log(COAP_FAILED_TO_SEND, request.getFromAddress(), e);
         close();
       } catch (InterruptedException e) {
-        // ToDo Add log here
         close();
         Thread.currentThread().interrupt();
       }

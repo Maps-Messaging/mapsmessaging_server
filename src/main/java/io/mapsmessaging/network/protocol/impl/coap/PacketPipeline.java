@@ -1,5 +1,6 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
 import static io.mapsmessaging.network.protocol.impl.coap.Constants.MAX_RETRANSMIT;
 
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
@@ -72,7 +73,7 @@ public class PacketPipeline {
             try {
               send(packet);
             } catch (IOException e) {
-              // ToDo Add log message
+              protocol.getLogger().log(COAP_FAILED_TO_SEND, packet.getFromAddress(), e);
             }
             packet.setTimeSent(now);
           }
