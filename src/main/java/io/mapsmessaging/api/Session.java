@@ -122,7 +122,6 @@ public class Session {
         try {
           return lookupTask.call();
         } catch (Exception e) {
-          e.printStackTrace();
           throw new RuntimeException(e);
         }
       });
