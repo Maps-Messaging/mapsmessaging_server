@@ -68,7 +68,7 @@ public class PacketPipeline {
     public void run() {
       long now = System.currentTimeMillis();
       for(BasePacket packet: outstandingQueue.values()){
-        if(packet.getTimeSent() < (now- 2000)){
+        if(packet.getTimeSent() < (now- (Constants.ACK_TIMEOUT * 1000L))){
           if(packet.incrementResendCount() <  MAX_RETRANSMIT){
             try {
               send(packet);
