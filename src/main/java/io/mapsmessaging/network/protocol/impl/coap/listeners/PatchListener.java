@@ -14,11 +14,11 @@ public class PatchListener extends Listener {
   public BasePacket handle(BasePacket request, CoapProtocol protocol) {
     OptionSet optionSet = request.getOptions();
     String path = "/";
-    UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
-    if(uriPath != null){
+    if (optionSet.hasOption(URI_PATH)) {
+      UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
       path = uriPath.toString();
     }
-    if(request.getType().equals(TYPE.CON)){
+    if (request.getType().equals(TYPE.CON)) {
       // Need to create a response here!!!
     }
     return null;
