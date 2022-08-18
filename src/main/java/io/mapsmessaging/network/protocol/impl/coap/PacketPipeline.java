@@ -25,7 +25,7 @@ public class PacketPipeline {
     sendQueue = new ConcurrentLinkedQueue<>();
     outstandingQueue = new ConcurrentSkipListMap<>();
     this.protocol = protocol;
-    retransmissionThread = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new RetransmissionThread(),2,2, TimeUnit.SECONDS);
+    retransmissionThread = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new RetransmissionThread(),Constants.ACK_TIMEOUT,Constants.ACK_TIMEOUT, TimeUnit.SECONDS);
   }
 
   public void close(){
