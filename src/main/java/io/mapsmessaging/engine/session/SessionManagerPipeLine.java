@@ -89,6 +89,7 @@ public class SessionManagerPipeLine {
     securityManager = manager;
   }
 
+  @SuppressWarnings("java:S1452")
   public Future<?> submit(Callable<?> task) {
     return taskScheduler.submit(task);
   }

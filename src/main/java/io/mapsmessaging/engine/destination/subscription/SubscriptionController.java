@@ -470,6 +470,7 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
+  @SuppressWarnings("java:S1452")
   public Future<?> getTimeout() {
     return schedule;
   }
