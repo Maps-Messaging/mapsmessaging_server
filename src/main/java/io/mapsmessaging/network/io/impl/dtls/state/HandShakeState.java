@@ -68,7 +68,7 @@ public class HandShakeState extends State {
 
     if (hs == NEED_WRAP) {
       List<Packet> packets = new ArrayList<>();
-      boolean finished = produceHandshakePackets(packets);
+      produceHandshakePackets(packets);
       for (Packet p : packets) {
         p.setFromAddress(stateEngine.getClientId());
         stateEngine.send(p);
@@ -104,9 +104,7 @@ public class HandShakeState extends State {
       } // otherwise, ignore this packet
     } else if (rs == SSLEngineResult.Status.CLOSED) {
       throw new IOException("SSLEngine has closed");
-    } else if (rs == SSLEngineResult.Status.OK) {
-      // OK
-    } else {
+    } else if (rs != SSLEngineResult.Status.OK) {
       throw new IOException("Can't reach here, result is " + rs);
     }
 
@@ -115,11 +113,14 @@ public class HandShakeState extends State {
       Packet packet = new Packet(oNet);
       packets.add(packet);
     }
-
     if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
       return true;
     }
+    processInnerLoop(hs);
+    return false;
+  }
 
+  private void processInnerLoop(SSLEngineResult.HandshakeStatus hs) throws IOException {
     boolean endInnerLoop = false;
     SSLEngineResult.HandshakeStatus nhs = hs;
     while (!endInnerLoop) {
@@ -138,6 +139,5 @@ public class HandShakeState extends State {
       }
       nhs = stateEngine.getSslEngine().getHandshakeStatus();
     }
-    return false;
   }
 }
