@@ -53,16 +53,14 @@ public class ConsulManagerFactory {
       } catch (Exception e) {
         LockSupport.parkNanos(1000000000L);
         counter++;
-        if (!forceWait) {
-          if (e instanceof ConsulException) {
-            Exception actual = (Exception) e.getCause();
-            if (actual instanceof ConnectException) {
-              logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, serverId);
-            } else {
-              logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, serverId, e);
-            }
-            return;
+        if (!forceWait && e instanceof ConsulException) {
+          Exception actual = (Exception) e.getCause();
+          if (actual instanceof ConnectException) {
+            logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, serverId);
+          } else {
+            logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, serverId, e);
           }
+          return;
         }
         logger.log(ServerLogMessages.CONSUL_MANAGER_START_DELAYED, serverId);
       }
