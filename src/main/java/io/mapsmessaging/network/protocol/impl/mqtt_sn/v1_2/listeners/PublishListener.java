@@ -56,44 +56,48 @@ public class PublishListener extends PacketListener {
       qos = QualityOfService.AT_MOST_ONCE;
     }
     String topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
-    if (topicName != null) {
-      HashMap<String, String> meta = new LinkedHashMap<>();
-      meta.put("protocol", "MQTT-SN");
-      meta.put("version", "1.2");
-      meta.put("time_ms", "" + System.currentTimeMillis());
-      meta.put("sessionId", session.getName());
-
-      MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setQoS(qos)
-          .setMeta(meta)
-          .setRetain(publish.retain())
-          .setTransformation(protocol.getTransformation())
-          .setOpaqueData(publish.getMessage());
-      CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
-      future.thenApply(destination -> {
-        if (destination != null) {
-          Message message = messageBuilder.build();
-          try {
-            if (message.getQualityOfService().getLevel() == 2) {
-              Transaction transaction = session.startTransaction(session.getName() + ":" + publish.getMessageId());
-              transaction.add(destination, message);
-            } else {
-              destination.storeMessage(message);
-            }
-          } catch (IOException e) {
-            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS));
-          }
-          if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
-            ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.SUCCESS));
-          } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
-            ((MQTT_SNProtocol) protocol).writeFrame(new PubRec(publish.getMessageId()));
-          }
-        } else {
-          ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS));
-        }
-        return destination;
-      });
+    if (topicName != null && (!topicName.startsWith("$") || topicName.toLowerCase().startsWith("$schema"))) {
+      processValidMessage(session, qos, publish, protocol, topicName);
     }
     return null;
+  }
+
+  private void processValidMessage(Session session, QualityOfService qos, Publish publish, ProtocolImpl protocol, String topicName){
+    HashMap<String, String> meta = new LinkedHashMap<>();
+    meta.put("protocol", "MQTT-SN");
+    meta.put("version", "1.2");
+    meta.put("time_ms", "" + System.currentTimeMillis());
+    meta.put("sessionId", session.getName());
+
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setQoS(qos)
+        .setMeta(meta)
+        .setRetain(publish.retain())
+        .setTransformation(protocol.getTransformation())
+        .setOpaqueData(publish.getMessage());
+    CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
+    future.thenApply(destination -> {
+      if (destination != null) {
+        Message message = messageBuilder.build();
+        try {
+          if (message.getQualityOfService().getLevel() == 2) {
+            Transaction transaction = session.startTransaction(session.getName() + ":" + publish.getMessageId());
+            transaction.add(destination, message);
+          } else {
+            destination.storeMessage(message);
+          }
+        } catch (IOException e) {
+          ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS));
+        }
+        if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
+          ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.SUCCESS));
+        } else if (publish.getQoS().equals(QualityOfService.EXACTLY_ONCE)) {
+          ((MQTT_SNProtocol) protocol).writeFrame(new PubRec(publish.getMessageId()));
+        }
+      } else {
+        ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS));
+      }
+      return destination;
+    });
   }
 }
