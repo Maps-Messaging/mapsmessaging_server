@@ -22,6 +22,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import org.json.JSONObject;
 import org.json.XML;
 
+@SuppressWarnings("java:S2129") // We convert a Byte[] into a String for json to parse
 public class JSONToXML implements Transformer {
 
   @Override
