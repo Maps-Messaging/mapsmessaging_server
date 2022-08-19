@@ -65,7 +65,10 @@ public class HandShakeState extends State {
         return;
       }
     }
+    processPackets(hs);
+  }
 
+  private void processPackets(SSLEngineResult.HandshakeStatus hs) throws IOException {
     if (hs == NEED_WRAP) {
       List<Packet> packets = new ArrayList<>();
       produceHandshakePackets(packets);
