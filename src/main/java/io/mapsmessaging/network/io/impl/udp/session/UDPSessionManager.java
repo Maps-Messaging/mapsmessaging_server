@@ -61,29 +61,39 @@ public class UDPSessionManager<T extends Timeoutable> {
   }
 
   protected void scanForTimeouts() {
-    List<SocketAddress> expiredKeys = new ArrayList<>();
     if (!sessionStateMap.isEmpty()) {
-      long now = System.currentTimeMillis();
-      for (Entry<SocketAddress, UDPSessionState<T>> entry : sessionStateMap.entrySet()) {
-        long expiry = now - timeout;
-        if (entry.getValue().getContext().getTimeOut() != 0) {
-          expiry = now - entry.getValue().getContext().getTimeOut();
-        }
-        if (entry.getValue().getGetLastAccess() < expiry) {
-          expiredKeys.add(entry.getKey());
-        }
+      List<SocketAddress> expiredKeys = new ArrayList<>();
+      createExpiredList(expiredKeys);
+      processExpiredSessions(expiredKeys);
+    }
+  }
+
+  private void createExpiredList(List<SocketAddress> expiredKeys){
+    long now = System.currentTimeMillis();
+    for (Entry<SocketAddress, UDPSessionState<T>> entry : sessionStateMap.entrySet()) {
+      long expiry = now - timeout;
+      if (entry.getValue().getContext().getTimeOut() != 0) {
+        expiry = now - entry.getValue().getContext().getTimeOut();
       }
-      for (SocketAddress key : expiredKeys) {
-        UDPSessionState<T> state = sessionStateMap.get(key);
-        sessionStateMap.remove(key);
-        if (state.getContext() != null) {
-          try {
-            state.getContext().close();
-          } catch (IOException e) {
-            //
-          }
+      if (entry.getValue().getGetLastAccess() < expiry) {
+        expiredKeys.add(entry.getKey());
+      }
+    }
+
+  }
+
+  private void processExpiredSessions( List<SocketAddress> expiredKeys){
+    for (SocketAddress key : expiredKeys) {
+      UDPSessionState<T> state = sessionStateMap.get(key);
+      sessionStateMap.remove(key);
+      if (state.getContext() != null) {
+        try {
+          state.getContext().close();
+        } catch (IOException e) {
+          //
         }
       }
     }
+
   }
 }
