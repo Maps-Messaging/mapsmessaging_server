@@ -223,7 +223,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
       if(qos != 0) {
         long timeout = System.currentTimeMillis() + TIMEOUT;
         while (count == published.getCount()) {
-          delay(1);
+          delay(100);
           Assertions.assertFalse(timeout < System.currentTimeMillis());
         }
         count = published.getCount();
