@@ -1,26 +1,17 @@
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.URI_PATH;
-
-import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
-import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
+import org.jetbrains.annotations.Nullable;
 
-public class FetchListener extends Listener {
+public class FetchListener extends GetListener {
 
   @Override
-  public BasePacket handle(BasePacket request, CoapProtocol protocol) {
-    OptionSet optionSet = request.getOptions();
-    String path = "/";
-    if (optionSet.hasOption(URI_PATH)) {
-      UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
-      path = uriPath.toString();
-    }
-    if (request.getType().equals(TYPE.CON)) {
-      // ToDo
+  protected @Nullable String getSelector(BasePacket packet){
+    byte[] payload = packet.getPayload();
+    if(payload != null){
+      return new String(payload);
     }
     return null;
   }
+
 }

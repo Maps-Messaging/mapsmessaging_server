@@ -20,6 +20,7 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
 import java.io.IOException;
+import org.jetbrains.annotations.Nullable;
 
 public class GetListener extends Listener {
 
@@ -61,6 +62,10 @@ public class GetListener extends Listener {
     return response;
   }
 
+  protected @Nullable String getSelector(BasePacket packet){
+    return null;
+  }
+
   private BasePacket buildSubscription(String path, BasePacket request, CoapProtocol protocol){
     BasePacket response;
     try {
@@ -86,6 +91,10 @@ public class GetListener extends Listener {
         SubscriptionContext context = new SubscriptionContext(path);
         context.setReceiveMaximum(1);
         context.setBrowserFlag(true);
+        String selector = getSelector(request);
+        if(selector != null){
+          context.setSelector(selector);
+        }
         Context subscriptionContext = protocol.getSubscriptionState().create(path, request);
         subscriptionContext.setSubscribedEventManager(session.addSubscription(context));
       } else {

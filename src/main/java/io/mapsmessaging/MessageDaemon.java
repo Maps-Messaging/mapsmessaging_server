@@ -296,7 +296,6 @@ public class MessageDaemon implements WrapperListener {
       t.join(10000);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      e.printStackTrace();
     }
     return i;
   }

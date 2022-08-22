@@ -235,7 +235,6 @@ public class DestinationManager implements DestinationFactory {
           logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
         }
       } catch (IOException error) {
-        error.printStackTrace();
         logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEPTION_ON_START, error);
       }
     }

@@ -98,6 +98,7 @@ public class SessionManager {
     sessionManagerJMX.close();
   }
 
+  @SuppressWarnings("java:S1452")
   public Future<?> submit(String sessionId, Callable<?> task) {
     return sessionPipeLines[getPipeLineIndex(sessionId)].submit(task);
   }

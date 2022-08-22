@@ -184,7 +184,6 @@ public class MQTTProtocol extends ProtocolImpl {
       registerRead();
       return false;
     } catch (MalformedException | IOException e) {
-      e.printStackTrace();
       logger.log(ServerLogMessages.MALFORMED, e, e.getMessage());
       endPoint.close();
     }

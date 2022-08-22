@@ -29,7 +29,6 @@ import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SecurityContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.will.WillDetails;
-import io.mapsmessaging.engine.session.will.WillTaskImpl;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -122,7 +121,8 @@ public class Session {
         try {
           return lookupTask.call();
         } catch (Exception e) {
-          throw new RuntimeException(e);
+          future.completeExceptionally(e);
+          return null;
         }
       });
     } else {
@@ -209,8 +209,8 @@ public class Session {
     return new WillTask(sessionImpl.getWillTaskImpl());
   }
 
-  public WillTaskImpl updateWillTopic(WillDetails willDetails) {
-    return sessionImpl.setWillTask(willDetails);
+  public void updateWillTopic(WillDetails willDetails) {
+    sessionImpl.setWillTask(willDetails);
   }
 
   public boolean isRestored() {
