@@ -252,7 +252,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
 
   public void subscribeWildcardQoSnTopicAndPublish(int qos, int version)
-      throws InterruptedException, IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+      throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
@@ -275,6 +275,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
         Assertions.assertFalse(timeout < System.currentTimeMillis());
       }
       count = published.getCount();
+      delay(20);
     }
     Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS), "Expected "+PUBLISH_COUNT+" received count down at "+received.getCount());
     for(int x=0;x<5;x++){
