@@ -96,7 +96,7 @@ class DelayedPublishTest extends MessageAPITest {
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
     Assertions.assertEquals(0, counter.get());
 
-    WaitForState.waitFor(4, TimeUnit.SECONDS, () -> counter.get() == EVENT_COUNT);
+    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> counter.get() == EVENT_COUNT);
     Assertions.assertEquals(EVENT_COUNT, counter.get());
     close(session);
   }
