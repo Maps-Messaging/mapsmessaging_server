@@ -92,6 +92,14 @@ public class BasePacket implements ServerPacket {
     options = new OptionSet();
   }
 
+
+  public void sent(){}
+
+  public boolean isComplete(){
+    return true;
+  }
+
+
   public int incrementResendCount(){
     return resentCount++;
   }

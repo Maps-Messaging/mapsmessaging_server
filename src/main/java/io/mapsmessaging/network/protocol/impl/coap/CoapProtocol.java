@@ -104,6 +104,10 @@ public class CoapProtocol extends ProtocolImpl {
     super.close();
   }
 
+  public int getNextMessageId(){
+    return (int) (messageId.incrementAndGet() & 0xffff);
+  }
+
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Context context = subscriptionState.find(messageEvent.getDestinationName());

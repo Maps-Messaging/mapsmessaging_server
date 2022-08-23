@@ -44,6 +44,9 @@ public class OptionSet {
     optionList.put(option.getId(), option);
   }
 
+  public void removeOption(int id){
+    optionList.remove(id);
+  }
   public boolean hasOption(int id){
     return optionList.containsKey(id);
   }
@@ -115,5 +118,9 @@ public class OptionSet {
       default:
         return new GenericOption(id);
     }
+  }
+
+  public void clearAll() {
+    optionList.clear();
   }
 }

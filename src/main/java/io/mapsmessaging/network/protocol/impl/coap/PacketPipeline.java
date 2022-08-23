@@ -39,6 +39,9 @@ public class PacketPipeline {
       protocol.send(packet);
     }
     else if (outstandingQueue.isEmpty()) {
+      if(!packet.isComplete()){
+        sendQueue.offer(packet);
+      }
       sendPacket(packet);
     } else {
       sendQueue.offer(packet);
@@ -54,16 +57,22 @@ public class PacketPipeline {
   }
 
   public void ack(int messageId) throws IOException {
-    outstandingQueue.remove(messageId);
-    BasePacket packet = sendQueue.poll();
+    BasePacket sent = outstandingQueue.remove(messageId);
+    BasePacket packet;
+    if(sent.isComplete()){
+      packet = sendQueue.poll();
+    }
+    else{
+      packet = sent;
+      packet.sent();
+      packet.setMessageId(protocol.getNextMessageId());
+    }
     if (packet != null) {
       sendPacket(packet);
     }
   }
 
   private final class RetransmissionThread implements Runnable{
-
-
     @Override
     public void run() {
       long now = System.currentTimeMillis();
@@ -85,7 +94,4 @@ public class PacketPipeline {
       }
     }
   }
-
-
-
 }
