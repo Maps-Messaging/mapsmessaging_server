@@ -25,6 +25,12 @@ public class Block extends Option {
     super(id);
   }
 
+  public Block(int id, int number, boolean more, int sizeEx){
+    super(id);
+    this.number = number;
+    this.more = more;
+    this.sizeEx = sizeEx;
+  }
 
   @Override
   public void update(byte[] packed) throws IOException{

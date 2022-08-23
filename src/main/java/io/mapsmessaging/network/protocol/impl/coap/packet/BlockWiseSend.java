@@ -43,17 +43,16 @@ public class BlockWiseSend extends BasePacket {
     }
     setPayload(sendController.get());
     index = sendController.getBlockNumber();
-    Block block2 = (Block) optionSet.getOption(BLOCK2);
-    block2.setMore(!sendController.isLast());
-    block2.setNumber(index);
-    block2.setSizeEx(sizePower);
+    getOptions().add(new Block(BLOCK2, index, !sendController.isLast(), sizePower));
     return super.packFrame(packet);
   }
 
+  @Override
   public void sent(){
     sendController.ack(index);
   }
 
+  @Override
   public boolean isComplete(){
     return !sendController.isComplete();
   }
