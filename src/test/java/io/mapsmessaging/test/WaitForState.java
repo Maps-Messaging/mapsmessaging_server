@@ -20,21 +20,25 @@ package io.mapsmessaging.test;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
+import lombok.SneakyThrows;
 
 public class WaitForState {
 
+  @SuppressWarnings("java:S2925") // We are waiting for a condition to complete
+  @SneakyThrows
   public static void waitFor(long time, TimeUnit timeUnit, Condition condition) throws IOException {
     long timeout = System.currentTimeMillis() + timeUnit.toMillis(time);
     while(timeout > System.currentTimeMillis() && !condition.complete()){
-      LockSupport.parkNanos(100000000);
+      TimeUnit.MILLISECONDS.sleep(20);
     }
   }
 
+  @SuppressWarnings("java:S2925") // We are waiting for a condition to complete
+  @SneakyThrows
   public static void wait(long time, TimeUnit timeUnit) {
     long timeout = System.currentTimeMillis() + timeUnit.toMillis(time);
     while(timeout > System.currentTimeMillis()){
-      LockSupport.parkNanos(100000000);
+      TimeUnit.MILLISECONDS.sleep(20);
     }
   }
 
