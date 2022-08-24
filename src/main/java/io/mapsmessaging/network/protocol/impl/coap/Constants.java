@@ -24,7 +24,6 @@ public class Constants {
 
   // Counters
   public static final int MAX_RETRANSMIT = 4;
-  public static final int NSTART = 1;
 
   private Constants() {
   }

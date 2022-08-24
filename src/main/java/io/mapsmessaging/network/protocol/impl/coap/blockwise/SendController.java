@@ -31,4 +31,7 @@ public class SendController {
     return index == sendPacket.getSize();
   }
 
+  public void resize(int newSize) {
+    sendPacket.resize(newSize, index);
+  }
 }

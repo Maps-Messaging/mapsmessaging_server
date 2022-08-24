@@ -56,15 +56,15 @@ public class PacketPipeline {
     basePacket.setTimeSent(System.currentTimeMillis());
   }
 
-  public void ack(int messageId) throws IOException {
-    BasePacket sent = outstandingQueue.remove(messageId);
+  public void ack(BasePacket ackPacket) throws IOException {
+    BasePacket sent = outstandingQueue.remove(ackPacket.getMessageId());
     BasePacket packet;
     if(sent.isComplete()){
       packet = sendQueue.poll();
     }
     else{
       packet = sent;
-      packet.sent();
+      packet.sent(ackPacket);
       packet.setMessageId(protocol.getNextMessageId());
     }
     if (packet != null) {

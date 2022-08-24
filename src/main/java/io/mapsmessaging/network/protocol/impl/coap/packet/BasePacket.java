@@ -21,15 +21,15 @@ import org.jetbrains.annotations.NotNull;
 public class BasePacket implements ServerPacket {
 
   @Getter
-  private final int id;
+  protected final int id;
 
   @Getter
   @Setter
-  private byte[] token;
+  protected byte[] token;
 
   @Getter
   @Setter
-  private SocketAddress fromAddress;
+  protected SocketAddress fromAddress;
 
   @Getter
   @Setter
@@ -37,26 +37,26 @@ public class BasePacket implements ServerPacket {
 
   @Getter
   @Setter
-  private int version;
+  protected int version;
 
   @Getter
   @Setter
-  Code code;
+  protected Code code;
 
   @Getter
   @Setter
-  private TYPE type;
+  protected TYPE type;
 
   @Getter
   @Setter
-  private int messageId;
+  protected int messageId;
 
   @Getter
-  private final OptionSet options;
+  protected final OptionSet options;
 
   @Getter
   @Setter
-  private byte[] payload;
+  protected byte[] payload;
 
   @Getter
   @Setter
@@ -93,7 +93,7 @@ public class BasePacket implements ServerPacket {
   }
 
 
-  public void sent(){}
+  public void sent(BasePacket response){}
 
   public boolean isComplete(){
     return true;

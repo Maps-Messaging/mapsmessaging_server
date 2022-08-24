@@ -14,8 +14,8 @@ public class BlockWiseSend extends BasePacket {
   private SendController sendController;
   private int index;
 
-  public BlockWiseSend(int id, TYPE type, Code code, int version, int messageId, byte[] token) {
-    super(id, type, code, version, messageId, token);
+  public BlockWiseSend(BasePacket rhs) {
+    super(rhs.id, rhs.type, rhs.code, rhs.version, rhs.messageId, rhs.token);
   }
 
   public void setBlockSize(int size){
@@ -36,11 +36,8 @@ public class BlockWiseSend extends BasePacket {
     OptionSet optionSet = getOptions();
     if(sendController == null){
       sendController = new SendController(getPayload(), blockSize);
-      optionSet.removeOption(BLOCK2);
     }
-    else{
-      getOptions().clearAll(); // Just send the block
-    }
+    optionSet.removeOption(BLOCK2);
     setPayload(sendController.get());
     index = sendController.getBlockNumber();
     getOptions().add(new Block(BLOCK2, index, !sendController.isLast(), sizePower));
@@ -48,13 +45,23 @@ public class BlockWiseSend extends BasePacket {
   }
 
   @Override
-  public void sent(){
+  public void sent(BasePacket ackResponse){
     sendController.ack(index);
+    if(ackResponse.getOptions().hasOption(BLOCK2)){
+      Block block = (Block) ackResponse.getOptions().getOption(BLOCK2);
+      if(block.getSizeEx() != sizePower){
+        sizePower = block.getSizeEx();
+        sendController.resize(1<<(sizePower+4));
+      }
+    }
   }
 
   @Override
   public boolean isComplete(){
-    return !sendController.isComplete();
+    if(sendController == null){
+      return false;
+    }
+    return sendController.isComplete();
   }
 
 }

@@ -33,7 +33,7 @@ public class GetListener extends Listener {
 
       case ACK:
         if (request.getToken() != null) {
-          protocol.ack(request.getMessageId(), request.getToken());
+          protocol.ack(request);
         }
         break;
 

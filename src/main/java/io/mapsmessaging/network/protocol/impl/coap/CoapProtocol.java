@@ -5,6 +5,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.COAP_CREATED;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_PACKET_SENT;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -20,9 +21,11 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.Listener;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.ListenerFactory;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
+import io.mapsmessaging.network.protocol.impl.coap.packet.BlockWiseSend;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Block;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ContentFormat;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ETag;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Format;
@@ -113,7 +116,18 @@ public class CoapProtocol extends ProtocolImpl {
     Context context = subscriptionState.find(messageEvent.getDestinationName());
     if (context == null)
       return;
+    boolean doBlockwise = false;
+    int blockSize = 0;
+    if(context.getRequest().getOptions().hasOption(BLOCK2)){
+      Block block = (Block) context.getRequest().getOptions().getOption(BLOCK2);
+      blockSize = 1<<(block.getSizeEx()+4);
+      doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
+    }
     BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
+    if(doBlockwise){
+      response = new BlockWiseSend(response);
+      ((BlockWiseSend)response).setBlockSize(blockSize);
+    }
     response.setFromAddress(context.getRequest().getFromAddress());
     response.setPayload(messageEvent.getMessage().getOpaqueData());
     setOptions(messageEvent, context, response.getOptions());
@@ -233,7 +247,7 @@ public class CoapProtocol extends ProtocolImpl {
   }
 
   protected void send(BasePacket response) throws IOException {
-    Packet responsePacket = new Packet(1024, false);
+    Packet responsePacket = new Packet(2048, false);
     response.packFrame(responsePacket);
     responsePacket.setFromAddress(response.getFromAddress());
     responsePacket.flip();
@@ -256,10 +270,11 @@ public class CoapProtocol extends ProtocolImpl {
     return "RFC7252";
   }
 
-  public void ack(int messageId, byte[] token) throws IOException {
+  public void ack(BasePacket ackPacket) throws IOException {
+    byte[] token = ackPacket.getToken();
     if(token != null) {
-      transactionState.ack(messageId, token);
+      transactionState.ack(ackPacket.getMessageId(), token);
     }
-    outboundPipeline.ack(messageId);
+    outboundPipeline.ack(ackPacket);
   }
 }

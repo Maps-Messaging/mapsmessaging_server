@@ -1,11 +1,13 @@
 package io.mapsmessaging.network.protocol.impl.coap.blockwise;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SendPacket {
 
-  private final int blockSize;
+  private int blockSize;
   private final List<byte[]> blocks;
 
   public SendPacket(byte[] full, int blockSize){
@@ -38,6 +40,45 @@ public class SendPacket {
       System.arraycopy(data, pos, block, 0, block.length);
       blocks.add(block);
       pos += block.length;
+    }
+  }
+
+  // Remote client has requested a change to the buffer size, so we need to
+  // a) Rebuild the complete byte[]
+  // b) update the block size
+  // c) Save the buffers we HAVE sent, so we can add them to the end
+  // d) rebuild the blocks FROM the start of the next index
+  // e) pad the start of the list with the buffers already sent to match what we have already sent
+  public void resize(int newSize, int index) {
+    //a)
+    ByteArrayOutputStream tmp = new ByteArrayOutputStream(1024);
+    for(byte[] buf:blocks){
+      try {
+        tmp.write(buf);
+      } catch (IOException e) {
+        //
+      }
+    }
+    byte[] full = tmp.toByteArray();
+    int offset = blockSize * index;
+
+    //b)
+    blockSize = newSize;
+
+    //c)
+    List<byte[]> sentBlocks = new ArrayList<>();
+    for(int x=0;x<index;x++){
+      sentBlocks.add(blocks.get(x));
+    }
+
+    //d)
+    byte[] remaining = new byte[(full.length - offset)];
+    System.arraycopy(full, offset, remaining, 0, remaining.length);
+    packList(remaining);
+
+    // e)
+    for(int x=0;x<index;x++){
+      blocks.add(sentBlocks.get(x));
     }
   }
 }
