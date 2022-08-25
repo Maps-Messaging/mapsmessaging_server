@@ -19,7 +19,7 @@ public class CoapProtocolFactory extends ProtocolImplFactory {
   private final List<CoapInterfaceManager> managers;
 
   public CoapProtocolFactory() {
-    super("CoAP", "Constrained Application Protocol RFC7252", null);
+    super("CoAP", "Constrained Application Protocol RFC7252, RFC7641, RFC7959", null);
     managers = new ArrayList<>();
   }
 
