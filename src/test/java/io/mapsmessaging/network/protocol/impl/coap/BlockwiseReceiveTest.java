@@ -28,6 +28,7 @@ class BlockwiseReceiveTest extends BaseCoapTest {
       Request request = Request.newGet();
       request.getOptions().setBlock2(size, false, 0);
       CoapResponse response1 = client.advanced(request);
+      Assertions.assertNotNull(response1); // Should not be null
       Assertions.assertArrayEquals(tmp, response1.getPayload());
       client.shutdown();
   }
