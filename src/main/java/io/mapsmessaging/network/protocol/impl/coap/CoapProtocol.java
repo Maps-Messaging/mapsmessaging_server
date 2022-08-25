@@ -87,6 +87,7 @@ public class CoapProtocol extends ProtocolImpl {
     this.coapInterfaceManager = coapInterfaceManager;
     SessionContext context = new SessionContext(endPoint.getName(), this);
     context.setPersistentSession(false);
+    context.setReceiveMaximum(5);
     context.setDuration(120);
     session = SessionManager.getInstance().create(context, this);
     session.start();
@@ -114,14 +115,20 @@ public class CoapProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Context context = subscriptionState.find(messageEvent.getDestinationName());
-    if (context == null)
+    if (context == null) {
       return;
+    }
     boolean doBlockwise = false;
     int blockSize = 0;
     if(context.getRequest().getOptions().hasOption(BLOCK2)){
       Block block = (Block) context.getRequest().getOptions().getOption(BLOCK2);
-      blockSize = 1<<(block.getSizeEx()+4);
-      doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
+      if(block.getSizeEx() != 0b111){
+        blockSize = 1<<(block.getSizeEx()+4);
+        doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
+      }
+      else{
+        System.err.println("BERT Not Supported");
+      }
     }
     BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
     if(doBlockwise){
@@ -136,6 +143,8 @@ public class CoapProtocol extends ProtocolImpl {
     } else {
       response.setMessageId((int) (messageId.incrementAndGet() & 0xffff));
     }
+    response.setCallback(messageEvent.getCompletionTask());
+
     try {
       transactionState.sent(context.getRequest().getToken(), response.getMessageId(), messageEvent.getMessage().getIdentifier(), messageEvent.getSubscription());
       outboundPipeline.send(response);
@@ -175,7 +184,7 @@ public class CoapProtocol extends ProtocolImpl {
       optionSet.add(eTag);
     }
     if (context.isObserve()) {
-      Observe option = new Observe((int) (messageEvent.getMessage().getIdentifier() % 0xffff));
+      Observe option = new Observe((int) (context.getObserveId().incrementAndGet() & 0xffff));
       optionSet.putOption(option);
     }
     List<SchemaConfig> schemas = SchemaManager.getInstance().getSchemaByContext(messageEvent.getDestinationName());

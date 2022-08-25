@@ -90,7 +90,7 @@ public class GetListener extends Listener {
         response = null;
         SubscriptionContext context = new SubscriptionContext(path);
         context.setReceiveMaximum(1);
-        context.setBrowserFlag(true);
+        context.setMaxAtRest(1);
         String selector = getSelector(request);
         if(selector != null){
           context.setSelector(selector);
