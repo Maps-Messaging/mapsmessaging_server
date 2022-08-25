@@ -1,5 +1,6 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -84,5 +85,42 @@ class CoapObserverTest extends BaseCoapTest {
     Assertions.assertEquals(0, counter.get());
 
     client.shutdown();
+  }
+
+
+  @Test
+  void testLargePublishRateSubscriber() throws ConnectorException, IOException, InterruptedException {
+    String testUri = getUri();
+    CoapClient client = new CoapClient(testUri);
+    CoapClient publisher = new CoapClient(testUri);
+    AtomicLong counter = new AtomicLong(0);
+    CoapObserveRelation observeRelation = client.observe(new CoapHandler() {
+      @Override
+      public void onLoad(CoapResponse coapResponse) {
+        System.err.println("received::"+counter.get());
+        counter.incrementAndGet();
+      }
+
+      @Override
+      public void onError() {
+        System.err.println("on-error");
+      }
+    }, 10000);
+
+    for(int x=0;x<1000;x++) {
+      publisher.put("Test payload...".getBytes(), 0);
+   }
+    TimeUnit.SECONDS.sleep(1);
+    long count = 0;
+    AtomicLong init = new AtomicLong(counter.get()+1);
+    while(count < 10){
+      publisher.put("Test payload...".getBytes(), 0);
+      WaitForState.waitFor(5, TimeUnit.SECONDS, () -> counter.get() == init.get());
+      Assertions.assertEquals(init.get(), counter.get());
+      init.incrementAndGet();
+      count++;
+    }
+    client.shutdown();
+    publisher.shutdown();
   }
 }
