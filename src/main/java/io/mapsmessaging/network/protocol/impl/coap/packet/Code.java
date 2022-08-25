@@ -43,6 +43,7 @@ public enum Code {
   VALID(SUCCESS, 3, "Valid"),
   CHANGED(SUCCESS, 4, "Changed"),
   CONTENT(SUCCESS, 5, "Content"),
+  CONTINUE(SUCCESS, 31, "Continue"),
 
   BAD_REQUEST(ERROR, 0, "Bad Request"),
   UNAUTHORISED(ERROR, 1, "Unauthorized"),

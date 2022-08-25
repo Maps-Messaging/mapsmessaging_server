@@ -96,7 +96,7 @@ public abstract class PublishListener extends  Listener {
     ReceivePacket receivePacket = blockBasedPackets.computeIfAbsent(path, k -> new ReceivePacket(block.getSizeEx()));
     receivePacket.add(block.getNumber(), request.getPayload());
     if (request.getType().equals(TYPE.CON)) {
-      BasePacket response = request.buildAckResponse(Code.CHANGED);
+      BasePacket response = request.buildAckResponse(Code.CONTINUE);
       try {
         protocol.sendResponse(response);
       } catch (IOException e) {
@@ -107,7 +107,7 @@ public abstract class PublishListener extends  Listener {
         }
       }
     }
-    if(block.isMore()){
+    if(!block.isMore()){
       return false;
     }
     blockBasedPackets.remove(path);
