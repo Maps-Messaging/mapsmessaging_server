@@ -31,10 +31,11 @@ class CoapObserverTest extends BaseCoapTest {
       }
     }, 4);
 
-    client.put("Test payload...".getBytes(), 0);
-    client.put("Test payload...".getBytes(), 0);
-    client.put("Test payload...".getBytes(), 0);
-    client.put("Test payload...".getBytes(), 0);
+
+    for(int x=0;x<4;x++) {
+      putAndWait(client, counter, x+1);
+    }
+
     int count = 0;
     while(counter.get() != 4 && count < 10){
       TimeUnit.SECONDS.sleep(1);
@@ -60,16 +61,10 @@ class CoapObserverTest extends BaseCoapTest {
       }
     }, 8);
 
-    client.put("Test payload...".getBytes(), 0);
-    client.put("Test payload...".getBytes(), 0);
-    client.put("Test payload...".getBytes(), 0);
-    client.put("Test payload...".getBytes(), 0);
-    int count = 0;
-    while(counter.get() != 4 && count < 10){
-      TimeUnit.SECONDS.sleep(1);
-      count++;
+    for(int x=0;x<4;x++) {
+      putAndWait(client, counter, x+1);
     }
-    Assertions.assertEquals(4, counter.get());
+
     observeRelation.proactiveCancel();
     TimeUnit.SECONDS.sleep(1);
     counter.set(0);
@@ -77,7 +72,7 @@ class CoapObserverTest extends BaseCoapTest {
     client.put("Test payload...".getBytes(), 0);
     client.put("Test payload...".getBytes(), 0);
     client.put("Test payload...".getBytes(), 0);
-    count = 0;
+    int count = 0;
     while(counter.get() == 0 && count < 2){
       TimeUnit.SECONDS.sleep(1);
       count++;
@@ -87,6 +82,13 @@ class CoapObserverTest extends BaseCoapTest {
     client.shutdown();
   }
 
+
+  private void putAndWait(CoapClient client, AtomicLong counter, long expected) throws ConnectorException, IOException {
+    client.put("Test payload...".getBytes(), 0);
+    WaitForState.waitFor(100, TimeUnit.MILLISECONDS, () -> counter.get() == expected);
+    Assertions.assertEquals(expected, counter.get());
+
+  }
 
   @Test
   void testLargePublishRateSubscriber() throws ConnectorException, IOException, InterruptedException {
