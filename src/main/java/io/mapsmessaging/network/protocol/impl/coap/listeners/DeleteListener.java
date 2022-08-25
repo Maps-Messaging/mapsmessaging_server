@@ -6,7 +6,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 
-public class DeleteListener extends Listener {
+public class DeleteListener extends PublishListener {
 
   @Override
   public BasePacket handle(BasePacket request, CoapProtocol protocol) {

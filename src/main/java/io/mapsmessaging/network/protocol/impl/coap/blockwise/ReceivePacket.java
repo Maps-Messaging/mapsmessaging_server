@@ -12,7 +12,7 @@ public class ReceivePacket {
 
   public ReceivePacket(int blockSize){
     blocks = new ArrayList<>();
-    this.blockSize = blockSize;
+    this.blockSize = 1 << ( blockSize +4);
   }
 
   public void add(int index, byte[] block){

@@ -127,7 +127,7 @@ public class CoapProtocol extends ProtocolImpl {
         doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
       }
       else{
-        System.err.println("BERT Not Supported");
+        // ToDo Log that BERT is not supported
       }
     }
     BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
