@@ -122,6 +122,7 @@ public class DestinationImpl implements BaseDestination {
   private final TransactionalMessageManager transactionMessageManager;
   private final DestinationStats stats;
 
+  @Getter
   private final EventReaperQueue completionQueue;
 
   @Getter

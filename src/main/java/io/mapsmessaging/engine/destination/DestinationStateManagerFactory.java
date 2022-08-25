@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
+import io.mapsmessaging.engine.destination.subscription.state.LimitedMessageStateManager;
 import io.mapsmessaging.engine.destination.subscription.state.MessageStateManagerImpl;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
@@ -38,8 +39,11 @@ public class DestinationStateManagerFactory {
     return instance;
   }
 
-  public MessageStateManagerImpl create(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+  public MessageStateManagerImpl create(DestinationImpl destinationImpl, boolean persistent, String name, int maxAtRest) throws IOException {
     BitSetFactory factory = createFactory(destinationImpl, persistent, name);
+    if(maxAtRest > 0){
+      return new LimitedMessageStateManager(name, factory, maxAtRest, destinationImpl.getCompletionQueue());
+    }
     return new MessageStateManagerImpl(name, factory);
   }
 

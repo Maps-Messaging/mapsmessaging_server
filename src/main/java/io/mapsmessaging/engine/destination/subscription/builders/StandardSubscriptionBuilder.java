@@ -41,7 +41,7 @@ public class StandardSubscriptionBuilder extends SubscriptionBuilder {
 
   public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
     AcknowledgementController acknowledgementController = createAcknowledgementController(context.getAcknowledgementController());
-    MessageStateManagerImpl stateManager = DestinationStateManagerFactory.getInstance().create(destination, isPersistent, uniqueSessionId);
+    MessageStateManagerImpl stateManager = DestinationStateManagerFactory.getInstance().create(destination, isPersistent, uniqueSessionId, context.getMaxAtRest());
     if (parserExecutor == null) {
       return new DestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager);
     } else {

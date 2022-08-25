@@ -44,37 +44,52 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
   @Getter
   private String destinationName;
+
   @Getter
   @Setter
   private BitSet flags;
+
   @Getter
   private String rootPath;
 
   @Getter
   @Setter
   private ClientAcknowledgement acknowledgementController;
+
   @Getter
   private String sharedName;
+
   @Getter
   @Setter
   private String selector;
+
   @Getter
   private String alias;
+
   @Getter
   @Setter
   private long subscriptionId;
+
+  @Getter
+  @Setter
+  private int maxAtRest;
+
   @Getter
   @Setter
   private int receiveMaximum;
+
   @Getter
   @Setter
   private RetainHandler retainHandler;
+
   @Getter
   @Setter
   private QualityOfService qualityOfService;
+
   @Getter
   @Setter
   private CreditHandler creditHandler;
+
   @Getter
   @Setter
   private DestinationMode destinationMode;
@@ -87,10 +102,12 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   private boolean replaced;
 
   public SubscriptionContext() {
+    maxAtRest =0;
   }
 
   public SubscriptionContext(String destinationName) {
     this.destinationName = destinationName;
+    maxAtRest =0;
     alias = destinationName; // Make the Alias the same as the destination. In some protocols this can be overridden
     flags = new BitSet(8);
     receiveMaximum = 1;
@@ -105,6 +122,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   public SubscriptionContext(SubscriptionContext rhs, String destinationName, String alias) {
     this.destinationName = destinationName;
     this.alias = alias;
+    maxAtRest =0;
     acknowledgementController = rhs.acknowledgementController;
     sharedName = rhs.sharedName;
     selector = rhs.selector;
@@ -131,6 +149,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
     subscriptionId = readLong(inputStream);
     receiveMaximum = readInt(inputStream);
+    maxAtRest = readInt(inputStream);
     flags = BitSet.valueOf(readByteArray(inputStream));
   }
 
@@ -150,6 +169,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
     writeLong(outputStream, subscriptionId);
     writeInt(outputStream, receiveMaximum);
+    writeInt(outputStream, maxAtRest);
     writeByteArray(outputStream, getFlags().toByteArray());
   }
 
