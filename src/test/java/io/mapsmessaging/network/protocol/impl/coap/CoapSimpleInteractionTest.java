@@ -72,7 +72,6 @@ class CoapSimpleInteractionTest extends BaseCoapTest {
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
 
-    System.err.println("No storing");
     response = client.putIfMatch("This should NOT change", 0, "tag5".getBytes());
     Assertions.assertNotNull(response);
     Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeClass, response.getCode().codeClass);

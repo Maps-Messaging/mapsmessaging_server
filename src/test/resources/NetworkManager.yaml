@@ -161,6 +161,8 @@ NetworkManager:
         url: udp://0.0.0.0:5683/
         name: "CoAP Interface"
         protocol: coap
+        maxBlockSize: 512
+        idleTimePeriod: 120
 
       -
         url: ssl://0.0.0.0:9999/
