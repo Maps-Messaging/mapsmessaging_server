@@ -115,7 +115,11 @@ public class UDPEndPointServer extends EndPointServer {
   @Override
   public void close() {
     for (UDPEndPoint endPoint : bondedEndPoints) {
-      endPoint.close();
+      try {
+        endPoint.close();
+      } catch (IOException e) {
+        // We can ignore since we are closing
+      }
     }
   }
 

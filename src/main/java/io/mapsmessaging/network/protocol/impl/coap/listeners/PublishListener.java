@@ -14,7 +14,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
-import io.mapsmessaging.network.protocol.impl.coap.blockwise.ReceivePacket;
+import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveState;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
@@ -36,9 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class PublishListener extends  Listener {
 
-
-  private final Map<String, ReceivePacket> blockBasedPackets = new LinkedHashMap<>();
-
   private void handleEvent(boolean isDelete, Boolean exists, Destination destination, BasePacket request, CoapProtocol protocol) throws IOException {
     Code code = Boolean.TRUE.equals(exists) ? Code.CHANGED : Code.CREATED;
     if (isDelete) {
@@ -54,7 +51,6 @@ public abstract class PublishListener extends  Listener {
       destination.storeMessage(build(request));
     }
   }
-
 
   protected Message build(BasePacket request){
     MessageBuilder messageBuilder = new MessageBuilder();
@@ -91,10 +87,10 @@ public abstract class PublishListener extends  Listener {
     return messageBuilder.build();
   }
 
-  private boolean handleBlock(BasePacket request, String path, OptionSet optionSet, CoapProtocol protocol){
+  private boolean handleBlock(BasePacket request, String path, OptionSet optionSet, CoapProtocol protocol) {
     Block block = (Block) optionSet.getOption(BLOCK1);
-    ReceivePacket receivePacket = blockBasedPackets.computeIfAbsent(path, k -> new ReceivePacket(block.getSizeEx()));
-    receivePacket.add(block.getNumber(), request.getPayload());
+    BlockReceiveState blockReceiveState = protocol.getBlockReceiveMonitor().registerOrGet(block, path);
+    blockReceiveState.getReceivePacket().add(block.getNumber(), request.getPayload());
     if (request.getType().equals(TYPE.CON)) {
       BasePacket response = request.buildAckResponse(Code.CONTINUE);
       try {
@@ -110,8 +106,8 @@ public abstract class PublishListener extends  Listener {
     if (block.isMore()) {
       return false;
     }
-    blockBasedPackets.remove(path);
-    request.setPayload(receivePacket.getFull());
+    protocol.getBlockReceiveMonitor().complete(path);
+    request.setPayload(blockReceiveState.getReceivePacket().getFull());
     return true;
   }
 

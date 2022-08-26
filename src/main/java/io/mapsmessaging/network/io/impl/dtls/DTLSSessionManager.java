@@ -97,7 +97,11 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
   @Override
   public void close() {
     sessionMapping.close();
-    udpEndPoint.close();
+    try {
+      udpEndPoint.close();
+    } catch (IOException e) {
+      // We are closing and, hence shutting down
+    }
   }
 
   public void connectionComplete(DTLSEndPoint endPoint) throws IOException {

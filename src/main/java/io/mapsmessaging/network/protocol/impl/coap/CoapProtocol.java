@@ -22,6 +22,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveMonitor;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.Listener;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.ListenerFactory;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
@@ -76,6 +77,8 @@ public class CoapProtocol extends ProtocolImpl {
   private final CoapInterfaceManager coapInterfaceManager;
   private final AtomicLong lastAccess;
 
+  @Getter
+  private final BlockReceiveMonitor blockReceiveMonitor;
   private boolean isClosed;
 
 
@@ -103,6 +106,7 @@ public class CoapProtocol extends ProtocolImpl {
     maxBlockSize = (int) endPoint.getConfig().getProperties().getLongProperty("maxBlockSize", 128);
     int idle = (int) (endPoint.getConfig().getProperties().getLongProperty("idleTimePeriod", 120));
     keepAlive = idle * 1000L;
+    blockReceiveMonitor = new BlockReceiveMonitor();
 
     String sessionName = socketAddress.toString();
     sessionName = sessionName.replace(":", "_");
@@ -317,6 +321,7 @@ public class CoapProtocol extends ProtocolImpl {
         // we are closing, we can ignore this
       }
     }
+    blockReceiveMonitor.scanForIdle();
   }
 
   public void ack(BasePacket ackPacket) throws IOException {

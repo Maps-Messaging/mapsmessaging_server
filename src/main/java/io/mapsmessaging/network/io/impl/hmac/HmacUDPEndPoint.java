@@ -36,7 +36,7 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   }
 
   @Override
-  public void close() {
+  public void close() throws IOException {
     super.close();
     cacheMap.close();
   }
