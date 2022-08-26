@@ -25,11 +25,15 @@ public class SubscriptionState {
   }
 
 
-  public Context remove(String path){
+  public Context remove(String path) {
     return state.remove(path);
   }
 
-  public boolean exists(String path){
+  public boolean exists(String path) {
     return state.containsKey(path);
+  }
+
+  public boolean isEmpty() {
+    return state.isEmpty();
   }
 }

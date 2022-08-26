@@ -123,7 +123,6 @@ public abstract class PublishListener extends  Listener {
       path = uriPath.toString();
     }
     if(optionSet.hasOption(BLOCK1) && !handleBlock(request, path, optionSet, protocol)){
-      System.err.println("Receiving blocks");
       return;
     }
 

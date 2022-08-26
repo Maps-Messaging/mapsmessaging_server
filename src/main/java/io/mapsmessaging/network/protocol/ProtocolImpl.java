@@ -35,6 +35,7 @@ import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,7 +87,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
     String endPointName = socketAddress.toString();
     endPointName = endPointName.replace(":", "_");
-    List<String> jmsList = endPoint.getJMXTypePath();
+    List<String> jmsList = new ArrayList<>(endPoint.getJMXTypePath());
     jmsList.add("remoteEndPoint=" + endPointName);
 
     mbean = new ProtocolJMX(jmsList, this);

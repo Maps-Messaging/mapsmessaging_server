@@ -101,11 +101,14 @@ public class CoapProtocol extends ProtocolImpl {
     this.coapInterfaceManager = coapInterfaceManager;
     mtu = coapInterfaceManager.getMtu();
     maxBlockSize = (int) endPoint.getConfig().getProperties().getLongProperty("maxBlockSize", 128);
-    keepAlive = (int) (endPoint.getConfig().getProperties().getLongProperty("idleTimePeriod", 120) * 1000);
-    SessionContext context = new SessionContext(endPoint.getName(), this);
+    int idle = (int) (endPoint.getConfig().getProperties().getLongProperty("idleTimePeriod", 120));
+    keepAlive = idle * 1000L;
+
+    String sessionName = socketAddress.toString();
+    sessionName = sessionName.replace(":", "_");
+    SessionContext context = new SessionContext(sessionName, this);
     context.setPersistentSession(false);
     context.setReceiveMaximum(5);
-    context.setDuration(120);
     session = SessionManager.getInstance().create(context, this);
     session.start();
     logger.log(COAP_CREATED, socketAddress, mtu, maxBlockSize);
@@ -304,8 +307,9 @@ public class CoapProtocol extends ProtocolImpl {
     return "RFC7252, RFC7641, RFC7959";
   }
 
+  @Override
   public void sendKeepAlive() {
-    if (lastAccess.get() < System.currentTimeMillis() + getTimeOut()) {
+    if (lastAccess.get() < System.currentTimeMillis() + getTimeOut() && subscriptionState.isEmpty()) {
       logger.log(COAP_SESSION_TIMED_OUT, socketAddress, getTimeOut());
       try {
         close();
