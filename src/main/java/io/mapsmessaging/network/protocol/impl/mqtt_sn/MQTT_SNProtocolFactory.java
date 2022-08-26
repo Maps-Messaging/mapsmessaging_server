@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
@@ -30,12 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 // The protocol is MQTT_SN so it makes sense
 @java.lang.SuppressWarnings("squid:S00101")
 public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
-
-
-  // https://en.wikipedia.org/wiki/User_Datagram_Protocol
-  private static final int IPV4_DATAGRAM_HEADER_SIZE = 20;
-  private static final int IPV6_DATAGRAM_HEADER_SIZE = 40;
-  private static final int LORA_DATAGRAM_HEADER_SIZE = 4;
 
   private final Map<EndPoint, MQTTSNInterfaceManager> mappedInterfaces;
 
@@ -69,6 +64,12 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
+    int datagramSize = NetworkInfoHelper.getMTU(info);
+    if (datagramSize > 0) {
+      endPoint.getConfig().getProperties().put("serverReadBufferSize", "" + datagramSize * 2);
+      endPoint.getConfig().getProperties().put("serverWriteBufferSize", "" + datagramSize * 2);
+    }
+
     byte gatewayId;
     String gatewayConfig = endPoint.getConfig().getProperties().getProperty("gatewayId", "1");
     try {

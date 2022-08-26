@@ -203,7 +203,7 @@ public class MQTTProtocol extends ProtocolImpl {
       if (response != null) {
         sentMessageAverages.increment();
         if (logger.isInfoEnabled()) {
-          logger.log(ServerLogMessages.RESPONSE_PACKET, response.toString());
+          logger.log(ServerLogMessages.RESPONSE_PACKET, response);
         }
         selectorTask.push(response);
       }

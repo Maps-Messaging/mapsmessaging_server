@@ -593,20 +593,24 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
 
   //<editor-fold desc="Server Discovery, mDNS, log messages">
-  DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to start" ),
-  DISCOVERY_FAILED_TO_REGISTER(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to register {}" ),
+  DISCOVERY_FAILED_TO_START(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to start"),
+  DISCOVERY_FAILED_TO_REGISTER(LEVEL.WARN, SERVER_CATEGORY.DISCOVERY, "The discovery engine failed to register {}"),
   DISCOVERY_REGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Registered new mDNS service {}"),
   DISCOVERY_DEREGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Deregistered mDNS service {}"),
   DISCOVERY_DEREGISTERED_ALL(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed all registered mDNS services"),
   //</editor-fold>
 
-  COAP_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created new CoAP protocol handler for {}"),
+  COAP_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created new CoAP protocol handler for {}, MTU:{}, MaxBlockSize:{}"),
   COAP_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Closed CoAP protocol handler for {}"),
+  COAP_RECEIVED_RESET(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Received CoAP reset packet for {}"),
+
   COAP_PACKET_PROCESSED(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Handling CoAP packet {} for {}"),
   COAP_PACKET_SENT(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Sent CoAP packet {} for {}"),
-
   COAP_FAILED_TO_SEND(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoAP failed to send packet to {}"),
   COAP_FAILED_TO_PROCESS(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoAP failed to process packet from {}"),
+
+  COAP_BERT_NOT_SUPPORTED(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "BERT block not currently supported for {}"),
+  COAP_BLOCK2_REQUEST(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Block2 packet received, Message No: {}, Block Size: {}, has more:{}"),
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");

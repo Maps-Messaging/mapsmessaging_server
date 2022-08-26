@@ -25,6 +25,7 @@ import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
@@ -35,7 +36,6 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 
 public class UDPEndPointServer extends EndPointServer {
@@ -62,21 +62,13 @@ public class UDPEndPointServer extends EndPointServer {
   }
 
   protected List<UDPInterfaceInformation> createInterfaceList(InetSocketAddress inetSocketAddress) throws SocketException {
-    List<UDPInterfaceInformation> result = new ArrayList<>();
-
     NetworkInterface inetAddress = NetworkInterface.getByInetAddress(inetSocketAddress.getAddress());
     if (inetAddress != null) {
+      List<UDPInterfaceInformation> result = new ArrayList<>();
       result.add(new UDPInterfaceInformation(inetAddress));
-    } else {
-      Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
-      while (enumeration.hasMoreElements()) {
-        NetworkInterface networkInterface = enumeration.nextElement();
-        if (!networkInterface.getInterfaceAddresses().isEmpty()) {
-          result.add(new UDPInterfaceInformation(networkInterface));
-        }
-      }
+      return result;
     }
-    return result;
+    return NetworkInfoHelper.createInterfaceList();
   }
 
   @Override

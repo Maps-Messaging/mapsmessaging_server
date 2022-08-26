@@ -1,10 +1,13 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_BERT_NOT_SUPPORTED;
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_BLOCK2_REQUEST;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_CLOSED;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_CREATED;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_PACKET_SENT;
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_RECEIVED_RESET;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
 import io.mapsmessaging.api.MessageEvent;
@@ -72,7 +75,13 @@ public class CoapProtocol extends ProtocolImpl {
   private final CoapInterfaceManager coapInterfaceManager;
   private boolean isClosed;
 
-  protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress) throws LoginException, IOException {
+  @Getter
+  private final int mtu;
+
+  private final int maxBlockSize;
+
+  protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress)
+      throws LoginException, IOException {
     super(endPoint);
     logger = LoggerFactory.getLogger(CoapProtocol.class);
     isClosed = false;
@@ -85,13 +94,15 @@ public class CoapProtocol extends ProtocolImpl {
     duplicationManager = new DuplicationManager(1);
     this.socketAddress = socketAddress;
     this.coapInterfaceManager = coapInterfaceManager;
+    mtu = coapInterfaceManager.getMtu();
+    maxBlockSize = (int) endPoint.getConfig().getProperties().getLongProperty("maxBlockSize", 128);
     SessionContext context = new SessionContext(endPoint.getName(), this);
     context.setPersistentSession(false);
     context.setReceiveMaximum(5);
     context.setDuration(120);
     session = SessionManager.getInstance().create(context, this);
     session.start();
-    logger.log(COAP_CREATED, socketAddress);
+    logger.log(COAP_CREATED, socketAddress, mtu, maxBlockSize);
   }
 
   @Override
@@ -125,9 +136,10 @@ public class CoapProtocol extends ProtocolImpl {
       if(block.getSizeEx() != 0b111){
         blockSize = 1<<(block.getSizeEx()+4);
         doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
+        logger.log(COAP_BLOCK2_REQUEST, block.getNumber(), block.getSizeEx(), block.isMore());
       }
       else{
-        // ToDo Log that BERT is not supported
+        logger.log(COAP_BERT_NOT_SUPPORTED, socketAddress);
       }
     }
     BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
@@ -204,11 +216,12 @@ public class CoapProtocol extends ProtocolImpl {
     try {
       BasePacket basePacket = packetFactory.parseFrame(packet);
       if (basePacket != null) {
-        logger.log(COAP_PACKET_SENT, basePacket, packet.getFromAddress());
         if(basePacket.getType() == TYPE.RST){
+          logger.log(COAP_RECEIVED_RESET, packet.getFromAddress());
           close();
           return false;
         }
+        logger.log(COAP_PACKET_SENT, basePacket, packet.getFromAddress());
         BasePacket duplicateResponse = duplicationManager.getResponse(basePacket.getMessageId());
         if(duplicateResponse != null){
           outboundPipeline.send(duplicateResponse);
@@ -256,7 +269,7 @@ public class CoapProtocol extends ProtocolImpl {
   }
 
   protected void send(BasePacket response) throws IOException {
-    Packet responsePacket = new Packet(2048, false);
+    Packet responsePacket = new Packet(mtu, false);
     response.packFrame(responsePacket);
     responsePacket.setFromAddress(response.getFromAddress());
     responsePacket.flip();

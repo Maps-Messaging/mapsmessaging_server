@@ -12,15 +12,19 @@ import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import javax.security.auth.login.LoginException;
+import lombok.Getter;
 
 public class CoapInterfaceManager implements SelectorCallback {
 
+  @Getter
+  private final int mtu;
   private final EndPoint endPoint;
   private final HashMap<SocketAddress, CoapProtocol> currentSessions;
   private final ProtocolMessageTransformation transformation;
 
-  public CoapInterfaceManager(EndPoint endPoint) throws IOException {
+  public CoapInterfaceManager(EndPoint endPoint, int mtu) throws IOException {
     this.endPoint = endPoint;
+    this.mtu = mtu;
     currentSessions = new LinkedHashMap<>();
     SelectorTask selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);

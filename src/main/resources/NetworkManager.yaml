@@ -152,13 +152,13 @@ NetworkManager:
         advertiseGateway: true
         ssl_SSLContext: DTLS
 
-      -
-        url: udp://0.0.0.0:5683/
+      - url: udp://0.0.0.0:5683/
         name: "CoAP Interface"
         protocol: coap
+        maxBlockSize: 512
 
-      -
-        url: udp://0.0.0.0:2442/
+
+      - url: udp://0.0.0.0:2442/
         name: "V2 predefined"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 10

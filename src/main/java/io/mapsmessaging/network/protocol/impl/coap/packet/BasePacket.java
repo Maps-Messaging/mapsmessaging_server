@@ -93,16 +93,19 @@ public class BasePacket implements ServerPacket {
   }
 
 
-  public void sent(BasePacket response){}
+  public void sent(BasePacket response) {
+    // this is only used when a single packet results in multiple response packets like a Block
+  }
 
-  public boolean isComplete(){
+  public boolean isComplete() {
     return true;
   }
 
 
-  public int incrementResendCount(){
+  public int incrementResendCount() {
     return resentCount++;
   }
+
   public BasePacket buildUpdatePacket(Code code) {
     TYPE responseType =type.equals(TYPE.CON) ? TYPE.CON : TYPE.NON;
     return new BasePacket(id,responseType, code, 1, messageId, token );
@@ -160,20 +163,28 @@ public class BasePacket implements ServerPacket {
           currentDelta = (int) optionId - currentOptionId;
           currentOptionId = (int) optionId;
         }
-      }
-      else {
+      } else {
         packOption(packet, currentDelta, option.pack());
       }
     }
-    if(payload != null && payload.length > 0){
-      int payloadMarker = 0xff;
-      packet.put((byte)payloadMarker);
-      packet.put(payload);
-    }
+    packPayload(packet);
     return packet.position();
   }
 
-  private void packOption(Packet packet, int optionId, byte[] data){
+  private void packPayload(Packet packet) {
+    if (payload != null && payload.length > 0) {
+      packet.put((byte) 0xff);
+      int available = packet.available();
+      if (available >= payload.length) {
+        packet.put(payload);
+      } else {
+
+        packet.put(payload, 0, available);
+      }
+    }
+  }
+
+  private void packOption(Packet packet, int optionId, byte[] data) {
     int optionIdSize = computeVariableValue(optionId);
     int optionSize = computeVariableValue(data.length);
     byte optionHeader = (byte) ((optionIdSize << 4) | (optionSize & 0xf));
