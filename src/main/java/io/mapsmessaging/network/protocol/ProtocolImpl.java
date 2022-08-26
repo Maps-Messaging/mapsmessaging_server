@@ -34,6 +34,8 @@ import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +65,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   protected ProtocolMessageTransformation transformation;
   protected final Map<String, Transformer> destinationTransformerMap;
 
-  private final ProtocolJMX mbean;
+  protected final ProtocolJMX mbean;
   protected long keepAlive;
   private boolean connected;
   private boolean completed;
@@ -77,6 +79,22 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
   }
+
+  protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
+    this.endPoint = endPoint;
+    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
+    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
+    String endPointName = socketAddress.toString();
+    endPointName = endPointName.replace(":", "_");
+    List<String> jmsList = endPoint.getJMXTypePath();
+    jmsList.add("remoteEndPoint=" + endPointName);
+
+    mbean = new ProtocolJMX(jmsList, this);
+    connected = false;
+    completed = false;
+    destinationTransformerMap = new ConcurrentHashMap<>();
+  }
+
 
   public void completedConnection() {
     if (!completed) {

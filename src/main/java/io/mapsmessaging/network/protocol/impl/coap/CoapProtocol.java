@@ -8,6 +8,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_PACKET_SENT;
 import static io.mapsmessaging.logging.ServerLogMessages.COAP_RECEIVED_RESET;
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_SESSION_TIMED_OUT;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
 import io.mapsmessaging.api.MessageEvent;
@@ -73,7 +74,10 @@ public class CoapProtocol extends ProtocolImpl {
   private final AtomicLong messageId;
   private final SocketAddress socketAddress;
   private final CoapInterfaceManager coapInterfaceManager;
+  private final AtomicLong lastAccess;
+
   private boolean isClosed;
+
 
   @Getter
   private final int mtu;
@@ -82,7 +86,8 @@ public class CoapProtocol extends ProtocolImpl {
 
   protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress)
       throws LoginException, IOException {
-    super(endPoint);
+    super(endPoint, socketAddress);
+    lastAccess = new AtomicLong(System.currentTimeMillis());
     logger = LoggerFactory.getLogger(CoapProtocol.class);
     isClosed = false;
     listenerFactory = new ListenerFactory();
@@ -96,6 +101,7 @@ public class CoapProtocol extends ProtocolImpl {
     this.coapInterfaceManager = coapInterfaceManager;
     mtu = coapInterfaceManager.getMtu();
     maxBlockSize = (int) endPoint.getConfig().getProperties().getLongProperty("maxBlockSize", 128);
+    keepAlive = (int) (endPoint.getConfig().getProperties().getLongProperty("idleTimePeriod", 120) * 1000);
     SessionContext context = new SessionContext(endPoint.getName(), this);
     context.setPersistentSession(false);
     context.setReceiveMaximum(5);
@@ -107,7 +113,7 @@ public class CoapProtocol extends ProtocolImpl {
 
   @Override
   public void close() throws IOException {
-    if(isClosed){
+    if (isClosed) {
       return;
     }
     logger.log(COAP_CLOSED, socketAddress);
@@ -116,7 +122,9 @@ public class CoapProtocol extends ProtocolImpl {
     SessionManager.getInstance().close(session, true);
     outboundPipeline.close();
     coapInterfaceManager.close(socketAddress);
-    super.close();
+    if (mbean != null) {
+      mbean.close();
+    }
   }
 
   public int getNextMessageId(){
@@ -215,7 +223,9 @@ public class CoapProtocol extends ProtocolImpl {
   public boolean processPacket(@NonNull @NotNull Packet packet) {
     try {
       BasePacket basePacket = packetFactory.parseFrame(packet);
+      lastAccess.set(System.currentTimeMillis());
       if (basePacket != null) {
+        receivedMessage();
         if(basePacket.getType() == TYPE.RST){
           logger.log(COAP_RECEIVED_RESET, packet.getFromAddress());
           close();
@@ -269,12 +279,14 @@ public class CoapProtocol extends ProtocolImpl {
   }
 
   protected void send(BasePacket response) throws IOException {
+    lastAccess.set(System.currentTimeMillis());
     Packet responsePacket = new Packet(mtu, false);
     response.packFrame(responsePacket);
     responsePacket.setFromAddress(response.getFromAddress());
     responsePacket.flip();
     endPoint.sendPacket(responsePacket);
     logger.log(COAP_PACKET_SENT, responsePacket, responsePacket.getFromAddress());
+    sentMessage();
   }
 
   @Override
@@ -289,12 +301,23 @@ public class CoapProtocol extends ProtocolImpl {
 
   @Override
   public String getVersion() {
-    return "RFC7252";
+    return "RFC7252, RFC7641, RFC7959";
+  }
+
+  public void sendKeepAlive() {
+    if (lastAccess.get() < System.currentTimeMillis() + getTimeOut()) {
+      logger.log(COAP_SESSION_TIMED_OUT, socketAddress, getTimeOut());
+      try {
+        close();
+      } catch (IOException e) {
+        // we are closing, we can ignore this
+      }
+    }
   }
 
   public void ack(BasePacket ackPacket) throws IOException {
     byte[] token = ackPacket.getToken();
-    if(token != null) {
+    if (token != null) {
       transactionState.ack(ackPacket.getMessageId(), token);
     }
     outboundPipeline.ack(ackPacket);

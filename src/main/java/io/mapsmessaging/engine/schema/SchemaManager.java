@@ -108,16 +108,22 @@ public class SchemaManager implements SchemaRepository {
   public void start() {
     SchemaConfig rawConfig = new RawSchemaConfig();
     rawConfig.setUniqueId(DEFAULT_RAW_UUID);
+    rawConfig.setResourceType("unknown");
+    rawConfig.setInterfaceDescription("raw");
     addSchema("", rawConfig);
 
     NativeSchemaConfig nativeSchemaConfig = new NativeSchemaConfig();
     nativeSchemaConfig.setUniqueId(DEFAULT_NUMERIC_STRING_SCHEMA);
     nativeSchemaConfig.setType(TYPE.NUMERIC_STRING);
+    nativeSchemaConfig.setInterfaceDescription("numeric");
+    nativeSchemaConfig.setResourceType("monitor");
     addSchema("$SYS", nativeSchemaConfig);
 
     nativeSchemaConfig = new NativeSchemaConfig();
     nativeSchemaConfig.setUniqueId(DEFAULT_STRING_SCHEMA);
     nativeSchemaConfig.setType(TYPE.STRING);
+    nativeSchemaConfig.setInterfaceDescription("string");
+    nativeSchemaConfig.setResourceType("monitor");
     addSchema("$SYS", nativeSchemaConfig);
 
     MessageFormatterFactory.getInstance();

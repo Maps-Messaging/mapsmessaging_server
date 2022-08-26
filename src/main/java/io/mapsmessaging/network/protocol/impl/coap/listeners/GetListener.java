@@ -1,5 +1,6 @@
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE;
 import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.URI_PATH;
 
@@ -10,8 +11,11 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
+import io.mapsmessaging.network.protocol.impl.coap.packet.BlockWiseSend;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
+import io.mapsmessaging.network.protocol.impl.coap.packet.Empty;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Block;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ContentFormat;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Format;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Observe;
@@ -50,7 +54,7 @@ public class GetListener extends Listener {
     UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
     path = uriPath.toString();
     if(path.equals(".well-known/core")){
-      response = sendWellKnown(request);
+      response = sendWellKnown(request, protocol);
     }
     else{
       response = buildSubscription(path, request, protocol);
@@ -109,12 +113,34 @@ public class GetListener extends Listener {
     return response;
   }
 
-  private BasePacket sendWellKnown(BasePacket getRequest) {
+  private BasePacket sendWellKnown(BasePacket getRequest, CoapProtocol protocol) {
     String linkContent = SchemaManager.getInstance().buildLinkFormatResponse();
     BasePacket response = getRequest.buildAckResponse(Code.CONTENT);
     response.setPayload(linkContent.getBytes());
     ContentFormat format = new ContentFormat(Format.LINK_FORMAT);
     response.getOptions().putOption(format);
+    if (getRequest.getOptions().hasOption(BLOCK2)) {
+      Block block = (Block) getRequest.getOptions().getOption(BLOCK2);
+      int size = 1 << (block.getSizeEx() + 4);
+      if (response.getPayload().length > size) {
+        BasePacket ack = new Empty(getRequest.getMessageId());
+        ack.setCode(Code.EMPTY);
+        ack.setFromAddress(getRequest.getFromAddress());
+        try {
+          protocol.sendResponse(ack);
+        } catch (IOException e) {
+
+        }
+        BlockWiseSend blockWiseSend = new BlockWiseSend(getRequest);
+        blockWiseSend.getOptions().getOptionList().putAll(getRequest.getOptions().getOptionList());
+        blockWiseSend.getOptions().add(format);
+        blockWiseSend.setCode(Code.CONTENT);
+        blockWiseSend.setBlockSize(block.getSizeEx());
+        blockWiseSend.setPayload(response.getPayload());
+        blockWiseSend.setFromAddress(getRequest.getFromAddress());
+        response = blockWiseSend;
+      }
+    }
     return response;
   }
 }

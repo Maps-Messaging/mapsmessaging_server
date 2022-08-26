@@ -65,7 +65,7 @@ public class UDPEndPoint extends EndPoint {
 
   @Override
   public void close() {
-    mbean.close();
+    //mbean.close();
   }
 
   @Override

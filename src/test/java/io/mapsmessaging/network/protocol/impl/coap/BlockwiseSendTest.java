@@ -26,7 +26,7 @@ class BlockwiseSendTest extends BaseCoapTest {
       Request put = Request.newPut();
       System.arraycopy(tmp, x, buf, 0, buf.length);
       put.setPayload(buf);
-      put.getOptions().setBlock1(size, (x+blockSize == tmp.length), id);
+      put.getOptions().setBlock1(size, (x + blockSize != tmp.length), id);
       CoapResponse response1 = client.advanced(put);
       Assertions.assertNotNull(response1);
       id++;

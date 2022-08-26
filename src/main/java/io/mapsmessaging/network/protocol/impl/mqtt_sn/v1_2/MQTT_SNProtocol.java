@@ -73,7 +73,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       @NonNull @NotNull String loggerName,
       @NonNull @NotNull PacketFactory packetFactory,
       @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration) {
-    super(endPoint);
+    super(endPoint, remoteClient);
     this.logger = LoggerFactory.getLogger(loggerName);
     this.remoteClient = remoteClient;
     this.selectorTask = selectorTask;
@@ -118,7 +118,9 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     factory.close(remoteClient);
     packetIdManager.close();
     monitor.cancel(false);
-    super.close();
+    if (mbean != null) {
+      mbean.close();
+    }
   }
 
   @Override

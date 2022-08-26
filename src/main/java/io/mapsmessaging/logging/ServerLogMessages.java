@@ -603,6 +603,7 @@ public enum ServerLogMessages implements LogMessage {
   COAP_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Created new CoAP protocol handler for {}, MTU:{}, MaxBlockSize:{}"),
   COAP_CLOSED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Closed CoAP protocol handler for {}"),
   COAP_RECEIVED_RESET(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Received CoAP reset packet for {}"),
+  COAP_SESSION_TIMED_OUT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "CoAP session {} exceeded idle time of {}"),
 
   COAP_PACKET_PROCESSED(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Handling CoAP packet {} for {}"),
   COAP_PACKET_SENT(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Sent CoAP packet {} for {}"),

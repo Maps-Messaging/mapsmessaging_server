@@ -11,12 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CoapProtocolFactory extends ProtocolImplFactory {
-
-  // https://en.wikipedia.org/wiki/User_Datagram_Protocol
-  private static final int IPV4_DATAGRAM_HEADER_SIZE = 20;
-  private static final int IPV6_DATAGRAM_HEADER_SIZE = 40;
-  private static final int LORA_DATAGRAM_HEADER_SIZE = 4;
-
   private final List<CoapInterfaceManager> managers;
 
   public CoapProtocolFactory() {
