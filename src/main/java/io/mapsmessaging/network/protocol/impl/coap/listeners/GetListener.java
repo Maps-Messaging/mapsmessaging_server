@@ -129,7 +129,7 @@ public class GetListener extends Listener {
         try {
           protocol.sendResponse(ack);
         } catch (IOException e) {
-
+          // Ignore this
         }
         BlockWiseSend blockWiseSend = new BlockWiseSend(getRequest);
         blockWiseSend.getOptions().getOptionList().putAll(getRequest.getOptions().getOptionList());

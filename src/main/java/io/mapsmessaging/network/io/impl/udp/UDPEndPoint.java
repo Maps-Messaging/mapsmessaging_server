@@ -64,11 +64,6 @@ public class UDPEndPoint extends EndPoint {
   }
 
   @Override
-  public void close() {
-    //mbean.close();
-  }
-
-  @Override
   public String getProtocol() {
     return "udp";
   }

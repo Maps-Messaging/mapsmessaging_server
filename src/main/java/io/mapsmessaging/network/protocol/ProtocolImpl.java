@@ -47,6 +47,8 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class ProtocolImpl implements SelectorCallback, MessageListener, Timeoutable {
 
+  private static String message = "Messages";
+
   private static final LongAdder totalReceived = new LongAdder();
   private static final LongAdder totalSent = new LongAdder();
 
@@ -73,8 +75,8 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
-    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
-    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
+    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, message);
+    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, message);
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
     connected = false;
     completed = false;
@@ -83,8 +85,8 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
     this.endPoint = endPoint;
-    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
-    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, "Messages");
+    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, message);
+    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, message);
     String endPointName = socketAddress.toString();
     endPointName = endPointName.replace(":", "_");
     List<String> jmsList = new ArrayList<>(endPoint.getJMXTypePath());
