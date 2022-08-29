@@ -320,7 +320,7 @@
   </repositories>
 
   <properties>
-    <logback.version>1.2.11</logback.version>
+    <logback.version>1.4.0</logback.version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonar.sources>src/main</sonar.sources>
