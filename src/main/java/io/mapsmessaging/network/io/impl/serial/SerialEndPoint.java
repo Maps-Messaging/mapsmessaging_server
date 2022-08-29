@@ -81,9 +81,14 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
   @Override
   public int readPacket(Packet packet) throws IOException {
-    int read = streamHandler.parseInput(inputStream, packet);
-    updateReadBytes(read);
-    return read;
+    try {
+      int read = streamHandler.parseInput(inputStream, packet);
+      updateReadBytes(read);
+      return read;
+    } catch (IOException e) {
+      close();
+      throw e;
+    }
   }
 
   @Override

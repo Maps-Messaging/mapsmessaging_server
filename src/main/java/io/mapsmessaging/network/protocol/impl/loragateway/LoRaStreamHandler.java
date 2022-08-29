@@ -62,13 +62,16 @@ public class LoRaStreamHandler implements StreamHandler {
       //
       try {
         int val = input.read();
-        while (val != Constants.START_FRAME) {
+        while (val != Constants.START_FRAME && val != -1) {
           val = input.read();
         }
       } catch (SerialPortTimeoutException e) {
         return parseInput(input, packet);
       }
       byte command = (byte) input.read();
+      if (command == -1) {
+        throw new IOException("End Of Stream reached");
+      }
       byte len = (byte) (input.read() & 0xff);
       //
       // Validate the command is known
