@@ -320,7 +320,7 @@
   </repositories>
 
   <properties>
-    <logback.version>1.2.11</logback.version>
+    <logback.version>1.4.0</logback.version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonar.sources>src/main</sonar.sources>
@@ -518,7 +518,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>proton-j</artifactId>
-      <version>0.33.10</version>
+      <version>0.34.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.jmdns/jmdns -->
@@ -649,7 +649,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>5.3.22</version>
+      <version>5.3.23</version>
       <scope>test</scope>
     </dependency>
 
