@@ -11,20 +11,21 @@ import java.util.List;
 public class NetworkInfoHelper {
 
   // https://en.wikipedia.org/wiki/User_Datagram_Protocol
-  private static final int IPV4_DATAGRAM_HEADER_SIZE = 20;
-  private static final int IPV6_DATAGRAM_HEADER_SIZE = 40;
+  private static final int IPV4_DATAGRAM_HEADER_SIZE = 28;
+  private static final int IPV6_DATAGRAM_HEADER_SIZE = 48;
   private static final int LORA_DATAGRAM_HEADER_SIZE = 4;
 
   public static int getMTU(InterfaceInformation info) throws SocketException {
     int datagramSize = info.getMTU();
-    if (datagramSize != -1) {
-      if (info.isLoRa()) {
-        datagramSize = datagramSize - LORA_DATAGRAM_HEADER_SIZE;
-      } else if (info.isIPV4()) {
-        datagramSize = datagramSize - IPV4_DATAGRAM_HEADER_SIZE;
-      } else {
-        datagramSize = datagramSize - IPV6_DATAGRAM_HEADER_SIZE;
-      }
+    if(datagramSize < 0){
+      datagramSize = 1500;
+    }
+    if (info.isLoRa()) {
+      datagramSize = datagramSize - LORA_DATAGRAM_HEADER_SIZE;
+    } else if (info.isIPV4()) {
+      datagramSize = datagramSize - IPV4_DATAGRAM_HEADER_SIZE;
+    } else {
+      datagramSize = datagramSize - IPV6_DATAGRAM_HEADER_SIZE;
     }
     return datagramSize;
   }
