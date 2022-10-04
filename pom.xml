@@ -465,7 +465,7 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20220320</version>
+      <version>20220924</version>
     </dependency>
 
     <dependency>
@@ -476,7 +476,7 @@
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>jwks-rsa</artifactId>
-      <version>0.21.1</version>
+      <version>0.21.2</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
@@ -655,7 +655,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-websocket</artifactId>
-      <version>2.7.3</version>
+      <version>2.7.4</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
