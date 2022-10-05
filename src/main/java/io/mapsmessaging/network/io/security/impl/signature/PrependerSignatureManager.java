@@ -12,7 +12,11 @@ public class PrependerSignatureManager implements SignatureManager {
 
   @Override
   public byte[] getSignature(Packet packet, byte[] signature) {
-    packet.getRawBuffer().get(0, signature);
+    ByteBuffer buffer = packet.getRawBuffer();
+    int pos = buffer.position();
+    buffer.position(0);
+    packet.getRawBuffer().get( signature);
+    buffer.position(pos);
     return signature;
   }
 
