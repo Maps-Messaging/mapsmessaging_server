@@ -16,10 +16,3 @@
 
 ---
 SecurityManager:
-    default: PublicAuthConfig
-    public: PublicAuthConfig
-    private: PrivateAuthConfig
-    admin: MessagingAuthConfig
-    anon: PublicAuthConfig
-    ssl: SSLAuthConfig
-    jwt: JWTAuthConfig

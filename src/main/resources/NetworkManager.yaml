@@ -91,7 +91,6 @@ NetworkManager:
         url: tcp://0.0.0.0:1883/
         protocol : mqtt
         selectorThreadCount : 20
-        auth : public
         receiveBufferSize : 20000
         sendBufferSize    : 20000
 
@@ -129,7 +128,6 @@ NetworkManager:
         url: tcp://0.0.0.0:5672/
         name: "AMQP Interface"
         protocol : amqp
-        auth : public
         SaslMechanisms : ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI, NTLM
 
       -
