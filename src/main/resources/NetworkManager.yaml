@@ -140,4 +140,5 @@ NetworkManager:
         name: "SemTech Gateway"
         protocol: semtech
         inbound: /semtech/{gatewayId}/in
+        status: /semtech/{gatewayId}/status
         outbound: /semtech/{gatewayId}/out

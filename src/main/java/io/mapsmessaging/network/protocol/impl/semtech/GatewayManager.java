@@ -23,14 +23,16 @@ public class GatewayManager {
   private final Map<String, GatewayInfo> gatewayMap;
   private final Session session;
   private final String inbound;
+  private final String status;
   private final String outbound;
   private final int maxQueued;
   private final Future<?> scheduledTask;
 
-  public GatewayManager(Session session, String inbound, String outbound, int maxQueued) {
+  public GatewayManager(Session session, String inbound, String status, String outbound, int maxQueued) {
     gatewayMap = new ConcurrentHashMap<>();
     this.session = session;
     this.inbound = inbound;
+    this.status = status;
     this.outbound = outbound;
     this.maxQueued = maxQueued;
     scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new TimeoutManager(), 30, 30, TimeUnit.SECONDS);
@@ -60,9 +62,10 @@ public class GatewayManager {
   private GatewayInfo createInfo(byte[] gatewayIdentifier) throws IOException {
     String name = dumpIdentifier(gatewayIdentifier);
     String inTopic = inbound.replace("{gatewayId}", name);
+    String statusTopic = status.replace("{gatewayId}", name);
     try {
       Destination in = session.findDestination(inTopic, DestinationType.TOPIC).get();
-
+      Destination status =session.findDestination(statusTopic, DestinationType.TOPIC).get();
       String outTopic = outbound.replace("{gatewayId}", name);
 
       SubscriptionContext subscriptionContext = new SubscriptionContext(outTopic);
@@ -72,7 +75,7 @@ public class GatewayManager {
       subscriptionContext.setRetainHandler(RetainHandler.SEND_ALWAYS);
       subscriptionContext.setAcknowledgementController(ClientAcknowledgement.AUTO);
       subscriptionContext.setReceiveMaximum(maxQueued);
-      GatewayInfo info = new GatewayInfo(gatewayIdentifier, name, in, session.addSubscription(subscriptionContext));
+      GatewayInfo info = new GatewayInfo(gatewayIdentifier, name, in, status, session.addSubscription(subscriptionContext));
       gatewayMap.put(name, info);
       return info;
     } catch (InterruptedException e) {

@@ -49,7 +49,8 @@ public class SemTechProtocol extends ProtocolImpl {
       session = SessionManager.getInstance().createAsync(sessionContext, this).get();
       String inboundTopicName = endPoint.getConfig().getProperties().getProperty("inbound", "/semtech/inbound");
       String outboundTopicName = endPoint.getConfig().getProperties().getProperty("outbound", "/semtech/outbound");
-      gatewayManager = new GatewayManager(session, inboundTopicName, outboundTopicName, maxQueued);
+      String statusTopicName = endPoint.getConfig().getProperties().getProperty("status", inboundTopicName);
+      gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, maxQueued);
     } catch (InterruptedException | ExecutionException e) {
       if (Thread.currentThread().isInterrupted()) {
         endPoint.close();

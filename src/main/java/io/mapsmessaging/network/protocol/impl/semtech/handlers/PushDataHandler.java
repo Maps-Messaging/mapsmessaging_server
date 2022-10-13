@@ -28,6 +28,7 @@ public class PushDataHandler extends Handler {
       if (pushData.getJsonObject() != null && pushData.getJsonObject().length() > 0) {
         try {
           JSONObject jsonObject = new JSONObject(pushData.getJsonObject());
+          boolean status = jsonObject.has("stat");
           // At this point we know it is a valid packet with a valid JSON payload, so now lets process it
           Map<String, String> meta = new LinkedHashMap<>();
           meta.put("protocol", "SemTech");
@@ -39,7 +40,12 @@ public class PushDataHandler extends Handler {
           Message message = builder.build();
           GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier());
           if (info != null) {
-            info.getInbound().storeMessage(message);
+            if(status){
+              info.getStatus().storeMessage(message);
+            }
+            else {
+              info.getInbound().storeMessage(message);
+            }
           }
         } catch (JSONException | IOException jsonParseException) {
           // Catch & ignore
