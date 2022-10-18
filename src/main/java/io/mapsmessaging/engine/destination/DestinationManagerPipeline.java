@@ -7,11 +7,9 @@ import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.audit.AuditEvent;
-import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
 import io.mapsmessaging.engine.destination.subscription.builders.QueueSubscriptionBuilder;
-import io.mapsmessaging.engine.destination.tasks.DelayedMessageProcessor;
 import io.mapsmessaging.engine.destination.tasks.ShutdownPhase1Task;
 import io.mapsmessaging.engine.destination.tasks.StoreMessageTask;
 import io.mapsmessaging.engine.tasks.Response;
@@ -21,7 +19,6 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import java.io.IOException;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -30,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 public class DestinationManagerPipeline {
@@ -138,27 +134,6 @@ public class DestinationManagerPipeline {
     taskScheduler.submit(task);
     return future;
   }
-
-  @SneakyThrows
-  public void scan() {
-    Map<String, DestinationImpl> workingCopy = new LinkedHashMap<>();
-    CompletableFuture<Map<String, DestinationImpl>> future = copy(null, workingCopy);
-    workingCopy = future.get();
-    for (DestinationImpl destination : workingCopy.values()) {
-      DelayedMessageManager messageProcessor = destination.getDelayedStatus();
-      if (messageProcessor != null && !messageProcessor.isEmpty()) {
-        List<Long> waiting = messageProcessor.getBucketIds();
-        for (Long expiry : waiting) {
-          if (expiry < System.currentTimeMillis()) {
-            destination.submit(new DelayedMessageProcessor(destination, destination.subscriptionManager, messageProcessor, expiry));
-          } else {
-            break;
-          }
-        }
-      }
-    }
-  }
-
 
   private DestinationImpl createInternal(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     DestinationImpl destinationImpl = destinationList.get(name);

@@ -30,7 +30,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -94,8 +93,6 @@ public class DestinationManager implements DestinationFactory {
     rootPath = rootPathLookup;
     creatorPipelines = new DestinationManagerPipeline[Runtime.getRuntime().availableProcessors() * 2];
     Arrays.setAll(creatorPipelines, x -> new DestinationManagerPipeline(rootPath, properties, destinationManagerListeners));
-
-    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, time, TimeUnit.MILLISECONDS);
   }
 
   int getIndex(String name) {
@@ -269,16 +266,6 @@ public class DestinationManager implements DestinationFactory {
     }
     messageExpiryHandler.setDestination(response);
     return response;
-  }
-
-  public class DelayProcessor implements Runnable {
-
-    @Override
-    public void run() {
-      for (DestinationManagerPipeline pipeline : creatorPipelines) {
-        pipeline.scan();
-      }
-    }
   }
 
   public class ResourceLoaderManagement {

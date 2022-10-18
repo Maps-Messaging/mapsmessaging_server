@@ -57,7 +57,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
   }
 
   @Override
-  public void close() throws Exception {
+  public void close()  {
     future.cancel(true);
     storeStats.clear();
   }

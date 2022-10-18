@@ -27,7 +27,7 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
  *
  * It stores each event in the structure. The structure is made up of buckets that store events for the same time for processing, this avoids collision issues on the time.
  *
- * This class is NOT thread safe and it's assumed that the calling functions will maintain the thread safety
+ * This class is NOT thread safe, and it's assumed that the calling functions will maintain the thread safety
  */
 public class DelayedMessageManager extends MessageManager {
 

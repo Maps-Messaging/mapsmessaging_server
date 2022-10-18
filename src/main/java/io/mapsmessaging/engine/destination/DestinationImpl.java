@@ -32,6 +32,7 @@ import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscrip
 import io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionManager;
 import io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionRegister;
 import io.mapsmessaging.engine.destination.tasks.BulkRemoveMessageTask;
+import io.mapsmessaging.engine.destination.tasks.DelayedMessageProcessor;
 import io.mapsmessaging.engine.destination.tasks.DelayedStoreMessageTask;
 import io.mapsmessaging.engine.destination.tasks.MessageDeliveryTask;
 import io.mapsmessaging.engine.destination.tasks.NonDelayedStoreMessageTask;
@@ -52,6 +53,7 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
+import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -133,6 +135,8 @@ public class DestinationImpl implements BaseDestination {
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
   private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
+  private final ScheduledFuture<?> delayScheduler;
+
   @Getter
   private final Schema schema;
   private volatile boolean closed;
@@ -165,14 +169,17 @@ public class DestinationImpl implements BaseDestination {
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
-    if (MessageDaemon.getInstance() != null) {
+    if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
+      resourceStatistics = new ResourceStatistics(resource);
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
+      resourceStatistics = null;
       destinationJMXBean = null;
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
+    delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
+
     transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     closed = false;
     completionQueue = new EventReaperQueue();
@@ -201,10 +208,11 @@ public class DestinationImpl implements BaseDestination {
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
-    if (MessageDaemon.getInstance() != null) {
+    if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
+      resourceStatistics = new ResourceStatistics(resource);
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
+      resourceStatistics = null;
       destinationJMXBean = null;
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
@@ -220,6 +228,7 @@ public class DestinationImpl implements BaseDestination {
     }
     // Delayed Messages are automatically dealt with once the structure has been reloaded
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
+    delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
 
     transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
@@ -247,14 +256,17 @@ public class DestinationImpl implements BaseDestination {
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
-    if (MessageDaemon.getInstance() != null) {
+    if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
+      resourceStatistics = new ResourceStatistics(resource);
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
+      resourceStatistics = null;
       destinationJMXBean = null;
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
+    delayScheduler = null;
+
     transactionMessageManager = null;
     closed = false;
     completionQueue = new EventReaperQueue();
@@ -269,6 +281,7 @@ public class DestinationImpl implements BaseDestination {
     resource.close();
     retainManager.close();
     if (delayedMessageManager != null) {
+      delayScheduler.cancel(true);
       delayedMessageManager.close();
     }
     if (transactionMessageManager != null) {
@@ -279,6 +292,9 @@ public class DestinationImpl implements BaseDestination {
     }
     if (schemaSubscriptionManager != null) {
       schemaSubscriptionManager.close();
+    }
+    if(resourceStatistics != null){
+      resourceStatistics.close();
     }
   }
 
@@ -363,10 +379,13 @@ public class DestinationImpl implements BaseDestination {
   public void delete() throws IOException {
     if (!closed) {
       closed = true;
-      subscriptionManager.close();
-      schemaSubscriptionManager.close();
-      transactionMessageManager.delete();
-      delayedMessageManager.delete();
+      if (transactionMessageManager != null) transactionMessageManager.delete();
+      if (subscriptionManager != null ) subscriptionManager.close();
+      if (schemaSubscriptionManager != null)schemaSubscriptionManager.close();
+      if (delayedMessageManager != null) {
+        delayScheduler.cancel(true);
+        delayedMessageManager.delete();
+      }
       resource.delete();
       if (destinationJMXBean != null) {
         destinationJMXBean.close();
@@ -689,6 +708,27 @@ public class DestinationImpl implements BaseDestination {
   public DelayedMessageManager getDelayedStatus() {
     return delayedMessageManager;
   }
+
+  public void processDelayedEvents(){
+    if (delayedMessageManager != null && !delayedMessageManager.isEmpty()) {
+      List<Long> waiting = delayedMessageManager.getBucketIds();
+      for (Long expiry : waiting) {
+        if (expiry < System.currentTimeMillis()) {
+          submit(new DelayedMessageProcessor(this, this.subscriptionManager, delayedMessageManager, expiry));
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  public class DelayProcessor implements Runnable {
+
+    @Override
+    public void run() {
+      processDelayedEvents();
+    }
+  }
   //</editor-fold>
 
   //<editor-fold desc="Task Queue functions">
@@ -818,17 +858,29 @@ public class DestinationImpl implements BaseDestination {
 
   private final class EventReaper implements Runnable {
 
+    private int countDown = 0;
+    private int idleCount =0;
+
     @Override
     public void run() {
-      Queue<Long> completedQueue = completionQueue.getAndClear();
-      if (!completedQueue.isEmpty()) {
-        Queue<Long> interested = subscriptionManager.getAll();
-        completedQueue.removeAll(interested);
+      if(countDown <= 0) {
+        Queue<Long> completedQueue = completionQueue.getAndClear();
         if (!completedQueue.isEmpty()) {
-          BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
-          subscriptionTaskQueue.submit(bulkRemoveMessageTask);
+          idleCount = 0;
+          countDown =0;
+          Queue<Long> interested = subscriptionManager.getAll();
+          completedQueue.removeAll(interested);
+          if (!completedQueue.isEmpty()) {
+            BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
+            subscriptionTaskQueue.submit(bulkRemoveMessageTask);
+          }
+        }
+        else{
+          idleCount = (idleCount+1) % 20;
+          countDown = 5 * idleCount;
         }
       }
+      countDown--;
     }
   }
 
