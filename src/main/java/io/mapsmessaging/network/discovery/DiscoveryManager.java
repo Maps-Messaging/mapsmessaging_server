@@ -1,5 +1,7 @@
 package io.mapsmessaging.network.discovery;
 
+import io.mapsmessaging.BuildInfo;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -7,6 +9,7 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -15,7 +18,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
 
@@ -72,6 +77,28 @@ public class DiscoveryManager implements Agent {
     return new AdapterManager(hostname, serverName, JmDNS.create(homeAddress, serverName), stampMeta);
   }
 
+  public ServiceInfo register(RestApiServerManager restApiServerManager) {
+    Map<String, String> map = new LinkedHashMap<>();
+    map.put("server name", MessageDaemon.getInstance().getId());
+    map.put("schema support", "true");
+    map.put("schema name", "$schema");
+    map.put("version", BuildInfo.getInstance().getBuildVersion());
+    map.put("date", BuildInfo.getInstance().getBuildDate());
+    map.put("restApi", "true");
+    String service = "_maps._tcp._local";
+    ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, restApiServerManager.getPort(), 0, 0, map);
+    for (AdapterManager manager : boundedNetworks) {
+      String host = restApiServerManager.getHost();
+      if (host.equals("0.0.0.0") || host.equals(manager.getAdapter())) {
+        try {
+          manager.register(serviceInfo);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+    return serviceInfo;
+  }
 
   public void register(EndPointServer endPointServer) {
     if (!endPointServer.getConfig().getProperties().getBooleanProperty("discoverable", false)) {
