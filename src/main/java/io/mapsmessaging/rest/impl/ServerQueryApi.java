@@ -6,7 +6,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.RestApi;
 import io.mapsmessaging.rest.data.ProtocolInfo;
-import io.mapsmessaging.rest.data.Transformation;
+import io.mapsmessaging.rest.transformation.JsonTransformation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +14,8 @@ public class ServerQueryApi implements RestApi {
 
   public void initialise(){
     get("/server/name", (req, res) -> getName());
-    get("/server/destinations", (req, res) -> getDestinations(), new Transformation());
-    get("/server/protocols", (req, res) -> getProtocols(), new Transformation());
+    get("/server/destinations", (req, res) -> getDestinations(), new JsonTransformation());
+    get("/server/protocols", (req, res) -> getProtocols(), new JsonTransformation());
   }
 
   private String getName(){
