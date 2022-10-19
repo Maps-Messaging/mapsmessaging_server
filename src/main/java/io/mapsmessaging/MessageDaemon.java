@@ -38,7 +38,7 @@ import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.rest.ServerQueryApi;
+import io.mapsmessaging.rest.ServerManager;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -280,8 +280,8 @@ public class MessageDaemon implements WrapperListener {
     isStarted.set(true);
 
     ConfigurationProperties map = ConfigurationManager.getInstance().getProperties("RestApi");
-    ServerQueryApi serverQueryApi = new ServerQueryApi();
-    serverQueryApi.initRestApi(map);
+    ServerManager restServerManager = new ServerManager();
+    restServerManager.initRestApi(map);
     return null;
   }
 
