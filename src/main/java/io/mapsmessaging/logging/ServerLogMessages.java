@@ -47,6 +47,11 @@ public enum ServerLogMessages implements LogMessage {
   MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "\t\tLoaded service {}, {}"),
   MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Service Manager {} loaded"),
 
+  MESSAGE_DAEMON_AGENT_STARTING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Starting {} "),
+  MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Started {} took {}ms"),
+
+  MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Stopping {} "),
+  MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Stopped {} took {}ms"),
   // </editor-fold>
 
   // <editor-fold desc="hawtio messages">
@@ -55,7 +60,7 @@ public enum ServerLogMessages implements LogMessage {
   HAWTIO_WAR_FILE_NOT_FOUND(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio WAR file not found, at location {}"),
   HAWTIO_NOT_CONFIGURED_TO_RUN(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio interface not configured to run"),
   HAWTIO_INITIALISATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Hawtio initialisation started using file {} "),
-  HAWTIO_REGISTRATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio failed to register with the mDNS server" ),
+  HAWTIO_REGISTRATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio failed to register with the mDNS server"),
   // </editor-fold>
 
   // <editor-fold desc="Network Manager log messages">

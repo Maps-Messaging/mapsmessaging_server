@@ -25,6 +25,7 @@ import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
@@ -37,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-public class NetworkConnectionManager implements ServiceManager {
+public class NetworkConnectionManager implements ServiceManager, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final SelectorLoadManager selectorLoadManager;
@@ -95,6 +96,16 @@ public class NetworkConnectionManager implements ServiceManager {
 
   public SelectorLoadManager getSelectorLoadManager() {
     return selectorLoadManager;
+  }
+
+  @Override
+  public String getName() {
+    return "Network Connection Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Orchestrates remote connections to other messaging servers";
   }
 
   public void start() {

@@ -24,6 +24,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
 import io.mapsmessaging.network.io.EndPointServerFactory;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-public class NetworkManager implements ServiceManager {
+public class NetworkManager implements ServiceManager, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(NetworkManager.class);
   private final ServiceLoader<EndPointServerFactory> endPointServers;
@@ -61,6 +62,24 @@ public class NetworkManager implements ServiceManager {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
 
     bean = new NetworkManagerJMX(parent, this);
+  }
+
+  @Override
+  public String getName() {
+    return "Network Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Manages all of the adapters/protocols used by the server";
+  }
+
+  public void start() {
+    initialise();
+  }
+
+  public void stop() {
+    stopAll();
   }
 
   public void initialise() {

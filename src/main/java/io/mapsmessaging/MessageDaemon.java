@@ -18,6 +18,10 @@
 
 package io.mapsmessaging;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STARTED;
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STARTING;
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STOPPED;
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STOPPING;
 import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_BOOTSTRAP;
 
 import io.mapsmessaging.admin.MessageDaemonJMX;
@@ -29,7 +33,6 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
-import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -38,12 +41,15 @@ import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.rest.ServerManager;
+import io.mapsmessaging.rest.RestApiServerManager;
+import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
+import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -51,10 +57,12 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,21 +77,13 @@ public class MessageDaemon implements WrapperListener {
   private static MessageDaemon instance;
 
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
-  private final NetworkManager networkManager;
-  private final NetworkConnectionManager networkConnectionManager;
-  private final DestinationManager destinationManager;
-  private final SessionManager sessionManager;
-  private final HawtioManager hawtioManager;
-  private final JolokaManager jolokaManager;
-  private final DiscoveryManager discoveryManager;
-  private final SecurityManager securityManager;
-  private final SystemTopicManager systemTopicManager;
+  private final Map<String, AgentOrder> agentMap;
   private final String uniqueId;
   private final MessageDaemonJMX mBean;
-  private final String homeDirectory;
   private final AtomicBoolean isStarted;
 
   public MessageDaemon() throws IOException {
+    agentMap = new LinkedHashMap<>();
     instance = this;
     isStarted = new AtomicBoolean(false);
     String tmpHome = System.getProperty("MAPS_HOME", ".");
@@ -95,7 +95,7 @@ public class MessageDaemon implements WrapperListener {
     if (tmpHome.endsWith(File.separator)) {
       tmpHome = tmpHome.substring(0, tmpHome.length() - 1);
     }
-    homeDirectory = tmpHome;
+    String homeDirectory = tmpHome;
     File data = new File(homeDirectory + "/data");
     if (!data.exists()) {
       Files.createDirectories(data.toPath());
@@ -120,64 +120,70 @@ public class MessageDaemon implements WrapperListener {
     }
     // </editor-fold>
 
-
     //<editor-fold desc="Now see if we can start the Consul Manager">
     // May block till a consul connection is made, depending on config
     ConsulManagerFactory.getInstance().start(uniqueId);
+
     //</editor-fold>
     ConfigurationManager.getInstance().initialise(uniqueId + "_");
+
+    mBean = new MessageDaemonJMX(this);
+
+    loadConstants();
+    createAgentStartStopList(path);
+  }
+
+  private void loadConstants() {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
-    int delayTimer = properties.getIntProperty("DelayedPublishInterval", 1000);
-    int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
     int transactionExpiry = properties.getIntProperty("TransactionExpiry", 3600000);
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
 
-    mBean = new MessageDaemonJMX(this);
-    if(properties.getBooleanProperty("EnableJMX", true)){
+    if (properties.getBooleanProperty("EnableJMX", true)) {
       JMXManager.setEnableJMX(true);
       new SimpleTaskSchedulerJMX(mBean.getTypePath());
       JMXManager.setEnableJMXStatistics(properties.getBooleanProperty("EnableJMXStatistics", true));
-    }
-    else{
+    } else {
       JMXManager.setEnableJMX(false);
       JMXManager.setEnableJMXStatistics(false);
     }
 
     SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopicAverages", true));
-
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
+  }
 
+  private void createAgentStartStopList(String path) throws IOException {
     // Start the Schema manager to it has the defaults and has loaded the required classes
-    SchemaManager.getInstance().start();
-    discoveryManager = new DiscoveryManager(uniqueId);
+    SecurityManager securityManager = new SecurityManager();
+    DestinationManager destinationManager = new DestinationManager();
 
-    networkManager = new NetworkManager(mBean.getTypePath());
-    networkConnectionManager = new NetworkConnectionManager(mBean.getTypePath());
-    securityManager = new SecurityManager();
-    destinationManager = new DestinationManager(delayTimer);
-    systemTopicManager = new SystemTopicManager(destinationManager);
-    sessionManager = new SessionManager(securityManager, destinationManager, path, pipeLineSize);
-    jolokaManager = new JolokaManager();
-    hawtioManager = new HawtioManager();
-    logServiceManagers();
-    TransactionManager.getInstance().start();
+    addToMap(10, 90, TransactionManager.getInstance());
+    addToMap(20, 110, SchemaManager.getInstance());
+    addToMap(30, 10, new DiscoveryManager(uniqueId));
+    addToMap(40, 120, securityManager);
+    addToMap(50, 95, destinationManager);
+    addToMap(60, 30, new SessionManager(securityManager, destinationManager, path));
+    addToMap(70, 15, new NetworkManager(mBean.getTypePath()));
+    addToMap(80, 5, new SystemTopicManager(destinationManager));
+    addToMap(90, 20, new NetworkConnectionManager(mBean.getTypePath()));
+    addToMap(100, 25, new JolokaManager());
+    addToMap(110, 30, new HawtioManager());
+    addToMap(120, 40, new RestApiServerManager());
+  }
+
+  private void addToMap(int start, int stop, Agent agent) {
+    agentMap.put(agent.getName(), new AgentOrder(start, stop, agent));
   }
 
   private void logServiceManagers() {
-
-    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Network Manager");
-    logServices(networkManager.getServices());
-
-    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "System Topics Manager");
-    logServices(systemTopicManager.getServices());
-
-    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Transformation Manager");
-    logServices(TransformationManager.getInstance().getServices());
-
-    logServices(networkConnectionManager.getServices());
+    for (Entry<String, AgentOrder> agentEntry : agentMap.entrySet()) {
+      if (agentEntry.getValue().getAgent() instanceof ServiceManager) {
+        logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, agentEntry.getKey());
+        logServices(((ServiceManager) agentEntry.getValue().getAgent()).getServices());
+      }
+    }
 
     logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
     ServiceLoader<ProtocolImplFactory> protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
@@ -186,8 +192,8 @@ public class MessageDaemon implements WrapperListener {
       service.add(parser);
     }
     logServices(service.listIterator());
-
-    logServices(TransformerManager.getInstance().getServices());
+    logServices(TransformationManager.getInstance().getServices());
+    logServices(io.mapsmessaging.engine.transformers.TransformerManager.getInstance().getServices());
   }
 
   private void logServices(Iterator<Service> services) {
@@ -201,45 +207,20 @@ public class MessageDaemon implements WrapperListener {
     return instance;
   }
 
-  // Start the application.  If the JVM was launched from the native
-  //  Wrapper then the application will wait for the native Wrapper to
-  //  call the application's start method.  Otherwise, the start method
-  //  will be called immediately.
-  public static void main(String[] args) throws IOException {
-    File pidFile = new File(PID_FILE);
-
-    if (pidFile.exists()) {
-      try {
-        java.nio.file.Files.delete(Paths.get(PID_FILE));
-      } catch (IOException e) {
-        LockSupport.parkNanos(10000000);
-      }
-    }
-    try {
-      if (pidFile.createNewFile()) {
-        pidFile.deleteOnExit();
-      }
-    } catch (IOException e) {
-      // can ignore this exception
-    }
-    new ExitRunner(pidFile);
-    WrapperManager.start(new MessageDaemon(), args);
-  }
-
   public DiscoveryManager getDiscoveryManager(){
-    return discoveryManager;
+    return (DiscoveryManager) agentMap.get("Discovery Manager").getAgent();
   }
 
   public NetworkManager getNetworkManager() {
-    return networkManager;
+    return (NetworkManager) agentMap.get("Network Manager").getAgent();
   }
 
   public DestinationManager getDestinationManager() {
-    return destinationManager;
+    return (DestinationManager) agentMap.get("Destination Manager").getAgent();
   }
 
   public SessionManager getSessionManager() {
-    return sessionManager;
+    return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
   public MessageDaemonJMX getMBean() {
@@ -255,7 +236,6 @@ public class MessageDaemon implements WrapperListener {
       Map<String, String> meta = new LinkedHashMap<>();
 
       for (ConfigurationProperties properties : list) {
-
         String protocol = properties.getProperty("protocol");
         String url = properties.getProperty("url");
         while (protocol.contains(",")) {
@@ -268,40 +248,31 @@ public class MessageDaemon implements WrapperListener {
       }
       ConsulManagerFactory.getInstance().getManager().register(meta);
     }
-    jolokaManager.start();
-    destinationManager.initialise();
-    sessionManager.start();
-    destinationManager.start();
-    networkManager.initialise();
-    networkManager.startAll();
-    hawtioManager.start();
-    networkConnectionManager.initialise();
-    networkConnectionManager.start();
+    List<AgentOrder> startList = new ArrayList<>(agentMap.values());
+    startList.sort(Comparator.comparingInt(o -> o.getStartOrder()));
+    for (AgentOrder agent : startList) {
+      long start = System.currentTimeMillis();
+      logger.log(MESSAGE_DAEMON_AGENT_STARTING, agent.getAgent().getName());
+      agent.getAgent().start();
+      logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
+    }
     isStarted.set(true);
-
-    ConfigurationProperties map = ConfigurationManager.getInstance().getProperties("RestApi");
-    ServerManager restServerManager = new ServerManager();
-    restServerManager.initRestApi(map);
+    logServiceManagers();
     return null;
   }
 
   @Override
   public int stop(int i) {
-    Thread t = new Thread(discoveryManager::deregisterAll);
-    t.start();
     isStarted.set(false);
-    networkConnectionManager.stop();
-    jolokaManager.stop();
-    networkManager.stopAll();
-    sessionManager.stop();
-    systemTopicManager.stop();
-    destinationManager.stop();
-    mBean.close();
-    try {
-      t.join(10000);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
+    List<AgentOrder> startList = new ArrayList<>(agentMap.values());
+    startList.sort(Comparator.comparingInt(o -> o.getStopOrder()));
+    for (AgentOrder agent : startList) {
+      long start = System.currentTimeMillis();
+      logger.log(MESSAGE_DAEMON_AGENT_STOPPING, agent.getAgent().getName());
+      agent.getAgent().stop();
+      logger.log(MESSAGE_DAEMON_AGENT_STOPPED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
     }
+    mBean.close();
     return i;
   }
 
@@ -338,21 +309,28 @@ public class MessageDaemon implements WrapperListener {
     }
   }
 
-  public static class ExitRunner extends Thread {
+  // Start the application.  If the JVM was launched from the native
+  //  Wrapper then the application will wait for the native Wrapper to
+  //  call the application's start method.  Otherwise, the start method
+  //  will be called immediately.
+  public static void main(String[] args) throws IOException {
+    File pidFile = new File(PID_FILE);
 
-    File pidFile;
-
-    ExitRunner(File pidFile) {
-      this.pidFile = pidFile;
-      super.start();
-    }
-
-    @Override
-    public void run() {
-      while (pidFile.exists()) {
-        LockSupport.parkNanos(1000000);
+    if (pidFile.exists()) {
+      try {
+        java.nio.file.Files.delete(Paths.get(PID_FILE));
+      } catch (IOException e) {
+        LockSupport.parkNanos(10000000);
       }
-      WrapperManager.stop(1);
     }
+    try {
+      if (pidFile.createNewFile()) {
+        pidFile.deleteOnExit();
+      }
+    } catch (IOException e) {
+      // can ignore this exception
+    }
+    new ExitRunner(pidFile);
+    WrapperManager.start(new MessageDaemon(), args);
   }
 }

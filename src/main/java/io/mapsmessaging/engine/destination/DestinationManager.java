@@ -28,6 +28,7 @@ import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.File;
@@ -49,7 +50,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
-public class DestinationManager implements DestinationFactory {
+public class DestinationManager implements DestinationFactory, Agent {
 
   private static final String[] QUEUE = {"/queue", "queue"};
   private static final String TEMPORARY_QUEUE = "/dynamic/temporary/queue";
@@ -61,7 +62,7 @@ public class DestinationManager implements DestinationFactory {
   private final DestinationPathManager rootPath;
   private final DestinationManagerPipeline[] creatorPipelines;
 
-  public DestinationManager(int time) {
+  public DestinationManager() {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
     ConfigurationProperties list = ConfigurationManager.getInstance().getProperties("DestinationManager");
@@ -175,22 +176,32 @@ public class DestinationManager implements DestinationFactory {
     }
   }
 
+  @Override
+  public String getName() {
+    return "Destination Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Manages life cycle of the destinations and manages access to them";
+  }
+
   public void start() {
-    logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
+    logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.start();
     }
   }
 
-    public void stop() {
+  public void stop() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       futures.add(pipeline.stop());
     }
     CompletableFuture<Void>[] cfs = futures.toArray(new CompletableFuture[futures.size()]);
-      try {
-        CompletableFuture.allOf(cfs).thenApply(ignored -> futures.stream()
+    try {
+      CompletableFuture.allOf(cfs).thenApply(ignored -> futures.stream()
               .map(CompletableFuture::join)
               .collect(Collectors.toList())
           ).get(60, TimeUnit.SECONDS);

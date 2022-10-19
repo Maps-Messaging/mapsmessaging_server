@@ -8,6 +8,7 @@ import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
+import io.mapsmessaging.utilities.Agent;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-public class SchemaManager implements SchemaRepository {
+public class SchemaManager implements SchemaRepository, Agent {
 
   public static final String DEFAULT_RAW_UUID = UUID.fromString("10000000-0000-1000-a000-100000000000").toString();
   public static final String DEFAULT_NUMERIC_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000001").toString();
@@ -37,7 +38,7 @@ public class SchemaManager implements SchemaRepository {
   @Override
   public synchronized SchemaConfig addSchema(String path, SchemaConfig schemaConfig) {
     try {
-      if(!loadedFormatter.containsKey(schemaConfig.getUniqueId())){
+      if (!loadedFormatter.containsKey(schemaConfig.getUniqueId())) {
         MessageFormatter messageFormatter = MessageFormatterFactory.getInstance().getFormatter(schemaConfig);
         loadedFormatter.put(schemaConfig.getUniqueId(), messageFormatter);
       }
@@ -45,6 +46,10 @@ public class SchemaManager implements SchemaRepository {
       // Unable to load the formatter
     }
     return repository.addSchema(path, schemaConfig);
+  }
+
+  public void stop() {
+
   }
 
   public MessageFormatter getMessageFormatter(String uniqueId) {
@@ -100,9 +105,19 @@ public class SchemaManager implements SchemaRepository {
     return response;
   }
 
-  public String buildLinkFormatResponse(){
+  public String buildLinkFormatResponse() {
     List<LinkFormat> linkFormatList = buildLinkFormatList();
     return LinkFormatManager.getInstance().buildLinkFormatString("", linkFormatList);
+  }
+
+  @Override
+  public String getName() {
+    return "Schema Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Manages the life cycle of schemas on the server";
   }
 
   public void start() {

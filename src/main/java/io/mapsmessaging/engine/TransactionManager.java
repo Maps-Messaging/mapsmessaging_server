@@ -22,6 +22,7 @@ import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
  * This class manages the timeouts of transactions, if we do not have timeouts it is a simple DOS attack to simply start transactions and publish messages with no commit or abort,
  * resulting in a build up of messages that can never be delivered.
  */
-public class TransactionManager implements Runnable {
+public class TransactionManager implements Runnable, Agent {
 
   private static long timeOutInterval = 100;
   private static long expiryTime = 3600000;
@@ -110,6 +111,16 @@ public class TransactionManager implements Runnable {
         }
       }
     }
+  }
+
+  @Override
+  public String getName() {
+    return "Transaction Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Transaction Life-Cycle and persistence manager";
   }
 
   public void start() {

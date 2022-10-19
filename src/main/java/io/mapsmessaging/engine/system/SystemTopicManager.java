@@ -19,6 +19,7 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -32,20 +33,21 @@ import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 
-public class SystemTopicManager implements Runnable, ServiceManager {
+public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
   @Getter
   @Setter
   private static boolean enableStatistics = true;
 
   private final ServiceLoader<SystemTopic> systemTopics;
-  private final Future<?> scheduledFuture;
   private final List<SystemTopic> completeList;
+
+  private Future<?> scheduledFuture;
 
   public SystemTopicManager(DestinationManager destinationManager) throws IOException {
     systemTopics = ServiceLoader.load(SystemTopic.class);
     completeList = new ArrayList<>();
-    if(enableStatistics) {
+    if (enableStatistics) {
       for (SystemTopic systemTopic : systemTopics) {
         systemTopic.start();
         destinationManager.addSystemTopic(systemTopic);
@@ -63,10 +65,6 @@ public class SystemTopicManager implements Runnable, ServiceManager {
           }
         }
       }
-      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
-    }
-    else{
-      scheduledFuture = null;
     }
   }
 
@@ -80,6 +78,23 @@ public class SystemTopicManager implements Runnable, ServiceManager {
           // We can ignore this, since it would be temp on the connection
         }
       }
+    }
+  }
+
+  @Override
+  public String getName() {
+    return "System Topic Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "System topic life cycle manager";
+  }
+
+  @Override
+  public void start() {
+    if (enableStatistics) {
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
     }
   }
 

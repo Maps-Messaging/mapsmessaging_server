@@ -23,6 +23,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.security.Principal;
@@ -33,7 +34,7 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
-public class SecurityManager {
+public class SecurityManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(SecurityManager.class);
   private final ConfigurationProperties properties;
@@ -72,6 +73,26 @@ public class SecurityManager {
     } else {
       return properties.getProperty("default");
     }
+  }
+
+  @Override
+  public String getName() {
+    return "Security Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Manages the JAAS login mechanisms for the server";
+  }
+
+  @Override
+  public void start() {
+
+  }
+
+  @Override
+  public void stop() {
+
   }
 
   private static class LocalCallbackHandler implements CallbackHandler {

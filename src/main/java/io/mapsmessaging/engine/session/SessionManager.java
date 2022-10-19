@@ -27,6 +27,9 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
 import javax.security.auth.login.LoginException;
 
-public class SessionManager {
+public class SessionManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(SessionManager.class);
   private final SessionManagerPipeLine[] sessionPipeLines;
@@ -51,16 +54,28 @@ public class SessionManager {
   private final LongAdder expiredSessions;
 
 
-  public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath, int pipelineSize) {
+  public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath) {
+    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
+    int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
     disconnectedSessions = new LongAdder();
     connectedSessions = new LongAdder();
     expiredSessions = new LongAdder();
-    sessionPipeLines = new SessionManagerPipeLine[pipelineSize];
+    sessionPipeLines = new SessionManagerPipeLine[pipeLineSize];
     storeLookup = new PersistentSessionManager(dataPath);
     Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, security, connectedSessions, disconnectedSessions, expiredSessions));
     securityManager = security;
     willTaskManager = WillTaskManager.getInstance();
     sessionManagerJMX = new SessionManagerJMX(this);
+  }
+
+  @Override
+  public String getName() {
+    return "Session Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Session life cycle manager";
   }
 
   //<editor-fold desc="Manager startup and shutdown functions">

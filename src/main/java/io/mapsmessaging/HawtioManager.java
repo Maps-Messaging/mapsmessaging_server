@@ -27,12 +27,13 @@ import static io.mapsmessaging.logging.ServerLogMessages.HAWTIO_WAR_FILE_NOT_FOU
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.File;
 import java.lang.reflect.Method;
 
-public class HawtioManager {
+public class HawtioManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(HawtioManager.class);
 
@@ -58,6 +59,16 @@ public class HawtioManager {
     }
   }
 
+  @Override
+  public String getName() {
+    return "Hawtio Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Hawtio Web management";
+  }
+
   public void start() {
     if (enabled) {
       Thread runner = new Thread(new Startup());
@@ -66,13 +77,16 @@ public class HawtioManager {
     }
   }
 
+  public void stop() {
+  }
+
   private class Startup implements Runnable {
 
-    private void register(){
-      if(properties.getBooleanProperty("discoverable", false)) {
+    private void register() {
+      if (properties.getBooleanProperty("discoverable", false)) {
         String service = "_http._tcp.local.";
         try {
-          MessageDaemon.getInstance().getDiscoveryManager().register( properties.getProperty("hostname", "0.0.0.0"), service, "hawtio", 8080, "/hawtio/");
+          MessageDaemon.getInstance().getDiscoveryManager().register(properties.getProperty("hostname", "0.0.0.0"), service, "hawtio", 8080, "/hawtio/");
         } catch (Exception e) {
           logger.log(ServerLogMessages.HAWTIO_REGISTRATION_FAILED, e);
         }

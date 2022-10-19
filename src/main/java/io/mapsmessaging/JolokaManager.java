@@ -21,6 +21,7 @@ package io.mapsmessaging;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.util.Map.Entry;
 import org.jolokia.jvmagent.JolokiaServer;
 import org.jolokia.jvmagent.JolokiaServerConfig;
 
-public class JolokaManager {
+public class JolokaManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(JolokaManager.class);
 
@@ -40,6 +41,16 @@ public class JolokaManager {
   public JolokaManager() {
     properties = ConfigurationManager.getInstance().getProperties("jolokia");
     enabled = properties.getProperty("enable", "true").equalsIgnoreCase("true");
+  }
+
+  @Override
+  public String getName() {
+    return "Jolokia Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "JMX RestAPI mapper";
   }
 
   public void start() {

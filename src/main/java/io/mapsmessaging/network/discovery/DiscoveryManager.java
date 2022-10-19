@@ -7,6 +7,7 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
@@ -18,7 +19,7 @@ import java.util.List;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
 
-public class DiscoveryManager {
+public class DiscoveryManager implements Agent {
 
   private final Logger logger;
   private final String serverName;
@@ -28,20 +29,31 @@ public class DiscoveryManager {
     this.serverName = serverName;
     logger = LoggerFactory.getLogger(DiscoveryManager.class);
     boundedNetworks = new ArrayList<>();
+  }
 
+  @Override
+  public String getName() {
+    return "Discovery Manager";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Manages the mDNS records";
+  }
+
+  public void start() {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
     if (properties.getBooleanProperty("enabled", false)) {
       boolean stampMeta = properties.getBooleanProperty("addTxtRecords", false);
       String hostnames = properties.getProperty("hostnames");
       try {
-        if(hostnames != null){
+        if (hostnames != null) {
           String[] hostnameList = hostnames.split(",");
-          for(String hostname: hostnameList){
+          for (String hostname : hostnameList) {
             InetAddress address = InetAddress.getByName(hostname.trim());
             boundedNetworks.add(bindInterface(hostname, address, stampMeta));
           }
-        }
-        else{
+        } else {
           InetAddress address = InetAddress.getLocalHost();
           boundedNetworks.add(bindInterface(address.getHostName(), address, stampMeta));
         }
@@ -51,13 +63,18 @@ public class DiscoveryManager {
     }
   }
 
+  public void stop() {
+    Thread t = new Thread(this::deregisterAll);
+    t.start();
+  }
+
   private AdapterManager bindInterface(String hostname, InetAddress homeAddress, boolean stampMeta) throws IOException {
     return new AdapterManager(hostname, serverName, JmDNS.create(homeAddress, serverName), stampMeta);
   }
 
 
   public void register(EndPointServer endPointServer) {
-    if(!endPointServer.getConfig().getProperties().getBooleanProperty("discoverable", false)){
+    if (!endPointServer.getConfig().getProperties().getBooleanProperty("discoverable", false)) {
       return;
     }
     EndPointURL url = endPointServer.getUrl();
