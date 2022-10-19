@@ -88,6 +88,14 @@ public class NetworkManager implements ServiceManager {
     }
   }
 
+  public  List<EndPointManager> getAll(){
+    List<EndPointManager> response = new ArrayList<>();
+    for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
+        response.add(entry.getValue());
+    }
+    return response;
+  }
+
   public void startAll() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {

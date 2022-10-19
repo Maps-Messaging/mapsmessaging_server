@@ -268,6 +268,14 @@ public class DestinationManager implements DestinationFactory {
     return response;
   }
 
+  public List<String> getAll() {
+    Map<String, DestinationImpl> response = new LinkedHashMap<>();
+    for(DestinationManagerPipeline pipeline:creatorPipelines){
+      pipeline.copy(name -> true, response);
+    }
+    return new ArrayList<>(response.keySet());
+  }
+
   public class ResourceLoaderManagement {
 
     private final Queue<File> fileList;
