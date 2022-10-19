@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.discovery;
 
 import io.mapsmessaging.BuildInfo;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -20,10 +21,12 @@ public class AdapterManager {
   private final Logger logger;
   private final String serverName;
   private final JmDNS mDNSAgent;
-  @Getter
-  private final String adapter;
   private final Map<EndPointServer, List<ServiceInfo>> endPointList;
   private final boolean stampMeta;
+  private final ServiceInfo serverInfo;
+
+  @Getter
+  private final String adapter;
 
   public AdapterManager(String adapter, String serverName, JmDNS agent, boolean stampMeta) {
     this.serverName = serverName;
@@ -32,6 +35,26 @@ public class AdapterManager {
     this.stampMeta = stampMeta;
     logger = LoggerFactory.getLogger(AdapterManager.class);
     endPointList = new LinkedHashMap<>();
+    ServiceInfo tmp;
+    try {
+      tmp = registerServer();
+    } catch (IOException e) {
+      tmp = null;
+    }
+    serverInfo = tmp;
+  }
+
+  public ServiceInfo registerServer() throws IOException {
+    Map<String, String> map = new LinkedHashMap<>();
+    map.put("server name", MessageDaemon.getInstance().getId());
+    map.put("schema support", "true");
+    map.put("schema name", "$schema");
+    map.put("version", BuildInfo.getInstance().getBuildVersion());
+    map.put("date", BuildInfo.getInstance().getBuildDate());
+    String service = "_maps._tcp._local";
+    ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, 8080, 0, 0, map);
+    register(serviceInfo);
+    return serviceInfo;
   }
 
   public synchronized void register(EndPointServer endPointServer, String transport, List<String> protocolList){
@@ -59,6 +82,7 @@ public class AdapterManager {
         map.put("schema support", "true");
         map.put("schema name", "$schema");
         map.put("version", BuildInfo.getInstance().getBuildVersion());
+        map.put("server name", MessageDaemon.getInstance().getId());
         map.put("date", BuildInfo.getInstance().getBuildDate());
       }
       String service = "_" + lowerProtocol + "._"+transport+"._local";
@@ -91,6 +115,7 @@ public class AdapterManager {
         deregister(info);
       }
     }
+    deregister(serverInfo);
   }
 
   public synchronized void deregister(ServiceInfo serviceInfo) {
