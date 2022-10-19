@@ -22,7 +22,7 @@ public class RestApiServerManager implements Agent {
   @Getter
   private final String host;
 
-  private ServiceInfo serviceInfo;
+  private ServiceInfo[] serviceInfos;
 
   public RestApiServerManager() {
     map = ConfigurationManager.getInstance().getProperties("RestApi");
@@ -48,12 +48,14 @@ public class RestApiServerManager implements Agent {
       for (RestApi restApi : restApis) {
         restApi.initialise();
       }
-      serviceInfo = MessageDaemon.getInstance().getDiscoveryManager().register(this);
+      serviceInfos = MessageDaemon.getInstance().getDiscoveryManager().register(this);
     }
   }
 
   public void stop() {
-    MessageDaemon.getInstance().getDiscoveryManager().deregister(serviceInfo);
+    for(ServiceInfo serviceInfo: serviceInfos) {
+      MessageDaemon.getInstance().getDiscoveryManager().deregister(serviceInfo);
+    }
   }
 
 }

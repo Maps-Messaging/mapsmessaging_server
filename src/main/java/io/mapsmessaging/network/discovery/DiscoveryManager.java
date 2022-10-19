@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
 
 public class DiscoveryManager implements Agent {
 
@@ -34,6 +35,12 @@ public class DiscoveryManager implements Agent {
     this.serverName = serverName;
     logger = LoggerFactory.getLogger(DiscoveryManager.class);
     boundedNetworks = new ArrayList<>();
+  }
+
+  public void registerListener(String type, ServiceListener listener){
+    for(AdapterManager adapterManager:boundedNetworks){
+      adapterManager.registerListener(type, listener);
+    }
   }
 
   @Override
@@ -77,17 +84,18 @@ public class DiscoveryManager implements Agent {
     return new AdapterManager(hostname, serverName, JmDNS.create(homeAddress, serverName), stampMeta);
   }
 
-  public ServiceInfo register(RestApiServerManager restApiServerManager) {
-    Map<String, String> map = new LinkedHashMap<>();
-    map.put("server name", MessageDaemon.getInstance().getId());
-    map.put("schema support", "true");
-    map.put("schema name", "$schema");
-    map.put("version", BuildInfo.getInstance().getBuildVersion());
-    map.put("date", BuildInfo.getInstance().getBuildDate());
-    map.put("restApi", "true");
-    String service = "_maps._tcp._local";
-    ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, restApiServerManager.getPort(), 0, 0, map);
+  public ServiceInfo[] register(RestApiServerManager restApiServerManager) {
+    List<ServiceInfo> registeredServices = new ArrayList<>();
     for (AdapterManager manager : boundedNetworks) {
+      Map<String, String> map = new LinkedHashMap<>();
+      map.put("server name", MessageDaemon.getInstance().getId());
+      map.put("schema support", "true");
+      map.put("schema name", "$schema");
+      map.put("version", BuildInfo.getInstance().getBuildVersion());
+      map.put("date", BuildInfo.getInstance().getBuildDate());
+      map.put("restApi", "true");
+      String service = "_maps._tcp._local";
+      ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, restApiServerManager.getPort(), 0, 0, map);
       String host = restApiServerManager.getHost();
       if (host.equals("0.0.0.0") || host.equals(manager.getAdapter())) {
         try {
@@ -96,8 +104,9 @@ public class DiscoveryManager implements Agent {
           throw new RuntimeException(e);
         }
       }
+      registeredServices.add(serviceInfo);
     }
-    return serviceInfo;
+    return registeredServices.toArray(new ServiceInfo[0]);
   }
 
   public void register(EndPointServer endPointServer) {

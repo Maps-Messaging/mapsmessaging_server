@@ -39,6 +39,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.NetworkConnectionManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
+import io.mapsmessaging.network.discovery.ServerConnectionManager;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
@@ -55,7 +56,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -66,25 +66,34 @@ import java.util.Map.Entry;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.LockSupport;
-import org.tanukisoftware.wrapper.WrapperListener;
-import org.tanukisoftware.wrapper.WrapperManager;
 
-public class MessageDaemon implements WrapperListener {
+public class MessageDaemon {
 
-  private static final String PID_FILE = "pid";
-
+  public static MessageDaemon getInstance(){
+    return instance;
+  }
   private static MessageDaemon instance;
+  static {
+    MessageDaemon tmp = null;
+    try {
+      tmp = new MessageDaemon();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    instance = tmp;
+  }
 
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final Map<String, AgentOrder> agentMap;
   private final String uniqueId;
-  private final MessageDaemonJMX mBean;
+  private final String path;
+  private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
+
+
 
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
-    instance = this;
     isStarted = new AtomicBoolean(false);
     String tmpHome = System.getProperty("MAPS_HOME", ".");
     File testHome = new File(tmpHome);
@@ -100,7 +109,7 @@ public class MessageDaemon implements WrapperListener {
     if (!data.exists()) {
       Files.createDirectories(data.toPath());
     }
-    String path = homeDirectory + "/data/";
+    path = homeDirectory + "/data/";
 
     InstanceConfig instanceConfig = new InstanceConfig(path);
     instanceConfig.loadState();
@@ -126,12 +135,8 @@ public class MessageDaemon implements WrapperListener {
 
     //</editor-fold>
     ConfigurationManager.getInstance().initialise(uniqueId + "_");
-
-    mBean = new MessageDaemonJMX(this);
-
-    loadConstants();
-    createAgentStartStopList(path);
   }
+
 
   private void loadConstants() {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
@@ -171,6 +176,7 @@ public class MessageDaemon implements WrapperListener {
     addToMap(100, 25, new JolokaManager());
     addToMap(110, 30, new HawtioManager());
     addToMap(120, 40, new RestApiServerManager());
+    addToMap(200, 0, new ServerConnectionManager());
   }
 
   private void addToMap(int start, int stop, Agent agent) {
@@ -203,10 +209,6 @@ public class MessageDaemon implements WrapperListener {
     }
   }
 
-  public static MessageDaemon getInstance() {
-    return instance;
-  }
-
   public DiscoveryManager getDiscoveryManager(){
     return (DiscoveryManager) agentMap.get("Discovery Manager").getAgent();
   }
@@ -227,8 +229,11 @@ public class MessageDaemon implements WrapperListener {
     return mBean;
   }
 
-  @Override
-  public Integer start(String[] strings) {
+  public Integer start(String[] strings) throws IOException {
+    mBean = new MessageDaemonJMX(this);
+    loadConstants();
+    createAgentStartStopList(path);
+
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
       ConfigurationProperties map = ConfigurationManager.getInstance().getProperties("NetworkManager");
@@ -261,7 +266,6 @@ public class MessageDaemon implements WrapperListener {
     return null;
   }
 
-  @Override
   public int stop(int i) {
     isStarted.set(false);
     List<AgentOrder> startList = new ArrayList<>(agentMap.values());
@@ -274,13 +278,6 @@ public class MessageDaemon implements WrapperListener {
     }
     mBean.close();
     return i;
-  }
-
-  @Override
-  public void controlEvent(int event) {
-    if (!((event == WrapperManager.WRAPPER_CTRL_LOGOFF_EVENT) && (WrapperManager.isLaunchedAsService()))) {
-      WrapperManager.stop(0);
-    }
   }
 
   public boolean isStarted() {
@@ -309,28 +306,7 @@ public class MessageDaemon implements WrapperListener {
     }
   }
 
-  // Start the application.  If the JVM was launched from the native
-  //  Wrapper then the application will wait for the native Wrapper to
-  //  call the application's start method.  Otherwise, the start method
-  //  will be called immediately.
   public static void main(String[] args) throws IOException {
-    File pidFile = new File(PID_FILE);
-
-    if (pidFile.exists()) {
-      try {
-        java.nio.file.Files.delete(Paths.get(PID_FILE));
-      } catch (IOException e) {
-        LockSupport.parkNanos(10000000);
-      }
-    }
-    try {
-      if (pidFile.createNewFile()) {
-        pidFile.deleteOnExit();
-      }
-    } catch (IOException e) {
-      // can ignore this exception
-    }
-    new ExitRunner(pidFile);
-    WrapperManager.start(new MessageDaemon(), args);
+    ServerRunner.main(args);
   }
 }

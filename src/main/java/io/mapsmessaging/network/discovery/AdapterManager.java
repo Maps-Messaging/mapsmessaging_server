@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
 import lombok.Getter;
 
 public class AdapterManager {
@@ -105,5 +106,9 @@ public class AdapterManager {
     logger.log(ServerLogMessages.DISCOVERY_DEREGISTERED_ALL);
     mDNSAgent.unregisterAllServices();
     endPointList.clear();
+  }
+
+  public void registerListener(String type, ServiceListener listener) {
+    mDNSAgent.addServiceListener(type, listener);
   }
 }
