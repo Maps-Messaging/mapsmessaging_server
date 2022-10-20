@@ -95,6 +95,13 @@ public class DiscoveryManager implements Agent {
       map.put("date", BuildInfo.getInstance().getBuildDate());
       map.put("restApi", "true");
       String service = "_maps._tcp._local";
+      if(restApiServerManager.isSecure()){
+        map.put("protocol", "https");
+      }
+      else{
+        map.put("protocol", "http");
+      }
+
       ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, restApiServerManager.getPort(), 0, 0, map);
       String host = restApiServerManager.getHost();
       if (host.equals("0.0.0.0") || host.equals(manager.getAdapter())) {

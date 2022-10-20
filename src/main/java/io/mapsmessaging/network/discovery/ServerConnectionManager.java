@@ -21,12 +21,17 @@ public class ServerConnectionManager implements ServiceListener, Agent {
 
   @Override
   public void serviceRemoved(ServiceEvent serviceEvent) {
+    if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
+      for(String host:serviceEvent.getInfo().getHostAddresses()){
+        logger.log(ServerLogMessages.DISCOVERY_REMOVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
+      }
+    }
 
   }
 
   @Override
   public void serviceResolved(ServiceEvent serviceEvent) {
-    if(!serviceEvent.getName().equals(MessageDaemon.getInstance().getId())){ // Ignore local
+    if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
       for(String host:serviceEvent.getInfo().getHostAddresses()){
         logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
       }

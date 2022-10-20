@@ -88,6 +88,7 @@ public class NetworkManager implements ServiceManager, Agent {
       EndPointURL endPointURL = EndPointURLFactory.getInstance().create(networkConfig.getUrl());
       initialiseInstance(endPointURL, networkConfig);
     }
+    startAll();
   }
 
   private void initialiseInstance(EndPointURL endPointURL, NetworkConfig networkConfig) {

@@ -2,6 +2,7 @@ package io.mapsmessaging.rest;
 
 import static spark.Spark.ipAddress;
 import static spark.Spark.port;
+import static spark.Spark.secure;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.utilities.Agent;
@@ -9,26 +10,19 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.util.ServiceLoader;
 import javax.jmdns.ServiceInfo;
-import lombok.Getter;
 
 public class RestApiServerManager implements Agent {
 
   private final ServiceLoader<RestApi> restApis;
   private final ConfigurationProperties map;
 
-  @Getter
-  private final int port;
-
-  @Getter
-  private final String host;
-
+  private boolean isSecure;
   private ServiceInfo[] serviceInfos;
 
   public RestApiServerManager() {
     map = ConfigurationManager.getInstance().getProperties("RestApi");
     restApis = ServiceLoader.load(RestApi.class);
-    port = map.getIntProperty("port", 4567);
-    host = map.getProperty("host", "0.0.0.0");
+    isSecure = false;
   }
 
   @Override
@@ -43,12 +37,40 @@ public class RestApiServerManager implements Agent {
 
   public void start() {
     if (map.getBooleanProperty("enabled", false)) {
-      port(port);
-      ipAddress(host);
+      port( map.getIntProperty("port", 4567));
+      ipAddress( map.getProperty("host", "0.0.0.0"));
+      setupSSL();
       for (RestApi restApi : restApis) {
         restApi.initialise();
       }
       serviceInfos = MessageDaemon.getInstance().getDiscoveryManager().register(this);
+    }
+  }
+
+  public int getPort(){
+    return map.getIntProperty("port", 4567);
+  }
+
+  public String getHost(){
+    return map.getProperty("host", "0.0.0.0");
+  }
+
+  public boolean isSecure(){
+    return isSecure;
+  }
+
+  private void setupSSL(){
+    String keyStore = map.getProperty("ssl_keyStoreFile", null);
+    String keyStorePass = map.getProperty("ssl_keyStorePassphrase", null);
+    String trustStore = map.getProperty("ssl_trustStoreFile", null);
+    String trustStorePass = map.getProperty("ssl_trustStorePassphrase", null);
+    if(keyStore != null &&
+        keyStorePass != null &&
+        trustStore != null &&
+        trustStorePass != null
+    ){
+      secure(keyStore, keyStorePass, trustStore, trustStorePass);
+      isSecure = true;
     }
   }
 

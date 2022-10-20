@@ -19,3 +19,7 @@ RestApi:
   enabled: true
   hostnames: 10.140.62.189
   port: 8080
+  ssl_keyStoreFile: my-keystore.jks
+  ssl_keyStorePassphrase: password
+  ssl_trustStoreFile: my-keystore.jks
+  ssl_trustStorePassphrase: password

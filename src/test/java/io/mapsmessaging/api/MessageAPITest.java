@@ -18,16 +18,16 @@
 
 package io.mapsmessaging.api;
 
+import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.EngineManager;
 import io.mapsmessaging.engine.session.FakeProtocolImpl;
 import io.mapsmessaging.engine.session.SecurityManager;
+import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.test.BaseTestConfig;
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.test.BaseTestConfig;
 
 public class MessageAPITest extends BaseTestConfig {
 
@@ -35,7 +35,7 @@ public class MessageAPITest extends BaseTestConfig {
   protected SecurityManager previous;
 
   @BeforeEach
-  public void setupTest() {
+  public void setupTest() throws IOException {
     if(!BaseTestConfig.md.isStarted()){
       BaseTestConfig.md.start(null);
     }

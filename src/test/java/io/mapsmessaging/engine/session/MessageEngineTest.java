@@ -18,9 +18,10 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.test.BaseTestConfig;
+import java.io.IOException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import io.mapsmessaging.test.BaseTestConfig;
 
 public abstract class MessageEngineTest extends BaseTestConfig {
 
@@ -28,7 +29,7 @@ public abstract class MessageEngineTest extends BaseTestConfig {
   protected SecurityManager previous;
 
   @BeforeEach
-  public void setupTest() {
+  public void setupTest() throws IOException {
     if(!BaseTestConfig.md.isStarted()){
       BaseTestConfig.md.start(null);
     }
