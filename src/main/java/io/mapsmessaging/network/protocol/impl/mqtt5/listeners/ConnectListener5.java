@@ -141,9 +141,9 @@ public class ConnectListener5 extends PacketListener5 {
     connAck.add(
             new ServerReference(
                 "Build Date:"
-                    + BuildInfo.getInstance().getBuildDate()
+                    + BuildInfo.getBuildDate()
                     + " BuildVersion:"
-                    + BuildInfo.getInstance().getBuildVersion()))
+                    + BuildInfo.getBuildVersion()))
         .add(new RetainAvailable(true))
         .add(new SubscriptionIdentifiersAvailable(true))
         .add(new WildcardSubscriptionsAvailable(true))

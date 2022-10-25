@@ -24,18 +24,9 @@ import lombok.ToString;
 @ToString
 public class BuildInfo {
 
-  private static final BuildInfo instance = new BuildInfo();
-
   @Getter
-  private final String buildDate;
+  public static final String buildDate = "dd-mmm-yyyy";
   @Getter
-  private final String buildVersion;
+  public static final String buildVersion = "BuildVersionSetAtBuildTime";
 
-  private BuildInfo() {
-    buildDate = "dd-mmm-yyyy";
-    buildVersion = "BuildVersionSetAtBuildTime";
-  }
-  public static BuildInfo getInstance() {
-    return instance;
-  }
 }

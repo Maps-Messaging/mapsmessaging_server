@@ -95,8 +95,8 @@ public class ResourceFactory {
           resourceName,
           destinationType.getName(),
           uuid.getMostSignificantBits() + ":" + uuid.getLeastSignificantBits(),
-          BuildInfo.getInstance().getBuildDate(),
-          BuildInfo.getInstance().getBuildVersion()
+          BuildInfo.getBuildDate(),
+          BuildInfo.getBuildVersion()
       );
       if(config != null) {
         properties.setSchema(config.toMap());

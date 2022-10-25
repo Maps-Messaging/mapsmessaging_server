@@ -37,6 +37,6 @@ public class BrokerVersion extends SystemTopic {
 
   @Override
   protected Message generateMessage() {
-    return getMessage(BuildInfo.getInstance().getBuildVersion().getBytes());
+    return getMessage(BuildInfo.getBuildVersion().getBytes());
   }
 }

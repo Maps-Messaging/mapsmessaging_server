@@ -234,7 +234,7 @@ public class MessageDaemon {
     loadConstants();
     createAgentStartStopList(path);
 
-    logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getInstance().getBuildVersion(), BuildInfo.getInstance().getBuildDate());
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
       ConfigurationProperties map = ConfigurationManager.getInstance().getProperties("NetworkManager");
       List<ConfigurationProperties> list = (List<ConfigurationProperties>) map.get("data");

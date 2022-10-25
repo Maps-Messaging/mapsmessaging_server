@@ -124,12 +124,12 @@ public class MessageDaemonJMX implements HealthMonitor {
 
   @JMXBeanAttribute(name = "build Date", description = "Returns the build date and time of the server")
   public String getBuildDate() {
-    return BuildInfo.getInstance().getBuildDate();
+    return BuildInfo.getBuildDate();
   }
 
   @JMXBeanAttribute(name = "build Version", description = "Returns the build version of the server")
   public String getBuildVersion() {
-    return BuildInfo.getInstance().getBuildVersion();
+    return BuildInfo.getBuildVersion();
   }
 
   public List<String> getTypePath() {

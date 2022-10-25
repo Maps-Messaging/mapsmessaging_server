@@ -61,9 +61,9 @@ public class AdapterManager {
         }
         map.put("schema support", "true");
         map.put("schema name", "$schema");
-        map.put("version", BuildInfo.getInstance().getBuildVersion());
+        map.put("version", BuildInfo.getBuildVersion());
         map.put("server name", MessageDaemon.getInstance().getId());
-        map.put("date", BuildInfo.getInstance().getBuildDate());
+        map.put("date", BuildInfo.getBuildDate());
       }
       String service = "_" + lowerProtocol + "._"+transport+"._local";
       ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, url.getPort(), 0, 0, map);

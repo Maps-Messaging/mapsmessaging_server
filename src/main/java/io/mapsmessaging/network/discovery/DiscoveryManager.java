@@ -91,8 +91,8 @@ public class DiscoveryManager implements Agent {
       map.put("server name", MessageDaemon.getInstance().getId());
       map.put("schema support", "true");
       map.put("schema name", "$schema");
-      map.put("version", BuildInfo.getInstance().getBuildVersion());
-      map.put("date", BuildInfo.getInstance().getBuildDate());
+      map.put("version", BuildInfo.getBuildVersion());
+      map.put("date", BuildInfo.getBuildDate());
       map.put("restApi", "true");
       String service = "_maps._tcp._local";
       if(restApiServerManager.isSecure()){

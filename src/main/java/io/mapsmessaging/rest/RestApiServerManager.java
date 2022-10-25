@@ -8,7 +8,9 @@ import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import java.net.URI;
 import javax.jmdns.ServiceInfo;
+import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.glassfish.jersey.grizzly2.servlet.GrizzlyWebContainerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -92,6 +94,13 @@ public class RestApiServerManager implements Agent {
       String baseUri = "http://" + getHost() + ":" + getPort() + "/";
       httpServer = GrizzlyWebContainerFactory.create(URI.create(baseUri), sc, null, null);
       httpServer.start();
+      if(map.getBooleanProperty("enableSwagger", false)) {
+        ServerConfiguration cfg = httpServer.getServerConfiguration();
+        ClassLoader loader = RestApiServerManager.class.getClassLoader();
+        CLStaticHttpHandler docsHandler = new CLStaticHttpHandler(loader, "swagger-ui/");
+        docsHandler.setFileCacheEnabled(false);
+        cfg.addHttpHandler(docsHandler, "/swagger-ui/");
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
