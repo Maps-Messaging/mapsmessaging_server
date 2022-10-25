@@ -77,7 +77,7 @@ public class BaseTestConfig extends BaseTest {
 
       setIfNot("java.security.auth.login.config", "=src/test/resources/jaasAuth.config");
       setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
-      md = new MessageDaemon();
+      md = MessageDaemon.getInstance();
       Runnable runnable = () -> {
         try {
           md.start(null);

@@ -164,8 +164,8 @@ public class MessageDaemon {
     SecurityManager securityManager = new SecurityManager();
     DestinationManager destinationManager = new DestinationManager();
 
+    addToMap(5, 110, SchemaManager.getInstance());
     addToMap(10, 90, TransactionManager.getInstance());
-    addToMap(20, 110, SchemaManager.getInstance());
     addToMap(30, 10, new DiscoveryManager(uniqueId));
     addToMap(40, 120, securityManager);
     addToMap(50, 95, destinationManager);

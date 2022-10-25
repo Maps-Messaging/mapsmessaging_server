@@ -1,24 +1,13 @@
-package io.mapsmessaging.rest.impl;
+package io.mapsmessaging.rest.api.impl;
 
-import static spark.Spark.get;
 
-import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.rest.RestApi;
-import io.mapsmessaging.rest.data.SchemaData;
-import io.mapsmessaging.rest.transformation.JsonTransformation;
-import io.mapsmessaging.schemas.config.SchemaConfig;
-import java.util.ArrayList;
-import java.util.List;
-import spark.Request;
-import spark.Response;
-
-public class SchemaQueryApi implements RestApi {
+public class SchemaQueryApi {
 
   public void initialise() {
-    get("/schema/getAll", this::getAll, new JsonTransformation());
-    get("/schema/get/:id", this::getId, new JsonTransformation());
+    //  get("/schema/getAll", this::getAll, new JsonTransformation());
+    //  get("/schema/get/:id", this::getId, new JsonTransformation());
   }
-
+/*
   protected SchemaData getId(Request req, Response res) {
     res.type("application/json");
     String id =  req.params(":id");
@@ -38,4 +27,6 @@ public class SchemaQueryApi implements RestApi {
     }
     return list;
   }
+
+ */
 }

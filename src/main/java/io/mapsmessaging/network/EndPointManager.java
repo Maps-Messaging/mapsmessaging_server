@@ -47,7 +47,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
     endPointURL = url;
     protocols = nc.getProtocols();
     endPointServer = null;
-    state = STATE.CLOSED;
+    state = STATE.STOPPED;
     int selectorCount = nc.getProperties().getIntProperty("selectorThreadCount", 5);
     EndPointManagerJMX bean = new EndPointManagerJMX(managerBean.getTypePath(), this, nc);
     endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, nc, bean);
@@ -67,27 +67,27 @@ public class EndPointManager implements Closeable, AcceptHandler {
   }
 
   public void start() throws IOException {
-    if (state != STATE.CLOSED) {
-      throw new IOException("End Point not closed, unable to open an already open End Point");
+    if (state != STATE.STOPPED) {
+      throw new IOException("End Point not closed, unable to start an already started End Point");
     }
     logger.log(ServerLogMessages.END_POINT_MANAGER_START, endPointURL);
-    state = STATE.OPEN;
+    state = STATE.START;
     endPointServer.start();
     endPointServer.register();
   }
 
   public void close() throws IOException {
-    if (state == STATE.CLOSED) {
+    if (state == STATE.STOPPED) {
       throw new IOException("End Point already closed");
     }
     logger.log(ServerLogMessages.END_POINT_MANAGER_CLOSE, endPointURL);
-    state = STATE.CLOSED;
+    state = STATE.STOPPED;
     endPointServer.deregister();
     endPointServer.close();
   }
 
   public void pause() throws IOException {
-    if (state == STATE.CLOSED) {
+    if (state == STATE.STOPPED) {
       throw new IOException("End Point is closed, unable to pause");
     }
     if (state == STATE.PAUSED) {
@@ -100,7 +100,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
   }
 
   public void resume() throws IOException {
-    if (state == STATE.CLOSED) {
+    if (state == STATE.STOPPED) {
       throw new IOException("End Point is closed, unable to resume");
     }
     if (state != STATE.PAUSED) {
@@ -108,13 +108,13 @@ public class EndPointManager implements Closeable, AcceptHandler {
     }
     logger.log(ServerLogMessages.END_POINT_MANAGER_RESUME, endPointURL);
     endPointServer.register();
-    state = STATE.OPEN;
+    state = STATE.START;
   }
 
   @Override
   public void accept(EndPoint endpoint) throws IOException {
     ThreadContext.put("endpoint", endPointURL.toString());
-    if (state == STATE.OPEN) {
+    if (state == STATE.START) {
       try {
         new ProtocolAcceptRunner(endpoint, protocols);
       } catch (IOException e) {
@@ -131,9 +131,10 @@ public class EndPointManager implements Closeable, AcceptHandler {
     return endPointServer;
   }
 
-  enum STATE {
-    CLOSED,
-    OPEN,
-    PAUSED
+  public enum STATE {
+    STOPPED,
+    START,
+    PAUSED,
+    RESUME
   }
 }

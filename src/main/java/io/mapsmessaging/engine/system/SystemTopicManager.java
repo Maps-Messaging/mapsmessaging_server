@@ -41,12 +41,18 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
   private final ServiceLoader<SystemTopic> systemTopics;
   private final List<SystemTopic> completeList;
+  private final DestinationManager destinationManager;
 
   private Future<?> scheduledFuture;
 
-  public SystemTopicManager(DestinationManager destinationManager) throws IOException {
+  public SystemTopicManager(DestinationManager destinationManager){
     systemTopics = ServiceLoader.load(SystemTopic.class);
     completeList = new ArrayList<>();
+    this.destinationManager = destinationManager;
+  }
+
+  @Override
+  public void run()  {
     if (enableStatistics) {
       for (SystemTopic systemTopic : systemTopics) {
         systemTopic.start();
@@ -54,8 +60,12 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
         String[] aliases = systemTopic.aliases();
         completeList.add(systemTopic);
         for (String alias : aliases) {
-          SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
-          destinationManager.addSystemTopic(aliasTopic);
+          try {
+            SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
+            destinationManager.addSystemTopic(aliasTopic);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
         }
         List<SystemTopic> children = systemTopic.getChildren();
         if (children != null) {
@@ -66,10 +76,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
         }
       }
     }
-  }
 
-  @Override
-  public void run() {
     for (SystemTopic systemTopic : completeList) {
       if (systemTopic.hasUpdates()) {
         try {

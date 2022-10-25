@@ -138,12 +138,10 @@ NetworkManager:
         ssl_SSLContext: DTLS
 
       -
-        url: dtls://0.0.0.0:1886/
-        name: "DTLS MQTT-SN Interface"
-        protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 10
-        maxTopicsInSleep: 10
-        advertiseGateway: false
+        url: dtls://0.0.0.0:5684/
+        name: "DTLS CoAP Interface"
+        protocol: coap
+        maxBlockSize: 512
         ssl_SSLContext: DTLS
 
       -

@@ -121,7 +121,7 @@ public class NetworkManager implements ServiceManager, Agent {
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
-        if (endPointManager.getState() == STATE.CLOSED) {
+        if (endPointManager.getState() == STATE.STOPPED) {
           entry.getValue().start();
         }
       } catch (IOException e) {
@@ -135,7 +135,7 @@ public class NetworkManager implements ServiceManager, Agent {
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
-        if (endPointManager.getState() != STATE.CLOSED) {
+        if (endPointManager.getState() != STATE.STOPPED) {
           endPointManager.close();
         }
       } catch (IOException e) {
@@ -149,7 +149,7 @@ public class NetworkManager implements ServiceManager, Agent {
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
-        if (endPointManager.getState() != STATE.CLOSED
+        if (endPointManager.getState() != STATE.STOPPED
             && endPointManager.getState() != STATE.PAUSED) {
           endPointManager.pause();
         }
@@ -164,7 +164,7 @@ public class NetworkManager implements ServiceManager, Agent {
     for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
       try {
         EndPointManager endPointManager = entry.getValue();
-        if (endPointManager.getState() != STATE.CLOSED
+        if (endPointManager.getState() != STATE.STOPPED
             && endPointManager.getState() == STATE.PAUSED) {
           endPointManager.resume();
         }

@@ -29,8 +29,8 @@ public class SchemaData {
   @Getter
   private final String interfaceDescription;
 
-  public SchemaData(SchemaConfig schema){
-    format  = schema.getFormat();
+  public SchemaData(SchemaConfig schema) {
+    format = schema.getFormat();
     uniqueId = schema.getUniqueId();
     creation = schema.getCreation();
     expiresAfter = schema.getExpiresAfter();
