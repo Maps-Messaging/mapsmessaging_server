@@ -4,6 +4,7 @@ import static io.mapsmessaging.BuildInfo.buildVersion;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.StringResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -43,7 +44,7 @@ import javax.ws.rs.core.MediaType;
 )
 @Api(value = URI_PATH)
 @Path(URI_PATH)
-public class MapsRestServerApi {
+public class MapsRestServerApi extends BaseRestApi {
 
   @GET
   @Path("/ping")

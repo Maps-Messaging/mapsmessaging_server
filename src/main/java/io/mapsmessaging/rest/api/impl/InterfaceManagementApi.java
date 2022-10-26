@@ -5,6 +5,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceDetailResponse;
 import io.mapsmessaging.rest.data.InterfaceInfo;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -21,7 +22,7 @@ import javax.ws.rs.core.Response;
 
 @Api(value = URI_PATH + "/server/interfaces")
 @Path(URI_PATH)
-public class InterfaceManagementApi {
+public class InterfaceManagementApi extends BaseRestApi {
 
   @GET
   @Path("/server/interfaces")
@@ -38,10 +39,10 @@ public class InterfaceManagementApi {
         global = endPointManager.getEndPointServer().getConfig().getProperties().getGlobal();
       }
     }
-    InterfaceDetailResponse response = new InterfaceDetailResponse();
-    response.setData(protocols);
-    response.setGlobalConfig(global);
-    return response;
+    InterfaceDetailResponse interfaceDetailResponse = new InterfaceDetailResponse();
+    interfaceDetailResponse.setData(protocols);
+    interfaceDetailResponse.setGlobalConfig(global);
+    return interfaceDetailResponse;
   }
 
 
@@ -77,6 +78,4 @@ public class InterfaceManagementApi {
     MessageDaemon.getInstance().getNetworkManager().resumeAll();
     return Response.ok().build();
   }
-
-
 }

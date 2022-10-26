@@ -3,6 +3,7 @@ package io.mapsmessaging.rest.api.impl;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.SchemaData;
 import io.mapsmessaging.rest.data.SchemaResponse;
 import io.mapsmessaging.rest.data.StringListResponse;
@@ -19,7 +20,7 @@ import javax.ws.rs.core.MediaType;
 
 @Api(value = URI_PATH+ "/server/schema")
 @Path(URI_PATH)
-public class SchemaQueryApi {
+public class SchemaQueryApi extends BaseRestApi {
 
   @GET
   @Path("/server/schema/{schemaId}")

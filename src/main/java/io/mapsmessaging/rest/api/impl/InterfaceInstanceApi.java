@@ -5,6 +5,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
+import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -20,7 +21,7 @@ import javax.ws.rs.core.Response;
 
 @Api(value = URI_PATH + "/server/interface")
 @Path(URI_PATH)
-public class InterfaceInstanceApi {
+public class InterfaceInstanceApi extends BaseRestApi {
 
   @GET
   @Path("/server/interface/{endpoint}")
