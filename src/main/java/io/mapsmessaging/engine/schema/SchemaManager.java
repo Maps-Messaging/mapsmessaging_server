@@ -56,6 +56,10 @@ public class SchemaManager implements SchemaRepository, Agent {
     return loadedFormatter.get(uniqueId);
   }
 
+  public List<String> getMessageFormats() {
+    return MessageFormatterFactory.getInstance().getFormatters();
+  }
+
   @Override
   public synchronized SchemaConfig getSchema(String uniqueId) {
     return repository.getSchema(uniqueId);

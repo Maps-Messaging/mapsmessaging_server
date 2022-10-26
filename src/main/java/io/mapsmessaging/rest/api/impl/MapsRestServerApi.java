@@ -60,4 +60,5 @@ public class MapsRestServerApi {
   public StringResponse getName() {
     return new StringResponse(MessageDaemon.getInstance().getId());
   }
+
 }

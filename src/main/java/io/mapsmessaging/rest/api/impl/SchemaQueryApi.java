@@ -1,32 +1,65 @@
 package io.mapsmessaging.rest.api.impl;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
+import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.rest.data.SchemaData;
+import io.mapsmessaging.rest.data.SchemaResponse;
+import io.mapsmessaging.rest.data.StringListResponse;
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import java.util.ArrayList;
+import java.util.List;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Api(value = URI_PATH+ "/server/schema")
+@Path(URI_PATH)
 public class SchemaQueryApi {
 
-  public void initialise() {
-    //  get("/schema/getAll", this::getAll, new JsonTransformation());
-    //  get("/schema/get/:id", this::getId, new JsonTransformation());
-  }
-/*
-  protected SchemaData getId(Request req, Response res) {
-    res.type("application/json");
-    String id =  req.params(":id");
-    for(SchemaConfig config:SchemaManager.getInstance().getAll()){
-      if(config.getUniqueId().equals(id)){
-        return new SchemaData(config);
+  @GET
+  @Path("/server/schema/{schemaId}")
+  @Produces({MediaType.APPLICATION_JSON})
+  @ApiOperation(value = "Get the schema configuration")
+  public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) {
+    for(SchemaConfig config: SchemaManager.getInstance().getAll()){
+      if(config.getUniqueId().equals(schemaId)){
+        return new SchemaResponse(new SchemaData(config));
       }
     }
-    return null;
+    return  new SchemaResponse(new ArrayList<>());
   }
 
-  protected List<SchemaData> getAll(Request req, Response res) {
-    res.type("application/json");
+  @GET
+  @Path("/server/schema")
+  @Produces({MediaType.APPLICATION_JSON})
+  @ApiOperation(value = "Get all the schema configuration")
+  public SchemaResponse getAllSchemas() {
     List<SchemaData> list = new ArrayList<>();
     for(SchemaConfig config:SchemaManager.getInstance().getAll()){
       list.add(new SchemaData(config));
     }
-    return list;
+    return new SchemaResponse(list);
   }
 
- */
+  @GET
+  @Path("/server/schema/formats")
+  @Produces({MediaType.APPLICATION_JSON})
+  @ApiOperation(value = "Get all the schema configuration")
+  public StringListResponse getKnownFormats() {
+    return new StringListResponse( SchemaManager.getInstance().getMessageFormats());
+  }
+
+  @GET
+  @Path("/server/schema/link-format")
+  @Produces({MediaType.TEXT_PLAIN})
+  @ApiOperation(value = "Get link format string")
+  public String getLinkFormat() {
+    return SchemaManager.getInstance().buildLinkFormatResponse();
+  }
+
 }
