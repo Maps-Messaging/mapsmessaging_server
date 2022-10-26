@@ -19,6 +19,7 @@
 package io.mapsmessaging.utilities.configuration;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +49,14 @@ public abstract class PropertyManager {
       } else if (jsonValue instanceof String) {
         return new JSONObject(jsonValue);
       } else if (jsonValue == null) {
+        if (!root.containsKey(name)) {
+          Map<String, Object> tmp = new LinkedHashMap<>();
+          tmp.put(name, root);
+          root = tmp;
+        }
         return new JSONObject(root);
+      } else if (jsonValue instanceof Map) {
+        return new JSONObject((Map<?, ?>) jsonValue);
       }
     }
     return new JSONObject();

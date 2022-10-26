@@ -138,7 +138,8 @@ public class ConsulPropertyManager extends PropertyManager {
     KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     // Now lets Store it in key value pairs in consul
     for (String name : properties.keySet()) {
-      keyValueClient.putValue(serverPrefix + name, getPropertiesJSON(name).toString(2));
+      String val = getPropertiesJSON(name).toString(2);
+      keyValueClient.putValue(serverPrefix + name, val);
     }
   }
 }

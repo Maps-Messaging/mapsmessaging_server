@@ -24,6 +24,7 @@ import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.NotRegisteredException;
 import com.orbitz.consul.model.agent.ImmutableRegistration;
 import com.orbitz.consul.model.agent.Registration;
+import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -55,7 +56,8 @@ public class ConsulManager implements Runnable {
 
   public void register(Map<String, String> meta) {
     List<String> propertyNames = new ArrayList<>();
-    meta.put("version", Constants.VERSION);
+    meta.put("version", BuildInfo.getBuildVersion());
+    meta.put("build-Date", BuildInfo.getBuildDate());
     logger.log(ServerLogMessages.CONSUL_REGISTER);
 
     Registration service = ImmutableRegistration.builder()

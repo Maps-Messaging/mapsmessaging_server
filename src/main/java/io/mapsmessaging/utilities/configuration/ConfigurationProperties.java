@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONObject;
 
 public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
@@ -52,6 +53,15 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
     if (global instanceof ConfigurationProperties) {
       globalValues = (ConfigurationProperties) global;
     }
+  }
+
+  @Override
+  public Object get(Object key) {
+    Object val = super.get(key);
+    if (val instanceof JSONObject) {
+      return new ConfigurationProperties(((JSONObject) val).toMap());
+    }
+    return val;
   }
 
   public String getProperty(String key) {
