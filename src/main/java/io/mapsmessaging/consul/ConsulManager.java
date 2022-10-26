@@ -28,6 +28,7 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +72,16 @@ public class ConsulManager implements Runnable {
 
     agentClient.register(service);
     scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, Constants.HEALTH_TIME, Constants.HEALTH_TIME, TimeUnit.SECONDS);
+  }
+
+  public void register(RestApiServerManager restApiServerManager){
+    Registration service = ImmutableRegistration.builder()
+        .id(serviceId+"-RestApi")
+        .name(Constants.NAME+"-RestApi")
+        .port(restApiServerManager.getPort())
+        .check(Registration.RegCheck.http("http://localhost:8080/api/v1/ping", Constants.HEALTH_TIME))
+        .build();
+    agentClient.register(service);
   }
 
   public void stop() {

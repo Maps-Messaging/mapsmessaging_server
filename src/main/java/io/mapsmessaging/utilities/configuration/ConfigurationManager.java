@@ -71,6 +71,9 @@ public class ConfigurationManager {
     if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
       defaultConsulManager.copy(yamlPropertyManager);
     }
+    if(authoritative != null && authoritative.properties.size() == 0){
+      authoritative.copy(defaultConsulManager); // Define the local host
+    }
   }
 
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
