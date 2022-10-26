@@ -49,7 +49,7 @@ public class SchemaQueryApi {
   @GET
   @Path("/server/schema/formats")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Get all the schema configuration")
+  @ApiOperation(value = "Get all known formats currently supported by the schema")
   public StringListResponse getKnownFormats() {
     return new StringListResponse( SchemaManager.getInstance().getMessageFormats());
   }
