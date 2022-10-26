@@ -38,11 +38,15 @@ import javax.ws.rs.core.MediaType;
     produces = {"application/json", "application/xml"},
     schemes = {SwaggerDefinition.Scheme.HTTP, SwaggerDefinition.Scheme.HTTPS},
     tags = {
-        @Tag(name = "Private", description = "Tag used to denote operations as private")
+        @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
+        @Tag(name = "Interface Management", description = "Used to manage an individual network interface"),
+        @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
+        @Tag(name = "Messaging Server API", description = "Global APIs to manage and query the server"),
+
     },
     externalDocs = @ExternalDocs(value = "Maps Messaging", url = "https://www.mapsmessaging.io/")
 )
-@Api(value = URI_PATH)
+@Api(value = URI_PATH, tags="Messaging Server API")
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
 

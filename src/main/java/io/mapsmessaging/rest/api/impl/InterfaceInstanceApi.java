@@ -19,7 +19,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Api(value = URI_PATH + "/server/interface")
+@Api(value = URI_PATH + "/server/interface", tags="Server Interface Management")
 @Path(URI_PATH)
 public class InterfaceInstanceApi extends BaseRestApi {
 

@@ -18,7 +18,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-@Api(value = URI_PATH+ "/server/schema")
+@Api(value = URI_PATH+ "/server/schema", tags="Schema Management")
 @Path(URI_PATH)
 public class SchemaQueryApi extends BaseRestApi {
 

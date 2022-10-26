@@ -60,7 +60,7 @@ public class RestApiServerManager implements Agent {
   }
 
   public String getHost() {
-    return map.getProperty("host", "0.0.0.0");
+    return map.getProperty("hostnames", "0.0.0.0");
   }
 
   public boolean isSecure() {
