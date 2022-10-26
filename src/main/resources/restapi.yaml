@@ -20,6 +20,7 @@ RestApi:
   hostnames: 10.140.62.189
   port: 8080
   enableSwagger: true
+  enableSwaggerUI: true
   ssl_keyStoreFile: my-keystore.jks
   ssl_keyStorePassphrase: password
   ssl_trustStoreFile: my-keystore.jks
