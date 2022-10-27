@@ -20,13 +20,13 @@
   <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.err</target>
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>info</level>
+      <level>warn</level>
     </filter>
     <encoder>
       <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
-  <root level="info">
+  <root level="warn">
     <appender-ref ref="STDERR"/>
   </root>
 </configuration>
