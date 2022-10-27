@@ -268,6 +268,7 @@ public class MessageDaemon {
 
   public int stop(int i) {
     isStarted.set(false);
+    ConsulManagerFactory.getInstance().stop();
     List<AgentOrder> startList = new ArrayList<>(agentMap.values());
     startList.sort(Comparator.comparingInt(o -> o.getStopOrder()));
     for (AgentOrder agent : startList) {

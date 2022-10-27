@@ -18,12 +18,14 @@
 
 package io.mapsmessaging.consul;
 
+import com.google.common.net.HostAndPort;
 import com.orbitz.consul.AgentClient;
 import com.orbitz.consul.Consul;
 import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.NotRegisteredException;
 import com.orbitz.consul.model.agent.ImmutableRegistration;
 import com.orbitz.consul.model.agent.Registration;
+import com.orbitz.consul.monitoring.ClientEventCallback;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -36,18 +38,27 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class ConsulManager implements Runnable {
+public class ConsulManager implements Runnable, ClientEventCallback {
 
   private final Logger logger = LoggerFactory.getLogger(ConsulManager.class);
   private final Consul client;
   private final AgentClient agentClient;
-  private final String serviceId;
+  private final List<String> serviceIds;
+  private final String uniqueName;
   private Future<?> scheduledTask;
 
   public ConsulManager(String serverId) {
-    client = Consul.builder().build();
+    String host = System.getProperty("ConsulHost", "127.0.0.1");
+    int port = Integer.parseInt(System.getProperty("ConsulPort", "8500"));
+    HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
+    client = Consul.builder()
+        .withClientEventCallback(this)
+        .withHostAndPort(hostAndPort)
+        .build();
     agentClient = client.agentClient();
-    serviceId = serverId;
+    serviceIds = new ArrayList<>();
+    uniqueName = serverId;
+    serviceIds.add(serverId);
     logger.log(ServerLogMessages.CONSUL_STARTUP);
   }
 
@@ -62,7 +73,7 @@ public class ConsulManager implements Runnable {
     logger.log(ServerLogMessages.CONSUL_REGISTER);
 
     Registration service = ImmutableRegistration.builder()
-        .id(serviceId)
+        .id(uniqueName)
         .name(Constants.NAME)
         .port(Constants.CONSUL_PORT)
         .check(Registration.RegCheck.ttl(Constants.PING_TIME))
@@ -75,16 +86,28 @@ public class ConsulManager implements Runnable {
   }
 
   public void register(RestApiServerManager restApiServerManager){
+    String host = restApiServerManager.getHost();
+    if(host.equals("0.0.0.0")){
+      return; // Not Yet Supported
+    }
+    int port = restApiServerManager.getPort();
+    String protocol = "http";
+    if(restApiServerManager.isSecure()) protocol = "https";
+    String url = protocol+"://"+host+":"+port+"/api/v1/ping";
     Registration service = ImmutableRegistration.builder()
-        .id(serviceId+"-RestApi")
+        .id(uniqueName+"-RestApi")
         .name(Constants.NAME+"-RestApi")
         .port(restApiServerManager.getPort())
-        .check(Registration.RegCheck.http("http://localhost:8080/api/v1/ping", Constants.HEALTH_TIME))
+        .check(Registration.RegCheck.http(url, Constants.HEALTH_TIME))
         .build();
     agentClient.register(service);
+    serviceIds.add(uniqueName+"-RestApi");
   }
 
   public void stop() {
+    for(String id:serviceIds){
+      agentClient.deregister(id);
+    }
     if (scheduledTask != null) {
       logger.log(ServerLogMessages.CONSUL_SHUTDOWN);
       scheduledTask.cancel(false);
@@ -94,7 +117,7 @@ public class ConsulManager implements Runnable {
   public void run() {
     agentClient.ping();
     try {
-      agentClient.pass(serviceId);
+      agentClient.pass(uniqueName);
     } catch (NotRegisteredException e) {
       logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
     }
