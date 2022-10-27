@@ -230,6 +230,7 @@ public class MessageDaemon {
   }
 
   public Integer start(String[] strings) throws IOException {
+    isStarted.set(true);
     mBean = new MessageDaemonJMX(this);
     loadConstants();
     createAgentStartStopList(path);
@@ -261,7 +262,6 @@ public class MessageDaemon {
       agent.getAgent().start();
       logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
     }
-    isStarted.set(true);
     logServiceManagers();
     return null;
   }
