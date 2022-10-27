@@ -110,7 +110,9 @@ public class MessageDaemon {
       Files.createDirectories(data.toPath());
     }
     path = homeDirectory + "/data/";
-
+    File file = new File(path);
+    System.err.println("Data Dir:"+file.getAbsolutePath());
+    System.err.println("Data Dir:"+file.getCanonicalPath());
     InstanceConfig instanceConfig = new InstanceConfig(path);
     instanceConfig.loadState();
     String serverId = instanceConfig.getServerName();
