@@ -22,6 +22,7 @@ import com.orbitz.consul.ConsulException;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 import java.net.ConnectException;
 import java.util.concurrent.locks.LockSupport;
@@ -74,6 +75,13 @@ public class ConsulManagerFactory {
       manager.register(restApiServerManager);
     }
   }
+
+  public void register(EndPointServer endPointServer){
+    if(manager != null && endPointServer.getConfig().getProperties().getBooleanProperty("discoverable", false)){
+      manager.register(endPointServer);
+    }
+  }
+
   public synchronized void stop() {
     if (manager != null) {
       logger.log(ServerLogMessages.CONSUL_MANAGER_STOP);

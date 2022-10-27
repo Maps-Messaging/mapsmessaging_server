@@ -30,6 +30,8 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.util.ArrayList;
@@ -83,6 +85,26 @@ public class ConsulManager implements Runnable, ClientEventCallback {
 
     agentClient.register(service);
     scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, Constants.HEALTH_TIME, Constants.HEALTH_TIME, TimeUnit.SECONDS);
+  }
+
+  public void register(EndPointServer endPointServer){
+    EndPointURL endPointURL = new EndPointURL(endPointServer.getConfig().getUrl());
+
+    String host = endPointURL.getHost();
+    if(host.equals("0.0.0.0")){
+      return; // Not Yet Supported
+    }
+    int port = endPointURL.getPort();
+    String protocol = endPointServer.getConfig().getProtocols();
+    String id = uniqueName+"-"+endPointServer.getConfig().getProperties().getProperty("name");
+    Registration service = ImmutableRegistration.builder()
+        .id(id)
+        .name(Constants.NAME+"-"+protocol)
+        .port(port)
+        .check(Registration.RegCheck.tcp(host+":"+port, 30000, 2000))
+        .build();
+    agentClient.register(service);
+    serviceIds.add(id);
   }
 
   public void register(RestApiServerManager restApiServerManager){

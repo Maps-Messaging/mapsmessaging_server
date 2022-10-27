@@ -133,6 +133,7 @@ public class DiscoveryManager implements Agent {
         manager.register(endPointServer, transport, protocolList);
       }
     }
+    ConsulManagerFactory.getInstance().register(endPointServer);
   }
 
   private List<String> createProtocolList(String protocolConfig, String transport){
