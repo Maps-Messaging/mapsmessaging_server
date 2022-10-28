@@ -135,7 +135,7 @@ public class MessageDaemon {
     ConsulManagerFactory.getInstance().start(uniqueId);
 
     //</editor-fold>
-    ConfigurationManager.getInstance().initialise(uniqueId + "_");
+    ConfigurationManager.getInstance().initialise(uniqueId);
   }
 
 

@@ -56,7 +56,7 @@ public class ConfigurationManager {
     if (ConsulManagerFactory.getInstance().isStarted()) {
       authoritative = new ConsulPropertyManager(serverId);
       authoritative.load();
-      defaultConsulManager = new ConsulPropertyManager("default_");
+      defaultConsulManager = new ConsulPropertyManager("default");
       defaultConsulManager.load();
       propertyManagers.add(defaultConsulManager);
     }

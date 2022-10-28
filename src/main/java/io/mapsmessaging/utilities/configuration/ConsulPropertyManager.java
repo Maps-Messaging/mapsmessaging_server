@@ -44,7 +44,7 @@ public class ConsulPropertyManager extends PropertyManager {
   private final Logger logger = LoggerFactory.getLogger(ConsulPropertyManager.class);
 
   public ConsulPropertyManager(String prefix) {
-    serverPrefix = prefix + "_";
+    serverPrefix = prefix + "/";
   }
 
   protected void load() {
