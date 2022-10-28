@@ -111,8 +111,7 @@ public class MessageDaemon {
     }
     path = homeDirectory + "/data/";
     File file = new File(path);
-    System.err.println("Data Dir:"+file.getAbsolutePath());
-    System.err.println("Data Dir:"+file.getCanonicalPath());
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_HOME_DIRECTORY, file.getAbsolutePath());
     InstanceConfig instanceConfig = new InstanceConfig(path);
     instanceConfig.loadState();
     String serverId = instanceConfig.getServerName();

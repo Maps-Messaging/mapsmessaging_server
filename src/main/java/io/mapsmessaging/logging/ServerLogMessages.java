@@ -44,6 +44,7 @@ public enum ServerLogMessages implements LogMessage {
   MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Messaging Daemon Unique Id has been assigned to {}"),
 
   MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The supplied home directory, {}, does not exist"),
+  MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The home directory has been defined as {}"),
   MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "\t\tLoaded service {}, {}"),
   MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Service Manager {} loaded"),
 
