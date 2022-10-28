@@ -722,7 +722,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.325</version>
+      <version>1.12.330</version>
       <scope>test</scope>
     </dependency>
 
