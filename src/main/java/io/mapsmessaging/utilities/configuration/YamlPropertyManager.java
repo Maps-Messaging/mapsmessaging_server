@@ -22,6 +22,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.ResourceList;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,8 +31,8 @@ import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import org.yaml.snakeyaml.Yaml;
 
@@ -58,23 +59,18 @@ public class YamlPropertyManager extends PropertyManager {
       propertyName = propertyName.substring(propertyName.lastIndexOf(File.separatorChar) + 1);
       propertyName = propertyName.substring(0, propertyName.indexOf(".yaml"));
       Map<String, Object> map = loadFile(propertyName);
-      Object objRoot = map.get(propertyName);
-      if (objRoot instanceof ConfigurationProperties) {
-        ConfigurationProperties root = (ConfigurationProperties) objRoot;
-        Object global = root.get(GLOBAL);
-        Object data = root.get("data");
-        if (data != null && global instanceof ConfigurationProperties) {
-          if (data instanceof List) {
-            for (ConfigurationProperties properties : (List<ConfigurationProperties>) data) {
-              properties.setGlobal((ConfigurationProperties) global);
-            }
-          } else if (data instanceof ConfigurationProperties) {
-            ((ConfigurationProperties) data).setGlobal((ConfigurationProperties) global);
-          }
+      String source = (String) map.remove("yaml");
+      ConfigurationProperties configurationProperties = new ConfigurationProperties();
+      for (Entry<String, Object> item : map.entrySet()) {
+        Map<String, Object> entry = (Map<String, Object>) item.getValue();
+        if (entry.get("global") != null) {
+          Map<String, Object> global = (Map<String, Object>) entry.remove("global");
+          configurationProperties.setGlobal(new ConfigurationProperties(global));
         }
+        configurationProperties.putAll(entry);
       }
-
-      properties.putAll(map);
+      configurationProperties.setSource(source);
+      properties.put(propertyName, configurationProperties);
       logger.log(ServerLogMessages.PROPERTY_MANAGER_FOUND, propertyName);
     } catch (IOException e) {
       logger.log(ServerLogMessages.PROPERTY_MANAGER_LOAD_FAILED, e, propertyName);
@@ -90,16 +86,26 @@ public class YamlPropertyManager extends PropertyManager {
     InputStream is = getClass().getResourceAsStream(propResourceName);
     Map<String, Object> response;
     if (is != null) {
+      int read = 1;
+      byte[] buffer = new byte[1024];
+      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+      while (read > 0) {
+        read = is.read(buffer);
+        if (read > 0) {
+          byteArrayOutputStream.write(buffer, 0, read);
+        }
+      }
+      String tmp = byteArrayOutputStream.toString();
       Yaml yaml = new Yaml();
-      JsonParser parser = new YamlParser(yaml.load(is));
+      JsonParser parser = new YamlParser(yaml.load(tmp));
       is.close();
       response = parser.parse();
       Object topLevel = response.get(propertyName);
       if (topLevel instanceof Map) {
         Map<String, Object> root = (Map<String, Object>) topLevel;
-        root.put("JSON", parser.getJson());
         root.put("loaded", System.currentTimeMillis());
       }
+      response.put("yaml", tmp);
     } else {
       throw new FileNotFoundException("No such resource found " + propResourceName);
     }
@@ -108,9 +114,9 @@ public class YamlPropertyManager extends PropertyManager {
 
   @Override
   protected void store(String name) throws IOException {
-    HashMap<String, Object> data = new LinkedHashMap<>(properties);
+    HashMap<String, Object> data = new LinkedHashMap<>(properties.getMap());
     if (properties.getGlobal() != null) {
-      data.put(GLOBAL, new LinkedHashMap<>(properties.getGlobal()));
+      data.put(GLOBAL, new LinkedHashMap<>(properties.getGlobal().getMap()));
     }
     try (PrintWriter writer = new PrintWriter(name)) {
       Yaml yaml = new Yaml();
@@ -120,7 +126,7 @@ public class YamlPropertyManager extends PropertyManager {
 
   @Override
   public void copy(PropertyManager propertyManager) {
-    HashMap<String, Object> data = new LinkedHashMap<>(propertyManager.properties);
+    HashMap<String, Object> data = new LinkedHashMap<>(propertyManager.properties.getMap());
     properties.clear();
     properties.putAll(data);
     properties.setGlobal(properties.getGlobal());

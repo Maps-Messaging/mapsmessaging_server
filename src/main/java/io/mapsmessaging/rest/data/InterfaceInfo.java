@@ -41,7 +41,7 @@ public class InterfaceInfo {
     setName(endPointManager.getEndPointServer().getConfig().getProperties().getProperty("name"));
     setPort(endPointManager.getEndPointServer().getUrl().getPort());
     setHost(endPointManager.getEndPointServer().getUrl().getHost());
-    setConfig(endPointManager.getEndPointServer().getConfig().getProperties());
+    setConfig(endPointManager.getEndPointServer().getConfig().getProperties().getMap());
     switch (endPointManager.getState()) {
       case START:
         setState("Started");

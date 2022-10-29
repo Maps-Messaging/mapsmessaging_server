@@ -19,8 +19,11 @@
 package io.mapsmessaging.utilities.configuration;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -40,26 +43,52 @@ public abstract class PropertyManager {
   public abstract void copy(PropertyManager propertyManager);
 
   public @NonNull @NotNull JSONObject getPropertiesJSON(@NonNull @NotNull String name) {
+    JSONObject jsonObject = new JSONObject();
     Object config = properties.get(name);
-    if (config instanceof Map) {
-      Map<String, Object> root = (Map<String, Object>) config;
-      Object jsonValue = root.get("JSON");
-      if (jsonValue instanceof JSONObject) {
-        return (JSONObject) jsonValue;
-      } else if (jsonValue instanceof String) {
-        return new JSONObject(jsonValue);
-      } else if (jsonValue == null) {
-        if (!root.containsKey(name)) {
-          Map<String, Object> tmp = new LinkedHashMap<>();
-          tmp.put(name, root);
-          root = tmp;
-        }
-        return new JSONObject(root);
-      } else if (jsonValue instanceof Map) {
-        return new JSONObject((Map<?, ?>) jsonValue);
-      }
+    if (config instanceof ConfigurationProperties) {
+      config = ((ConfigurationProperties) config).getMap();
     }
-    return new JSONObject();
+    if (config instanceof Map) {
+      Map<String, Object> map = pack((Map<String, Object>) config);
+      jsonObject.put(name, map);
+      if (properties.getGlobal() != null) {
+        map.put("global", pack(properties.getGlobal().getMap()));
+      }
+    } else {
+      jsonObject.put(name, config);
+    }
+    return jsonObject;
+  }
+
+  private void pack(Map<String, Object> map, String key, Object obj) {
+    if (obj instanceof ConfigurationProperties) {
+      pack(map, key, ((ConfigurationProperties) obj).getMap());
+    } else if (obj instanceof Map) {
+      map.put(key, pack((Map<String, Object>) obj));
+    } else if (obj instanceof List) {
+      List<Object> list = (List<Object>) obj;
+      List<Object> translated = new ArrayList<>();
+      for (Object tmp : list) {
+        if (tmp instanceof ConfigurationProperties) {
+          translated.add(pack(((ConfigurationProperties) tmp).getMap()));
+        } else {
+          translated.add(tmp);
+        }
+      }
+      map.put(key, translated);
+    } else {
+      map.put(key, obj);
+    }
+  }
+
+  private Map<String, Object> pack(Map<String, Object> map) {
+    Map<String, Object> tmp = new LinkedHashMap<>();
+    for (Entry<String, Object> entry : map.entrySet()) {
+      String key = entry.getKey();
+      Object obj = entry.getValue();
+      pack(tmp, key, obj);
+    }
+    return tmp;
   }
 
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {

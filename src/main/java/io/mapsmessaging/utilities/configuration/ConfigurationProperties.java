@@ -19,45 +19,42 @@
 package io.mapsmessaging.utilities.configuration;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 import org.json.JSONObject;
 
-public class ConfigurationProperties extends LinkedHashMap<String, Object> {
+public class ConfigurationProperties {
 
-  private ConfigurationProperties globalValues;
+  @Getter
+  @Setter
+  private String source;
+  private ConfigurationProperties global;
+
+  private final Map<String, Object> map;
 
   public ConfigurationProperties() {
     super();
+    map = new LinkedHashMap<>();
   }
 
-  public ConfigurationProperties(Map<String, Object> map) {
-    for (Map.Entry<String, Object> entry : map.entrySet()) {
-      if (entry.getValue() instanceof Map) {
-        put(entry.getKey(), new ConfigurationProperties((Map<String, Object>) entry.getValue()));
-      } else if (entry.getValue() instanceof List) {
-        List<Object> parsedList = new ArrayList<>();
-        for (Object list : (List<Object>) entry.getValue()) {
-          if (list instanceof Map) {
-            parsedList.add(new ConfigurationProperties((Map<String, Object>) list));
-          }
-        }
-        put(entry.getKey(), parsedList);
-      } else {
-        put(entry.getKey(), entry.getValue());
-      }
-    }
+  public ConfigurationProperties(Map<String, Object> inMap) {
+    map = new LinkedHashMap<>();
+    putAll(inMap);
 
-    Object global = map.get("global");
-    if (global instanceof ConfigurationProperties) {
-      globalValues = (ConfigurationProperties) global;
+    Object globalObject = inMap.get("global");
+    if (globalObject instanceof ConfigurationProperties) {
+      this.global = (ConfigurationProperties) globalObject;
     }
   }
 
-  @Override
   public Object get(Object key) {
-    Object val = super.get(key);
+    Object val = map.get(key);
     if (val instanceof JSONObject) {
       return new ConfigurationProperties(((JSONObject) val).toMap());
     }
@@ -114,8 +111,8 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   private Object get(String key, Object defaultValue) {
     Object val = get(key);
-    if (val == null && globalValues != null) {
-      val = globalValues.get(key);
+    if (val == null && global != null) {
+      val = global.get(key);
     }
     if (val != null) {
       return val;
@@ -184,32 +181,32 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
   }
 
   public boolean containsKey(String key) {
-    if (!super.containsKey(key)) {
-      if (globalValues != null) {
-        return globalValues.containsKey(key);
+    if (!map.containsKey(key)) {
+      if (global != null) {
+        return global.containsKey(key);
       }
       return false;
     }
     return true;
   }
 
-  public void setGlobal(ConfigurationProperties global) {
-    this.globalValues = global;
+  public void setGlobal(ConfigurationProperties globalVal) {
+    this.global = globalVal;
   }
 
   public ConfigurationProperties getGlobal() {
-    if (globalValues == null) {
+    if (global == null) {
       return (ConfigurationProperties) get("global");
     }
-    return globalValues;
+    return global;
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof ConfigurationProperties) {
       boolean listEquals = super.equals(object);
-      if (globalValues != null) {
-        return listEquals && globalValues.equals(((ConfigurationProperties) object).globalValues);
+      if (global != null) {
+        return listEquals && global.equals(((ConfigurationProperties) object).global);
       }
       return listEquals;
     }
@@ -218,17 +215,68 @@ public class ConfigurationProperties extends LinkedHashMap<String, Object> {
 
   @Override
   public int hashCode() {
-    if (globalValues != null) {
-      return super.hashCode() + globalValues.hashCode();
+    if (global != null) {
+      return super.hashCode() + global.hashCode();
     }
     return super.hashCode();
   }
 
   @Override
   public String toString() {
-    if (globalValues != null) {
-      return super.toString() + " " + globalValues.toString();
+    if (global != null) {
+      return super.toString() + " " + global.toString();
     }
     return super.toString();
   }
+
+  public boolean isEmpty() {
+    return map.isEmpty();
+  }
+
+  public Set<Entry<String, Object>> entrySet() {
+    return map.entrySet();
+  }
+
+  public Collection<Object> values() {
+    return map.values();
+  }
+
+  public Set<String> keySet() {
+    return map.keySet();
+  }
+
+  public void put(String key, Object val) {
+    if (val instanceof Map) {
+      map.put(key, new ConfigurationProperties((Map<String, Object>) val));
+    } else if (val instanceof List) {
+      List<Object> parsedList = new ArrayList<>();
+      for (Object list : (List<Object>) val) {
+        if (list instanceof Map) {
+          parsedList.add(new ConfigurationProperties((Map<String, Object>) list));
+        }
+      }
+      map.put(key, parsedList);
+    } else {
+      map.put(key, val);
+    }
+  }
+
+  public void putAll(Map<String, Object> copy) {
+    for (Map.Entry<String, Object> entry : copy.entrySet()) {
+      put(entry.getKey(), entry.getValue());
+    }
+  }
+
+  public void clear() {
+    map.clear();
+  }
+
+  public int size() {
+    return map.size();
+  }
+
+  public Map<String, Object> getMap() {
+    return map;
+  }
+
 }

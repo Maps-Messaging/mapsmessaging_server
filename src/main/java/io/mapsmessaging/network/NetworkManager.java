@@ -100,6 +100,8 @@ public class NetworkManager implements ServiceManager, Agent {
             endPointManagers.put(endPointURL.toString(), endPointManager);
           } catch (IOException iox) {
             logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());
+          } catch (RuntimeException runtimeException) {
+            logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, runtimeException, endPointURL.toString());
           }
         } else {
           logger.log(ServerLogMessages.NETWORK_MANAGER_DEVICE_NOT_LOADED, endPointServerFactory.getName());

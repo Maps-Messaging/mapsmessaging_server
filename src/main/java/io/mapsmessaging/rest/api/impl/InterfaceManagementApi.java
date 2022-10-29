@@ -41,7 +41,7 @@ public class InterfaceManagementApi extends BaseRestApi {
     }
     InterfaceDetailResponse interfaceDetailResponse = new InterfaceDetailResponse();
     interfaceDetailResponse.setData(protocols);
-    interfaceDetailResponse.setGlobalConfig(global);
+    interfaceDetailResponse.setGlobalConfig(global.getMap());
     return interfaceDetailResponse;
   }
 

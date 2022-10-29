@@ -307,7 +307,7 @@ public class DestinationImpl implements BaseDestination {
     if (!props.isEmpty()) {
       SchemaConfig config;
       try {
-        config = SchemaConfigFactory.getInstance().constructConfig(props);
+        config = SchemaConfigFactory.getInstance().constructConfig(props.getMap());
       } catch (IOException e) {
         config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
       }
