@@ -20,7 +20,7 @@
 # http://www.airspayce.com/mikem/bcm2835/
 
 CC            = g++
-CFLAGS        = -fPIC  -DRASPBERRY_PI -I"/usr/lib/jvm/java-11-openjdk-armhf/include/" -I"/usr/lib/jvm/java-11-openjdk-armhf/include/linux/" -DBCM2835_NO_DELAY_COMPATIBILITY -D__BASEFILE__=\"$*\"
+CFLAGS        = -fPIC  -DRASPBERRY_PI -I"/opt/zulu11/include" -I"/opt/zulu11/include/linux/" -DBCM2835_NO_DELAY_COMPATIBILITY -D__BASEFILE__=\"$*\"
 LDFLAGS       = -shared
 LIBS          = -lbcm2835
 RADIOHEADBASE = ./RadioHead/
