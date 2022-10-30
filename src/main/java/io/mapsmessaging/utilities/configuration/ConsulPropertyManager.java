@@ -26,21 +26,13 @@ import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.Base64;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.yaml.snakeyaml.Yaml;
 
-public class ConsulPropertyManager extends PropertyManager {
+public class ConsulPropertyManager extends YamlPropertyManager {
 
   private final String serverPrefix;
   private final Logger logger = LoggerFactory.getLogger(ConsulPropertyManager.class);
@@ -49,6 +41,7 @@ public class ConsulPropertyManager extends PropertyManager {
     serverPrefix = prefix + "/";
   }
 
+  @Override
   protected void load() {
     try {
       KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
@@ -66,63 +59,14 @@ public class ConsulPropertyManager extends PropertyManager {
       Optional<Value> entry = keyValueClient.getValue(key);
       if (entry.isPresent()) {
         Optional<String> optionalValue = entry.get().getValue();
-        optionalValue.ifPresent(s -> {
-          String value = s;
-          value = new String(Base64.getDecoder().decode(value));
-          Yaml yaml = new Yaml();
-          JsonParser parser = new YamlParser(yaml.load(value));
-          loadPropertiesJSON(key.substring(serverPrefix.length()), parser.getJson());
-          properties.setSource(value);
-        });
-      }
-    } catch (ConsulException consulException) {
-      logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
-    } catch (JSONException jsonException) {
-      logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_INVALID_JSON, key, jsonException);
-    }
-  }
-
-  private void loadPropertiesJSON(@NonNull @NotNull String name, @NonNull @NotNull JSONObject root) {
-    ConfigurationProperties entry = new ConfigurationProperties();
-    properties.put(name, entry);
-    JSONObject configEntry = null;
-    if (root.has(name)) {
-      configEntry = root.getJSONObject(name);
-    }
-    if (configEntry != null && configEntry.has("data")) {
-      Object obj = configEntry.get("data");
-      if (obj instanceof JSONArray) {
-        JSONArray array = (JSONArray) obj;
-        List<ConfigurationProperties> list = new ArrayList<>();
-        for (int x = 0; x < array.length(); x++) {
-          ConfigurationProperties item = new ConfigurationProperties();
-          Map<String, Object> configEntries = fromJSON(array.getJSONObject(x));
-          item.putAll(configEntries);
-          list.add(item);
+        if(optionalValue.isPresent()){
+          String value = new String(Base64.getDecoder().decode(optionalValue.get()));
+          parseAndLoadYaml(key, value);
         }
-        entry.put("data", list);
-      } else {
-        entry.putAll(fromJSON(configEntry.getJSONObject("data")));
       }
-    } else {
-      entry.putAll(fromJSON(configEntry));
+    } catch (ConsulException | IOException consulException) {
+      logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
     }
-    Map<String, Object> globalProperties = new LinkedHashMap<>();
-    if (configEntry != null && configEntry.has("global")) {
-      globalProperties = fromJSON(configEntry.getJSONObject("global"));
-    }
-    entry.setGlobal(new ConfigurationProperties(globalProperties));
-  }
-
-
-  private Map<String, Object> fromJSON(JSONObject object) {
-    Map<String, Object> response = new LinkedHashMap<>();
-    if (object != null) {
-      for (String key : object.keySet()) {
-        response.put(key, object.get(key));
-      }
-    }
-    return response;
   }
 
   @Override
@@ -140,7 +84,7 @@ public class ConsulPropertyManager extends PropertyManager {
       keyValueClient.deleteKey(serverPrefix + name);
     }
 
-    // Now lets add the new config
+    // Now let's add the new config
     properties.clear();
     properties.putAll(propertyManager.properties.getMap());
     if (properties.getGlobal() != null) {

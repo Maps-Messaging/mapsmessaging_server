@@ -22,6 +22,6 @@ class YamlPropertyManagerTest extends PropertyManagerTest {
 
   @Override
   protected PropertyManager create() {
-    return new YamlPropertyManager();
+    return new FileYamlPropertyManager();
   }
 }

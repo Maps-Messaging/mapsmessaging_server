@@ -60,7 +60,7 @@ public class ConfigurationManager {
       defaultConsulManager.load();
       propertyManagers.add(defaultConsulManager);
     }
-    YamlPropertyManager yamlPropertyManager = new YamlPropertyManager();
+    YamlPropertyManager yamlPropertyManager = new FileYamlPropertyManager();
     propertyManagers.add(yamlPropertyManager);
     for (PropertyManager manager : propertyManagers) {
       manager.load();

@@ -18,98 +18,38 @@
 
 package io.mapsmessaging.utilities.configuration;
 
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.utilities.ResourceList;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 import org.yaml.snakeyaml.Yaml;
 
-public class YamlPropertyManager extends PropertyManager {
+public abstract class YamlPropertyManager extends PropertyManager {
 
   private static final String GLOBAL = "global";
 
-  private final Logger logger = LoggerFactory.getLogger(YamlPropertyManager.class);
-
-  @Override
-  protected void load() {
-    try {
-      Collection<String> knownProperties = ResourceList.getResources(Pattern.compile(".*yaml"));
-      for (String propertyName : knownProperties) {
-        loadProperty(propertyName);
-      }
-    } catch (IOException e) {
-      logger.log(ServerLogMessages.PROPERTY_MANAGER_SCAN_FAILED, e);
+  protected void parseAndLoadYaml(String propertyName, String yamlString) throws IOException {
+    Yaml yaml = new Yaml();
+    JsonParser parser = new YamlParser(yaml.load(yamlString));
+    Map<String, Object> response = parser.parse();
+    Object topLevel = response.get(propertyName);
+    if (topLevel instanceof Map) {
+      Map<String, Object> root = (Map<String, Object>) topLevel;
+      root.put("loaded", System.currentTimeMillis());
     }
-  }
-
-  private void loadProperty(String propertyName) {
-    try {
-      propertyName = propertyName.substring(propertyName.lastIndexOf(File.separatorChar) + 1);
-      propertyName = propertyName.substring(0, propertyName.indexOf(".yaml"));
-      Map<String, Object> map = loadFile(propertyName);
-      String source = (String) map.remove("yaml");
-      ConfigurationProperties configurationProperties = new ConfigurationProperties();
-      for (Entry<String, Object> item : map.entrySet()) {
-        Map<String, Object> entry = (Map<String, Object>) item.getValue();
-        if (entry.get("global") != null) {
-          Map<String, Object> global = (Map<String, Object>) entry.remove("global");
-          configurationProperties.setGlobal(new ConfigurationProperties(global));
-        }
-        configurationProperties.putAll(entry);
+    ConfigurationProperties configurationProperties = new ConfigurationProperties();
+    for (Entry<String, Object> item : response.entrySet()) {
+      Map<String, Object> entry = (Map<String, Object>) item.getValue();
+      if (entry.get("global") != null) {
+        Map<String, Object> global = (Map<String, Object>) entry.remove("global");
+        configurationProperties.setGlobal(new ConfigurationProperties(global));
       }
-      configurationProperties.setSource(source);
-      properties.put(propertyName, configurationProperties);
-      logger.log(ServerLogMessages.PROPERTY_MANAGER_FOUND, propertyName);
-    } catch (IOException e) {
-      logger.log(ServerLogMessages.PROPERTY_MANAGER_LOAD_FAILED, e, propertyName);
+      configurationProperties.putAll(entry);
     }
-  }
-
-  private Map<String, Object> loadFile(String propertyName) throws IOException {
-    String propResourceName = "/" + propertyName;
-    while (propResourceName.contains(".")) {
-      propResourceName = propResourceName.replace('.', File.separatorChar);
-    }
-    propResourceName = propResourceName + ".yaml";
-    InputStream is = getClass().getResourceAsStream(propResourceName);
-    Map<String, Object> response;
-    if (is != null) {
-      int read = 1;
-      byte[] buffer = new byte[1024];
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      while (read > 0) {
-        read = is.read(buffer);
-        if (read > 0) {
-          byteArrayOutputStream.write(buffer, 0, read);
-        }
-      }
-      String tmp = byteArrayOutputStream.toString();
-      Yaml yaml = new Yaml();
-      JsonParser parser = new YamlParser(yaml.load(tmp));
-      is.close();
-      response = parser.parse();
-      Object topLevel = response.get(propertyName);
-      if (topLevel instanceof Map) {
-        Map<String, Object> root = (Map<String, Object>) topLevel;
-        root.put("loaded", System.currentTimeMillis());
-      }
-      response.put("yaml", tmp);
-    } else {
-      throw new FileNotFoundException("No such resource found " + propResourceName);
-    }
-    return response;
+    configurationProperties.setSource(yamlString);
+    properties.put(propertyName, configurationProperties);
   }
 
   @Override
