@@ -101,7 +101,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
         .id(id)
         .name(Constants.NAME+"-"+protocol)
         .port(port)
-        .check(Registration.RegCheck.tcp(host+":"+port, 30000, 2000))
+        .check(Registration.RegCheck.tcp(host+":"+port, Constants.PING_TIME, Constants.PING_TIME/2))
         .build();
     agentClient.register(service);
     serviceIds.add(id);
@@ -120,7 +120,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
         .id(uniqueName+"-RestApi")
         .name(Constants.NAME+"-RestApi")
         .port(restApiServerManager.getPort())
-        .check(Registration.RegCheck.http(url, Constants.HEALTH_TIME))
+        .check(Registration.RegCheck.http(url, Constants.PING_TIME))
         .build();
     agentClient.register(service);
     serviceIds.add(uniqueName+"-RestApi");
