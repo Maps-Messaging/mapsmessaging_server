@@ -5,8 +5,8 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.SchemaData;
-import io.mapsmessaging.rest.data.SchemaResponse;
-import io.mapsmessaging.rest.data.StringListResponse;
+import io.mapsmessaging.rest.responses.SchemaResponse;
+import io.mapsmessaging.rest.responses.StringListResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -29,10 +29,10 @@ public class SchemaQueryApi extends BaseRestApi {
   public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) {
     for(SchemaConfig config: SchemaManager.getInstance().getAll()){
       if(config.getUniqueId().equals(schemaId)){
-        return new SchemaResponse(new SchemaData(config));
+        return new SchemaResponse(request, new SchemaData(config));
       }
     }
-    return  new SchemaResponse(new ArrayList<>());
+    return  new SchemaResponse(request, new ArrayList<>());
   }
 
   @GET
@@ -44,7 +44,7 @@ public class SchemaQueryApi extends BaseRestApi {
     for(SchemaConfig config:SchemaManager.getInstance().getAll()){
       list.add(new SchemaData(config));
     }
-    return new SchemaResponse(list);
+    return new SchemaResponse(request, list);
   }
 
   @GET
@@ -52,7 +52,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get all known formats currently supported by the schema")
   public StringListResponse getKnownFormats() {
-    return new StringListResponse( SchemaManager.getInstance().getMessageFormats());
+    return new StringListResponse(request,  SchemaManager.getInstance().getMessageFormats());
   }
 
   @GET

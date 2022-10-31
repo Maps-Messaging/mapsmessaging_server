@@ -291,7 +291,39 @@ public class ConfigurationProperties {
   }
 
   public Map<String, Object> getMap() {
-    return map;
+    return packMap(map);
+  }
+
+  private Map<String, Object> packMap(Map<String, Object> map){
+    Map<String, Object> response = new LinkedHashMap<>();
+    for(Entry<String, Object> entry:map.entrySet()){
+      if(entry.getValue() instanceof ConfigurationProperties){
+        response.put(entry.getKey(), packMap( ((ConfigurationProperties)entry.getValue()).map));
+      }
+      else if(entry.getValue() instanceof Map){
+        response.put(entry.getKey(), packMap((Map<String,Object>) entry.getValue()));
+      }
+      else if(entry.getValue() instanceof List){
+        List<Object> list = (List<Object>) entry.getValue();
+        List<Object> replacement = new ArrayList<>();
+        for(Object obj:list){
+          if(obj instanceof Map){
+            replacement.add(packMap((Map<String, Object>)obj));
+          }
+          else if(obj instanceof ConfigurationProperties){
+            replacement.add(packMap(((ConfigurationProperties)obj).getMap()));
+          }
+          else{
+            list.add(obj);
+          }
+        }
+        response.put(entry.getKey(), replacement);
+      }
+      else{
+        response.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return response;
   }
 
 }

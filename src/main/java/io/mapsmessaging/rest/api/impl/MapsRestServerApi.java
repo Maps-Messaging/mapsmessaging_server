@@ -5,8 +5,8 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.rest.api.BaseRestApi;
-import io.mapsmessaging.rest.data.ServerStatistics;
-import io.mapsmessaging.rest.data.StringResponse;
+import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
+import io.mapsmessaging.rest.responses.StringResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Contact;
@@ -56,7 +56,7 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Simple request to test if the server is running")
   public StringResponse getPing() {
-    return new StringResponse("ok");
+    return new StringResponse(request, "ok");
   }
 
   @GET
@@ -64,15 +64,15 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Returns the servers unique name")
   public StringResponse getName() {
-    return new StringResponse(MessageDaemon.getInstance().getId());
+    return new StringResponse(request, MessageDaemon.getInstance().getId());
   }
 
   @GET
   @Path("/stats")
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Retrieve the server statistics")
-  public ServerStatistics getStats() {
-    return new ServerStatistics();
+  public ServerStatisticsResponse getStats() {
+    return new ServerStatisticsResponse(request);
   }
 
 }

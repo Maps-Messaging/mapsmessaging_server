@@ -6,8 +6,8 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.BaseRestApi;
-import io.mapsmessaging.rest.data.InterfaceDetailResponse;
 import io.mapsmessaging.rest.data.InterfaceInfo;
+import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -39,10 +39,7 @@ public class InterfaceManagementApi extends BaseRestApi {
         global = endPointManager.getEndPointServer().getConfig().getProperties().getGlobal();
       }
     }
-    InterfaceDetailResponse interfaceDetailResponse = new InterfaceDetailResponse();
-    interfaceDetailResponse.setData(protocols);
-    interfaceDetailResponse.setGlobalConfig(global.getMap());
-    return interfaceDetailResponse;
+    return new InterfaceDetailResponse(request, protocols, global);
   }
 
 
