@@ -5,6 +5,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.rest.api.BaseRestApi;
+import io.mapsmessaging.rest.data.ServerStatistics;
 import io.mapsmessaging.rest.data.StringResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -64,6 +65,14 @@ public class MapsRestServerApi extends BaseRestApi {
   @ApiOperation(value = "Returns the servers unique name")
   public StringResponse getName() {
     return new StringResponse(MessageDaemon.getInstance().getId());
+  }
+
+  @GET
+  @Path("/stats")
+  @Produces({MediaType.APPLICATION_JSON})
+  @ApiOperation(value = "Retrieve the server statistics")
+  public ServerStatistics getStats() {
+    return new ServerStatistics();
   }
 
 }
