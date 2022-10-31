@@ -91,6 +91,9 @@ public abstract class PropertyManager {
     return tmp;
   }
 
+  public boolean contains(String name){
+    return properties.containsKey(name);
+  }
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     Object obj = properties.get(name);
     if (obj instanceof ConfigurationProperties) {

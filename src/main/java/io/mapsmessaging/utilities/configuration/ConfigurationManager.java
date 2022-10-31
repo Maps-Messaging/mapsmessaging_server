@@ -78,17 +78,13 @@ public class ConfigurationManager {
 
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     ConfigurationProperties config;
-    if (authoritative != null) {
-      config = authoritative.getProperties(name);
-      if (!config.isEmpty()) {
-        return config;
-      }
+    if (authoritative != null && authoritative.contains(name)) {
+      return authoritative.getProperties(name);
     }
 
     for (PropertyManager manager : propertyManagers) {
-      config = manager.getProperties(name);
-      if (!config.isEmpty()) {
-        return config;
+      if ( manager.contains(name)) {
+        return manager.getProperties(name);
       }
     }
     return new ConfigurationProperties(new HashMap<>());

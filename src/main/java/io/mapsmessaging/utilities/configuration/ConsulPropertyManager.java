@@ -61,7 +61,8 @@ public class ConsulPropertyManager extends YamlPropertyManager {
         Optional<String> optionalValue = entry.get().getValue();
         if(optionalValue.isPresent()){
           String value = new String(Base64.getDecoder().decode(optionalValue.get()));
-          parseAndLoadYaml(key, value);
+          String name = key.substring(serverPrefix.length());
+          parseAndLoadYaml(name, value);
         }
       }
     } catch (ConsulException | IOException consulException) {
