@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import static io.mapsmessaging.logging.ServerLogMessages.PROPERTY_MANAGER_LOOKUP;
+import static io.mapsmessaging.logging.ServerLogMessages.PROPERTY_MANAGER_LOOKUP_FAILED;
+
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -77,16 +80,18 @@ public class ConfigurationManager {
   }
 
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
-    ConfigurationProperties config;
     if (authoritative != null && authoritative.contains(name)) {
+      logger.log(PROPERTY_MANAGER_LOOKUP, name, "Main");
       return authoritative.getProperties(name);
     }
 
     for (PropertyManager manager : propertyManagers) {
       if ( manager.contains(name)) {
+        logger.log(PROPERTY_MANAGER_LOOKUP, name, "Backup");
         return manager.getProperties(name);
       }
     }
+    logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, name);
     return new ConfigurationProperties(new HashMap<>());
   }
 }

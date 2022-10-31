@@ -412,11 +412,15 @@ public enum ServerLogMessages implements LogMessage {
   // <editor-fold desc="Configuration log messages">
   PROPERTY_MANAGER_START(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Property Manager"),
   PROPERTY_MANAGER_FOUND(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Found and loaded property {}"),
+  PROPERTY_MANAGER_LOOKUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Looking failed for {} config"),
+  PROPERTY_MANAGER_LOOKUP_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Looking for {} config, found in {}"),
   PROPERTY_MANAGER_SCANNING(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Scanning property with {} entries"),
   PROPERTY_MANAGER_INDEX_DETECTED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Detected an indexed property file, parsing into different properties"),
   PROPERTY_MANAGER_COMPLETED_INDEX(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed indexed property with {} for index {}"),
   PROPERTY_MANAGER_SCAN_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to scan for property files"),
   PROPERTY_MANAGER_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load property {}"),
+  PROPERTY_MANAGER_ENTRY_LOOKUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} found {} in {}"),
+  PROPERTY_MANAGER_ENTRY_LOOKUP_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} not found, returning default {}"),
   // </editor-fold>
 
   //<editor-fold desc="Destination Manager log messages">

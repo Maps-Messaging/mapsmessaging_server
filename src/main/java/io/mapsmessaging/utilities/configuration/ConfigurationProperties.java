@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -35,6 +38,8 @@ public class ConfigurationProperties {
   @Setter
   private String source;
   private ConfigurationProperties global;
+
+  private final Logger logger = LoggerFactory.getLogger(ConfigurationProperties.class);
 
   private final Map<String, Object> map;
 
@@ -111,12 +116,18 @@ public class ConfigurationProperties {
 
   private Object get(String key, Object defaultValue) {
     Object val = get(key);
-    if (val == null && global != null) {
-      val = global.get(key);
+    if(val != null){
+      logger.log(ServerLogMessages.PROPERTY_MANAGER_ENTRY_LOOKUP, key, val, "Main");
     }
+    else if (global != null) {
+      val = global.get(key);
+      logger.log(ServerLogMessages.PROPERTY_MANAGER_ENTRY_LOOKUP, key, val, "Global");
+    }
+
     if (val != null) {
       return val;
     }
+    logger.log(ServerLogMessages.PROPERTY_MANAGER_ENTRY_LOOKUP_FAILED, key, defaultValue);
     return defaultValue;
   }
 
