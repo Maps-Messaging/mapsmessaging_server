@@ -247,12 +247,16 @@ public class ConfigurationProperties {
 
   public void put(String key, Object val) {
     if (val instanceof Map) {
-      map.put(key, new ConfigurationProperties((Map<String, Object>) val));
+      ConfigurationProperties props = new ConfigurationProperties((Map<String, Object>) val);
+      props.setGlobal(global);
+      map.put(key, props);
     } else if (val instanceof List) {
       List<Object> parsedList = new ArrayList<>();
       for (Object list : (List<Object>) val) {
         if (list instanceof Map) {
-          parsedList.add(new ConfigurationProperties((Map<String, Object>) list));
+          ConfigurationProperties props = new ConfigurationProperties((Map<String, Object>) list);
+          props.setGlobal(global);
+          parsedList.add(props);
         }
       }
       map.put(key, parsedList);
