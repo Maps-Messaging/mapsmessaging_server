@@ -58,7 +58,7 @@ public class ConfigurationProperties {
     }
   }
 
-  public Object get(Object key) {
+  public Object get(String key) {
     Object val = map.get(key);
     if (val instanceof JSONObject) {
       return new ConfigurationProperties(((JSONObject) val).toMap());

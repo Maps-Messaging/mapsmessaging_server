@@ -149,7 +149,7 @@ public class RestApiServerManager implements Agent {
         HttpServer server;
         if(sslConfig != null) {
           SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
-          server = GrizzlyHttpServerFactory.createHttpServer(uri,  (GrizzlyHttpContainer)((GrizzlyHttpContainer)null), true,sslEngineConfigurator, false);
+          server = GrizzlyHttpServerFactory.createHttpServer(uri,  ((GrizzlyHttpContainer)null), true,sslEngineConfigurator, false);
         }
         else{
           server =GrizzlyHttpServerFactory.createHttpServer(uri);
