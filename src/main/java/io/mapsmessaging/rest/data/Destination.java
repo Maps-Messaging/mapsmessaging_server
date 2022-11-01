@@ -1,7 +1,9 @@
 package io.mapsmessaging.rest.data;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
 import java.io.IOException;
+import java.util.Map;
 import lombok.Getter;
 
 public class Destination {
@@ -24,6 +26,9 @@ public class Destination {
   @Getter
   private final String schemaId;
 
+  @Getter
+  private final Map<String, LinkedMovingAverageRecord> stats;
+
   public Destination(DestinationImpl destinationImpl) throws IOException {
     this.name = destinationImpl.getFullyQualifiedNamespace();
     storedMessages = destinationImpl.getStoredMessages();
@@ -31,5 +36,6 @@ public class Destination {
     schemaId = destinationImpl.getSchema().getUniqueId();
     delayedMessages = destinationImpl.getDelayedMessages();
     pendingMessages = destinationImpl.getPendingTransactions();
+    stats = destinationImpl.getStats().getStatistics();
   }
 }

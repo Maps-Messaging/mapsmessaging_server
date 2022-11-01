@@ -3,6 +3,8 @@ package io.mapsmessaging.rest.data;
 import io.mapsmessaging.engine.destination.DestinationStats;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
+import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
+import java.util.Map;
 import lombok.Getter;
 
 public class ServerStatistics {
@@ -32,6 +34,9 @@ public class ServerStatistics {
   @Getter
   private final long totalDeliveredMessages;
 
+  @Getter
+  private final Map<String, LinkedMovingAverageRecord> stats;
+
 
   public ServerStatistics() {
     packetsReceived = EndPointServerStatus.SystemTotalPacketsReceived.sum();
@@ -48,5 +53,6 @@ public class ServerStatistics {
     totalRetrievedMessages = DestinationStats.getTotalExpiredMessages();
     totalDeliveredMessages = DestinationStats.getTotalDeliveredMessages();
     totalExpiredMessages = DestinationStats.getTotalExpiredMessages();
+    stats = DestinationStats.getGlobalStats();
   }
 }

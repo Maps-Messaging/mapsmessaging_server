@@ -20,7 +20,9 @@ package io.mapsmessaging.utilities.stats;
 
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
@@ -89,6 +91,13 @@ public class LinkedMovingAverages {
     return unitName;
   }
 
+  public LinkedMovingAverageRecord getRecord(){
+    Map<String, Long> stats = new LinkedHashMap<>();
+    for(MovingAverage movingAverage:movingAverages){
+      stats.put(movingAverage.getName(), movingAverage.getCurrent());
+    }
+    return new LinkedMovingAverageRecord(name, unitName, timeSpan, getCurrent(), stats);
+  }
   /**
    * @return A list of complete names of all moving averages
    */

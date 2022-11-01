@@ -36,6 +36,8 @@ public class MovingAverage {
   private final String name;
   private final int expectedEntries;
 
+  private long current;
+
   /**
    * Creates a new instance over the period of time in TimeUnits
    *
@@ -47,6 +49,7 @@ public class MovingAverage {
     timePeriod = unit.toMillis(time);
     dataPoints = new ArrayList<>();
     expectedEntries = time;
+    current =0;
   }
 
   /**
@@ -76,7 +79,8 @@ public class MovingAverage {
     for (DataPoint dataPoint : dataPoints) {
       ave += dataPoint.data;
     }
-    return ave / expectedEntries;
+    current = ave / expectedEntries;
+    return current;
   }
 
   /**
@@ -89,6 +93,10 @@ public class MovingAverage {
 
   protected void clearData(long now) {
     dataPoints.removeIf(dataPoint -> dataPoint.expiry < now);
+  }
+
+  public long getCurrent() {
+    return current;
   }
 
   protected static class DataPoint {

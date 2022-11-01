@@ -19,9 +19,12 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.engine.stats.Statistics;
+import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 public class DestinationStats extends Statistics {
@@ -61,6 +64,18 @@ public class DestinationStats extends Statistics {
   private static final LongAdder totalRetrievedMessages = new LongAdder();
   private static final LongAdder totalExpiredMessages = new LongAdder();
   private static final LongAdder totalDeliveredMessages = new LongAdder();
+
+
+  public static Map<String, LinkedMovingAverageRecord> getGlobalStats(){
+    Map<String, LinkedMovingAverageRecord> map = new LinkedHashMap<>();
+    map.put(totalPublishedMessagesAverages.getName(), totalPublishedMessagesAverages.getRecord());
+    map.put(totalSubscribedMessagesAverages.getName(), totalSubscribedMessagesAverages.getRecord());
+    map.put(totalNoInterestMessagesAverages.getName(), totalNoInterestMessagesAverages.getRecord());
+    map.put(totalRetrievedMessagesAverages.getName(), totalRetrievedMessagesAverages.getRecord());
+    map.put(totalExpiredMessagesAverages.getName(), totalExpiredMessagesAverages.getRecord());
+    map.put(totalDeliveredMessagesAverages.getName(), totalDeliveredMessagesAverages.getRecord());
+    return map;
+  }
 
   public static long getTotalPublishedMessages() {
     return totalPublishedMessages.sum();
@@ -122,6 +137,25 @@ public class DestinationStats extends Statistics {
     readTimeAverages = create(ACCUMULATOR.AVE, "Time to read messages from resource", MICRO_SECONDS);
     writeTimeAverages = create(ACCUMULATOR.AVE, "Time to write messages to resource", MICRO_SECONDS);
     deleteTimeAverages = create(ACCUMULATOR.AVE, "Time to delete messages from resource", MICRO_SECONDS);
+
+  }
+
+  public Map<String, LinkedMovingAverageRecord> getStatistics(){
+    Map<String, LinkedMovingAverageRecord> map = new LinkedHashMap<>();
+    map.put(noInterestMessageAverages.getName(), noInterestMessageAverages.getRecord());
+    map.put(publishedMessageAverages.getName(), publishedMessageAverages.getRecord());
+    map.put(subscribedMessageAverages.getName(), subscribedMessageAverages.getRecord());
+    map.put(retrievedMessagesAverages.getName(), retrievedMessagesAverages.getRecord());
+    map.put(expiredMessagesAverages.getName(), expiredMessagesAverages.getRecord());
+    map.put(deliveredMessagesAverages.getName(), deliveredMessagesAverages.getRecord());
+    map.put(subscribedClientAverages.getName(), subscribedClientAverages.getRecord());
+    map.put(storedMessageAverages.getName(), storedMessageAverages.getRecord());
+    map.put(delayedPublishedMessageAverages.getName(), delayedPublishedMessageAverages.getRecord());
+    map.put(transactedPublishedMessageAverages.getName(), transactedPublishedMessageAverages.getRecord());
+    map.put(readTimeAverages.getName(), readTimeAverages.getRecord());
+    map.put(writeTimeAverages.getName(), writeTimeAverages.getRecord());
+    map.put(deleteTimeAverages.getName(), deleteTimeAverages.getRecord());
+    return map;
   }
 
   public void subscriptionAdded() {
