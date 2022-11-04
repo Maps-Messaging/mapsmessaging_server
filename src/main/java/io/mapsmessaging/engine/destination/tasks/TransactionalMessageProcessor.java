@@ -41,6 +41,7 @@ public class TransactionalMessageProcessor extends MessageProcessor {
       destination.getDelayedStatus().register(delayed, message);
       return 0;
     } else {
+      destination.getStats().messagePublished();
       return processSubscription(destination, subscriptionManager, message);
     }
   }

@@ -28,15 +28,18 @@ import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
+import java.util.List;
 import java.util.concurrent.FutureTask;
 
 public class UDPEndPoint extends EndPoint {
@@ -46,10 +49,29 @@ public class UDPEndPoint extends EndPoint {
   private final Selector selector;
   private final EndPointJMX mbean;
   private final String name;
+  private final InetSocketAddress remoteAddress;
+
+  public UDPEndPoint(InetSocketAddress remote, Selector selector, long id, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
+    super(id, endPointServerStatus);
+    remoteAddress = remote;
+    this.selector = selector;
+    authenticationConfig = null;
+    datagramChannel = DatagramChannel.open();
+    datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+    datagramChannel.configureBlocking(false);
+    datagramChannel.setOption(StandardSocketOptions.SO_BROADCAST, true);
+    datagramChannel.socket().bind(null);
+    name = getProtocol() + "_" + datagramChannel.getLocalAddress().toString();
+    mbean = new EndPointJMX(jmxParent, this);
+    jmxParentPath = mbean.getTypePath();
+    jmxParentPath = mbean.getTypePath();
+    logger.log(UDP_CREATED, datagramChannel.getLocalAddress());
+  }
 
   public UDPEndPoint(InetSocketAddress inetSocketAddress, Selector selector, long id, EndPointServer server, String authConfig, EndPointManagerJMX managerMBean)
       throws IOException {
     super(id, server);
+    remoteAddress = null;
     this.selector = selector;
     datagramChannel = DatagramChannel.open();
     datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
@@ -70,7 +92,11 @@ public class UDPEndPoint extends EndPoint {
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
-    int result = datagramChannel.send(packet.getRawBuffer(), packet.getFromAddress());
+    SocketAddress host = packet.getFromAddress();
+    if(remoteAddress != null){
+      host = remoteAddress;
+    }
+    int result = datagramChannel.send(packet.getRawBuffer(), host);
     logger.log(UDP_SENT_BYTES, result);
     updateWriteBytes(result);
     return result;

@@ -97,16 +97,16 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
 
   //<editor-fold desc="End Point Connection Management">
-  END_POINT_CONNECTION_STARTING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Starting connection manager"),
+  END_POINT_CONNECTION_STARTING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Starting connection manager"),
   END_POINT_CONNECTION_SUBSCRIPTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to establish a {} subscription in between {} and {} "),
   END_POINT_CONNECTION_CLOSE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Exception raised while closing end point"),
-  END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Established a {} subscription between {} and {}"),
+  END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Established a {} subscription between {} and {}"),
   END_POINT_CONNECTION_PROTOCOL_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised while establishing protocol between {} and protocol {}"),
   END_POINT_CONNECTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised while connecting to remote server {}"),
-  END_POINT_CONNECTION_INITIALISED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Initialised connection"),
-  END_POINT_CONNECTION_CLOSED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Closing connection"),
-  END_POINT_CONNECTION_STATE_CHANGED(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
-  END_POINT_CONNECTION_STOPPING(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+  END_POINT_CONNECTION_INITIALISED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Initialised connection"),
+  END_POINT_CONNECTION_CLOSED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Closing connection"),
+  END_POINT_CONNECTION_STATE_CHANGED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
+  END_POINT_CONNECTION_STOPPING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
   //</editor-fold>
 
   // <editor-fold desc="Selector and Selector task log messages">

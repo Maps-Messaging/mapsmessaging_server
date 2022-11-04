@@ -25,7 +25,9 @@ public class SemTechProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
-    return null;
+    SemTechProtocol protocol = new SemTechProtocol(endPoint, sessionId);
+    mappedInterfaces.put(endPoint, protocol);
+    return protocol;
   }
 
   @Override

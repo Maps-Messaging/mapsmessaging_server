@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import java.io.IOException;
 
 public class Connecting extends State {
 
@@ -28,6 +29,14 @@ public class Connecting extends State {
 
   @Override
   public void execute() {
+    if(endPointConnection.getUrl().getProtocol().equalsIgnoreCase("udp")){
+      // This is a UDP connection, we are connected by default
+      try {
+        endPointConnection.handleNewEndPoint(endPointConnection.getConnection().getEndPoint());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
     // Need to wait for the protocol to be established before we can move on
   }
 

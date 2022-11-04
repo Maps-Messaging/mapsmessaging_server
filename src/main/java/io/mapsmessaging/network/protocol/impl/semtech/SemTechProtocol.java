@@ -28,11 +28,17 @@ public class SemTechProtocol extends ProtocolImpl {
   private final SelectorTask selectorTask;
   private final PacketFactory packetFactory;
   private final Session session;
+  private final boolean isClient;
+  private final byte[] gatewayId;
 
   @Getter
   private final GatewayManager gatewayManager;
 
   protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint) throws IOException {
+    this(endPoint, null);
+  }
+
+  protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint, String sessionId) throws IOException {
     super(endPoint);
     logger = LoggerFactory.getLogger("SemTech Protocol on " + endPoint.getName());
     selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
@@ -57,6 +63,13 @@ public class SemTechProtocol extends ProtocolImpl {
         Thread.currentThread().interrupt();
       }
       throw new IOException(e.getMessage());
+    }
+    isClient = (sessionId == null);
+    if(isClient){
+      gatewayId = null;
+    }
+    else{
+      gatewayId = sessionId.getBytes();
     }
   }
 

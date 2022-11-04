@@ -66,6 +66,7 @@ import java.util.Map.Entry;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.Getter;
 
 public class MessageDaemon {
 
@@ -90,6 +91,8 @@ public class MessageDaemon {
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
 
+  @Getter
+  private boolean enableResourceStatistics;
 
 
   public MessageDaemon() throws IOException {
@@ -154,6 +157,7 @@ public class MessageDaemon {
       JMXManager.setEnableJMX(false);
       JMXManager.setEnableJMXStatistics(false);
     }
+    enableResourceStatistics = properties.getBooleanProperty("EnableResourceStatistics", false);
 
     SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopicAverages", true));
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));

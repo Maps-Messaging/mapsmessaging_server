@@ -74,13 +74,16 @@ public class MovingAverage {
    * @return The current moving average for the current data set
    */
   public long getAverage() {
+    return current;
+  }
+
+  public void update(){
     clearData(System.currentTimeMillis());
     long ave = 0;
     for (DataPoint dataPoint : dataPoints) {
       ave += dataPoint.data;
     }
     current = ave / expectedEntries;
-    return current;
   }
 
   /**
@@ -93,10 +96,6 @@ public class MovingAverage {
 
   protected void clearData(long now) {
     dataPoints.removeIf(dataPoint -> dataPoint.expiry < now);
-  }
-
-  public long getCurrent() {
-    return current;
   }
 
   protected static class DataPoint {

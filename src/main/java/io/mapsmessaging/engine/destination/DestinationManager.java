@@ -187,6 +187,7 @@ public class DestinationManager implements DestinationFactory, Agent {
   }
 
   public void start() {
+    initialise();
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.start();

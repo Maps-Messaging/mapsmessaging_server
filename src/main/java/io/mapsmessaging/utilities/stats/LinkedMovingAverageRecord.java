@@ -13,6 +13,7 @@ public class LinkedMovingAverageRecord {
   private final long timeSpan;
   @Getter
   private final long current;
+
   @Getter
   private final Map<String, Long> stats;
 

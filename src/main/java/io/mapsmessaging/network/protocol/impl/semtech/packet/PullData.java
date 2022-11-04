@@ -4,21 +4,22 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
 
 import io.mapsmessaging.network.io.Packet;
+import java.net.SocketAddress;
 import lombok.Getter;
 import lombok.ToString;
 
 /**
  * ### 5.2. PULL_DATA packet ###
- *
  * That packet type is used by the gateway to poll data from the server.
- *
  * This data exchange is initialized by the gateway because it might be impossible for the server to send packets to the gateway if the gateway is behind a NAT.
- *
  * When the gateway initialize the exchange, the network route towards the server will open and will allow for packets to flow both directions. The gateway must periodically send
  * PULL_DATA packets to be sure the network route stays open for the server to be used at any time.
- *
- * Bytes  | Function :------:|--------------------------------------------------------------------- 0      | protocol version = 2 1-2    | random token 3      | PULL_DATA
- * identifier 0x02 4-11   | Gateway unique identifier (MAC address)
+ * Bytes  | Function
+ * -------|---------------------------------------------------------------------
+ * 0      | protocol version = 2
+ * 1-2    | random token
+ * 3      | PULL_DATA identifier 0x02
+ * 4-11   | Gateway unique identifier (MAC address)
  */
 
 @ToString
@@ -35,6 +36,13 @@ public class PullData extends SemTechPacket {
     gatewayIdentifier = new byte[8];
     packet.get(gatewayIdentifier);
   }
+
+  public PullData(int token, byte[] gatewayIdentifier, SocketAddress fromAddress) {
+    super(fromAddress);
+    this.token = token;
+    this.gatewayIdentifier = gatewayIdentifier;
+  }
+
 
   @Override
   public int packFrame(Packet packet) {

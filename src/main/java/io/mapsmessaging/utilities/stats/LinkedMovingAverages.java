@@ -94,9 +94,9 @@ public class LinkedMovingAverages {
   public LinkedMovingAverageRecord getRecord(){
     Map<String, Long> stats = new LinkedHashMap<>();
     for(MovingAverage movingAverage:movingAverages){
-      stats.put(movingAverage.getName(), movingAverage.getCurrent());
+      stats.put(movingAverage.getName(), movingAverage.getAverage());
     }
-    return new LinkedMovingAverageRecord(name, unitName, timeSpan, getCurrent(), stats);
+    return new LinkedMovingAverageRecord(name, unitName, timeSpan, total.sum(), stats);
   }
   /**
    * @return A list of complete names of all moving averages
@@ -195,6 +195,7 @@ public class LinkedMovingAverages {
       long ave = dataProcessor.calculate();
       for (MovingAverage movingAverage : movingAverages) {
         movingAverage.add(ave);
+        movingAverage.update();
       }
       previousStatistics = currentStatistics;
       currentStatistics = new SummaryStatistics();

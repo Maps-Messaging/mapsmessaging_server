@@ -19,7 +19,7 @@ public class GatewayInfo {
   @Getter
   private final SubscribedEventManager outbound;
   @Getter
-  private final byte[] raw_identifier;
+  private final byte[] rawIdentifier;
   @Getter
   private final String name;
   @Getter
@@ -31,7 +31,7 @@ public class GatewayInfo {
   private final Queue<MessageEvent> waitingMessages;
 
   public GatewayInfo(byte[] raw_identifier, String name, Destination inbound, Destination status, SubscribedEventManager outbound) {
-    this.raw_identifier = raw_identifier;
+    this.rawIdentifier = raw_identifier;
     this.name = name;
     this.inbound = inbound;
     this.status = status;

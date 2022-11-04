@@ -10,7 +10,7 @@ public abstract class SemTechPacket implements ServerPacket {
   @Getter
   SocketAddress fromAddress;
 
-  public SemTechPacket(SocketAddress fromAddress) {
+  protected SemTechPacket(SocketAddress fromAddress) {
     super();
     this.fromAddress = fromAddress;
   }

@@ -109,6 +109,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   }
 
   public void start() {
+    initialise();
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
     for (EndPointConnection endPointConnection : endPointConnectionList) {
       endPointConnection.start();

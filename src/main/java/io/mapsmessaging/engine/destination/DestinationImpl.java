@@ -169,11 +169,10 @@ public class DestinationImpl implements BaseDestination {
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats();
+    resourceStatistics = new ResourceStatistics(resource);
     if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
-      resourceStatistics = new ResourceStatistics(resource);
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
-      resourceStatistics = null;
       destinationJMXBean = null;
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
@@ -208,11 +207,10 @@ public class DestinationImpl implements BaseDestination {
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats();
+    resourceStatistics = new ResourceStatistics(resource);
     if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
-      resourceStatistics = new ResourceStatistics(resource);
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
-      resourceStatistics = null;
       destinationJMXBean = null;
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
@@ -256,11 +254,10 @@ public class DestinationImpl implements BaseDestination {
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats();
+    resourceStatistics = new ResourceStatistics(resource);
     if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
-      resourceStatistics = new ResourceStatistics(resource);
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
-      resourceStatistics = null;
       destinationJMXBean = null;
     }
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();

@@ -5,17 +5,20 @@ import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactor
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
 
 import io.mapsmessaging.network.io.Packet;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 
 /**
  * ### 3.2. PUSH_DATA packet ###
  * That packet type is used by the gateway mainly to forward the RF packets received, and associated metadata, to the server.
- * Bytes  | Function :------:|---------------------------------------------------------------------
+ * Bytes  | Function
+ * -------|---------------------------------------------------------------------
  * 0      | protocol version = 2
  * 1-2    | random token
- * 3      | PUSH_DATA
- * identifier 0x00 4-11   | Gateway unique identifier (MAC address) 12-end | JSON object, starting with {, ending with }, see section 4
+ * 3      | PUSH_DATA  identifier 0x00
+ * 4-11   | Gateway unique identifier (MAC address)
+ * 12-end | JSON object, starting with {, ending with }, see section 4
  */
 
 public class PushData extends SemTechPacket {
@@ -37,6 +40,14 @@ public class PushData extends SemTechPacket {
     packet.get(tmp);
     jsonObject = new String(tmp);
   }
+
+  public PushData(int token, byte[] gatewayIdentifier, String jsonObject, SocketAddress fromAddress) {
+    super(fromAddress);
+    this.token = token;
+    this.gatewayIdentifier = gatewayIdentifier;
+    this.jsonObject = jsonObject;
+  }
+
 
   public boolean isValid() {
     return jsonObject.length() == 0 || (jsonObject.startsWith("{") && jsonObject.endsWith("}"));

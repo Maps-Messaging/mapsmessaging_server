@@ -9,8 +9,11 @@ import java.net.SocketAddress;
  *
  * That packet type is used by the server to acknowledge immediately all the PUSH_DATA packets received.
  *
- * Bytes  | Function :------:|--------------------------------------------------------------------- 0      | protocol version = 2 1-2    | same token as the PUSH_DATA packet to
- * acknowledge 3      | PUSH_ACK identifier 0x01
+ * Bytes  | Function
+ * -------|---------------------------------------------------------------------
+ * 0      | protocol version = 2
+ * 1-2    | same token as the PUSH_DATA packet to acknowledge
+ * 3      | PUSH_ACK identifier 0x01
  */
 
 public class PushAck extends Ack {

@@ -12,7 +12,7 @@ public abstract class Ack extends SemTechPacket {
   private final int token;
   private final int type;
 
-  public Ack(int token, int type, SocketAddress fromAddress) {
+  protected Ack(int token, int type, SocketAddress fromAddress) {
     super(fromAddress);
     this.token = token;
     this.type = type;
