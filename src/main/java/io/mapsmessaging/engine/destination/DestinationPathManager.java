@@ -25,22 +25,51 @@ public class DestinationPathManager {
 
   private static final String OPTIONAL_PATH = "{folder}";
 
-  private final @Getter long partitionSize;
-  private final @Getter long idleTime;
+  @Getter
+  private final long partitionSize;
+  @Getter
+  private final long idleTime;
 
-  private final @Getter int itemCount;
-  private final @Getter int expiredEventPoll;
+  @Getter
+  private final int itemCount;
+  @Getter
+  private final int expiredEventPoll;
 
-  private final @Getter boolean enableSync;
-  private final @Getter boolean remap;
-  private final @Getter boolean writeThrough;
-  private final @Getter boolean enableCache;
+  @Getter
+  private final boolean enableSync;
+  @Getter
+  private final boolean remap;
+  @Getter
+  private final boolean writeThrough;
+  @Getter
+  private final boolean enableCache;
 
-  private final @Getter String name;
-  private final @Getter String directory;
-  private final @Getter String namespaceMapping;
-  private final @Getter String type;
-  private final @Getter String cacheType;
+  @Getter
+  private final String name;
+  @Getter
+  private final String directory;
+  @Getter
+  private final String namespaceMapping;
+  @Getter
+  private final String type;
+  @Getter
+  private final String cacheType;
+  @Getter
+  private final String archiveName;
+  @Getter
+  private final long archiveIdleTime;
+
+  @Getter
+  private final String s3RegionName;
+  @Getter
+  private final String s3AccessKeyId;
+  @Getter
+  private final String s3SecretAccessKey;
+  @Getter
+  private final String s3BucketName;
+  @Getter
+  private final boolean s3Compression;
+
 
   public DestinationPathManager(ConfigurationProperties properties) {
     name = properties.getProperty("name");
@@ -73,6 +102,35 @@ public class DestinationPathManager {
       cacheType = "";
       writeThrough = false;
       enableCache = false;
+    }
+    if(properties.containsKey("archive")){
+      ConfigurationProperties archiveProps = (ConfigurationProperties) properties.get("archive");
+      archiveName = archiveProps.getProperty("name");
+      archiveIdleTime = archiveProps.getLongProperty("idleTime", -1);
+      if(archiveProps.containsKey("S3") && archiveName.equalsIgnoreCase("s3")){
+        ConfigurationProperties s3Props = (ConfigurationProperties) properties.get("s3");
+        s3AccessKeyId = s3Props.getProperty("accesskeyId");
+        s3BucketName = s3Props.getProperty("bucketName");
+        s3SecretAccessKey = s3Props.getProperty("secretAccessKey");
+        s3Compression =  s3Props.getBooleanProperty("compression", false);
+        s3RegionName = s3Props.getProperty("regionName");
+      }
+      else{
+        s3AccessKeyId = "";
+        s3BucketName = "";
+        s3SecretAccessKey = "";
+        s3Compression =  false;
+        s3RegionName = "";
+      }
+    }
+    else{
+      archiveName = "None";
+      archiveIdleTime = -1;
+      s3AccessKeyId = "";
+      s3BucketName = "";
+      s3SecretAccessKey = "";
+      s3Compression =  false;
+      s3RegionName = "";
     }
   }
 

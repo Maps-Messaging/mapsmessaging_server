@@ -71,11 +71,11 @@ DestinationManager:
             writeThrough: enable # Could be either enable or disable
          archive:
             name: None # Options : None, Compress, S3. Please note if S3 selected the s3 config will need to be supplied
-            archiveIdleTime: 86400000 # time in milliseconds for an idle partition to be archived, this is 1 day
+            idleTime: 86400000 # time in milliseconds for an idle partition to be archived, this is 1 day
             s3:
-               RegionName: <aws region to use>
-               AccessKeyId: <Unique S3 Access id>
-               SecretAccessKey: <Unique S3 Secret Key>
-               BucketName: <s3 bucket name to use>
-               Compression: true # Options true/false if the file is compressed before pushing to S3
+               regionName: <aws region to use>
+               accessKeyId: <Unique S3 Access id>
+               secretAccessKey: <Unique S3 Secret Key>
+               bucketName: <s3 bucket name to use>
+               compression: true # Options true/false if the file is compressed before pushing to S3
 

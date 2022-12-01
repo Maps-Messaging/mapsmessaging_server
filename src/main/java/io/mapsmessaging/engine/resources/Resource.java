@@ -91,6 +91,15 @@ public class Resource implements AutoCloseable {
         builder.setCache(pathManager.getCacheType());
         builder.enableCacheWriteThrough(pathManager.isWriteThrough());
       }
+      if(pathManager.getArchiveName() != null){
+        properties.put("archiveName", pathManager.getArchiveName() );
+        properties.put("archiveIdleTime", ""+pathManager.getArchiveIdleTime());
+        properties.put("S3AccessKeyId", pathManager.getS3AccessKeyId());
+        properties.put("S3SecretAccessKey", pathManager.getS3SecretAccessKey());
+        properties.put("S3RegionName", pathManager.getS3RegionName());
+        properties.put("S3BucketName", pathManager.getS3BucketName());
+        properties.put("S3CompressEnabled", ""+pathManager.isS3Compression());
+      }
     }
     builder.setProperties(properties)
         .setName(name)
