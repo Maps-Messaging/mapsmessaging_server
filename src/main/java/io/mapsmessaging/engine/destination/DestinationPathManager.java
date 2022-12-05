@@ -58,6 +58,8 @@ public class DestinationPathManager {
   private final String archiveName;
   @Getter
   private final long archiveIdleTime;
+  @Getter
+  private final String digestAlgorithm;
 
   @Getter
   private final String s3RegionName;
@@ -107,6 +109,7 @@ public class DestinationPathManager {
       ConfigurationProperties archiveProps = (ConfigurationProperties) properties.get("archive");
       archiveName = archiveProps.getProperty("name");
       archiveIdleTime = archiveProps.getLongProperty("idleTime", -1);
+      digestAlgorithm = archiveProps.getProperty("digestAlgorithm", "MD5");
       if(archiveProps.containsKey("S3") && archiveName.equalsIgnoreCase("s3")){
         ConfigurationProperties s3Props = (ConfigurationProperties) properties.get("s3");
         s3AccessKeyId = s3Props.getProperty("accesskeyId");
@@ -131,6 +134,7 @@ public class DestinationPathManager {
       s3SecretAccessKey = "";
       s3Compression =  false;
       s3RegionName = "";
+      digestAlgorithm = "";
     }
   }
 

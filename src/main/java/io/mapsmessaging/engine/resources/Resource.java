@@ -94,6 +94,7 @@ public class Resource implements AutoCloseable {
       if(pathManager.getArchiveName() != null){
         properties.put("archiveName", pathManager.getArchiveName() );
         properties.put("archiveIdleTime", ""+pathManager.getArchiveIdleTime());
+        properties.put("digestName", pathManager.getDigestAlgorithm());
         properties.put("S3AccessKeyId", pathManager.getS3AccessKeyId());
         properties.put("S3SecretAccessKey", pathManager.getS3SecretAccessKey());
         properties.put("S3RegionName", pathManager.getS3RegionName());

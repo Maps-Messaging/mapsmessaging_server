@@ -72,6 +72,7 @@ DestinationManager:
          archive:
             name: None # Options : None, Compress, S3. Please note if S3 selected the s3 config will need to be supplied
             idleTime: 86400000 # time in milliseconds for an idle partition to be archived, this is 1 day
+            digestAlgorithm: MD5 # Digest algorithm to use, can be None, MD5, SHA-1, SHA-256 or any supported by the JVM
             s3:
                regionName: <aws region to use>
                accessKeyId: <Unique S3 Access id>
