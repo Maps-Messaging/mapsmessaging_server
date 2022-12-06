@@ -8,9 +8,12 @@ Wire protocol standardisation for messaging has enabled an unprecidented interop
 Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) and [V5](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html), while evolution of the same protocol the functionality being offered in V5 far exceeds what was available in V3. Add to this AMQP V1.0, which is gaining ground in IoT, when trying to design a coherent messaging fabric it requires multiple messaging servers with standalone integration systems or messaging servers with plugins that have limited support of the protocol. This results in complex deployments, rigid client and server deployments and not achieving the utopia that open wire protocols were promising to deliver.
 
 ## Features
-* MapsMessaging supports the MQTT, MQTT-SN, AMQP (JMS over AMQP) and STOMP. For the complete list of [supported protocol versions](https://www.mapsmessaging.io/protocol_support.html). 
+* MapsMessaging supports the MQTT (3.1, 3.1.1, 5.0), MQTT-SN (1.2, 2.0), AMQP (1.0) (JMS over AMQP), STOMP, CoAP. For the complete list
+  of [supported protocol versions](https://www.mapsmessaging.io/protocol_support.html).
 
-* It also supports connections to other messaging servers that support MQTT, Stomp and AMQP allowing the server to either publish data to the remote servers or subscribe to data on the remote servers. Removing the need to add extra hops in message delivery systems. More information can be found [here](https://www.mapsmessaging.io/InterServerConnection_config.html)
+* It also supports connections to other messaging servers that support MQTT, Stomp and AMQP allowing the server to either publish data to the remote servers or subscribe to data on
+  the remote servers. Removing the need to add extra hops in message delivery systems. More information can be
+  found [here](https://www.mapsmessaging.io/InterServerConnection_config.html)
 
 * [JMS Selector](https://github.com/Maps-Messaging/jms_selector_parser) based filtering support for AMPQ_JMS, Stomp, MQTT V5.
 
