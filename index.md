@@ -16,6 +16,7 @@ With the MapsMessaging Daemon it natively supports the following protocols
 * AMQP 1.0 - (JMS over AMQP)
 * Stomp (1.1, 1.2)
 * CoAP (RFC7252, RFC7641, RFC7959)
+* RestAPI - Management only at the moment
 
 Independently of where messages arrive from all clients on all protocols and interact with each other.  
 
