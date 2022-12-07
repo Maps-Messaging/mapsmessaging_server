@@ -91,6 +91,9 @@ public class NetworkManager implements ServiceManager, Agent {
     startAll();
   }
 
+  // We are constructing end points which open a resource, we need this resource to remain open
+  // we add it to a list that manages the close
+  @SuppressWarnings("java:S2095")
   private void initialiseInstance(EndPointURL endPointURL, NetworkConfig networkConfig) {
     for (EndPointServerFactory endPointServerFactory : endPointServers) {
       if (endPointServerFactory.getName().equals(endPointURL.getProtocol())) {
