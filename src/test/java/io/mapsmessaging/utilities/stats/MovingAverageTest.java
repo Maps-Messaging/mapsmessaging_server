@@ -18,11 +18,10 @@
 
 package io.mapsmessaging.utilities.stats;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class MovingAverageTest {
 
@@ -43,6 +42,7 @@ class MovingAverageTest {
       movingAverage.add(1);
       count++;
     }
+    movingAverage.update();
     Assertions.assertEquals(count, movingAverage.getAverage());
   }
 
