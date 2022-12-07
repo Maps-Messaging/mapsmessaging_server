@@ -64,7 +64,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
             SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
             destinationManager.addSystemTopic(aliasTopic);
           } catch (IOException e) {
-            e.printStackTrace();
+            // We can ignore this exception, it is an artifact of the path
           }
         }
         List<SystemTopic> children = systemTopic.getChildren();
