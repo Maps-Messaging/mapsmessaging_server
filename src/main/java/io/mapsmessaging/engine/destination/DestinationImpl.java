@@ -383,6 +383,7 @@ public class DestinationImpl implements BaseDestination {
         delayScheduler.cancel(true);
         delayedMessageManager.delete();
       }
+      if(retainManager != null) retainManager.close();
       resource.delete();
       if (destinationJMXBean != null) {
         destinationJMXBean.close();
@@ -401,6 +402,7 @@ public class DestinationImpl implements BaseDestination {
         try {
           Files.delete(file.toPath());
         } catch (IOException e) {
+          e.printStackTrace();
           failed.add(file);
         }
       }

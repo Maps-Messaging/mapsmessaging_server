@@ -17,11 +17,11 @@ public class RetainManager {
 
   private final Queue<Long> retainIndex;
   private final AtomicLong retainId;
-
+  private final BitSetFactory factory;
 
   public RetainManager(boolean isPersistent, String path) throws IOException {
-    BitSetFactory bitSetFactory = createFactory(path, isPersistent);
-    retainIndex = new NaturalOrderedLongQueue(0, bitSetFactory);
+    factory = createFactory(path, isPersistent);
+    retainIndex = new NaturalOrderedLongQueue(0, factory);
     retainId = new AtomicLong(-2);
   }
 
@@ -64,7 +64,8 @@ public class RetainManager {
     }
   }
 
-  public void close() {
+  public void close() throws IOException {
     ((NaturalOrderedCollection)retainIndex).close();
+    factory.close();
   }
 }
