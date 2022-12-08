@@ -62,10 +62,10 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
           ac.setAuthorized(true);
         } else if (cb instanceof NameCallback) {
           NameCallback nc = (NameCallback) cb;
-          nc.setName("username");
+//          nc.setName("username");
         } else if (cb instanceof PasswordCallback) {
           PasswordCallback pc = (PasswordCallback) cb;
-          pc.setPassword("password".toCharArray());
+//          pc.setPassword("password".toCharArray());
         } else if (cb instanceof RealmCallback) {
           RealmCallback rc = (RealmCallback) cb;
           rc.setText("myServer");
