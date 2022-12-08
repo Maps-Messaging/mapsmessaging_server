@@ -8,7 +8,6 @@ public class DebugMapper implements ExceptionMapper<Throwable> {
 
   @Override
   public Response toResponse(Throwable exception) {
-    exception.printStackTrace();
     if (exception instanceof WebApplicationException) {
       return ((WebApplicationException) exception).getResponse();
     }
