@@ -402,7 +402,6 @@ public class DestinationImpl implements BaseDestination {
         try {
           Files.delete(file.toPath());
         } catch (IOException e) {
-          e.printStackTrace();
           failed.add(file);
         }
       }
