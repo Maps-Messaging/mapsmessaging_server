@@ -2,7 +2,6 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.utils.FilePathHelper;
-import io.mapsmessaging.utilities.collections.NaturalOrderedCollection;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
@@ -65,7 +64,6 @@ public class RetainManager {
   }
 
   public void close() throws IOException {
-    ((NaturalOrderedCollection)retainIndex).close();
     factory.close();
   }
 }
