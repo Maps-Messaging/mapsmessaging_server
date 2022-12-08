@@ -314,7 +314,7 @@ public class ConfigurationProperties {
             replacement.add(packMap(((ConfigurationProperties)obj).getMap()));
           }
           else{
-            list.add(obj);
+            replacement.add(obj);
           }
         }
         response.put(entry.getKey(), replacement);
