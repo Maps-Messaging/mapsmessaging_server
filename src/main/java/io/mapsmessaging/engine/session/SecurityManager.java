@@ -18,11 +18,11 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.engine.security.PrincipalCallback;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
