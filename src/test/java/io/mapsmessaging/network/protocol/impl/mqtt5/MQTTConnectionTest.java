@@ -16,30 +16,32 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.mqtt;
+package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.network.protocol.impl.mqtt.MQTTBaseTest;
 import java.util.UUID;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttCallback;
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public abstract class MQTTConnectionTest extends MQTTBaseTest {
+abstract class MQTTConnectionTest extends MQTTBaseTest {
 
   protected abstract int getVersion();
 
   @Test
   @DisplayName("Test anonymous MQTT client connection")
   void testAnonymous() throws MqttException {
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setMqttVersion(getVersion());
-    MqttClient client = new MqttClient("tcp://localhost:8675", getClientId(UUID.randomUUID().toString(), getVersion()), new MemoryPersistence());
+    MqttConnectionOptions options = new MqttConnectionOptions();
+    MqttClient client = new MqttClient("tcp://localhost:8675", UUID.randomUUID().toString(), new MemoryPersistence());
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
@@ -50,12 +52,15 @@ public abstract class MQTTConnectionTest extends MQTTBaseTest {
   @Test
   @DisplayName("Test valid username/password MQTT client connection")
   void testValidUser() throws MqttException {
-    MqttClient client = new MqttClient("tcp://localhost:2001", getClientId(UUID.randomUUID().toString(), getVersion()), new MemoryPersistence());
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setWill("/topic/will", "this is my will msg".getBytes(), 2, true);
+    MqttConnectionOptions options = new MqttConnectionOptions();
+    MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttMessage mqttMessage = new MqttMessage();
+    mqttMessage.setPayload("this is my will msg".getBytes());
+    mqttMessage.setQos(2);
+    mqttMessage.setRetained(true);
+    options.setWill("/topic/will", mqttMessage);
     options.setUserName("user1");
-    options.setPassword("password1".toCharArray());
-    options.setMqttVersion(getVersion());
+    options.setPassword("password1".getBytes());
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
@@ -66,12 +71,11 @@ public abstract class MQTTConnectionTest extends MQTTBaseTest {
   @Test
   @DisplayName("Test valid user/password MQTT client connection with a reset session set")
   void testValidUserResetState() throws MqttException {
-    MqttClient client = new MqttClient("tcp://localhost:2001", getClientId(UUID.randomUUID().toString(), getVersion()), new MemoryPersistence());
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setCleanSession(true);
+    MqttConnectionOptions options = new MqttConnectionOptions();
+    MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
+    options.setCleanStart(true);
     options.setUserName("user1");
-    options.setPassword("password1".toCharArray());
-    options.setMqttVersion(getVersion());
+    options.setPassword("password1".getBytes());
 
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
@@ -79,12 +83,11 @@ public abstract class MQTTConnectionTest extends MQTTBaseTest {
     Assertions.assertFalse(client.isConnected());
     client.close();
 
-    client = new MqttClient("tcp://localhost:2001", getClientId(UUID.randomUUID().toString(), getVersion()), new MemoryPersistence());
-    options = new MqttConnectOptions();
-    options.setCleanSession(false);
+    client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
+    options = new MqttConnectionOptions();
+    options.setCleanStart(false);
     options.setUserName("user1");
-    options.setPassword("password1".toCharArray());
-    options.setMqttVersion(getVersion());
+    options.setPassword("password1".getBytes());
 
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
@@ -97,12 +100,17 @@ public abstract class MQTTConnectionTest extends MQTTBaseTest {
   @Test
   @DisplayName("Test invalid MQTT client connection")
   void testInvalidUser() throws MqttException {
-    MqttClient client = new MqttClient("tcp://localhost:2001", getClientId(UUID.randomUUID().toString(), getVersion()), new MemoryPersistence());
-    MqttCallback callback = new MqttCallback(){
+    MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttCallback callback = new MqttCallback() {
 
       @Override
-      public void connectionLost(Throwable throwable) {
-        throwable.printStackTrace();
+      public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+
+      }
+
+      @Override
+      public void mqttErrorOccurred(MqttException e) {
+
       }
 
       @Override
@@ -110,17 +118,28 @@ public abstract class MQTTConnectionTest extends MQTTBaseTest {
       }
 
       @Override
-      public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+      public void deliveryComplete(IMqttToken iMqttToken) {
+
       }
+
+      @Override
+      public void connectComplete(boolean b, String s) {
+
+      }
+
+      @Override
+      public void authPacketArrived(int i, MqttProperties mqttProperties) {
+
+      }
+
     };
 
     client.setCallback(callback);
     client.setTimeToWait(2000);
-    MqttConnectOptions options = new MqttConnectOptions();
+    MqttConnectionOptions options = new MqttConnectionOptions();
     options.setUserName("user1");
-    options.setPassword("password2".toCharArray());
+    options.setPassword("password2".getBytes());
     options.setConnectionTimeout(5);
-    options.setMqttVersion(getVersion());
     try {
       client.connect(options);
     } catch (MqttException e) {
