@@ -43,6 +43,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   private final List<SystemTopic> completeList;
   private final DestinationManager destinationManager;
 
+  private boolean loaded = false;
   private Future<?> scheduledFuture;
 
   public SystemTopicManager(DestinationManager destinationManager){
@@ -52,8 +53,9 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   }
 
   @Override
-  public void run()  {
-    if (enableStatistics) {
+  public void run() {
+    if (enableStatistics && !loaded) {
+      loaded = true;
       for (SystemTopic systemTopic : systemTopics) {
         systemTopic.start();
         destinationManager.addSystemTopic(systemTopic);
