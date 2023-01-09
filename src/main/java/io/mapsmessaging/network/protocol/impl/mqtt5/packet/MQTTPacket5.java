@@ -29,7 +29,7 @@ public abstract class MQTTPacket5 extends MQTTPacket {
 
   public static final int AUTH = 15;
 
-  private MessageProperties properties;
+  protected MessageProperties properties;
 
   protected MQTTPacket5(int id) {
     super(id);

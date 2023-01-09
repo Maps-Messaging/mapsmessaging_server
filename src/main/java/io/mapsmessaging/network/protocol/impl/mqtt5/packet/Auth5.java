@@ -35,7 +35,6 @@ public class Auth5 extends MQTTPacket5 {
   public Auth5(byte fixedHeader, long remainingLen, Packet packet)
       throws MalformedException, EndOfBufferException {
     super(fixedHeader >> 4);
-
     if ((fixedHeader & 0xf) != 0) {
       throw new MalformedException("Auth: Reserved bits in command byte not 0");
     }
@@ -49,20 +48,20 @@ public class Auth5 extends MQTTPacket5 {
 
   public Auth5(String authMethod, byte[] clientChallenge) {
     super(AUTH);
-    super.getProperties().add(new AuthenticationMethod(authMethod));
-    super.getProperties().add(new AuthenticationData(clientChallenge));
+    properties.add(new AuthenticationMethod(authMethod));
+    properties.add(new AuthenticationData(clientChallenge));
   }
-
 
   @Override
   public int packFrame(Packet packet) {
     int len = propertiesSize();
-    packControlByte(packet, 0);
-    writeVariableInt(packet, (2L + len + lengthSize(len)));
+    int variableLen = (len + lengthSize(len)) + 1;
 
-//    packet.put(statusCode.getValue());
+    packControlByte(packet, 0);
+    writeVariableInt(packet, variableLen);
+    packet.put(reasonCode);
     packProperties(packet, len);
-    return (len + 2);
+    return (variableLen + 2);
   }
 
   public byte getReasonCode() {
