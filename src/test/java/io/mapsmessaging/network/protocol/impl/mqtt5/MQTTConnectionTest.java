@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.network.protocol.impl.mqtt.MQTTBaseTest;
 import java.util.UUID;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
