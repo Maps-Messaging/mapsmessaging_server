@@ -43,7 +43,6 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   private final List<SystemTopic> completeList;
   private final DestinationManager destinationManager;
 
-  private boolean loaded = false;
   private Future<?> scheduledFuture;
 
   public SystemTopicManager(DestinationManager destinationManager){
@@ -54,31 +53,6 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
   @Override
   public void run() {
-    if (enableStatistics && !loaded) {
-      loaded = true;
-      for (SystemTopic systemTopic : systemTopics) {
-        systemTopic.start();
-        destinationManager.addSystemTopic(systemTopic);
-        String[] aliases = systemTopic.aliases();
-        completeList.add(systemTopic);
-        for (String alias : aliases) {
-          try {
-            SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
-            destinationManager.addSystemTopic(aliasTopic);
-          } catch (IOException e) {
-            // We can ignore this exception, it is an artifact of the path
-          }
-        }
-        List<SystemTopic> children = systemTopic.getChildren();
-        if (children != null) {
-          for (SystemTopic child : children) {
-            destinationManager.addSystemTopic(child);
-            completeList.add(child);
-          }
-        }
-      }
-    }
-
     for (SystemTopic systemTopic : completeList) {
       if (systemTopic.hasUpdates()) {
         try {
@@ -103,7 +77,28 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   @Override
   public void start() {
     if (enableStatistics) {
-      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
+      for (SystemTopic systemTopic : systemTopics) {
+        systemTopic.start();
+        destinationManager.addSystemTopic(systemTopic);
+        String[] aliases = systemTopic.aliases();
+        completeList.add(systemTopic);
+        for (String alias : aliases) {
+          try {
+            SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
+            destinationManager.addSystemTopic(aliasTopic);
+          } catch (IOException e) {
+            // We can ignore this exception, it is an artifact of the path
+          }
+        }
+        List<SystemTopic> children = systemTopic.getChildren();
+        if (children != null) {
+          for (SystemTopic child : children) {
+            destinationManager.addSystemTopic(child);
+            completeList.add(child);
+          }
+        }
+      }
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 1, 10, TimeUnit.SECONDS);
     }
   }
 
