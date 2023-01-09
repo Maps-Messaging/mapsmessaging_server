@@ -428,7 +428,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>AuthenticationLibrary</artifactId>
-      <version>0.2.2</version>
+      <version>0.2.3</version>
     </dependency>
 
     <dependency>
@@ -860,6 +860,7 @@
       <version>1.36</version>
       <scope>test</scope>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.eclipse.californium/californium-core -->
     <dependency>
       <groupId>org.eclipse.californium</groupId>

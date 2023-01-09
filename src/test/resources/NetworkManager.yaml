@@ -74,11 +74,24 @@ NetworkManager:
           auth : public
 
       -
+        name: "MQTT Interface"
+        url: "tcp://0.0.0.0:2883/"
+        protocol : mqtt
+        Sasl:
+          mechanism: SCRAM-BCRYPT-SHA-512
+          identityProvider: htpassword
+          passwordFile: ./src/test/resources/htpassword
+
+
+      -
         url: "tcp://0.0.0.0:5672/"
         name: "AMQP Interface"
         protocol : amqp
         auth : public
-        SaslMechanisms : ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI
+        Sasl:
+          mechanism: SCRAM-SHA-512
+          identityProvider: htpassword
+          passwordFile: htpasswd
 
       -
         url: "tcp://0.0.0.0:1882/"

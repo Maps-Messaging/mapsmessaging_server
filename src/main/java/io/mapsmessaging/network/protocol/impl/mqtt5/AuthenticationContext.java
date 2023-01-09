@@ -18,8 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.network.protocol.impl.SaslAuthenticationMechanism;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
+import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,25 +28,18 @@ import javax.security.sasl.Sasl;
 public class AuthenticationContext {
 
   private final String authMethod;
-  private final MQTTPacket5 parkedConnect;
   private final SaslAuthenticationMechanism mechanism;
 
-  public AuthenticationContext(String authMethod, ConfigurationProperties properties, MQTTPacket5 parkedConnect) throws IOException {
-    this.parkedConnect = parkedConnect;
+  public AuthenticationContext(String authMethod, String serverName, String protocol, ConfigurationProperties properties) throws IOException {
     this.authMethod = authMethod;
-
     // Here we load the config into the props, where required
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
-    mechanism = new SaslAuthenticationMechanism(authMethod, props);
+    mechanism = new SaslAuthenticationMechanism(authMethod,serverName, protocol, props, properties);
   }
 
   public String getAuthMethod() {
     return authMethod;
-  }
-
-  public MQTTPacket5 getParkedConnect() {
-    return parkedConnect;
   }
 
   public byte[] evaluateResponse(byte[] authenticationData) throws IOException {

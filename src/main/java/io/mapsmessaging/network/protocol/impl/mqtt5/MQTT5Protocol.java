@@ -119,10 +119,17 @@ public class MQTT5Protocol extends ProtocolImpl {
     packetListenerFactory = new PacketListenerFactory5();
     packetFactory = new PacketFactory5(this);
     closed = false;
-    authenticationContext = null;
     packetIdManager = new PacketIdManager();
     BitSetFactory bitsetFactory = new BitSetFactoryImpl(DefaultConstants.BITSET_BLOCK_SIZE);
     clientOutstanding = new NaturalOrderedLongList(0, bitsetFactory);
+
+    if(props.containsKey("Sasl")){
+      ConfigurationProperties saslProps = (ConfigurationProperties) props.get("Sasl");
+      authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"),"ServerNameHere", getName(), endPoint.getConfig().getProperties());
+    }
+    else{
+      authenticationContext = null;
+    }
     processPacket(packet);
     selectorTask.getReadTask().pushOutstandingData(packet);
   }

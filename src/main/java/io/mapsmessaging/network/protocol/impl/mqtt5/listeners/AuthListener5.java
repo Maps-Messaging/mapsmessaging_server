@@ -39,12 +39,19 @@ public class AuthListener5 extends PacketListener5 {
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
     // Need to push this until we have finished our auth
     AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
-    AuthenticationContext context;
+    AuthenticationContext context= null;
     if (mqttPacket instanceof Connect5) {
       try {
-        context = new AuthenticationContext(authMethod.getAuthenticationMethod(), endPoint.getConfig().getProperties(), mqttPacket);
-        ((MQTT5Protocol) protocol).setAuthenticationContext(context);
-        mqttPacket.getProperties().remove(MessagePropertyFactory.AUTHENTICATION_METHOD);
+        MQTT5Protocol mqtt5Protocol = ((MQTT5Protocol) protocol);
+        if(mqtt5Protocol.getAuthenticationContext() != null) {
+          String serverConfig = mqtt5Protocol.getAuthenticationContext().getAuthMethod();
+          String clientConfig = authMethod.getAuthenticationMethod();
+          if (!serverConfig.equalsIgnoreCase(clientConfig)) {
+            throw new IOException("Unsupported Authentication mechanism, expected " + mqtt5Protocol.getAuthenticationContext().getAuthMethod() + " client specified " + authMethod.getName());
+          }
+          context = mqtt5Protocol.getAuthenticationContext();
+          mqttPacket.getProperties().remove(MessagePropertyFactory.AUTHENTICATION_METHOD);
+        }
       } catch (IOException e) {
         throw new MalformedException("Exception raised creating Authentication Server", e);
       }
@@ -60,8 +67,8 @@ public class AuthListener5 extends PacketListener5 {
         byte[] clientChallenge = context.evaluateResponse(clientData.getAuthenticationData());
         if (context.isComplete()) {
           ((MQTT5Protocol) protocol).setAuthenticationContext(null);
-          MQTTPacket5 initial = context.getParkedConnect();
-          return ((MQTT5Protocol) protocol).getPacketListenerFactory().getListener(initial.getControlPacketId()).handlePacket(initial, session, endPoint, protocol);
+         //MQTTPacket5 initial = context.getParkedConnect();
+          //return ((MQTT5Protocol) protocol).getPacketListenerFactory().getListener(initial.getControlPacketId()).handlePacket(initial, session, endPoint, protocol);
         }
         Auth5 auth = new Auth5(context.getAuthMethod(), clientChallenge);
         auth.setReasonCode(StatusCode.CONTINUE_AUTHENTICATION.getValue());

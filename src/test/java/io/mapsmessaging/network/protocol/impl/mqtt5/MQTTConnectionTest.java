@@ -18,7 +18,14 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.security.MapsSecurityProvider;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+import lombok.SneakyThrows;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
 import org.eclipse.paho.mqttv5.client.MqttClient;
@@ -29,18 +36,75 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-abstract class MQTTConnectionTest extends MQTTBaseTest {
-
-  protected abstract int getVersion();
+class MQTTConnectionTest extends MQTTBaseTest {
+  @BeforeAll
+  static void registerSecurityProvider(){
+    MapsSecurityProvider.register();
+  }
 
   @Test
   @DisplayName("Test anonymous MQTT client connection")
   void testAnonymous() throws MqttException {
     MqttConnectionOptions options = new MqttConnectionOptions();
     MqttClient client = new MqttClient("tcp://localhost:8675", UUID.randomUUID().toString(), new MemoryPersistence());
+    client.connect(options);
+    Assertions.assertTrue(client.isConnected());
+    client.disconnect();
+    Assertions.assertFalse(client.isConnected());
+    client.close();
+  }
+
+  @Test
+  @DisplayName("Test anonymous MQTT client connection")
+  void testSasl() throws MqttException, SaslException {
+    Map<String, String> props = new HashMap<>();
+    props.put(Sasl.QOP, "auth");
+    String[] mechanisms = {"SCRAM-BCRYPT-SHA-512"};
+    ClientCallbackHandler clientHandler = new ClientCallbackHandler("test3", "This is an bcrypt password", "servername");
+    SaslClient saslClient =  Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
+    MqttConnectionOptions options = new MqttConnectionOptions();
+    options.setAuthMethod("SCRAM-BCRYPT-SHA-512");
+    options.setUserName("test3");
+    options.setPassword("This is an bcrypt password".getBytes());
+    options.setAuthData(saslClient.evaluateChallenge(new byte[0]));
+    MqttClient client = new MqttClient("tcp://localhost:2883", UUID.randomUUID().toString(), new MemoryPersistence());
+    client.setCallback(new MqttCallback() {
+      @Override
+      public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+
+      }
+
+      @Override
+      public void mqttErrorOccurred(MqttException e) {
+
+      }
+
+      @Override
+      public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+
+      }
+
+      @Override
+      public void deliveryComplete(IMqttToken iMqttToken) {
+
+      }
+
+      @Override
+      public void connectComplete(boolean b, String s) {
+
+      }
+
+      @SneakyThrows
+      @Override
+      public void authPacketArrived(int i, MqttProperties mqttProperties) {
+        System.err.println("Auth Packet received:::");
+        byte[] response = saslClient.evaluateChallenge(mqttProperties.getAuthenticationData());
+      }
+    });
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
     client.disconnect();

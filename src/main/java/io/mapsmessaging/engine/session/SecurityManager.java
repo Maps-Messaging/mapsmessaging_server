@@ -22,6 +22,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.security.MapsSecurityProvider;
 import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -44,6 +45,7 @@ public class SecurityManager implements Agent {
     ConfigurationProperties props = ConfigurationManager.getInstance().getProperties("SecurityManager");
     logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
     properties = props;
+    MapsSecurityProvider.register();
   }
 
   public SecurityContext getSecurityContext(SessionContext sessionContext) throws LoginException {

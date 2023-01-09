@@ -53,11 +53,16 @@ public class Auth5 extends MQTTPacket5 {
     super.getProperties().add(new AuthenticationData(clientChallenge));
   }
 
+
   @Override
   public int packFrame(Packet packet) {
+    int len = propertiesSize();
     packControlByte(packet, 0);
-    packet.put((byte) 0);
-    return 2;
+    writeVariableInt(packet, (2L + len + lengthSize(len)));
+
+//    packet.put(statusCode.getValue());
+    packProperties(packet, len);
+    return (len + 2);
   }
 
   public byte getReasonCode() {

@@ -95,6 +95,16 @@ NetworkManager:
         sendBufferSize    : 20000
 
       -
+        name: "MQTT Interface"
+        url: "tcp://0.0.0.0:2883/"
+        protocol : mqtt
+        Sasl:
+          mechanism: SCRAM-SHA-512
+          identityProvider: htpassword
+          passwordFile: htpasswd
+
+
+      -
         url: udp://0.0.0.0:1884/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn
