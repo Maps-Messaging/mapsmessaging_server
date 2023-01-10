@@ -38,6 +38,7 @@ import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -60,6 +61,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
   }
 
   @Test
+  @Disabled // Until Paho MQTT5 supports AUTH
   @DisplayName("Test SASL MQTT client connection")
   void testSasl() throws MqttException, SaslException {
     Map<String, String> props = new HashMap<>();
@@ -70,7 +72,6 @@ class MQTTConnectionTest extends MQTTBaseTest {
     MqttConnectionOptions options = new MqttConnectionOptions();
     options.setAuthMethod("SCRAM-BCRYPT-SHA-512");
     options.setUserName("test3");
-    options.setPassword("This is an bcrypt password".getBytes());
     options.setAuthData(saslClient.evaluateChallenge(null));
     MqttAsyncClient client = new MqttAsyncClient("tcp://localhost:2883", UUID.randomUUID().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
