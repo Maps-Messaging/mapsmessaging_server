@@ -66,7 +66,7 @@ public class ProtocolFactory implements ServiceManager {
       }
     }
     if (potential == failed) {
-      throw new IOException("No known protocol detected " + packet.toString());
+      throw new IOException("No known protocol detected " + packet.toString()+" <"+potential+" != "+failed+">");
     }
     return null;
   }
