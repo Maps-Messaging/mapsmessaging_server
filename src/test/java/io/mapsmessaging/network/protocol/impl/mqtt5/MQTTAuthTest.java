@@ -79,7 +79,6 @@ class MQTTAuthTest extends MQTTBaseTest {
   }
 
   @Test
-  @Disabled // Need Paho to fix AUTH issues
   @DisplayName("Test unknown user SASL MQTT client connection")
   void testInvalidUser() throws MqttException, SaslException {
     Map<String, String> props = new HashMap<>();
@@ -175,5 +174,54 @@ class MQTTAuthTest extends MQTTBaseTest {
     Assertions.assertThrowsExactly(MqttException.class, () -> client.connect(options).waitForCompletion(10000));
     client.close();
   }
+
+  @Test
+  @DisplayName("Test unknown authentication mechanism")
+  void testInvalidMechanism() throws MqttException, SaslException {
+    Map<String, String> props = new HashMap<>();
+    props.put(Sasl.QOP, "auth");
+    String[] mechanisms = {"SCRAM-BCRYPT-SHA-512"};
+    ClientCallbackHandler clientHandler = new ClientCallbackHandler("test3", "what ever", "servername");
+    SaslClient saslClient =  Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
+    MqttConnectionOptions options = new MqttConnectionOptions();
+    options.setAuthMethod("SomeRandomMechanism");
+    options.setUserName("test3");
+    options.setAuthData(saslClient.evaluateChallenge(null));
+    MqttAsyncClient client = new MqttAsyncClient("tcp://localhost:2883", UUID.randomUUID().toString(), new MemoryPersistence());
+    client.setCallback(new MqttCallback() {
+      @Override
+      public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+      }
+
+      @Override
+      public void mqttErrorOccurred(MqttException e) {
+      }
+
+      @Override
+      public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+      }
+
+      @Override
+      public void deliveryComplete(IMqttToken iMqttToken) {
+      }
+
+      @Override
+      public void connectComplete(boolean b, String s) {
+      }
+
+      @SneakyThrows
+      @Override
+      public void authPacketArrived(int authState, MqttProperties mqttProperties) {
+        byte[] response = saslClient.evaluateChallenge(mqttProperties.getAuthenticationData());
+        if (authState != 0) {
+          mqttProperties.setAuthenticationData(response);
+          client.authenticate(authState, this, mqttProperties);
+        }
+      }
+    });
+    Assertions.assertThrowsExactly(MqttException.class, () -> client.connect(options).waitForCompletion(10000));
+    client.close();
+  }
+
 
 }

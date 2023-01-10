@@ -44,22 +44,28 @@ public class AuthListener5 extends PacketListener5 {
     // Need to push this until we have finished our auth
     AuthenticationContext context= null;
     if (mqttPacket instanceof Connect5) {
-      try {
-        MQTT5Protocol mqtt5Protocol = ((MQTT5Protocol) protocol);
-        if(mqtt5Protocol.getAuthenticationContext() != null) {
-          AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
-          String serverConfig = mqtt5Protocol.getAuthenticationContext().getAuthMethod();
-          String clientConfig = authMethod.getAuthenticationMethod();
-          if (!serverConfig.equalsIgnoreCase(clientConfig)) {
-            throw new IOException("Unsupported Authentication mechanism, expected " + mqtt5Protocol.getAuthenticationContext().getAuthMethod() + " client specified " + authMethod.getName());
-          }
-          context = mqtt5Protocol.getAuthenticationContext();
-          mqttPacket.getProperties().remove(MessagePropertyFactory.AUTHENTICATION_METHOD);
-          context.setConnectMsg(mqttPacket);
-          context.setAuthenticationMethod(authMethod);
+      MQTT5Protocol mqtt5Protocol = ((MQTT5Protocol) protocol);
+      if(mqtt5Protocol.getAuthenticationContext() != null) {
+        AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
+        String serverConfig = mqtt5Protocol.getAuthenticationContext().getAuthMethod();
+        String clientConfig = authMethod.getAuthenticationMethod();
+        if (!serverConfig.equalsIgnoreCase(clientConfig)) {
+          ConnAck5 connAck = new ConnAck5();
+          connAck.setStatusCode(StatusCode.BAD_AUTHENTICATION_METHOD); // MQTT Standard
+          connAck.getProperties().add(authMethod);
+          connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
+            try {
+              protocol.close();
+            } catch (IOException e1) {
+              logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e1);
+            }
+          }, 100, TimeUnit.MILLISECONDS));
+          return connAck;
         }
-      } catch (IOException e) {
-        throw new MalformedException("Exception raised creating Authentication Server", e);
+        context = mqtt5Protocol.getAuthenticationContext();
+        mqttPacket.getProperties().remove(MessagePropertyFactory.AUTHENTICATION_METHOD);
+        context.setConnectMsg(mqttPacket);
+        context.setAuthenticationMethod(authMethod);
       }
     } else {
       context = ((MQTT5Protocol) protocol).getAuthenticationContext();
