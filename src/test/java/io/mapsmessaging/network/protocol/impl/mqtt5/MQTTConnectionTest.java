@@ -27,6 +27,7 @@ import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import lombok.SneakyThrows;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
@@ -70,42 +71,40 @@ class MQTTConnectionTest extends MQTTBaseTest {
     options.setAuthMethod("SCRAM-BCRYPT-SHA-512");
     options.setUserName("test3");
     options.setPassword("This is an bcrypt password".getBytes());
-    options.setAuthData(saslClient.evaluateChallenge(new byte[0]));
-    MqttClient client = new MqttClient("tcp://localhost:2883", UUID.randomUUID().toString(), new MemoryPersistence());
+    options.setAuthData(saslClient.evaluateChallenge(null));
+    MqttAsyncClient client = new MqttAsyncClient("tcp://localhost:2883", UUID.randomUUID().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
-
       }
 
       @Override
       public void mqttErrorOccurred(MqttException e) {
-
       }
 
       @Override
       public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
-
       }
 
       @Override
       public void deliveryComplete(IMqttToken iMqttToken) {
-
       }
 
       @Override
       public void connectComplete(boolean b, String s) {
-
       }
 
       @SneakyThrows
       @Override
-      public void authPacketArrived(int i, MqttProperties mqttProperties) {
-        System.err.println("Auth Packet received:::");
-        byte[] response = saslClient.evaluateChallenge(mqttProperties.getAuthenticationData());
+      public void authPacketArrived(int authState, MqttProperties mqttProperties) {
+        if(authState != 0) {
+          byte[] response = saslClient.evaluateChallenge(mqttProperties.getAuthenticationData());
+          mqttProperties.setAuthenticationData(response);
+          client.authenticate(authState, this, mqttProperties);
+        }
       }
     });
-    client.connect(options);
+    client.connect(options).waitForCompletion(30000);
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
     Assertions.assertFalse(client.isConnected());

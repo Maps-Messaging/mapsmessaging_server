@@ -42,6 +42,7 @@ import io.mapsmessaging.engine.destination.tasks.TransactionalMessageProcessor;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
+import io.mapsmessaging.engine.resources.ResourceImpl;
 import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.engine.schema.Schema;
@@ -250,7 +251,7 @@ public class DestinationImpl implements BaseDestination {
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
-    resource = new Resource();
+    resource = new ResourceImpl();
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
     stats = new DestinationStats();
