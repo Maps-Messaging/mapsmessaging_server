@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationMethod;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
@@ -30,6 +31,11 @@ import lombok.Setter;
 
 public class AuthenticationContext {
 
+  @Getter
+  @Setter
+  private AuthenticationMethod authenticationMethod;
+
+  @Getter
   private final String authMethod;
   private final SaslAuthenticationMechanism mechanism;
 
@@ -43,10 +49,6 @@ public class AuthenticationContext {
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
     mechanism = new SaslAuthenticationMechanism(authMethod, serverName, protocol, props, properties);
-  }
-
-  public String getAuthMethod() {
-    return authMethod;
   }
 
   public byte[] evaluateResponse(byte[] authenticationData) throws IOException {
