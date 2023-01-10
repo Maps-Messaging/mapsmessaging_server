@@ -46,8 +46,9 @@ public class Auth5 extends MQTTPacket5 {
     }
   }
 
-  public Auth5(String authMethod, byte[] clientChallenge) {
+  public Auth5(byte reasonCode, String authMethod, byte[] clientChallenge) {
     super(AUTH);
+    this.reasonCode = reasonCode;
     properties.add(new AuthenticationMethod(authMethod));
     properties.add(new AuthenticationData(clientChallenge));
   }

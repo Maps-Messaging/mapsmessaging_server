@@ -51,6 +51,7 @@ public class AuthListener5 extends PacketListener5 {
           }
           context = mqtt5Protocol.getAuthenticationContext();
           mqttPacket.getProperties().remove(MessagePropertyFactory.AUTHENTICATION_METHOD);
+          context.setConnectMsg(mqttPacket);
         }
       } catch (IOException e) {
         throw new MalformedException("Exception raised creating Authentication Server", e);
@@ -67,12 +68,10 @@ public class AuthListener5 extends PacketListener5 {
         byte[] clientChallenge = context.evaluateResponse(clientData.getAuthenticationData());
         if (context.isComplete()) {
           ((MQTT5Protocol) protocol).setAuthenticationContext(null);
-         //MQTTPacket5 initial = context.getParkedConnect();
-          //return ((MQTT5Protocol) protocol).getPacketListenerFactory().getListener(initial.getControlPacketId()).handlePacket(initial, session, endPoint, protocol);
+          MQTTPacket5 initial = context.getConnectMsg();
+          return ((MQTT5Protocol) protocol).getPacketListenerFactory().getListener(initial.getControlPacketId()).handlePacket(initial, session, endPoint, protocol);
         }
-        Auth5 auth = new Auth5(context.getAuthMethod(), clientChallenge);
-        auth.setReasonCode(StatusCode.CONTINUE_AUTHENTICATION.getValue());
-        return auth;
+        return new Auth5(StatusCode.CONTINUE_AUTHENTICATION.getValue(), context.getAuthMethod(), clientChallenge);
       } catch (IOException e) {
         throw new MalformedException("Exception raised in processing Auth challenge", e);
       }
