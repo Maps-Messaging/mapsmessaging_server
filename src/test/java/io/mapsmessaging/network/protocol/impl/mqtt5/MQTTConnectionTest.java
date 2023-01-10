@@ -60,7 +60,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
   }
 
   @Test
-  @DisplayName("Test anonymous MQTT client connection")
+  @DisplayName("Test SASL MQTT client connection")
   void testSasl() throws MqttException, SaslException {
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
@@ -104,12 +104,12 @@ class MQTTConnectionTest extends MQTTBaseTest {
         }
       }
     });
-    client.connect(options).waitForCompletion(30000);
+    client.connect(options).waitForCompletion(10000);
     Assertions.assertTrue(client.isConnected());
     Assertions.assertTrue(saslClient.isComplete());
     String qop = (String) saslClient.getNegotiatedProperty(Sasl.QOP);
     Assertions.assertTrue(qop.startsWith("auth"), "We should have an authorised SASL session");
-    client.disconnect();
+    client.disconnect().waitForCompletion(10000);
     Assertions.assertFalse(client.isConnected());
     client.close();
   }
