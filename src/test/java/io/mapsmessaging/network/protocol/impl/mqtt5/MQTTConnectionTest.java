@@ -97,8 +97,8 @@ class MQTTConnectionTest extends MQTTBaseTest {
       @SneakyThrows
       @Override
       public void authPacketArrived(int authState, MqttProperties mqttProperties) {
-        if(authState != 0) {
-          byte[] response = saslClient.evaluateChallenge(mqttProperties.getAuthenticationData());
+        byte[] response = saslClient.evaluateChallenge(mqttProperties.getAuthenticationData());
+        if (authState != 0) {
           mqttProperties.setAuthenticationData(response);
           client.authenticate(authState, this, mqttProperties);
         }
@@ -106,6 +106,9 @@ class MQTTConnectionTest extends MQTTBaseTest {
     });
     client.connect(options).waitForCompletion(30000);
     Assertions.assertTrue(client.isConnected());
+    Assertions.assertTrue(saslClient.isComplete());
+    String qop = (String) saslClient.getNegotiatedProperty(Sasl.QOP);
+    Assertions.assertTrue(qop.startsWith("auth"), "We should have an authorised SASL session");
     client.disconnect();
     Assertions.assertFalse(client.isConnected());
     client.close();
