@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.security.MapsSecurityProvider;
 import java.util.UUID;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
@@ -30,16 +29,10 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class MQTTConnectionTest extends MQTTBaseTest {
-  @BeforeAll
-  static void registerSecurityProvider(){
-    MapsSecurityProvider.register();
-  }
-
   @Test
   @DisplayName("Test anonymous MQTT client connection")
   void testAnonymous() throws MqttException {
