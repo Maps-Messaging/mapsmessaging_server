@@ -33,15 +33,17 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
   private final SaslServer saslServer;
   private final IdentityLookup identityLookup;
   private final ServerCallbackHandler serverCallbackHandler;
+  private final String mechanism;
 
   public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, ConfigurationProperties properties) throws SaslException {
-    ConfigurationProperties config = (ConfigurationProperties) properties.get("Sasl");
+    ConfigurationProperties config = (ConfigurationProperties) properties.get("sasl");
     identityLookup = IdentityLookupFactory.getInstance().get(config.getProperty("identityProvider"), config.getMap());
     if(identityLookup == null){
       throw new SaslException("Unable to locate identity look up mechanism for "+config.getProperty("identityProvider"));
     }
     serverCallbackHandler = new ServerCallbackHandler(serverName,identityLookup );
     saslServer = Sasl.createSaslServer(mechanism, protocol, serverName, props, serverCallbackHandler);
+    this.mechanism = mechanism;
   }
 
   @Override
@@ -55,6 +57,14 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
   }
 
   public String getName(){
-    return saslServer.getMechanismName();
+    return mechanism;
   }
+
+  public String getUsername() {
+    if(saslServer.isComplete()) {
+      return saslServer.getAuthorizationID();
+    }
+    return null;
+  }
+
 }

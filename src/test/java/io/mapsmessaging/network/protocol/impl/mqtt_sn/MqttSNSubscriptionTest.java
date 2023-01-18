@@ -37,10 +37,10 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
+class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
   @Test
-  public void registerAndSubscribeTopic() throws InterruptedException {
+  void registerAndSubscribeTopic() throws InterruptedException {
     MqttsClient client = new MqttsClient("localhost",1884 );
     CountDownLatch connected = new CountDownLatch(1);
     CountDownLatch registered = new CountDownLatch(1);
@@ -118,7 +118,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
   }
 
   @Test
-  public void subscribeTopic() throws InterruptedException {
+  void subscribeTopic() throws InterruptedException {
     MqttsClient client = new MqttsClient("localhost",1884 );
     CountDownLatch connected = new CountDownLatch(1);
     CountDownLatch registered = new CountDownLatch(1);
@@ -193,7 +193,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @MethodSource
-  public void subscribeTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnClientConnectException, MqttsnQueueAcceptException, MqttsnException {
+  void subscribeTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnClientConnectException, MqttsnQueueAcceptException, MqttsnException {
     subscribeQoSnTopicAndPublish(qos, version);
   }
 

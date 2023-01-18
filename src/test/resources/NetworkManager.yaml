@@ -77,7 +77,7 @@ NetworkManager:
         name: "MQTT Interface"
         url: "tcp://0.0.0.0:2883/"
         protocol : mqtt
-        Sasl:
+        sasl:
           mechanism: SCRAM-BCRYPT-SHA-512
           identityProvider: htpassword
           passwordFile: ./src/test/resources/htpassword
@@ -110,7 +110,6 @@ NetworkManager:
           - id: 1
             topic: predefined/topic
             address: '*'
-
 
       -
         url: hmac://0.0.0.0:1885/
@@ -149,6 +148,23 @@ NetworkManager:
         maxTopicsInSleep: 10
         advertiseGateway: true
         ssl_SSLContext: DTLS
+
+      -
+        url: udp://0.0.0.0:1887/
+        name: "MQTT-SN SASL Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        preDefinedTopics:
+          - id: 1
+            topic: predefined/topic
+            address: '*'
+        sasl:
+          mechanism: SCRAM-BCRYPT-SHA-512
+          identityProvider: htpassword
+          passwordFile: ./src/test/resources/htpassword
+
 
       -
         url: dtls://0.0.0.0:5684/

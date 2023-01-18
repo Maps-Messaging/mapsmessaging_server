@@ -36,14 +36,14 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class MqttSnSleepTest extends BaseTestConfig {
+class MqttSnSleepTest extends BaseTestConfig {
 
   private static Stream<Arguments> sleepingClientTest() {
     return createQoSVersionStream();
   }
   @ParameterizedTest
   @MethodSource
-  public void sleepingClientTest(int qos, int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException {
+  void sleepingClientTest(int qos, int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException {
     int expectedCount = qos!=0 ? PUBLISH_COUNT: 1;
 
     AtomicLong publishCount = new AtomicLong(0);

@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import lombok.Getter;
 import lombok.ToString;
@@ -29,8 +30,7 @@ public class Auth extends MQTT_SN_2_Packet {
     byte[] tmp = new byte[methodLen];
     packet.get(tmp, 0, tmp.length);
     method = new String(tmp);
-    data = new byte[length - (methodLen + 6)];
-    packet.get(data);
+    data = MQTTPacket.readRemaining(packet, length - (4+methodLen));
   }
 
   @Override
@@ -39,8 +39,9 @@ public class Auth extends MQTT_SN_2_Packet {
     len = packLength(packet, len);
     packet.put((byte) AUTH);
     packet.put((byte) reasonCode.getValue());
-    packet.put((byte) method.length());
-    packet.put(method.getBytes());
+    byte[] buf = method.getBytes();
+    packet.put((byte) buf.length);
+    packet.put(buf);
     packet.put(data);
     return len;
   }

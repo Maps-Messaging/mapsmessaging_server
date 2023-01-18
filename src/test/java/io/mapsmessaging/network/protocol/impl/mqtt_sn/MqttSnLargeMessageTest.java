@@ -10,7 +10,7 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-class MqttSnLargeMessageTests extends BaseMqttSnConfig {
+class MqttSnLargeMessageTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest

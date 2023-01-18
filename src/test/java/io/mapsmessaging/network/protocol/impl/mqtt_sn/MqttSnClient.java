@@ -9,16 +9,15 @@ import org.slj.mqtt.sn.client.impl.MqttsnClientUdpOptions;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
 import org.slj.mqtt.sn.model.MqttsnOptions;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.model.TopicInfo;
 import org.slj.mqtt.sn.model.session.impl.MqttsnWillDataImpl;
 import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
+import org.slj.mqtt.sn.spi.IMqttsnAuthHandler;
 import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnPublishFailureListener;
 import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
 import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
-import org.slj.mqtt.sn.spi.IMqttsnRuntimeRegistry;
 import org.slj.mqtt.sn.spi.IMqttsnStorageService;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
@@ -28,6 +27,10 @@ public class MqttSnClient {
   private final MqttsnClient client;
 
   public MqttSnClient(String contextId, String host, int port, int version) throws MqttsnException {
+    this(contextId, host, port, version, null);
+  }
+
+  public MqttSnClient(String contextId, String host, int port, int version, IMqttsnAuthHandler auth) throws MqttsnException {
 
     //-- using a default configuration for the controllers will just work out of the box, alternatively
     //-- you can supply your own implementations to change underlying storage or business logic as is required
@@ -36,11 +39,11 @@ public class MqttSnClient {
     //-- the client is Closeable and so use a try with resource
     client = new MqttsnClient();
     //-- the client needs to be started using the configuration you constructed above
-    client.start(createClientRuntimeRegistry(contextId, codecs, host, port));
+    client.start(createClientRuntimeRegistry(contextId, codecs, host, port, auth));
   }
 
 
-  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(String clientId, IMqttsnCodec codecs, String host, int port){
+  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(String clientId, IMqttsnCodec codecs, String host, int port,  IMqttsnAuthHandler auth){
     IMqttsnStorageService storageService = new MemoryStorage();
     MqttsnUdpOptions udpOptions = new MqttsnClientUdpOptions().
         withHost(host).
@@ -55,14 +58,8 @@ public class MqttSnClient {
         withPredefinedTopic("predefined/topic", 1);
     return (MqttsnClientRuntimeRegistry) MqttsnClientRuntimeRegistry.defaultConfiguration(storageService, options).
         withTransport(new MqttsnUdpTransport(udpOptions)).
+        withAuthHandler(auth).
         withCodec(codecs);
-  }
-
-  public TopicInfo lookupRegistry(String topicName) throws MqttsnException {
-    System.err.println("Looking for "+topicName);
-    IMqttsnRuntimeRegistry registry = client.getRegistry();
-
-    return null;
   }
 
   public void connect(int keepAlive, boolean cleanSession) throws MqttsnClientConnectException, MqttsnException {

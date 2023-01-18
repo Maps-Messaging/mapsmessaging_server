@@ -28,8 +28,11 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillTopicRequest;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MQTT_SNProtocolV2;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Auth;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -55,7 +58,18 @@ public class InitialConnectionState implements State {
   @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
+      SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
+      ConfigurationProperties props = endPoint.getConfig().getProperties();
+
       Connect connect = (Connect) mqtt;
+
+      boolean serverRequiresAuth = props.containsKey("sasl");
+      boolean requiresAuth = connect.isAuthentication();
+      if(serverRequiresAuth && ( !requiresAuth && saslAuthenticationMechanism == null)){
+        sendErrorResponse(protocol, ReasonCodes.BAD_AUTH);
+        return null;
+      }
+
       stateEngine.setMaxBufferSize(connect.getMaxPacketSize());
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), protocol);
       scb.setPersistentSession(true);
@@ -63,8 +77,13 @@ public class InitialConnectionState implements State {
       scb.setKeepAlive(connect.getKeepAlive());
       scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
       scb.setSessionExpiry(connect.getSessionExpiry());
+      if(saslAuthenticationMechanism != null){
+        String username  = saslAuthenticationMechanism.getUsername();
+        if(username != null) {
+          scb.setUsername(username);
+        }
+      }
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getKeepAlive()));
-      boolean requiresAuth = connect.isAuthentication();
       if (connect.isWill()) {
         stateEngine.setSessionContextBuilder(scb);
         WillTopicRequest topicRequest = new WillTopicRequest();
@@ -73,14 +92,15 @@ public class InitialConnectionState implements State {
         return topicRequest;
       } else {
         if(requiresAuth){
-          ConfigurationProperties props = endPoint.getConfig().getProperties();
           if(props.containsKey("sasl")){
             ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
             Map<String, String> authProps = new HashMap<>();
             authProps.put(Sasl.QOP, "auth");
             try {
-              SaslAuthenticationMechanism saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "", "mqtt-sn", authProps, saslProps);
+              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "", "mqtt-sn", authProps, props);
               stateEngine.setState(new AuthenticationState(connect, saslAuthenticationMechanism));
+              ((MQTT_SNProtocolV2)protocol).setSaslAuthenticationMechanism(saslAuthenticationMechanism);
+              return new Auth(ReasonCodes.CONTINUE_AUTHENTICATION, saslAuthenticationMechanism.getName(), new byte[0]);
             } catch (SaslException e) {
               // Close
               try {
@@ -111,20 +131,33 @@ public class InitialConnectionState implements State {
             protocol.writeFrame(response);
             return session;
           } catch (IOException e) {
-            sendErrorResponse(protocol);
+            sendErrorResponse(protocol, ReasonCodes.NOT_SUPPORTED);
             return null;
           }
         }).exceptionally(exception -> {
-          sendErrorResponse(protocol);
+          sendErrorResponse(protocol, ReasonCodes.NOT_SUPPORTED);
           return null;
         });
+      }
+    }
+
+    else if (mqtt.getControlPacketId() == MQTT_SN_2_Packet.AUTH) {
+      Auth auth = (Auth) mqtt;
+      try {
+        SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
+        saslAuthenticationMechanism.challenge(auth.getData());
+      } catch (IOException e) {
+        e.printStackTrace();
+        // Log this and allow the session to be closed
       }
     }
     return null;
   }
 
-  private void sendErrorResponse(MQTT_SNProtocol protocol) {
-    io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck response = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck(ReasonCodes.NOT_SUPPORTED);
+
+
+  private void sendErrorResponse(MQTT_SNProtocol protocol, ReasonCodes reasonCodes) {
+    ConnAck response = new ConnAck(reasonCodes, 0, null, false);
     response.setCallback(() -> {
       try {
         protocol.close();

@@ -84,11 +84,14 @@ public abstract class MQTTPacket implements ServerPacket {
     }
   }
 
-  public static String readRemainingString(Packet packet) throws MalformedException {
-    int len = packet.available();
-    byte[] tmp = new byte[len];
+  public static byte[] readRemaining(Packet packet, int maxLen) {
+    byte[] tmp = new byte[maxLen];
     packet.get(tmp);
-    String str = new String(tmp, StandardCharsets.UTF_8);
+    return tmp;
+  }
+
+  public static String readRemainingString(Packet packet) throws MalformedException {
+    String str = new String(readRemaining(packet, packet.available()), StandardCharsets.UTF_8);
     if (str.chars().anyMatch(c -> c == 0)) {
       throw new MalformedException("UTF-8 String must not contain U+0000 characters [MQTT-1.5.3-2]");
     }

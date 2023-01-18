@@ -28,13 +28,11 @@ import org.slj.mqtt.sn.model.session.impl.MqttsnWillDataImpl;
 import org.slj.mqtt.sn.spi.MqttsnException;
 import org.slj.mqtt.sn.utils.TopicPath;
 
-public class MqttSNConnectionTest extends BaseMqttSnConfig {
-
-
+class MqttSNConnectionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @ValueSource(ints = {1,2})
-  public void connectWithOutFlags(int version) throws MqttsnException, MqttsnClientConnectException {
+  void connectWithOutFlags(int version) throws MqttsnException, MqttsnClientConnectException {
     MqttSnClient client = new MqttSnClient("connectWithOutFlags", "localhost", 1884, version);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
@@ -44,7 +42,7 @@ public class MqttSNConnectionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
-  public void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException, InterruptedException {
+  void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException, InterruptedException {
     TopicPath tp = new TopicPath("willTopic");
     MqttsnWillDataImpl details = new MqttsnWillDataImpl(tp, "This is my last will and stuff".getBytes(StandardCharsets.UTF_8), 1, true);
     MqttSnClient client = new MqttSnClient("connectWithFlags"+version, "localhost", 1884, version);
@@ -60,7 +58,7 @@ public class MqttSNConnectionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @ValueSource(ints = {1, 2})
-  public void connectWaitForKeepalive(int version) throws MqttsnException, MqttsnClientConnectException, InterruptedException {
+  void connectWaitForKeepalive(int version) throws MqttsnException, MqttsnClientConnectException, InterruptedException {
     MqttSnClient client = new MqttSnClient("connectWaitForKeepalive", "localhost", 1884, version);
     client.connect(10, true);
     Assertions.assertTrue(client.isConnected());

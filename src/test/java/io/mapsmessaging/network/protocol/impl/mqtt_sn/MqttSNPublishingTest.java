@@ -32,12 +32,12 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class MqttSNPublishingTest extends BaseMqttSnConfig {
+class MqttSNPublishingTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
   @MethodSource
-  public void  subscribeTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+  void  subscribeTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
     subscribeTopicAndPublishQoSn(qos, version);
   }
 
