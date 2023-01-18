@@ -28,6 +28,7 @@ import lombok.ToString;
 @ToString
 public class Disconnect extends MQTT_SN_2_Packet {
 
+
   @Getter
   private final long expiry;
   @Getter
@@ -54,7 +55,7 @@ public class Disconnect extends MQTT_SN_2_Packet {
       if (length >= 8) {
         String reason = "";
         try {
-          reason = MQTTPacket.readUTF8(packet);
+          reason = MQTTPacket.readRemainingString(packet);
         } catch (MalformedException e) {
           reason = e.getMessage();
         }

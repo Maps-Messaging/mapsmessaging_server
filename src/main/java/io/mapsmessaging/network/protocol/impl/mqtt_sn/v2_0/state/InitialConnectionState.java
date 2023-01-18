@@ -30,10 +30,16 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
+import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslException;
 
 /**
  * Protocol dictates that we need to a) Receive a Connect packet b) Respond with a Will Topic Request c) Receive a Will Topic Response d) Respond with a Will Message Request e)
@@ -58,6 +64,7 @@ public class InitialConnectionState implements State {
       scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
       scb.setSessionExpiry(connect.getSessionExpiry());
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getKeepAlive()));
+      boolean requiresAuth = connect.isAuthentication();
       if (connect.isWill()) {
         stateEngine.setSessionContextBuilder(scb);
         WillTopicRequest topicRequest = new WillTopicRequest();
@@ -65,6 +72,33 @@ public class InitialConnectionState implements State {
         stateEngine.setState(nextState);
         return topicRequest;
       } else {
+        if(requiresAuth){
+          ConfigurationProperties props = endPoint.getConfig().getProperties();
+          if(props.containsKey("sasl")){
+            ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
+            Map<String, String> authProps = new HashMap<>();
+            authProps.put(Sasl.QOP, "auth");
+            try {
+              SaslAuthenticationMechanism saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "", "mqtt-sn", authProps, saslProps);
+              stateEngine.setState(new AuthenticationState(connect, saslAuthenticationMechanism));
+            } catch (SaslException e) {
+              // Close
+              try {
+                endPoint.close();
+              } catch (IOException ex) {
+                throw new RuntimeException(ex);
+              }
+            }
+          }
+          else{
+            try {
+              endPoint.close();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+          return null;
+        }
         CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
         sessionFuture.thenApply(session -> {
           protocol.setSession(session);

@@ -55,7 +55,7 @@ public class MqttSnSleepTest extends BaseTestConfig {
     hyper.connect(120, true);
     sleepy.connect(120, true);
 
-    hyper.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
+    hyper.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
     sleepy.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
     sleepy.subscribe("/mqttsn/test", qos);
 
@@ -129,7 +129,7 @@ public class MqttSnSleepTest extends BaseTestConfig {
   }
   @ParameterizedTest
   @MethodSource
-  public void expiredEventTest(int qos, int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException, IOException {
+  void expiredEventTest(int qos, int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException, IOException {
     AtomicLong publishCount = new AtomicLong(0);
     AtomicLong receiveCounter = new AtomicLong(0);
 
@@ -139,7 +139,7 @@ public class MqttSnSleepTest extends BaseTestConfig {
     hyper.connect(120, true);
     sleepy.connect(120, true);
 
-    hyper.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
+    hyper.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
     sleepy.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
     sleepy.subscribe("/mqttsn/test", qos);
 

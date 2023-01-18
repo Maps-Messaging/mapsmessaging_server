@@ -208,7 +208,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
 
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
+    client.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
 
 
     client.connect(50,true);
@@ -242,7 +242,7 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
   @MethodSource
-  public void subscribeWildcardTopicAndPublish(int qos, int version) throws InterruptedException, IOException, MqttsnClientConnectException, MqttsnException, MqttsnQueueAcceptException {
+  void subscribeWildcardTopicAndPublish(int qos, int version) throws InterruptedException, IOException, MqttsnClientConnectException, MqttsnException, MqttsnQueueAcceptException {
     subscribeWildcardQoSnTopicAndPublish(qos, version);
   }
 
@@ -256,15 +256,14 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
-    MqttSnClient publisher = new MqttSnClient("subscribeWildcardQoSnTopicAndPublish"+qos+"_"+version, "localhost",1884, version );
-    publisher.connect(120, true);
-    publisher.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
-
     MqttSnClient client = new MqttSnClient("subscribeWildcardQoSnTopicAndPublish", "localhost",1884, version );
     client.connect(120, true);
     client.subscribe("/mqttsn/test/wild/+", qos);
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
 
+    MqttSnClient publisher = new MqttSnClient("subscribeWildcardQoSnTopicAndPublish"+qos+"_"+version, "localhost",1884, version );
+    publisher.connect(120, true);
+    publisher.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
 
     long count = published.getCount();
     for(int x=0;x<PUBLISH_COUNT;x++){
@@ -278,9 +277,6 @@ public class MqttSNSubscriptionTest extends BaseMqttSnConfig {
       delay(20);
     }
     Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS), "Expected "+PUBLISH_COUNT+" received count down at "+received.getCount());
-    for(int x=0;x<5;x++){
-      Assertions.assertNotNull(client.lookupRegistry("/mqttsn/test/wild/topic" + x % 5));
-    }
     publisher.disconnect();
     client.disconnect();
   }

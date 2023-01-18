@@ -35,7 +35,7 @@ public class Subscribe extends MQTT_SN_2_Packet {
   @Getter
   private final boolean noLocal;
   @Getter
-  private final QualityOfService QoS;
+  private final QualityOfService qos;
   @Getter
   private final boolean retain;
   @Getter
@@ -49,7 +49,7 @@ public class Subscribe extends MQTT_SN_2_Packet {
     super(SUBSCRIBE);
     byte flags = packet.get();
     noLocal = (flags & 0b10000000) != 0;
-    QoS = QualityOfService.getInstance((flags & 0b01100000) >> 5);
+    qos = QualityOfService.getInstance((flags & 0b01100000) >> 5);
     retain = (flags & 0b00010000) != 0;
     retainHandler = RetainHandler.getInstance((flags & 0b00001100) >> 2);
     topicIdType = (flags & 0b11);

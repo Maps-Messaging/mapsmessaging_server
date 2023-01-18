@@ -123,8 +123,8 @@ public class MQTT5Protocol extends ProtocolImpl {
     BitSetFactory bitsetFactory = new BitSetFactoryImpl(DefaultConstants.BITSET_BLOCK_SIZE);
     clientOutstanding = new NaturalOrderedLongList(0, bitsetFactory);
 
-    if(props.containsKey("Sasl")){
-      ConfigurationProperties saslProps = (ConfigurationProperties) props.get("Sasl");
+    if(props.containsKey("sasl")){
+      ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
       authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"),"ServerNameHere", getName(), endPoint.getConfig().getProperties());
     }
     else{

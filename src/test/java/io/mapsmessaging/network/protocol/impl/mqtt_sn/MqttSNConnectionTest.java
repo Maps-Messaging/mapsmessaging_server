@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
-import org.slj.mqtt.sn.model.MqttsnWillData;
+import org.slj.mqtt.sn.model.session.impl.MqttsnWillDataImpl;
 import org.slj.mqtt.sn.spi.MqttsnException;
 import org.slj.mqtt.sn.utils.TopicPath;
 
@@ -46,7 +46,7 @@ public class MqttSNConnectionTest extends BaseMqttSnConfig {
   @ValueSource(ints = {1, 2})
   public void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException, InterruptedException {
     TopicPath tp = new TopicPath("willTopic");
-    MqttsnWillData details = new MqttsnWillData(tp, "This is my last will and stuff".getBytes(StandardCharsets.UTF_8), 1, true);
+    MqttsnWillDataImpl details = new MqttsnWillDataImpl(tp, "This is my last will and stuff".getBytes(StandardCharsets.UTF_8), 1, true);
     MqttSnClient client = new MqttSnClient("connectWithFlags"+version, "localhost", 1884, version);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());

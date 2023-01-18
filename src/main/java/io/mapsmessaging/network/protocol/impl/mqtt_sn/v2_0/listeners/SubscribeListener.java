@@ -66,42 +66,47 @@ public class SubscribeListener extends PacketListener {
       //
       // Do NOT register wildcard subscriptions
       //
-      if (topicId == 0 && !(topicName.contains("+") || topicName.contains("#"))) {
-        topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
+      short topicAlias = (short) subscribe.getTopicIdType();
+      if(topicName.contains("+") || topicName.contains("#")){
+        topicAlias = 0;
       }
-      ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
+      else if(topicId == 0 ){
+        topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
+        topicAlias = 0;
+      }
+      ClientAcknowledgement ackManger = subscribe.getQos().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
       builder.setReceiveMaximum(RECEIVE_MAXIMUM);
       builder.setNoLocalMessages(subscribe.isNoLocal());
       builder.setRetainHandler(subscribe.getRetainHandler());
-      builder.setQos(subscribe.getQoS());
+      builder.setQos(subscribe.getQos());
       try {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
         SubAck subAck = new SubAck(
-            topicId, (short) subscribe.getTopicIdType(),
-            subscribe.getQoS(),
+            topicId, topicAlias,
+            subscribe.getQos(),
             subscribe.getMsgId(),
             ReasonCodes.SUCCESS);
-        subAck.setQoS(subscribe.getQoS());
+        subAck.setQoS(subscribe.getQos());
         stateEngine.addSubscribeResponse(topicName, subAck);
         return subAck;
       } catch (IOException e) {
         SubAck subAck = new SubAck(
             topicId, TOPIC_NAME,
-            subscribe.getQoS(),
+            subscribe.getQos(),
             subscribe.getMsgId(),
             ReasonCodes.INVALID_TOPIC_ALIAS);
-        subAck.setQoS(subscribe.getQoS());
+        subAck.setQoS(subscribe.getQos());
         return subAck;
       }
     } else {
       SubAck subAck = new SubAck(
           (short) 0, TOPIC_NAME,
-          subscribe.getQoS(),
+          subscribe.getQos(),
           subscribe.getMsgId(),
           ReasonCodes.INVALID_TOPIC_ALIAS);
-      subAck.setQoS(subscribe.getQoS());
+      subAck.setQoS(subscribe.getQos());
       return subAck;
     }
   }

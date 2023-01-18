@@ -98,7 +98,7 @@ NetworkManager:
         name: "MQTT Interface"
         url: "tcp://0.0.0.0:2883/"
         protocol : mqtt
-        Sasl:
+        sasl:
           mechanism: SCRAM-SHA-512
           identityProvider: htpassword
           passwordFile: htpasswd
@@ -111,6 +111,11 @@ NetworkManager:
         eventsPerTopicDuringSleep: 5
         maxTopicsInSleep: 10
         advertiseGateway: true
+        sasl:
+          mechanism: SCRAM-SHA-512
+          identityProvider: htpassword
+          passwordFile: htpasswd
+
 
       - url: udp://0.0.0.0:5683/
         name: "CoAP Interface"

@@ -53,4 +53,8 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
   public boolean complete() {
     return saslServer.isComplete();
   }
+
+  public String getName(){
+    return saslServer.getMechanismName();
+  }
 }

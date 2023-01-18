@@ -63,7 +63,7 @@ public class Connect extends MQTT_SN_2_Packet {
     maxPacketSize = MQTTPacket.readShort(packet);
     if (packet.hasRemaining()) {
       try {
-        clientId = MQTTPacket.readUTF8(packet);
+        clientId = MQTTPacket.readRemainingString(packet);
       } catch (MalformedException e) {
         throw new IOException(e);
       }

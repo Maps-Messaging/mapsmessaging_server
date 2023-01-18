@@ -36,7 +36,7 @@ public class Auth extends MQTT_SN_2_Packet {
   @Override
   public int packFrame(Packet packet) {
     int len = 4 + method.length() + data.length;
-    packet.put((byte) len);
+    len = packLength(packet, len);
     packet.put((byte) AUTH);
     packet.put((byte) reasonCode.getValue());
     packet.put((byte) method.length());

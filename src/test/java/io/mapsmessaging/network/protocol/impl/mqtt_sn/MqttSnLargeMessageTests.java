@@ -20,7 +20,7 @@ class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
+    client.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
     AtomicLong receiveCount = new AtomicLong(0);
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCount.incrementAndGet());
 
@@ -49,7 +49,7 @@ class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
+    client.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
 
     AtomicLong receiveCount = new AtomicLong(0);
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {

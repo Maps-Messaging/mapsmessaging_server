@@ -84,7 +84,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     closed = false;
     stateEngine = new StateEngine(this, registeredTopicConfiguration);
     monitor = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new TimeOutMonitor(), 60, 60, TimeUnit.SECONDS);
-
   }
 
 
