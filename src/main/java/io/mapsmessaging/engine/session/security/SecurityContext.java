@@ -15,15 +15,34 @@
  *
  */
 
-package io.mapsmessaging.engine.session;
+package io.mapsmessaging.engine.session.security;
 
-import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
-import io.mapsmessaging.engine.session.security.SecurityContext;
+import java.io.IOException;
+import javax.security.auth.Subject;
 
-public class FakeSecurityManager extends SecurityManager{
+public abstract class SecurityContext {
 
-  public SecurityContext getSecurityContext(SessionContext sessionContext) {
-    return new AnonymousSecurityContext();
+  protected final String username;
+  protected Subject subject;
+  protected boolean isLoggedIn;
+
+  protected SecurityContext(String username){
+    this.username = username;
   }
 
+  public String getUsername(){
+    return username;
+  }
+
+  public Subject getSubject(){
+    return subject;
+  }
+
+  public boolean isLoggedIn(){
+    return isLoggedIn;
+  }
+
+  public abstract void login() throws IOException;
+
+  public abstract void logout();
 }

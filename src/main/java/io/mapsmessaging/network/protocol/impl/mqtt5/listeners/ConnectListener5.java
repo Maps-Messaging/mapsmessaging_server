@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -27,6 +26,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.ConnAck5;
@@ -34,8 +34,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Connect5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AssignedClientIdentifier;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationData;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationMethod;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MaximumPacketSize;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
@@ -201,6 +199,8 @@ public class ConnectListener5 extends PacketListener5 {
     if (duplicateReport.length() > 0) {
       logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
     }
+    AuthenticationContext context = protocol.getAuthenticationContext();
+    scb.isAuthorized(context != null && context.isComplete() && context.getUsername() != null);
     return SessionManager.getInstance().create(scb.build(), protocol);
   }
 
@@ -236,14 +236,6 @@ public class ConnectListener5 extends PacketListener5 {
 
         case MessagePropertyFactory.USER_PROPERTY:
           scb.setUserProperty((UserProperty) property);
-          break;
-
-        case MessagePropertyFactory.AUTHENTICATION_METHOD:
-          scb.setAuthenticationMethod(((AuthenticationMethod) property).getAuthenticationMethod());
-          break;
-
-        case MessagePropertyFactory.AUTHENTICATION_DATA:
-          scb.setAuthenticationData(((AuthenticationData) property).getAuthenticationData());
           break;
 
         default:
