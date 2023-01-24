@@ -21,15 +21,15 @@ import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import java.security.Principal;
-import java.util.HashSet;
-import java.util.Set;
-import javax.security.auth.Subject;
 
 public class AnonymousSecurityContext extends SecurityContext {
+
   final Logger logger = LoggerFactory.getLogger(AnonymousSecurityContext.class);
 
-  public AnonymousSecurityContext() {
+  private final Principal endPointPrincipal;
+  public AnonymousSecurityContext(Principal endPointPrincipal) {
     super("Anonymous");
+    this.endPointPrincipal = endPointPrincipal;
   }
 
   @Override
@@ -38,17 +38,14 @@ public class AnonymousSecurityContext extends SecurityContext {
   }
   @Override
   public void login() {
-    logger.log(AuditEvent.SUCCESSFUL_LOGIN, username);
+    subject = buildSubject(username, endPointPrincipal);
+    logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
     isLoggedIn = true;
-    Set<Principal> principalSet = new HashSet<>();
-    Set<String> credentials = new HashSet<>();
-    Set<String> privileges = new HashSet<>();
-    subject = new Subject(true, principalSet, credentials, privileges);
   }
 
   @Override
   public void logout() {
-    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
+    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, subject);
     isLoggedIn = false;
   }
 }

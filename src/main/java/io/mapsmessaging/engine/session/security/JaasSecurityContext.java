@@ -40,9 +40,9 @@ public class JaasSecurityContext extends SecurityContext {
   public void login() throws IOException {
     try {
       loginContext.login();
-      logger.log(AuditEvent.SUCCESSFUL_LOGIN, username);
+      subject = loginContext.getSubject();
+      logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
       isLoggedIn = true;
-      super.subject = loginContext.getSubject();
     } catch (LoginException e) {
       logger.log(ServerLogMessages.SECURITY_MANAGER_FAILED_LOG_IN, username, e.getMessage());
       IOException ioException = new IOException(e.getMessage());

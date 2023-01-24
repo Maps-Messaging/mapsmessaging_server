@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.engine.session;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
+
 import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
 import io.mapsmessaging.engine.session.security.JaasSecurityContext;
 import io.mapsmessaging.engine.session.security.SaslSecurityContext;
@@ -56,19 +58,21 @@ public class SecurityManager implements Agent {
     char[] passCode = sessionContext.getPassword();
     ProtocolImpl protocol = sessionContext.getProtocol();
     String defined = getAuthenticationName(protocol);
+    Principal endPointPrincipal = protocol.getEndPoint().getEndPointPrincipal();
+    SecurityContext context;
     if(sessionContext.isAuthorized()){
       username = sessionContext.getUsername();
-      return new SaslSecurityContext(username);
+      context = new SaslSecurityContext(username, endPointPrincipal);
     }
-    if (defined != null) {
-      Principal endPointPrincipal = protocol.getEndPoint().getEndPointPrincipal();
-      if (username == null && endPointPrincipal != null) {
-        username = endPointPrincipal.getName();
-      }
+    else if (defined != null) {
       LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal);
-      return new JaasSecurityContext(username, loginContext);
+      context = new JaasSecurityContext(username, loginContext);
     }
-    return new AnonymousSecurityContext();
+    else {
+      context = new AnonymousSecurityContext(endPointPrincipal);
+    }
+    logger.log(SECURITY_MANAGER_SECURITY_CONTEXT, context.getSubject());
+    return context;
   }
 
   public LoginContext getLoginContext(String definedAuth, String username, char[] passCode, Principal endPointPrincipal) throws LoginException {

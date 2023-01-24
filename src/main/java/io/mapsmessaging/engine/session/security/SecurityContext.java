@@ -17,7 +17,11 @@
 
 package io.mapsmessaging.engine.session.security;
 
+import com.sun.security.auth.UserPrincipal;
 import java.io.IOException;
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.Set;
 import javax.security.auth.Subject;
 
 public abstract class SecurityContext {
@@ -45,4 +49,18 @@ public abstract class SecurityContext {
   public abstract void login() throws IOException;
 
   public abstract void logout();
+
+  protected Subject buildSubject(String user, Principal endPointPrincipal){
+    Set<Principal> principalSet = new HashSet<>();
+    Set<String> credentials = new HashSet<>();
+    Set<String> privileges = new HashSet<>();
+    principalSet.add(new UserPrincipal(user));
+    if(endPointPrincipal != null) principalSet.add(endPointPrincipal);
+    return new Subject(true, principalSet, credentials, privileges);
+  }
+
+  @Override
+  public String toString(){
+    return "Username:"+username+"/tSubject:"+subject;
+  }
 }

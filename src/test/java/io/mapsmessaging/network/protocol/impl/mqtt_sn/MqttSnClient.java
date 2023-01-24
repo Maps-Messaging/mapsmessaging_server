@@ -1,3 +1,20 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -7,13 +24,14 @@ import org.slj.mqtt.sn.client.impl.MqttsnClient;
 import org.slj.mqtt.sn.client.impl.MqttsnClientRuntimeRegistry;
 import org.slj.mqtt.sn.client.impl.MqttsnClientUdpOptions;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
+import org.slj.mqtt.sn.model.IAuthHandler;
 import org.slj.mqtt.sn.model.MqttsnOptions;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.model.session.impl.MqttsnWillDataImpl;
+import org.slj.mqtt.sn.model.MqttsnSecurityOptions;
+import org.slj.mqtt.sn.model.session.impl.WillDataImpl;
 import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
-import org.slj.mqtt.sn.spi.IMqttsnAuthHandler;
 import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnPublishFailureListener;
 import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
@@ -30,7 +48,7 @@ public class MqttSnClient {
     this(contextId, host, port, version, null);
   }
 
-  public MqttSnClient(String contextId, String host, int port, int version, IMqttsnAuthHandler auth) throws MqttsnException {
+  public MqttSnClient(String contextId, String host, int port, int version, IAuthHandler auth) throws MqttsnException {
 
     //-- using a default configuration for the controllers will just work out of the box, alternatively
     //-- you can supply your own implementations to change underlying storage or business logic as is required
@@ -43,7 +61,7 @@ public class MqttSnClient {
   }
 
 
-  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(String clientId, IMqttsnCodec codecs, String host, int port,  IMqttsnAuthHandler auth){
+  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(String clientId, IMqttsnCodec codecs, String host, int port,  IAuthHandler auth){
     IMqttsnStorageService storageService = new MemoryStorage();
     MqttsnUdpOptions udpOptions = new MqttsnClientUdpOptions().
         withHost(host).
@@ -56,9 +74,14 @@ public class MqttSnClient {
         withMaxMessagesInflight(1).
         withMaxWait(60000).
         withPredefinedTopic("predefined/topic", 1);
+    if(auth != null) {
+      MqttsnSecurityOptions securityOptions = new MqttsnSecurityOptions().
+          withAuthHandler(auth);
+      options.setSecurityOptions(securityOptions);
+    }
+
     return (MqttsnClientRuntimeRegistry) MqttsnClientRuntimeRegistry.defaultConfiguration(storageService, options).
         withTransport(new MqttsnUdpTransport(udpOptions)).
-        withAuthHandler(auth).
         withCodec(codecs);
   }
 
@@ -115,7 +138,7 @@ public class MqttSnClient {
     client.disconnect();
   }
 
-  public void setWillData(MqttsnWillDataImpl details) throws MqttsnException {
+  public void setWillData(WillDataImpl details) throws MqttsnException {
     client.setWillData(details);
   }
 }

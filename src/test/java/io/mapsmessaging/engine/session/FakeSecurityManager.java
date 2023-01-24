@@ -23,7 +23,7 @@ import io.mapsmessaging.engine.session.security.SecurityContext;
 public class FakeSecurityManager extends SecurityManager{
 
   public SecurityContext getSecurityContext(SessionContext sessionContext) {
-    return new AnonymousSecurityContext();
+    return new AnonymousSecurityContext(null);
   }
 
 }

@@ -17,26 +17,24 @@
 
 package io.mapsmessaging.engine.session.security;
 
+import io.mapsmessaging.engine.audit.AuditEvent;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.HashSet;
-import java.util.Set;
-import javax.security.auth.Subject;
 
 public class SaslSecurityContext extends SecurityContext {
+  private final Logger logger = LoggerFactory.getLogger(SaslSecurityContext.class);
 
-  public SaslSecurityContext(String username) {
+  public SaslSecurityContext(String username, Principal endPointPrincipal) {
     super(username);
-    Set<Principal> principalSet = new HashSet<>();
-    Set<String> credentials = new HashSet<>();
-    Set<String> privileges = new HashSet<>();
-    subject = new Subject(true, principalSet, credentials, privileges);
+    subject = buildSubject(username, endPointPrincipal);
     isLoggedIn = true;
   }
 
   @Override
   public void login() throws IOException {
-    // Sasl has ensured we are already logged in
+    logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
   }
 
   @Override
