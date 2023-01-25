@@ -66,6 +66,10 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final RegisteredTopicConfiguration registeredTopicConfiguration;
   private final ProtocolMessageTransformation transformation;
 
+  private final boolean enablePortChanges;
+  private final boolean enableAddressChanges;
+
+
   public MQTTSNInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.gatewayId = gatewayId;
@@ -73,6 +77,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     advertiserTask = null;
     this.endPoint = endPoint;
     long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    enablePortChanges = endPoint.getConfig().getProperties().getBooleanProperty("enablePortChanges", true);
+    enableAddressChanges = endPoint.getConfig().getProperties().getBooleanProperty("enableAddressChanges", false);
     currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
@@ -86,6 +92,9 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
     long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    enablePortChanges = endPoint.getConfig().getProperties().getBooleanProperty("enablePortChanges", true);
+    enableAddressChanges = endPoint.getConfig().getProperties().getBooleanProperty("enableAddressChanges", false);
+
     currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
@@ -121,7 +130,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       return true; // Ignoring packet since unknown client
     }
     UDPSessionState<MQTT_SNProtocol> state = currentSessions.getState(packet.getFromAddress());
-    if(state == null){
+    if(state == null && enablePortChanges){
       state = lookupByPacket(packet);
     }
 
@@ -160,31 +169,20 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private UDPSessionState<MQTT_SNProtocol> lookupByPacket(Packet packet) throws IOException {
     byte type = packet.get(1);
     if(type == MQTT_SNPacket.PINGREQ){
-      MQTT_SNPacket packet1 = packetFactory[0].parseFrame(packet);
-      packet.position(0);
-      if(packet1 instanceof PingRequest){
-        PingRequest pingRequest = (PingRequest) packet1;
-        if(pingRequest.getClientId() != null){
-          UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress());
-          if(state != null) {
-            state.getContext().setAddressKey(packet.getFromAddress());
-            return state;
+      for (PacketFactory factory : packetFactory) {
+        MQTT_SNPacket mqttMsg = factory.parseFrame(packet);
+        packet.position(0);
+        if (mqttMsg instanceof PingRequest) {
+          PingRequest pingRequest = (PingRequest) mqttMsg;
+          if (pingRequest.getClientId() != null) {
+            UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
+            if (state != null) {
+              state.getContext().setAddressKey(packet.getFromAddress());
+              return state;
+            }
           }
         }
       }
-      packet1 = packetFactory[1].parseFrame(packet);
-      packet.position(0);
-      if(packet1 instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequest){
-        io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequest pingRequest = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequest) packet1;
-        if(pingRequest.getClientId() != null){
-          UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress());
-          if(state != null) {
-            state.getContext().setAddressKey(packet.getFromAddress());
-            return state;
-          }
-        }
-      }
-
     }
     return null;
   }

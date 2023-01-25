@@ -79,6 +79,8 @@ NetworkManager:
         dropQoS0Events: true
         eventQueueTimeout: 0
         advertiseGateway: false
+        enablePortChanges: true
+        enableAddressChanges: true
 
       # ---------------------------------------------------------------------------------------------------------
       # Global configuration

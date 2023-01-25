@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -32,7 +31,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners.PacketListe
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Disconnect;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequest;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequestV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingResponse;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import java.io.IOException;
@@ -96,7 +95,7 @@ public class SleepState implements State {
           clearReaper();
           reaperRunner = SimpleTaskScheduler.getInstance().schedule(new Reaper(), sleepDuration, TimeUnit.SECONDS);
         }
-        int maxMessages = ((PingRequest) mqtt).getMaxMessages();
+        int maxMessages = ((PingRequestV2) mqtt).getMaxMessages();
         stateEngine.emptyQueue(maxMessages, () ->
             protocol.writeFrame(new PingResponse(stateEngine.getQueueSize()))
         );

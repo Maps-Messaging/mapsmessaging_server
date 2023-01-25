@@ -106,6 +106,8 @@ NetworkManager:
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: true
+        enablePortChanges: true
+        enableAddressChanges: true
         preDefinedTopics:
           - id: 1
             topic: predefined/topic
