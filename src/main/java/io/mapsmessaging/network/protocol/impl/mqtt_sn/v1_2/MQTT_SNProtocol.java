@@ -54,7 +54,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   protected final Logger logger;
   protected final PacketFactory packetFactory;
-  protected final SocketAddress remoteClient;
   protected final SelectorTask selectorTask;
   protected final MQTTSNInterfaceManager factory;
   protected final StateEngine stateEngine;
@@ -77,9 +76,9 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration) {
     super(endPoint, remoteClient);
     this.logger = LoggerFactory.getLogger(loggerName);
-    this.remoteClient = remoteClient;
     this.selectorTask = selectorTask;
     this.factory = factory;
+    addressKey = remoteClient;
     packetIdManager = new PacketIdManager();
     logger.log(ServerLogMessages.MQTT_SN_INSTANCE);
     this.packetFactory = packetFactory;
@@ -116,7 +115,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     if (!session.isClosed()) {
       SessionManager.getInstance().close(session, false);
     }
-    factory.close(remoteClient);
+    factory.close(addressKey);
     packetIdManager.close();
     monitor.cancel(false);
     if (mbean != null) {
@@ -208,7 +207,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   }
 
   public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {
-    frame.setFromAddress(remoteClient);
+    frame.setFromAddress(addressKey);
     sentMessageAverages.increment();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);
