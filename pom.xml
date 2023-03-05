@@ -46,6 +46,19 @@
   <description>A multi adapter and protocol server</description>
   <url>https://www.mapsmessaging.io</url>
 
+  <developers>
+    <developer>
+      <id>mbuckton</id>
+      <name>Matthew Buckton</name>
+      <organization>Maps Messaging</organization>
+      <organizationUrl>http://mapsmessaging.io/</organizationUrl>
+      <roles>
+        <role>founder</role>
+      </roles>
+      <timezone>Australia/Sydney</timezone>
+    </developer>
+  </developers>
+
   <licenses>
     <license>
       <name>Mozilla Public License Version 2.0</name>
@@ -249,7 +262,6 @@
         <executions>
           <execution>
             <id>attach-sources</id>
-            <phase>verify</phase>
             <goals>
               <goal>jar-no-fork</goal>
             </goals>
@@ -445,40 +457,40 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>AuthenticationLibrary</artifactId>
-      <version>0.2.6</version>
+      <version>0.2.10</version>
     </dependency>
 
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Simple_Logging</artifactId>
-      <version>2.0.6</version>
+      <version>2.0.7</version>
     </dependency>
 
     <!-- JMS Selector logic module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Extensible_JMS_Selector_Parser</artifactId>
-      <version>1.1.8</version>
+      <version>1.1.9</version>
     </dependency>
 
     <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.1.4</version>
+      <version>1.1.5</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>2.1.3</version>
+      <version>2.1.4</version>
     </dependency>
 
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>DynamicStorage</artifactId>
-      <version>2.4.5</version>
+      <version>2.4.6</version>
     </dependency>
 
     <dependency>
