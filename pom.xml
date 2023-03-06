@@ -775,7 +775,7 @@
     <dependency>
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-      <version>1.2.6</version>
+      <version>1.2.5</version>
       <scope>test</scope>
     </dependency>
 
@@ -783,7 +783,7 @@
     <dependency>
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
-      <version>1.2.6</version>
+      <version>1.2.5</version>
       <scope>test</scope>
     </dependency>
 
