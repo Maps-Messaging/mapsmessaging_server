@@ -13,7 +13,12 @@ import java.io.OutputStreamWriter;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.inspector.TrustedTagInspector;
+import org.yaml.snakeyaml.representer.Representer;
 
 public class InstanceConfig {
 
@@ -41,18 +46,19 @@ public class InstanceConfig {
     serverName = null;
   }
 
-  public void loadState(){
-    Yaml yaml = new Yaml();
-    Object obj = null;
+  public void loadState() {
+    LoaderOptions options = new LoaderOptions();
+    options.setTagInspector(new TrustedTagInspector());
+    Yaml yaml = new Yaml(new Constructor(options), new Representer(new DumperOptions()));
+    FileInputStream fileInputStream = null;
     try {
-      FileInputStream fileInputStream = new FileInputStream(path+ INSTANCE_CONFIG_YAML);
-      obj = yaml.load(fileInputStream);
+      fileInputStream = new FileInputStream(path + INSTANCE_CONFIG_YAML);
+      InstanceConfig obj;
+      obj = yaml.loadAs(fileInputStream, InstanceConfig.class);
+      serverName = obj.serverName;
+      creationDate = obj.creationDate;
     } catch (FileNotFoundException e) {
-      logger.log(INSTANCE_STATE_ERROR, path+ INSTANCE_CONFIG_YAML, e);
-    }
-    if(obj instanceof InstanceConfig){
-      serverName = ((InstanceConfig)obj).serverName;
-      creationDate = ((InstanceConfig)obj).creationDate;
+//      throw new RuntimeException(e);
     }
   }
 

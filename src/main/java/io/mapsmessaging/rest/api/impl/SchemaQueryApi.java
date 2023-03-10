@@ -22,6 +22,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.SchemaData;
+import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.SchemaMapResponse;
 import io.mapsmessaging.rest.responses.SchemaResponse;
 import io.mapsmessaging.rest.responses.StringListResponse;
@@ -32,15 +33,39 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-@Api(value = URI_PATH+ "/server/schema", tags="Schema Management")
+@Api(value = URI_PATH + "/server/schema", tags = "Schema Management")
 @Path(URI_PATH)
 public class SchemaQueryApi extends BaseRestApi {
+
+  @DELETE
+  @Path("/server/schema/{schemaId}")
+  @Produces({MediaType.APPLICATION_JSON})
+  @ApiOperation(value = "Delete the schema configuration by unique id")
+  public BaseResponse deleteSchemaById(@PathParam("schemaId") String schemaId) {
+    SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
+    if (config != null) {
+      SchemaManager.getInstance().removeSchema(schemaId);
+      return new BaseResponse(request);
+    }
+    return new BaseResponse(request);
+  }
+
+  @DELETE
+  @Path("/server/schema")
+  @Produces({MediaType.APPLICATION_JSON})
+  @ApiOperation(value = "Delete all schema configuration in the repository")
+  public BaseResponse deleteAllSchemas() {
+    SchemaManager.getInstance().removeAllSchemas();
+    return new BaseResponse(request);
+  }
 
   @GET
   @Path("/server/schema/{schemaId}")
@@ -48,7 +73,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @ApiOperation(value = "Get the schema configuration by unique id")
   public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) {
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
-    if(config != null) {
+    if (config != null) {
       return new SchemaResponse(request, new SchemaData(config));
     }
     return  new SchemaResponse(request, new ArrayList<>());
@@ -61,11 +86,7 @@ public class SchemaQueryApi extends BaseRestApi {
   public SchemaResponse getSchemaByContext(@PathParam("context") String context) {
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
     if(config != null) {
-      List<SchemaData> list = new ArrayList<>();
-      for(SchemaConfig con:config){
-        list.add(new SchemaData(con));
-      }
-      return new SchemaResponse(request, list);
+      return new SchemaResponse(request, convert(config));
     }
     return  new SchemaResponse(request, new ArrayList<>());
   }
@@ -77,11 +98,7 @@ public class SchemaQueryApi extends BaseRestApi {
   public SchemaResponse getSchemaByType(@PathParam("type") String type) {
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
     if(config != null) {
-      List<SchemaData> list = new ArrayList<>();
-      for(SchemaConfig con:config){
-        list.add(new SchemaData(con));
-      }
-      return new SchemaResponse(request, list);
+      return new SchemaResponse(request, convert(config));
     }
     return  new SchemaResponse(request, new ArrayList<>());
   }
@@ -91,11 +108,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get all the schema configuration")
   public SchemaResponse getAllSchemas() {
-    List<SchemaData> list = new ArrayList<>();
-    for(SchemaConfig config:SchemaManager.getInstance().getAll()){
-      list.add(new SchemaData(config));
-    }
-    return new SchemaResponse(request, list);
+    return new SchemaResponse(request, convert(SchemaManager.getInstance().getAll()));
   }
 
   @GET
@@ -104,18 +117,19 @@ public class SchemaQueryApi extends BaseRestApi {
   @ApiOperation(value = "Get all the schema configuration")
   public SchemaMapResponse getSchemaMapping() {
     Map<String, List<SchemaConfig>> map = SchemaManager.getInstance().getMappedSchemas();
-
-    return new SchemaMapResponse(request, new LinkedHashMap<>());
+    Map<String, List<SchemaData>> responseMap = new LinkedHashMap<>();
+    for (Entry<String, List<SchemaConfig>> entry : map.entrySet()) {
+      responseMap.put(entry.getKey(), (convert(entry.getValue())));
+    }
+    return new SchemaMapResponse(request, responseMap);
   }
-
-
 
   @GET
   @Path("/server/schema/formats")
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get all known formats currently supported by the schema")
   public StringListResponse getKnownFormats() {
-    return new StringListResponse(request,  SchemaManager.getInstance().getMessageFormats());
+    return new StringListResponse(request, SchemaManager.getInstance().getMessageFormats());
   }
 
   @GET
@@ -124,6 +138,14 @@ public class SchemaQueryApi extends BaseRestApi {
   @ApiOperation(value = "Get link format string")
   public String getLinkFormat() {
     return SchemaManager.getInstance().buildLinkFormatResponse();
+  }
+
+  private List<SchemaData> convert(List<SchemaConfig> configs) {
+    List<SchemaData> data = new ArrayList<>();
+    for (SchemaConfig config : configs) {
+      data.add(new SchemaData(config));
+    }
+    return data;
   }
 
 }

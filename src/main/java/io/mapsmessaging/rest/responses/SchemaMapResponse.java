@@ -18,6 +18,7 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.rest.data.SchemaData;
+import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Request;
 import lombok.Getter;
@@ -25,10 +26,10 @@ import lombok.Getter;
 public class SchemaMapResponse extends BaseResponse {
 
   @Getter
-  private final Map<String, SchemaData> data;
+  private final Map<String, List<SchemaData>> data;
 
 
-  public SchemaMapResponse(Request request, Map<String, SchemaData> data){
+  public SchemaMapResponse(Request request, Map<String, List<SchemaData>> data) {
     super(request);
     this.data = data;
   }
