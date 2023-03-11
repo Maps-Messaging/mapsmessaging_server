@@ -26,6 +26,7 @@ import io.mapsmessaging.rest.responses.SchemaMapResponse;
 import io.mapsmessaging.rest.responses.SchemaResponse;
 import io.mapsmessaging.rest.responses.StringListResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.io.IOException;
@@ -34,12 +35,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import lombok.Getter;
+import lombok.Setter;
 
 @Api(value = URI_PATH + "/server/schema", tags = "Schema Management")
 @Path(URI_PATH)
@@ -64,6 +69,16 @@ public class SchemaQueryApi extends BaseRestApi {
   @ApiOperation(value = "Delete all schema configuration in the repository")
   public BaseResponse deleteAllSchemas() {
     SchemaManager.getInstance().removeAllSchemas();
+    return new BaseResponse(request);
+  }
+
+  @ApiOperation(value = "Add a new schema configuration to the repository")
+  @Path("/server/schema")
+  @POST
+  @Consumes({MediaType.APPLICATION_JSON})
+  public BaseResponse addSchema(SchemaPostData jsonString) throws IOException {
+    SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.schema);
+    SchemaManager.getInstance().addSchema(jsonString.context, config);
     return new BaseResponse(request);
   }
 
@@ -148,4 +163,17 @@ public class SchemaQueryApi extends BaseRestApi {
     return data;
   }
 
+  private static final class SchemaPostData {
+
+    @Getter
+    @Setter
+    private String schema;
+
+    @Getter
+    @Setter
+    private String context;
+
+    public SchemaPostData() {
+    }
+  }
 }
