@@ -21,7 +21,6 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.BaseRestApi;
-import io.mapsmessaging.rest.data.SchemaData;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.SchemaMapResponse;
 import io.mapsmessaging.rest.responses.SchemaResponse;
@@ -29,6 +28,7 @@ import io.mapsmessaging.rest.responses.StringListResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,43 +71,43 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get the schema configuration by unique id")
-  public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) {
+  public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) throws IOException {
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
-      return new SchemaResponse(request, new SchemaData(config));
+      return new SchemaResponse(request, config.pack());
     }
-    return  new SchemaResponse(request, new ArrayList<>());
+    return new SchemaResponse(request, new ArrayList<>());
   }
 
   @GET
   @Path("/server/schema/context/{context}")
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get the schema configuration by context name")
-  public SchemaResponse getSchemaByContext(@PathParam("context") String context) {
+  public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
-    if(config != null) {
+    if (config != null) {
       return new SchemaResponse(request, convert(config));
     }
-    return  new SchemaResponse(request, new ArrayList<>());
+    return new SchemaResponse(request, new ArrayList<>());
   }
 
   @GET
   @Path("/server/schema/type/{type}")
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get the schema configuration by schema type")
-  public SchemaResponse getSchemaByType(@PathParam("type") String type) {
+  public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
-    if(config != null) {
+    if (config != null) {
       return new SchemaResponse(request, convert(config));
     }
-    return  new SchemaResponse(request, new ArrayList<>());
+    return new SchemaResponse(request, new ArrayList<>());
   }
 
   @GET
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get all the schema configuration")
-  public SchemaResponse getAllSchemas() {
+  public SchemaResponse getAllSchemas() throws IOException {
     return new SchemaResponse(request, convert(SchemaManager.getInstance().getAll()));
   }
 
@@ -115,9 +115,9 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema/map")
   @Produces({MediaType.APPLICATION_JSON})
   @ApiOperation(value = "Get all the schema configuration")
-  public SchemaMapResponse getSchemaMapping() {
+  public SchemaMapResponse getSchemaMapping() throws IOException {
     Map<String, List<SchemaConfig>> map = SchemaManager.getInstance().getMappedSchemas();
-    Map<String, List<SchemaData>> responseMap = new LinkedHashMap<>();
+    Map<String, List<String>> responseMap = new LinkedHashMap<>();
     for (Entry<String, List<SchemaConfig>> entry : map.entrySet()) {
       responseMap.put(entry.getKey(), (convert(entry.getValue())));
     }
@@ -140,10 +140,10 @@ public class SchemaQueryApi extends BaseRestApi {
     return SchemaManager.getInstance().buildLinkFormatResponse();
   }
 
-  private List<SchemaData> convert(List<SchemaConfig> configs) {
-    List<SchemaData> data = new ArrayList<>();
+  private List<String> convert(List<SchemaConfig> configs) throws IOException {
+    List<String> data = new ArrayList<>();
     for (SchemaConfig config : configs) {
-      data.add(new SchemaData(config));
+      data.add(config.pack());
     }
     return data;
   }

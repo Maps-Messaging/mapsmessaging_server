@@ -2,9 +2,10 @@ package io.mapsmessaging.rest.data;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import java.io.IOException;
+import java.io.Serializable;
 import lombok.Getter;
 
-public class Destination {
+public class Destination implements Serializable {
 
   @Getter
   private final String name;

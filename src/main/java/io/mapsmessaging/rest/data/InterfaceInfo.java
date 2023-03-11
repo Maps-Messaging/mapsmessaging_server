@@ -2,19 +2,20 @@ package io.mapsmessaging.rest.data;
 
 import io.mapsmessaging.network.EndPointManager;
 import io.swagger.annotations.ApiModelProperty;
+import java.io.Serializable;
 import java.util.Map;
 import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public class InterfaceInfo {
+public class InterfaceInfo implements Serializable {
 
   @Getter
-  @ApiModelProperty(value="Unique name of the interface")
+  @ApiModelProperty(value = "Unique name of the interface")
   private final String name;
 
   @Getter
-  @ApiModelProperty(value="Port that the interface is bound to")
+  @ApiModelProperty(value = "Port that the interface is bound to")
   private final int port;
 
   @Getter

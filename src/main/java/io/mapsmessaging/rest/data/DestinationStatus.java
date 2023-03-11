@@ -2,10 +2,11 @@ package io.mapsmessaging.rest.data;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
+import java.io.Serializable;
 import java.util.Map;
 import lombok.Getter;
 
-public class DestinationStatus {
+public class DestinationStatus implements Serializable {
 
   @Getter
   private final String name;
