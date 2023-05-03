@@ -17,23 +17,69 @@
 
 package io.mapsmessaging.routing;
 
-import io.mapsmessaging.routing.manager.SchemaManager;
+import io.mapsmessaging.routing.manager.SchemaMonitor;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import java.io.IOException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONObject;
 
-public class RemoteServerManager {
+public class RemoteServerManager implements Runnable{
 
-  private final boolean schemaEnabled;
   private final String url;
-  private final SchemaManager schemaManager;
-
+  private final SchemaMonitor schemaManager;
+  private ScheduledFuture<?> scheduledFuture;
 
   public RemoteServerManager(String url, boolean schemaEnabled){
     this.url = url;
-    this.schemaEnabled = schemaEnabled;
     if(schemaEnabled){
-      schemaManager = new SchemaManager(url);
+      schemaManager = new SchemaMonitor(url);
     }
     else{
       schemaManager = null;
+    }
+    resume();
+  }
+
+  public synchronized void stop(){
+    if(scheduledFuture != null) {
+      scheduledFuture.cancel(true);
+      scheduledFuture = null;
+    }
+  }
+
+  public void pause(){
+    stop();
+  }
+
+  public synchronized void resume(){
+    if(scheduledFuture == null) {
+      scheduledFuture = SimpleTaskScheduler.getInstance().schedule(this, 60, TimeUnit.SECONDS);
+    }
+  }
+
+  public void run(){
+    Request request = new Request.Builder()
+        .url(url+"/api/v1/updates")
+        .build();
+    OkHttpClient client = new OkHttpClient();
+    try (Response response = client.newCall(request).execute()) {
+      if (response.isSuccessful()) {
+        String responseBody = response.body().string();
+        JSONObject json = new JSONObject(responseBody);
+        if(schemaManager != null) schemaManager.scanForUpdates(json.getLong("schemaUpdate"));
+      } else {
+        throw new RuntimeException("Request failed: " + response.code() + " " + response.message());
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Request failed due to IOException", e);
+    }
+    finally {
+      scheduledFuture=null;
+      resume();
     }
   }
 }

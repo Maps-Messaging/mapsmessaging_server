@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.routing.manager;
 
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import java.io.IOException;
@@ -26,13 +27,21 @@ import okhttp3.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class SchemaManager implements Runnable {
+public class SchemaMonitor implements Runnable {
 
   private final String remoteUrl;
+  private long lastUpdateCount;
 
-  public SchemaManager(String remoteUrl){
+  public SchemaMonitor(String remoteUrl){
     this.remoteUrl = remoteUrl;
-    run();
+    lastUpdateCount = 0;
+  }
+
+  public void scanForUpdates(long lastUpdateCount){
+    if(this.lastUpdateCount != lastUpdateCount){
+      this.lastUpdateCount = lastUpdateCount;
+      run();
+    }
   }
 
   public void run(){
@@ -48,6 +57,10 @@ public class SchemaManager implements Runnable {
         if(jsonArray != null && !jsonArray.isEmpty()){
           for(int x=0;x<jsonArray.length();x++) {
             SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonArray.get(x).toString());
+            if(SchemaManager.getInstance().getSchema(config.getUniqueId()) == null){
+              SchemaManager.getInstance().addSchema(" ", config);
+              System.err.println("Adding schema");
+            }
             System.err.println(config);
           }
         }

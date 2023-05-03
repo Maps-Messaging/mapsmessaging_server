@@ -95,7 +95,6 @@ public class RoutingManager implements Agent, ServiceListener {
   @Override
   public void serviceResolved(ServiceEvent serviceEvent) {
     if(!isLocal(serviceEvent)) {
-      System.err.println("Resolved service:: " + serviceEvent.getName() + " " + serviceEvent.getInfo());
       boolean restSupport = serviceEvent.getInfo().getPropertyString("restApi").trim().toLowerCase().equals("true");
       if(restSupport) {
         String protocol = serviceEvent.getInfo().getPropertyString("protocol");
