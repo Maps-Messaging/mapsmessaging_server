@@ -96,6 +96,13 @@ public class RoutingManager implements Agent, ServiceListener {
   public void serviceResolved(ServiceEvent serviceEvent) {
     if(!isLocal(serviceEvent)) {
       System.err.println("Resolved service:: " + serviceEvent.getName() + " " + serviceEvent.getInfo());
+      boolean restSupport = serviceEvent.getInfo().getPropertyString("restApi").trim().toLowerCase().equals("true");
+      if(restSupport) {
+        String protocol = serviceEvent.getInfo().getPropertyString("protocol");
+        String host = serviceEvent.getInfo().getHostAddresses()[0];
+        boolean schemaSupport = serviceEvent.getInfo().getPropertyString("schema support").trim().toLowerCase().equals("true");
+        RemoteServerManager remoteManager = new RemoteServerManager(protocol+"://"+host+":"+serviceEvent.getInfo().getPort(), schemaSupport);
+      }
     }
   }
 
