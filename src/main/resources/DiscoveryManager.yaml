@@ -17,6 +17,6 @@
 ---
 
 DiscoveryManager:
-  enabled: false                               # If true then the server will start the discovery server else the server will not run the service
+  enabled: true                               # If true then the server will start the discovery server else the server will not run the service
   hostnames: 10.140.62.189,  100.119.57.114   # Array list of adapters to bind the discovery server to
   addTxtRecords: true

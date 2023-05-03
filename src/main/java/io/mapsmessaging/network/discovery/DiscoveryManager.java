@@ -1,3 +1,20 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.network.discovery;
 
 import io.mapsmessaging.BuildInfo;
@@ -31,16 +48,26 @@ public class DiscoveryManager implements Agent {
   private final Logger logger;
   private final String serverName;
   private final List<AdapterManager> boundedNetworks;
+  private final ConfigurationProperties properties;
+  private final boolean enabled;
 
   public DiscoveryManager(String serverName) {
     this.serverName = serverName;
     logger = LoggerFactory.getLogger(DiscoveryManager.class);
     boundedNetworks = new ArrayList<>();
+    properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
+    enabled = properties.getBooleanProperty("enabled", false);
   }
 
   public void registerListener(String type, ServiceListener listener){
     for(AdapterManager adapterManager:boundedNetworks){
       adapterManager.registerListener(type, listener);
+    }
+  }
+
+  public void removeListener(String type, ServiceListener listener){
+    for(AdapterManager adapterManager:boundedNetworks){
+      adapterManager.removeListener(type, listener);
     }
   }
 
@@ -55,8 +82,7 @@ public class DiscoveryManager implements Agent {
   }
 
   public void start() {
-    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
-    if (properties.getBooleanProperty("enabled", false)) {
+    if (enabled) {
       boolean stampMeta = properties.getBooleanProperty("addTxtRecords", false);
       String hostnames = properties.getProperty("hostnames");
       try {
@@ -189,5 +215,9 @@ public class DiscoveryManager implements Agent {
     for(AdapterManager manager:boundedNetworks){
       manager.deregisterAll();
     }
+  }
+
+  public boolean isEnabled() {
+    return enabled;
   }
 }

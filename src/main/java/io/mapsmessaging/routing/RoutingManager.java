@@ -20,22 +20,29 @@ package io.mapsmessaging.routing;
 import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_SHUTDOWN;
 import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_STARTUP;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import javax.jmdns.ServiceEvent;
+import javax.jmdns.ServiceListener;
+import javax.jmdns.impl.JmDNSImpl;
 
-public class RoutingManager implements Agent {
+public class RoutingManager implements Agent, ServiceListener {
 
   private final Logger logger = LoggerFactory.getLogger(RoutingManager.class);
 
   private final ConfigurationProperties properties;
   private final boolean enabled;
+  private final boolean autoConfig;
 
   public RoutingManager() {
     properties = ConfigurationManager.getInstance().getProperties("routing");
-    enabled = properties.getProperty("enable", "false").equalsIgnoreCase("true");
+    enabled = properties.getBooleanProperty("enabled", false);
+    autoConfig = properties.getBooleanProperty("autoDiscovery", false);
   }
 
   @Override
@@ -51,11 +58,53 @@ public class RoutingManager implements Agent {
   public void start() {
     if (enabled) {
       logger.log(ROUTING_STARTUP);
+      if(autoConfig){
+        DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
+        if(discoveryManager.isEnabled()) {
+          // Register listener for map server notification
+          discoveryManager.registerListener("_maps._tcp.local.", this);
+        }
+      }
     }
   }
 
   public void stop() {
     logger.log(ROUTING_SHUTDOWN);
+    if(autoConfig) {
+      DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
+      if(discoveryManager.isEnabled()) {
+        discoveryManager.removeListener("_maps._tcp.local.", this);
+      }
+    }
   }
 
+  @Override
+  public void serviceAdded(ServiceEvent serviceEvent) {
+    if(!isLocal(serviceEvent)){
+      System.err.println("Added service:: "+serviceEvent.getName()+" "+serviceEvent.getInfo());
+    }
+  }
+
+  @Override
+  public void serviceRemoved(ServiceEvent serviceEvent) {
+    if(!isLocal(serviceEvent)) {
+      System.err.println("Removed service:: "+serviceEvent.getName()+" "+serviceEvent.getInfo());
+    }
+  }
+
+  @Override
+  public void serviceResolved(ServiceEvent serviceEvent) {
+    if(!isLocal(serviceEvent)) {
+      System.err.println("Resolved service:: " + serviceEvent.getName() + " " + serviceEvent.getInfo());
+    }
+  }
+
+  private boolean isLocal(ServiceEvent serviceEvent){
+    Object source = serviceEvent.getSource();
+    if(source instanceof JmDNSImpl){
+      JmDNSImpl impl = (JmDNSImpl) source;
+      return (impl.getLocalHost().getName().toLowerCase().startsWith(serviceEvent.getInfo().getName().toLowerCase()));
+    }
+    return false;
+  }
 }
