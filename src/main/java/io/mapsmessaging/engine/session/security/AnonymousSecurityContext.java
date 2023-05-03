@@ -39,13 +39,13 @@ public class AnonymousSecurityContext extends SecurityContext {
   @Override
   public void login() {
     subject = buildSubject(username, endPointPrincipal);
-    logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
+    logger.log(AuditEvent.SUCCESSFUL_LOGIN, username);
     isLoggedIn = true;
   }
 
   @Override
   public void logout() {
-    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, subject);
+    logger.log(AuditEvent.SUCCESSFUL_LOGOUT, username);
     isLoggedIn = false;
   }
 }

@@ -875,9 +875,17 @@
     <dependency>
       <groupId>org.slj</groupId>
       <artifactId>mqtt-sn-client</artifactId>
-      <version>0.2.0</version>
+      <version>0.2.1</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.slj</groupId>
+      <artifactId>mqtt-tree</artifactId>
+      <version>0.5.4</version>
+      <scope>test</scope>
+    </dependency>
+
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -63,6 +63,11 @@ public enum ServerLogMessages implements LogMessage {
   HAWTIO_REGISTRATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Hawtio failed to register with the mDNS server"),
   // </editor-fold>
 
+  // <editor-fold desc="routing manager messages">
+  ROUTING_STARTUP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Starting Event Routing Manager"),
+  ROUTING_SHUTDOWN(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Stopping Event Routing Manager"),
+  // </editor-fold>
+
   // <editor-fold desc="Network Manager log messages">
   NETWORK_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Network Manager"),
   NETWORK_MANAGER_LOAD_PROPERTIES(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Network Manager Properties"),
