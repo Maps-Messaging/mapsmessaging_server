@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -28,12 +27,21 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillTopicRequest;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.State;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MQTT_SNProtocolV2;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Auth;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
+import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslException;
 
 /**
  * Protocol dictates that we need to a) Receive a Connect packet b) Respond with a Will Topic Request c) Receive a Will Topic Response d) Respond with a Will Message Request e)
@@ -49,7 +57,18 @@ public class InitialConnectionState implements State {
   @Override
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
+      SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
+      ConfigurationProperties props = endPoint.getConfig().getProperties();
+
       Connect connect = (Connect) mqtt;
+
+      boolean serverRequiresAuth = props.containsKey("sasl");
+      boolean requiresAuth = connect.isAuthentication();
+      if(serverRequiresAuth && ( !requiresAuth && saslAuthenticationMechanism == null)){
+        sendErrorResponse(protocol, ReasonCodes.BAD_AUTH);
+        return null;
+      }
+
       stateEngine.setMaxBufferSize(connect.getMaxPacketSize());
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), protocol);
       scb.setPersistentSession(true);
@@ -57,6 +76,13 @@ public class InitialConnectionState implements State {
       scb.setKeepAlive(connect.getKeepAlive());
       scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
       scb.setSessionExpiry(connect.getSessionExpiry());
+      if(saslAuthenticationMechanism != null){
+        String username  = saslAuthenticationMechanism.getUsername();
+        if(username != null) {
+          scb.setUsername(username);
+          scb.isAuthorized(true);
+        }
+      }
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getKeepAlive()));
       if (connect.isWill()) {
         stateEngine.setSessionContextBuilder(scb);
@@ -65,6 +91,34 @@ public class InitialConnectionState implements State {
         stateEngine.setState(nextState);
         return topicRequest;
       } else {
+        if(requiresAuth){
+          if(props.containsKey("sasl")){
+            ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
+            Map<String, String> authProps = new HashMap<>();
+            authProps.put(Sasl.QOP, "auth");
+            try {
+              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "", "mqtt-sn", authProps, props);
+              stateEngine.setState(new AuthenticationState(connect, saslAuthenticationMechanism));
+              ((MQTT_SNProtocolV2)protocol).setSaslAuthenticationMechanism(saslAuthenticationMechanism);
+              return new Auth(ReasonCodes.CONTINUE_AUTHENTICATION, saslAuthenticationMechanism.getName(), new byte[0]);
+            } catch (SaslException e) {
+              // Close
+              try {
+                endPoint.close();
+              } catch (IOException ex) {
+                throw new RuntimeException(ex);
+              }
+            }
+          }
+          else{
+            try {
+              endPoint.close();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+          return null;
+        }
         CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
         sessionFuture.thenApply(session -> {
           protocol.setSession(session);
@@ -77,20 +131,33 @@ public class InitialConnectionState implements State {
             protocol.writeFrame(response);
             return session;
           } catch (IOException e) {
-            sendErrorResponse(protocol);
+            sendErrorResponse(protocol, ReasonCodes.NOT_SUPPORTED);
             return null;
           }
         }).exceptionally(exception -> {
-          sendErrorResponse(protocol);
+          sendErrorResponse(protocol, ReasonCodes.NOT_SUPPORTED);
           return null;
         });
+      }
+    }
+
+    else if (mqtt.getControlPacketId() == MQTT_SN_2_Packet.AUTH) {
+      Auth auth = (Auth) mqtt;
+      try {
+        SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
+        saslAuthenticationMechanism.challenge(auth.getData());
+      } catch (IOException e) {
+        e.printStackTrace();
+        // Log this and allow the session to be closed
       }
     }
     return null;
   }
 
-  private void sendErrorResponse(MQTT_SNProtocol protocol) {
-    io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck response = new io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck(ReasonCodes.NOT_SUPPORTED);
+
+
+  private void sendErrorResponse(MQTT_SNProtocol protocol, ReasonCodes reasonCodes) {
+    ConnAck response = new ConnAck(reasonCodes, 0, null, false);
     response.setCallback(() -> {
       try {
         protocol.close();

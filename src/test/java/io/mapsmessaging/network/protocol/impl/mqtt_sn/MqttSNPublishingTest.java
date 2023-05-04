@@ -1,18 +1,17 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -32,12 +31,12 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-public class MqttSNPublishingTest extends BaseMqttSnConfig {
+class MqttSNPublishingTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
   @MethodSource
-  public void  subscribeTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
+  void  subscribeTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
     subscribeTopicAndPublishQoSn(qos, version);
   }
 
@@ -55,7 +54,7 @@ public class MqttSNPublishingTest extends BaseMqttSnConfig {
 
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
 
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
+    client.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
 
     //
     // Test Registered Topics
@@ -74,6 +73,7 @@ public class MqttSNPublishingTest extends BaseMqttSnConfig {
       }
     }
     Assertions.assertTrue(received.await(30, TimeUnit.SECONDS));
+    delay(1000);
     client.disconnect();
   }
 }

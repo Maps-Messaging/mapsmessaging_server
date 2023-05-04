@@ -34,6 +34,25 @@ public abstract class MQTTConnectionTest extends MQTTBaseTest {
 
   protected abstract int getVersion();
 
+
+  void justRun() throws MqttException, InterruptedException {
+    MqttConnectOptions options = new MqttConnectOptions();
+    options.setMqttVersion(getVersion());
+    MqttClient client = new MqttClient("tcp://localhost:1883", getClientId(UUID.randomUUID().toString(), getVersion()), new MemoryPersistence());
+    client.connect(options);
+    byte[] payload = new byte[1024];
+    for(int x=0;x<payload.length;x++){
+      payload[x] = (byte)(x%128);
+    }
+    while(true){
+      MqttMessage mqttMessage = new MqttMessage();
+      mqttMessage.setQos(1);
+      mqttMessage.setPayload(payload);
+      client.publish("/test", mqttMessage);
+    }
+  }
+
+
   @Test
   @DisplayName("Test anonymous MQTT client connection")
   void testAnonymous() throws MqttException {

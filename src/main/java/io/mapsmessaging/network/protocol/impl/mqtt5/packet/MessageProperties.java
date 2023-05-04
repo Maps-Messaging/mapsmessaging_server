@@ -72,7 +72,12 @@ public class MessageProperties {
   }
 
   public void remove(int propertyId) {
-    properties.remove(propertyId);
+    for(MessageProperty property:properties){
+      if(property.getId() == propertyId){
+        properties.remove(property);
+        break;
+      }
+    }
   }
 
   public String getDuplicateReport() {

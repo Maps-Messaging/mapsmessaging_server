@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -40,6 +39,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PacketFactory;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PingRequest;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.SearchGateway;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MQTT_SNProtocolV2;
@@ -66,6 +66,10 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final RegisteredTopicConfiguration registeredTopicConfiguration;
   private final ProtocolMessageTransformation transformation;
 
+  private final boolean enablePortChanges;
+  private final boolean enableAddressChanges;
+
+
   public MQTTSNInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.gatewayId = gatewayId;
@@ -73,6 +77,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     advertiserTask = null;
     this.endPoint = endPoint;
     long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    enablePortChanges = endPoint.getConfig().getProperties().getBooleanProperty("enablePortChanges", true);
+    enableAddressChanges = endPoint.getConfig().getProperties().getBooleanProperty("enableAddressChanges", false);
     currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
@@ -86,6 +92,9 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
     long timeout = endPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    enablePortChanges = endPoint.getConfig().getProperties().getBooleanProperty("enablePortChanges", true);
+    enableAddressChanges = endPoint.getConfig().getProperties().getBooleanProperty("enableAddressChanges", false);
+
     currentSessions = new UDPSessionManager<>(timeout);
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
@@ -121,6 +130,10 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       return true; // Ignoring packet since unknown client
     }
     UDPSessionState<MQTT_SNProtocol> state = currentSessions.getState(packet.getFromAddress());
+    if(state == null && enablePortChanges){
+      state = lookupByPacket(packet);
+    }
+
     if (state != null && state.getContext() != null) {
       MQTT_SNProtocol protocol = state.getContext();
       // OK we have an existing protocol, so simply hand over the packet for processing
@@ -153,6 +166,27 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     return true;
   }
 
+  private UDPSessionState<MQTT_SNProtocol> lookupByPacket(Packet packet) throws IOException {
+    byte type = packet.get(1);
+    if(type == MQTT_SNPacket.PINGREQ){
+      for (PacketFactory factory : packetFactory) {
+        MQTT_SNPacket mqttMsg = factory.parseFrame(packet);
+        packet.position(0);
+        if (mqttMsg instanceof PingRequest) {
+          PingRequest pingRequest = (PingRequest) mqttMsg;
+          if (pingRequest.getClientId() != null) {
+            UDPSessionState<MQTT_SNProtocol> state = currentSessions.findAndUpdate(pingRequest.getClientId(), packet.getFromAddress(), enableAddressChanges);
+            if (state != null) {
+              state.getContext().setAddressKey(packet.getFromAddress());
+              return state;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   private void processIncomingPacket(Packet packet, PacketFactory factory) throws IOException {
     MQTT_SNPacket mqttSn = factory.parseFrame(packet);
 
@@ -162,6 +196,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
       MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
+      state.setClientIdentifier( ((Connect) mqttSn).getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
     } else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
@@ -170,6 +205,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) mqttSn;
       MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
+      state.setClientIdentifier(connectV2.getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
     } else if (mqttSn instanceof SearchGateway) {
       handleSearch(packet);

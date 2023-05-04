@@ -31,7 +31,7 @@ public class Disconnect extends MQTT_SNPacket {
 
   public Disconnect(Packet packet, int length) {
     super(DISCONNECT);
-    if (length > 2) {
+    if (length >= 4) {
       duration = MQTTPacket.readShort(packet);
     } else {
       duration = 0;

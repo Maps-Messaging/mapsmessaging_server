@@ -24,6 +24,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import java.io.IOException;
 import java.util.UUID;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 @ToString
@@ -44,7 +45,8 @@ public class Connect extends MQTT_SN_2_Packet {
   @Getter
   private final boolean will;
   @Getter
-  private final boolean authentication;
+  @Setter
+  private boolean authentication;
 
   public Connect(Packet packet, int length) throws IOException {
     super(CONNECT);
@@ -63,7 +65,7 @@ public class Connect extends MQTT_SN_2_Packet {
     maxPacketSize = MQTTPacket.readShort(packet);
     if (packet.hasRemaining()) {
       try {
-        clientId = MQTTPacket.readUTF8(packet);
+        clientId = MQTTPacket.readRemainingString(packet);
       } catch (MalformedException e) {
         throw new IOException(e);
       }

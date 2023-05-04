@@ -17,4 +17,4 @@
 ---
 
 DiscoveryManager:
-  enabled: true                    # If true then the server will start the discovery server else the server will not run the service
+  enabled: false                    # If true then the server will start the discovery server else the server will not run the service

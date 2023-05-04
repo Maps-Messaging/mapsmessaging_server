@@ -17,29 +17,14 @@
 
 <configuration>
   <shutdownHook/>
-  <appender name="LogFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>log/messaging.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>log/messaging.log-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
-      <maxHistory>7</maxHistory>
-    </rollingPolicy>
-    <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss}, [%X{division}-%X{category}], [%t] %logger{36} - %msg%n</pattern>
-    </encoder>
-  </appender>
-  <appender name="AsyncLogFile" class="ch.qos.logback.classic.AsyncAppender">
-    <appender-ref ref="LogFile" />
-  </appender>
-  <appender name="AsyncError" class="ch.qos.logback.core.ConsoleAppender">
+  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.err</target>
-    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>warn</level>
-    </filter>
     <encoder>
       <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
   <root level="warn">
-    <appender-ref ref="AsyncError" />
+    <appender-ref ref="STDERR"/>
   </root>
+
 </configuration>

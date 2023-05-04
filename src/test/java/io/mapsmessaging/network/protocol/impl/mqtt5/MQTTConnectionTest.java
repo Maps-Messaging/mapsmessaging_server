@@ -32,10 +32,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-abstract class MQTTConnectionTest extends MQTTBaseTest {
-
-  protected abstract int getVersion();
-
+class MQTTConnectionTest extends MQTTBaseTest {
   @Test
   @DisplayName("Test anonymous MQTT client connection")
   void testAnonymous() throws MqttException {

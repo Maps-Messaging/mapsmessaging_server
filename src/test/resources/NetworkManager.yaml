@@ -74,11 +74,24 @@ NetworkManager:
           auth : public
 
       -
+        name: "MQTT Interface"
+        url: "tcp://0.0.0.0:2883/"
+        protocol : mqtt
+        sasl:
+          mechanism: SCRAM-BCRYPT-SHA-512
+          identityProvider: htpassword
+          passwordFile: ./src/test/resources/htpassword
+
+
+      -
         url: "tcp://0.0.0.0:5672/"
         name: "AMQP Interface"
         protocol : amqp
         auth : public
-        SaslMechanisms : ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI
+        Sasl:
+          mechanism: SCRAM-SHA-512
+          identityProvider: htpassword
+          passwordFile: htpasswd
 
       -
         url: "tcp://0.0.0.0:1882/"
@@ -93,11 +106,12 @@ NetworkManager:
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: true
+        enablePortChanges: true
+        enableAddressChanges: true
         preDefinedTopics:
           - id: 1
             topic: predefined/topic
             address: '*'
-
 
       -
         url: hmac://0.0.0.0:1885/
@@ -136,6 +150,23 @@ NetworkManager:
         maxTopicsInSleep: 10
         advertiseGateway: true
         ssl_SSLContext: DTLS
+
+      -
+        url: udp://0.0.0.0:1887/
+        name: "MQTT-SN SASL Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 10
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        preDefinedTopics:
+          - id: 1
+            topic: predefined/topic
+            address: '*'
+        sasl:
+          mechanism: SCRAM-BCRYPT-SHA-512
+          identityProvider: htpassword
+          passwordFile: ./src/test/resources/htpassword
+
 
       -
         url: dtls://0.0.0.0:5684/

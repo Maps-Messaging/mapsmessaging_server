@@ -4,10 +4,11 @@ import io.mapsmessaging.engine.destination.DestinationStats;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
+import java.io.Serializable;
 import java.util.Map;
 import lombok.Getter;
 
-public class ServerStatistics {
+public class ServerStatistics implements Serializable {
 
   @Getter
   private final long packetsSent;

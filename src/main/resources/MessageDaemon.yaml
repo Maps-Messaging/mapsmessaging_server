@@ -55,6 +55,13 @@ MessageDaemon:
     # Default 1024
     CompressMessageMinSize: 1024
 
+
+    #
+    # Enable / Disable advanced resource statistics
+    #
+    # Default: false
+    EnableResourceStatistics: true
+
     #
     # Enable or Disable $SYS topics, if disabled then the server will not populate any $SYS topics
     #

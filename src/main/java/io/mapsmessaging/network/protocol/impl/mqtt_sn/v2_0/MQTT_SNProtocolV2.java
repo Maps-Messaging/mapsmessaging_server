@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -29,17 +28,24 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PacketFactoryV2;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequest;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequestV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state.InitialConnectionState;
+import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import java.io.IOException;
 import java.net.SocketAddress;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 // The protocol is MQTT_SN, so it makes sense, ignoring the Camel Case rule in class names
 @SuppressWarnings("squid:S00101")
 public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
+
+  @Getter
+  @Setter
+  private SaslAuthenticationMechanism saslAuthenticationMechanism;
 
   public MQTT_SNProtocolV2(@NonNull @NotNull MQTTSNInterfaceManager factory,
       @NonNull @NotNull EndPoint endPoint,
@@ -96,6 +102,6 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
 
   @Override
   public MQTT_SNPacket getPingRequest() {
-    return new PingRequest();
+    return new PingRequestV2();
   }
 }

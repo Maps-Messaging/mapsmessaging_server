@@ -21,7 +21,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.BasePublish;
+import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -58,20 +60,28 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
     topicIdType = TOPIC_NAME;
   }
 
-  public Publish(Packet packet)  {
+  public Publish(Packet packet) throws IOException {
     super(PUBLISH);
     byte flags = packet.get();
     dup = (flags & 0b10000000) != 0;
     int qos = (flags & 0b01100000) >> 5;
     QoS = QualityOfService.getInstance(qos);
+    boolean receiveMessageId = qos == 1 || qos == 2;
+
     retain = (flags & 0b00010000) != 0;
     topicIdType = flags & 0b11;
-    int topicLength = MQTTPacket.readShort(packet);
-    messageId = MQTTPacket.readShort(packet);
+    if(receiveMessageId) {
+      messageId = MQTTPacket.readShort(packet);
+    }
+    else{
+      messageId =0;
+    }
     if (topicIdType == LONG_TOPIC_NAME) {
-      byte[] tmp = new byte[topicLength];
-      packet.get(tmp, 0, topicLength);
-      topicName = new String(tmp);
+      try {
+        topicName = MQTTPacket.readUTF8(packet);
+      } catch (MalformedException e) {
+        throw new IOException("Invalid UTF-8 encoding for topic name", e);
+      }
       topicId = -1;
     } else {
       topicId = (short) MQTTPacket.readShort(packet);
@@ -83,12 +93,22 @@ public class Publish extends MQTT_SN_2_Packet implements BasePublish {
 
   @Override
   public int packFrame(Packet packet) {
-    int len = packLength(packet, 9 + message.length);
+    boolean sendMessageId = getQoS().getLevel() == 1 || getQoS().getLevel() == 2;
+    boolean sendTopicNameLength = topicIdType == LONG_TOPIC_NAME;
+    int len = 5 + message.length;
+    if(sendMessageId) len += 2;
+    if(sendTopicNameLength) len += 2;
+
+    len = packLength(packet, len);
     packet.put((byte) PUBLISH);
     packet.put(packFlag());
-    MQTTPacket.writeShort(packet, 2);
-    MQTTPacket.writeShort(packet, messageId);
-    MQTTPacket.writeShort(packet, topicId);
+    if(sendMessageId) MQTTPacket.writeShort(packet, messageId);
+    if(topicIdType == LONG_TOPIC_NAME){
+      MQTTPacket.writeUTF8(packet, topicName);
+    }
+    else{
+      MQTTPacket.writeShort(packet, topicId);
+    }
     packet.put(message);
     return len;
   }

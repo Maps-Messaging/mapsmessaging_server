@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+  ~ Copyright [ 2020 - 2023 ] [Matthew Buckton]
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
+
+<!--
   ~ This program is free software: you can redistribute it and/or modify
   ~  it under the terms of the GNU General Public License as published by
   ~  the Free Software Foundation, either version 3 of the License, or
@@ -28,6 +45,19 @@
   <name>Maps Messaging Server</name>
   <description>A multi adapter and protocol server</description>
   <url>https://www.mapsmessaging.io</url>
+
+  <developers>
+    <developer>
+      <id>mbuckton</id>
+      <name>Matthew Buckton</name>
+      <organization>Maps Messaging</organization>
+      <organizationUrl>http://mapsmessaging.io/</organizationUrl>
+      <roles>
+        <role>founder</role>
+      </roles>
+      <timezone>Australia/Sydney</timezone>
+    </developer>
+  </developers>
 
   <licenses>
     <license>
@@ -232,7 +262,6 @@
         <executions>
           <execution>
             <id>attach-sources</id>
-            <phase>verify</phase>
             <goals>
               <goal>jar-no-fork</goal>
             </goals>
@@ -353,6 +382,8 @@
     <logback.version>1.4.5</logback.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonar.sources>src/main</sonar.sources>
+
+
     <!-- Below property indicates the pattern of the test suite -->
     <runSuite>**/*Suite.class</runSuite>
     <sonar.test.exclusions>
@@ -379,7 +410,11 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
+
     <jersey.version>2.27</jersey.version>
+    <swagger.version>2.0.2</swagger.version>
+    <swagger-ui.version>3.17.0</swagger-ui.version>
+
   </properties>
 
   <dependencyManagement>
@@ -424,44 +459,49 @@
       <version>${logback.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <version>2.14.2</version>
+    </dependency>
 
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>AuthenticationLibrary</artifactId>
-      <version>0.2.2</version>
+      <version>0.2.10</version>
     </dependency>
 
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Simple_Logging</artifactId>
-      <version>2.0.6</version>
+      <version>2.0.7</version>
     </dependency>
 
     <!-- JMS Selector logic module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Extensible_JMS_Selector_Parser</artifactId>
-      <version>1.1.8</version>
+      <version>1.1.9</version>
     </dependency>
 
     <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.1.4</version>
+      <version>1.1.5</version>
     </dependency>
 
     <!-- Non Blocking Task Queue module -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Non_Block_Task_Scheduler</artifactId>
-      <version>2.1.3</version>
+      <version>2.1.4</version>
     </dependency>
 
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>DynamicStorage</artifactId>
-      <version>2.4.5</version>
+      <version>2.4.6</version>
     </dependency>
 
     <dependency>
@@ -480,7 +520,7 @@
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>1.33</version>
+      <version>2.0</version>
     </dependency>
 
 
@@ -529,13 +569,13 @@
     <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
       <artifactId>jersey-container-grizzly2-servlet</artifactId>
-      <version>2.27</version>
+      <version>${jersey.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
       <artifactId>jersey-container-grizzly2-http</artifactId>
-      <version>3.1.1</version>
+      <version>${jersey.version}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/io.swagger/swagger-jersey2-jaxrs -->
     <dependency>
@@ -835,9 +875,17 @@
     <dependency>
       <groupId>org.slj</groupId>
       <artifactId>mqtt-sn-client</artifactId>
-      <version>1.0.0</version>
+      <version>0.2.1</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.slj</groupId>
+      <artifactId>mqtt-tree</artifactId>
+      <version>0.5.4</version>
+      <scope>test</scope>
+    </dependency>
+
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -860,6 +908,7 @@
       <version>1.36</version>
       <scope>test</scope>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.eclipse.californium/californium-core -->
     <dependency>
       <groupId>org.eclipse.californium</groupId>

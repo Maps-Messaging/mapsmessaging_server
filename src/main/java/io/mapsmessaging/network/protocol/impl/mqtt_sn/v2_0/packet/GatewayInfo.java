@@ -44,7 +44,7 @@ public class GatewayInfo extends MQTT_SN_2_Packet {
     if (gatewayAddress != null) {
       len = 3 + gatewayAddress.length;
     }
-    packet.put((byte) len);
+    len = packLength(packet, len);
     packet.put((byte) GWINFO);
     packet.put((byte) gatewayId);
     if (gatewayAddress != null) {

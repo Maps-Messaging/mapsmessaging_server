@@ -47,10 +47,10 @@ public class ResourceFactory {
   public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationPathManager pathManager, String fullyQualifiedPath, UUID uuid,
       DestinationType destinationType,  SchemaConfig config) throws IOException {
     if (resourceName.toLowerCase().startsWith("$sys")) {
-      return new Resource();
+      return new ResourceImpl();
     } else {
       ResourceProperties props = createMetaData(pathManager, resourceName, uuid, destinationType, config);
-      return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath, props);
+      return new ResourceImpl(messageExpiryHandler, pathManager, fullyQualifiedPath, props);
     }
   }
 
@@ -77,7 +77,7 @@ public class ResourceFactory {
         long most = Long.parseLong(mostString);
         UUID uuid = new UUID(most, least);
         String fullyQualifiedPath = pathManager.getDirectory() + File.separator + uuid + File.separator;
-        return new Resource(messageExpiryHandler, pathManager, fullyQualifiedPath, properties);
+        return new ResourceImpl(messageExpiryHandler, pathManager, fullyQualifiedPath, properties);
       }
     }
     Files.delete(directory.toPath());

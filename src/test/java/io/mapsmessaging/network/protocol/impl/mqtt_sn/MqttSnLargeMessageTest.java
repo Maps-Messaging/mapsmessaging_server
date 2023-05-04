@@ -10,7 +10,7 @@ import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
 
-class MqttSnLargeMessageTests extends BaseMqttSnConfig {
+class MqttSnLargeMessageTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
@@ -20,7 +20,7 @@ class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
+    client.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
     AtomicLong receiveCount = new AtomicLong(0);
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCount.incrementAndGet());
 
@@ -49,7 +49,7 @@ class MqttSnLargeMessageTests extends BaseMqttSnConfig {
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);
-    client.registerSentListener((iMqttsnContext, uuid, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
+    client.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
 
     AtomicLong receiveCount = new AtomicLong(0);
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {

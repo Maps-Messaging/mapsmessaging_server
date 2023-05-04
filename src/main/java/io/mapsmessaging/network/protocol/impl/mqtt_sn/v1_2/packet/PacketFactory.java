@@ -25,7 +25,7 @@ import java.io.IOException;
 public class PacketFactory {
 
   public MQTT_SNPacket parseFrame(Packet packet) throws IOException {
-    int packetLength = packet.get();
+    int packetLength = packet.get() & 0xff;
     int dif;
     if (packetLength == 1) { // Special case so the next 2 bytes indicates the length
       packetLength = MQTTPacket.readShort(packet);

@@ -38,7 +38,6 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       if(version == 2) {
         MQTTPacket.writeShort(packet, 60); // KeepAlive
         MQTTPacket.writeInt(packet, 1500); // Max Buffer Size
-        MQTTPacket.writeUTF8(packet, "TestConnectionPacket");
       }
       len = (byte) packet.position();
       packet.put(0, len);
@@ -51,8 +50,8 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       }
       packet.flip();
       Assertions.assertTrue(packet.hasRemaining());
-      Assertions.assertEquals(packet.get(1), 0x5);
-      Assertions.assertEquals(packet.get(2), 0x3);
+      Assertions.assertEquals(0x5, packet.get(1));
+      Assertions.assertEquals(0x3, packet.get(2));
     }
   }
   private static Stream<Arguments> testMissingExpiry() {
@@ -76,7 +75,7 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       if(version == 2) {
         MQTTPacket.writeInt(packet, 0x1ffff); // SessionTime
         MQTTPacket.writeShort(packet, 1500); // Buffersize
-        MQTTPacket.writeUTF8(packet, "TestConnectionPacket");
+        MQTTPacket.writeRawBuffer("TestConnectionPacket".getBytes(), packet);
       }
       len = (byte) packet.position();
       packet.put(0, len);
@@ -121,7 +120,7 @@ public abstract class ConnectPacketTest extends BaseMqttSnConfig {
       if(version == 2) {
         MQTTPacket.writeInt(packet, 0x1ffff); // SessionTime
         MQTTPacket.writeShort(packet, 1500); // Buffersize
-        MQTTPacket.writeUTF8(packet, "TestConnectionPacket");
+        MQTTPacket.writeRawBuffer( "TestConnectionPacket".getBytes(), packet);
       }
       len = (byte) packet.position();
       packet.put(0, len);

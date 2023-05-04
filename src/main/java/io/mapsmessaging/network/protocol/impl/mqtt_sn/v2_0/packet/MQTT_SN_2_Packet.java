@@ -29,5 +29,4 @@ public class MQTT_SN_2_Packet extends MQTT_SNPacket {
   public MQTT_SN_2_Packet(int id) {
     super(id);
   }
-
 }

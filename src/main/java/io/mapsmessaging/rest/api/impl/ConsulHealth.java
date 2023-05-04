@@ -14,7 +14,6 @@ public class ConsulHealth extends BaseRestApi {
 
 
   @GET
-  @Path("/")
   @Produces({MediaType.TEXT_PLAIN})
   @ApiOperation(value = "Simple request to test if the server is running")
   public String getPing() {

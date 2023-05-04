@@ -1,3 +1,20 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.engine.schema;
 
 import io.mapsmessaging.schemas.config.SchemaConfig;
@@ -15,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import lombok.Getter;
 
 public class SchemaManager implements SchemaRepository, Agent {
 
@@ -35,6 +53,9 @@ public class SchemaManager implements SchemaRepository, Agent {
   private final SchemaRepository repository;
   private final Map<String, MessageFormatter> loadedFormatter;
 
+  @Getter
+  private long updateCount = 0;
+
   @Override
   public synchronized SchemaConfig addSchema(String path, SchemaConfig schemaConfig) {
     try {
@@ -45,6 +66,7 @@ public class SchemaManager implements SchemaRepository, Agent {
     } catch (Exception e) {
       // Unable to load the formatter
     }
+    updateCount++;
     return repository.addSchema(path, schemaConfig);
   }
 
@@ -89,12 +111,14 @@ public class SchemaManager implements SchemaRepository, Agent {
   public synchronized void removeSchema(String uniqueId) {
     repository.removeSchema(uniqueId);
     loadedFormatter.remove(uniqueId);
+    updateCount++;
   }
 
   @Override
   public synchronized void removeAllSchemas() {
     loadedFormatter.clear();
     repository.removeAllSchemas();
+    updateCount++;
   }
 
   public synchronized List<LinkFormat> buildLinkFormatList() {
