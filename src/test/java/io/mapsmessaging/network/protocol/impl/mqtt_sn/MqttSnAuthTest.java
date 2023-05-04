@@ -46,7 +46,7 @@ class MqttSnAuthTest extends BaseMqttSnConfig {
     ClientCallbackHandler clientHandler = new ClientCallbackHandler("test3", "This is an bcrypt password", "servername");
 
     IAuthHandler authHandler = new SaslAuthHandler(mechanisms, "Authorized", "localhost", props, clientHandler);
-    MqttSnClient client = new MqttSnClient("connectWithOutFlags", "localhost", 1887, 2, authHandler);
+    MqttSnClient client = new MqttSnClient( "localhost", 1887, 2, authHandler);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     AtomicBoolean receivedEvent = new AtomicBoolean(false);

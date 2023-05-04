@@ -866,13 +866,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.eclipse.paho</groupId>
-      <artifactId>MQTT-SN-UDP-Client</artifactId>
-      <version>1.2.1-OKSE</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.slj</groupId>
       <artifactId>mqtt-sn-client</artifactId>
       <version>0.2.1</version>
@@ -886,6 +879,12 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>com.eclipse.paho</groupId>
+      <artifactId>MQTT-SN-UDP-Client</artifactId>
+      <version>1.2.1-OKSE</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
