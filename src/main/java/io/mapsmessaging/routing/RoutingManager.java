@@ -27,6 +27,8 @@ import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
 import javax.jmdns.impl.JmDNSImpl;
@@ -38,11 +40,13 @@ public class RoutingManager implements Agent, ServiceListener {
   private final ConfigurationProperties properties;
   private final boolean enabled;
   private final boolean autoConfig;
+  private final Map<String, RemoteServerManager> remoteServers;
 
   public RoutingManager() {
     properties = ConfigurationManager.getInstance().getProperties("routing");
     enabled = properties.getBooleanProperty("enabled", false);
     autoConfig = properties.getBooleanProperty("autoDiscovery", false);
+    remoteServers = new LinkedHashMap<>();
   }
 
   @Override
@@ -75,42 +79,62 @@ public class RoutingManager implements Agent, ServiceListener {
       if(discoveryManager.isEnabled()) {
         discoveryManager.removeListener("_maps._tcp.local.", this);
       }
+      for(RemoteServerManager remoteServerManager: remoteServers.values()){
+        remoteServerManager.stop();
+      }
     }
   }
 
   @Override
   public void serviceAdded(ServiceEvent serviceEvent) {
-    if(!isLocal(serviceEvent)){
-      System.err.println("Added service:: "+serviceEvent.getName()+" "+serviceEvent.getInfo());
+    if(isNotLocal(serviceEvent)){
+      String key = buildKey(serviceEvent);
+      if(remoteServers.containsKey(key)) {
+        remoteServers.get(key).resume();
+      }
     }
   }
 
   @Override
   public void serviceRemoved(ServiceEvent serviceEvent) {
-    if(!isLocal(serviceEvent)) {
-      System.err.println("Removed service:: "+serviceEvent.getName()+" "+serviceEvent.getInfo());
+    if(isNotLocal(serviceEvent)) {
+      String key = buildKey(serviceEvent);
+      RemoteServerManager remoteServerManager = remoteServers.get(key);
+      if(remoteServerManager != null){
+        remoteServerManager.pause();
+      }
     }
   }
 
   @Override
   public void serviceResolved(ServiceEvent serviceEvent) {
-    if(!isLocal(serviceEvent)) {
-      boolean restSupport = serviceEvent.getInfo().getPropertyString("restApi").trim().toLowerCase().equals("true");
+    if(isNotLocal(serviceEvent)) {
+      boolean restSupport = serviceEvent.getInfo().getPropertyString("restApi").trim().equalsIgnoreCase("true");
       if(restSupport) {
-        String protocol = serviceEvent.getInfo().getPropertyString("protocol");
-        String host = serviceEvent.getInfo().getHostAddresses()[0];
-        boolean schemaSupport = serviceEvent.getInfo().getPropertyString("schema support").trim().toLowerCase().equals("true");
-        RemoteServerManager remoteManager = new RemoteServerManager(protocol+"://"+host+":"+serviceEvent.getInfo().getPort(), schemaSupport);
+        boolean schemaSupport = serviceEvent.getInfo().getPropertyString("schema support").trim().equalsIgnoreCase("true");
+        String key = buildKey(serviceEvent);
+        if(!remoteServers.containsKey(key)){
+          remoteServers.put(key, new RemoteServerManager(key, schemaSupport));
+        }
+        else{
+          remoteServers.get(key).resume();
+        }
       }
     }
   }
 
-  private boolean isLocal(ServiceEvent serviceEvent){
+  private String buildKey(ServiceEvent serviceEvent){
+    String protocol = serviceEvent.getInfo().getPropertyString("protocol");
+    String host = serviceEvent.getInfo().getHostAddresses()[0];
+    return protocol+"://"+host+":"+serviceEvent.getInfo().getPort();
+  }
+
+  private boolean isNotLocal(ServiceEvent serviceEvent){
     Object source = serviceEvent.getSource();
     if(source instanceof JmDNSImpl){
       JmDNSImpl impl = (JmDNSImpl) source;
-      return (impl.getLocalHost().getName().toLowerCase().startsWith(serviceEvent.getInfo().getName().toLowerCase()));
+      return !(impl.getLocalHost().getName().toLowerCase().startsWith(serviceEvent.getInfo().getName().toLowerCase()));
     }
-    return false;
+    return true;
   }
 }
