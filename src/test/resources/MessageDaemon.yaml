@@ -43,11 +43,11 @@ MessageDaemon:
     # Enable or Disable $SYS topics, if disabled then the server will not populate any $SYS topics
     #
     # Default: true
-    EnableSystemTopics: true
+    EnableSystemTopics: false
 
     #
     # Enables or disables the moving averages for specific $SYS topics
     # if enabled then 1, 5, 10 and 15 minute moving averages are calculated and $SYS topics constructed and populated
     #
     # Default: true
-    EnableSystemTopicAverages: true
+    EnableSystemTopicAverages: false

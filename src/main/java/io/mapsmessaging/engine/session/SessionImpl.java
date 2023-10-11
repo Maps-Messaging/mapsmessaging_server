@@ -36,17 +36,14 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.*;
 
 public class SessionImpl {
 
@@ -262,6 +259,7 @@ public class SessionImpl {
     String namespace = destinationManager.calculateNamespace(originalName);
     namespaceMapping.addMapped(originalName, namespace);
     context.setDestinationName(namespace);
+    subscriptionManager.wake(this);
     return subscriptionManager.addSubscription(context);
   }
 

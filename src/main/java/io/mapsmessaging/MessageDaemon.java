@@ -17,15 +17,10 @@
 
 package io.mapsmessaging;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STARTED;
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STARTING;
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STOPPED;
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STOPPING;
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_BOOTSTRAP;
-
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.device.DeviceManager;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
@@ -51,22 +46,18 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+import lombok.Getter;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.ServiceLoader;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.Getter;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class MessageDaemon {
 
@@ -183,6 +174,7 @@ public class MessageDaemon {
     addToMap(120, 40, new RestApiServerManager());
     addToMap(200, 2, new ServerConnectionManager());
     addToMap(210, 0, new RoutingManager());
+    addToMap(220, 7, new DeviceManager());
   }
 
   private void addToMap(int start, int stop, Agent agent) {

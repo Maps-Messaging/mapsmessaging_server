@@ -17,14 +17,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
-
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
 import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
 import org.junit.jupiter.api.Assertions;
@@ -35,6 +27,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
 
 class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
@@ -260,6 +261,7 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     client.subscribe("/mqttsn/test/wild/+", qos);
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
 
+    Thread.sleep(10000);
     MqttSnClient publisher = new MqttSnClient( "localhost",1884, version );
     publisher.connect(120, true);
     publisher.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
