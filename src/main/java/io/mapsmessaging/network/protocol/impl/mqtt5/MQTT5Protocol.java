@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -39,35 +38,21 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.PacketListenerFactory5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.ConnAck5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Connect5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.PacketFactory5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Publish5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ContentType;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.CorrelationData;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageExpiryInterval;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.PayloadFormatIndicator;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ReasonString;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ResponseTopic;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.TopicAlias;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.*;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.Map;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("DuplicatedBlocks")

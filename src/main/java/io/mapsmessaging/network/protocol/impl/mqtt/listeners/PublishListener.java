@@ -1,28 +1,23 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.Transaction;
-import io.mapsmessaging.api.TransactionException;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -34,18 +29,15 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.PubAck;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.PubRec;
-import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
+import lombok.SneakyThrows;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import lombok.SneakyThrows;
 
 public class PublishListener extends PacketListener {
 

@@ -21,43 +21,31 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 @ToString
+@Getter
 public class SessionContextBuilder {
 
-  @Getter
   private final String id;
-  @Getter
   private final ProtocolImpl protocol;
-  @Getter
   private final Map<String, String> userData;
-  @Getter
   private String username;
-  @Getter
   private char[] password;
-  @Getter
   private boolean resetState;
-  @Getter
   private String willTopic;
-  @Getter
   private Message willMessage;
-  @Getter
   private long willDelay;
-  @Getter
   private boolean persistentSession;
-  @Getter
   private long sessionExpiry;
-  @Getter
   private int receiveMaximum;
-  @Getter
   private int duration;
-  @Getter
   private boolean authorized;
 
   public SessionContextBuilder(@NonNull @NotNull String id, @NonNull @NotNull ProtocolImpl protocol) {

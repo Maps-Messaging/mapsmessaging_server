@@ -1,28 +1,23 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.Transaction;
-import io.mapsmessaging.api.TransactionException;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -36,30 +31,17 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.TopicAliasMapping;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Disconnect5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.PubAck5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.PubRec5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Publish5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.PublishMonitorPacket5;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ContentType;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.CorrelationData;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageExpiryInterval;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.PayloadFormatIndicator;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ResponseTopic;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.TopicAlias;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.*;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import lombok.SneakyThrows;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import lombok.SneakyThrows;
 
 public class PublishListener5 extends PacketListener5 {
 

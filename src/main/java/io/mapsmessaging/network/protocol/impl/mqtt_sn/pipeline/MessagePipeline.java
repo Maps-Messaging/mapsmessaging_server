@@ -1,16 +1,21 @@
-package io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline;
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_CREATED;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_COMPLETED;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_DROPPED;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_QUEUED;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_SENT;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_EVENT_TIMED_OUT;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_PAUSED;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_RESUMED;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_PIPELINE_WOKEN;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
+package io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -22,6 +27,9 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Register;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -29,8 +37,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
 
 public class MessagePipeline {
 
