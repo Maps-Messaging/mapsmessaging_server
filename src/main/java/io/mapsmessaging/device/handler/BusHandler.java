@@ -19,6 +19,7 @@ package io.mapsmessaging.device.handler;
 
 import io.mapsmessaging.device.handler.onewire.OneWireDeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,9 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class BusHandler {
 
   private final Map<String, DeviceHandler> foundDevices;
+  protected final ConfigurationProperties properties;
 
-  protected BusHandler(){
+  protected BusHandler(ConfigurationProperties properties){
     foundDevices = new ConcurrentHashMap<>();
+    this.properties = properties;
   }
 
   public void start() {

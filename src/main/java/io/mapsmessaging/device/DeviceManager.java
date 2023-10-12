@@ -44,24 +44,60 @@ public class DeviceManager implements ServiceManager, Agent {
 
   public DeviceManager() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
-    deviceBusManager = DeviceBusManager.getInstance();
+    devices = new ArrayList<>();
     busHandlers = new ArrayList<>();
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("DeviceManager");
-    Object obj = properties.get("data");
-    devices = new ArrayList<>();
-    if (obj instanceof List) {
-      devices.addAll((List<ConfigurationProperties>) obj);
-    } else if (obj instanceof ConfigurationProperties) {
-      devices.add((ConfigurationProperties) obj);
-    }
-    logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
 
-    for(I2CBusManager busManager:deviceBusManager.getI2cBusManager()){
-      busHandlers.add(new I2CBusHandler(busManager));
+    DeviceBusManager manager = null;
+    try{
+      manager = DeviceBusManager.getInstance();
     }
-    busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager()));
+    catch(Throwable th){
+      // PI4J is not available, so we can disable this
+    }
 
-    logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
+    deviceBusManager = manager;
+    if( properties.getBooleanProperty("enabled", false) && deviceBusManager != null) {
+      Object obj = properties.get("data");
+      if (obj instanceof List) {
+        devices.addAll((List<ConfigurationProperties>) obj);
+      } else if (obj instanceof ConfigurationProperties) {
+        devices.add((ConfigurationProperties) obj);
+      }
+      logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
+
+      for(ConfigurationProperties deviceConfig: devices) {
+        if (deviceConfig.containsKey("name") &&
+            deviceConfig.getProperty("name").equalsIgnoreCase("i2c") &&
+            deviceConfig.getBooleanProperty("enabled", false)) {
+          loadI2CConfig(deviceConfig);
+        }
+
+        if (deviceConfig.containsKey("name") &&
+            deviceConfig.getProperty("name").equalsIgnoreCase("oneWire") &&
+            deviceConfig.getBooleanProperty("enabled", false)) {
+          busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager(), deviceConfig));
+        }
+      }
+      logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
+    }
+  }
+
+  private void loadI2CConfig(ConfigurationProperties deviceConfig){
+    Object configList = deviceConfig.get("config");
+    if (configList instanceof List) {
+      for (Object busConfigObj : (List) configList) {
+        if (busConfigObj instanceof ConfigurationProperties) {
+          ConfigurationProperties busConfig = (ConfigurationProperties) busConfigObj;
+          for (int x = 0; x < deviceBusManager.getI2cBusManager().length; x++) {
+            if (busConfig.getIntProperty("bus", -1) == x && busConfig.getBooleanProperty("enabled", false)) {
+              I2CBusManager busManager = deviceBusManager.getI2cBusManager()[x];
+              busHandlers.add(new I2CBusHandler(busManager, deviceConfig));
+            }
+          }
+        }
+      }
+    }
   }
 
   @Override
@@ -80,6 +116,7 @@ public class DeviceManager implements ServiceManager, Agent {
 
   public void stop() {
     stopAll();
+    deviceBusManager.close();
   }
 
   public void initialise() {

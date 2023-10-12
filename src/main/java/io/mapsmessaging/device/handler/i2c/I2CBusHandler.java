@@ -21,6 +21,7 @@ import io.mapsmessaging.device.handler.BusHandler;
 import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.util.Map;
 
@@ -28,8 +29,8 @@ public class I2CBusHandler extends BusHandler {
 
   private final I2CBusManager i2CBusManager;
 
-  public I2CBusHandler(I2CBusManager i2CBusManager){
-    super();
+  public I2CBusHandler(I2CBusManager i2CBusManager, ConfigurationProperties properties){
+    super(properties);
     this.i2CBusManager = i2CBusManager;
   }
 
