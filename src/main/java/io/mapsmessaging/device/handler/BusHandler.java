@@ -20,24 +20,36 @@ package io.mapsmessaging.device.handler;
 import io.mapsmessaging.device.handler.onewire.OneWireDeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public abstract class BusHandler {
+public abstract class BusHandler implements Runnable {
 
   private final Map<String, DeviceHandler> foundDevices;
   protected final ConfigurationProperties properties;
+  private final int scanPeriod;
+  private Future<?> scheduledFuture;
 
   protected BusHandler(ConfigurationProperties properties){
     foundDevices = new ConcurrentHashMap<>();
     this.properties = properties;
+    scanPeriod = properties.getIntProperty("scanTime", 120000);
   }
 
-  public void start() {
+  public synchronized void start() {
+    if(properties.getBooleanProperty("autoScan", false)) {
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, scanPeriod, scanPeriod, TimeUnit.MILLISECONDS);
+    }
   }
 
-  public void stop(){
+  public synchronized void stop(){
+    if(scheduledFuture != null){
+      scheduledFuture.cancel(true);
+    }
   }
 
   public void pause() {
@@ -50,20 +62,15 @@ public abstract class BusHandler {
 
   protected abstract  Map<String, DeviceController> scan();
 
-
-  private final class BusScanner implements Runnable {
-
-    @Override
-    public void run() {
-
-      Map<String, DeviceController> map = scan();
-      for (Map.Entry<String, DeviceController> entry : map.entrySet()) {
-        if (!foundDevices.containsKey(entry.getKey())) {
-          // Found new device
-          DeviceHandler handler = new OneWireDeviceHandler(entry.getValue());
-          foundDevices.put(entry.getKey(), handler);
-          deviceDetected(handler);
-        }
+  @Override
+  public void run() {
+    Map<String, DeviceController> map = scan();
+    for (Map.Entry<String, DeviceController> entry : map.entrySet()) {
+      if (!foundDevices.containsKey(entry.getKey())) {
+        // Found new device
+        DeviceHandler handler = new OneWireDeviceHandler(entry.getValue());
+        foundDevices.put(entry.getKey(), handler);
+        deviceDetected(handler);
       }
     }
   }

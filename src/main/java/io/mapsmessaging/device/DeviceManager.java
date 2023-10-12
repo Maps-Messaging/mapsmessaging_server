@@ -92,7 +92,7 @@ public class DeviceManager implements ServiceManager, Agent {
           for (int x = 0; x < deviceBusManager.getI2cBusManager().length; x++) {
             if (busConfig.getIntProperty("bus", -1) == x && busConfig.getBooleanProperty("enabled", false)) {
               I2CBusManager busManager = deviceBusManager.getI2cBusManager()[x];
-              busHandlers.add(new I2CBusHandler(busManager, deviceConfig));
+              busHandlers.add(new I2CBusHandler(busManager, busConfig));
             }
           }
         }

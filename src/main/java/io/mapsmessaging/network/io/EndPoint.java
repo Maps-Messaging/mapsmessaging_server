@@ -22,6 +22,7 @@ import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import lombok.Getter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -41,6 +42,7 @@ public abstract class EndPoint implements Closeable {
   public static final LongAdder totalConnections = new LongAdder();
   public static final LongAdder totalDisconnections = new LongAdder();
 
+  @Getter
   protected final EndPointServerStatus server;
   protected final Logger logger;
 
@@ -142,10 +144,6 @@ public abstract class EndPoint implements Closeable {
 
   public long getLastWrite() {
     return lastWrite.get();
-  }
-
-  public EndPointServerStatus getServer() {
-    return server;
   }
 
   public Logger getLogger() {
