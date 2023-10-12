@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -33,6 +32,12 @@ import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -41,42 +46,40 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public abstract class ProtocolImpl implements SelectorCallback, MessageListener, Timeoutable {
 
-  private static String message = "Messages";
+  private static final String MESSAGES = "Messages";
 
   private static final LongAdder totalReceived = new LongAdder();
   private static final LongAdder totalSent = new LongAdder();
-
   public static long getTotalReceived() {
     return totalReceived.sum();
   }
-
   public static long getTotalSent() {
     return totalSent.sum();
   }
 
   protected final EndPoint endPoint;
-
   protected final LinkedMovingAverages sentMessageAverages;
   protected final LinkedMovingAverages receivedMessageAverages;
-
-  protected ProtocolMessageTransformation transformation;
   protected final Map<String, Transformer> destinationTransformerMap;
-
   protected final ProtocolJMX mbean;
+
+
   protected long keepAlive;
-  private boolean connected;
   private boolean completed;
+
+  @Getter
+  private boolean connected;
+  @Getter
+  @Setter
+  protected ProtocolMessageTransformation transformation;
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
-    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, message);
-    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, message);
+    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
+    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
     connected = false;
     completed = false;
@@ -85,8 +88,8 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
     this.endPoint = endPoint;
-    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, message);
-    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, message);
+    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
+    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
     String endPointName = socketAddress.toString();
     endPointName = endPointName.replace(":", "_");
     List<String> jmsList = new ArrayList<>(endPoint.getJMXTypePath());
@@ -104,14 +107,6 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
       completed = true;
       endPoint.completedConnection();
     }
-  }
-
-  public ProtocolMessageTransformation getTransformation() {
-    return transformation;
-  }
-
-  public void setTransformation(ProtocolMessageTransformation transformation) {
-    this.transformation = transformation;
   }
 
   @Override
@@ -188,10 +183,6 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     }
   }
 
-  public boolean isConnected() {
-    return connected;
-  }
-
   protected Message processTransformer(String normalisedName, Message message) {
     Transformer transformer = destinationTransformerMap.get(normalisedName);
     if (transformer != null) {
@@ -213,7 +204,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     builder.setQos(qos);
     builder.setAllowOverlap(true);
     builder.setReceiveMaximum(receiveMax);
-    if (selector != null && selector.length() > 0) {
+    if (selector != null && !selector.isEmpty()) {
       builder.setSelector(selector);
     }
     return builder;

@@ -19,75 +19,34 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import java.util.UUID;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.ToString;
 
+import java.util.UUID;
+
 @ToString
+@Data
 public class SessionContext {
 
   // <editor-fold desc="These fields are persisted and on reload describes the session">
-  @Getter
   private final String id;
-
-  @Getter
-  @Setter
   private String uniqueId;
-
-  @Getter
-  @Setter
   private String willTopic;
-
-  @Getter
-  @Setter
   private Message willMessage;
-
-  @Getter
-  @Setter
   private long willDelay;
-
-  @Getter
-  @Setter
   private long expiry;
   // </editor-fold>
 
   // <editor-fold desc="These are volatile fields and must not be persisted since they change at run
   // time">
-
-  @Getter
   private final ProtocolImpl protocol;
-
-  @Getter
-  @Setter
   private boolean authorized;
-
-  @Getter
-  @Setter
   private String username;
-
-  @Getter
-  @Setter
   private char[] password;
-
-  @Getter
-  @Setter
   private int receiveMaximum;
-
-  @Getter
-  @Setter
   private int duration;
-
-  @Getter
-  @Setter
   private boolean isRestored;
-
-  @Getter
-  @Setter
   private boolean resetState;
-
-  @Getter
-  @Setter
   private boolean persistentSession;
   // </editor-fold>
 

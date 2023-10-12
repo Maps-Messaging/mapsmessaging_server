@@ -31,22 +31,19 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PacketFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PingRequest;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.InitialConnectionState;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 // The protocol is MQTT_SN, so it makes sense, ignoring the Camel Case rule in class names
 @java.lang.SuppressWarnings("squid:S00101")
@@ -198,6 +195,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    System.err.println("Send Message::"+messageEvent);
     if (stateEngine.getMaxBufferSize() > 0 &&
         stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9) {
       messageEvent.getCompletionTask().run();

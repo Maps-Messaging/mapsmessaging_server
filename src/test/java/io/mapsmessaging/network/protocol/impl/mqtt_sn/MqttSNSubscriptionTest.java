@@ -17,14 +17,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
-
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 import org.eclipse.paho.mqttsn.udpclient.MqttsCallback;
 import org.eclipse.paho.mqttsn.udpclient.MqttsClient;
 import org.junit.jupiter.api.Assertions;
@@ -35,6 +27,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
 
 class MqttSNSubscriptionTest extends BaseMqttSnConfig {
 
@@ -201,7 +202,7 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
   }
 
   public void subscribeQoSnTopicAndPublish(int qos, int version) throws InterruptedException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
-    MqttSnClient client = new MqttSnClient("1", "localhost",1884, version );
+    MqttSnClient client = new MqttSnClient("localhost",1884, version );
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
@@ -255,12 +256,13 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
-    MqttSnClient client = new MqttSnClient("subscribeWildcardQoSnTopicAndPublish", "localhost",1884, version );
+    MqttSnClient client = new MqttSnClient("localhost",1884, version );
     client.connect(120, true);
     client.subscribe("/mqttsn/test/wild/+", qos);
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
 
-    MqttSnClient publisher = new MqttSnClient("subscribeWildcardQoSnTopicAndPublish"+qos+"_"+version, "localhost",1884, version );
+    Thread.sleep(10000);
+    MqttSnClient publisher = new MqttSnClient( "localhost",1884, version );
     publisher.connect(120, true);
     publisher.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
 

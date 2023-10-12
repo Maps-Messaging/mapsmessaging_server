@@ -1,18 +1,17 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -20,13 +19,7 @@ package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
-import io.mapsmessaging.engine.destination.subscription.transaction.AutoAcknowledgementController;
-import io.mapsmessaging.engine.destination.subscription.transaction.ClientAcknowledgementController;
-import io.mapsmessaging.engine.destination.subscription.transaction.ClientCreditManager;
-import io.mapsmessaging.engine.destination.subscription.transaction.CreditManager;
-import io.mapsmessaging.engine.destination.subscription.transaction.FixedCreditManager;
-import io.mapsmessaging.engine.destination.subscription.transaction.IndividualAcknowledgementController;
+import io.mapsmessaging.engine.destination.subscription.transaction.*;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -34,6 +27,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+
 import java.io.IOException;
 
 public abstract class SubscriptionBuilder {

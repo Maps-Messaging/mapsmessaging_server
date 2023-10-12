@@ -1,15 +1,21 @@
-package io.mapsmessaging.network.protocol.impl.coap;
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_BERT_NOT_SUPPORTED;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_BLOCK2_REQUEST;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_CLOSED;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_CREATED;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_PACKET_SENT;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_RECEIVED_RESET;
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_SESSION_TIMED_OUT;
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
+package io.mapsmessaging.network.protocol.impl.coap;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -25,23 +31,17 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveMonitor;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.Listener;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.ListenerFactory;
-import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
-import io.mapsmessaging.network.protocol.impl.coap.packet.BlockWiseSend;
-import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
-import io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory;
-import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.Block;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.ContentFormat;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.ETag;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.Format;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.MaxAge;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.Observe;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
-import io.mapsmessaging.network.protocol.impl.coap.packet.options.UriPath;
+import io.mapsmessaging.network.protocol.impl.coap.packet.*;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionState;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import lombok.Getter;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.List;
@@ -49,10 +49,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.security.auth.login.LoginException;
-import lombok.Getter;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
 public class CoapProtocol extends ProtocolImpl {
 

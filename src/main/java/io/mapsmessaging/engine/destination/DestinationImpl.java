@@ -1,18 +1,17 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -31,20 +30,8 @@ import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionManager;
 import io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionRegister;
-import io.mapsmessaging.engine.destination.tasks.BulkRemoveMessageTask;
-import io.mapsmessaging.engine.destination.tasks.DelayedMessageProcessor;
-import io.mapsmessaging.engine.destination.tasks.DelayedStoreMessageTask;
-import io.mapsmessaging.engine.destination.tasks.MessageDeliveryTask;
-import io.mapsmessaging.engine.destination.tasks.NonDelayedStoreMessageTask;
-import io.mapsmessaging.engine.destination.tasks.QueueBasedStoreMessageTask;
-import io.mapsmessaging.engine.destination.tasks.RemoveMessageTask;
-import io.mapsmessaging.engine.destination.tasks.TransactionalMessageProcessor;
-import io.mapsmessaging.engine.resources.MessageExpiryHandler;
-import io.mapsmessaging.engine.resources.Resource;
-import io.mapsmessaging.engine.resources.ResourceFactory;
-import io.mapsmessaging.engine.resources.ResourceImpl;
-import io.mapsmessaging.engine.resources.ResourceProperties;
-import io.mapsmessaging.engine.resources.ResourceStatistics;
+import io.mapsmessaging.engine.destination.tasks.*;
+import io.mapsmessaging.engine.resources.*;
 import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.tasks.EngineTask;
@@ -64,6 +51,11 @@ import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import lombok.Getter;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -71,18 +63,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.Getter;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class represents a mechanism for clients to publish to a known point, subscribe to this point and the complex mechanisms around that, including transactional publishing,

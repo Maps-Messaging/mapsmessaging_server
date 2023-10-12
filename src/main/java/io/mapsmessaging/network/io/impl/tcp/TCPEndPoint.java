@@ -1,40 +1,31 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.io.impl.tcp;
-
-import static io.mapsmessaging.logging.ServerLogMessages.TCP_ACCEPT_START;
-import static io.mapsmessaging.logging.ServerLogMessages.TCP_CONFIGURED_PARAMETER;
-import static io.mapsmessaging.logging.ServerLogMessages.TCP_READ_BUFFER;
-import static io.mapsmessaging.logging.ServerLogMessages.TCP_SEND_BUFFER;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.io.EndPointServer;
-import io.mapsmessaging.network.io.EndPointServerStatus;
-import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -44,6 +35,8 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class TCPEndPoint extends EndPoint {
 

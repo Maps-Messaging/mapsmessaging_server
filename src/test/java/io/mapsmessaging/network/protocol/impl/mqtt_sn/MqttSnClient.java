@@ -18,11 +18,11 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.client.impl.MqttsnClient;
 import org.slj.mqtt.sn.client.impl.MqttsnClientRuntimeRegistry;
 import org.slj.mqtt.sn.client.impl.MqttsnClientUdpOptions;
+import org.slj.mqtt.sn.client.spi.MqttsnClientOptions;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
 import org.slj.mqtt.sn.model.IAuthHandler;
 import org.slj.mqtt.sn.model.MqttsnOptions;
@@ -41,14 +41,13 @@ import org.slj.mqtt.sn.spi.MqttsnException;
 
 public class MqttSnClient {
 
-  private static final AtomicInteger counter = new AtomicInteger(0);
   private final MqttsnClient client;
 
-  public MqttSnClient(String contextId, String host, int port, int version) throws MqttsnException {
-    this(contextId, host, port, version, null);
+  public MqttSnClient(String host, int port, int version) throws MqttsnException {
+    this( host, port, version, null);
   }
 
-  public MqttSnClient(String contextId, String host, int port, int version, IAuthHandler auth) throws MqttsnException {
+  public MqttSnClient(String host, int port, int version, IAuthHandler auth) throws MqttsnException {
 
     //-- using a default configuration for the controllers will just work out of the box, alternatively
     //-- you can supply your own implementations to change underlying storage or business logic as is required
@@ -57,20 +56,20 @@ public class MqttSnClient {
     //-- the client is Closeable and so use a try with resource
     client = new MqttsnClient();
     //-- the client needs to be started using the configuration you constructed above
-    client.start(createClientRuntimeRegistry(contextId, codecs, host, port, auth));
+    client.start(createClientRuntimeRegistry(codecs, host, port, auth));
   }
 
 
-  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(String clientId, IMqttsnCodec codecs, String host, int port,  IAuthHandler auth){
+  protected MqttsnClientRuntimeRegistry createClientRuntimeRegistry(IMqttsnCodec codecs, String host, int port,  IAuthHandler auth){
     IMqttsnStorageService storageService = new MemoryStorage();
     MqttsnUdpOptions udpOptions = new MqttsnClientUdpOptions().
         withHost(host).
         withPort(0);
 
-    MqttsnOptions options = new MqttsnOptions().
+    MqttsnOptions options = new MqttsnClientOptions().
         withNetworkAddressEntry("localhost",
             NetworkAddress.localhost(port)).
-        withContextId(clientId + "-" + ThreadLocalRandom.current().nextLong()).
+        withContextId(""+ThreadLocalRandom.current().nextLong()).
         withMaxMessagesInflight(1).
         withMaxWait(60000).
         withPredefinedTopic("predefined/topic", 1);

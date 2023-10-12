@@ -382,7 +382,7 @@
     <logback.version>1.4.7</logback.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonar.sources>src/main</sonar.sources>
-
+    <pi4j.version>2.3.0</pi4j.version>
 
     <!-- Below property indicates the pattern of the test suite -->
     <runSuite>**/*Suite.class</runSuite>
@@ -508,6 +508,12 @@
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Schemas</artifactId>
       <version>2.0.7</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>Device_Library</artifactId>
+      <version>1.0.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/tanukisoft/wrapper -->
@@ -765,6 +771,13 @@
       <artifactId>cognitoidentityprovider</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-core</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
+
+
     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
     <dependency>
       <groupId>com.amazonaws</groupId>
@@ -866,13 +879,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.eclipse.paho</groupId>
-      <artifactId>MQTT-SN-UDP-Client</artifactId>
-      <version>1.2.1-OKSE</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.slj</groupId>
       <artifactId>mqtt-sn-client</artifactId>
       <version>0.2.1</version>
@@ -886,6 +892,12 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>com.eclipse.paho</groupId>
+      <artifactId>MQTT-SN-UDP-Client</artifactId>
+      <version>1.2.1-OKSE</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>

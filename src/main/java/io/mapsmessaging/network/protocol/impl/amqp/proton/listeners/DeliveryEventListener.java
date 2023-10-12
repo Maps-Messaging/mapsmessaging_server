@@ -1,28 +1,24 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SubscribedEventManager;
-import io.mapsmessaging.api.Transaction;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.TransactionManager;
@@ -30,29 +26,21 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslatorFactory;
-import java.io.IOException;
-import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
-import org.apache.qpid.proton.amqp.transaction.Coordinator;
-import org.apache.qpid.proton.amqp.transaction.Declare;
-import org.apache.qpid.proton.amqp.transaction.Declared;
-import org.apache.qpid.proton.amqp.transaction.Discharge;
-import org.apache.qpid.proton.amqp.transaction.TransactionalState;
+import org.apache.qpid.proton.amqp.transaction.*;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.Target;
-import org.apache.qpid.proton.engine.Delivery;
-import org.apache.qpid.proton.engine.Event;
-import org.apache.qpid.proton.engine.EventType;
-import org.apache.qpid.proton.engine.Link;
-import org.apache.qpid.proton.engine.Receiver;
-import org.apache.qpid.proton.engine.Sender;
+import org.apache.qpid.proton.engine.*;
 import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
 
 public class DeliveryEventListener extends BaseEventListener {
 
