@@ -26,7 +26,6 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.inspector.TrustedTagInspector;
 import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.*;
@@ -62,7 +61,7 @@ public class InstanceConfig {
 
   public void loadState() {
     LoaderOptions options = new LoaderOptions();
-    options.setTagInspector(new TrustedTagInspector());
+    options.setTagInspector(tag -> true);
     Yaml yaml = new Yaml(new Constructor(options), new Representer(new DumperOptions()));
     FileInputStream fileInputStream = null;
     try {
