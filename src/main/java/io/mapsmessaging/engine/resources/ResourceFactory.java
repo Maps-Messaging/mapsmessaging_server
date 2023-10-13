@@ -21,7 +21,10 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.DestinationPathManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.inspector.TagInspector;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,7 +63,10 @@ public class ResourceFactory {
       return null;
     }
     try (FileInputStream fis = new FileInputStream(props)) {
-      Yaml yaml = new Yaml();
+      var loaderoptions = new LoaderOptions();
+      TagInspector taginspector = tag -> tag.getClassName().equals(io.mapsmessaging.engine.resources.ResourceProperties.class.getName());
+      loaderoptions.setTagInspector(taginspector);
+      Yaml yaml = new Yaml(new Constructor(io.mapsmessaging.engine.resources.ResourceProperties.class, loaderoptions));
       return yaml.load(fis);
     }
   }

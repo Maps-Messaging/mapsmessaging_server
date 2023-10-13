@@ -17,8 +17,7 @@
 
 package io.mapsmessaging.engine.resources;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.ToString;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -31,35 +30,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @ToString
+@Data
 public class ResourceProperties {
 
   public static final String RESOURCE_FILE_NAME = "resource.yaml";
 
-
-  @Getter
-  @Setter
   private Date date;
-  @Getter
-  @Setter
   private String resourceName;
-  @Getter
-  @Setter
   private String type;
-  @Getter
-  @Setter
   private String uuid;
-  @Getter
-  @Setter
   private String buildDate;
-  @Getter
-  @Setter
   private String buildVersion;
-  @Getter
-  @Setter
   private Map<String, Object> schema;
 
-  public ResourceProperties() {
-  }
+  public ResourceProperties() {}
 
   public ResourceProperties(Date date, String resourceName, String type, String uuid, String buildDate, String buildVersion) {
     this.date = date;
