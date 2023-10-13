@@ -22,7 +22,6 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.device.DeviceClientConnection;
 import io.mapsmessaging.device.DeviceSessionManagement;
-import io.mapsmessaging.device.handler.onewire.OneWireDeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
@@ -50,7 +49,7 @@ public abstract class BusHandler implements Runnable {
 
   public synchronized void start() {
     if(properties.getBooleanProperty("autoScan", false)) {
-      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, scanPeriod, scanPeriod, TimeUnit.MILLISECONDS);
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 5000, scanPeriod, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -77,7 +76,7 @@ public abstract class BusHandler implements Runnable {
     return builder.build();
   }
 
-  private DeviceSessionManagement createSession(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
+  private DeviceSessionManagement createSession(DeviceHandler deviceHandler) {
     DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler);
     SessionContext context = createContext(deviceHandler);
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceSessionManagement);
@@ -99,7 +98,10 @@ public abstract class BusHandler implements Runnable {
   public void deviceDetected(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
     DeviceSessionManagement deviceSessionManagement = createSession(deviceHandler);
     activeSessions.put(deviceSessionManagement.getName(), deviceSessionManagement);
+    deviceSessionManagement.start();
   }
+
+  protected abstract DeviceHandler createDeviceHander(DeviceController controller);
 
   protected abstract  Map<String, DeviceController> scan();
 
@@ -110,7 +112,7 @@ public abstract class BusHandler implements Runnable {
     for (Map.Entry<String, DeviceController> entry : map.entrySet()) {
       if (!foundDevices.containsKey(entry.getKey())) {
         // Found new device
-        DeviceHandler handler = new OneWireDeviceHandler(entry.getValue());
+        DeviceHandler handler = createDeviceHander(entry.getValue());
         foundDevices.put(entry.getKey(), handler);
         deviceDetected(handler);
       }

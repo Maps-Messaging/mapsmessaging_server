@@ -15,38 +15,34 @@
  *
  */
 
-package io.mapsmessaging.device.handler.i2c;
+package io.mapsmessaging.device.handler.demo;
 
 import io.mapsmessaging.device.handler.BusHandler;
 import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
-import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class I2CBusHandler extends BusHandler {
+public class DemoBusHandler extends BusHandler {
 
-  private final I2CBusManager i2CBusManager;
+  private DeviceController demoDevice;
 
-  public I2CBusHandler(I2CBusManager i2CBusManager, ConfigurationProperties properties){
+  public DemoBusHandler( ConfigurationProperties properties){
     super(properties);
-    this.i2CBusManager = i2CBusManager;
-  }
-
-  @Override
-  protected DeviceHandler createDeviceHander(DeviceController controller) {
-    return new I2CDeviceHandler(controller);
+    demoDevice = new DemoDeviceController();
   }
 
   @Override
   protected Map<String, DeviceController> scan() {
-    try {
-      i2CBusManager.scanForDevices(10);
-    } catch (InterruptedException e) {
-      //
-    }
-    return i2CBusManager.getActive();
+    Map<String, DeviceController> active = new LinkedHashMap<>();
+    active.put("demo", demoDevice);
+    return active;
+  }
+  @Override
+  protected DeviceHandler createDeviceHander(DeviceController controller) {
+    return new DemoDeviceHandler(controller);
   }
 
 }

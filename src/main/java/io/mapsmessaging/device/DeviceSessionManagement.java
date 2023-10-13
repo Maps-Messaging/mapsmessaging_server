@@ -55,6 +55,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     if(device.getController().getType() == DeviceType.SENSOR){
       scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 1, 30, TimeUnit.SECONDS);
     }
+
   }
 
   public void stop() throws IOException {

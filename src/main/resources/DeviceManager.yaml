@@ -37,20 +37,25 @@ DeviceManager:
 
         -
           bus: 1
-          enabled: true
+          enabled: false
           autoScan: true
           topicMap: /device/[bus_name]/1/[device_name]
 
     -
       name: oneWire
-      enabled: true  # enable / disable one wire interface
+      enabled: false  # enable / disable one wire interface
       autoScan: true
 
+    -
+      name: demo
+      enabled: true
+      autoScan: true
+      topicName: /device/demo/time
 
     -
       # Note: each SPI device needs to be defined, there is no generic way to scan for SPI devices
       name: spi
-      enabled: true # enable / disable SPI interface
+      enabled: false # enable / disable SPI interface
       config:
         -
           name: Mcp3y0x

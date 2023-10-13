@@ -18,6 +18,7 @@
 package io.mapsmessaging.device;
 
 import io.mapsmessaging.device.handler.BusHandler;
+import io.mapsmessaging.device.handler.demo.DemoBusHandler;
 import io.mapsmessaging.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.devices.DeviceBusManager;
@@ -78,6 +79,12 @@ public class DeviceManager implements ServiceManager, Agent {
             deviceConfig.getBooleanProperty("enabled", false)) {
           busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager(), deviceConfig));
         }
+
+        if (deviceConfig.containsKey("name") &&
+            deviceConfig.getProperty("name").equalsIgnoreCase("demo") &&
+            deviceConfig.getBooleanProperty("enabled", false)) {
+          busHandlers.add(new DemoBusHandler(deviceConfig));
+        }
       }
       logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
     }
@@ -88,14 +95,17 @@ public class DeviceManager implements ServiceManager, Agent {
     if (configList instanceof List) {
       for (Object busConfigObj : (List) configList) {
         if (busConfigObj instanceof ConfigurationProperties) {
-          ConfigurationProperties busConfig = (ConfigurationProperties) busConfigObj;
-          for (int x = 0; x < deviceBusManager.getI2cBusManager().length; x++) {
-            if (busConfig.getIntProperty("bus", -1) == x && busConfig.getBooleanProperty("enabled", false)) {
-              I2CBusManager busManager = deviceBusManager.getI2cBusManager()[x];
-              busHandlers.add(new I2CBusHandler(busManager, busConfig));
-            }
-          }
+          configureI2CConfig((ConfigurationProperties) busConfigObj);
         }
+      }
+    }
+  }
+
+  private void configureI2CConfig(ConfigurationProperties busConfig){
+    for (int x = 0; x < deviceBusManager.getI2cBusManager().length; x++) {
+      if (busConfig.getIntProperty("bus", -1) == x && busConfig.getBooleanProperty("enabled", false)) {
+        I2CBusManager busManager = deviceBusManager.getI2cBusManager()[x];
+        busHandlers.add(new I2CBusHandler(busManager, busConfig));
       }
     }
   }
