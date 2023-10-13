@@ -25,30 +25,21 @@ import io.mapsmessaging.device.DeviceSessionManagement;
 import io.mapsmessaging.device.handler.onewire.OneWireDeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.engine.session.SessionContext;
-import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.*;
 
 public abstract class BusHandler implements Runnable {
-  private final AtomicLong ID_GENERATOR = new AtomicLong(0);
-
-
   private final Map<String, DeviceSessionManagement> activeSessions;
   private final Map<String, DeviceHandler> foundDevices;
   protected final ConfigurationProperties properties;
   private final int scanPeriod;
   private Future<?> scheduledFuture;
-  private Session session;
-  private ProtocolMessageTransformation transformation;
 
   protected BusHandler(ConfigurationProperties properties){
     foundDevices = new ConcurrentHashMap<>();
@@ -76,7 +67,7 @@ public abstract class BusHandler implements Runnable {
   }
 
   private SessionContext createContext(DeviceHandler deviceHandler){
-    SessionContextBuilder builder = new SessionContextBuilder(deviceHandler.getBusName()+"_"+deviceHandler.getName()+ID_GENERATOR.get(), new DeviceClientConnection(deviceHandler));
+    SessionContextBuilder builder = new SessionContextBuilder(deviceHandler.getBusName()+"_"+deviceHandler.getName(), new DeviceClientConnection(deviceHandler));
     builder.setPersistentSession(false)
     .setKeepAlive(0)
     .setResetState(true)
@@ -86,14 +77,14 @@ public abstract class BusHandler implements Runnable {
     return builder.build();
   }
 
-  private Session createSession(DeviceHandler deviceHandler){
+  private Session createSession(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
     SessionContext context = createContext(deviceHandler);
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceHandler);
     future.thenApply(session -> {
       try {
-        this.session = session;
         session.login();
-        transformation = (TransformationManager.getInstance().getTransformation(deviceHandler.getName(), session.getSecurityContext().getUsername()));
+        deviceHandler.setSession(session);
+        deviceHandler.setTransformation((TransformationManager.getInstance().getTransformation(deviceHandler.getName(), session.getSecurityContext().getUsername())));
         return session;
       }
       catch(IOException failedLogin){
@@ -101,21 +92,18 @@ public abstract class BusHandler implements Runnable {
       }
       return session;
     });
-    try {
-      future.wait();
-    } catch (InterruptedException e) {
-      // toDo
-    }
-    return session;
+    return future.get();
   }
 
-  public void deviceDetected(DeviceHandler deviceHandler){
-    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, createSession(deviceHandler));
+  public void deviceDetected(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
+    createSession(deviceHandler);
+    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, deviceHandler.getSession());
     activeSessions.put(deviceSessionManagement.getName(), deviceSessionManagement);
   }
 
   protected abstract  Map<String, DeviceController> scan();
 
+  @SneakyThrows
   @Override
   public void run() {
     Map<String, DeviceController> map = scan();

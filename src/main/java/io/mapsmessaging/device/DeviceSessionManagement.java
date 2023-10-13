@@ -17,10 +17,20 @@
 
 package io.mapsmessaging.device;
 
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.device.handler.DeviceHandler;
 
-public class DeviceSessionManagement {
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+public class DeviceSessionManagement implements Runnable {
 
   private final DeviceHandler device;
   private final Session session;
@@ -30,9 +40,34 @@ public class DeviceSessionManagement {
     this.session = session;
   }
 
-
   public String getName() {
     return device.getName();
   }
 
+  private Message buildMessage() throws IOException {
+    Map<String, String> meta = new LinkedHashMap<>();
+    meta.put("bus", device.getBusName());
+    meta.put("version", device.getVersion());
+    meta.put("device", device.getName());
+    MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setOpaqueData(device.getData());
+    messageBuilder.setTransformation(device.getTransformation());
+    messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
+    messageBuilder.setMeta(meta);
+    return messageBuilder.build();
+  }
+
+  @Override
+  public void run() {
+    try {
+      Destination destination = session.findDestination("/device", DestinationType.TOPIC).get();
+      destination.storeMessage(buildMessage());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

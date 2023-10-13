@@ -23,27 +23,15 @@ import io.mapsmessaging.devices.DeviceController;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class I2CDeviceHandler implements DeviceHandler {
-
-  private final DeviceController deviceController;
+public class I2CDeviceHandler extends DeviceHandler {
 
   public I2CDeviceHandler(DeviceController deviceController){
-    this.deviceController = deviceController;
+    super(deviceController);
   }
 
   @Override
   public String getBusName() {
     return "i2c";
-  }
-
-  @Override
-  public String getName() {
-    return deviceController.getName();
-  }
-
-  @Override
-  public String getVersion() {
-    return "1.0";
   }
 
   @Override

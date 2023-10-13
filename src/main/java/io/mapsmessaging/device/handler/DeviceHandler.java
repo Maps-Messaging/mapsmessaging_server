@@ -18,12 +18,41 @@
 package io.mapsmessaging.device.handler;
 
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import lombok.Getter;
+import lombok.Setter;
 
-public interface DeviceHandler extends MessageListener {
-  
-  String getBusName();
+import java.io.IOException;
 
-  String getName();
+public abstract class DeviceHandler implements MessageListener {
 
-  String getVersion();
+  private final DeviceController controller;
+  @Getter
+  @Setter
+  private Session session;
+
+  @Getter
+  @Setter
+  private ProtocolMessageTransformation transformation;
+
+  protected DeviceHandler(DeviceController controller){
+    this.controller = controller;
+  }
+
+  public abstract String getBusName();
+
+  public String getName(){
+    return controller.getName();
+  }
+
+  public String getVersion(){
+    return "1.0";
+  }
+
+  public byte[] getData() throws IOException {
+    return controller.getDeviceState();
+  }
+
 }

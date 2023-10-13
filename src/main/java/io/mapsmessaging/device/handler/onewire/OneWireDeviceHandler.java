@@ -23,27 +23,15 @@ import io.mapsmessaging.devices.DeviceController;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class OneWireDeviceHandler implements DeviceHandler {
-
-  private final DeviceController deviceController;
+public class OneWireDeviceHandler extends DeviceHandler {
 
   public OneWireDeviceHandler(DeviceController deviceController){
-    this.deviceController = deviceController;
+    super(deviceController);
   }
 
   @Override
   public String getBusName() {
     return "oneWire";
-  }
-
-  @Override
-  public String getName() {
-    return deviceController.getName();
-  }
-
-  @Override
-  public String getVersion() {
-    return "1.0";
   }
 
   @Override

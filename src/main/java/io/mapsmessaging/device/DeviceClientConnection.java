@@ -54,12 +54,12 @@ public class DeviceClientConnection implements ClientConnection {
 
   @Override
   public Principal getPrincipal() {
-    return null;
+    return () -> deviceHandler.getName();
   }
 
   @Override
   public String getAuthenticationConfig() {
-    return null;
+    return "";
   }
 
   @Override
