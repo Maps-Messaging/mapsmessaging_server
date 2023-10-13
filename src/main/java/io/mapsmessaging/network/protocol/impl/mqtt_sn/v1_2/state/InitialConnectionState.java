@@ -19,6 +19,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -44,7 +45,7 @@ public class InitialConnectionState implements State {
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       Connect connect = (Connect) mqtt;
-      SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), protocol);
+      SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
       scb.setPersistentSession(true);
       scb.setResetState(connect.clean());
       scb.setKeepAlive(connect.getDuration());

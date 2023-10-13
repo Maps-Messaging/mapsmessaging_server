@@ -19,6 +19,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -35,13 +36,14 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Pack
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslException;
 
 /**
  * Protocol dictates that we need to a) Receive a Connect packet b) Respond with a Will Topic Request c) Receive a Will Topic Response d) Respond with a Will Message Request e)
@@ -70,7 +72,7 @@ public class InitialConnectionState implements State {
       }
 
       stateEngine.setMaxBufferSize(connect.getMaxPacketSize());
-      SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), protocol);
+      SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
       scb.setPersistentSession(true);
       scb.setResetState(connect.isCleanStart());
       scb.setKeepAlive(connect.getKeepAlive());

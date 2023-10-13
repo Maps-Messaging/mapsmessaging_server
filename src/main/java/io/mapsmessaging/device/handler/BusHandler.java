@@ -17,25 +17,42 @@
 
 package io.mapsmessaging.device.handler;
 
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.device.DeviceClientConnection;
+import io.mapsmessaging.device.DeviceSessionManagement;
 import io.mapsmessaging.device.handler.onewire.OneWireDeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.engine.session.SessionContext;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class BusHandler implements Runnable {
+  private final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
+
+  private final Map<String, DeviceSessionManagement> activeSessions;
   private final Map<String, DeviceHandler> foundDevices;
   protected final ConfigurationProperties properties;
   private final int scanPeriod;
   private Future<?> scheduledFuture;
+  private Session session;
+  private ProtocolMessageTransformation transformation;
 
   protected BusHandler(ConfigurationProperties properties){
     foundDevices = new ConcurrentHashMap<>();
+    activeSessions = new ConcurrentHashMap<>();
     this.properties = properties;
     scanPeriod = properties.getIntProperty("scanTime", 120000);
   }
@@ -58,7 +75,44 @@ public abstract class BusHandler implements Runnable {
   public void resume() {
   }
 
-  public abstract void deviceDetected(DeviceHandler deviceHandler);
+  private SessionContext createContext(DeviceHandler deviceHandler){
+    SessionContextBuilder builder = new SessionContextBuilder(deviceHandler.getBusName()+"_"+deviceHandler.getName()+ID_GENERATOR.get(), new DeviceClientConnection(deviceHandler));
+    builder.setPersistentSession(false)
+    .setKeepAlive(0)
+    .setResetState(true)
+    .setUsername("anonymous")
+    .setPassword(new char[0])
+    .setReceiveMaximum(10);
+    return builder.build();
+  }
+
+  private Session createSession(DeviceHandler deviceHandler){
+    SessionContext context = createContext(deviceHandler);
+    CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceHandler);
+    future.thenApply(session -> {
+      try {
+        this.session = session;
+        session.login();
+        transformation = (TransformationManager.getInstance().getTransformation(deviceHandler.getName(), session.getSecurityContext().getUsername()));
+        return session;
+      }
+      catch(IOException failedLogin){
+        // To Do
+      }
+      return session;
+    });
+    try {
+      future.wait();
+    } catch (InterruptedException e) {
+      // toDo
+    }
+    return session;
+  }
+
+  public void deviceDetected(DeviceHandler deviceHandler){
+    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, createSession(deviceHandler));
+    activeSessions.put(deviceSessionManagement.getName(), deviceSessionManagement);
+  }
 
   protected abstract  Map<String, DeviceController> scan();
 

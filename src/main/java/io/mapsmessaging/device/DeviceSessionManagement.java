@@ -15,39 +15,24 @@
  *
  */
 
-package io.mapsmessaging.device.handler.onewire;
+package io.mapsmessaging.device;
 
-import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.device.handler.DeviceHandler;
-import io.mapsmessaging.devices.DeviceController;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
-public class OneWireDeviceHandler implements DeviceHandler {
+public class DeviceSessionManagement {
 
-  private final DeviceController deviceController;
+  private final DeviceHandler device;
+  private final Session session;
 
-  public OneWireDeviceHandler(DeviceController deviceController){
-    this.deviceController = deviceController;
+  public DeviceSessionManagement(DeviceHandler deviceHandler, Session session){
+    this.device = deviceHandler;
+    this.session = session;
   }
 
-  @Override
-  public String getBusName() {
-    return "oneWire";
-  }
 
-  @Override
   public String getName() {
-    return deviceController.getName();
+    return device.getName();
   }
 
-  @Override
-  public String getVersion() {
-    return "1.0";
-  }
-
-  @Override
-  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-
-  }
 }

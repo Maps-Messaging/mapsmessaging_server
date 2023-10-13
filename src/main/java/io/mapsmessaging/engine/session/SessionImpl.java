@@ -34,8 +34,8 @@ import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -48,17 +48,21 @@ import java.util.concurrent.*;
 public class SessionImpl {
 
   protected final Logger logger;
-  private final SecurityContext securityContext;
   private final SessionContext context;
   private final Future<?> scheduledFuture;
   private final SubscriptionController subscriptionManager;
   private final DestinationFactory destinationManager;
   private final NamespaceMap namespaceMapping;
   private final ClosureTaskManager closureTaskManager;
-
-  private WillTaskImpl willTaskImpl;
-  private MessageCallback messageCallback;
   private boolean isClosed;
+
+  @Getter
+  private final SecurityContext securityContext;
+  @Getter
+  private WillTaskImpl willTaskImpl;
+  @Getter
+  private MessageCallback messageCallback;
+  @Getter
   private long expiry;
 
   //<editor-fold desc="Life cycle API">
@@ -82,9 +86,9 @@ public class SessionImpl {
     //
     // Schedule a keep alive
     //
-    if (context.getProtocol().getTimeOut() != 0) {
-      long ka = context.getProtocol().getTimeOut() + 5000L; // allow 5 seconds more
-      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new KeepAliveTask(context.getProtocol()), ka, ka, TimeUnit.MILLISECONDS);
+    if (context.getClientConnection().getTimeOut() != 0) {
+      long ka = context.getClientConnection().getTimeOut() + 5000L; // allow 5 seconds more
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new KeepAliveTask(context.getClientConnection()), ka, ka, TimeUnit.MILLISECONDS);
       logger.log(ServerLogMessages.SESSION_MANAGER_KEEP_ALIVE_TASK);
     } else {
       scheduledFuture = null;
@@ -120,13 +124,9 @@ public class SessionImpl {
 
   public void login() throws IOException {
     securityContext.login();
-    ((SessionDestinationManager) destinationManager).setSessionTenantConfig(TenantManagement.build(context.getProtocol(), securityContext));
+    ((SessionDestinationManager) destinationManager).setSessionTenantConfig(TenantManagement.build(context.getClientConnection(), securityContext));
     // Only do this once the connection has be authenticated
     this.willTaskImpl = createWill(context);
-  }
-
-  public SecurityContext getSecurityContext() {
-    return securityContext;
   }
 
   //</editor-fold>
@@ -197,10 +197,6 @@ public class SessionImpl {
     return future;
   }
 
-  public MessageCallback getMessageCallback() {
-    return messageCallback;
-  }
-
   public void setMessageCallback(MessageCallback messageCallback) {
     this.messageCallback = messageCallback;
   }
@@ -216,8 +212,8 @@ public class SessionImpl {
     return context.getId();
   }
 
-  public ProtocolImpl getProtocol() {
-    return context.getProtocol();
+  public ClientConnection getClientConnection() {
+    return context.getClientConnection();
   }
 
   public boolean isClosed() {
@@ -232,16 +228,8 @@ public class SessionImpl {
     this.expiry = expiry;
   }
 
-  public long getExpiry() {
-    return expiry;
-  }
-
   public int getReceiveMaximum() {
     return context.getReceiveMaximum();
-  }
-
-  public WillTaskImpl getWillTaskImpl() {
-    return willTaskImpl;
   }
 
   public WillTaskImpl setWillTask(WillDetails willDetails) {
@@ -338,8 +326,8 @@ public class SessionImpl {
               willTopicName,
               sessionContext.getWillDelay(),
               sessionContext.getId(),
-              sessionContext.getProtocol().getName(),
-              sessionContext.getProtocol().getVersion());
+              sessionContext.getClientConnection().getName(),
+              sessionContext.getClientConnection().getVersion());
       logger.log(ServerLogMessages.SESSION_MANAGER_WILL_TASK, sessionContext.getId(), willDetails.toString());
       return this.setWillTask(willDetails);
     }

@@ -18,8 +18,8 @@
 package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.SessionContext;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
 import lombok.Getter;
 import lombok.NonNull;
@@ -34,7 +34,7 @@ import java.util.Map;
 public class SessionContextBuilder {
 
   private final String id;
-  private final ProtocolImpl protocol;
+  private final ClientConnection clientConnection;
   private final Map<String, String> userData;
   private String username;
   private char[] password;
@@ -48,9 +48,9 @@ public class SessionContextBuilder {
   private int duration;
   private boolean authorized;
 
-  public SessionContextBuilder(@NonNull @NotNull String id, @NonNull @NotNull ProtocolImpl protocol) {
+  public SessionContextBuilder(@NonNull @NotNull String id, @NonNull @NotNull ClientConnection clientConnection) {
     this.id = id;
-    this.protocol = protocol;
+    this.clientConnection = clientConnection;
     userData = new LinkedHashMap<>();
     authorized = false;
     username = null;
@@ -125,7 +125,7 @@ public class SessionContextBuilder {
   }
 
   public SessionContext build() {
-    SessionContext sc = new SessionContext(id, protocol);
+    SessionContext sc = new SessionContext(id, clientConnection);
     sc.setUsername(username);
     sc.setPassword(password);
     sc.setWillTopic(willTopic);

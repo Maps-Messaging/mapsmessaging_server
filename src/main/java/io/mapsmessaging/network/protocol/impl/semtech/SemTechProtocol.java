@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
@@ -65,7 +66,7 @@ public class SemTechProtocol extends ProtocolImpl {
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
 
     int maxQueued = endPoint.getConfig().getProperties().getIntProperty("MaxQueueSize", 10);
-    SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), this);
+    SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), new ProtocolClientConnection(this));
     sessionContext.setPersistentSession(false);
     sessionContext.setResetState(true);
     sessionContext.setReceiveMaximum(maxQueued);

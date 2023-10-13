@@ -15,15 +15,23 @@
  *
  */
 
-package io.mapsmessaging.utilities;
+package io.mapsmessaging.engine.session;
 
-public interface Agent {
+import java.security.Principal;
+
+public interface ClientConnection {
+  
+  long getTimeOut();
 
   String getName();
 
-  String getDescription();
+  String getVersion();
 
-  void start();
+  void sendKeepAlive();
 
-  void stop();
+  Principal getPrincipal();
+
+  String getAuthenticationConfig();
+
+  String getUniqueName();
 }

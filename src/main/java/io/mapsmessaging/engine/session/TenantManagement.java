@@ -21,16 +21,16 @@ import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 public class TenantManagement {
 
@@ -39,8 +39,8 @@ public class TenantManagement {
   private static final String PROTOCOL_TOKEN = "{protocol}";
   private static final TenantManagement instance = new TenantManagement();
 
-  public static SessionTenantConfig build(ProtocolImpl protocol, SecurityContext securityContext) {
-    return instance.create(protocol, securityContext);
+  public static SessionTenantConfig build(ClientConnection clientConnection, SecurityContext securityContext) {
+    return instance.create(clientConnection, securityContext);
   }
 
 
@@ -66,7 +66,7 @@ public class TenantManagement {
     mappers.add(new ProtocolMapper());
   }
 
-  private @NotNull @NonNull SessionTenantConfig create(ProtocolImpl protocol, SecurityContext securityContext) {
+  private @NotNull @NonNull SessionTenantConfig create(ClientConnection clientConnection, SecurityContext securityContext) {
     //
     // The username is the key to the configuration, once we have that we can
     // do a look-up based on the username, if not found then we can look for the "default" value
@@ -80,7 +80,7 @@ public class TenantManagement {
     String tenantPath = configurationLookup(username);
 
     for (NamespaceMapper mapper : mappers) {
-      tenantPath = mapper.reMap(tenantPath, protocol, securityContext);
+      tenantPath = mapper.reMap(tenantPath, clientConnection, securityContext);
     }
     logger.log(ServerLogMessages.NAMESPACE_MAPPING, username, tenantPath);
     if (tenantPath.length() > 1 && !tenantPath.endsWith("/")) {
@@ -125,12 +125,12 @@ public class TenantManagement {
       this.lookupString = lookupString;
     }
 
-    public String reMap(String namespace, ProtocolImpl protocol, SecurityContext securityContext) {
-      String response = namespace.replace(lookupString, getData(protocol, securityContext));
+    public String reMap(String namespace, ClientConnection clientConnection, SecurityContext securityContext) {
+      String response = namespace.replace(lookupString, getData(clientConnection, securityContext));
       return response.replace("\"", ""); // Remove any "
     }
 
-    protected abstract String getData(ProtocolImpl protocol, SecurityContext securityContext);
+    protected abstract String getData(ClientConnection clientConnection, SecurityContext securityContext);
   }
 
   private static class UsernameMapper extends NamespaceMapper {
@@ -140,7 +140,7 @@ public class TenantManagement {
     }
 
     @Override
-    protected String getData(ProtocolImpl protocol, SecurityContext securityContext) {
+    protected String getData(ClientConnection clientConnection, SecurityContext securityContext) {
       String user = securityContext.getUsername();
       if (user == null) {
         user = "anonymous";
@@ -156,8 +156,8 @@ public class TenantManagement {
     }
 
     @Override
-    protected String getData(ProtocolImpl protocol, SecurityContext securityContext) {
-      return protocol.getName();
+    protected String getData(ClientConnection clientConnection, SecurityContext securityContext) {
+      return clientConnection.getName();
     }
   }
 

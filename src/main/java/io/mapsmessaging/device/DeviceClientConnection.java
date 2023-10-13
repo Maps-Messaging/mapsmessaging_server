@@ -15,39 +15,55 @@
  *
  */
 
-package io.mapsmessaging.device.handler.onewire;
+package io.mapsmessaging.device;
 
-import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.device.handler.DeviceHandler;
-import io.mapsmessaging.devices.DeviceController;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+import io.mapsmessaging.engine.session.ClientConnection;
+import lombok.Getter;
 
-public class OneWireDeviceHandler implements DeviceHandler {
+import java.security.Principal;
 
-  private final DeviceController deviceController;
+public class DeviceClientConnection implements ClientConnection {
 
-  public OneWireDeviceHandler(DeviceController deviceController){
-    this.deviceController = deviceController;
+  @Getter
+  private final DeviceHandler deviceHandler;
+
+  public DeviceClientConnection(DeviceHandler deviceHandler){
+    this.deviceHandler = deviceHandler;
   }
 
   @Override
-  public String getBusName() {
-    return "oneWire";
+  public long getTimeOut() {
+    return 0;
   }
 
   @Override
   public String getName() {
-    return deviceController.getName();
+    return deviceHandler.getBusName();
   }
 
   @Override
   public String getVersion() {
-    return "1.0";
+    return deviceHandler.getVersion();
   }
 
   @Override
-  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+  public void sendKeepAlive() {
+    // No keep alive required
+  }
 
+  @Override
+  public Principal getPrincipal() {
+    return null;
+  }
+
+  @Override
+  public String getAuthenticationConfig() {
+    return null;
+  }
+
+  @Override
+  public String getUniqueName() {
+    return deviceHandler.getName();
   }
 }

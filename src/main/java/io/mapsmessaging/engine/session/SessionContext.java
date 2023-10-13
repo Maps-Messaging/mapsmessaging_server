@@ -18,7 +18,6 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import lombok.Data;
 import lombok.ToString;
 
@@ -39,7 +38,7 @@ public class SessionContext {
 
   // <editor-fold desc="These are volatile fields and must not be persisted since they change at run
   // time">
-  private final ProtocolImpl protocol;
+  private final ClientConnection clientConnection;
   private boolean authorized;
   private String username;
   private char[] password;
@@ -50,9 +49,9 @@ public class SessionContext {
   private boolean persistentSession;
   // </editor-fold>
 
-  public SessionContext(String id, ProtocolImpl protocol) {
+  public SessionContext(String id, ClientConnection clientConnection) {
     this.id = id;
-    this.protocol = protocol;
+    this.clientConnection = clientConnection;
     expiry = -1;
     receiveMaximum = (1 << 16) - 1;
     isRestored = false;

@@ -1,49 +1,42 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.api.subscriptions;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageAPITest;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.MessageListener;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.api.SubscribedEventManager;
-import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 class SelectorTest extends MessageAPITest implements MessageListener {
 
@@ -54,14 +47,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   void topicTrueSelectorTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new FakeProtocolImpl(this));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new FakeProtocolImpl(this));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about
@@ -118,14 +111,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   public void topicSelectorDisconnectTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new FakeProtocolImpl(this));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new FakeProtocolImpl(this));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about
@@ -185,14 +178,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   public void topicSelectorUnsubscribeTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new FakeProtocolImpl(this));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new FakeProtocolImpl(this));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about
@@ -247,14 +240,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   public void topicSelectorOverlappedUnsubscribeTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new FakeProtocolImpl(this));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new FakeProtocolImpl(this));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about

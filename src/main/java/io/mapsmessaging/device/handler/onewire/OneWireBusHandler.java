@@ -18,7 +18,6 @@
 package io.mapsmessaging.device.handler.onewire;
 
 import io.mapsmessaging.device.handler.BusHandler;
-import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.onewire.OneWireBusManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -32,11 +31,6 @@ public class OneWireBusHandler extends BusHandler {
   public OneWireBusHandler(OneWireBusManager oneWireBusManager, ConfigurationProperties properties) {
     super(properties);
     this.oneWireBusManager = oneWireBusManager;
-  }
-
-  @Override
-  public void deviceDetected(DeviceHandler deviceHandler) {
-
   }
 
   @Override

@@ -25,6 +25,7 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
@@ -109,7 +110,7 @@ public class CoapProtocol extends ProtocolImpl {
 
     String sessionName = socketAddress.toString();
     sessionName = sessionName.replace(":", "_");
-    SessionContext context = new SessionContext(sessionName, this);
+    SessionContext context = new SessionContext(sessionName, new ProtocolClientConnection(this));
     context.setPersistentSession(false);
     context.setReceiveMaximum(5);
     session = SessionManager.getInstance().create(context, this);

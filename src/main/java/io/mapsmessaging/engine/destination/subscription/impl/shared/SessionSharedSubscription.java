@@ -24,9 +24,9 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.impl.MessageDeliveryCompletionTask;
 import io.mapsmessaging.engine.destination.subscription.tasks.SharedSubscriptionTask;
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
+import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.ThreadContext;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -186,15 +186,11 @@ public class SessionSharedSubscription extends Subscription {
     String name = "";
     String endpoint = "";
     String version = "";
-    ProtocolImpl protocol = sessionImpl.getProtocol();
-    if (protocol != null) {
-      name = protocol.getName();
-      if (protocol.getEndPoint() != null) {
-        endpoint = protocol.getEndPoint().getName();
-      } else {
-        endpoint = "";
-      }
-      version = protocol.getVersion();
+    ClientConnection clientConnection = sessionImpl.getClientConnection();
+    if (clientConnection != null) {
+      name = clientConnection.getName();
+      endpoint = clientConnection.getUniqueName();
+      version = clientConnection.getVersion();
     }
     ThreadContext.put("session", sessionImpl.getName());
     ThreadContext.put("protocol", name);

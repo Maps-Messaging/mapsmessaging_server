@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.stomp.listener;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.impl.stomp.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
@@ -65,7 +66,7 @@ public class ConnectedListener extends BaseConnectListener {
   }
 
   private CompletableFuture<Session> createSession(StateEngine engine) {
-    SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), engine.getProtocol());
+    SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), new ProtocolClientConnection(engine.getProtocol()));
     scb.setPersistentSession(false);
     scb.setKeepAlive(120);
     scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);

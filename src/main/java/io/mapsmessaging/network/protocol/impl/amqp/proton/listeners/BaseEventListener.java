@@ -22,6 +22,7 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -80,7 +81,7 @@ public abstract class BaseEventListener implements EventListener {
     String sessionId = parseSessionId(connection.getRemoteContainer());
     io.mapsmessaging.network.protocol.impl.amqp.SessionManager sessionManager = protocol.getSession(sessionId);
     if (sessionManager == null) {
-      SessionContextBuilder contextBuilder = new SessionContextBuilder(sessionId, protocol);
+      SessionContextBuilder contextBuilder = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
       contextBuilder.setKeepAlive(60)
           .setPersistentSession(true)
           .setSessionExpiry(600)

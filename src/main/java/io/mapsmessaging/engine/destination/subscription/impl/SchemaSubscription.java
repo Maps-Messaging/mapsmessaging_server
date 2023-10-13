@@ -22,10 +22,10 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.ThreadContext;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 
 import java.io.IOException;
@@ -152,15 +152,11 @@ public class SchemaSubscription extends Subscription {
     String endpoint = "";
     String version = "";
     MessageCallback callback = session.getMessageCallback();
-    ProtocolImpl protocol = session.getProtocol();
-    if (protocol != null) {
-      name = protocol.getName();
-      if (protocol.getEndPoint() != null) {
-        endpoint = protocol.getEndPoint().getName();
-      } else {
-        endpoint = "";
-      }
-      version = protocol.getVersion();
+    ClientConnection clientConnection = session.getClientConnection();
+    if (clientConnection != null) {
+      name = clientConnection.getName();
+      endpoint = clientConnection.getUniqueName();
+      version = clientConnection.getVersion();
     }
     ThreadContext.put("protocol", name);
     ThreadContext.put("endpoint", endpoint);

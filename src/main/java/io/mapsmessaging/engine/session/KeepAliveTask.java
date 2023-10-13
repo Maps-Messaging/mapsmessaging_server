@@ -17,18 +17,16 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.network.protocol.ProtocolImpl;
-
 public class KeepAliveTask implements Runnable {
 
-  private final ProtocolImpl protocol;
+  private final ClientConnection clientConnection;
 
-  KeepAliveTask(ProtocolImpl protocol) {
-    this.protocol = protocol;
+  KeepAliveTask(ClientConnection clientConnection) {
+    this.clientConnection = clientConnection;
   }
 
   @Override
   public void run() {
-    protocol.sendKeepAlive();
+    clientConnection.sendKeepAlive();
   }
 }

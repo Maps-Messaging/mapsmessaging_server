@@ -17,8 +17,6 @@
 
 package io.mapsmessaging.engine.session;
 
-import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
-
 import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
 import io.mapsmessaging.engine.session.security.JaasSecurityContext;
 import io.mapsmessaging.engine.session.security.SaslSecurityContext;
@@ -26,19 +24,21 @@ import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.security.MapsSecurityProvider;
 import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import java.security.Principal;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.security.Principal;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
 
 public class SecurityManager implements Agent {
 
@@ -56,9 +56,9 @@ public class SecurityManager implements Agent {
   public SecurityContext getSecurityContext(SessionContext sessionContext) throws LoginException {
     String username = sessionContext.getUsername();
     char[] passCode = sessionContext.getPassword();
-    ProtocolImpl protocol = sessionContext.getProtocol();
-    String defined = getAuthenticationName(protocol);
-    Principal endPointPrincipal = protocol.getEndPoint().getEndPointPrincipal();
+    ClientConnection clientConnection = sessionContext.getClientConnection();
+    String defined = getAuthenticationName(clientConnection);
+    Principal endPointPrincipal = clientConnection.getPrincipal();
     SecurityContext context;
     if(sessionContext.isAuthorized()){
       username = sessionContext.getUsername();
@@ -79,9 +79,9 @@ public class SecurityManager implements Agent {
     return new LoginContext(definedAuth, new LocalCallbackHandler(username, passCode, endPointPrincipal));
   }
 
-  public String getAuthenticationName(ProtocolImpl protocol) {
-    String authConfig = protocol.getEndPoint().getAuthenticationConfig();
-    if (authConfig != null && authConfig.length() > 0) {
+  public String getAuthenticationName(ClientConnection clientConnection) {
+    String authConfig = clientConnection.getAuthenticationConfig();
+    if (authConfig != null && !authConfig.isEmpty()) {
       return properties.getProperty(authConfig);
     } else {
       return properties.getProperty("default");
@@ -100,12 +100,12 @@ public class SecurityManager implements Agent {
 
   @Override
   public void start() {
-
+    // No Action required
   }
 
   @Override
   public void stop() {
-
+    // No Action required
   }
 
   private static class LocalCallbackHandler implements CallbackHandler {

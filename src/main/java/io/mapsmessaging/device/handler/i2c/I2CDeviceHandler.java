@@ -17,8 +17,11 @@
 
 package io.mapsmessaging.device.handler.i2c;
 
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class I2CDeviceHandler implements DeviceHandler {
 
@@ -26,5 +29,25 @@ public class I2CDeviceHandler implements DeviceHandler {
 
   public I2CDeviceHandler(DeviceController deviceController){
     this.deviceController = deviceController;
+  }
+
+  @Override
+  public String getBusName() {
+    return "i2c";
+  }
+
+  @Override
+  public String getName() {
+    return deviceController.getName();
+  }
+
+  @Override
+  public String getVersion() {
+    return "1.0";
+  }
+
+  @Override
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+
   }
 }

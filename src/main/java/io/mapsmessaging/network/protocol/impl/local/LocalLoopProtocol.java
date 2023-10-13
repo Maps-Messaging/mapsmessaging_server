@@ -24,6 +24,7 @@ import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
@@ -88,7 +89,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
 
   @Override
   public void connect(String sessionId, String username, String password) throws IOException {
-    SessionContextBuilder scb = new SessionContextBuilder(sessionId, this);
+    SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(this));
     scb.setUsername(username);
     scb.setPassword(password.toCharArray());
     scb.setPersistentSession(true);

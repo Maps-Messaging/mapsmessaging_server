@@ -25,14 +25,15 @@ import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.state.MessageStateManager;
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
+import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -44,6 +45,7 @@ import java.util.Queue;
  */
 public class DestinationSubscription extends Subscription {
 
+  @Getter
   private final AcknowledgementController acknowledgementController;
   private final MessageDeliveryCompletionTask completionTask;
 
@@ -158,10 +160,6 @@ public class DestinationSubscription extends Subscription {
     return 1;
   }
 
-  public AcknowledgementController getAcknowledgementController() {
-    return acknowledgementController;
-  }
-
   public MessageDeliveryCompletionTask getCompletionTask() {
     return completionTask;
   }
@@ -225,10 +223,6 @@ public class DestinationSubscription extends Subscription {
     return messageStateManager.pending();
   }
 
-  @Override
-  public SessionImpl getSessionImpl() {
-    return sessionImpl;
-  }
   // </editor-fold>
 
   @Override
@@ -277,15 +271,11 @@ public class DestinationSubscription extends Subscription {
     String endpoint = "";
     String version = "";
     MessageCallback callback = session.getMessageCallback();
-    ProtocolImpl protocol = session.getProtocol();
-    if (protocol != null) {
-      name = protocol.getName();
-      if (protocol.getEndPoint() != null) {
-        endpoint = protocol.getEndPoint().getName();
-      } else {
-        endpoint = "";
-      }
-      version = protocol.getVersion();
+    ClientConnection clientConnection = session.getClientConnection();
+    if (clientConnection != null) {
+      name = clientConnection.getName();
+      endpoint = clientConnection.getUniqueName();
+      version = clientConnection.getVersion();
     }
     ThreadContext.put("protocol", name);
     ThreadContext.put("endpoint", endpoint);

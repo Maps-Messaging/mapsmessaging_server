@@ -23,6 +23,7 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -33,26 +34,12 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.ConnAck5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Connect5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AssignedClientIdentifier;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MaximumPacketSize;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ReceiveMaximum;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ResponseInformation;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.RetainAvailable;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ServerKeepAlive;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ServerReference;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SessionExpiryInterval;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SharedSubscriptionsAvailable;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifiersAvailable;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.TopicAliasMaximum;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.WildcardSubscriptionsAvailable;
-import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.WillDelayInterval;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.UUID;
-import javax.security.auth.login.LoginException;
 
 public class ConnectListener5 extends PacketListener5 {
 
@@ -76,7 +63,7 @@ public class ConnectListener5 extends PacketListener5 {
       connAck.add(new AssignedClientIdentifier(sessionId));
     }
 
-    SessionContextBuilder scb = new SessionContextBuilder(sessionId, protocol);
+    SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
     scb.setReceiveMaximum(((MQTT5Protocol) protocol).getClientReceiveMaximum());
     boolean sendResponseInfo = parseProperties((MQTT5Protocol) protocol, connect, scb);
 

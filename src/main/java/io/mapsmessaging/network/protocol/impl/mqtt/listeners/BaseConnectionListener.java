@@ -21,6 +21,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
@@ -56,7 +57,7 @@ public abstract class BaseConnectionListener extends PacketListener {
   }
 
   protected SessionContextBuilder getBuilder(EndPoint endPoint, ProtocolImpl protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
-    SessionContextBuilder scb = new SessionContextBuilder(sessionId, protocol);
+    SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
     scb.setPersistentSession(true)
         .setResetState(isClean)
         .setKeepAlive(keepAlive)

@@ -17,5 +17,13 @@
 
 package io.mapsmessaging.device.handler;
 
-public interface DeviceHandler {
+import io.mapsmessaging.api.MessageListener;
+
+public interface DeviceHandler extends MessageListener {
+  
+  String getBusName();
+
+  String getName();
+
+  String getVersion();
 }
