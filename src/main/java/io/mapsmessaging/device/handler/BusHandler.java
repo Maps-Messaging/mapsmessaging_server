@@ -77,14 +77,15 @@ public abstract class BusHandler implements Runnable {
     return builder.build();
   }
 
-  private Session createSession(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
+  private DeviceSessionManagement createSession(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
+    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler);
     SessionContext context = createContext(deviceHandler);
-    CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceHandler);
+    CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceSessionManagement);
     future.thenApply(session -> {
       try {
         session.login();
-        deviceHandler.setSession(session);
-        deviceHandler.setTransformation((TransformationManager.getInstance().getTransformation(deviceHandler.getName(), session.getSecurityContext().getUsername())));
+        deviceSessionManagement.setSession(session);
+        deviceSessionManagement.setTransformation((TransformationManager.getInstance().getTransformation(deviceHandler.getName(), session.getSecurityContext().getUsername())));
         return session;
       }
       catch(IOException failedLogin){
@@ -92,12 +93,11 @@ public abstract class BusHandler implements Runnable {
       }
       return session;
     });
-    return future.get();
+    return deviceSessionManagement;
   }
 
   public void deviceDetected(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
-    createSession(deviceHandler);
-    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, deviceHandler.getSession());
+    DeviceSessionManagement deviceSessionManagement = createSession(deviceHandler);
     activeSessions.put(deviceSessionManagement.getName(), deviceSessionManagement);
   }
 

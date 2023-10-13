@@ -17,11 +17,8 @@
 
 package io.mapsmessaging.device.handler.i2c;
 
-import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 public class I2CDeviceHandler extends DeviceHandler {
 
@@ -34,8 +31,4 @@ public class I2CDeviceHandler extends DeviceHandler {
     return "i2c";
   }
 
-  @Override
-  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-
-  }
 }

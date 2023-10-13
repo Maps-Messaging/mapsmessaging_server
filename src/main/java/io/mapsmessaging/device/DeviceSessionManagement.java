@@ -17,27 +17,51 @@
 
 package io.mapsmessaging.device;
 
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.device.handler.DeviceHandler;
+import io.mapsmessaging.devices.DeviceType;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import lombok.Data;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public class DeviceSessionManagement implements Runnable {
-
+@Data
+public class DeviceSessionManagement implements Runnable, MessageListener {
   private final DeviceHandler device;
-  private final Session session;
+  private Session session;
+  private Destination destination;
 
-  public DeviceSessionManagement(DeviceHandler deviceHandler, Session session){
+  private ProtocolMessageTransformation transformation;
+  private Future<?> scheduledFuture;
+
+  public DeviceSessionManagement(DeviceHandler deviceHandler){
     this.device = deviceHandler;
-    this.session = session;
+    scheduledFuture = null;
+  }
+
+  public void start() throws ExecutionException, InterruptedException {
+    destination = session.findDestination("/device/"+device.getBusName()+"/"+device.getName(), DestinationType.TOPIC).get();
+    if(device.getController().getType() == DeviceType.SENSOR){
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 1, 30, TimeUnit.SECONDS);
+    }
+  }
+
+  public void stop() throws IOException {
+    if(scheduledFuture != null){
+      scheduledFuture.cancel(true);
+      SessionManager.getInstance().close(session, true);
+    }
   }
 
   public String getName() {
@@ -51,7 +75,7 @@ public class DeviceSessionManagement implements Runnable {
     meta.put("device", device.getName());
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(device.getData());
-    messageBuilder.setTransformation(device.getTransformation());
+    messageBuilder.setTransformation(transformation);
     messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
     messageBuilder.setMeta(meta);
     return messageBuilder.build();
@@ -60,14 +84,14 @@ public class DeviceSessionManagement implements Runnable {
   @Override
   public void run() {
     try {
-      Destination destination = session.findDestination("/device", DestinationType.TOPIC).get();
       destination.storeMessage(buildMessage());
     } catch (IOException e) {
       throw new RuntimeException(e);
-    } catch (ExecutionException e) {
-      throw new RuntimeException(e);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+
   }
 }
