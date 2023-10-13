@@ -27,7 +27,6 @@ public abstract class SubscriptionTask extends EngineTask {
   public long processSubscription(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager, Message message) {
     int counter = subscriptionManager.register(message);
     if (counter == 0) {
-      System.err.println("No interest in "+destination.getFullyQualifiedNamespace());
       if (message.getIdentifier() != destination.getRetainedIdentifier()) {
         RemoveMessageTask remove = new RemoveMessageTask(destination, message.getIdentifier());
         destination.submit(remove, DestinationImpl.DELETE_PRIORITY);
