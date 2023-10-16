@@ -97,7 +97,8 @@ public class DeviceManager implements ServiceManager, Agent {
         if (deviceConfig.containsKey("name") &&
             deviceConfig.getProperty("name").equalsIgnoreCase("demo") &&
             deviceConfig.getBooleanProperty("enabled", false)) {
-          busHandlers.add(new DemoBusHandler(deviceConfig, locateNamedTrigger("default")));
+          String triggerName = deviceConfig.getProperty("trigger", "default");
+          busHandlers.add(new DemoBusHandler(deviceConfig, locateNamedTrigger(triggerName)));
         }
       }
       logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
