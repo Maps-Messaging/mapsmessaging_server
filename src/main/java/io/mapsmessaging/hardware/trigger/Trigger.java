@@ -17,10 +17,14 @@
 
 package io.mapsmessaging.hardware.trigger;
 
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.service.Service;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public abstract class Trigger {
+public abstract class Trigger implements Service {
 
   private final List<Runnable> actions;
 
@@ -41,6 +45,8 @@ public abstract class Trigger {
       action.run();
     }
   }
+
+  public abstract Trigger build(ConfigurationProperties properties)throws IOException;
 
   public abstract void start();
 

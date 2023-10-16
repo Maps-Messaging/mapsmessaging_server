@@ -17,10 +17,19 @@
 
 package io.mapsmessaging.hardware.trigger;
 
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+
+import java.io.IOException;
+
 public class InterruptTrigger extends Trigger{
 
   public InterruptTrigger(int pin){
 
+  }
+
+  @Override
+  public Trigger build(ConfigurationProperties properties) throws IOException {
+    return null;
   }
 
   @Override
@@ -31,5 +40,15 @@ public class InterruptTrigger extends Trigger{
   @Override
   public void stop() {
 
+  }
+
+  @Override
+  public String getName() {
+    return "interrupt";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Triggers device read on interrupt pin";
   }
 }

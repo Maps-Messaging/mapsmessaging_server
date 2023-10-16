@@ -17,8 +17,11 @@
 
 package io.mapsmessaging.hardware.trigger;
 
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
+
+import java.io.IOException;
 
 public class CronTrigger extends Trigger {
 
@@ -26,15 +29,30 @@ public class CronTrigger extends Trigger {
   private final String cronExpression;
   private final JobDetail job;
 
-  public CronTrigger(String cronExpression) throws SchedulerException {
+  public CronTrigger(){
+    scheduler = null;
+    cronExpression = null;
+    job = null;
+  }
+
+  public CronTrigger(String cronExpression) throws IOException {
     super();
-    this.scheduler = StdSchedulerFactory.getDefaultScheduler();
-    this.cronExpression = cronExpression;
-    scheduler.start();
-    job = JobBuilder.newJob(CronJob.class)
-        .withIdentity("cronJob", "group1")
-        .build();
-    job.getJobDataMap().put("trigger", this);
+    try {
+      this.scheduler = StdSchedulerFactory.getDefaultScheduler();
+      this.cronExpression = cronExpression;
+      scheduler.start();
+      job = JobBuilder.newJob(CronJob.class)
+          .withIdentity("cronJob", "group1")
+          .build();
+      job.getJobDataMap().put("trigger", this);
+    } catch (SchedulerException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @Override
+  public Trigger build(ConfigurationProperties properties) throws IOException {
+    return new CronTrigger(properties.getProperty("cron"));
   }
 
   @Override
@@ -58,5 +76,15 @@ public class CronTrigger extends Trigger {
     } catch (SchedulerException e) {
       // To Do
     }
+  }
+
+  @Override
+  public String getName() {
+    return "cron";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Triggers device read on CRON configuration";
   }
 }

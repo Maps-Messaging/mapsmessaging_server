@@ -23,9 +23,11 @@ import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.demo.DemoBusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
+import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -35,6 +37,7 @@ import io.mapsmessaging.utilities.service.ServiceManager;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ServiceLoader;
 
 public class DeviceManager implements ServiceManager, Agent {
 
@@ -42,11 +45,17 @@ public class DeviceManager implements ServiceManager, Agent {
   private final List<ConfigurationProperties> devices;
   private final DeviceBusManager deviceBusManager;
   private final List<BusHandler> busHandlers;
+  private final List<Trigger> triggers;
 
   public DeviceManager() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     devices = new ArrayList<>();
     busHandlers = new ArrayList<>();
+    ServiceLoader<Trigger> triggerServices = ServiceLoader.load(Trigger.class);
+    triggers = new ArrayList<>();
+    for(Trigger trigger:triggerServices){
+      triggers.add(trigger);
+    }
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("DeviceManager");
 
     DeviceBusManager manager = null;
