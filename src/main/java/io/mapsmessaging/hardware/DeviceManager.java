@@ -53,20 +53,23 @@ public class DeviceManager implements ServiceManager, Agent {
     busHandlers = new ArrayList<>();
     ServiceLoader<Trigger> triggerServices = ServiceLoader.load(Trigger.class);
     triggers = new ArrayList<>();
-    for(Trigger trigger:triggerServices){
+    for (Trigger trigger : triggerServices) {
       triggers.add(trigger);
     }
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("DeviceManager");
 
     DeviceBusManager manager = null;
-    try{
+    try {
       manager = DeviceBusManager.getInstance();
-    }
-    catch(Throwable th){
+    } catch (Throwable th) {
       // PI4J is not available, so we can disable this
     }
 
     deviceBusManager = manager;
+    loadConfig(properties);
+  }
+
+  private void loadConfig(ConfigurationProperties properties){
     if( properties.getBooleanProperty("enabled", false) && deviceBusManager != null) {
       Object obj = properties.get("data");
       if (obj instanceof List) {

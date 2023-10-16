@@ -17,29 +17,49 @@
 
 package io.mapsmessaging.hardware.trigger;
 
+import com.pi4j.io.gpio.digital.DigitalState;
+import io.mapsmessaging.devices.DeviceBusManager;
+import io.mapsmessaging.devices.gpio.*;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-public class InterruptTrigger extends Trigger{
+public class InterruptTrigger extends Trigger implements InterruptListener {
 
-  public InterruptTrigger(int pin){
+  private final InterruptPin interruptPin;
 
+  public InterruptTrigger(){
+    interruptPin = null;
+  }
+
+  public InterruptTrigger(InterruptPin pin){
+    interruptPin = pin;
   }
 
   @Override
   public Trigger build(ConfigurationProperties properties) throws IOException {
-    return null;
+    InterruptFactory interruptFactory = DeviceBusManager.getInstance().getInterruptFactory();
+    Map<String, String> factoryMap = new LinkedHashMap<>();
+    for(Map.Entry<String, Object> entry:properties.entrySet()){
+      factoryMap.put(entry.getKey(), entry.getValue().toString());
+    }
+    return new InterruptTrigger(interruptFactory.allocateInterruptPin(factoryMap));
   }
 
   @Override
   public void start() {
-
+    if(interruptPin != null) {
+      interruptPin.addListener(this);
+    }
   }
 
   @Override
   public void stop() {
-
+    if(interruptPin != null) {
+      interruptPin.removeListener(this);
+    }
   }
 
   @Override
@@ -50,5 +70,10 @@ public class InterruptTrigger extends Trigger{
   @Override
   public String getDescription() {
     return "Triggers device read on interrupt pin";
+  }
+
+  @Override
+  public void interrupt(InterruptPin pin, DigitalState state) {
+    runActions();
   }
 }
