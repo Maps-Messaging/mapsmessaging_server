@@ -15,10 +15,10 @@
  *
  */
 
-package io.mapsmessaging.device;
+package io.mapsmessaging.hardware.device;
 
-import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import lombok.Getter;
 
 import java.security.Principal;

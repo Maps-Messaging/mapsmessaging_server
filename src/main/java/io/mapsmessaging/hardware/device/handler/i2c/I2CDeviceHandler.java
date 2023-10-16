@@ -15,10 +15,10 @@
  *
  */
 
-package io.mapsmessaging.device.handler.i2c;
+package io.mapsmessaging.hardware.device.handler.i2c;
 
-import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 
 public class I2CDeviceHandler extends DeviceHandler {
 

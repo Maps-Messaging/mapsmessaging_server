@@ -15,20 +15,16 @@
  *
  */
 
-package io.mapsmessaging.device.handler.onewire;
+package io.mapsmessaging.hardware.trigger;
 
-import io.mapsmessaging.device.handler.DeviceHandler;
-import io.mapsmessaging.devices.DeviceController;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
-public class OneWireDeviceHandler extends DeviceHandler {
-
-  public OneWireDeviceHandler(DeviceController deviceController){
-    super(deviceController);
-  }
-
+public class CronJob implements Job {
   @Override
-  public String getBusName() {
-    return "oneWire";
+  public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+    Trigger trigger = (Trigger) jobExecutionContext.getMergedJobDataMap().get("trigger");
+    trigger.runActions();
   }
-
 }

@@ -15,14 +15,14 @@
  *
  */
 
-package io.mapsmessaging.device;
+package io.mapsmessaging.hardware;
 
-import io.mapsmessaging.device.handler.BusHandler;
-import io.mapsmessaging.device.handler.demo.DemoBusHandler;
-import io.mapsmessaging.device.handler.i2c.I2CBusHandler;
-import io.mapsmessaging.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
+import io.mapsmessaging.hardware.device.handler.BusHandler;
+import io.mapsmessaging.hardware.device.handler.demo.DemoBusHandler;
+import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
+import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;

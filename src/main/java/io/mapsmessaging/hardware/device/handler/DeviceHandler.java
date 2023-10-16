@@ -15,44 +15,39 @@
  *
  */
 
-package io.mapsmessaging.device.handler.demo;
+package io.mapsmessaging.hardware.device.handler;
 
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.DeviceType;
-import io.mapsmessaging.schemas.config.SchemaConfig;
+import lombok.Data;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 
-public class DemoDeviceController implements DeviceController {
-  @Override
-  public String getName() {
-    return "demo";
+@Data
+public abstract class DeviceHandler {
+
+  private final DeviceController controller;
+
+  protected DeviceHandler(DeviceController controller){
+    this.controller = controller;
   }
 
-  @Override
-  public String getDescription() {
-    return "Demo Device";
+  public abstract String getBusName();
+
+  public String getName(){
+    return controller.getName();
   }
 
-  @Override
-  public SchemaConfig getSchema() {
-    return null;
+  public String getVersion(){
+    return "1.0";
   }
 
-  @Override
-  public byte[] getDeviceConfiguration() throws IOException {
-    return new byte[0];
+  public byte[] getData() throws IOException {
+    return controller.getDeviceState();
   }
 
-  @Override
-  public DeviceType getType() {
-    return DeviceType.SENSOR;
-  }
-
-  @Override
-  public byte[] getDeviceState() {
-    return ("{ \"time\": \""+ LocalDateTime.now().toString()+" \"}").getBytes();
+  public DeviceType getType(){
+    return controller.getType();
   }
 
 }

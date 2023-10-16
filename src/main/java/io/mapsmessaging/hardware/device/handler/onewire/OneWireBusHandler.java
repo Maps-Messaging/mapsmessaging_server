@@ -15,34 +15,35 @@
  *
  */
 
-package io.mapsmessaging.device.handler.demo;
+package io.mapsmessaging.hardware.device.handler.onewire;
 
-import io.mapsmessaging.device.handler.BusHandler;
-import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.devices.onewire.OneWireBusManager;
+import io.mapsmessaging.hardware.device.handler.BusHandler;
+import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class DemoBusHandler extends BusHandler {
+public class OneWireBusHandler extends BusHandler {
 
-  private DeviceController demoDevice;
+  private final OneWireBusManager oneWireBusManager;
 
-  public DemoBusHandler( ConfigurationProperties properties){
+  public OneWireBusHandler(OneWireBusManager oneWireBusManager, ConfigurationProperties properties) {
     super(properties);
-    demoDevice = new DemoDeviceController();
+    this.oneWireBusManager = oneWireBusManager;
   }
 
   @Override
   protected Map<String, DeviceController> scan() {
-    Map<String, DeviceController> active = new LinkedHashMap<>();
-    active.put("demo", demoDevice);
-    return active;
+    oneWireBusManager.scan();
+    return oneWireBusManager.getActive();
   }
+
   @Override
   protected DeviceHandler createDeviceHander(DeviceController controller) {
-    return new DemoDeviceHandler(controller);
+    return new OneWireDeviceHandler(controller);
   }
+
 
 }

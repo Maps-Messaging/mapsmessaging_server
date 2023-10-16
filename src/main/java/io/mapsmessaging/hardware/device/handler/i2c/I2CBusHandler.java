@@ -15,35 +15,38 @@
  *
  */
 
-package io.mapsmessaging.device.handler.onewire;
+package io.mapsmessaging.hardware.device.handler.i2c;
 
-import io.mapsmessaging.device.handler.BusHandler;
-import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
-import io.mapsmessaging.devices.onewire.OneWireBusManager;
+import io.mapsmessaging.devices.i2c.I2CBusManager;
+import io.mapsmessaging.hardware.device.handler.BusHandler;
+import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.util.Map;
 
-public class OneWireBusHandler extends BusHandler {
+public class I2CBusHandler extends BusHandler {
 
-  private final OneWireBusManager oneWireBusManager;
+  private final I2CBusManager i2CBusManager;
 
-  public OneWireBusHandler(OneWireBusManager oneWireBusManager, ConfigurationProperties properties) {
+  public I2CBusHandler(I2CBusManager i2CBusManager, ConfigurationProperties properties){
     super(properties);
-    this.oneWireBusManager = oneWireBusManager;
-  }
-
-  @Override
-  protected Map<String, DeviceController> scan() {
-    oneWireBusManager.scan();
-    return oneWireBusManager.getActive();
+    this.i2CBusManager = i2CBusManager;
   }
 
   @Override
   protected DeviceHandler createDeviceHander(DeviceController controller) {
-    return new OneWireDeviceHandler(controller);
+    return new I2CDeviceHandler(controller);
   }
 
+  @Override
+  protected Map<String, DeviceController> scan() {
+    try {
+      i2CBusManager.scanForDevices(10);
+    } catch (InterruptedException e) {
+      //
+    }
+    return i2CBusManager.getActive();
+  }
 
 }

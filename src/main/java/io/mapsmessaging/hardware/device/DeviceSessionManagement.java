@@ -15,14 +15,14 @@
  *
  */
 
-package io.mapsmessaging.device;
+package io.mapsmessaging.hardware.device;
 
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceType;
+import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import lombok.Data;

@@ -15,15 +15,15 @@
  *
  */
 
-package io.mapsmessaging.device.handler;
+package io.mapsmessaging.hardware.device.handler;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.device.DeviceClientConnection;
-import io.mapsmessaging.device.DeviceSessionManagement;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.engine.session.SessionContext;
+import io.mapsmessaging.hardware.device.DeviceClientConnection;
+import io.mapsmessaging.hardware.device.DeviceSessionManagement;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;

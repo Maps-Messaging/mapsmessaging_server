@@ -15,20 +15,20 @@
  *
  */
 
-package io.mapsmessaging.device.handler.demo;
+package io.mapsmessaging.hardware.device.handler.onewire;
 
-import io.mapsmessaging.device.handler.DeviceHandler;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 
-public class DemoDeviceHandler extends DeviceHandler {
+public class OneWireDeviceHandler extends DeviceHandler {
 
-  public DemoDeviceHandler(DeviceController controller){
-    super(controller);
+  public OneWireDeviceHandler(DeviceController deviceController){
+    super(deviceController);
   }
 
   @Override
   public String getBusName() {
-    return "demo";
+    return "oneWire";
   }
 
 }
