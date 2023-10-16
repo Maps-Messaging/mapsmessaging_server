@@ -26,6 +26,19 @@ DeviceManager:
 
   data:
     -
+      name: triggers
+      config:
+        -
+          type: cron
+          name: everyMinute
+          cron: 0 * * * *
+        -
+          type: periodic
+          name: everySecond
+          interval: 1000
+
+
+    -
       name: i2c
       enabled: true  # Enable or disable I2C bus interface
       config:
@@ -33,23 +46,27 @@ DeviceManager:
           bus: 0
           enabled: false
           autoScan: false
+          trigger: everyMinute
           topicMap: /device/[bus_name]/0/[device_name]
 
         -
           bus: 1
           enabled: false
           autoScan: true
+          trigger: everyMinute
           topicMap: /device/[bus_name]/1/[device_name]
 
     -
       name: oneWire
       enabled: false  # enable / disable one wire interface
+      trigger: everyMinute
       autoScan: true
 
     -
       name: demo
       enabled: true
       autoScan: true
+      trigger: everyMinute
       topicName: /device/demo/time
 
     -

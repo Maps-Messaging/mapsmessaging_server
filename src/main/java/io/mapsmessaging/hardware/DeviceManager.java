@@ -23,21 +23,19 @@ import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.demo.DemoBusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
+import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.io.IOException;
+import java.util.*;
 
 public class DeviceManager implements ServiceManager, Agent {
 
@@ -46,11 +44,13 @@ public class DeviceManager implements ServiceManager, Agent {
   private final DeviceBusManager deviceBusManager;
   private final List<BusHandler> busHandlers;
   private final List<Trigger> triggers;
+  private final Map<String, Trigger> configuredTriggers;
 
   public DeviceManager() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     devices = new ArrayList<>();
     busHandlers = new ArrayList<>();
+    configuredTriggers = new LinkedHashMap<>();
     ServiceLoader<Trigger> triggerServices = ServiceLoader.load(Trigger.class);
     triggers = new ArrayList<>();
     for (Trigger trigger : triggerServices) {
@@ -70,6 +70,7 @@ public class DeviceManager implements ServiceManager, Agent {
   }
 
   private void loadConfig(ConfigurationProperties properties){
+    loadTriggers(properties);
     if( properties.getBooleanProperty("enabled", false) && deviceBusManager != null) {
       Object obj = properties.get("data");
       if (obj instanceof List) {
@@ -85,20 +86,50 @@ public class DeviceManager implements ServiceManager, Agent {
             deviceConfig.getBooleanProperty("enabled", false)) {
           loadI2CConfig(deviceConfig);
         }
-
         if (deviceConfig.containsKey("name") &&
             deviceConfig.getProperty("name").equalsIgnoreCase("oneWire") &&
             deviceConfig.getBooleanProperty("enabled", false)) {
-          busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager(), deviceConfig));
+          String triggerName = deviceConfig.getProperty("trigger", "default");
+          Trigger trigger = locateNamedTrigger(triggerName);
+          busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager(), deviceConfig, trigger));
         }
 
         if (deviceConfig.containsKey("name") &&
             deviceConfig.getProperty("name").equalsIgnoreCase("demo") &&
             deviceConfig.getBooleanProperty("enabled", false)) {
-          busHandlers.add(new DemoBusHandler(deviceConfig));
+          busHandlers.add(new DemoBusHandler(deviceConfig, locateNamedTrigger("default")));
         }
       }
       logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
+    }
+  }
+
+  private void loadTriggers(ConfigurationProperties deviceConfig){
+    Object configList = deviceConfig.get("triggers");
+    if (configList instanceof List) {
+      for (Object triggerConfigObj : (List) configList) {
+        if (triggerConfigObj instanceof ConfigurationProperties) {
+          configureTriggerConfig((ConfigurationProperties) triggerConfigObj);
+        }
+      }
+    }
+    if(!configuredTriggers.containsKey("default")){
+      configuredTriggers.put("default", new PeriodicTrigger(60000));
+    }
+  }
+
+  private void configureTriggerConfig(ConfigurationProperties triggerConfig){
+    String type = triggerConfig.getProperty("type");
+    for(Trigger trigger:triggers){
+      if(trigger.getName().equalsIgnoreCase(type)){
+        try {
+          Trigger actual = trigger.build(triggerConfig);
+          String name = triggerConfig.getProperty("name");
+          configuredTriggers.put(name, actual);
+        } catch (IOException e) {
+          // ToDo
+        }
+      }
     }
   }
 
@@ -117,9 +148,19 @@ public class DeviceManager implements ServiceManager, Agent {
     for (int x = 0; x < deviceBusManager.getI2cBusManager().length; x++) {
       if (busConfig.getIntProperty("bus", -1) == x && busConfig.getBooleanProperty("enabled", false)) {
         I2CBusManager busManager = deviceBusManager.getI2cBusManager()[x];
-        busHandlers.add(new I2CBusHandler(busManager, busConfig));
+        String triggerName = busConfig.getProperty("trigger", "default");
+        Trigger trigger = locateNamedTrigger(triggerName);
+        busHandlers.add(new I2CBusHandler(busManager, busConfig, trigger));
       }
     }
+  }
+
+  private Trigger locateNamedTrigger(String name){
+    Trigger trigger = configuredTriggers.get(name);
+    if(trigger == null){
+      trigger = configuredTriggers.get("default");
+    }
+    return trigger;
   }
 
   @Override

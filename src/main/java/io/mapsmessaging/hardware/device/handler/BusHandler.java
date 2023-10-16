@@ -24,6 +24,7 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.hardware.device.DeviceClientConnection;
 import io.mapsmessaging.hardware.device.DeviceSessionManagement;
+import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
@@ -39,11 +40,14 @@ public abstract class BusHandler implements Runnable {
   protected final ConfigurationProperties properties;
   private final int scanPeriod;
   private Future<?> scheduledFuture;
+  private final Trigger trigger;
 
-  protected BusHandler(ConfigurationProperties properties){
+
+  protected BusHandler(ConfigurationProperties properties, Trigger trigger){
     foundDevices = new ConcurrentHashMap<>();
     activeSessions = new ConcurrentHashMap<>();
     this.properties = properties;
+    this.trigger = trigger;
     scanPeriod = properties.getIntProperty("scanTime", 120000);
   }
 
@@ -113,6 +117,7 @@ public abstract class BusHandler implements Runnable {
       if (!foundDevices.containsKey(entry.getKey())) {
         // Found new device
         DeviceHandler handler = createDeviceHander(entry.getValue());
+        handler.setTrigger(trigger);
         foundDevices.put(entry.getKey(), handler);
         deviceDetected(handler);
       }

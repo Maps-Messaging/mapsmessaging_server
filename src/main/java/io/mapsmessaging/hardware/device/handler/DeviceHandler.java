@@ -19,6 +19,7 @@ package io.mapsmessaging.hardware.device.handler;
 
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.DeviceType;
+import io.mapsmessaging.hardware.trigger.Trigger;
 import lombok.Data;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.io.IOException;
 public abstract class DeviceHandler {
 
   private final DeviceController controller;
+  private Trigger trigger;
 
   protected DeviceHandler(DeviceController controller){
     this.controller = controller;

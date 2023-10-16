@@ -21,10 +21,8 @@ import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {
@@ -52,17 +49,12 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
 
   public void start() throws ExecutionException, InterruptedException {
     destination = session.findDestination("/device/"+device.getBusName()+"/"+device.getName(), DestinationType.TOPIC).get();
-    if(device.getController().getType() == DeviceType.SENSOR){
-      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 1, 30, TimeUnit.SECONDS);
-    }
-
+    device.getTrigger().addTask(this);
   }
 
   public void stop() throws IOException {
-    if(scheduledFuture != null){
-      scheduledFuture.cancel(true);
-      SessionManager.getInstance().close(session, true);
-    }
+    device.getTrigger().removeTask(this);
+    SessionManager.getInstance().close(session, true);
   }
 
   public String getName() {

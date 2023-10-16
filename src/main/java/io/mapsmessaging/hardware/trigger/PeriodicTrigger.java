@@ -34,10 +34,10 @@ public class PeriodicTrigger extends Trigger {
     periodInMilliseconds = -1;
   }
 
-  public PeriodicTrigger(long periodInSeconds) {
+  public PeriodicTrigger(long periodInMilliseconds) {
     super();
     this.executorService = Executors.newScheduledThreadPool(1);
-    this.periodInMilliseconds = periodInSeconds;
+    this.periodInMilliseconds = periodInMilliseconds;
   }
 
   @Override

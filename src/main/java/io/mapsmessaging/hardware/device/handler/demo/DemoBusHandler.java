@@ -20,6 +20,7 @@ package io.mapsmessaging.hardware.device.handler.demo;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
+import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.util.LinkedHashMap;
@@ -29,8 +30,8 @@ public class DemoBusHandler extends BusHandler {
 
   private DeviceController demoDevice;
 
-  public DemoBusHandler( ConfigurationProperties properties){
-    super(properties);
+  public DemoBusHandler( ConfigurationProperties properties, Trigger trigger){
+    super(properties, trigger);
     demoDevice = new DemoDeviceController();
   }
 

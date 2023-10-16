@@ -21,6 +21,7 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.onewire.OneWireBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
+import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.util.Map;
@@ -29,8 +30,8 @@ public class OneWireBusHandler extends BusHandler {
 
   private final OneWireBusManager oneWireBusManager;
 
-  public OneWireBusHandler(OneWireBusManager oneWireBusManager, ConfigurationProperties properties) {
-    super(properties);
+  public OneWireBusHandler(OneWireBusManager oneWireBusManager, ConfigurationProperties properties, Trigger trigger) {
+    super(properties, trigger);
     this.oneWireBusManager = oneWireBusManager;
   }
 
