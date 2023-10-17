@@ -229,6 +229,7 @@ public class DeviceManager implements ServiceManager, Agent {
   @Override
   public Iterator<Service> getServices() {
     List<Service> service = new ArrayList<>();
+    service.addAll(triggers);
     return service.listIterator();
   }
 }
