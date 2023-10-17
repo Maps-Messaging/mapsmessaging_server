@@ -70,11 +70,17 @@ public class DeviceManager implements ServiceManager, Agent {
   }
 
   private void loadConfig(ConfigurationProperties properties){
-    loadTriggers(properties);
     if( properties.getBooleanProperty("enabled", false) && deviceBusManager != null) {
       Object obj = properties.get("data");
       if (obj instanceof List) {
-        devices.addAll((List<ConfigurationProperties>) obj);
+        for(ConfigurationProperties props:(List<ConfigurationProperties>) obj){
+          if(props.getProperty("name").equalsIgnoreCase("triggers")){
+            loadTriggers(props);
+          }
+          else{
+            devices.add(props);
+          }
+        }
       } else if (obj instanceof ConfigurationProperties) {
         devices.add((ConfigurationProperties) obj);
       }
@@ -106,7 +112,7 @@ public class DeviceManager implements ServiceManager, Agent {
   }
 
   private void loadTriggers(ConfigurationProperties deviceConfig){
-    Object configList = deviceConfig.get("triggers");
+    Object configList = deviceConfig.get("config");
     if (configList instanceof List) {
       for (Object triggerConfigObj : (List) configList) {
         if (triggerConfigObj instanceof ConfigurationProperties) {
@@ -176,6 +182,9 @@ public class DeviceManager implements ServiceManager, Agent {
 
   public void start() {
     initialise();
+    for(Trigger trigger:configuredTriggers.values()){
+      trigger.start();
+    }
   }
 
   public void stop() {
@@ -184,9 +193,6 @@ public class DeviceManager implements ServiceManager, Agent {
   }
 
   public void initialise() {
-    for (ConfigurationProperties configurationProperties : devices) {
-
-    }
     startAll();
   }
 

@@ -19,7 +19,9 @@ package io.mapsmessaging.hardware.trigger;
 
 import com.pi4j.io.gpio.digital.DigitalState;
 import io.mapsmessaging.devices.DeviceBusManager;
-import io.mapsmessaging.devices.gpio.*;
+import io.mapsmessaging.devices.gpio.InterruptFactory;
+import io.mapsmessaging.devices.gpio.InterruptListener;
+import io.mapsmessaging.devices.gpio.InterruptPin;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.IOException;
@@ -69,7 +71,7 @@ public class InterruptTrigger extends Trigger implements InterruptListener {
 
   @Override
   public String getDescription() {
-    return "Triggers device read on interrupt pin";
+    return "Triggers device read on interrupt";
   }
 
   @Override
