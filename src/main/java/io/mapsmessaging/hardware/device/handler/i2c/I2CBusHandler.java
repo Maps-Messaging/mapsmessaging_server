@@ -50,4 +50,12 @@ public class I2CBusHandler extends BusHandler {
     return i2CBusManager.getActive();
   }
 
+
+  public boolean enableConfig(){
+    return true;
+  }
+
+  public boolean enableRaw(){
+    return true;
+  }
 }

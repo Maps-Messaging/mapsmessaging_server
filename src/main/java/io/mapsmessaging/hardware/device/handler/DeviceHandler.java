@@ -20,6 +20,7 @@ package io.mapsmessaging.hardware.device.handler;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.hardware.trigger.Trigger;
+import io.mapsmessaging.schemas.config.SchemaConfig;
 import lombok.Data;
 
 import java.io.IOException;
@@ -48,8 +49,28 @@ public abstract class DeviceHandler {
     return controller.getDeviceState();
   }
 
+  public byte[] getConfiguration() throws IOException {
+    return controller.getDeviceConfiguration();
+  }
+
+  public byte[] updateConfig(byte[] config) throws IOException{
+    return controller.updateDeviceConfiguration(config);
+  }
+
+  public SchemaConfig getSchema(){
+    return controller.getSchema();
+  }
+
   public DeviceType getType(){
     return controller.getType();
+  }
+
+  public boolean enableConfig(){
+    return false;
+  }
+
+  public boolean enableRaw(){
+    return false;
   }
 
 }

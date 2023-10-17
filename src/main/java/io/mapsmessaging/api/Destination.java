@@ -21,6 +21,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.schemas.config.SchemaConfig;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -57,5 +58,9 @@ public class Destination implements BaseDestination {
 
   public Message getRetained() throws IOException {
     return destinationImpl.getMessage(destinationImpl.getRetainedIdentifier());
+  }
+
+  public void updateSchema(SchemaConfig schemaConfig, Message message) throws IOException {
+    destinationImpl.updateSchema(schemaConfig, message);
   }
 }
