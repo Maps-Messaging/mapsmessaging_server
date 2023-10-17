@@ -31,4 +31,13 @@ public class I2CDeviceHandler extends DeviceHandler {
     return "i2c";
   }
 
+  @Override
+  public boolean enableConfig(){
+    return true;
+  }
+
+  @Override
+  public boolean enableRaw(){
+    return true;
+  }
 }
