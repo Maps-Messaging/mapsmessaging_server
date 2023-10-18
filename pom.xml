@@ -368,7 +368,7 @@
     <repository>
       <id>maps_test_libs</id>
       <name>artifactory-releases</name>
-      <url>https://repository.mapsmessaging.io:8081/respository/maps_test_libs/</url>
+      <url>https://repository.mapsmessaging.io:8081/repository/maps_test_libs/</url>
     </repository>
   </repositories>
 
@@ -874,7 +874,7 @@
     <dependency>
       <groupId>net.ser1</groupId>
       <artifactId>gozirra-client</artifactId>
-      <version>0.4.2-SNAPSHOT</version>
+      <version>0.4.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -895,7 +895,7 @@
     <dependency>
       <groupId>com.eclipse.paho</groupId>
       <artifactId>MQTT-SN-UDP-Client</artifactId>
-      <version>1.2.1-OKSE</version>
+      <version>1.2.1</version>
       <scope>test</scope>
     </dependency>
 
