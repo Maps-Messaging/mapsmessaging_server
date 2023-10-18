@@ -364,6 +364,13 @@
     </plugins>
   </build>
 
+  <repositories>
+    <repository>
+      <id>maps_test_libs</id>
+      <name>artifactory-releases</name>
+      <url>https://repository.mapsmessaging.io:8081/respository/maps_test_libs/</url>
+    </repository>
+  </repositories>
 
   <properties>
     <logback.version>1.4.7</logback.version>
@@ -874,7 +881,7 @@
     <dependency>
       <groupId>org.slj</groupId>
       <artifactId>mqtt-sn-client</artifactId>
-      <version>0.2.1</version>
+      <version>0.2.2</version>
       <scope>test</scope>
     </dependency>
 
