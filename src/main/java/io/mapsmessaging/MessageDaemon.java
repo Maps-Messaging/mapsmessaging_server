@@ -26,7 +26,6 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
-import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -174,7 +173,7 @@ public class MessageDaemon {
     addToMap(120, 40, new RestApiServerManager());
     addToMap(200, 2, new ServerConnectionManager());
     addToMap(210, 0, new RoutingManager());
-    addToMap(220, 7, new DeviceManager());
+//    addToMap(220, 7, new DeviceManager());
   }
 
   private void addToMap(int start, int stop, Agent agent) {
