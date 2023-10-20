@@ -82,24 +82,32 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
         destinationManager.addSystemTopic(systemTopic);
         String[] aliases = systemTopic.aliases();
         completeList.add(systemTopic);
-        for (String alias : aliases) {
-          try {
-            SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
-            destinationManager.addSystemTopic(aliasTopic);
-          } catch (IOException e) {
-            // We can ignore this exception, it is an artifact of the path
-          }
-        }
-        List<SystemTopic> children = systemTopic.getChildren();
-        if (children != null) {
-          for (SystemTopic child : children) {
-            destinationManager.addSystemTopic(child);
-            completeList.add(child);
-          }
-        }
+        createAliases(aliases, systemTopic);
+        addChildren(systemTopic.getChildren());
       }
       scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 1, 10, TimeUnit.SECONDS);
     }
+  }
+
+  private void createAliases(String[] aliases, SystemTopic systemTopic){
+    for (String alias : aliases) {
+      try {
+        SystemTopicAlias aliasTopic = new SystemTopicAlias(alias, systemTopic);
+        destinationManager.addSystemTopic(aliasTopic);
+      } catch (IOException e) {
+        // We can ignore this exception, it is an artifact of the path
+      }
+    }
+  }
+
+  private void addChildren(List<SystemTopic> children){
+    if (children != null) {
+      for (SystemTopic child : children) {
+        destinationManager.addSystemTopic(child);
+        completeList.add(child);
+      }
+    }
+
   }
 
   public void stop() {

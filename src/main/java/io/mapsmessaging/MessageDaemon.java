@@ -149,7 +149,7 @@ public class MessageDaemon {
     }
     enableResourceStatistics = properties.getBooleanProperty("EnableResourceStatistics", false);
 
-    SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopicAverages", true));
+    SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopics", true));
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
   }
