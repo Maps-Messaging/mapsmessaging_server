@@ -92,7 +92,7 @@ NetworkManager:
         name: "MQTT Interface"
         url: tcp://0.0.0.0:1883/
         protocol : mqtt
-        selectorThreadCount : 20
+        selectorThreadCount : 5
         receiveBufferSize : 20000
         sendBufferSize    : 20000
 
