@@ -42,13 +42,11 @@ RUN ZULU_ARCH=zulu16.32.15-ca-jdk16.0.2-linux_musl_aarch64.tar.gz && \
 # Admin     8080
 # SemTech   1700
 #----------------------------------------------------------------------------------------------
-EXPOSE 1882/tcp
-EXPOSE 1883/tcp
-EXPOSE 1884/udp
-EXPOSE 5672/tcp
-EXPOSE 8675/tcp
+EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 1700/udp
+EXPOSE 1884/udp
+EXPOSE 5683/udp
+EXPOSE 2442/udp
 
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
@@ -61,9 +59,17 @@ RUN wget -q https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod
 # Now configure the scripts
 #----------------------------------------------------------------------------------------------
 RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
-    dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
+    dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
+
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
+
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
+
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
+
 
 
 #----------------------------------------------------------------------------------------------
