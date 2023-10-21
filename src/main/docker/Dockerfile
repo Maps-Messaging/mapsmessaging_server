@@ -31,22 +31,17 @@ RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
 #   f) Register the command to start the server
 #----------------------------------------------------------------------------------------------
 # Expose the protocol ports
-# MQTT      1882, 1883  TCP
-# MQTT-SN   1884        UDP
-# AMQP      5672        TCP
-# Stomp     8675        TCP
+# ALL      9000  TCP - Includes MQTT, AMQP and Stomp and WebSockets
 # Admin     8080        TCP
+# MQTT-SN   1884        UDP
 # SemTech   1700        UDP
 # CoAP      5683        UDP
 #----------------------------------------------------------------------------------------------
-EXPOSE 1882/tcp
-EXPOSE 1883/tcp
-EXPOSE 1884/udp
-EXPOSE 5672/tcp
-EXPOSE 8675/tcp
+EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 1700/udp
+EXPOSE 1884/udp
 EXPOSE 5683/udp
+EXPOSE 2442/udp
 
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
@@ -61,7 +56,13 @@ RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/down
 RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
     dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
     mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
+    mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
+
+
 
 
 #----------------------------------------------------------------------------------------------

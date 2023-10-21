@@ -17,20 +17,6 @@
 ---
 NetworkManager:
     global:
-        # ---------------------------------------------------------------------------------------------------------
-        # Global configuration for SSL
-        # ---------------------------------------------------------------------------------------------------------
-
-        ssl_keyStoreFile: my-keystore.jks
-        ssl_keyStorePassphrase: password
-        ssl_trustStoreFile: my-keystore.jks
-        ssl_trustStorePassphrase: password
-        ssl_keyManagerFactory: SunX509
-        ssl_trustManagerFactory: SunX509
-        ssl_SSLContext: TLS
-        ssl_keyStore: JKS
-        ssl_trustStore: JKS
-
       # ---------------------------------------------------------------------------------------------------------
       # tcp layer configuration
       # ---------------------------------------------------------------------------------------------------------
@@ -47,7 +33,7 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
         serverReadBufferSize :  10K
         serverWriteBufferSize : 10K
-        selectorThreadCount   : 1
+        selectorThreadCount   : 5
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT Protocol configuration
@@ -67,12 +53,6 @@ NetworkManager:
         maxServerKeepAlive : 60
 
       # ---------------------------------------------------------------------------------------------------------
-      # LoRa Gateway specific
-      # ---------------------------------------------------------------------------------------------------------
-      # Maximum Packets per second limit to ensure the radio isn't flooded
-        LoRaMaxTransmissionRate : 20
-
-      # ---------------------------------------------------------------------------------------------------------
       # MQTT-SN specific configuration
       # ---------------------------------------------------------------------------------------------------------
         maxInFlightEvents : 1
@@ -90,31 +70,10 @@ NetworkManager:
     data:
 
       -
-        name: "MQTT Interface"
+        name: "All TCP Interfaces"
         url: tcp://0.0.0.0:9000/
         protocol : all
         selectorThreadCount : 5
-
-      -
-        name: "MQTT Interface"
-        url: tcp://0.0.0.0:1883/
-        protocol : mqtt
-
-      -
-        name: "MQTT Interface"
-        url: "tcp://0.0.0.0:2883/"
-        protocol : mqtt
-
-      -
-        name: "Stomp Interface"
-        url: tcp://0.0.0.0:8675/
-        protocol : stomp
-
-      -
-        url: tcp://0.0.0.0:5672/
-        name: "AMQP Interface"
-        protocol : amqp
-        SaslMechanisms : ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI, NTLM
 
       -
         url: udp://0.0.0.0:1884/
@@ -123,18 +82,6 @@ NetworkManager:
         eventsPerTopicDuringSleep: 5
         maxTopicsInSleep: 10
         advertiseGateway: true
-        sasl:
-          mechanism: SCRAM-SHA-512
-          identityProvider: htpassword
-          passwordFile: htpasswd
-
-
-      - url: udp://0.0.0.0:5683/
-        name: "CoAP Interface"
-        protocol: coap
-        maxBlockSize: 512
-        idleTimePeriod: 120
-
 
       - url: udp://0.0.0.0:2442/
         name: "V2 predefined"
@@ -142,20 +89,10 @@ NetworkManager:
         eventsPerTopicDuringSleep: 5
         maxTopicsInSleep: 10
         advertiseGateway: true
-        preDefinedTopics:
-          -
-            id: 1
-            topic: predefined/topic
-            address: '*'
-          -
-            id: 1
-            topic: predefined/localhost/topic
-            address: '127.0.0.1'
 
-      -
-        url: udp://0.0.0.0:1700/
-        name: "SemTech Gateway"
-        protocol: semtech
-        inbound: /semtech/{gatewayId}/in
-        status: /semtech/{gatewayId}/status
-        outbound: /semtech/{gatewayId}/out
+      - url: udp://0.0.0.0:5683/
+        name: "CoAP Interface"
+        protocol: coap
+        maxBlockSize: 512
+        idleTimePeriod: 120
+
