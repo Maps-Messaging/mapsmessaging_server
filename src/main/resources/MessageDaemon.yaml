@@ -60,13 +60,13 @@ MessageDaemon:
     # Enable / Disable advanced resource statistics
     #
     # Default: false
-    EnableResourceStatistics: true
+    EnableResourceStatistics: false
 
     #
     # Enable or Disable $SYS topics, if disabled then the server will not populate any $SYS topics
     #
     # Default: true
-    EnableSystemTopics: false
+    EnableSystemTopics: true
 
     #
     # Enables or disables the moving averages for specific $SYS topics
