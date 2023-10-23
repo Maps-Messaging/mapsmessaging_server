@@ -23,7 +23,7 @@ public class OnChangeFilter implements PublishFilter {
   @Override
   public boolean send(byte[] previous, byte[] current) {
     if(previous != null && current != null && previous.length == current.length) {
-      return Arrays.equals(previous, current);
+      return !Arrays.equals(previous, current);
     }
     return true;
   }

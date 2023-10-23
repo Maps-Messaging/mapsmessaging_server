@@ -23,8 +23,8 @@ import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 
 public class I2CDeviceHandler extends DeviceHandler {
 
-  public I2CDeviceHandler(DeviceController deviceController){
-    super(deviceController);
+  public I2CDeviceHandler(String key, DeviceController deviceController){
+    super(key, deviceController);
   }
 
   @Override

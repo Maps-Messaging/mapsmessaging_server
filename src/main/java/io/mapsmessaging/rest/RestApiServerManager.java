@@ -22,11 +22,6 @@ import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import java.io.IOException;
-import java.net.URI;
-import javax.jmdns.ServiceInfo;
-import javax.servlet.Servlet;
-import javax.ws.rs.core.PathSegment;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
@@ -39,6 +34,12 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.uri.UriComponent;
+
+import javax.jmdns.ServiceInfo;
+import javax.servlet.Servlet;
+import javax.ws.rs.core.PathSegment;
+import java.io.IOException;
+import java.net.URI;
 
 public class RestApiServerManager implements Agent {
 
@@ -106,9 +107,11 @@ public class RestApiServerManager implements Agent {
   }
 
   public void stop() {
-    for (ServiceInfo serviceInfo : serviceInfos) {
-      httpServer.shutdown();
-      MessageDaemon.getInstance().getDiscoveryManager().deregister(serviceInfo);
+    if(serviceInfos != null) {
+      for (ServiceInfo serviceInfo : serviceInfos) {
+        httpServer.shutdown();
+        MessageDaemon.getInstance().getDiscoveryManager().deregister(serviceInfo);
+      }
     }
   }
 

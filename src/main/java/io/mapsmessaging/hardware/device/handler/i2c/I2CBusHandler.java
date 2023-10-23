@@ -19,6 +19,8 @@ package io.mapsmessaging.hardware.device.handler.i2c;
 
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
+import io.mapsmessaging.devices.i2c.I2CDeviceController;
+import io.mapsmessaging.hardware.device.DeviceSessionManagement;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
@@ -36,8 +38,14 @@ public class I2CBusHandler extends BusHandler {
   }
 
   @Override
-  protected DeviceHandler createDeviceHander(DeviceController controller) {
-    return new I2CDeviceHandler(controller);
+  protected DeviceHandler createDeviceHander(String key, DeviceController controller) {
+    return new I2CDeviceHandler(key, controller);
+  }
+
+  @Override
+  public void closedSession(DeviceSessionManagement deviceSessionManagement){
+    i2CBusManager.close((I2CDeviceController) deviceSessionManagement.getDevice().getController());
+    super.closedSession(deviceSessionManagement);
   }
 
   @Override

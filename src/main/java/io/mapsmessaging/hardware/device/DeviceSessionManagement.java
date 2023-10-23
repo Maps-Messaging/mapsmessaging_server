@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
+import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
@@ -42,6 +43,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private final DeviceHandler device;
   private final String topicNameTemplate;
   private final DataFilter filter;
+  private final BusHandler busHandler;
 
   private Session session;
   private Destination destination;
@@ -53,12 +55,14 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private ProtocolMessageTransformation transformation;
   private Future<?> scheduledFuture;
 
-  public DeviceSessionManagement(DeviceHandler deviceHandler, String topicNameTemplate, DataFilter filter){
+  public DeviceSessionManagement(DeviceHandler deviceHandler, String topicNameTemplate, DataFilter filter, BusHandler busHandler){
     this.device = deviceHandler;
     this.topicNameTemplate = topicNameTemplate;
     this.filter = filter;
+    this.busHandler = busHandler;
     scheduledFuture = null;
     previousPayload = null;
+    device.getController().setRaiseExceptionOnError(true);
   }
 
   public void start() throws ExecutionException, InterruptedException {
@@ -121,24 +125,46 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
 
   @Override
   public void run() {
+    byte[] payload;
     try {
-      byte[] payload = device.getData();
-      if(filter.send(previousPayload, payload)) {
-        destination.storeMessage(buildMessage(payload, true));
-        previousPayload = payload;
-      }
+      device.getController().setRaiseExceptionOnError(true);
+      payload = device.getData();
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      try {
+        stop(); // remove and close session
+        busHandler.closedSession(this);
+      } catch (IOException ex) {
+
+      }
+      // OK, device is offline
+      payload = null;
+    }
+
+    if(payload != null) {
+      try {
+        if (filter.send(previousPayload, payload)) {
+          destination.storeMessage(buildMessage(payload, true));
+          previousPayload = payload;
+        }
+      } catch (IOException e) {
+        // We have bigger issues here
+      }
     }
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    System.err.println("Received sendMessage "+messageEvent);
     try {
       byte[] update = device.updateConfig(messageEvent.getMessage().getOpaqueData());
       if(update != null) {
-        config.storeMessage(buildMessage(update, true));
+        Thread t = new Thread(() -> {
+          try {
+            config.storeMessage(buildMessage(update, true));
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+        t.start();
       }
     } catch (IOException e) {
       throw new RuntimeException(e);

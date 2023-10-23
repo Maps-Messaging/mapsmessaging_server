@@ -55,4 +55,8 @@ public class DemoDeviceController implements DeviceController {
     return ("{ \"time\": \""+ LocalDateTime.now().toString()+" \"}").getBytes();
   }
 
+  @Override
+  public void setRaiseExceptionOnError(boolean flag) {
+
+  }
 }

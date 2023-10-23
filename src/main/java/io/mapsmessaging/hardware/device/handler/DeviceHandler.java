@@ -29,9 +29,12 @@ import java.io.IOException;
 public abstract class DeviceHandler {
 
   private final DeviceController controller;
+  private final String key;
   private Trigger trigger;
 
-  protected DeviceHandler(DeviceController controller){
+
+  protected DeviceHandler(String key, DeviceController controller){
+    this.key = key;
     this.controller = controller;
   }
 

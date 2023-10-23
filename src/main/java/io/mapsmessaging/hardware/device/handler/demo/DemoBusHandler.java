@@ -42,7 +42,7 @@ public class DemoBusHandler extends BusHandler {
     return active;
   }
   @Override
-  protected DeviceHandler createDeviceHander(DeviceController controller) {
+  protected DeviceHandler createDeviceHander(String key, DeviceController controller) {
     return new DemoDeviceHandler(controller);
   }
 

@@ -83,13 +83,18 @@ public abstract class BusHandler implements Runnable {
     return builder.build();
   }
 
+  public void closedSession(DeviceSessionManagement deviceSessionManagement){
+    activeSessions.remove(deviceSessionManagement.getName());
+    foundDevices.remove(deviceSessionManagement.getDevice().getKey());
+  }
+
   private DeviceSessionManagement createSession(DeviceHandler deviceHandler) {
     String filterName  = properties.getProperty("filter", "ON_CHANGE");
     DataFilter filter = DataFilter.valueOf(filterName);
     if(filter == null){
       filter = DataFilter.ON_CHANGE;
     }
-    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, topicNameTemplate, filter);
+    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, topicNameTemplate, filter, this);
     SessionContext context = createContext(deviceHandler);
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceSessionManagement);
     future.thenApply(session -> {
@@ -113,7 +118,7 @@ public abstract class BusHandler implements Runnable {
     deviceSessionManagement.start();
   }
 
-  protected abstract DeviceHandler createDeviceHander(DeviceController controller);
+  protected abstract DeviceHandler createDeviceHander(String key, DeviceController controller);
 
   protected abstract  Map<String, DeviceController> scan();
 
@@ -124,7 +129,7 @@ public abstract class BusHandler implements Runnable {
     for (Map.Entry<String, DeviceController> entry : map.entrySet()) {
       if (!foundDevices.containsKey(entry.getKey())) {
         // Found new device
-        DeviceHandler handler = createDeviceHander(entry.getValue());
+        DeviceHandler handler = createDeviceHander(entry.getKey(), entry.getValue());
         handler.setTrigger(trigger);
         foundDevices.put(entry.getKey(), handler);
         deviceDetected(handler);

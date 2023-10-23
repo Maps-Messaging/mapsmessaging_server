@@ -42,8 +42,8 @@ public class OneWireBusHandler extends BusHandler {
   }
 
   @Override
-  protected DeviceHandler createDeviceHander(DeviceController controller) {
-    return new OneWireDeviceHandler(controller);
+  protected DeviceHandler createDeviceHander(String key, DeviceController controller) {
+    return new OneWireDeviceHandler(key, controller);
   }
 
 

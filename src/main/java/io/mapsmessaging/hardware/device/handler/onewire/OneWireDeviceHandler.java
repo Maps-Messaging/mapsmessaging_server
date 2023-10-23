@@ -22,8 +22,8 @@ import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 
 public class OneWireDeviceHandler extends DeviceHandler {
 
-  public OneWireDeviceHandler(DeviceController deviceController){
-    super(deviceController);
+  public OneWireDeviceHandler(String key,DeviceController deviceController){
+    super(key, deviceController);
   }
 
   @Override

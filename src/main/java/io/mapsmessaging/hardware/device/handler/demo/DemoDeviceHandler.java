@@ -23,7 +23,7 @@ import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 public class DemoDeviceHandler extends DeviceHandler {
 
   public DemoDeviceHandler(DeviceController controller){
-    super(controller);
+    super("demo", controller);
   }
 
   @Override

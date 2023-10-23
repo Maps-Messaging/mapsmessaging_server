@@ -38,6 +38,10 @@ DeviceManager:
           type: periodic
           name: everySecond
           interval: 1000
+        -
+          type: periodic
+          name: everyHundredth
+          interval: 100
 
 
     -
@@ -54,7 +58,7 @@ DeviceManager:
           bus: 1
           enabled: true
           autoScan: true
-          trigger: everySecond
+          trigger: everyHundredth
 
     -
       name: oneWire

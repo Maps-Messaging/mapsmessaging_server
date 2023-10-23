@@ -80,3 +80,14 @@ DestinationManager:
                bucketName: <s3 bucket name to use>
                compression: true # Options true/false if the file is compressed before pushing to S3
 
+      -
+         name: device
+         directory: ./data/devices
+         namespace: /device/
+         type: Memory # could be either Partition, Memory or MemoryTier
+         sync: disable # Enable or Disable
+         format:
+            name: json # RAW, JSON, XML
+         archive:
+            name: None # Options : None, Compress, S3. Please note if S3 selected the s3 config will need to be supplied
+
