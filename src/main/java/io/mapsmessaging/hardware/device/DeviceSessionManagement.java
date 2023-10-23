@@ -22,6 +22,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
@@ -32,47 +33,59 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {
   private final DeviceHandler device;
+  private final String topicNameTemplate;
+  private final DataFilter filter;
+
   private Session session;
   private Destination destination;
   private Destination config;
   private Destination raw;
   private SubscribedEventManager subscribedEventManager;
 
+  private byte[] previousPayload;
   private ProtocolMessageTransformation transformation;
   private Future<?> scheduledFuture;
 
-  public DeviceSessionManagement(DeviceHandler deviceHandler){
+  public DeviceSessionManagement(DeviceHandler deviceHandler, String topicNameTemplate, DataFilter filter){
     this.device = deviceHandler;
+    this.topicNameTemplate = topicNameTemplate;
+    this.filter = filter;
     scheduledFuture = null;
+    previousPayload = null;
   }
 
   public void start() throws ExecutionException, InterruptedException {
-    destination = session.findDestination("/device/"+device.getBusName()+"/"+device.getName()+"/data", DestinationType.TOPIC).get();
+    destination = session.findDestination(device.getTopicName(topicNameTemplate+"/data"), DestinationType.TOPIC).get();
     if(device.enableRaw()) {
-      raw = session.findDestination("/device/" + device.getBusName() + "/" + device.getName() + "/raw", DestinationType.TOPIC).get();
+      raw = session.findDestination(device.getTopicName(topicNameTemplate+ "/raw"), DestinationType.TOPIC).get();
     }
     try {
       SchemaConfig schemaConfig = device.getSchema();
       if(schemaConfig != null) {
+        schemaConfig.setUniqueId(UUID.randomUUID());
         destination.updateSchema(schemaConfig, null);
       }
-    } catch (IOException e) {
+    } catch (Throwable e) {
+      e.printStackTrace();
       // todo
     }
     if(device.enableConfig()) {
-      config = session.findDestination("/device/" + device.getBusName() + "/" + device.getName() + "/config", DestinationType.TOPIC).get();
+      config = session.findDestination(device.getTopicName(topicNameTemplate+ "/config"), DestinationType.TOPIC).get();
       try {
         SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(config.getFullyQualifiedNamespace(), ClientAcknowledgement.AUTO);
         subscriptionContextBuilder.setQos(QualityOfService.AT_MOST_ONCE);
         subscriptionContextBuilder.setNoLocalMessages(true);
         subscribedEventManager = session.addSubscription(subscriptionContextBuilder.build());
-      } catch (IOException e) {
+        updateConfig();
+      } catch (Throwable e) {
+        e.printStackTrace();
         // To Do
       }
     }
@@ -93,7 +106,8 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
 
   private Message buildMessage(byte[] payload, boolean retain) {
     Map<String, String> meta = new LinkedHashMap<>();
-    meta.put("bus", device.getBusName());
+    meta.put("busName", device.getBusName());
+    if(device.getBusNumber()>=0) meta.put("busNumber", ""+device.getBusNumber());
     meta.put("version", device.getVersion());
     meta.put("device", device.getName());
     MessageBuilder messageBuilder = new MessageBuilder();
@@ -108,7 +122,11 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   @Override
   public void run() {
     try {
-      destination.storeMessage(buildMessage(device.getData(), true));
+      byte[] payload = device.getData();
+      if(filter.send(previousPayload, payload)) {
+        destination.storeMessage(buildMessage(payload, true));
+        previousPayload = payload;
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -116,13 +134,26 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    System.err.println("Received sendMessage "+messageEvent);
     try {
       byte[] update = device.updateConfig(messageEvent.getMessage().getOpaqueData());
       if(update != null) {
-        config.storeMessage(buildMessage(update, false));
+        config.storeMessage(buildMessage(update, true));
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
+
+  public void updateConfig() {
+    try {
+      byte[] update = device.getConfiguration();
+      if(update != null) {
+        config.storeMessage(buildMessage(update, true));
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 }

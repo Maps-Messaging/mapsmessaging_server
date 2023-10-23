@@ -20,9 +20,11 @@
 
 DeviceManager:
   global:
-    enabled: false    # Enabled hardware interface
+    enabled: true    # Enabled hardware interface
+    trigger: everyMinute
     scanTime: 30000 # Scan time looking for new hardware
-    topicMap: /device/[bus_name]/[device_name]
+    topicNameTemplate: /device/[bus_name]/[device_name]
+    filter: ON_CHANGE # Option is ALWAYS_SEND or ON_CHANGE. If ON_CHANGE then when the data changes will the event be published
 
   data:
     -
@@ -41,33 +43,29 @@ DeviceManager:
     -
       name: i2c
       enabled: true  # Enable or disable I2C bus interface
+      topicNameTemplate: /device/[bus_name]/[bus_number]/[device_addr]/[device_name]
       config:
         -
           bus: 0
           enabled: false
           autoScan: false
-          trigger: everyMinute
-          topicMap: /device/[bus_name]/0/[device_name]
 
         -
           bus: 1
-          enabled: false
+          enabled: true
           autoScan: true
-          trigger: everyMinute
-          topicMap: /device/[bus_name]/1/[device_name]
+          trigger: everySecond
 
     -
       name: oneWire
       enabled: false  # enable / disable one wire interface
-      trigger: everyMinute
       autoScan: true
 
     -
       name: demo
       enabled: false
       autoScan: true
-      trigger: everyMinute
-      topicName: /device/demo/time
+      topicNameTemplate: /device/demo/time
 
     -
       # Note: each SPI device needs to be defined, there is no generic way to scan for SPI devices

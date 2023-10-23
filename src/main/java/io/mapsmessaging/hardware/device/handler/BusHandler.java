@@ -24,6 +24,7 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.hardware.device.DeviceClientConnection;
 import io.mapsmessaging.hardware.device.DeviceSessionManagement;
+import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -41,6 +42,7 @@ public abstract class BusHandler implements Runnable {
   private final int scanPeriod;
   private Future<?> scheduledFuture;
   private final Trigger trigger;
+  private final String topicNameTemplate;
 
 
   protected BusHandler(ConfigurationProperties properties, Trigger trigger){
@@ -49,6 +51,7 @@ public abstract class BusHandler implements Runnable {
     this.properties = properties;
     this.trigger = trigger;
     scanPeriod = properties.getIntProperty("scanTime", 120000);
+    topicNameTemplate = properties.getProperty("topicNameTemplate", "/device/[bus_name]/[bus_number]/[device_addr]/[device_name]");
   }
 
   public synchronized void start() {
@@ -81,7 +84,12 @@ public abstract class BusHandler implements Runnable {
   }
 
   private DeviceSessionManagement createSession(DeviceHandler deviceHandler) {
-    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler);
+    String filterName  = properties.getProperty("filter", "ON_CHANGE");
+    DataFilter filter = DataFilter.valueOf(filterName);
+    if(filter == null){
+      filter = DataFilter.ON_CHANGE;
+    }
+    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, topicNameTemplate, filter);
     SessionContext context = createContext(deviceHandler);
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceSessionManagement);
     future.thenApply(session -> {

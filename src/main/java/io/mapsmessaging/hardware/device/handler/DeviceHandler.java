@@ -37,6 +37,38 @@ public abstract class DeviceHandler {
 
   public abstract String getBusName();
 
+  public int getBusNumber(){
+    return -1;
+  }
+
+  public int getDeviceAddress(){
+    return -1;
+  }
+
+  public String getTopicName(String template){
+    while(template.contains("[bus_name]")) {
+      template = template.replace("[bus_name]", getBusName());
+    }
+
+    String busNumber = getBusNumber() >= 0? ""+getBusNumber(): "";
+    while(template.contains("[bus_number]")) {
+      template = template.replace("[bus_number]", busNumber);
+    }
+
+    String deviceAddress = getDeviceAddress() >= 0? "0x"+Integer.toHexString(getDeviceAddress()): "";
+    while(template.contains("[device_addr]")) {
+      template = template.replace("[device_addr]", deviceAddress);
+    }
+
+    while(template.contains("[device_name]")) {
+      template = template.replace("[device_name]", getName());
+    }
+    while(template.contains("//")){
+      template = template.replace("//", "/");
+    }
+    return template;
+  }
+
   public String getName(){
     return controller.getName();
   }

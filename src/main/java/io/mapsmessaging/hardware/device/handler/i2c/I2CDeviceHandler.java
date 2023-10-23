@@ -18,6 +18,7 @@
 package io.mapsmessaging.hardware.device.handler.i2c;
 
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.devices.i2c.I2CDeviceController;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 
 public class I2CDeviceHandler extends DeviceHandler {
@@ -31,6 +32,21 @@ public class I2CDeviceHandler extends DeviceHandler {
     return "i2c";
   }
 
+  @Override
+  public int getBusNumber(){
+    if(getController() instanceof I2CDeviceController){
+      return ((I2CDeviceController)getController()).getDevice().getBus();
+    }
+    return super.getBusNumber();
+  }
+
+  @Override
+  public int getDeviceAddress(){
+    if(getController() instanceof I2CDeviceController){
+      return ((I2CDeviceController)getController()).getDevice().getDevice().getDevice();
+    }
+    return super.getDeviceAddress();
+  }
   @Override
   public boolean enableConfig(){
     return true;
