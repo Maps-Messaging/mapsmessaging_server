@@ -22,6 +22,7 @@ import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import jakarta.servlet.Servlet;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
@@ -36,8 +37,6 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.uri.UriComponent;
 
 import javax.jmdns.ServiceInfo;
-import javax.servlet.Servlet;
-import javax.ws.rs.core.PathSegment;
 import java.io.IOException;
 import java.net.URI;
 
@@ -122,8 +121,8 @@ public class RestApiServerManager implements Agent {
       final ResourceConfig config = new ResourceConfig();
       config.packages(true, "io.mapsmessaging.rest.api.impl", "io.mapsmessaging.rest.api", "io.mapsmessaging.rest.translation");
       if(map.getBooleanProperty("enableSwagger", false)) {
-        config.register(io.swagger.jaxrs.listing.ApiListingResource.class);
-        config.register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+//        config.register(io.swagger.jaxrs.listing.ApiListingResource.class);
+//        config.register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
       }
       config.register(DebugMapper.class);
       ServletContainer sc = new ServletContainer(config);
@@ -161,7 +160,7 @@ public class RestApiServerManager implements Agent {
       } else if (path.charAt(0) != '/') {
         throw new IllegalArgumentException("The URI path, of the URI " + uri + ". must start with a '/'");
       } else {
-        path = String.format("/%s", ((PathSegment) UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
+        path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
         WebappContext context = new WebappContext("GrizzlyContext", path);
         ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
 

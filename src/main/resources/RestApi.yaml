@@ -16,8 +16,8 @@
 
 ---
 RestApi:
-  enabled: false
+  enabled: true
   hostnames: 0.0.0.0
-  port: 8080
+  port: 8082
   enableSwagger: true
   enableSwaggerUI: true

@@ -17,8 +17,6 @@
 
 package io.mapsmessaging.rest.api.impl;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.responses.BaseResponse;
@@ -29,22 +27,19 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import lombok.Getter;
-import lombok.Setter;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Api(value = URI_PATH + "/server/schema", tags = "Schema Management")
 @Path(URI_PATH)
