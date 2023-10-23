@@ -563,7 +563,7 @@
     <dependency>
       <groupId>com.sun.xml.bind</groupId>
       <artifactId>jaxb-impl</artifactId>
-      <version>4.0.2</version>
+      <version>4.0.4</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/javax.activation/activation -->
