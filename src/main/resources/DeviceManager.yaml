@@ -20,7 +20,7 @@
 
 DeviceManager:
   global:
-    enabled: true    # Enabled hardware interface
+    enabled: false    # Enabled hardware interface
     trigger: everyMinute
     scanTime: 30000 # Scan time looking for new hardware
     topicNameTemplate: /device/[bus_name]/[device_name]

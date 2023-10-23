@@ -73,13 +73,13 @@ MessageDaemon:
     # if enabled then 1, 5, 10 and 15 minute moving averages are calculated and $SYS topics constructed and populated
     #
     # Default: true
-    EnableSystemTopicAverages: false
+    EnableSystemTopicAverages: true
 
     #
     # Enable or Disable the construction of JMX Beans for server management / monitoring
     #
     # Default: true
-    EnableJMX: false
+    EnableJMX: true
 
 
     #
