@@ -48,6 +48,9 @@ public class Connected extends State {
         if (direction.equalsIgnoreCase("pull")) {
           endPointConnection.getConnection().subscribeRemote(remote, local, transformer);
         } else if (direction.equalsIgnoreCase("push")) {
+          if(remote.endsWith("#")){
+            remote = remote.substring(0, remote.length()-1);
+          }
           endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer);
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);

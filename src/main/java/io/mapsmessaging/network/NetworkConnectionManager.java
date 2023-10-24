@@ -29,14 +29,17 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.*;
 
 public class NetworkConnectionManager implements ServiceManager, Agent {
 
-  private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
+  @Getter
   private final SelectorLoadManager selectorLoadManager;
+
+  private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
   private final List<EndPointConnection> endPointConnectionList;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
@@ -87,10 +90,6 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         }
       }
     }
-  }
-
-  public SelectorLoadManager getSelectorLoadManager() {
-    return selectorLoadManager;
   }
 
   @Override

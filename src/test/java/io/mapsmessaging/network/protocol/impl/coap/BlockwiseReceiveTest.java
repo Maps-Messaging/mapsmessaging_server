@@ -1,8 +1,22 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.network.protocol.impl.coap;
 
-import static org.eclipse.californium.core.coap.CoAP.CodeClass.SUCCESS_RESPONSE;
-
-import java.io.IOException;
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.Request;
@@ -10,6 +24,10 @@ import org.eclipse.californium.elements.exception.ConnectorException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.io.IOException;
+
+import static org.eclipse.californium.core.coap.CoAP.CodeClass.SUCCESS_RESPONSE;
 
 class BlockwiseReceiveTest extends BaseCoapTest {
 
@@ -25,12 +43,14 @@ class BlockwiseReceiveTest extends BaseCoapTest {
       Assertions.assertNotNull(response);
       Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
 
+      delay(100);
       Request request = Request.newGet();
       request.getOptions().setBlock2(size, false, 0);
       CoapResponse response1 = client.advanced(request);
       Assertions.assertNotNull(response1); // Should not be null
       Assertions.assertArrayEquals(tmp, response1.getPayload());
-      client.shutdown();
+    delay(100);
+    client.shutdown();
   }
 
 }

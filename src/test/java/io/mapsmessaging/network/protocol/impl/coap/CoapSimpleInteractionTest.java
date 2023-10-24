@@ -1,8 +1,22 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.network.protocol.impl.coap;
 
-import static org.eclipse.californium.core.coap.CoAP.CodeClass.SUCCESS_RESPONSE;
-
-import java.io.IOException;
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.CoAP.Code;
@@ -12,6 +26,10 @@ import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.elements.exception.ConnectorException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
+import static org.eclipse.californium.core.coap.CoAP.CodeClass.SUCCESS_RESPONSE;
 
 class CoapSimpleInteractionTest extends BaseCoapTest {
 
@@ -66,36 +84,37 @@ class CoapSimpleInteractionTest extends BaseCoapTest {
     CoapResponse response = client.advanced(request);
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
-
+    delay(100);
     response = client.get();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
-
+    delay(100);
     response = client.putIfMatch("This should NOT change", 0, "tag5".getBytes());
     Assertions.assertNotNull(response);
     Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeClass, response.getCode().codeClass);
     Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeDetail, response.getCode().codeDetail);
 
-
+    delay(100);
     response = client.get();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
 
-
+    delay(100);
     client.putIfMatch("This should change", 0, "tag2".getBytes());
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
-
+    delay(100);
     response = client.get();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("This should change".getBytes(), response.getPayload());
-
+    delay(100);
     response = client.delete();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    delay(100);
     client.shutdown();
   }
 
@@ -106,42 +125,49 @@ class CoapSimpleInteractionTest extends BaseCoapTest {
     CoapResponse response = client.put("this is simply bytes".getBytes(), 0);
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
-
+    delay(100);
 
     response = client.get();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
 
+    delay(100);
     response = client.putIfNoneMatch("This should NOT change", 0);
     Assertions.assertNotNull(response);
     Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeClass, response.getCode().codeClass);
     Assertions.assertEquals(ResponseCode.PRECONDITION_FAILED.codeDetail, response.getCode().codeDetail);
 
+    delay(100);
     response = client.get();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("this is simply bytes".getBytes(), response.getPayload());
 
 
+    delay(100);
     response = client.delete();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
 
 
+    delay(1000);
     client.putIfNoneMatch("This should change since it was deleted", 0);
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
 
+    delay(100);
     response = client.get();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
     Assertions.assertArrayEquals("This should change since it was deleted".getBytes(), response.getPayload());
 
 
+    delay(100);
     response = client.delete();
     Assertions.assertNotNull(response);
     Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    delay(100);
     client.shutdown();
   }
 }

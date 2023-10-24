@@ -38,6 +38,7 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,12 +55,15 @@ public class MQTTProtocol extends ProtocolImpl {
   private final PacketFactory packetFactory;
   private final PacketListenerFactory packetListenerFactory;
   private final SelectorTask selectorTask;
+  @Getter
   private final PacketIdManager packetIdManager;
   private final long maxBufferSize;
 
+  @Getter
   private final Map<String, String> topicNameMapping;
 
   private volatile boolean closed;
+  @Getter
   private Session session;
 
 
@@ -132,10 +136,6 @@ public class MQTTProtocol extends ProtocolImpl {
     session.addSubscription(builder.build());
   }
 
-  public Map<String, String> getTopicNameMapping() {
-    return topicNameMapping;
-  }
-
   public String getVersion() {
     return "3.1.1";
   }
@@ -150,10 +150,6 @@ public class MQTTProtocol extends ProtocolImpl {
       return "waiting";
     }
     return session.getName();
-  }
-
-  public Session getSession() {
-    return session;
   }
 
   public void setSession(Session session) {
@@ -257,6 +253,17 @@ public class MQTTProtocol extends ProtocolImpl {
       if (tmp != null) {
         destinationName = tmp;
       }
+      else{
+        for(String key:topicNameMapping.keySet()){
+          int index = key.indexOf("#");
+          if(index > 0){
+            String sub = key.substring(0, index);
+            if(destinationName.startsWith(sub)){
+              destinationName = topicNameMapping.get(key) + destinationName.substring(sub.length());
+            }
+          }
+        }
+      }
     }
     Publish publish = new Publish(message.isRetain(), payload, qos, packetId, destinationName);
     publish.setCallback(messageEvent.getCompletionTask());
@@ -268,10 +275,6 @@ public class MQTTProtocol extends ProtocolImpl {
     sentMessage();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);
-  }
-
-  public PacketIdManager getPacketIdManager() {
-    return packetIdManager;
   }
 
   public long getMaximumBufferSize() {

@@ -32,6 +32,8 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,21 +44,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
 
 public class EndPointConnection extends EndPointServerStatus {
-
-  private final Logger logger;
-  private final ConfigurationProperties properties;
-  private final EndPointConnectionHostJMX manager;
-  private final EndPointConnectionFactory endPointConnectionFactory;
-  private final SelectorLoadManager selectorLoadManager;
-  private final List<ConfigurationProperties> destinationMappings;
-
   private final AtomicBoolean running;
   private final AtomicBoolean paused;
-
   private Future<?> futureTask;
-  private EndPoint endPoint;
-  private ProtocolImpl connection;
+
+  @Getter
+  private final Logger logger;
+  @Getter
+  private final ConfigurationProperties properties;
+  private final EndPointConnectionHostJMX manager;
+  @Getter
+  private final EndPointConnectionFactory endPointConnectionFactory;
+  @Getter
+  private final SelectorLoadManager selectorLoadManager;
+  @Getter
+  private final List<ConfigurationProperties> destinationMappings;
+  @Getter
   private State state;
+
+  @Getter
+  @Setter
+  private EndPoint endPoint;
+  @Getter
+  @Setter
+  private ProtocolImpl connection;
 
   public EndPointConnection(
       EndPointURL url, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings,
@@ -91,26 +102,6 @@ public class EndPointConnection extends EndPointServerStatus {
     logger.log(ServerLogMessages.END_POINT_CONNECTION_CLOSED);
   }
 
-  public ConfigurationProperties getProperties() {
-    return properties;
-  }
-
-  public List<ConfigurationProperties> getDestinationMappings() {
-    return destinationMappings;
-  }
-
-  public ProtocolImpl getConnection() {
-    return connection;
-  }
-
-  public void setConnection(ProtocolImpl connection) {
-    this.connection = connection;
-  }
-
-  public EndPointConnectionFactory getEndPointConnectionFactory() {
-    return endPointConnectionFactory;
-  }
-
   @Override
   public NetworkConfig getConfig() {
     return new NetworkConfig(properties);
@@ -134,26 +125,6 @@ public class EndPointConnection extends EndPointServerStatus {
     if (running.get()) {
       scheduleState(new Delayed(this));
     }
-  }
-
-  public Logger getLogger() {
-    return logger;
-  }
-
-  public State getState() {
-    return state;
-  }
-
-  public EndPoint getEndPoint() {
-    return endPoint;
-  }
-
-  public void setEndPoint(EndPoint endPoint) {
-    this.endPoint = endPoint;
-  }
-
-  public SelectorLoadManager getSelectorLoadManager() {
-    return selectorLoadManager;
   }
 
   public void start() {
