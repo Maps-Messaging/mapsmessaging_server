@@ -55,9 +55,7 @@ public abstract class BusHandler implements Runnable {
   }
 
   public synchronized void start() {
-    if(properties.getBooleanProperty("autoScan", false)) {
-      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 5000, scanPeriod, TimeUnit.MILLISECONDS);
-    }
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 5000, scanPeriod, TimeUnit.MILLISECONDS);
   }
 
   public synchronized void stop(){
@@ -88,13 +86,18 @@ public abstract class BusHandler implements Runnable {
     foundDevices.remove(deviceSessionManagement.getDevice().getKey());
   }
 
+  protected String getSelector(int address){
+    return properties.getProperty("selector", "");
+  }
+
   private DeviceSessionManagement createSession(DeviceHandler deviceHandler) {
     String filterName  = properties.getProperty("filter", "ON_CHANGE");
     DataFilter filter = DataFilter.valueOf(filterName);
     if(filter == null){
       filter = DataFilter.ON_CHANGE;
     }
-    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, topicNameTemplate, filter, this);
+    String selector = getSelector(deviceHandler.getDeviceAddress());
+    DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, topicNameTemplate, filter, this, selector);
     SessionContext context = createContext(deviceHandler);
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceSessionManagement);
     future.thenApply(session -> {

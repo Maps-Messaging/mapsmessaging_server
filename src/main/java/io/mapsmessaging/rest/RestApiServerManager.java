@@ -65,9 +65,13 @@ public class RestApiServerManager implements Agent {
 
   public void start() {
     if (map.getBooleanProperty("enabled", false)) {
-      setupSSL();
-      startServer();
-      serviceInfos = MessageDaemon.getInstance().getDiscoveryManager().register(this);
+      Thread t= new Thread(() -> {
+        setupSSL();
+        startServer();
+        serviceInfos = MessageDaemon.getInstance().getDiscoveryManager().register(this);
+      });
+      t.setDaemon(true);
+      t.start();
     }
   }
 

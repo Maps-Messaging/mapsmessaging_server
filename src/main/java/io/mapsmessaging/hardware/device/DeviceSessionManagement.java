@@ -27,9 +27,13 @@ import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -44,6 +48,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private final String topicNameTemplate;
   private final DataFilter filter;
   private final BusHandler busHandler;
+  private final ParserExecutor parser;
 
   private Session session;
   private Destination destination;
@@ -55,7 +60,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private ProtocolMessageTransformation transformation;
   private Future<?> scheduledFuture;
 
-  public DeviceSessionManagement(DeviceHandler deviceHandler, String topicNameTemplate, DataFilter filter, BusHandler busHandler){
+  public DeviceSessionManagement(DeviceHandler deviceHandler, String topicNameTemplate, DataFilter filter, BusHandler busHandler, String selector){
     this.device = deviceHandler;
     this.topicNameTemplate = topicNameTemplate;
     this.filter = filter;
@@ -63,6 +68,15 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     scheduledFuture = null;
     previousPayload = null;
     device.getController().setRaiseExceptionOnError(true);
+    ParserExecutor executor = null;
+    if(selector != null && !selector.isBlank()){
+      try {
+        executor = SelectorParser.compile(selector);
+      } catch (ParseException e) {
+        // ToDo
+      }
+    }
+    parser = executor;
   }
 
   public void start() throws ExecutionException, InterruptedException {
@@ -127,8 +141,14 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   public void run() {
     byte[] payload;
     try {
-      device.getController().setRaiseExceptionOnError(true);
       payload = device.getData();
+      if(parser != null){
+        JSONObject jsonObject = new JSONObject(new String(payload));
+        Map<String, Object> map = jsonObject.toMap();
+        if(!parser.evaluate(map)){
+          return;
+        }
+      }
     } catch (IOException e) {
       try {
         stop(); // remove and close session

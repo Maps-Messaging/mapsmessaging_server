@@ -145,6 +145,7 @@ public class DeviceManager implements ServiceManager, Agent {
     if (configList instanceof List) {
       for (Object busConfigObj : (List) configList) {
         if (busConfigObj instanceof ConfigurationProperties) {
+          ((ConfigurationProperties) busConfigObj).setGlobal(deviceConfig.getGlobal());
           configureI2CConfig((ConfigurationProperties) busConfigObj);
         }
       }

@@ -26,15 +26,21 @@ import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class I2CBusHandler extends BusHandler {
 
   private final I2CBusManager i2CBusManager;
+  private final Map<Integer, String> selectorMap;
 
   public I2CBusHandler(I2CBusManager i2CBusManager, ConfigurationProperties properties, Trigger trigger){
     super(properties, trigger);
     this.i2CBusManager = i2CBusManager;
+    selectorMap = new LinkedHashMap<>();
+    processConfiguredDevices();
   }
 
   @Override
@@ -49,9 +55,45 @@ public class I2CBusHandler extends BusHandler {
   }
 
   @Override
+  protected String getSelector(int address){
+    return selectorMap.containsKey(address) ? selectorMap.get(address) : super.getSelector(address);
+  }
+
+  private void processConfiguredDevices(){
+    Object devices = properties.get("devices");
+    if(devices instanceof List){
+      List<ConfigurationProperties> deviceConfigurations = (List)devices;
+      for(ConfigurationProperties deviceConfig: deviceConfigurations){
+        deviceConfig.setGlobal(properties.getGlobal());
+        configureDevice(deviceConfig);
+      }
+    }
+  }
+
+  private void configureDevice(ConfigurationProperties deviceConfig){
+    String name = deviceConfig.getProperty("name");
+    String addrStr = deviceConfig.getProperty("address");
+    String selector = deviceConfig.getProperty("selector");
+    if(name != null && addrStr != null){
+      int addr = Integer.parseInt(addrStr, addrStr.contains("x")?16:10);
+      try {
+        i2CBusManager.configureDevice(addr, name);
+      } catch (IOException e) {
+        e.printStackTrace();
+        // To Do
+      }
+      if(selector != null && !selector.isBlank()){
+        selectorMap.put(addr, selector);
+      }
+    }
+  }
+
+  @Override
   protected Map<String, DeviceController> scan() {
     try {
-      i2CBusManager.scanForDevices(10);
+      if(properties.getBooleanProperty("autoScan", false)) {
+        i2CBusManager.scanForDevices(10);
+      }
     } catch (InterruptedException e) {
       //
     }
