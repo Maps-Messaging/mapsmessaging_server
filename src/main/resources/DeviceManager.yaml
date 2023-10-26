@@ -25,6 +25,7 @@ DeviceManager:
     scanTime: 30000 # Scan time looking for new hardware
     topicNameTemplate: /device/[bus_name]/[device_name]
     filter: ON_CHANGE # Option is ALWAYS_SEND or ON_CHANGE. If ON_CHANGE then when the data changes will the event be published
+    selector: '' # JMS Selector to use when filtering the actual data from the sensor
 
   data:
     -
@@ -46,23 +47,33 @@ DeviceManager:
 
     -
       name: i2c
-      enabled: true  # Enable or disable I2C bus interface
-      topicNameTemplate: /device/[bus_name]/[bus_number]/[device_addr]/[device_name]
+      enabled: false  # Enable or disable I2C bus interface
       config:
         -
           bus: 0
           enabled: false
+          topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           autoScan: false
+          devices:
+            -
+              address: 0x23
+              name: BH1750
+              selector: 'lux > 20.0'
+            -
+              address: 0x5d
+              name: LPS25
+              selector: 'temperature > 20.0'
 
         -
           bus: 1
           enabled: true
           autoScan: true
+          topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           trigger: everyHundredth
 
     -
       name: oneWire
-      enabled: false  # enable / disable one wire interface
+      enabled: true  # enable / disable one wire interface
       autoScan: true
 
     -

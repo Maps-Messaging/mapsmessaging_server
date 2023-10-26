@@ -50,14 +50,7 @@ NetworkConnectionManager:
         ssl_trustStore: JKS
 
     data:
-        name: semtech uplink
-        url: udp://messaging:1700/
-        protocol: semtech
-        sessionId: gatewayId
-        links:
-            direction: push
-            local_namespace: /semtech/{gatewayId}/in
-            remote_namespace: /semtech/{gatewayId}/out
+
 
 
 #        name: Generic name for the connection
