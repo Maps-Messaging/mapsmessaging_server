@@ -88,6 +88,13 @@ public class ConsulPropertyManager extends YamlPropertyManager {
     // Now let's add the new config
     properties.clear();
     properties.putAll(propertyManager.properties.getMap());
+    for (String key : properties.keySet()) {
+      ConfigurationProperties copy = (ConfigurationProperties) properties.get(key);
+      ConfigurationProperties orig = (ConfigurationProperties) propertyManager.properties.get(key);
+      copy.setSource(orig.getSource());
+    }
+
+
     if (properties.getGlobal() != null) {
       properties.getGlobal().clear();
     }
