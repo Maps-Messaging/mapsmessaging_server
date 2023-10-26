@@ -116,7 +116,7 @@ public class MQTTProtocol extends ProtocolImpl {
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
-      destinationTransformerMap.put(resource, transformer);
+      destinationTransformerMap.put(mappedResource, transformer);
     }
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
@@ -130,7 +130,7 @@ public class MQTTProtocol extends ProtocolImpl {
       throws IOException {
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
-      destinationTransformerMap.put(resource, transformer);
+      destinationTransformerMap.put(mappedResource, transformer);
     }
     SubscriptionContextBuilder builder = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 1024);
     session.addSubscription(builder.build());
