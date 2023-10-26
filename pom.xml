@@ -507,7 +507,7 @@
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Device_Library</artifactId>
-      <version>1.0.3</version>
+      <version>1.0.5</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/tanukisoft/wrapper -->

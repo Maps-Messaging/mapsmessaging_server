@@ -66,6 +66,9 @@ public abstract class DeviceHandler {
     while(template.contains("[device_name]")) {
       template = template.replace("[device_name]", getName());
     }
+    while(template.contains("[device_type]")) {
+      template = template.replace("[device_type]", controller.getType().name().toLowerCase());
+    }
     while(template.contains("//")){
       template = template.replace("//", "/");
     }

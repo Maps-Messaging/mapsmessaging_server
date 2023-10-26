@@ -22,6 +22,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
@@ -55,6 +56,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private Destination config;
   private Destination raw;
   private SubscribedEventManager subscribedEventManager;
+  private SubscribedEventManager displayEventManager;
 
   private byte[] previousPayload;
   private ProtocolMessageTransformation transformation;
@@ -97,17 +99,38 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     if(device.enableConfig()) {
       config = session.findDestination(device.getTopicName(topicNameTemplate+ "/config"), DestinationType.TOPIC).get();
       try {
-        SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(config.getFullyQualifiedNamespace(), ClientAcknowledgement.AUTO);
-        subscriptionContextBuilder.setQos(QualityOfService.AT_MOST_ONCE);
-        subscriptionContextBuilder.setNoLocalMessages(true);
-        subscribedEventManager = session.addSubscription(subscriptionContextBuilder.build());
         updateConfig();
+        subscribedEventManager = subscribe(config);
       } catch (Throwable e) {
         e.printStackTrace();
         // To Do
       }
     }
-    device.getTrigger().addTask(this);
+    switch(device.getType()){
+      case SENSOR:
+      case CLOCK:
+        device.getTrigger().addTask(this);
+        break;
+
+      case DISPLAY:
+        try {
+          displayEventManager = subscribe(destination);
+        } catch (Exception e) {
+          // toDo
+        }
+        break;
+
+      default:
+        break;
+
+    }
+  }
+
+  private SubscribedEventManager subscribe(Destination destination) throws IOException {
+    SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(destination.getFullyQualifiedNamespace(), ClientAcknowledgement.AUTO);
+    subscriptionContextBuilder.setQos(QualityOfService.AT_MOST_ONCE);
+    subscriptionContextBuilder.setNoLocalMessages(true);
+    return session.addSubscription(subscriptionContextBuilder.build());
   }
 
   public void stop() throws IOException {
@@ -128,6 +151,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     if(device.getBusNumber()>=0) meta.put("busNumber", ""+device.getBusNumber());
     meta.put("version", device.getVersion());
     meta.put("device", device.getName());
+    meta.put("sessionId", session.getName());
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(payload);
     messageBuilder.setTransformation(transformation);
@@ -176,19 +200,21 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     try {
       byte[] update = device.updateConfig(messageEvent.getMessage().getOpaqueData());
-      if(update != null) {
+      if(update != null && device.getType() == DeviceType.SENSOR) {
         Thread t = new Thread(() -> {
           try {
             config.storeMessage(buildMessage(update, true));
           } catch (IOException e) {
-            throw new RuntimeException(e);
+//            throw new RuntimeException(e);
           }
         });
         t.start();
       }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Throwable e) {
+      e.printStackTrace();
+     // throw new RuntimeException(e);
     }
+    messageEvent.getCompletionTask().run();
   }
 
   public void updateConfig() {
