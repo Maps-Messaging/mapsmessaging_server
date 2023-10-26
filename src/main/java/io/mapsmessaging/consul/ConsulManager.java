@@ -50,13 +50,23 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   private Future<?> scheduledTask;
 
   public ConsulManager(String serverId) {
-    String host = System.getProperty("ConsulHost", "127.0.0.1");
-    int port = Integer.parseInt(System.getProperty("ConsulPort", "8500"));
-    HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
-    client = Consul.builder()
-        .withClientEventCallback(this)
-        .withHostAndPort(hostAndPort)
-        .build();
+    String consulUrl = System.getProperty("ConsulUrl");
+    Consul.Builder builder = Consul.builder();
+    if(consulUrl != null){
+      builder.withUrl(consulUrl);
+    }
+    else{
+      String host = System.getProperty("ConsulHost", "127.0.0.1");
+      String acl = System.getProperty("ConsulAcl");
+      int port = Integer.parseInt(System.getProperty("ConsulPort", "8500"));
+      HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
+        builder.withClientEventCallback(this)
+          .withHostAndPort(hostAndPort);
+      if(acl != null){
+        builder.withAclToken(acl);
+      }
+    }
+    client = builder.build();
     agentClient = client.agentClient();
     serviceIds = new ArrayList<>();
     uniqueName = serverId;
