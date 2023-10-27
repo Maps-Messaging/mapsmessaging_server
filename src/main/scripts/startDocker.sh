@@ -21,8 +21,6 @@ export VERSION=%%MAPS_VERSION%%
 
 # Get the value of the ConsulHost environment variable, or default to 127.0.0.1
 CONSUL_HOST="${ConsulHost:-127.0.0.1}"
-
-# Export it so that it's available to processes you might run from this script
 export CONSUL_HOST
 
 
@@ -43,4 +41,4 @@ export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH -DUSE_UUID=false -DConsulHost=$CONSUL_HOST -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
+java -classpath $CLASSPATH -DUSE_UUID=false -DConsulHost=$CONSUL_HOST DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
