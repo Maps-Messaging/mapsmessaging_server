@@ -78,6 +78,29 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     return client.keyValueClient();
   }
 
+  public String scanForDefaultConfig(String namespace){
+    if(!namespace.endsWith("/")){
+      namespace = namespace+"/";
+    }
+    KeyValueClient keyValueClient = getKeyValueManager();
+    while(namespace.contains("/") && namespace.length() >= 1){ // we have a depth
+      String lookup = namespace+"default";
+      List<String> keys = keyValueClient.getKeys(lookup);
+      if(keys != null && !keys.isEmpty()){
+        return lookup;
+      }
+      namespace = namespace.substring(0, namespace.length()-1); // Remove the "/"
+      int idx = namespace.lastIndexOf("/");
+      if(idx >=0 && namespace.length() > 1){
+        namespace = namespace.substring(0, idx+1); // Include the /
+      }
+      else{
+        break;
+      }
+    }
+    return "";
+  }
+
   public void register(Map<String, String> meta) {
     List<String> propertyNames = new ArrayList<>();
     meta.put("version", BuildInfo.getBuildVersion());

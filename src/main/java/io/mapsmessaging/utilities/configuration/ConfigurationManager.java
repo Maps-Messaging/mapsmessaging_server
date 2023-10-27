@@ -57,9 +57,23 @@ public class ConfigurationManager {
   public void initialise(@NonNull @NotNull String serverId) {
     ConsulPropertyManager defaultConsulManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
+      String consulConfigPath = System.getProperty("ConsulPath","/");
+      String defaultName = "default";
+      if(consulConfigPath != null){
+        if(!consulConfigPath.endsWith("/")){
+          consulConfigPath = consulConfigPath+"/";
+        }
+        serverId = consulConfigPath+serverId;
+        defaultName = consulConfigPath+defaultName;
+      }
       authoritative = new ConsulPropertyManager(serverId);
       authoritative.load();
-      defaultConsulManager = new ConsulPropertyManager("default");
+      String locatedDefault = ConsulManagerFactory.getInstance().getManager().scanForDefaultConfig(consulConfigPath);
+      if(!locatedDefault.isEmpty()){
+        defaultName = locatedDefault;
+      }
+
+      defaultConsulManager = new ConsulPropertyManager(defaultName);
       defaultConsulManager.load();
       propertyManagers.add(defaultConsulManager);
     }
