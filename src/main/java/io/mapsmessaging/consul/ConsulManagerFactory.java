@@ -53,6 +53,7 @@ public class ConsulManagerFactory {
         manager = new ConsulManager(serverId);
         retry = false;
       } catch (Exception e) {
+        logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, serverId, e);
         LockSupport.parkNanos(1000000000L);
         counter++;
         if (!forceWait && e instanceof ConsulException) {
