@@ -42,7 +42,11 @@ public class Connected extends State {
       String remote = property.getProperty("remote_namespace");
       String selector = property.getProperty("selector");
 
-      Transformer transformer = TransformerManager.getInstance().get(property.getProperty("transformer"));
+      Transformer transformer = null;
+      Object obj = property.get("transformer");
+      if(obj instanceof ConfigurationProperties) {
+        transformer = TransformerManager.getInstance().get((ConfigurationProperties)obj);
+      }
 
       try {
         if (direction.equalsIgnoreCase("pull")) {

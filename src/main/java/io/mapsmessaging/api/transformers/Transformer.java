@@ -18,10 +18,13 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 
 public interface Transformer extends Service {
 
   void transform(MessageBuilder messageBuilder);
+
+  Transformer build(ConfigurationProperties properties);
 
 }

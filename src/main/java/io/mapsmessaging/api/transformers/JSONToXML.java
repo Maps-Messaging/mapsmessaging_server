@@ -18,6 +18,7 @@
 package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import org.json.JSONObject;
 import org.json.XML;
 
@@ -28,6 +29,11 @@ public class JSONToXML implements Transformer {
   public void transform(MessageBuilder messageBuilder) {
     JSONObject jsonObject = new JSONObject(new String(messageBuilder.getOpaqueData()));
     messageBuilder.setOpaqueData(XML.toString(jsonObject).getBytes());
+  }
+
+  @Override
+  public Transformer build(ConfigurationProperties properties) {
+    return this;
   }
 
   @Override

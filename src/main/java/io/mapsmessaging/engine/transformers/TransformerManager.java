@@ -18,6 +18,7 @@
 package io.mapsmessaging.engine.transformers;
 
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
@@ -40,8 +41,13 @@ public class TransformerManager implements ServiceManager {
 
   private final Map<String, Service> transformerMap;
 
-  public Transformer get(String transformer) {
-    return (Transformer) transformerMap.get(transformer);
+  public Transformer get(ConfigurationProperties props) {
+    String transformer = props.getProperty("name");
+    Transformer t = (Transformer) transformerMap.get(transformer);
+    if(t != null){
+      return t.build(props);
+    }
+    return null;
   }
 
   private TransformerManager() {
