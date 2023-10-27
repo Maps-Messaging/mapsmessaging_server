@@ -42,5 +42,5 @@ export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH -DConsulUrl=CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
+java -classpath $CLASSPATH -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
 
