@@ -25,8 +25,8 @@ if [ -z ${MAPS_HOME+x} ];
 fi
 
 # Get the value of the ConsulHost environment variable, or default to 127.0.0.1
-CONSUL_HOST="${ConsulHost:-127.0.0.1}"
-export CONSUL_HOST
+CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
+export CONSUL_URL
 
 echo "Maps Home is set to '$MAPS_HOME'"
 export MAPS_LIB=$MAPS_HOME/lib
@@ -42,5 +42,5 @@ export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH -DConsulHost=$CONSUL_HOST -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
+java -classpath $CLASSPATH DConsulUrl=CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
 
