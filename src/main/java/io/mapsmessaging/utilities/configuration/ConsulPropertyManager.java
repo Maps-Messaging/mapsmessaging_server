@@ -38,6 +38,9 @@ public class ConsulPropertyManager extends YamlPropertyManager {
   private final Logger logger = LoggerFactory.getLogger(ConsulPropertyManager.class);
 
   public ConsulPropertyManager(String prefix) {
+    if(prefix.startsWith("/")){
+      prefix = prefix.substring(1);
+    }
     serverPrefix = prefix + "/";
   }
 
