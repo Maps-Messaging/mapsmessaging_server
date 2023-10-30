@@ -41,7 +41,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {
@@ -60,14 +59,12 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
 
   private byte[] previousPayload;
   private ProtocolMessageTransformation transformation;
-  private Future<?> scheduledFuture;
 
   public DeviceSessionManagement(DeviceHandler deviceHandler, String topicNameTemplate, DataFilter filter, BusHandler busHandler, String selector){
     this.device = deviceHandler;
     this.topicNameTemplate = topicNameTemplate;
     this.filter = filter;
     this.busHandler = busHandler;
-    scheduledFuture = null;
     previousPayload = null;
     device.getController().setRaiseExceptionOnError(true);
     ParserExecutor executor = null;
