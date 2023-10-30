@@ -21,5 +21,5 @@ hawtio:
     authenticationEnabled: false    # if true then hawtio service will require authentication
     host: 0.0.0.0                   # Host name / ip address to bind to
     port: 8080                      # Port for the hawtio service to bind to
-    warFileLocation: C:/Users/matthew/Downloads/hawtio-war-2.15.0.war # Path to the war file to load for the hawtio service
+    warFileLocation: /Users/matthew/Downloads/hawtio-war-2.15.0.war # Path to the war file to load for the hawtio service
     discoverable: false             # If the server registers a mdns entry for hawtio
