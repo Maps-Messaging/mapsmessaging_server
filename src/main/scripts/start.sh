@@ -28,6 +28,9 @@ fi
 CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
 export CONSUL_URL
 
+JAVA_OPTS="${JavaOpts:-''}"
+export JAVA_OPTS
+
 echo "Maps Home is set to '$MAPS_HOME'"
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
@@ -42,5 +45,5 @@ export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
+java -classpath $CLASSPATH $JAVA_OPTS -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
 

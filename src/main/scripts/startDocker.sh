@@ -14,6 +14,10 @@
 # limitations under the License.
 #
 #
+
+#
+# Configure the java command on the path
+#
 export JAVA_HOME=/opt/jdk-13
 export PATH=$JAVA_HOME/bin:$PATH
 
@@ -23,6 +27,8 @@ export VERSION=%%MAPS_VERSION%%
 CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
 export CONSUL_URL
 
+JAVA_OPTS="${JavaOpts:-''}"
+export JAVA_OPTS
 
 if [ -z ${MAPS_HOME+x} ];
   then export MAPS_HOME=/opt/message_daemon-$VERSION;
@@ -41,4 +47,4 @@ export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH -DUSE_UUID=false -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
+java -classpath $CLASSPATH $JAVA_OPTS -DUSE_UUID=false -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon

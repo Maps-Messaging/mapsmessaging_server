@@ -4,10 +4,19 @@
 # https://github.com/zulu-openjdk/zulu-openjdk/blob/master/alpine/13.0.1-13.28/Dockerfile
 #----------------------------------------------------------------------------------------------
 FROM alpine
+
+#----------------------------------------------------------------------------------------------
+# setup env variables
+#
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV JAVA_HOME=/usr/lib/jvm/zulu-13
+
+#----------------------------------------------------------------------------------------------
+# Install the JDK from Azul
+#----------------------------------------------------------------------------------------------
+
 RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
     INSTALL_DIR=$( dirname $JAVA_HOME ) && \
     BIN_DIR=/usr/bin && \
@@ -31,16 +40,22 @@ RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
 #   f) Register the command to start the server
 #----------------------------------------------------------------------------------------------
 # Expose the protocol ports
-# ALL      9000  TCP - Includes MQTT, AMQP and Stomp and WebSockets
-# Admin     8080        TCP
-# MQTT-SN   1884        UDP
-# SemTech   1700        UDP
-# CoAP      5683        UDP
+# -------------------------
+#
+# ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
+# Admin       8080        TCP - Hawtio
+# Admin       8082        TCP - Native RestAPI
+#
+# SemTech     1700        UDP
+# MQTT-SN     1884        UDP
+# CoAP        5683        UDP
+# MQTT-SN V2  2442        UDP
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
 EXPOSE 8082/tcp
 
+EXPOSE 1700/udp
 EXPOSE 1884/udp
 EXPOSE 5683/udp
 EXPOSE 2442/udp
