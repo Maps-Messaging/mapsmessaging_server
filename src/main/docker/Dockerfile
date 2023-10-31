@@ -39,6 +39,8 @@ RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
+EXPOSE 8082/tcp
+
 EXPOSE 1884/udp
 EXPOSE 5683/udp
 EXPOSE 2442/udp
