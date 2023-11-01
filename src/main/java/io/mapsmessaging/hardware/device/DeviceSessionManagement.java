@@ -102,7 +102,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
           destination.updateSchema(schemaConfig, null);
         }
       }
-    } catch (Throwable e) {
+    } catch (Exception e) {
       logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e);
 
     }
@@ -111,7 +111,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       try {
         updateConfig();
         subscribedEventManager = subscribe(config);
-      } catch (Throwable e) {
+      } catch (Exception e) {
         logger.log(DEVICE_SUBSCRIPTION_EXCEPTION, e);
       }
     }
@@ -155,7 +155,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     return device.getName();
   }
 
-  private Message buildMessage(byte[] payload, boolean retain) {
+  private Message buildMessage(byte[] payload) {
     Map<String, String> meta = new LinkedHashMap<>();
     meta.put("busName", device.getBusName());
     if(device.getBusNumber()>=0) meta.put("busNumber", ""+device.getBusNumber());
@@ -167,7 +167,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     messageBuilder.setTransformation(transformation);
     messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
     messageBuilder.setMeta(meta);
-    messageBuilder.setRetain(retain);
+    messageBuilder.setRetain(true);
     return messageBuilder.build();
   }
 
@@ -204,7 +204,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
 
     if(payload != null) {
       try {
-        destination.storeMessage(buildMessage(payload, true));
+        destination.storeMessage(buildMessage(payload));
         previousPayload = payload;
       } catch (IOException e) {
         logger.log(DEVICE_PUBLISH_EXCEPTION, e);
@@ -219,7 +219,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       if(update != null && device.getType() == DeviceType.SENSOR) {
         Thread t = new Thread(() -> {
           try {
-            config.storeMessage(buildMessage(update, true));
+            config.storeMessage(buildMessage(update));
           } catch (IOException e) {
             logger.log(DEVICE_PUBLISH_EXCEPTION, e);
           }
@@ -236,7 +236,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     try {
       byte[] update = device.getConfiguration();
       if(update != null) {
-        config.storeMessage(buildMessage(update, true));
+        config.storeMessage(buildMessage(update));
       }
     } catch (IOException e) {
       logger.log(DEVICE_PUBLISH_EXCEPTION, e);
