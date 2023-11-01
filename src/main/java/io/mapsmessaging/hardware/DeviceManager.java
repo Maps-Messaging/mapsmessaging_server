@@ -20,7 +20,6 @@ package io.mapsmessaging.hardware;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
-import io.mapsmessaging.hardware.device.handler.demo.DemoBusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
@@ -100,13 +99,6 @@ public class DeviceManager implements ServiceManager, Agent {
           String triggerName = deviceConfig.getProperty("trigger", "default");
           Trigger trigger = locateNamedTrigger(triggerName);
           busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager(), deviceConfig, trigger));
-        }
-
-        if (deviceConfig.containsKey("name") &&
-            deviceConfig.getProperty("name").equalsIgnoreCase("demo") &&
-            deviceConfig.getBooleanProperty("enabled", false)) {
-          String triggerName = deviceConfig.getProperty("trigger", "default");
-          busHandlers.add(new DemoBusHandler(deviceConfig, locateNamedTrigger(triggerName)));
         }
       }
       logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_COMPLETE);
