@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.devices.DeviceType;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
@@ -93,8 +94,13 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     try {
       SchemaConfig schemaConfig = device.getSchema();
       if(schemaConfig != null) {
-        schemaConfig.setUniqueId(UUID.randomUUID());
-        destination.updateSchema(schemaConfig, null);
+        SchemaManager manager = SchemaManager.getInstance();
+        boolean found = manager.getAll().stream()
+            .anyMatch(configured -> configured.getSource().equalsIgnoreCase(schemaConfig.getSource()));
+        if(!found) {
+          schemaConfig.setUniqueId(UUID.randomUUID());
+          destination.updateSchema(schemaConfig, null);
+        }
       }
     } catch (Throwable e) {
       logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e);
