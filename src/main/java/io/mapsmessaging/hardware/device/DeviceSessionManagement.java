@@ -26,6 +26,8 @@ import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.selector.ParseException;
@@ -42,8 +44,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {
+  private static Logger logger = LoggerFactory.getLogger(DeviceSessionManagement.class);
   private final DeviceHandler device;
   private final String topicNameTemplate;
   private final DataFilter filter;
@@ -72,13 +77,15 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       try {
         executor = SelectorParser.compile(selector);
       } catch (ParseException e) {
-        // ToDo
+        logger.log(DEVICE_SELECTOR_PARSER_EXCEPTION, selector, e);
       }
     }
     parser = executor;
   }
 
   public void start() throws ExecutionException, InterruptedException {
+    logger.log(DEVICE_START, device.getName() );
+
     destination = session.findDestination(device.getTopicName(topicNameTemplate+"/data"), DestinationType.TOPIC).get();
     if(device.enableRaw()) {
       raw = session.findDestination(device.getTopicName(topicNameTemplate+ "/raw"), DestinationType.TOPIC).get();
@@ -90,8 +97,8 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         destination.updateSchema(schemaConfig, null);
       }
     } catch (Throwable e) {
-      e.printStackTrace();
-      // todo
+      logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e);
+
     }
     if(device.enableConfig()) {
       config = session.findDestination(device.getTopicName(topicNameTemplate+ "/config"), DestinationType.TOPIC).get();
@@ -99,8 +106,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         updateConfig();
         subscribedEventManager = subscribe(config);
       } catch (Throwable e) {
-        e.printStackTrace();
-        // To Do
+        logger.log(DEVICE_SUBSCRIPTION_EXCEPTION, e);
       }
     }
     switch(device.getType()){
@@ -113,7 +119,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         try {
           displayEventManager = subscribe(destination);
         } catch (Exception e) {
-          // toDo
+          logger.log(DEVICE_SUBSCRIPTION_EXCEPTION, e);
         }
         break;
 
@@ -131,6 +137,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   }
 
   public void stop() throws IOException {
+    logger.log(DEVICE_STOP, device.getName() );
     device.getTrigger().removeTask(this);
     if(config != null) {
       session.removeSubscription(config.getFullyQualifiedNamespace());
@@ -163,19 +170,27 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     byte[] payload;
     try {
       payload = device.getData();
-      if(parser != null){
-        JSONObject jsonObject = new JSONObject(new String(payload));
-        Map<String, Object> map = jsonObject.toMap();
-        if(!parser.evaluate(map)){
-          return;
+      boolean send = false;
+      if (filter.send(previousPayload, payload)) {
+        if (parser != null) {
+          JSONObject jsonObject = new JSONObject(new String(payload));
+          Map<String, Object> map = jsonObject.toMap();
+          if (parser.evaluate(map)) {
+            send = true;
+          }
+        }
+        else{
+          send = true;
         }
       }
+      if(!send) return;
     } catch (IOException e) {
+      logger.log(DEVICE_PUBLISH_EXCEPTION, e);
       try {
         stop(); // remove and close session
         busHandler.closedSession(this);
       } catch (IOException ex) {
-
+        // Ignore we are closing this session
       }
       // OK, device is offline
       payload = null;
@@ -183,12 +198,10 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
 
     if(payload != null) {
       try {
-        if (filter.send(previousPayload, payload)) {
-          destination.storeMessage(buildMessage(payload, true));
-          previousPayload = payload;
-        }
+        destination.storeMessage(buildMessage(payload, true));
+        previousPayload = payload;
       } catch (IOException e) {
-        // We have bigger issues here
+        logger.log(DEVICE_PUBLISH_EXCEPTION, e);
       }
     }
   }
@@ -202,14 +215,13 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
           try {
             config.storeMessage(buildMessage(update, true));
           } catch (IOException e) {
-//            throw new RuntimeException(e);
+            logger.log(DEVICE_PUBLISH_EXCEPTION, e);
           }
         });
         t.start();
       }
     } catch (Throwable e) {
-      e.printStackTrace();
-     // throw new RuntimeException(e);
+      logger.log(DEVICE_PUBLISH_EXCEPTION, e);
     }
     messageEvent.getCompletionTask().run();
   }
@@ -221,7 +233,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         config.storeMessage(buildMessage(update, true));
       }
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      logger.log(DEVICE_PUBLISH_EXCEPTION, e);
     }
   }
 
