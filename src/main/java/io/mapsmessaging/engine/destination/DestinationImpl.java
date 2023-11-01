@@ -153,7 +153,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
+    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
       destinationJMXBean = null;
@@ -191,7 +191,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
+    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
       destinationJMXBean = null;
@@ -238,7 +238,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMXStatistics() && MessageDaemon.getInstance() != null) {
+    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
       destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     } else {
       destinationJMXBean = null;
