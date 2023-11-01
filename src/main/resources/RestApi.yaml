@@ -21,3 +21,7 @@ RestApi:
   port: 8082
   enableSwagger: true
   enableSwaggerUI: true
+
+  static:
+    enabled: true
+    path: src/main/resources/html/
