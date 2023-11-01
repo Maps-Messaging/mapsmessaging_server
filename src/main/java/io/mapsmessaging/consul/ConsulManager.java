@@ -83,7 +83,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
       namespace = namespace+"/";
     }
     KeyValueClient keyValueClient = getKeyValueManager();
-    while(namespace.contains("/") && namespace.length() >= 1){ // we have a depth
+    while(namespace.contains("/") ){ // we have a depth
       String lookup = namespace+"default";
       List<String> keys = keyValueClient.getKeys(lookup);
       if(keys != null && !keys.isEmpty()){
