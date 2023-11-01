@@ -16,7 +16,7 @@ Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt
   - STOMP
   - CoAP
   - SemTech
-  - NMEA
+  - NMEA-083
   - RestAPI
 
 * It also supports connections to other messaging servers that support MQTT, Stomp and AMQP allowing the server to either publish data to the remote servers or subscribe to data on
