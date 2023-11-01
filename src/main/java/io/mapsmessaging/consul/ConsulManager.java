@@ -52,6 +52,8 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   public ConsulManager(String serverId) {
     String consulUrl = System.getProperty("ConsulUrl");
     Consul.Builder builder = Consul.builder();
+    String consulToken = System.getProperty("ConsulToken");
+    if (consulToken!=null) builder.withTokenAuth(consulToken);
     if(consulUrl != null){
       builder.withUrl(consulUrl);
     }
