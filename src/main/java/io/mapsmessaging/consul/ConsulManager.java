@@ -40,8 +40,10 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class ConsulManager implements Runnable, ClientEventCallback {
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STARTING;
 
+public class ConsulManager implements Runnable, ClientEventCallback {
+  private final boolean consulAgentRegister;
   private final Logger logger = LoggerFactory.getLogger(ConsulManager.class);
   private final Consul client;
   private final AgentClient agentClient;
@@ -50,6 +52,17 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   private Future<?> scheduledTask;
 
   public ConsulManager(String serverId) {
+    boolean service = false;
+    String s_consulAgentRegister = System.getProperty("ConsulAgentRegister");
+    if (s_consulAgentRegister!=null){
+      try {
+        service = Boolean.parseBoolean(s_consulAgentRegister);
+      }
+      catch (Throwable t){
+        logger.log(MESSAGE_DAEMON_AGENT_STARTING, t);
+      }
+    }
+    consulAgentRegister = service;
     String consulUrl = System.getProperty("ConsulUrl");
     Consul.Builder builder = Consul.builder();
     String consulToken = System.getProperty("ConsulToken");
@@ -104,6 +117,9 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public void register(Map<String, String> meta) {
+    if(!consulAgentRegister){
+      return;
+    }
     List<String> propertyNames = new ArrayList<>();
     meta.put("version", BuildInfo.getBuildVersion());
     meta.put("build-Date", BuildInfo.getBuildDate());

@@ -61,8 +61,6 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class MessageDaemon {
 
-  private boolean consulAgentRegister=true;
-
   public static MessageDaemon getInstance(){
     return instance;
   }
@@ -254,16 +252,7 @@ public class MessageDaemon {
       }
 
       //look for override
-      String s_consulAgentRegister = System.getProperty("ConsulAgentRegister");
-      if (s_consulAgentRegister!=null){
-        try {
-          consulAgentRegister = Boolean.parseBoolean(s_consulAgentRegister);
-        }
-        catch (Throwable t){
-          logger.log(MESSAGE_DAEMON_AGENT_STARTING, t);
-        }
-      }
-      if (consulAgentRegister) ConsulManagerFactory.getInstance().getManager().register(meta);
+      ConsulManagerFactory.getInstance().getManager().register(meta);
     }
     List<AgentOrder> startList = new ArrayList<>(agentMap.values());
     startList.sort(Comparator.comparingInt(AgentOrder::getStartOrder));
