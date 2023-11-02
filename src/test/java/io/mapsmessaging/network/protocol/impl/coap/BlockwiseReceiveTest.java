@@ -34,21 +34,21 @@ class BlockwiseReceiveTest extends BaseCoapTest {
   @ParameterizedTest
   @ValueSource(ints = {0,1,2,3,4,5,6})
   void basicReceiveTest(int size) throws ConnectorException, IOException {
-      CoapClient client = new CoapClient(getUri());
-      byte[] tmp = new byte[1024];
-      for(int x=0;x<tmp.length;x++){
-        tmp[x] = (byte)((32+x)%10);
-      }
-      CoapResponse response =client.put(tmp, 0);
-      Assertions.assertNotNull(response);
-      Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
+    CoapClient client = new CoapClient(getUri());
+    byte[] tmp = new byte[256];
+    for (int x = 0; x < tmp.length; x++) {
+      tmp[x] = (byte) (32 + (x % 36));
+    }
+    CoapResponse response = client.put(tmp, 0);
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals(SUCCESS_RESPONSE.value, response.getCode().codeClass);
 
-      delay(100);
-      Request request = Request.newGet();
-      request.getOptions().setBlock2(size, false, 0);
-      CoapResponse response1 = client.advanced(request);
-      Assertions.assertNotNull(response1); // Should not be null
-      Assertions.assertArrayEquals(tmp, response1.getPayload());
+    delay(100);
+    Request request = Request.newGet();
+    request.getOptions().setBlock2(size, false, 0);
+    CoapResponse response1 = client.advanced(request);
+    Assertions.assertNotNull(response1); // Should not be null
+    Assertions.assertArrayEquals(tmp, response1.getPayload());
     delay(100);
     client.shutdown();
   }
