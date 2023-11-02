@@ -36,6 +36,10 @@ public class SendController {
     return index;
   }
 
+  public void setBlockNumber(int blockNumber){
+    index = blockNumber;
+  }
+
   public void ack(int block){
     if(block == index)  index++;
   }

@@ -634,7 +634,24 @@ public enum ServerLogMessages implements LogMessage {
   COAP_BLOCK2_REQUEST(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Block2 packet received, Message No: {}, Block Size: {}, has more:{}"),
   //</editor-fold>
 
+  //<editor-fold desc="Device Integration, log messages">
+  DEVICE_SELECTOR_PARSER_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Selection {}, failed to parse with the following exception {}"),
+  DEVICE_SCHEMA_UPDATE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Schema failed to be updated {}"),
+  DEVICE_SUBSCRIPTION_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Subscription failed to be applied to {}"),
+  DEVICE_PUBLISH_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Event publish failed {}"),
+  DEVICE_START(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Starting device {}"),
+  DEVICE_STOP(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Stopping device {}"),
 
+  DEVICE_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Device Manager"),
+  DEVICE_MANAGER_FAILED_TO_REGISTER(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Failed to register device"),
+  DEVICE_MANAGER_START_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting all registered devices"),
+  DEVICE_MANAGER_STOP_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Stopping all registered devices"),
+  DEVICE_MANAGER_PAUSE_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Pausing all registered devices"),
+  DEVICE_MANAGER_RESUME_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resuming all registered devices"),
+  DEVICE_MANAGER_LOAD_PROPERTIES(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Device Manager Properties"),
+  DEVICE_MANAGER_STARTUP_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed startup Device Manager"),
+
+  //</editor-fold>
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
@@ -664,6 +681,7 @@ public enum ServerLogMessages implements LogMessage {
     NETWORK("Network"),
     PROTOCOL("Protocol"),
     DISCOVERY("Discovery"),
+    DEVICE("Device"),
     ENGINE("Engine");
 
     private final @Getter String description;

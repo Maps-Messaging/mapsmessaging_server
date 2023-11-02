@@ -37,7 +37,7 @@ public class BaseCoapTest extends BaseTestConfig {
   private static final File CONFIG_FILE = new File("Californium3.properties");
   private static final String CONFIG_HEADER = "Californium CoAP Properties file for client";
   private static final int DEFAULT_MAX_RESOURCE_SIZE = 2 * 1024 * 1024; // 2 MB
-  private static final int DEFAULT_BLOCK_SIZE = 512;
+  private static final int DEFAULT_BLOCK_SIZE = 2048;
   private static Configuration.DefinitionsProvider DEFAULTS = config -> {
     config.set(CoapConfig.MAX_RESOURCE_BODY_SIZE, DEFAULT_MAX_RESOURCE_SIZE);
     config.set(CoapConfig.MAX_MESSAGE_SIZE, DEFAULT_BLOCK_SIZE);

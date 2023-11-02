@@ -146,8 +146,10 @@ public class CoapProtocol extends ProtocolImpl {
     }
     boolean doBlockwise = false;
     int blockSize = 0;
+    int blockNumber = 0;
     if(context.getRequest().getOptions().hasOption(BLOCK2)){
       Block block = (Block) context.getRequest().getOptions().getOption(BLOCK2);
+      blockNumber = block.getNumber();
       if(block.getSizeEx() != 0b111){
         blockSize = 1<<(block.getSizeEx()+4);
         doBlockwise = blockSize < messageEvent.getMessage().getOpaqueData().length;
@@ -160,11 +162,14 @@ public class CoapProtocol extends ProtocolImpl {
     BasePacket response = context.getRequest().buildUpdatePacket(Code.CONTENT);
     if(doBlockwise){
       response = new BlockWiseSend(response);
-      ((BlockWiseSend)response).setBlockSize(blockSize);
     }
     response.setFromAddress(context.getRequest().getFromAddress());
     response.setPayload(messageEvent.getMessage().getOpaqueData());
     setOptions(messageEvent, context, response.getOptions());
+    if(doBlockwise){
+      ((BlockWiseSend)response).setBlockSize(blockSize);
+      ((BlockWiseSend)response).setBlockNumber(blockNumber);
+    }
     if (context.getRequest().getType().equals(TYPE.NON)) {
       response.setMessageId(context.getRequest().getMessageId());
     } else {
