@@ -70,7 +70,7 @@ then
     host=$(echo "$hostport" | cut -d":" -f1)
     port=$(echo "$hostport" | grep ":" | cut -d":" -f2)
     path=$(echo "$url_no_protocol" | grep "/" | cut -d"/" -f2-)
-    java -classpath $CLASSPATH $JAVA_OPTS -DUSE_UUID=false -DConsulUrl=$protocol$host -DConsulPath=$path -DConsulToken=$pass -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
+    java -classpath $CLASSPATH $JAVA_OPTS -DUSE_UUID=false -DConsulUrl=$protocol$hostport -DConsulPath=$path -DConsulToken=$pass -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
 else
     java -classpath $CLASSPATH $JAVA_OPTS -DUSE_UUID=false -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
 fi
