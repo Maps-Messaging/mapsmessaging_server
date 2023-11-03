@@ -23,8 +23,16 @@ export PATH=$JAVA_HOME/bin:$PATH
 
 export VERSION=%%MAPS_VERSION%%
 
-# Get the value of the ConsulHost environment variable, or default to 127.0.0.1
-CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
+# Check if FLY_CONSUL_URL is set and not empty
+if [[ -n "${FLY_CONSUL_URL}" ]]; then
+  # If FLY_CONSUL_URL is set, use its value for CONSUL_URL
+  CONSUL_URL="${FLY_CONSUL_URL}"
+else
+  # If FLY_CONSUL_URL is not set, use the default value
+  CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
+fi
+
+# Export the CONSUL_URL so it becomes an environment variable
 export CONSUL_URL
 
 if [ -z ${MAPS_HOME+x} ];
@@ -43,41 +51,13 @@ export MAPS_CONF=$MAPS_HOME/conf
 export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*"
 #
 # Now start the the daemon
-#
-# Check if FLY_CONSUL_URL is set and non-empty
-if [ -n "${FLY_CONSUL_URL}" ]; then
-    echo "Detected fly.io consul URL ..."
- # Extract the protocol
-    protocol=$(echo "${FLY_CONSUL_URL}" | awk -F '://' '{print $1 "://"}')
-
-    # Extract the token
-    token=$(echo "${FLY_CONSUL_URL}" | awk -F '://' '{print $2}' | awk -F '@' '{print $1}')
-
-    # Extract the base URL without the token
-    base_url=$(echo "${FLY_CONSUL_URL}" | awk -F '@' '{print $2}' | awk -F '/' '{print $1 "://"}' | awk -F ':' '{print $1 ":" $2}')
-
-    # Extract the path
-    path=$(echo "${FLY_CONSUL_URL}" | awk -F '@' '{print $2}' | cut -d '/' -f2- | sed 's/^/\//')
-
-    # Construct the Java command
-    java -classpath $CLASSPATH $JAVA_OPTS \
-        -DUSE_UUID=false \
-        -DConsulUrl="${protocol}${base_url}" \
-        -DConsulPath="${path}" \
-        -DConsulToken="${token}" \
-        -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
-        -DMAPS_HOME="${MAPS_HOME}" \
-        io.mapsmessaging.MessageDaemon
-else
-    # Default Java command if FLY_CONSUL_URL is not set
-    java -classpath $CLASSPATH $JAVA_OPTS \
-        -DUSE_UUID=false \
-        -DConsulUrl="${CONSUL_URL}" \
-        -DConsulPath="${CONSUL_PATH}" \
-        -DConsulToken="${CONSUL_TOKEN}" \
-        -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
-        -DMAPS_HOME="${MAPS_HOME}" \
-        io.mapsmessaging.MessageDaemon
-fi
+java -classpath $CLASSPATH $JAVA_OPTS \
+    -DUSE_UUID=false \
+    -DConsulUrl="${CONSUL_URL}" \
+    -DConsulPath="${CONSUL_PATH}" \
+    -DConsulToken="${CONSUL_TOKEN}" \
+    -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
+    -DMAPS_HOME="${MAPS_HOME}" \
+    io.mapsmessaging.MessageDaemon
 
 
