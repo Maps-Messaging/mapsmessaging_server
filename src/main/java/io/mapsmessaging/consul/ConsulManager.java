@@ -84,7 +84,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
         builder.withAclToken(acl);
       }
     }
-
+    builder.withPing(false);
     client = builder.build();
     agentClient = client.agentClient();
     serviceIds = new ArrayList<>();
@@ -250,9 +250,6 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public static void main(String[] args){
-    String url = "https://:sometoken@consul-host/consul-path/";
-    System.err.println("Token = "+extractToken(url));
-    System.err.println("URL   = "+removeToken(url));
-    System.err.println("Path  = "+extractPath(url));
+    System.err.println(registerAgent());
   }
 }

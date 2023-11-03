@@ -71,7 +71,7 @@ public class ConsulManagerFactory {
 
   public String getPath(){
     if(manager != null){
-      manager.getUrlPath();
+      return manager.getUrlPath();
     }
     return null;
   }
