@@ -83,7 +83,6 @@ public class PublishListener extends PacketListener {
             destination.storeMessage(message);
           }
         } catch (IOException e) {
-          e.printStackTrace();
           ((MQTT_SNProtocol) protocol).writeFrame(new PubAck(publish.getTopicId(), publish.getMessageId(), ReasonCodes.INVALID_TOPIC_ALIAS));
         }
         if (publish.getQoS().equals(QualityOfService.AT_LEAST_ONCE)) {
