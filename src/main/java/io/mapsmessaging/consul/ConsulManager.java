@@ -222,16 +222,6 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   private static boolean registerAgent(){
-    boolean service = false;
-    String s_consulAgentRegister = System.getProperty("ConsulAgentRegister");
-    if (s_consulAgentRegister!=null){
-      try {
-        service = Boolean.parseBoolean(s_consulAgentRegister);
-      }
-      catch (Throwable t){
-        service = false;
-      }
-    }
-    return service;
+    return Boolean.parseBoolean(System.getProperty("ConsulAgentRegister", "false"));
   }
 }
