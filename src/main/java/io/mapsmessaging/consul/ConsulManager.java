@@ -52,20 +52,17 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   private Future<?> scheduledTask;
 
   public ConsulManager(String serverId) {
-    boolean service = false;
-    String s_consulAgentRegister = System.getProperty("ConsulAgentRegister");
-    if (s_consulAgentRegister!=null){
-      try {
-        service = Boolean.parseBoolean(s_consulAgentRegister);
-      }
-      catch (Throwable t){
-        logger.log(MESSAGE_DAEMON_AGENT_STARTING, t);
+    consulAgentRegister = registerAgent();
+    String token = null;
+    String consulUrl = System.getProperty("ConsulUrl");
+    if(consulUrl != null){
+      token = extractToken(consulUrl);
+      if(token != null) {
+        consulUrl = removeToken(consulUrl);
       }
     }
-    consulAgentRegister = service;
-    String consulUrl = System.getProperty("ConsulUrl");
     Consul.Builder builder = Consul.builder();
-    String consulToken = System.getProperty("ConsulToken");
+    String consulToken = System.getProperty("ConsulToken", token);
     if (consulToken!=null) builder.withTokenAuth(consulToken);
     if(consulUrl != null){
       builder.withUrl(consulUrl);
@@ -139,8 +136,10 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public void register(EndPointServer endPointServer){
+    if(!consulAgentRegister){
+      return;
+    }
     EndPointURL endPointURL = new EndPointURL(endPointServer.getConfig().getUrl());
-
     String host = endPointURL.getHost();
     if(host.equals("0.0.0.0")){
       return; // Not Yet Supported
@@ -159,6 +158,9 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public void register(RestApiServerManager restApiServerManager){
+    if(!consulAgentRegister){
+      return;
+    }
     String host = restApiServerManager.getHost();
     if(host.equals("0.0.0.0")){
       return; // Not Yet Supported
@@ -194,5 +196,42 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     } catch (NotRegisteredException e) {
       logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
     }
+  }
+
+  private static String extractToken(String url){
+    String token = null;
+    if(url.contains("@")){
+      int tokenEnd = url.indexOf("@");
+      int tokenStart = url.indexOf("://");
+      if(tokenStart<tokenEnd){
+        token = url.substring(tokenStart+3, tokenEnd);
+      }
+    }
+    return token;
+  }
+
+  private static String removeToken(String url){
+    if(url.contains("@")){
+      int tokenEnd = url.indexOf("@");
+      int tokenStart = url.indexOf("://");
+      if(tokenStart<tokenEnd){
+        url = url.substring(0, tokenStart+3) + url.substring(tokenEnd+1);
+      }
+    }
+    return url;
+  }
+
+  private static boolean registerAgent(){
+    boolean service = false;
+    String s_consulAgentRegister = System.getProperty("ConsulAgentRegister");
+    if (s_consulAgentRegister!=null){
+      try {
+        service = Boolean.parseBoolean(s_consulAgentRegister);
+      }
+      catch (Throwable t){
+        service = false;
+      }
+    }
+    return service;
   }
 }
