@@ -240,7 +240,6 @@ public class ConsulManager implements Runnable, ClientEventCallback {
       }
       return path;
     } catch (MalformedURLException e) {
-      e.printStackTrace();
       // ignore
     }
     return "/";
