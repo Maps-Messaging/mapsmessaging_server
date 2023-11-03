@@ -251,7 +251,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public static void main(String[] args){
-    String url = "https://:911fe242-2e78-bfd0-3b8a-cea998ee52ca@consul-fra-9.fly-shared.net/weathered-glitter-5931-yexkqwp3zne9m38d/";
+    String url = "https://:sometoken@consul-host/consul-path/";
     System.err.println("Token = "+extractToken(url));
     System.err.println("URL   = "+removeToken(url));
     System.err.println("Path  = "+extractPath(url));
