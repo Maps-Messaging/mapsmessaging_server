@@ -28,9 +28,6 @@ fi
 CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
 export CONSUL_URL
 
-JAVA_OPTS="${JavaOpts:-''}"
-export JAVA_OPTS
-
 echo "Maps Home is set to '$MAPS_HOME'"
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
@@ -45,33 +42,37 @@ export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
 # Now start the the daemon
 #
-if [ -z ${FLY_CONSUL_URL+x} ];
-then
+if [ -n "${FLY_CONSUL_URL}" ]; then
     echo "Detected fly.io consul URL ..."
-    protocol=$(echo "$FLY_CONSUL_URL" | grep "://" | sed -e's,^\(.*://\).*,\1,g')
-    # Remove the protocol
-    url_no_protocol=$(echo "${1/$protocol/}")
-    # Use tr: Make the protocol lower-case for easy string compare
-    protocol=$(echo "$protocol" | tr '[:upper:]' '[:lower:]')
-    # Extract the user and password (if any)
-    # cut 1: Remove the path part to prevent @ in the querystring from breaking the next cut
-    # rev: Reverse string so cut -f1 takes the (reversed) rightmost field, and -f2- is what we want
-    # cut 2: Remove the host:port
-    # rev: Undo the first rev above
-    userpass=$(echo "$url_no_protocol" | grep "@" | cut -d"/" -f1 | rev | cut -d"@" -f2- | rev)
-    pass=$(echo "$userpass" | grep ":" | cut -d":" -f2)
-    if [ -n "$pass" ]; then
-      user=$(echo "$userpass" | grep ":" | cut -d":" -f1)
-    else
-      user="$userpass"
-    fi
-    # Extract the host
-    hostport=$(echo "${url_no_protocol/$userpass@/}" | cut -d"/" -f1)
-    host=$(echo "$hostport" | cut -d":" -f1)
-    port=$(echo "$hostport" | grep ":" | cut -d":" -f2)
-    path=$(echo "$url_no_protocol" | grep "/" | cut -d"/" -f2-)
-    java -classpath $CLASSPATH $JAVA_OPTS -DUSE_UUID=false -DConsulUrl=$protocol$hostport -DConsulPath=$path -DConsulToken=$pass -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
-else
-    java -classpath $CLASSPATH $JAVA_OPTS -DUSE_UUID=false -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
-fi
+  # Extract the protocol
+    protocol=$(echo "${FLY_CONSUL_URL}" | awk -F '://' '{print $1 "://"}')
 
+    # Extract the token
+    token=$(echo "${FLY_CONSUL_URL}" | awk -F '://' '{print $2}' | awk -F '@' '{print $1}')
+
+    # Extract the base URL without the token
+    base_url=$(echo "${FLY_CONSUL_URL}" | awk -F '@' '{print $2}' | awk -F '/' '{print $1 "://"}' | awk -F ':' '{print $1 ":" $2}')
+
+    # Extract the path
+    path=$(echo "${FLY_CONSUL_URL}" | awk -F '@' '{print $2}' | cut -d '/' -f2- | sed 's/^/\//')
+
+    # Construct the Java command
+    java -classpath $CLASSPATH $JAVA_OPTS \
+        -DUSE_UUID=false \
+        -DConsulUrl="${protocol}${base_url}" \
+        -DConsulPath="${path}" \
+        -DConsulToken="${token}" \
+        -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
+        -DMAPS_HOME="${MAPS_HOME}" \
+        io.mapsmessaging.MessageDaemon
+else
+    # Default Java command if FLY_CONSUL_URL is not set
+    java -classpath $CLASSPATH $JAVA_OPTS \
+        -DUSE_UUID=false \
+        -DConsulUrl="${CONSUL_URL}" \
+        -DConsulPath="${CONSUL_PATH}" \
+        -DConsulToken="${CONSUL_TOKEN}" \
+        -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
+        -DMAPS_HOME="${MAPS_HOME}" \
+        io.mapsmessaging.MessageDaemon
+fi
