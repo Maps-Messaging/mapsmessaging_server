@@ -211,7 +211,10 @@ public class ConsulManager implements Runnable, ClientEventCallback {
       int tokenEnd = url.indexOf("@");
       int tokenStart = url.indexOf("://");
       if(tokenStart<tokenEnd){
-        token = url.substring(tokenStart+3, tokenEnd);
+        token = url.substring(tokenStart+3, tokenEnd).trim();
+        if(token.startsWith(":")){
+          token = token.substring(1);
+        }
       }
     }
     return token;
@@ -247,4 +250,10 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     return Boolean.parseBoolean(System.getProperty("ConsulAgentRegister", "false"));
   }
 
+  public static void main(String[] args){
+    String url = "https://:911fe242-2e78-bfd0-3b8a-cea998ee52ca@consul-fra-9.fly-shared.net/weathered-glitter-5931-yexkqwp3zne9m38d/";
+    System.err.println("Token = "+extractToken(url));
+    System.err.println("URL   = "+removeToken(url));
+    System.err.println("Path  = "+extractPath(url));
+  }
 }
