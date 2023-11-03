@@ -62,12 +62,10 @@ public class ProtocolFactory implements ServiceManager {
             failed++;
           }
         } catch (EndOfBufferException e) {
-          System.err.println("EOB on "+protocol.getName());
           // Ignore, just not enough data
         }
       }
     }
-    System.err.println("potential:"+potential+" failed:"+failed);
     if (potential == failed) {
       throw new IOException("No known protocol detected " + packet.toString()+" <"+potential+" != "+failed+">");
     }

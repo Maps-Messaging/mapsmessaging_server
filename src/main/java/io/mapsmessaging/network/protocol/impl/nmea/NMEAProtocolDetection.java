@@ -33,10 +33,8 @@ public class NMEAProtocolDetection implements Detection {
       }
       return true;
     } catch (EndOfBufferException tryAgain) {
-      tryAgain.printStackTrace();
       throw tryAgain;
     } catch (Exception e) {
-      e.printStackTrace();
       return false;
     } finally {
       packet.position(pos); // roll it back
