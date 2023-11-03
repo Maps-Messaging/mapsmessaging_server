@@ -33,14 +33,15 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import lombok.Getter;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STARTING;
 
 public class ConsulManager implements Runnable, ClientEventCallback {
   private final boolean consulAgentRegister;
@@ -50,17 +51,22 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   private final List<String> serviceIds;
   private final String uniqueName;
   private Future<?> scheduledTask;
+  @Getter
+  private final String urlPath;
 
   public ConsulManager(String serverId) {
     consulAgentRegister = registerAgent();
     String token = null;
     String consulUrl = System.getProperty("ConsulUrl");
+    String path="/";
     if(consulUrl != null){
       token = extractToken(consulUrl);
       if(token != null) {
         consulUrl = removeToken(consulUrl);
       }
+      path = extractPath(consulUrl);
     }
+    urlPath = path;
     Consul.Builder builder = Consul.builder();
     String consulToken = System.getProperty("ConsulToken", token);
     if (consulToken!=null) builder.withTokenAuth(consulToken);
@@ -78,6 +84,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
         builder.withAclToken(acl);
       }
     }
+
     client = builder.build();
     agentClient = client.agentClient();
     serviceIds = new ArrayList<>();
@@ -221,7 +228,23 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     return url;
   }
 
+  private static String extractPath(String urlString){
+    try {
+      URL url = new URL(urlString);
+      String path = url.getPath().trim();
+      if(path.isEmpty()){
+        path = "/";
+      }
+      return path;
+    } catch (MalformedURLException e) {
+      e.printStackTrace();
+      // ignore
+    }
+    return "/";
+  }
+
   private static boolean registerAgent(){
     return Boolean.parseBoolean(System.getProperty("ConsulAgentRegister", "false"));
   }
+
 }

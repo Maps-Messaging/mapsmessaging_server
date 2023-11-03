@@ -69,6 +69,12 @@ public class ConsulManagerFactory {
     }
   }
 
+  public String getPath(){
+    if(manager != null){
+      manager.getUrlPath();
+    }
+    return null;
+  }
 
   public void register(RestApiServerManager restApiServerManager){
     if(manager != null){
