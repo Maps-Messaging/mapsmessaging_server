@@ -86,7 +86,8 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     }
     builder.withPing(false);
     client = builder.build();
-    agentClient = client.agentClient();
+    if (consulAgentRegister) agentClient = client.agentClient();
+    else agentClient=null;
     serviceIds = new ArrayList<>();
     uniqueName = serverId;
     serviceIds.add(serverId);
