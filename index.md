@@ -54,14 +54,27 @@ As part of the architecture design for the server the approach was taken that if
 * [JMS Selector Parser module](selector/overview.md) 
   Is a standalone JMS Selector 2 pass parser that produces a resultant parser that supports a generic Key/Value object to resolve the selector. It can be used in Java Collection.streams, is thread safe and can be used in parallelStreams, or anywhere you need a JMS Selector syntax parser / filter.
 
+
 * [Non Blocking Task Scheduler](scheduler/overview.md) 
   The MapsMessaging engine is a non locking, non-blocking messaging engine, to achieve this we have implemented a task queue scheduler that facilitates low latency task pass over and internal integrity checks that the task is on the correct queue (Optional).
   
+
 * [Naturally Ordered Long Collections](https://github.com/Maps-Messaging/naturally_ordered_long_collections) 
   The MapsMessaging engine needs to keep track of which message a client has interest in or which message is awaiting a commit from a client. For it to do this fast, recoverable and small in footprint, we have implemented a collection based on the java BitSet that can be read/written to file, can perform bitwise operations for speed when collection APIs like addAll(), removeAll() etc are called making it a very fast, compact naturally ordered collection. It also supports priority based queues.
 
+
 * [Storage API](https://github.com/Maps-Messaging/dynamic_storage)
   The MapsMessaging server needs fast storage for writing and reading of events. These stores need to be self contained and reduce time for maintenance. The Storage API also offers idle events at rest data stores to be migrated to an S3 bucket or compressed and stored else where.
+
+
+* [Device Integration](https://github.com/Maps-Messaging/device_integration)
+  This library abstracts the complexity of interfacing with a variety of I2C and 1-Wire devices, offering a consistent API that remains stable even as new device types are incorporated. It's designed for extensibility, enabling users to interact with sensors, displays, storage devices, real-time clocks (RTCs), and more, without needing to adapt their codebase for each new device added.
+
+
+* [Schema Management](https://github.com/Maps-Messaging/schemas)
+  package offers a unified API for data serialization/deserialization across formats like JSON, protobufs, and Avro, and includes a schema registry for storing and sharing schema definitions to ensure data consistency and integrity.
+
+
 
 All libraries are accessable from the maven central repository
 
