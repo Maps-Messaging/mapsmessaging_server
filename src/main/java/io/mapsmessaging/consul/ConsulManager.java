@@ -38,6 +38,7 @@ import lombok.Getter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -70,7 +71,12 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     urlPath = path;
     Consul.Builder builder = Consul.builder();
     String consulToken = System.getProperty("ConsulToken", token);
-    if (consulToken!=null) builder.withTokenAuth(consulToken);
+    if (consulToken!=null) {
+      Map<String,String> headers = new LinkedHashMap<>();
+      headers.put("X-Consul-Token", consulToken);
+      builder.withHeaders(headers);
+      //builder.withTokenAuth(consulToken);
+    }
     if(consulUrl != null){
       builder.withUrl(consulUrl);
     }
