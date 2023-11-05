@@ -1,4 +1,8 @@
 theme: jekyll-theme-cayman
 
-# Google Analytics
-google_analytics: UA-194371304-1
+# Analytics
+analytics:
+  provider          : "google-gtag"
+  google:
+    measurement_id       : "G-V96WCNQ4DV"
+    anonymize_ip         : true
