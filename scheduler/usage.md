@@ -12,17 +12,7 @@ You will need to ensure that all access to your structure is performed by a sing
 
 ## pom.xml setup
 
-Add the repository configuration into the pom.xml
-``` xml
-    <!-- MapsMessaging jfrog server -->
-    <repository>
-      <id>mapsmessaging.io</id>
-      <name>artifactory-releases</name>
-      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
-    </repository>
-```    
-
-Then include the dependency
+Include the dependency
 ``` xml
      <!-- Non Blocking Task Queue module -->
     <dependency>

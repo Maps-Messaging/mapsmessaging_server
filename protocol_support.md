@@ -2,19 +2,19 @@
 With mapsmessaging server, the entire purpose is to support all the open messaging standards in their entirety and to facilitate message flow between different protocols and versions seamlessly out of the box.
 Current support:
 
-| Protocol                        | Version | Support Status | WS  | WSS | TCP    | SSL | UDP | DTLS | LoRa | Serial |
-|---------------------------------|---------|----------------|-----|-----|--------| --- |----|------|-------| ------ |
-| Stomp                           | 1.1  | Y              | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
-| Stomp                           | 1.2  | Y              | Y   | Y           | Y      | Y | N  | N/A  |N/A   | 0 |
-| MQTT                            | 3.1  | Y              | Y   | Y           | Y      | Y | N  | N/A  |N/A   | 0 |
-| MQTT                            | 3.1.1 | Y              | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
-| MQTT                            | 5.0  | Y              | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
-| MQTT-SN                         | 1.2  | Y              | N   | N           | N      | N | Y  | Y    | Y     | N |
-| MQTT-SN                         | 2.0  | Y              | N   | N           | N      | N | Y  | Y    | Y     | N |
-| CoAP                            |      | Y              | N   | N           | N      | N | Y  | Y    | Y     | N |
-| AMQP                            | 1.0  | Y-1            | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
+| Protocol                       | Version | Support Status | WS  | WSS | TCP    | SSL | UDP | DTLS | LoRa | Serial |
+|--------------------------------|---------|----------------|-----|-----|--------| --- |----|------|-------| ------ |
+| Stomp                          | 1.1  | Y              | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
+| Stomp                          | 1.2  | Y              | Y   | Y           | Y      | Y | N  | N/A  |N/A   | 0 |
+| MQTT                           | 3.1  | Y              | Y   | Y           | Y      | Y | N  | N/A  |N/A   | 0 |
+| MQTT                           | 3.1.1 | Y              | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
+| MQTT                           | 5.0  | Y              | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
+| MQTT-SN                        | 1.2  | Y              | N   | N           | N      | N | Y  | Y    | Y     | N |
+| MQTT-SN                        | 2.0  | Y              | N   | N           | N      | N | Y  | Y    | Y     | N |
+| CoAP                           |      | Y              | N   | N           | N      | N | Y  | Y    | Y     | N |
+| AMQP                           | 1.0  | Y-1            | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
 | JMS-AMQP :small_orange_diamond: | JMS 2.0 | Y-1            | Y   | Y           | Y      | Y | N  | N/A  | N/A   | 0 |
-| NMEA :small_red_triangle_down:  | 0183 | Y              | N   | N           | Y      | N | N  | N/A  | N     | Y |
+| NMEA :small_red_triangle_down: | 0183 | Y              | N   | N           | Y      | N | N  | N/A  | N     | Y |
 
 
 Y - Tested, has conformance tests for validity of the protocol \

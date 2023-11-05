@@ -6,17 +6,8 @@ The source can be found at the [github project](https://github.com/Maps-Messagin
 
 ## pom.xml setup
 
-Add the repository configuration into the pom.xml
-``` xml
-    <!-- MapsMessaging jfrog server -->
-    <repository>
-      <id>mapsmessaging.io</id>
-      <name>artifactory-releases</name>
-      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
-    </repository>
-```    
 
-Then include the dependency
+Include the dependency
 ``` xml
     <!-- JMS Selector logic module -->
      <dependencies>    
