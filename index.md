@@ -63,23 +63,15 @@ As part of the architecture design for the server the approach was taken that if
 * [Storage API](https://github.com/Maps-Messaging/dynamic_storage)
   The MapsMessaging server needs fast storage for writing and reading of events. These stores need to be self contained and reduce time for maintenance. The Storage API also offers idle events at rest data stores to be migrated to an S3 bucket or compressed and stored else where.
 
-To access these via maven simply add the following to your pom.xml file.
-```xml
-    <!-- MapsMessaging jfrog server --> 
-    <repository>
-      <id>mapsmessaging.io</id>
-      <name>artifactory-releases</name>
-      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
-    </repository>
-```
+All libraries are accessable from the maven central repository
+
 ### Install images and Docker Images
 The nightly installation builds can be found here
 
-[message_daemon-3.2.0-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-3.2.0-install.tar.gz) \
-[message_daemon-3.2.0-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-3.2.0-install.zip)
+[github releases](https://github.com/Maps-Messaging/mapsmessaging_server/releases)
 
 
-Docker Image name can be found at [mapsmessaging.jfrog.io](https://mapsmessaging.jfrog.io/ui/repos/tree/General/mapsmessaging-docker-prod%2Fmapsmessaging)
+Docker Image name can be found at [dockerhub](https://hub.docker.com/search?q=mapsmessaging)
 
 
 
