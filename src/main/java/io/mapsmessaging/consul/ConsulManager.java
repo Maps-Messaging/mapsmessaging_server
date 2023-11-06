@@ -81,15 +81,11 @@ public class ConsulManager implements Runnable, ClientEventCallback {
       Map<String,String> headers = new LinkedHashMap<>();
       headers.put("X-Consul-Token", consulToken);
       builder.withHeaders(headers);
-      //builder.withTokenAuth(consulToken);
+      builder.withTokenAuth(consulToken);
     }
     if(consulUrl != null){
       builder.withUrl(consulUrl);
-      if(token != null) {
-        Map<String, String> headers = new LinkedHashMap<>();
-        headers.put("X-Consul-Token", token);
-        builder.withHeaders(headers);
-      }
+      builder.withTokenAuth(consulToken);
     }
     else{
       String host = System.getProperty("ConsulHost", "127.0.0.1");
