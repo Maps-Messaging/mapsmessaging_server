@@ -1,75 +1,62 @@
 # Installation of MapsMessaging Server
 
-Firstly download from our nightly builds server 
+Ensure you have JDK 13 or higher installed. You can download a suitable JDK from [Zulu-13](https://www.azul.com/downloads/zulu-community/?&version=java-13).
 
-## Prerequisites 
+## Downloading the Server
 
-* JDK 13 or higher - We use and develop with [Zulu-13](https://www.azul.com/downloads/zulu-community/?package=jdk)
-  * Installation package from the following links
+Download the MapsMessaging Server from the [Releases](https://github.com/Maps-Messaging/mapsmessaging_server/releases) section of the mapsmessaging_server GitHub repository.
 
-    [message_daemon-2.0.0-install.tar.gz](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-2.0.0-install.tar.gz) \
-    [message_daemon-2.0.0-install.zip](https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-images-prod/message_daemon-2.0.0-install.zip)
+- For the latest stable release, look for the release version (e.g., "3.3.4").
+- For the latest development version, download the snapshot (e.g., "3.3.5-SNAPSHOT").
 
-## Linux / OS-X
+## Installation on Linux / OS-X
 
-Once you have downloaded the install image simply
+After downloading, execute the following commands:
 
-### installation
-
-```shell
+```bash
 cd /opt
-tar -xvzf message_daemon-2.0.0-SNAPSHOT-install.tar.gz
+tar -xvzf message_daemon-<VERSION>.tar.gz
+ln -s message_daemon-<VERSION> message_daemon
 ```
+Replace `<VERSION>` with the downloaded version number, such as `3.3.4` for a release or `3.3.5-SNAPSHOT` for a snapshot.
 
-### Starting
-This will create a directory under /opt with the installation, then to start the server
-```shell
-cd  message_daemon-2.0.0-SNAPSHOT
+## Starting the Server
+
+Navigate to the symlinked directory and start the server with:
+
+```bash
+cd message_daemon
 chmod +x bin/start.sh
 nohup ./bin/start.sh &
 ```
 
-This will start the server with the following configuration
+## Default Port Configuration
 
-* MQTT on port 1883 
-* AMQP on port 5672
-* MQTT-SN on port 1884
-* Stomp on port 8675
+The server starts with the following default ports for each protocol:
 
-Please note: <u>NO</u> authentication is configured by default
+| Protocol  | Port(s)       |
+|-----------|---------------|
+| MQTT      | 1883, 2883    |
+| MQTT-SN   | 1884, 2442    |
+| CoAP      | 5683          |
+| AMQP      | 5672          |
+| Stomp     | 8675          |
+| RestAPI   | 8082          |
+| Hawtio    | 8080          |
 
-### Modifying installation path
 
-The installation package assumes the installation directory is /opt if this is not the case, then a simple edit in the start.sh and change the line
+**Note:** No authentication is configured by default.
 
-Change the following
-```shell
-#
-# Define the home directory for the messaging daemon
-#
-export MAPS_HOME=<your path to the installation here>
-export MAPS_LIB=$MAPS_HOME/lib
-export MAPS_CONF=$MAPS_HOME/conf
+## Customizing the Installation Path
+
+If you need to customize the installation path, modify the `MAPS_HOME` variable in the `start.sh` script accordingly.
+
+## Shutting Down the Server
+
+To stop the server, remove the pid file with:
+
+```bash
+rm /opt/message_daemon/pid
 ```
 
-To 
-
-```shell
-#
-# Define the home directory for the messaging daemon
-#
-export MAPS_HOME=/opt/message_daemon-2.0.0-SNAPSHOT
-export MAPS_LIB=$MAPS_HOME/lib
-export MAPS_CONF=$MAPS_HOME/conf
-```
-
-Then start as previously shown.
-
-### Shutting down
-
-To stop the server simply remove the pid file in the home directory
-
-```shell
-rm /opt/message_daemon-2.0.0-SNAPSHOT/pid
-```
-The server will then perform a graceful shutdown
+The server will shut down gracefully.
