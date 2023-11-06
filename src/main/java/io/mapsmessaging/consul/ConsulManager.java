@@ -72,17 +72,18 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     urlPath = path;
     System.out.println("ORIGINAL CONSUL_URL: "+ System.getProperty("ConsulUrl"));
     System.out.println("CONSUL_URL: "+ consulUrl);
-    System.out.println("CONSUL_TOKEN`: "+ token);
     System.out.println("CONSUL_PATH: "+ path);
 
     Consul.Builder builder = Consul.builder();
     String consulToken = System.getProperty("ConsulToken", token);
     if (consulToken!=null) {
-      Map<String,String> headers = new LinkedHashMap<>();
-      headers.put("X-Consul-Token", consulToken);
-      builder.withHeaders(headers);
+      //Map<String,String> headers = new LinkedHashMap<>();
+      //headers.put("X-Consul-Token", consulToken);
+      //builder.withHeaders(headers);
       builder.withTokenAuth(consulToken);
     }
+    System.out.println("CONSUL_TOKEN`: '"+ consulToken+"'");
+
     if(consulUrl != null){
       builder.withUrl(consulUrl);
       builder.withTokenAuth(consulToken);
