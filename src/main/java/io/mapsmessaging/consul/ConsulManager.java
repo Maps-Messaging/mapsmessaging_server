@@ -63,12 +63,14 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     if(consulUrl != null){
       token = extractToken(consulUrl);
       path = extractPath(consulUrl);
+      //if (path.endsWith("/")) path.substring(0,path.lastIndexOf('/')-1);
       if(token != null) {
         consulUrl = removeToken(consulUrl);
       }
       consulUrl = removePath(consulUrl);
     }
     urlPath = path;
+    System.out.println("ORIGINAL CONSUL_URL: "+ System.getProperty("ConsulUrl"));
     System.out.println("CONSUL_URL: "+ consulUrl);
     System.out.println("CONSUL_TOKEN`: "+ token);
     System.out.println("CONSUL_PATH: "+ path);
