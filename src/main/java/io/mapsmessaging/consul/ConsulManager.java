@@ -69,6 +69,10 @@ public class ConsulManager implements Runnable, ClientEventCallback {
       consulUrl = removePath(consulUrl);
     }
     urlPath = path;
+    System.out.println("CONSUL_URL: "+ consulUrl);
+    System.out.println("CONSUL_TOKEN`: "+ token);
+    System.out.println("CONSUL_PATH: "+ path);
+
     Consul.Builder builder = Consul.builder();
     String consulToken = System.getProperty("ConsulToken", token);
     if (consulToken!=null) {
@@ -79,6 +83,11 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     }
     if(consulUrl != null){
       builder.withUrl(consulUrl);
+      if(token != null) {
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("X-Consul-Token", token);
+        builder.withHeaders(headers);
+      }
     }
     else{
       String host = System.getProperty("ConsulHost", "127.0.0.1");
