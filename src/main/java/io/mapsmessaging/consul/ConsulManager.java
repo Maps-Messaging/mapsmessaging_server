@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.consul;
 
-import com.google.common.net.HostAndPort;
 import com.orbitz.consul.AgentClient;
 import com.orbitz.consul.Consul;
 import com.orbitz.consul.KeyValueClient;
@@ -33,86 +32,34 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
-import lombok.Getter;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_LOG;
+
 public class ConsulManager implements Runnable, ClientEventCallback {
-  private final boolean consulAgentRegister;
   private final Logger logger = LoggerFactory.getLogger(ConsulManager.class);
   private final Consul client;
   private final AgentClient agentClient;
   private final List<String> serviceIds;
   private final String uniqueName;
+  private final ConsulConfiguration consulConfiguration;
   private Future<?> scheduledTask;
-  @Getter
-  private final String urlPath;
 
-  public ConsulManager(String serverId) {
-    consulAgentRegister = registerAgent();
-    String token = null;
-    String consulUrl = System.getProperty("ConsulUrl");
-    String path="/";
-    if(consulUrl != null){
-      token = extractToken(consulUrl);
-      path = extractPath(consulUrl);
-      if (path.endsWith("/")) path=path.substring(0,path.lastIndexOf('/'));
-      if(token != null) {
-        consulUrl = removeToken(consulUrl);
-      }
-      consulUrl = removePath(consulUrl);
-    }
-    urlPath = path;
-    System.out.println("ORIGINAL CONSUL_URL: "+ System.getProperty("ConsulUrl"));
-    System.out.println("CONSUL_URL: "+ consulUrl);
-    System.out.println("CONSUL_PATH: "+ path);
-
-    Consul.Builder builder = Consul.builder();
-    String consulToken = System.getProperty("ConsulToken", token);
-    if (consulToken.trim().isEmpty()) consulToken=token;
-    if (consulToken!=null) {
-      Map<String,String> headers = new LinkedHashMap<>();
-      headers.put("X-Consul-Token", consulToken);
-      builder.withHeaders(headers);
-      builder.withTokenAuth(consulToken);
-    }
-    System.out.println("CONSUL_TOKEN`: '"+ consulToken+"'");
-
-    if(consulUrl != null){
-      builder.withUrl(consulUrl);
-      builder.withTokenAuth(consulToken);
-    }
-    else{
-      String host = System.getProperty("ConsulHost", "127.0.0.1");
-      String acl = System.getProperty("ConsulAcl");
-      int port = Integer.parseInt(System.getProperty("ConsulPort", "8500"));
-      HostAndPort hostAndPort = HostAndPort.fromParts(host, port);
-        builder.withClientEventCallback(this)
-          .withHostAndPort(hostAndPort);
-      if(acl != null){
-        builder.withAclToken(acl);
-      }
-      builder.withTokenAuth(consulToken);
-    }
-    builder.withPing(true);
-    client = builder.build();
-    if (consulAgentRegister) {
-      agentClient = client.agentClient();
-    }
-    else {
-      agentClient = null;
-    }
-
-    serviceIds = new ArrayList<>();
+  public ConsulManager(String serverId) throws IOException {
     uniqueName = serverId;
+    serviceIds = new ArrayList<>();
     serviceIds.add(serverId);
+    consulConfiguration = new ConsulConfiguration();
+    logger.log(CONSUL_CLIENT_LOG, "Creating client", consulConfiguration);
+    client = consulConfiguration.createBuilder(this).build();
+    logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
+    agentClient = consulConfiguration.registerAgent() ? client.agentClient() : null;
     logger.log(ServerLogMessages.CONSUL_STARTUP);
   }
 
@@ -124,27 +71,31 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     if(!namespace.endsWith("/")){
       namespace = namespace+"/";
     }
-    KeyValueClient keyValueClient = getKeyValueManager();
-    while(namespace.contains("/") ){ // we have a depth
-      String lookup = namespace+"default";
-      List<String> keys = keyValueClient.getKeys(lookup);
-      if(keys != null && !keys.isEmpty()){
-        return lookup;
+    try {
+      KeyValueClient keyValueClient = getKeyValueManager();
+      while (namespace.contains("/")) { // we have a depth
+        String lookup = namespace + "default";
+        List<String> keys = keyValueClient.getKeys(lookup);
+        if (keys != null && !keys.isEmpty()) {
+          return lookup;
+        }
+        namespace = namespace.substring(0, namespace.length() - 1); // Remove the "/"
+        int idx = namespace.lastIndexOf("/");
+        if (idx >= 0 && namespace.length() > 1) {
+          namespace = namespace.substring(0, idx + 1); // Include the /
+        } else {
+          break;
+        }
       }
-      namespace = namespace.substring(0, namespace.length()-1); // Remove the "/"
-      int idx = namespace.lastIndexOf("/");
-      if(idx >=0 && namespace.length() > 1){
-        namespace = namespace.substring(0, idx+1); // Include the /
-      }
-      else{
-        break;
-      }
+    }
+    catch(Throwable exceptionInInitializerError){
+      exceptionInInitializerError.printStackTrace();
     }
     return "";
   }
 
   public void register(Map<String, String> meta) {
-    if(!consulAgentRegister){
+    if(!consulConfiguration.registerAgent()){
       return;
     }
     List<String> propertyNames = new ArrayList<>();
@@ -166,7 +117,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public void register(EndPointServer endPointServer){
-    if(!consulAgentRegister){
+    if(!consulConfiguration.registerAgent()){
       return;
     }
     EndPointURL endPointURL = new EndPointURL(endPointServer.getConfig().getUrl());
@@ -188,7 +139,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public void register(RestApiServerManager restApiServerManager){
-    if(!consulAgentRegister){
+    if(!consulConfiguration.registerAgent()){
       return;
     }
     String host = restApiServerManager.getHost();
@@ -210,11 +161,12 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public void stop() {
-    for(String id:serviceIds){
-      if (consulAgentRegister) {
+    if (consulConfiguration.registerAgent()) {
+      for(String id:serviceIds){
         agentClient.deregister(id);
       }
     }
+
     if (scheduledTask != null) {
       logger.log(ServerLogMessages.CONSUL_SHUTDOWN);
       scheduledTask.cancel(false);
@@ -222,65 +174,17 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   }
 
   public void run() {
-    agentClient.ping();
-    try {
-      agentClient.pass(uniqueName);
-    } catch (NotRegisteredException e) {
-      logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
-    }
-  }
-
-  private static String extractToken(String url){
-    String token = null;
-    if(url.contains("@")){
-      int tokenEnd = url.indexOf("@");
-      int tokenStart = url.indexOf("://");
-      if(tokenStart<tokenEnd){
-        token = url.substring(tokenStart+3, tokenEnd).trim();
-        if(token.startsWith(":")){
-          token = token.substring(1);
-        }
+    if (consulConfiguration.registerAgent()) {
+      agentClient.ping();
+      try {
+        agentClient.pass(uniqueName);
+      } catch (NotRegisteredException e) {
+        logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
       }
     }
-    return token;
   }
 
-  private static String removePath(String urlString){
-    try {
-      URL url = new URL(urlString);
-      return url.getPort()!=-1?url.getProtocol()+"://"+url.getHost()+":"+url.getPort():url.getProtocol()+"://"+url.getHost();
-    } catch (MalformedURLException e) {
-      // ignore
-    }
-    return urlString;
-  }
-
-  private static String removeToken(String url){
-    if(url.contains("@")){
-      int tokenEnd = url.indexOf("@");
-      int tokenStart = url.indexOf("://");
-      if(tokenStart<tokenEnd){
-        url = url.substring(0, tokenStart+3) + url.substring(tokenEnd+1);
-      }
-    }
-    return url;
-  }
-
-  private static String extractPath(String urlString){
-    try {
-      URL url = new URL(urlString);
-      String path = url.getPath().trim();
-      if(path.isEmpty()){
-        path = "/";
-      }
-      return path;
-    } catch (MalformedURLException e) {
-      // ignore
-    }
-    return "/";
-  }
-
-  private static boolean registerAgent(){
-    return Boolean.parseBoolean(System.getProperty("ConsulAgentRegister", "false"));
+  public String getUrlPath() {
+    return consulConfiguration.getUrlPath();
   }
 }

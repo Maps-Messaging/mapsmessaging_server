@@ -83,13 +83,18 @@ public class ConfigurationManager {
       manager.load();
     }
 
-    // We have a consul link but there is no config loaded, so load up the configuration into the
-    // consul server to bootstrap the server
-    if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
-      defaultConsulManager.copy(yamlPropertyManager);
+    try {
+      // We have a consul link but there is no config loaded, so load up the configuration into the
+      // consul server to bootstrap the server
+      if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
+        defaultConsulManager.copy(yamlPropertyManager);
+      }
+      if (authoritative != null && authoritative.properties.size() == 0) {
+        authoritative.copy(defaultConsulManager); // Define the local host
+      }
     }
-    if(authoritative != null && authoritative.properties.size() == 0){
-      authoritative.copy(defaultConsulManager); // Define the local host
+    catch(Throwable th){
+      th.printStackTrace();
     }
   }
 

@@ -24,6 +24,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.concurrent.locks.LockSupport;
 
@@ -51,6 +52,10 @@ public class ConsulManagerFactory {
     while (retry && counter < Constants.RETRY_COUNT) {
       try {
         manager = new ConsulManager(serverId);
+        retry = false;
+      }
+      catch(IOException io){
+        logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, serverId, io);
         retry = false;
       } catch (Exception e) {
         LockSupport.parkNanos(1000000000L);
