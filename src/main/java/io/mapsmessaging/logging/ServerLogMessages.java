@@ -542,6 +542,8 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="CONSUL agent logging">
   CONSUL_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Agent startup"),
   CONSUL_CLIENT_LOG(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Consul Client state {} with config {}"),
+  CONSUL_CLIENT_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Consul Client raised exception {}"),
+
   CONSUL_SHUTDOWN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Agent shutdown"),
   CONSUL_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Registering with local agent"),
   CONSUL_PING_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Ping failed with exception {}"),

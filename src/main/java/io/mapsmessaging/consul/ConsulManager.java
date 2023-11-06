@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_EXCEPTION;
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_LOG;
 
 public class ConsulManager implements Runnable, ClientEventCallback {
@@ -89,7 +90,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
       }
     }
     catch(Throwable exceptionInInitializerError){
-      exceptionInInitializerError.printStackTrace();
+      logger.log(CONSUL_CLIENT_EXCEPTION, exceptionInInitializerError);
     }
     return "";
   }

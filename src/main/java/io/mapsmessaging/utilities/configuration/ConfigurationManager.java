@@ -28,8 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static io.mapsmessaging.logging.ServerLogMessages.PROPERTY_MANAGER_LOOKUP;
-import static io.mapsmessaging.logging.ServerLogMessages.PROPERTY_MANAGER_LOOKUP_FAILED;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class ConfigurationManager {
 
@@ -94,7 +93,7 @@ public class ConfigurationManager {
       }
     }
     catch(Throwable th){
-      th.printStackTrace();
+      logger.log(CONSUL_CLIENT_EXCEPTION, th);
     }
   }
 
