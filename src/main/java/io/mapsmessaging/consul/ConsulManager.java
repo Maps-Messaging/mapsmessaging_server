@@ -76,11 +76,11 @@ public class ConsulManager implements Runnable, ClientEventCallback {
 
     Consul.Builder builder = Consul.builder();
     String consulToken = System.getProperty("ConsulToken", token);
-    if (consulToken.trim().length()==0) consulToken=token;
+    if (consulToken.trim().isEmpty()) consulToken=token;
     if (consulToken!=null) {
-      //Map<String,String> headers = new LinkedHashMap<>();
-      //headers.put("X-Consul-Token", consulToken);
-      //builder.withHeaders(headers);
+      Map<String,String> headers = new LinkedHashMap<>();
+      headers.put("X-Consul-Token", consulToken);
+      builder.withHeaders(headers);
       builder.withTokenAuth(consulToken);
     }
     System.out.println("CONSUL_TOKEN`: '"+ consulToken+"'");
@@ -99,6 +99,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
       if(acl != null){
         builder.withAclToken(acl);
       }
+      builder.withTokenAuth(consulToken);
     }
     builder.withPing(true);
     client = builder.build();
@@ -247,7 +248,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   private static String removePath(String urlString){
     try {
       URL url = new URL(urlString);
-      return url.getProtocol()+"://"+url.getHost()+":"+url.getPort();
+      return url.getPort()!=-1?url.getProtocol()+"://"+url.getHost()+":"+url.getPort():url.getProtocol()+"://"+url.getHost();
     } catch (MalformedURLException e) {
       // ignore
     }
