@@ -28,6 +28,7 @@ import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+
 @ToString
 @Data
 public class ConsulConfiguration {
@@ -44,7 +45,9 @@ public class ConsulConfiguration {
 
     String urlCfg = System.getProperty("ConsulUrl");
     if(urlCfg != null){
+      System.err.println("Processing::"+urlCfg);
       tokencfg = extractToken(urlCfg);
+      System.err.println("Token extracted::"+tokencfg);
       path = extractPath(urlCfg);
       if(tokencfg != null) {
         urlCfg = removeToken(urlCfg);
@@ -66,6 +69,7 @@ public class ConsulConfiguration {
 
     System.out.println("ORIGINAL CONSUL_URL: "+ System.getProperty("ConsulUrl"));
     System.out.println("Configuration: "+ this);
+
   }
 
   public Consul.Builder createBuilder(ClientEventCallback clientEventCallback) throws IOException {
@@ -73,15 +77,25 @@ public class ConsulConfiguration {
       throw new IOException("No Consul configuration found");
     }
     Consul.Builder builder = Consul.builder();
+
+    //
+    // Process a potential token
+    //
     if (consulToken!=null) {
       Map<String,String> headers = new LinkedHashMap<>();
       headers.put("X-Consul-Token", consulToken);
       builder = builder.withHeaders(headers)
                 .withTokenAuth(consulToken);
     }
+
+    //
+    // Process a potential ACL, they are different to a token
+    //
     if(consulAcl != null) builder.withAclToken(consulAcl);
 
     return builder.withUrl(consulUrl)
+        .withWriteTimeoutMillis(60000)
+        .withReadTimeoutMillis(60000)
         .withClientEventCallback(clientEventCallback)
         .withPing(true);
   }
@@ -92,6 +106,7 @@ public class ConsulConfiguration {
 
   private String parseToken(String tokencfg){
     tokencfg = System.getProperty("ConsulToken", tokencfg);
+    System.err.println("Loaded token as "+tokencfg);
     return (tokencfg != null && !tokencfg.trim().isEmpty()) ? tokencfg.trim() : null;
   }
 
