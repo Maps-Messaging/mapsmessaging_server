@@ -63,7 +63,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     if(consulUrl != null){
       token = extractToken(consulUrl);
       path = extractPath(consulUrl);
-      //if (path.endsWith("/")) path.substring(0,path.lastIndexOf('/')-1);
+      if (path.endsWith("/")) path=path.substring(0,path.lastIndexOf('/'));
       if(token != null) {
         consulUrl = removeToken(consulUrl);
       }
@@ -212,7 +212,9 @@ public class ConsulManager implements Runnable, ClientEventCallback {
 
   public void stop() {
     for(String id:serviceIds){
-      agentClient.deregister(id);
+      if (consulAgentRegister) {
+        agentClient.deregister(id);
+      }
     }
     if (scheduledTask != null) {
       logger.log(ServerLogMessages.CONSUL_SHUTDOWN);
