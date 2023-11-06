@@ -17,17 +17,18 @@ Wire protocol standardization has promised interoperability and flexibility in I
 
 ## Advanced Features
 
-- **Schema Repository:** Centralized management for data integrity and format consistency.
-- **Direct Device Integration:** Offers direct communication with I2C, 1-Wire, and SPI devices, mapping interactions to topic namespaces.
-- **Versatile Authentication:** Supports a variety of mechanisms, including `.htpasswd`, LDAP, JWT, Auth0, and more.
-- **Cloud-Native Event Storage:** Event data at rest can be pushed to S3 buckets for long-term storage.
-- **Event Filtering:** Advanced filtering between MAPS-servers or other servers with filtering capabilities, ensuring only relevant data is transmitted.
+- **Schema Repository:** Centralized management for data integrity and format consistency. [More info](https://github.com/Maps-Messaging/schemas).
+- **Direct Device Integration:** Offers direct communication with I2C, 1-Wire, and SPI devices, mapping interactions to topic namespaces. [More info](https://github.com/Maps-Messaging/device_integration)
+- **Versatile Authentication:** Supports a variety of mechanisms, including `.htpasswd`, LDAP, JWT, Auth0, and more. [More info](https://github.com/Maps-Messaging/authentication_library)
+- **Cloud-Native Event Storage:** Event data at rest can be pushed to S3 buckets for long-term storage. [More info](https://github.com/Maps-Messaging/dynamic_storage)
+- **Event Filtering:** Advanced filtering between MAPS-servers or other servers with filtering capabilities, ensuring only relevant data is transmitted. [More info](https://github.com/Maps-Messaging/jms_selector_parser)
+- **Robust Logging:** Utilizes Logback for comprehensive and customizable logging configurations.  [More info](https://github.com/Maps-Messaging/simple_logging)
+- **Non-Blocking Async Engine:** Employs a highly efficient, non-blocking asynchronous engine and network layers, ensuring minimal locking and maximal concurrency for superior performance. [Learn more](https://github.com/Maps-Messaging/non_block_task_scheduler).
 - **LoRa Support:** Native support for LoRa devices, enabling direct communication without requiring a LoRaWAN network.
 - **Semtech Gateway Compatibility:** Acts as a LoRaWAN gateway in conjunction with Semtech's technology, expanding the server's IoT ecosystem.
 - **mDNS Discovery:** Provides service discovery via mDNS, with future enhancements planned for automatic connection and namespace/schema propagation.
 - **Security Domains:** Configurable security domains allow for tailored authentication and authorization on a per-adapter/protocol basis.
 - **Flexible Configuration:** Supports configuration through both Consul and file-based setups, catering to various deployment environments.
-- **Robust Logging:** Utilizes Logback for comprehensive and customizable logging configurations.
 
 ## Getting Started: "Hello World" Example
 
