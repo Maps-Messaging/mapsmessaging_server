@@ -20,12 +20,13 @@ package io.mapsmessaging.routing.manager;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
-import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.io.IOException;
 
 public class SchemaMonitor implements Runnable {
 
@@ -59,9 +60,7 @@ public class SchemaMonitor implements Runnable {
             SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonArray.get(x).toString());
             if(SchemaManager.getInstance().getSchema(config.getUniqueId()) == null){
               SchemaManager.getInstance().addSchema(" ", config);
-              System.err.println("Adding schema");
             }
-            System.err.println(config);
           }
         }
       } else {
