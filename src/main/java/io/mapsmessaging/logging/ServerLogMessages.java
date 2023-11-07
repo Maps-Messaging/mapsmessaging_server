@@ -560,6 +560,8 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="CONSUL Key/Value management log messages">
   CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "No keys found in Consul Key/Value for id {}"),
   CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Key {}, lookup failed with exception"),
+  CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Key {}, lookup success, returned {} bytes"),
+
   CONSUL_PROPERTY_MANAGER_INVALID_JSON(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Value returned is not valid json for key {}"),
   CONSUL_PROPERTY_MANAGER_SAVE_ALL(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Saving all entries for {}"),
   CONSUL_PROPERTY_MANAGER_STORE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Storing entry for {}"),

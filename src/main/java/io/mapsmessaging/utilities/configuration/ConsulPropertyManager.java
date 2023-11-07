@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 
+import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS;
+
 public class ConsulPropertyManager extends YamlPropertyManager {
 
   private final String serverPrefix;
@@ -65,6 +67,7 @@ public class ConsulPropertyManager extends YamlPropertyManager {
         if(optionalValue.isPresent()){
           String value = new String(Base64.getDecoder().decode(optionalValue.get()));
           String name = key.substring(serverPrefix.length());
+          logger.log(CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS, name, value.length());
           parseAndLoadYaml(name, value);
         }
       }
