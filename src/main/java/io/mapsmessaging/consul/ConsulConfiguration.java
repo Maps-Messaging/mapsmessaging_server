@@ -18,6 +18,8 @@
 package io.mapsmessaging.consul;
 
 import com.orbitz.consul.Consul;
+import com.orbitz.consul.KeyValueClient;
+import com.orbitz.consul.model.kv.Value;
 import com.orbitz.consul.monitoring.ClientEventCallback;
 import lombok.Data;
 import lombok.ToString;
@@ -26,7 +28,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @ToString
@@ -92,10 +96,10 @@ public class ConsulConfiguration {
     // Process a potential ACL, they are different to a token
     //
     if(consulAcl != null) builder.withAclToken(consulAcl);
-
     return builder.withUrl(consulUrl)
         .withWriteTimeoutMillis(60000)
         .withReadTimeoutMillis(60000)
+        .withHttps(consulUrl.toLowerCase().startsWith("https"))
         .withClientEventCallback(clientEventCallback)
         .withPing(true);
   }
@@ -105,7 +109,10 @@ public class ConsulConfiguration {
   }
 
   private String parseToken(String tokencfg){
-    tokencfg = System.getProperty("ConsulToken", tokencfg);
+    String tokenProp = System.getProperty("ConsulToken", tokencfg);
+    if(tokenProp != null && !tokenProp.isEmpty()){
+      tokencfg = tokenProp;
+    }
     System.err.println("Loaded token as "+tokencfg);
     return (tokencfg != null && !tokencfg.trim().isEmpty()) ? tokencfg.trim() : null;
   }
@@ -159,5 +166,24 @@ public class ConsulConfiguration {
       }
     }
     return token;
+  }
+
+  public static void main(String[] artgs) throws IOException {
+    ConsulConfiguration consulConfiguration = new ConsulConfiguration();
+    Consul.Builder builder = consulConfiguration.createBuilder(new ClientEventCallback(){
+
+    });
+    builder = builder.withHttps(true);
+    Consul consul = builder.build();
+    KeyValueClient kvClient = consul.keyValueClient();
+    List<String> keys = kvClient.getKeys("/");
+
+    for(String key:keys){
+      Optional<Value> optionalValue = kvClient.getValue(key);
+      if(optionalValue.isPresent()){
+        System.err.println("Key:"+key);
+        System.err.println( optionalValue.get());
+      }
+    }
   }
 }
