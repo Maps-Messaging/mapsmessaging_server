@@ -18,7 +18,7 @@
 #
 # Configure the java command on the path
 #
-export JAVA_HOME=/opt/jdk-13
+export JAVA_HOME=/opt/jdk-17
 export PATH=$JAVA_HOME/bin:$PATH
 
 export VERSION=%%MAPS_VERSION%%
@@ -27,13 +27,11 @@ export VERSION=%%MAPS_VERSION%%
 if [[ -n "${FLY_CONSUL_URL}" ]]; then
   # If FLY_CONSUL_URL is set, use its value for CONSUL_URL
   CONSUL_URL="${FLY_CONSUL_URL}"
-else
-  # If FLY_CONSUL_URL is not set, use the default value
-  CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
 fi
 
 # Export the CONSUL_URL so it becomes an environment variable
 export CONSUL_URL
+echo $CONSUL_URL
 
 if [ -z ${MAPS_HOME+x} ];
   then export MAPS_HOME=/opt/message_daemon-$VERSION;
