@@ -18,8 +18,10 @@
 #
 # Configure the java command on the path
 #
-export JAVA_HOME=/opt/jdk-17
+export JAVA_HOME=/usr/lib/jvm/zulu-17
 export PATH=$JAVA_HOME/bin:$PATH
+
+ls -lsa /usr/lib/jvm
 
 export VERSION=%%MAPS_VERSION%%
 
