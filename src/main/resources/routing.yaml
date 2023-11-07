@@ -16,7 +16,7 @@
 
 ---
 Routing:
-  enabled: true
+  enabled: false
   autoDiscovery: true
   predefinedServers:
     -
