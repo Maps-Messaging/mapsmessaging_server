@@ -21,7 +21,7 @@
 export JAVA_HOME=/usr/lib/jvm/zulu-17
 export PATH=$JAVA_HOME/bin:$PATH
 
-ls -lsa /usr/lib/jvm
+echo $PATH
 
 export VERSION=%%MAPS_VERSION%%
 
