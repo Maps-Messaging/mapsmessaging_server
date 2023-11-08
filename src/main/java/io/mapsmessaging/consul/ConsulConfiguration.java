@@ -103,7 +103,8 @@ public class ConsulConfiguration {
               .withWriteTimeoutMillis(60000)
               .withReadTimeoutMillis(60000)
               .withHttps(consulUrl.toLowerCase().startsWith("https"))
-              .withClientEventCallback(clientEventCallback);
+              .withClientEventCallback(clientEventCallback)
+              .withPing(false);
     }
   }
 
