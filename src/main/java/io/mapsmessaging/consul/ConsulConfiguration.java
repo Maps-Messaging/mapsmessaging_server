@@ -21,6 +21,7 @@ import com.orbitz.consul.Consul;
 import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.model.kv.Value;
 import com.orbitz.consul.monitoring.ClientEventCallback;
+import io.mapsmessaging.utilities.configuration.ConsulPropertyManager;
 import lombok.Data;
 import lombok.ToString;
 
@@ -49,9 +50,7 @@ public class ConsulConfiguration {
 
     String urlCfg = System.getProperty("ConsulUrl");
     if(urlCfg != null){
-      System.err.println("Processing::"+urlCfg);
       tokencfg = extractToken(urlCfg);
-      System.err.println("Token extracted::"+tokencfg);
       path = extractPath(urlCfg);
       if(tokencfg != null) {
         urlCfg = removeToken(urlCfg);
@@ -69,11 +68,6 @@ public class ConsulConfiguration {
     consulToken = parseToken(tokencfg);
     consulUrl = urlCfg;
     urlPath = path;
-
-
-    System.out.println("ORIGINAL CONSUL_URL: "+ System.getProperty("ConsulUrl"));
-    System.out.println("Configuration: "+ this);
-
   }
 
   public Consul.Builder createBuilder(ClientEventCallback clientEventCallback) throws IOException {
@@ -113,7 +107,6 @@ public class ConsulConfiguration {
     if(tokenProp != null && !tokenProp.isEmpty()){
       tokencfg = tokenProp;
     }
-    System.err.println("Loaded token as "+tokencfg);
     return (tokencfg != null && !tokencfg.trim().isEmpty()) ? tokencfg.trim() : null;
   }
 
@@ -185,5 +178,10 @@ public class ConsulConfiguration {
         System.err.println( optionalValue.get());
       }
     }
+
+    ConsulPropertyManager propertyManager = new ConsulPropertyManager("/");
+    propertyManager.load();
+    propertyManager.save();
+
   }
 }
