@@ -17,22 +17,11 @@
 
 package io.mapsmessaging.consul;
 
-import com.orbitz.consul.Consul;
-import com.orbitz.consul.KeyValueClient;
-import com.orbitz.consul.model.kv.Value;
-import com.orbitz.consul.monitoring.ClientEventCallback;
-import io.mapsmessaging.utilities.configuration.ConsulPropertyManager;
 import lombok.Data;
 import lombok.ToString;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 
 @ToString
 @Data
@@ -43,25 +32,24 @@ public class ConsulConfiguration {
   private final String urlPath;
   private final String consulAcl;
 
-  public ConsulConfiguration(){
+  public ConsulConfiguration() {
 
     String tokencfg;
-    String path ="/";
+    String path = "/";
 
     String urlCfg = System.getProperty("ConsulUrl");
-    if(urlCfg != null){
+    if (urlCfg != null) {
       tokencfg = extractToken(urlCfg);
       path = extractPath(urlCfg);
-      if(tokencfg != null) {
+      if (tokencfg != null) {
         urlCfg = removeToken(urlCfg);
       }
       urlCfg = removePath(urlCfg);
-    }
-    else{
+    } else {
       tokencfg = null;
       String host = System.getProperty("ConsulHost", "127.0.0.1");
       int port = Integer.parseInt(System.getProperty("ConsulPort", "8500"));
-      urlCfg = "http://"+host+":"+port;
+      urlCfg = "http://" + host + ":" + port;
     }
 
     consulAcl = System.getProperty("ConsulAcl");
@@ -70,82 +58,44 @@ public class ConsulConfiguration {
     urlPath = path;
   }
 
-  public Consul.Builder createBuilder(ClientEventCallback clientEventCallback) throws IOException {
-    if(consulUrl == null){
-      throw new IOException("No Consul configuration found");
-    }
-    Consul.Builder builder = Consul.builder();
-
-    //
-    // Process a potential token
-    //
-    if (consulToken!=null) {
-      Map<String,String> headers = new LinkedHashMap<>();
-      headers.put("X-Consul-Token", consulToken);
-      builder = builder.withHeaders(headers)
-                .withTokenAuth(consulToken);
-    }
-
-    //
-    // Process a potential ACL, they are different to a token
-    //
-    if(consulAcl != null) builder.withAclToken(consulAcl);
-    if (registerAgent()){
-      return builder.withUrl(consulUrl)
-              .withWriteTimeoutMillis(60000)
-              .withReadTimeoutMillis(60000)
-              .withHttps(consulUrl.toLowerCase().startsWith("https"))
-              .withClientEventCallback(clientEventCallback)
-              .withPing(true);
-    }
-    else {
-      return builder.withUrl(consulUrl)
-              .withWriteTimeoutMillis(60000)
-              .withReadTimeoutMillis(60000)
-              .withHttps(consulUrl.toLowerCase().startsWith("https"))
-              .withClientEventCallback(clientEventCallback)
-              .withPing(false);
-    }
-  }
-
-  public boolean registerAgent(){
+  public boolean registerAgent() {
     return Boolean.parseBoolean(System.getProperty("ConsulAgentRegister", "false"));
   }
 
-  private String parseToken(String tokencfg){
+  private String parseToken(String tokencfg) {
     String tokenProp = System.getProperty("ConsulToken", tokencfg);
-    if(tokenProp != null && !tokenProp.isEmpty()){
+    if (tokenProp != null && !tokenProp.isEmpty()) {
       tokencfg = tokenProp;
     }
     return (tokencfg != null && !tokencfg.trim().isEmpty()) ? tokencfg.trim() : null;
   }
 
-  private String removePath(String urlString){
+  private String removePath(String urlString) {
     try {
       URL url = new URL(urlString);
-      return url.getPort()!=-1?url.getProtocol()+"://"+url.getHost()+":"+url.getPort():url.getProtocol()+"://"+url.getHost();
+      return url.getPort() != -1 ? url.getProtocol() + "://" + url.getHost() + ":" + url.getPort() : url.getProtocol() + "://" + url.getHost();
     } catch (MalformedURLException e) {
       // ignore
     }
     return urlString;
   }
 
-  private String removeToken(String url){
-    if(url.contains("@")){
+  private String removeToken(String url) {
+    if (url.contains("@")) {
       int tokenEnd = url.indexOf("@");
       int tokenStart = url.indexOf("://");
-      if(tokenStart<tokenEnd){
-        url = url.substring(0, tokenStart+3) + url.substring(tokenEnd+1);
+      if (tokenStart < tokenEnd) {
+        url = url.substring(0, tokenStart + 3) + url.substring(tokenEnd + 1);
       }
     }
     return url;
   }
 
-  private String extractPath(String urlString){
+  private String extractPath(String urlString) {
     try {
       URL url = new URL(urlString);
       String path = url.getPath().trim();
-      if(path.isEmpty()){
+      if (path.isEmpty()) {
         path = "/";
       }
       return path;
@@ -155,43 +105,18 @@ public class ConsulConfiguration {
     return "/";
   }
 
-
-  private String extractToken(String url){
+  private String extractToken(String url) {
     String token = null;
-    if(url.contains("@")){
+    if (url.contains("@")) {
       int tokenEnd = url.indexOf("@");
       int tokenStart = url.indexOf("://");
-      if(tokenStart<tokenEnd){
-        token = url.substring(tokenStart+3, tokenEnd).trim();
-        if(token.startsWith(":")){
+      if (tokenStart < tokenEnd) {
+        token = url.substring(tokenStart + 3, tokenEnd).trim();
+        if (token.startsWith(":")) {
           token = token.substring(1);
         }
       }
     }
     return token;
-  }
-
-  public static void main(String[] artgs) throws IOException {
-    ConsulConfiguration consulConfiguration = new ConsulConfiguration();
-    Consul.Builder builder = consulConfiguration.createBuilder(new ClientEventCallback(){
-
-    });
-    builder = builder.withHttps(true);
-    Consul consul = builder.build();
-    KeyValueClient kvClient = consul.keyValueClient();
-    List<String> keys = kvClient.getKeys("/");
-
-    for(String key:keys){
-      Optional<Value> optionalValue = kvClient.getValue(key);
-      if(optionalValue.isPresent()){
-        System.err.println("Key:"+key);
-        System.err.println( optionalValue.get());
-      }
-    }
-
-    ConsulPropertyManager propertyManager = new ConsulPropertyManager("/");
-    propertyManager.load();
-    propertyManager.save();
-
   }
 }

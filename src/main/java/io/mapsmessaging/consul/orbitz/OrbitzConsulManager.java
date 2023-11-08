@@ -15,17 +15,17 @@
  *
  */
 
-package io.mapsmessaging.consul;
+package io.mapsmessaging.consul.orbitz;
 
-import com.orbitz.consul.AgentClient;
-import com.orbitz.consul.Consul;
-import com.orbitz.consul.KeyValueClient;
-import com.orbitz.consul.NotRegisteredException;
+import com.orbitz.consul.*;
 import com.orbitz.consul.model.agent.ImmutableRegistration;
 import com.orbitz.consul.model.agent.Registration;
 import com.orbitz.consul.model.kv.Value;
 import com.orbitz.consul.monitoring.ClientEventCallback;
 import io.mapsmessaging.BuildInfo;
+import io.mapsmessaging.consul.Constants;
+import io.mapsmessaging.consul.ConsulConfiguration;
+import io.mapsmessaging.consul.ConsulServerApi;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -35,21 +35,16 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_LOG;
+import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_KEY_VALUE_MANAGER;
 
-public class ConsulManager implements Runnable, ClientEventCallback {
+public class OrbitzConsulManager extends ConsulServerApi implements Runnable, ClientEventCallback {
 
-  private static final Pattern VALID_KEY_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-._~/]+$");
-
-  private final Logger logger = LoggerFactory.getLogger(ConsulManager.class);
+  private final Logger logger = LoggerFactory.getLogger(OrbitzConsulManager.class);
 
   private final ConsulConfiguration consulConfiguration;
 
@@ -57,50 +52,61 @@ public class ConsulManager implements Runnable, ClientEventCallback {
   private final AgentClient agentClient;
   private final KeyValueClient keyValueClient;
 
-  private final List<String> serviceIds;
-  private final String uniqueName;
   private Future<?> scheduledTask;
 
-  public ConsulManager(String serverId) throws IOException {
-    uniqueName = serverId;
-    serviceIds = new ArrayList<>();
-    serviceIds.add(serverId);
-    consulConfiguration = new ConsulConfiguration();
-    logger.log(CONSUL_CLIENT_LOG, "Creating client", consulConfiguration);
-    client = consulConfiguration.createBuilder(this).build();
-    logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
-    agentClient = consulConfiguration.registerAgent() ? client.agentClient() : null;
-    keyValueClient = client.keyValueClient();
-    logger.log(ServerLogMessages.CONSUL_STARTUP);
-  }
-
-
-  public String scanForDefaultConfig(String namespace){
-    if(!namespace.endsWith("/")){
-      namespace = namespace+"/";
-    }
+  public OrbitzConsulManager(String serverId) throws IOException {
+    super(serverId);
     try {
-      while (namespace.contains("/")) { // we have a depth
-        String lookup = namespace + "default";
-        List<String> keys = keyValueClient.getKeys(lookup);
-        if (keys != null && !keys.isEmpty()) {
-          return lookup;
-        }
-        namespace = namespace.substring(0, namespace.length() - 1); // Remove the "/"
-        int idx = namespace.lastIndexOf("/");
-        if (idx >= 0 && namespace.length() > 1) {
-          namespace = namespace.substring(0, idx + 1); // Include the /
-        } else {
-          break;
-        }
-      }
+      consulConfiguration = new ConsulConfiguration();
+      logger.log(CONSUL_CLIENT_LOG, "Creating client", consulConfiguration);
+      client = createBuilder().build();
+      logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
+      agentClient = consulConfiguration.registerAgent() ? client.agentClient() : null;
+      keyValueClient = client.keyValueClient();
+      logger.log(ServerLogMessages.CONSUL_STARTUP);
+    } catch (ConsulException ex) {
+      throw new IOException(ex);
     }
-    catch(Throwable exceptionInInitializerError){
-      logger.log(CONSUL_CLIENT_EXCEPTION, exceptionInInitializerError);
-    }
-    return "";
   }
 
+  private Consul.Builder createBuilder() throws IOException {
+    if (consulConfiguration.getConsulUrl() == null) {
+      throw new IOException("No Consul configuration found");
+    }
+    Consul.Builder builder = Consul.builder();
+
+    //
+    // Process a potential token
+    //
+    if (consulConfiguration.getConsulToken() != null) {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("X-Consul-Token", consulConfiguration.getConsulToken());
+      builder = builder.withHeaders(headers)
+          .withTokenAuth(consulConfiguration.getConsulToken());
+    }
+
+    //
+    // Process a potential ACL, they are different to a token
+    //
+    if (consulConfiguration.getConsulAcl() != null) builder.withAclToken(consulConfiguration.getConsulAcl());
+    if (consulConfiguration.registerAgent()) {
+      return builder.withUrl(consulConfiguration.getConsulUrl())
+          .withWriteTimeoutMillis(60000)
+          .withReadTimeoutMillis(60000)
+          .withHttps(consulConfiguration.getConsulUrl().toLowerCase().startsWith("https"))
+          .withClientEventCallback(this)
+          .withPing(true);
+    } else {
+      return builder.withUrl(consulConfiguration.getConsulUrl())
+          .withWriteTimeoutMillis(60000)
+          .withReadTimeoutMillis(60000)
+          .withHttps(consulConfiguration.getConsulUrl().toLowerCase().startsWith("https"))
+          .withClientEventCallback(this)
+          .withPing(false);
+    }
+  }
+
+  @Override
   public void register(Map<String, String> meta) {
     if(!consulConfiguration.registerAgent()){
       return;
@@ -123,6 +129,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, Constants.HEALTH_TIME, Constants.HEALTH_TIME, TimeUnit.SECONDS);
   }
 
+  @Override
   public void register(EndPointServer endPointServer){
     if(!consulConfiguration.registerAgent()){
       return;
@@ -145,6 +152,7 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     serviceIds.add(id);
   }
 
+  @Override
   public void register(RestApiServerManager restApiServerManager){
     if(!consulConfiguration.registerAgent()){
       return;
@@ -191,44 +199,55 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     }
   }
 
+  @Override
   public String getUrlPath() {
     return consulConfiguration.getUrlPath();
   }
 
-  public List<String> getKeys(String key) {
+  @Override
+  public List<String> getKeys(String key) throws IOException {
     String keyName = validateKey(key);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, "");
-    List<String> keyList = keyValueClient.getKeys(keyName);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, keyList);
-    return keyList;
+    try {
+      logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, "");
+      List<String> keyList = keyValueClient.getKeys(keyName);
+      logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, keyList);
+      return keyList;
+    } catch (ConsulException ex) {
+      throw new IOException(ex);
+    }
   }
 
-  public Optional<Value> getValue(String key) {
-    String keyName = validateKey(key);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, "");
-    Optional<Value> value = keyValueClient.getValue(keyName);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, value);
-    return value;
+  @Override
+  public String getValue(String key) throws IOException {
+    try {
+      String keyName = validateKey(key);
+      logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, "");
+      Optional<Value> value = keyValueClient.getValue(keyName);
+      logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, value);
+      if (value.isPresent()) {
+        Optional<String> optionalValue = value.get().getValue();
+        if (optionalValue.isPresent()) {
+          return new String(Base64.getDecoder().decode(optionalValue.get()));
+        }
+      }
+    } catch (ConsulException ex) {
+      throw new IOException(ex);
+    }
+    return "";
   }
 
+  @Override
   public void putValue(String key, String value) {
     String keyName = validateKey(key);
     logger.log(CONSUL_KEY_VALUE_MANAGER, "putValue", keyName, value);
     keyValueClient.putValue(keyName, value);
   }
 
+  @Override
   public void deleteKey(String key) {
     String keyName = validateKey(key);
     logger.log(CONSUL_KEY_VALUE_MANAGER, "deleteKey", keyName, "");
     keyValueClient.deleteKey(key);
   }
 
-  private String validateKey(String keyName){
-    if(VALID_KEY_NAME_PATTERN.matcher(keyName).matches()){
-      return keyName;
-    }
-    String fixed = keyName.replaceAll("[^a-zA-Z0-9-._~/]", "");
-    logger.log(CONSUL_INVALID_KEY, keyName, fixed);
-    return fixed;
-  }
 }

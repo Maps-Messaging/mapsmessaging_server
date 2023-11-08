@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.consul;
 
-import com.orbitz.consul.ConsulException;
+import io.mapsmessaging.consul.orbitz.OrbitzConsulManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -42,7 +42,7 @@ public class ConsulManagerFactory {
 
   private final Logger logger = LoggerFactory.getLogger(ConsulManagerFactory.class);
   private final boolean forceWait;
-  private ConsulManager manager;
+  private ConsulServerApi manager;
 
   public synchronized void start(String serverId) {
     stop(); // just to be sure
@@ -51,7 +51,7 @@ public class ConsulManagerFactory {
     int counter = 0;
     while (retry && counter < Constants.RETRY_COUNT) {
       try {
-        manager = new ConsulManager(serverId);
+        manager = new OrbitzConsulManager(serverId);
         retry = false;
       }
       catch(IOException io){
@@ -60,7 +60,7 @@ public class ConsulManagerFactory {
       } catch (Exception e) {
         LockSupport.parkNanos(1000000000L);
         counter++;
-        if (!forceWait && e instanceof ConsulException) {
+        if (!forceWait && e instanceof IOException) {
           Exception actual = (Exception) e.getCause();
           if (actual instanceof ConnectException) {
             logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, serverId);
@@ -100,7 +100,7 @@ public class ConsulManagerFactory {
     }
   }
 
-  public synchronized ConsulManager getManager() {
+  public synchronized ConsulServerApi getManager() {
     return manager;
   }
 

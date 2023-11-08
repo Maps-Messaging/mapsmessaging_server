@@ -18,19 +18,14 @@
 package io.mapsmessaging.utilities.configuration;
 
 
-import com.orbitz.consul.ConsulException;
-import com.orbitz.consul.KeyValueClient;
-import com.orbitz.consul.model.kv.Value;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS;
 
@@ -53,24 +48,18 @@ public class ConsulPropertyManager extends YamlPropertyManager {
       for (String key : keys) {
         processKey(key);
       }
-    } catch (ConsulException e) {
+    } catch (IOException e) {
       logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES, serverPrefix);
     }
   }
 
   private void processKey(String key) {
     try {
-      Optional<Value> entry = ConsulManagerFactory.getInstance().getManager().getValue(key);
-      if (entry.isPresent()) {
-        Optional<String> optionalValue = entry.get().getValue();
-        if(optionalValue.isPresent()){
-          String value = new String(Base64.getDecoder().decode(optionalValue.get()));
-          String name = key.substring(serverPrefix.length());
-          logger.log(CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS, name, value.length());
-          parseAndLoadYaml(name, value);
-        }
-      }
-    } catch (ConsulException | IOException consulException) {
+      String value = ConsulManagerFactory.getInstance().getManager().getValue(key);
+      String name = key.substring(serverPrefix.length());
+      logger.log(CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS, name, value.length());
+      parseAndLoadYaml(name, value);
+    } catch (IOException consulException) {
       logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
     }
   }
