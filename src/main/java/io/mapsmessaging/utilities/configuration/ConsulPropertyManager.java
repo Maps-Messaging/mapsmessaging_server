@@ -49,19 +49,18 @@ public class ConsulPropertyManager extends YamlPropertyManager {
   @Override
   public void load() {
     try {
-      KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
-      List<String> keys = keyValueClient.getKeys(serverPrefix);
+      List<String> keys = ConsulManagerFactory.getInstance().getManager().getKeys(serverPrefix);
       for (String key : keys) {
-        processKey(keyValueClient, key);
+        processKey(key);
       }
     } catch (ConsulException e) {
       logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES, serverPrefix);
     }
   }
 
-  private void processKey(KeyValueClient keyValueClient, String key) {
+  private void processKey(String key) {
     try {
-      Optional<Value> entry = keyValueClient.getValue(key);
+      Optional<Value> entry = ConsulManagerFactory.getInstance().getManager().getValue(key);
       if (entry.isPresent()) {
         Optional<String> optionalValue = entry.get().getValue();
         if(optionalValue.isPresent()){
@@ -79,16 +78,18 @@ public class ConsulPropertyManager extends YamlPropertyManager {
   @Override
   protected void store(String name) {
     logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_STORE, serverPrefix, name);
-    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
-    keyValueClient.putValue(serverPrefix + name, getPropertiesJSON(name).toString(2));
+    ConsulManagerFactory.getInstance()
+        .getManager()
+        .putValue(serverPrefix + name, getPropertiesJSON(name).toString(2));
   }
 
   @Override
   public void copy(PropertyManager propertyManager) {
-    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     // Remove what we have
     for (String name : properties.keySet()) {
-      keyValueClient.deleteKey(serverPrefix + name);
+      ConsulManagerFactory.getInstance()
+          .getManager()
+          .deleteKey(serverPrefix + name);
     }
 
     // Now let's add the new config
@@ -113,12 +114,10 @@ public class ConsulPropertyManager extends YamlPropertyManager {
 
   public void save() {
     logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_SAVE_ALL, serverPrefix);
-
-    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     for (Entry<String, Object> entry : properties.entrySet()) {
       String source = ((ConfigurationProperties) entry.getValue()).getSource();
       String key = serverPrefix.trim() + entry.getKey().trim();
-      keyValueClient.putValue(key, source);
+      ConsulManagerFactory.getInstance().getManager().putValue(key, source);
     }
     // Now lets Store it in key value pairs in consul
   }

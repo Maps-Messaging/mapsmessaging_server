@@ -23,6 +23,7 @@ import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.NotRegisteredException;
 import com.orbitz.consul.model.agent.ImmutableRegistration;
 import com.orbitz.consul.model.agent.Registration;
+import com.orbitz.consul.model.kv.Value;
 import com.orbitz.consul.monitoring.ClientEventCallback;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.logging.Logger;
@@ -37,19 +38,27 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
-import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_EXCEPTION;
-import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_LOG;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class ConsulManager implements Runnable, ClientEventCallback {
+
+  private static final Pattern VALID_KEY_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-._~/]+$");
+
   private final Logger logger = LoggerFactory.getLogger(ConsulManager.class);
+
+  private final ConsulConfiguration consulConfiguration;
+
   private final Consul client;
   private final AgentClient agentClient;
+  private final KeyValueClient keyValueClient;
+
   private final List<String> serviceIds;
   private final String uniqueName;
-  private final ConsulConfiguration consulConfiguration;
   private Future<?> scheduledTask;
 
   public ConsulManager(String serverId) throws IOException {
@@ -61,19 +70,16 @@ public class ConsulManager implements Runnable, ClientEventCallback {
     client = consulConfiguration.createBuilder(this).build();
     logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
     agentClient = consulConfiguration.registerAgent() ? client.agentClient() : null;
+    keyValueClient = client.keyValueClient();
     logger.log(ServerLogMessages.CONSUL_STARTUP);
   }
 
-  public KeyValueClient getKeyValueManager() {
-    return client.keyValueClient();
-  }
 
   public String scanForDefaultConfig(String namespace){
     if(!namespace.endsWith("/")){
       namespace = namespace+"/";
     }
     try {
-      KeyValueClient keyValueClient = getKeyValueManager();
       while (namespace.contains("/")) { // we have a depth
         String lookup = namespace + "default";
         List<String> keys = keyValueClient.getKeys(lookup);
@@ -187,5 +193,42 @@ public class ConsulManager implements Runnable, ClientEventCallback {
 
   public String getUrlPath() {
     return consulConfiguration.getUrlPath();
+  }
+
+  public List<String> getKeys(String key) {
+    String keyName = validateKey(key);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, "");
+    List<String> keyList = keyValueClient.getKeys(keyName);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, keyList);
+    return keyList;
+  }
+
+  public Optional<Value> getValue(String key) {
+    String keyName = validateKey(key);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, "");
+    Optional<Value> value = keyValueClient.getValue(keyName);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, value);
+    return value;
+  }
+
+  public void putValue(String key, String value) {
+    String keyName = validateKey(key);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "putValue", keyName, value);
+    keyValueClient.putValue(keyName, value);
+  }
+
+  public void deleteKey(String key) {
+    String keyName = validateKey(key);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "deleteKey", keyName, "");
+    keyValueClient.deleteKey(key);
+  }
+
+  private String validateKey(String keyName){
+    if(VALID_KEY_NAME_PATTERN.matcher(keyName).matches()){
+      return keyName;
+    }
+    String fixed = keyName.replaceAll("[^a-zA-Z0-9-._~/]", "");
+    logger.log(CONSUL_INVALID_KEY, keyName, fixed);
+    return fixed;
   }
 }
