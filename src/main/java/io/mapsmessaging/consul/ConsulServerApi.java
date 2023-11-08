@@ -19,19 +19,23 @@ package io.mapsmessaging.consul;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
+import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_EXCEPTION;
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_INVALID_KEY;
 
-public abstract class ConsulServerApi {
+public abstract class ConsulServerApi implements Runnable {
   private static final Pattern VALID_KEY_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-._~/]+$");
 
 
@@ -39,11 +43,15 @@ public abstract class ConsulServerApi {
 
   protected final List<String> serviceIds;
   protected final String uniqueName;
+  protected final ConsulConfiguration consulConfiguration;
+
+  protected Future<?> scheduledTask;
 
   protected ConsulServerApi(String name) {
     serviceIds = new ArrayList<>();
     uniqueName = name;
     serviceIds.add(name);
+    consulConfiguration = new ConsulConfiguration();
   }
 
   public String scanForDefaultConfig(String namespace) {
@@ -71,7 +79,24 @@ public abstract class ConsulServerApi {
     return "";
   }
 
-  public abstract void stop();
+  public void stop() {
+    if (scheduledTask != null) {
+      logger.log(ServerLogMessages.CONSUL_SHUTDOWN);
+      scheduledTask.cancel(false);
+    }
+  }
+
+  protected void registerPingTask() {
+    scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, Constants.HEALTH_TIME, Constants.HEALTH_TIME, TimeUnit.SECONDS);
+  }
+
+  public void run() {
+    if (consulConfiguration.registerAgent()) {
+      pingService();
+    }
+  }
+
+  protected abstract void pingService();
 
   public abstract void register(Map<String, String> meta);
 

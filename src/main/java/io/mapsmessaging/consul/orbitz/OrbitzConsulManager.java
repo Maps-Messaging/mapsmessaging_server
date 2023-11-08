@@ -24,7 +24,6 @@ import com.orbitz.consul.model.kv.Value;
 import com.orbitz.consul.monitoring.ClientEventCallback;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.consul.Constants;
-import io.mapsmessaging.consul.ConsulConfiguration;
 import io.mapsmessaging.consul.ConsulServerApi;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -32,32 +31,25 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_LOG;
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_KEY_VALUE_MANAGER;
 
-public class OrbitzConsulManager extends ConsulServerApi implements Runnable, ClientEventCallback {
+public class OrbitzConsulManager extends ConsulServerApi implements ClientEventCallback {
 
   private final Logger logger = LoggerFactory.getLogger(OrbitzConsulManager.class);
-
-  private final ConsulConfiguration consulConfiguration;
 
   private final Consul client;
   private final AgentClient agentClient;
   private final KeyValueClient keyValueClient;
 
-  private Future<?> scheduledTask;
 
   public OrbitzConsulManager(String serverId) throws IOException {
     super(serverId);
     try {
-      consulConfiguration = new ConsulConfiguration();
       logger.log(CONSUL_CLIENT_LOG, "Creating client", consulConfiguration);
       client = createBuilder().build();
       logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
@@ -126,7 +118,7 @@ public class OrbitzConsulManager extends ConsulServerApi implements Runnable, Cl
         .build();
 
     agentClient.register(service);
-    scheduledTask = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, Constants.HEALTH_TIME, Constants.HEALTH_TIME, TimeUnit.SECONDS);
+    registerPingTask();
   }
 
   @Override
@@ -176,26 +168,20 @@ public class OrbitzConsulManager extends ConsulServerApi implements Runnable, Cl
   }
 
   public void stop() {
+    super.stop();
     if (consulConfiguration.registerAgent()) {
       for(String id:serviceIds){
         agentClient.deregister(id);
       }
     }
-
-    if (scheduledTask != null) {
-      logger.log(ServerLogMessages.CONSUL_SHUTDOWN);
-      scheduledTask.cancel(false);
-    }
   }
 
-  public void run() {
-    if (consulConfiguration.registerAgent()) {
-      agentClient.ping();
-      try {
-        agentClient.pass(uniqueName);
-      } catch (NotRegisteredException e) {
-        logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
-      }
+  protected void pingService() {
+    agentClient.ping();
+    try {
+      agentClient.pass(uniqueName);
+    } catch (NotRegisteredException e) {
+      logger.log(ServerLogMessages.CONSUL_PING_EXCEPTION, e);
     }
   }
 
