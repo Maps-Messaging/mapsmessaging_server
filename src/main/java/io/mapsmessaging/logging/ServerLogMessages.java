@@ -552,7 +552,7 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="CONSUL management log messages">
   CONSUL_MANAGER_START(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Manager starting up for id {}"),
   CONSUL_MANAGER_STOP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Manager shutting down"),
-  CONSUL_KEY_VALUE_MANAGER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, Action:{}, Paramaters: {} {}"),
+  CONSUL_KEY_VALUE_MANAGER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, Action:{}, Paramaters: (\"{}\",\"{}\")"),
   CONSUL_INVALID_KEY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, invalid key received {}, changed to {}"),
   CONSUL_MANAGER_START_ABORTED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted due to configuration, id {}"),
   CONSUL_MANAGER_START_DELAYED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup delaying server startup due to configuration for id {}"),
