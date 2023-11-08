@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.consul;
 
-import io.mapsmessaging.consul.orbitz.OrbitzConsulManager;
+import io.mapsmessaging.consul.ecwid.EcwidConsulManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -51,7 +51,7 @@ public class ConsulManagerFactory {
     int counter = 0;
     while (retry && counter < Constants.RETRY_COUNT) {
       try {
-        manager = new OrbitzConsulManager(serverId);
+        manager = new EcwidConsulManager(serverId);
         retry = false;
       }
       catch(IOException io){
