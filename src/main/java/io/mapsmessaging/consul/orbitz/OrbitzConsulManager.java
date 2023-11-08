@@ -186,11 +186,6 @@ public class OrbitzConsulManager extends ConsulServerApi implements ClientEventC
   }
 
   @Override
-  public String getUrlPath() {
-    return consulConfiguration.getUrlPath();
-  }
-
-  @Override
   public List<String> getKeys(String key) throws IOException {
     String keyName = validateKey(key);
     try {

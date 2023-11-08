@@ -104,7 +104,9 @@ public abstract class ConsulServerApi implements Runnable {
 
   public abstract void register(RestApiServerManager restApiServerManager);
 
-  public abstract String getUrlPath();
+  public String getUrlPath() {
+    return consulConfiguration.getUrlPath();
+  }
 
   public abstract List<String> getKeys(String key) throws IOException;
 

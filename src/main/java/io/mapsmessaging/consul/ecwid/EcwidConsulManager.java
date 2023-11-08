@@ -59,11 +59,6 @@ public class EcwidConsulManager extends ConsulServerApi {
   }
 
   @Override
-  public String scanForDefaultConfig(String namespace) {
-    return null;
-  }
-
-  @Override
   public void register(Map<String, String> meta) {
 
   }
@@ -76,11 +71,6 @@ public class EcwidConsulManager extends ConsulServerApi {
   @Override
   public void register(RestApiServerManager restApiServerManager) {
 
-  }
-
-  @Override
-  public String getUrlPath() {
-    return null;
   }
 
   @Override
