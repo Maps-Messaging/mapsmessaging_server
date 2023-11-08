@@ -90,12 +90,21 @@ public class ConsulConfiguration {
     // Process a potential ACL, they are different to a token
     //
     if(consulAcl != null) builder.withAclToken(consulAcl);
-    return builder.withUrl(consulUrl)
-        .withWriteTimeoutMillis(60000)
-        .withReadTimeoutMillis(60000)
-        .withHttps(consulUrl.toLowerCase().startsWith("https"))
-        .withClientEventCallback(clientEventCallback)
-        .withPing(true);
+    if (registerAgent()){
+      return builder.withUrl(consulUrl)
+              .withWriteTimeoutMillis(60000)
+              .withReadTimeoutMillis(60000)
+              .withHttps(consulUrl.toLowerCase().startsWith("https"))
+              .withClientEventCallback(clientEventCallback)
+              .withPing(true);
+    }
+    else {
+      return builder.withUrl(consulUrl)
+              .withWriteTimeoutMillis(60000)
+              .withReadTimeoutMillis(60000)
+              .withHttps(consulUrl.toLowerCase().startsWith("https"))
+              .withClientEventCallback(clientEventCallback);
+    }
   }
 
   public boolean registerAgent(){
