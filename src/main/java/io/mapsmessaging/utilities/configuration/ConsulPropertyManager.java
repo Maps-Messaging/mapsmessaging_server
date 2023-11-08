@@ -47,7 +47,7 @@ public class ConsulPropertyManager extends YamlPropertyManager {
   }
 
   @Override
-  protected void load() {
+  public void load() {
     try {
       KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
       List<String> keys = keyValueClient.getKeys(serverPrefix);
