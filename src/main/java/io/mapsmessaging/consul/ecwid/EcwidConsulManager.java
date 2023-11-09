@@ -48,6 +48,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_CLIENT_LOG;
 import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_KEY_VALUE_MANAGER;
@@ -61,6 +64,14 @@ public class EcwidConsulManager extends ConsulServerApi {
   public EcwidConsulManager(String name) throws IOException {
     super(name);
     try {
+      java.util.logging.Logger apacheLogger = java.util.logging.Logger.getLogger("org.apache.http");
+      apacheLogger.setLevel(Level.FINEST); // Use FINEST for most detailed logging
+      Handler consoleHandler = new ConsoleHandler();
+      consoleHandler.setLevel(Level.FINEST);
+      apacheLogger.addHandler(consoleHandler);
+
+      // Disable parent handlers to avoid duplicate logging
+      apacheLogger.setUseParentHandlers(false);
       logger.log(CONSUL_CLIENT_LOG, "Creating client", consulConfiguration);
       client = createClient();
       logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
