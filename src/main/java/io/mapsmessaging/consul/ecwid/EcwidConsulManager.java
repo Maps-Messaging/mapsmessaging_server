@@ -76,6 +76,7 @@ public class EcwidConsulManager extends ConsulServerApi {
 
       logger.log(CONSUL_CLIENT_LOG, "Creating client", consulConfiguration);
       client = createClient();
+      this.getKeys("/");
       logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
       logger.log(ServerLogMessages.CONSUL_STARTUP);
     } catch (Exception ex) {
