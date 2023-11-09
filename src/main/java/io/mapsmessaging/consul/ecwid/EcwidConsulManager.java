@@ -20,7 +20,10 @@ package io.mapsmessaging.consul.ecwid;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.ConsulRawClient;
 import com.ecwid.consul.v1.Response;
+import com.ecwid.consul.v1.agent.model.NewService;
 import com.ecwid.consul.v1.kv.model.GetValue;
+import io.mapsmessaging.BuildInfo;
+import io.mapsmessaging.consul.Constants;
 import io.mapsmessaging.consul.ConsulServerApi;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -96,10 +99,6 @@ public class EcwidConsulManager extends ConsulServerApi {
     return new ConsulClient(rawClient);
   }
 
-  @Override
-  public void stop() {
-    super.stop();
-  }
 
   @Override
   protected void pingService() {
@@ -108,6 +107,26 @@ public class EcwidConsulManager extends ConsulServerApi {
 
   @Override
   public void register(Map<String, String> meta) {
+
+
+    if (!consulConfiguration.registerAgent()) {
+      return;
+    }
+    NewService.Check serviceCheck = new NewService.Check();
+    serviceCheck.setInterval("10s");
+
+    List<String> propertyNames = new ArrayList<>();
+    meta.put("version", BuildInfo.getBuildVersion());
+    meta.put("build-Date", BuildInfo.getBuildDate());
+    logger.log(ServerLogMessages.CONSUL_REGISTER);
+    NewService newService = new NewService();
+    newService.setId(uniqueName);
+    newService.setName(Constants.NAME);
+    newService.setTags(propertyNames);
+    newService.setPort(Constants.CONSUL_PORT);
+    newService.setCheck(serviceCheck);
+    client.agentServiceRegister(newService);
+    registerPingTask();
 
   }
 
