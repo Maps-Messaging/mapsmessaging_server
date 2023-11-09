@@ -50,34 +50,6 @@ NetworkConnectionManager:
         ssl_trustStore: JKS
 
     data:
-      - name: messaging_server
-        url: tcp://10.140.62.244:1883/
-        sessionId: matts-pc-pull2
-        protocol: mqtt
-        username: matthew
-        password: doesntmatter
-        links:
-          - direction: pull
-            remote_namespace: /device/sensor/i2c/1/0x76/SEN0466/data
-            local_namespace: /temperature
-            transformer:
-              name: JsonToValue
-              key: temperature
-
-      - name: messaging_server
-        url: tcp://10.140.62.243:1883/
-        sessionId: matts-pc-pull
-        protocol: mqtt
-        username: matthew
-        password: doesntmatter
-        links:
-          - direction: pull
-            remote_namespace: /device/clock/i2c/1/0x68/DS3231/data
-            local_namespace: /clock
-            transformer:
-              name: JsonToValue
-              key: Date
-
 
 #        name: Generic name for the connection
 #        url: tcp|ssl|ws|wss://<hostname>:<port>/ This is optional, if left out it is assumed a local connection
