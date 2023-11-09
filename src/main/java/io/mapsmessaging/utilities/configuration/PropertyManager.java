@@ -40,7 +40,7 @@ public abstract class PropertyManager {
 
   protected abstract void store(String name) throws IOException;
 
-  public abstract void copy(PropertyManager propertyManager);
+  public abstract void copy(PropertyManager propertyManager) throws IOException;
 
   public @NonNull @NotNull JSONObject getPropertiesJSON(@NonNull @NotNull String name) {
     JSONObject jsonObject = new JSONObject();

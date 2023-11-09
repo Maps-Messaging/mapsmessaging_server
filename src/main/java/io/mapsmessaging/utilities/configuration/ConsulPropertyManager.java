@@ -65,7 +65,7 @@ public class ConsulPropertyManager extends YamlPropertyManager {
   }
 
   @Override
-  protected void store(String name) {
+  protected void store(String name) throws IOException {
     logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_STORE, serverPrefix, name);
     ConsulManagerFactory.getInstance()
         .getManager()
@@ -73,7 +73,7 @@ public class ConsulPropertyManager extends YamlPropertyManager {
   }
 
   @Override
-  public void copy(PropertyManager propertyManager) {
+  public void copy(PropertyManager propertyManager) throws IOException {
     // Remove what we have
     for (String name : properties.keySet()) {
       ConsulManagerFactory.getInstance()
@@ -101,7 +101,7 @@ public class ConsulPropertyManager extends YamlPropertyManager {
     save();
   }
 
-  public void save() {
+  public void save() throws IOException {
     logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_SAVE_ALL, serverPrefix);
     for (Entry<String, Object> entry : properties.entrySet()) {
       String source = ((ConfigurationProperties) entry.getValue()).getSource();

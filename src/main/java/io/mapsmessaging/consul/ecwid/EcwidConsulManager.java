@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.consul.ecwid;
 
+import com.ecwid.consul.transport.TransportException;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.ConsulRawClient;
 import com.ecwid.consul.v1.Response;
@@ -32,13 +33,9 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
-import org.apache.http.ssl.SSLContextBuilder;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -48,6 +45,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -59,19 +57,22 @@ public class EcwidConsulManager extends ConsulServerApi {
 
   private final Logger logger = LoggerFactory.getLogger(EcwidConsulManager.class);
 
-  private final ConsulClient client;
+  private final Map<String, String> cache;
+  private ConsulClient client;
 
   public EcwidConsulManager(String name) throws IOException {
     super(name);
+    cache = new WeakHashMap<>();
     try {
-      java.util.logging.Logger apacheLogger = java.util.logging.Logger.getLogger("org.apache.http");
-      apacheLogger.setLevel(Level.FINEST); // Use FINEST for most detailed logging
-      Handler consoleHandler = new ConsoleHandler();
-      consoleHandler.setLevel(Level.FINEST);
-      apacheLogger.addHandler(consoleHandler);
+      if (Boolean.getBoolean("ConsulDebug")) {
+        java.util.logging.Logger apacheLogger = java.util.logging.Logger.getLogger("org.apache.http");
+        apacheLogger.setLevel(Level.FINEST); // Use FINEST for most detailed logging
+        Handler consoleHandler = new ConsoleHandler();
+        consoleHandler.setLevel(Level.FINEST);
+        apacheLogger.addHandler(consoleHandler);
+        apacheLogger.setUseParentHandlers(false);
+      }
 
-      // Disable parent handlers to avoid duplicate logging
-      apacheLogger.setUseParentHandlers(false);
       logger.log(CONSUL_CLIENT_LOG, "Creating client", consulConfiguration);
       client = createClient();
       logger.log(CONSUL_CLIENT_LOG, "Created client", consulConfiguration);
@@ -87,12 +88,9 @@ public class EcwidConsulManager extends ConsulServerApi {
       defaultHeaders.add(new BasicHeader("X-Consul-Token", consulConfiguration.getConsulToken()));
     }
 
-    // Trust all certificates - NOT recommended for production
-    SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, (certificate, authType) -> true).build();
-
     HttpClient httpClient = HttpClients.custom()
         .setDefaultHeaders(defaultHeaders)
-        .setSSLSocketFactory(new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
+        .setConnectionReuseStrategy((httpResponse, httpContext) -> true)
         .build();
 
     URL url = new URL(consulConfiguration.getConsulUrl());
@@ -118,8 +116,6 @@ public class EcwidConsulManager extends ConsulServerApi {
 
   @Override
   public void register(Map<String, String> meta) {
-
-
     if (!consulConfiguration.registerAgent()) {
       return;
     }
@@ -138,7 +134,6 @@ public class EcwidConsulManager extends ConsulServerApi {
     newService.setCheck(serviceCheck);
     client.agentServiceRegister(newService);
     registerPingTask();
-
   }
 
   @Override
@@ -151,43 +146,122 @@ public class EcwidConsulManager extends ConsulServerApi {
 
   }
 
+  private void recreateClient() throws IOException {
+    try {
+      client = createClient();
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+  }
+
   @Override
   public List<String> getKeys(String key) throws IOException {
+    int retry = 0;
+    while (retry < 3) {
+      try {
+        return getKeysInternal(key);
+      } catch (TransportException exception) {
+        retry++;
+        recreateClient();
+        if (retry == 3) {
+          throw exception;
+        }
+      }
+    }
+    return new ArrayList<>();
+  }
+
+  @Override
+  public String getValue(String key) throws IOException {
+    int retry = 0;
+    while (retry < 3) {
+      try {
+        return getValueInternal(key);
+      } catch (TransportException exception) {
+        retry++;
+        recreateClient();
+        if (retry == 3) {
+          throw exception;
+        }
+      }
+    }
+    return "";
+  }
+
+  @Override
+  public void putValue(String key, String value) throws IOException {
+    int retry = 0;
+    while (retry < 3) {
+      try {
+        putValueInternal(key, value);
+      } catch (TransportException exception) {
+        retry++;
+        recreateClient();
+        if (retry == 3) {
+          throw exception;
+        }
+      }
+    }
+  }
+
+  @Override
+  public void deleteKey(String key) throws IOException {
+    int retry = 0;
+    while (retry < 3) {
+      try {
+        deleteKeyInternal(key);
+      } catch (TransportException exception) {
+        retry++;
+        recreateClient();
+        if (retry == 3) {
+          throw exception;
+        }
+      }
+    }
+  }
+
+
+  private List<String> getKeysInternal(String key) throws IOException {
     String keyName = validateKey(key);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, "");
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName);
     Response<List<String>> response = client.getKVKeysOnly(keyName);
     List<String> list = response.getValue();
     if (list == null) {
       list = new ArrayList<>();
     }
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, list);
     return list;
   }
 
-  @Override
-  public String getValue(String key) throws IOException {
+  private String getValueInternal(String key) throws IOException {
     String keyName = validateKey(key);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, "");
+    if (cache.containsKey(key)) {
+      return cache.get(key);
+    }
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName);
     Response<GetValue> response = client.getKVValue(keyName);
     GetValue getValue = response.getValue();
     String value = getValue.getDecodedValue();
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, value);
+    //cache.put(key, value);
     return value;
   }
 
-  @Override
-  public void putValue(String key, String value) {
+  private void putValueInternal(String key, String value) {
     String keyName = validateKey(key);
+    if (cache.containsKey(key)) {
+      cache.remove(key);
+    }
     value = value.replace("\n", "\r\n");
     value = value.replace("\r\r", "\r");
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "putValue", keyName, value);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "putValue", keyName);
     client.setKVValue(keyName, value);
   }
 
-  @Override
-  public void deleteKey(String key) {
+  private void deleteKeyInternal(String key) {
     String keyName = validateKey(key);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "deleteKey", keyName, "");
+    if (cache.containsKey(key)) {
+      cache.remove(key);
+    }
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "deleteKey", keyName);
     client.deleteKVValue(keyName);
   }
 }

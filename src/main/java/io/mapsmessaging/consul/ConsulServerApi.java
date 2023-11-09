@@ -112,9 +112,9 @@ public abstract class ConsulServerApi implements Runnable {
 
   public abstract String getValue(String key) throws IOException;
 
-  public abstract void putValue(String key, String value);
+  public abstract void putValue(String key, String value) throws IOException;
 
-  public abstract void deleteKey(String key);
+  public abstract void deleteKey(String key) throws IOException;
 
   protected String validateKey(String keyName) {
     if (VALID_KEY_NAME_PATTERN.matcher(keyName).matches()) {

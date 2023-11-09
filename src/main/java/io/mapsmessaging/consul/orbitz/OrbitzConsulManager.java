@@ -189,9 +189,8 @@ public class OrbitzConsulManager extends ConsulServerApi implements ClientEventC
   public List<String> getKeys(String key) throws IOException {
     String keyName = validateKey(key);
     try {
-      logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, "");
+      logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName);
       List<String> keyList = keyValueClient.getKeys(keyName);
-      logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName, keyList);
       return keyList;
     } catch (ConsulException ex) {
       throw new IOException(ex);
@@ -202,9 +201,8 @@ public class OrbitzConsulManager extends ConsulServerApi implements ClientEventC
   public String getValue(String key) throws IOException {
     try {
       String keyName = validateKey(key);
-      logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, "");
+      logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName);
       Optional<Value> value = keyValueClient.getValue(keyName);
-      logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName, value);
       if (value.isPresent()) {
         Optional<String> optionalValue = value.get().getValue();
         if (optionalValue.isPresent()) {
@@ -220,14 +218,14 @@ public class OrbitzConsulManager extends ConsulServerApi implements ClientEventC
   @Override
   public void putValue(String key, String value) {
     String keyName = validateKey(key);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "putValue", keyName, value);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "putValue", keyName);
     keyValueClient.putValue(keyName, value);
   }
 
   @Override
   public void deleteKey(String key) {
     String keyName = validateKey(key);
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "deleteKey", keyName, "");
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "deleteKey", keyName);
     keyValueClient.deleteKey(key);
   }
 

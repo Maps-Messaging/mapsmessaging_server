@@ -550,9 +550,9 @@ public enum ServerLogMessages implements LogMessage {
   //</editor-fold>
 
   //<editor-fold desc="CONSUL management log messages">
-  CONSUL_MANAGER_START(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Manager starting up for id {}"),
-  CONSUL_MANAGER_STOP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Manager shutting down"),
-  CONSUL_KEY_VALUE_MANAGER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, Action:{}, Paramaters: (\"{}\",\"{}\")"),
+  CONSUL_MANAGER_START(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Manager starting up for id {}"),
+  CONSUL_MANAGER_STOP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Manager shutting down"),
+  CONSUL_KEY_VALUE_MANAGER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, Action:{}, Key: \"{}\""),
   CONSUL_INVALID_KEY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, invalid key received {}, changed to {}"),
   CONSUL_MANAGER_START_ABORTED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted due to configuration, id {}"),
   CONSUL_MANAGER_START_DELAYED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup delaying server startup due to configuration for id {}"),
@@ -562,7 +562,7 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="CONSUL Key/Value management log messages">
   CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "No keys found in Consul Key/Value for id {}"),
   CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Key {}, lookup failed with exception"),
-  CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Key {}, lookup success, returned {} bytes"),
+  CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Key {}, lookup success, returned {} bytes"),
 
   CONSUL_PROPERTY_MANAGER_INVALID_JSON(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Value returned is not valid json for key {}"),
   CONSUL_PROPERTY_MANAGER_SAVE_ALL(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Saving all entries for {}"),
