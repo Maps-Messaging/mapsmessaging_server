@@ -57,6 +57,7 @@ public class ConfigurationManager {
     ConsulPropertyManager defaultConsulManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
       String consulConfigPath = System.getProperty("ConsulPath",ConsulManagerFactory.getInstance().getPath());
+      if (consulConfigPath.trim().isEmpty()) consulConfigPath=ConsulManagerFactory.getInstance().getPath();
       String defaultName = "default";
       if(consulConfigPath != null){
         if(!consulConfigPath.endsWith("/")){
