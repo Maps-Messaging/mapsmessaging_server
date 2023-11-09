@@ -33,6 +33,7 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 
@@ -83,15 +84,6 @@ public class EcwidConsulManager extends ConsulServerApi {
   }
 
   private ConsulClient createClient() throws MalformedURLException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-    List<Header> defaultHeaders = new ArrayList<>();
-    if (consulConfiguration.getConsulToken() != null) {
-      defaultHeaders.add(new BasicHeader("X-Consul-Token", consulConfiguration.getConsulToken()));
-    }
-
-    HttpClient httpClient = HttpClients.custom()
-        .setDefaultHeaders(defaultHeaders)
-        .setConnectionReuseStrategy((httpResponse, httpContext) -> true)
-        .build();
 
     URL url = new URL(consulConfiguration.getConsulUrl());
     int port = url.getPort();
@@ -103,6 +95,25 @@ public class EcwidConsulManager extends ConsulServerApi {
         port = 8500;
       }
     }
+
+
+    List<Header> defaultHeaders = new ArrayList<>();
+    if (consulConfiguration.getConsulToken() != null) {
+      defaultHeaders.add(new BasicHeader("X-Consul-Token", consulConfiguration.getConsulToken()));
+    }
+
+
+    RequestConfig requestConfig = RequestConfig.custom()
+        .setConnectTimeout(30 * 1000) // Set the connection timeout
+        .setSocketTimeout(30 * 1000) // Set the socket timeout
+        .build();
+
+    HttpClient httpClient = HttpClients.custom()
+        .setDefaultHeaders(defaultHeaders)
+        .setConnectionReuseStrategy((httpResponse, httpContext) -> true)
+        .setDefaultRequestConfig(requestConfig)
+        .build();
+
     ConsulRawClient rawClient = new ConsulRawClient(url.getProtocol() + "://" + url.getHost(), port, httpClient);
 
     return new ConsulClient(rawClient);
@@ -221,7 +232,7 @@ public class EcwidConsulManager extends ConsulServerApi {
   }
 
 
-  private List<String> getKeysInternal(String key) throws IOException {
+  private List<String> getKeysInternal(String key) {
     String keyName = validateKey(key);
     logger.log(CONSUL_KEY_VALUE_MANAGER, "getKeys", keyName);
     Response<List<String>> response = client.getKVKeysOnly(keyName);
@@ -232,16 +243,16 @@ public class EcwidConsulManager extends ConsulServerApi {
     return list;
   }
 
-  private String getValueInternal(String key) throws IOException {
+  private String getValueInternal(String key) {
     String keyName = validateKey(key);
+    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName);
     if (cache.containsKey(key)) {
       return cache.get(key);
     }
-    logger.log(CONSUL_KEY_VALUE_MANAGER, "GetValues", keyName);
     Response<GetValue> response = client.getKVValue(keyName);
     GetValue getValue = response.getValue();
     String value = getValue.getDecodedValue();
-    //cache.put(key, value);
+    cache.put(key, value);
     return value;
   }
 
