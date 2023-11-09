@@ -178,6 +178,8 @@ public class EcwidConsulManager extends ConsulServerApi {
   @Override
   public void putValue(String key, String value) {
     String keyName = validateKey(key);
+    value = value.replace("\n", "\r\n");
+    value = value.replace("\r\r", "\r");
     logger.log(CONSUL_KEY_VALUE_MANAGER, "putValue", keyName, value);
     client.setKVValue(keyName, value);
   }
