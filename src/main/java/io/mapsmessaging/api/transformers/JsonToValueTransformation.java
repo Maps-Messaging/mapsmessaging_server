@@ -30,7 +30,6 @@ public class JsonToValueTransformation implements Transformer {
   private final JsonParserExtension jsonParser;
 
   public JsonToValueTransformation() {
-    // Used by the java services
     jsonParser = null;
   }
 
@@ -45,12 +44,11 @@ public class JsonToValueTransformation implements Transformer {
     jsonParser = parser;
   }
 
-  @Override
   public Transformer build(ConfigurationProperties properties) {
-    if(properties != null) {
-      return new JsonToValueTransformation(properties.getProperty("key"));
-    }
-    return new JsonToValueTransformation(properties.getProperty("data"));
+    String property = properties != null ?
+        properties.getProperty("key", properties.getProperty("data")) :
+        null;
+    return property != null ? new JsonToValueTransformation(property) : new JsonToValueTransformation();
   }
 
   @Override
