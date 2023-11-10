@@ -33,7 +33,6 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 
@@ -103,16 +102,8 @@ public class EcwidConsulManager extends ConsulServerApi {
       defaultHeaders.add(new BasicHeader("X-Consul-Token", consulConfiguration.getConsulToken()));
     }
 
-
-    RequestConfig requestConfig = RequestConfig.custom()
-        .setConnectTimeout(30 * 1000) // Set the connection timeout
-        .setSocketTimeout(30 * 1000) // Set the socket timeout
-        .build();
-
     HttpClient httpClient = HttpClients.custom()
         .setDefaultHeaders(defaultHeaders)
-        .setConnectionReuseStrategy((httpResponse, httpContext) -> true)
-        .setDefaultRequestConfig(requestConfig)
         .build();
 
     ConsulRawClient rawClient = new ConsulRawClient(url.getProtocol() + "://" + url.getHost(), port, httpClient);
@@ -206,6 +197,7 @@ public class EcwidConsulManager extends ConsulServerApi {
     while (retry < 3) {
       try {
         putValueInternal(key, value);
+        return;
       } catch (TransportException exception) {
         retry++;
         recreateClient();
@@ -222,6 +214,7 @@ public class EcwidConsulManager extends ConsulServerApi {
     while (retry < 3) {
       try {
         deleteKeyInternal(key);
+        return;
       } catch (TransportException exception) {
         retry++;
         recreateClient();
