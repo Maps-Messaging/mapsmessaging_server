@@ -187,7 +187,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     Transformer transformer = destinationTransformerMap.get(normalisedName);
     if (transformer != null) {
       MessageBuilder mb = new MessageBuilder(message);
-      mb.setDestinationTransformer(transformer);
+      mb = mb.setDestinationTransformer(transformer);
       message = mb.build();
     }
     return message;
