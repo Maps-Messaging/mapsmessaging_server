@@ -74,7 +74,7 @@ public class JsonToValueTransformation implements Transformer {
       }
     }
     catch(Exception ex){
-      ex.printStackTrace();
+      // Add log
     }
     return data;
   }
