@@ -8,25 +8,6 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-#----------------------------------------------------------------------------------------------
-# Install cURL for debugging
-#----------------------------------------------------------------------------------------------
-RUN apk --no-cache add curl
-
-#----------------------------------------------------------------------------------------------
-# Install locales
-#----------------------------------------------------------------------------------------------
-ENV MUSL_LOCALE_DEPS cmake make musl-dev gcc gettext-dev libintl
-ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
-
-RUN apk add --no-cache \
-    $MUSL_LOCALE_DEPS \
-    && wget https://gitlab.com/rilian-la-te/musl-locales/-/archive/master/musl-locales-master.zip \
-    && unzip musl-locales-master.zip \
-      && cd musl-locales-master \
-      && cmake -DLOCALE_PROFILE=OFF -D CMAKE_INSTALL_PREFIX:PATH=/usr . && make && make install \
-      && cd .. && rm -r musl-locales-master
-
 
 # https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz
 # Setup the repos
@@ -66,6 +47,7 @@ EXPOSE 9000/tcp
 EXPOSE 8080/tcp
 EXPOSE 8082/tcp
 
+EXPOSE 1700/udp
 EXPOSE 1884/udp
 EXPOSE 5683/udp
 EXPOSE 2442/udp
