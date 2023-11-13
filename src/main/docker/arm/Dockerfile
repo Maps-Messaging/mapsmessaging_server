@@ -14,9 +14,9 @@ ENV JAVA_HOME=/usr/lib/jvm/zulu-17
 #
 
 
-RUN ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz && \
-    INSTALL_DIR=$(dirname $JAVA_HOME) && \
-    ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
+RUN export ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz && \
+    export INSTALL_DIR=$(dirname $JAVA_HOME) && \
+    export ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
     wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
     mkdir -p ${INSTALL_DIR} && \
     tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
