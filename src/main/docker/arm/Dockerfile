@@ -7,12 +7,21 @@ FROM arm64v8/alpine
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-
+ENV JAVA_HOME=/usr/lib/jvm/zulu-17
 
 # https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz
 # Setup the repos
 #
-ENV JAVA_HOME=/usr/lib/jvm/zulu-13
+
+
+RUN ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz && \
+    INSTALL_DIR=$(dirname $JAVA_HOME) && \
+    ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
+    wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
+    mkdir -p ${INSTALL_DIR} && \
+    tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
+    mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME}
+
 
 RUN ZULU_ARCH=zulu16.32.15-ca-jdk16.0.2-linux_musl_aarch64.tar.gz && \
     INSTALL_DIR=$( dirname $JAVA_HOME ) && \
@@ -99,4 +108,5 @@ VOLUME /data
 #----------------------------------------------------------------------------------------------
 CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
+    export PATH=${JAVA_HOME}/bin:${PATH} && \
     message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
