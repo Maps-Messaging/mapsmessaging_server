@@ -7,18 +7,20 @@ FROM arm64v8/alpine
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-ENV JAVA_HOME=/usr/lib/jvm/zulu-17
 
 # https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz
 # Setup the repos
 #
+ENV JAVA_HOME=/usr/lib/jvm/zulu-17
+ENV ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz
 
+RUN wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH}
 
-RUN export ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz && \
+RUN export INSTALL_DIR=$(dirname $JAVA_HOME) && \
+    mkdir -p ${INSTALL_DIR}
+
+RUN export ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
     export INSTALL_DIR=$(dirname $JAVA_HOME) && \
-    export ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
-    wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
-    mkdir -p ${INSTALL_DIR} && \
     tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
     mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME}
 
