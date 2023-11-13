@@ -83,8 +83,7 @@ public class EcwidConsulManager extends ConsulServerApi {
     }
   }
 
-  private ConsulClient createClient() throws MalformedURLException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-
+  private ConsulClient createClient() throws MalformedURLException {
     URL url = new URL(consulConfiguration.getConsulUrl());
     int port = url.getPort();
 
