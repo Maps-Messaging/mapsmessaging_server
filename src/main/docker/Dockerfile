@@ -114,9 +114,9 @@ RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daem
 #----------------------------------------------------------------------------------------------
 RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
     mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
-    sed 's|/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.17.6.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
+    sed 's|/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.17.7.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
-    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.17.6/hawtio-default-2.17.6.war
+    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.17.7/hawtio-default-2.17.7.war
 
 #----------------------------------------------------------------------------------------------
 # Define the data directory in the install as a volume so destination data is stored external
