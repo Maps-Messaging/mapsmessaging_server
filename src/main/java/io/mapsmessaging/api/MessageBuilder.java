@@ -23,6 +23,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -31,43 +32,26 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Data
 public class MessageBuilder {
 
-  @Getter
   private java.util.Map<String, String> meta;
-  @Getter
   private Map<String, TypedData> dataMap;
-  @Getter
   private byte[] opaqueData;
-  @Getter
   private Object correlationData;
-  @Getter
   private String contentType;
-  @Getter
   private String responseTopic;
-  @Getter
   private long id;
-  @Getter
   private long expiry;
-  @Getter
   private long delayed;
-  @Getter
   private Priority priority;
-  @Getter
   private long creation;
-  @Getter
   private QualityOfService qualityOfService;
-  @Getter
   private ProtocolMessageTransformation transformation;
-  @Getter
   private boolean retain;
-  @Getter
   private boolean storeOffline;
-  @Getter
   private boolean payloadUTF8;
-  @Getter
   private Transformer transformer;
-  @Getter
   private String schemaId;
 
   public MessageBuilder() {

@@ -35,6 +35,13 @@ public class BlockWiseSend extends BasePacket {
     super(rhs.id, rhs.type, rhs.code, rhs.version, rhs.messageId, rhs.token);
   }
 
+  public void setBlockNumber(int blockNumber){
+    if(sendController == null) {
+      sendController = new SendController(getPayload(), blockSize);
+    }
+    sendController.setBlockNumber(blockNumber);
+  }
+
   public void setBlockSize(int size){
     blockSize = size;
     sizePower = -1;
@@ -51,9 +58,6 @@ public class BlockWiseSend extends BasePacket {
   @Override
   public int packFrame(Packet packet) {
     OptionSet optionSet = getOptions();
-    if(sendController == null){
-      sendController = new SendController(getPayload(), blockSize);
-    }
     optionSet.removeOption(BLOCK2);
     setPayload(sendController.get());
     index = sendController.getBlockNumber();
@@ -75,10 +79,14 @@ public class BlockWiseSend extends BasePacket {
 
   @Override
   public boolean isComplete(){
+    return true;
+/*
     if(sendController == null){
       return false;
     }
     return sendController.isComplete();
+
+ */
   }
 
 }

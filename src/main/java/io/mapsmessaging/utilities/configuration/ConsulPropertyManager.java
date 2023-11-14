@@ -18,19 +18,16 @@
 package io.mapsmessaging.utilities.configuration;
 
 
-import com.orbitz.consul.ConsulException;
-import com.orbitz.consul.KeyValueClient;
-import com.orbitz.consul.model.kv.Value;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Optional;
+
+import static io.mapsmessaging.logging.ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS;
 
 public class ConsulPropertyManager extends YamlPropertyManager {
 
@@ -45,47 +42,43 @@ public class ConsulPropertyManager extends YamlPropertyManager {
   }
 
   @Override
-  protected void load() {
+  public void load() {
     try {
-      KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
-      List<String> keys = keyValueClient.getKeys(serverPrefix);
+      List<String> keys = ConsulManagerFactory.getInstance().getManager().getKeys(serverPrefix);
       for (String key : keys) {
-        processKey(keyValueClient, key);
+        processKey(key);
       }
-    } catch (ConsulException e) {
+    } catch (IOException e) {
       logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES, serverPrefix);
     }
   }
 
-  private void processKey(KeyValueClient keyValueClient, String key) {
+  private void processKey(String key) {
     try {
-      Optional<Value> entry = keyValueClient.getValue(key);
-      if (entry.isPresent()) {
-        Optional<String> optionalValue = entry.get().getValue();
-        if(optionalValue.isPresent()){
-          String value = new String(Base64.getDecoder().decode(optionalValue.get()));
-          String name = key.substring(serverPrefix.length());
-          parseAndLoadYaml(name, value);
-        }
-      }
-    } catch (ConsulException | IOException consulException) {
+      String value = ConsulManagerFactory.getInstance().getManager().getValue(key);
+      String name = key.substring(serverPrefix.length());
+      logger.log(CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS, name, value.length());
+      parseAndLoadYaml(name, value);
+    } catch (IOException consulException) {
       logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION, key, consulException);
     }
   }
 
   @Override
-  protected void store(String name) {
+  protected void store(String name) throws IOException {
     logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_STORE, serverPrefix, name);
-    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
-    keyValueClient.putValue(serverPrefix + name, getPropertiesJSON(name).toString(2));
+    ConsulManagerFactory.getInstance()
+        .getManager()
+        .putValue(serverPrefix + name, getPropertiesJSON(name).toString(2));
   }
 
   @Override
-  public void copy(PropertyManager propertyManager) {
-    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
+  public void copy(PropertyManager propertyManager) throws IOException {
     // Remove what we have
     for (String name : properties.keySet()) {
-      keyValueClient.deleteKey(serverPrefix + name);
+      ConsulManagerFactory.getInstance()
+          .getManager()
+          .deleteKey(serverPrefix + name);
     }
 
     // Now let's add the new config
@@ -108,13 +101,12 @@ public class ConsulPropertyManager extends YamlPropertyManager {
     save();
   }
 
-  public void save() {
+  public void save() throws IOException {
     logger.log(ServerLogMessages.CONSUL_PROPERTY_MANAGER_SAVE_ALL, serverPrefix);
-
-    KeyValueClient keyValueClient = ConsulManagerFactory.getInstance().getManager().getKeyValueManager();
     for (Entry<String, Object> entry : properties.entrySet()) {
       String source = ((ConfigurationProperties) entry.getValue()).getSource();
-      keyValueClient.putValue(serverPrefix + entry.getKey(), source);
+      String key = serverPrefix.trim() + entry.getKey().trim();
+      ConsulManagerFactory.getInstance().getManager().putValue(key, source);
     }
     // Now lets Store it in key value pairs in consul
   }

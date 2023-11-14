@@ -541,14 +541,19 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="CONSUL agent logging">
   CONSUL_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Agent startup"),
+  CONSUL_CLIENT_LOG(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Consul Client state {} with config {}"),
+  CONSUL_CLIENT_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Consul Client raised exception {}"),
+
   CONSUL_SHUTDOWN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Agent shutdown"),
   CONSUL_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Registering with local agent"),
   CONSUL_PING_EXCEPTION(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Ping failed with exception {}"),
   //</editor-fold>
 
   //<editor-fold desc="CONSUL management log messages">
-  CONSUL_MANAGER_START(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Manager starting up for id {}"),
-  CONSUL_MANAGER_STOP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Manager shutting down"),
+  CONSUL_MANAGER_START(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Manager starting up for id {}"),
+  CONSUL_MANAGER_STOP(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Manager shutting down"),
+  CONSUL_KEY_VALUE_MANAGER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, Action:{}, Key: \"{}\""),
+  CONSUL_INVALID_KEY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, invalid key received {}, changed to {}"),
   CONSUL_MANAGER_START_ABORTED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted due to configuration, id {}"),
   CONSUL_MANAGER_START_DELAYED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup delaying server startup due to configuration for id {}"),
   CONSUL_MANAGER_START_SERVER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted since Consol Server is not responding, id {}"),
@@ -557,6 +562,8 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="CONSUL Key/Value management log messages">
   CONSUL_PROPERTY_MANAGER_NO_KEY_VALUES(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "No keys found in Consul Key/Value for id {}"),
   CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Key {}, lookup failed with exception"),
+  CONSUL_PROPERTY_MANAGER_KEY_LOOKUP_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Key {}, lookup success, returned {} bytes"),
+
   CONSUL_PROPERTY_MANAGER_INVALID_JSON(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Value returned is not valid json for key {}"),
   CONSUL_PROPERTY_MANAGER_SAVE_ALL(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Saving all entries for {}"),
   CONSUL_PROPERTY_MANAGER_STORE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Storing entry for {}"),
@@ -634,7 +641,24 @@ public enum ServerLogMessages implements LogMessage {
   COAP_BLOCK2_REQUEST(LEVEL.TRACE, SERVER_CATEGORY.PROTOCOL, "Block2 packet received, Message No: {}, Block Size: {}, has more:{}"),
   //</editor-fold>
 
+  //<editor-fold desc="Device Integration, log messages">
+  DEVICE_SELECTOR_PARSER_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Selection {}, failed to parse with the following exception {}"),
+  DEVICE_SCHEMA_UPDATE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Schema failed to be updated {}"),
+  DEVICE_SUBSCRIPTION_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Subscription failed to be applied to {}"),
+  DEVICE_PUBLISH_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Event publish failed {}"),
+  DEVICE_START(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Starting device {}"),
+  DEVICE_STOP(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Stopping device {}"),
 
+  DEVICE_MANAGER_STARTUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting Device Manager"),
+  DEVICE_MANAGER_FAILED_TO_REGISTER(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Failed to register device"),
+  DEVICE_MANAGER_START_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Starting all registered devices"),
+  DEVICE_MANAGER_STOP_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Stopping all registered devices"),
+  DEVICE_MANAGER_PAUSE_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Pausing all registered devices"),
+  DEVICE_MANAGER_RESUME_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resuming all registered devices"),
+  DEVICE_MANAGER_LOAD_PROPERTIES(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Device Manager Properties"),
+  DEVICE_MANAGER_STARTUP_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed startup Device Manager"),
+
+  //</editor-fold>
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
@@ -664,6 +688,7 @@ public enum ServerLogMessages implements LogMessage {
     NETWORK("Network"),
     PROTOCOL("Protocol"),
     DISCOVERY("Discovery"),
+    DEVICE("Device"),
     ENGINE("Engine");
 
     private final @Getter String description;

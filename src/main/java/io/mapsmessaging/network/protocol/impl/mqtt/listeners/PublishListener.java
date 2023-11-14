@@ -49,7 +49,7 @@ public class PublishListener extends PacketListener {
 
     HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
     MessageBuilder mb = new MessageBuilder();
-    mb.setDataMap(dataHashMap)
+    return mb.setDataMap(dataHashMap)
         .setPriority(priority)
         .setRetain(retain)
         .setOpaqueData(msg)
@@ -57,9 +57,8 @@ public class PublishListener extends PacketListener {
         .setQoS(qos)
         .storeOffline(qos.isStoreOffLine())
         .setTransformation(transformation)
-        .setDestinationTransformer(transformer);
-
-    return mb.build();
+        .setDestinationTransformer(transformer)
+        .build();
   }
 
   private MQTTPacket getResponse(Publish publish){

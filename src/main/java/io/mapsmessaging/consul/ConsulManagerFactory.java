@@ -17,13 +17,14 @@
 
 package io.mapsmessaging.consul;
 
-import com.orbitz.consul.ConsulException;
+import io.mapsmessaging.consul.ecwid.EcwidConsulManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.concurrent.locks.LockSupport;
 
@@ -41,7 +42,7 @@ public class ConsulManagerFactory {
 
   private final Logger logger = LoggerFactory.getLogger(ConsulManagerFactory.class);
   private final boolean forceWait;
-  private ConsulManager manager;
+  private ConsulServerApi manager;
 
   public synchronized void start(String serverId) {
     stop(); // just to be sure
@@ -50,12 +51,16 @@ public class ConsulManagerFactory {
     int counter = 0;
     while (retry && counter < Constants.RETRY_COUNT) {
       try {
-        manager = new ConsulManager(serverId);
+        manager = new EcwidConsulManager(serverId);
+        retry = false;
+      }
+      catch(IOException io){
+        logger.log(ServerLogMessages.CONSUL_MANAGER_START_ABORTED, serverId, io);
         retry = false;
       } catch (Exception e) {
         LockSupport.parkNanos(1000000000L);
         counter++;
-        if (!forceWait && e instanceof ConsulException) {
+        if (!forceWait && e instanceof IOException) {
           Exception actual = (Exception) e.getCause();
           if (actual instanceof ConnectException) {
             logger.log(ServerLogMessages.CONSUL_MANAGER_START_SERVER_NOT_FOUND, serverId);
@@ -69,6 +74,12 @@ public class ConsulManagerFactory {
     }
   }
 
+  public String getPath(){
+    if(manager != null){
+      return manager.getUrlPath();
+    }
+    return null;
+  }
 
   public void register(RestApiServerManager restApiServerManager){
     if(manager != null){
@@ -89,7 +100,7 @@ public class ConsulManagerFactory {
     }
   }
 
-  public synchronized ConsulManager getManager() {
+  public synchronized ConsulServerApi getManager() {
     return manager;
   }
 

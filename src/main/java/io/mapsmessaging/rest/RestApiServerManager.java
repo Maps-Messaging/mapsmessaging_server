@@ -26,6 +26,7 @@ import jakarta.servlet.Servlet;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
+import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
@@ -118,6 +119,19 @@ public class RestApiServerManager implements Agent {
     }
   }
 
+  private void loadStatic(){
+    if(map.containsKey("static")){
+      Object obj = map.get("static");
+      if(obj instanceof ConfigurationProperties){
+        ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
+        if(staticConfig.getBooleanProperty("enabled", false)){
+          String path = staticConfig.getProperty("path", "./html");
+          StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
+          httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
+        }
+      }
+    }
+  }
 
   public void startServer() {
     try {
@@ -139,6 +153,7 @@ public class RestApiServerManager implements Agent {
       String baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
 
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
+      loadStatic();
       httpServer.start();
       if(map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
         ServerConfiguration cfg = httpServer.getServerConfiguration();
@@ -175,7 +190,7 @@ public class RestApiServerManager implements Agent {
           server = GrizzlyHttpServerFactory.createHttpServer(uri,  ((GrizzlyHttpContainer)null), true,sslEngineConfigurator, false);
         }
         else{
-          server =GrizzlyHttpServerFactory.createHttpServer(uri);
+          server = GrizzlyHttpServerFactory.createHttpServer(uri);
         }
         context.deploy(server);
         return server;

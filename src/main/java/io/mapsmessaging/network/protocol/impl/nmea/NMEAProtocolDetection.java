@@ -28,7 +28,7 @@ public class NMEAProtocolDetection implements Detection {
     int pos = packet.position();
     try {
       NMEAPacket nmeaPacket = new NMEAPacket(packet);
-      if (nmeaPacket.getSentence().length() == 0) {
+      if (nmeaPacket.getSentence().isEmpty()) {
         throw new EndOfBufferException("No NMEA packet detected");
       }
       return true;

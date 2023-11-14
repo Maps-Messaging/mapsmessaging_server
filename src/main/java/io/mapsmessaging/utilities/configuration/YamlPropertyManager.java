@@ -65,7 +65,7 @@ public abstract class YamlPropertyManager extends PropertyManager {
   }
 
   @Override
-  public void copy(PropertyManager propertyManager) {
+  public void copy(PropertyManager propertyManager) throws IOException {
     HashMap<String, Object> data = new LinkedHashMap<>(propertyManager.properties.getMap());
     properties.clear();
     properties.putAll(data);

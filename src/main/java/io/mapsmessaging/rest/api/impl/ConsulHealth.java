@@ -25,8 +25,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-@Api(value = "/")
-@Path("/")
+@Api(value = "/health")
+@Path("/health")
 public class ConsulHealth extends BaseRestApi {
 
 

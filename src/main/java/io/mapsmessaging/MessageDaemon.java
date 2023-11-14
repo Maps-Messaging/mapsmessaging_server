@@ -250,6 +250,8 @@ public class MessageDaemon {
         }
         meta.put(protocol, url);
       }
+
+      //look for override
       ConsulManagerFactory.getInstance().getManager().register(meta);
     }
     List<AgentOrder> startList = new ArrayList<>(agentMap.values());

@@ -11,24 +11,48 @@ FROM alpine
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-ENV JAVA_HOME=/usr/lib/jvm/zulu-13
+ENV JAVA_HOME=/usr/lib/jvm/zulu-17
+
+#----------------------------------------------------------------------------------------------
+# Install cURL for debugging
+#----------------------------------------------------------------------------------------------
+#RUN apk --no-cache add curl
+
+#----------------------------------------------------------------------------------------------
+# Install locales
+#----------------------------------------------------------------------------------------------
+#ENV MUSL_LOCALE_DEPS cmake make musl-dev gcc gettext-dev libintl
+#ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
+
+#RUN apk add --no-cache \
+#    $MUSL_LOCALE_DEPS \
+#    && wget https://gitlab.com/rilian-la-te/musl-locales/-/archive/master/musl-locales-master.zip \
+#    && unzip musl-locales-master.zip \
+#      && cd musl-locales-master \
+#      && cmake -DLOCALE_PROFILE=OFF -D CMAKE_INSTALL_PREFIX:PATH=/usr . && make && make install \
+#      && cd .. && rm -r musl-locales-master
 
 #----------------------------------------------------------------------------------------------
 # Install the JDK from Azul
 #----------------------------------------------------------------------------------------------
 
-RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
+# Pull down the java jdk and install it
+#RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
+
+RUN ZULU_ARCH=zulu17.46.19-ca-jdk17.0.9-linux_musl_x64.tar.gz && \
     INSTALL_DIR=$( dirname $JAVA_HOME ) && \
-    BIN_DIR=/usr/bin && \
-    MAN_DIR=/usr/share/man/man1 && \
     ZULU_DIR=$( basename ${ZULU_ARCH} .tar.gz ) && \
     wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
     mkdir -p ${INSTALL_DIR} && \
     tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
-    mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME} && \
-    cd ${BIN_DIR} && find ${JAVA_HOME}/bin -type f -perm -a=x -exec ln -s {} . \; && \
-    mkdir -p ${MAN_DIR} && \
-    cd ${MAN_DIR} && find ${JAVA_HOME}/man/man1 -type f -name "*.1" -exec ln -s {} . \;
+    mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME}
+
+# Setup the bin directory
+RUN  chmod +x ${JAVA_HOME}/bin/* && \
+     BIN_DIR=/usr/bin && \
+     chmod +x ${JAVA_HOME}/bin/* && \
+     cd ${BIN_DIR} && find ${JAVA_HOME}/bin -type f -perm -a=x -exec ln -s {} . \;
+
 
 #----------------------------------------------------------------------------------------------
 # We now have a JDK and Linux image. Now to
@@ -63,7 +87,7 @@ EXPOSE 2442/udp
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
 #----------------------------------------------------------------------------------------------
-RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/v%%MAPS_VERSION%%/message_daemon-%%MAPS_VERSION%%-install.tar.gz && \
+RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/message_daemon-%%MAPS_VERSION%%-install.tar.gz && \
     tar -xf message_daemon-%%MAPS_VERSION%%-install.tar.gz  && \
     rm  message_daemon-%%MAPS_VERSION%%-install.tar.gz
 
@@ -105,4 +129,5 @@ VOLUME /data
 #----------------------------------------------------------------------------------------------
 CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
+    export PATH=${JAVA_HOME}/bin:${PATH} && \
     message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh

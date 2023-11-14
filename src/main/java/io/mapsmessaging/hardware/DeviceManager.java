@@ -20,7 +20,6 @@ package io.mapsmessaging.hardware;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
-import io.mapsmessaging.hardware.device.handler.demo.DemoBusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
@@ -37,6 +36,8 @@ import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.IOException;
 import java.util.*;
 
+import static io.mapsmessaging.logging.ServerLogMessages.DEVICE_MANAGER_FAILED_TO_REGISTER;
+
 public class DeviceManager implements ServiceManager, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(DeviceManager.class);
@@ -47,7 +48,7 @@ public class DeviceManager implements ServiceManager, Agent {
   private final Map<String, Trigger> configuredTriggers;
 
   public DeviceManager() {
-    logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
+    logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP);
     devices = new ArrayList<>();
     busHandlers = new ArrayList<>();
     configuredTriggers = new LinkedHashMap<>();
@@ -84,7 +85,7 @@ public class DeviceManager implements ServiceManager, Agent {
       } else if (obj instanceof ConfigurationProperties) {
         devices.add((ConfigurationProperties) obj);
       }
-      logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
+      logger.log(ServerLogMessages.DEVICE_MANAGER_LOAD_PROPERTIES);
 
       for(ConfigurationProperties deviceConfig: devices) {
         if (deviceConfig.containsKey("name") &&
@@ -99,15 +100,8 @@ public class DeviceManager implements ServiceManager, Agent {
           Trigger trigger = locateNamedTrigger(triggerName);
           busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager(), deviceConfig, trigger));
         }
-
-        if (deviceConfig.containsKey("name") &&
-            deviceConfig.getProperty("name").equalsIgnoreCase("demo") &&
-            deviceConfig.getBooleanProperty("enabled", false)) {
-          String triggerName = deviceConfig.getProperty("trigger", "default");
-          busHandlers.add(new DemoBusHandler(deviceConfig, locateNamedTrigger(triggerName)));
-        }
       }
-      logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
+      logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_COMPLETE);
     }
   }
 
@@ -129,12 +123,12 @@ public class DeviceManager implements ServiceManager, Agent {
     String type = triggerConfig.getProperty("type");
     for(Trigger trigger:triggers){
       if(trigger.getName().equalsIgnoreCase(type)){
+        String name = triggerConfig.getProperty("name");
         try {
           Trigger actual = trigger.build(triggerConfig);
-          String name = triggerConfig.getProperty("name");
           configuredTriggers.put(name, actual);
         } catch (IOException e) {
-          // ToDo
+          logger.log(DEVICE_MANAGER_FAILED_TO_REGISTER, name, e);
         }
       }
     }
@@ -198,21 +192,21 @@ public class DeviceManager implements ServiceManager, Agent {
   }
 
   public void startAll() {
-    logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
+    logger.log(ServerLogMessages.DEVICE_MANAGER_START_ALL);
     for(BusHandler busHandler:busHandlers){
       busHandler.start();
     }
   }
 
   public void stopAll() {
-    logger.log(ServerLogMessages.NETWORK_MANAGER_STOP_ALL);
+    logger.log(ServerLogMessages.DEVICE_MANAGER_STOP_ALL);
     for(BusHandler busHandler:busHandlers){
       busHandler.stop();
     }
   }
 
   public void pauseAll() {
-    logger.log(ServerLogMessages.NETWORK_MANAGER_PAUSE_ALL);
+    logger.log(ServerLogMessages.DEVICE_MANAGER_PAUSE_ALL);
     for(BusHandler busHandler:busHandlers){
       busHandler.pause();
     }
@@ -220,7 +214,7 @@ public class DeviceManager implements ServiceManager, Agent {
   }
 
   public void resumeAll() {
-    logger.log(ServerLogMessages.NETWORK_MANAGER_RESUME_ALL);
+    logger.log(ServerLogMessages.DEVICE_MANAGER_RESUME_ALL);
     for(BusHandler busHandler:busHandlers){
       busHandler.resume();
     }

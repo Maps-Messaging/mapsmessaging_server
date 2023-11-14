@@ -11,19 +11,34 @@ ENV LC_ALL en_US.UTF-8
 # https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz
 # Setup the repos
 #
-ENV JAVA_HOME=/usr/lib/jvm/zulu-13
+ENV JAVA_HOME=/usr/lib/jvm/zulu-17
+ENV ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz
+
+RUN wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH}
+
+RUN export INSTALL_DIR=$(dirname $JAVA_HOME) && \
+    mkdir -p ${INSTALL_DIR}
+
+RUN export ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
+    export INSTALL_DIR=$(dirname $JAVA_HOME) && \
+    tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
+    mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME}
+
+
 RUN ZULU_ARCH=zulu16.32.15-ca-jdk16.0.2-linux_musl_aarch64.tar.gz && \
     INSTALL_DIR=$( dirname $JAVA_HOME ) && \
-    BIN_DIR=/usr/bin && \
     MAN_DIR=/usr/share/man/man1 && \
     ZULU_DIR=$( basename ${ZULU_ARCH} .tar.gz ) && \
     wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
     mkdir -p ${INSTALL_DIR} && \
     tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
-    mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME} && \
-    cd ${BIN_DIR} && find ${JAVA_HOME}/bin -type f -perm -a=x -exec ln -s {} . \; && \
-    mkdir -p ${MAN_DIR} && \
-    cd ${MAN_DIR} && find ${JAVA_HOME}/man/man1 -type f -name "*.1" -exec ln -s {} . \;
+    mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME}
+
+# Setup the bin directory
+RUN  chmod +x ${JAVA_HOME}/bin/* && \
+     BIN_DIR=/usr/bin && \
+     chmod +x ${JAVA_HOME}/bin/* && \
+     cd ${BIN_DIR} && find ${JAVA_HOME}/bin -type f -perm -a=x -exec ln -s {} . \;
 
 #----------------------------------------------------------------------------------------------
 # We now have a JDK and Linux image. Now to
@@ -46,6 +61,7 @@ EXPOSE 9000/tcp
 EXPOSE 8080/tcp
 EXPOSE 8082/tcp
 
+EXPOSE 1700/udp
 EXPOSE 1884/udp
 EXPOSE 5683/udp
 EXPOSE 2442/udp
@@ -53,7 +69,7 @@ EXPOSE 2442/udp
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
 #----------------------------------------------------------------------------------------------
-RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/v%%MAPS_VERSION%%/message_daemon-%%MAPS_VERSION%%-install.tar.gz && \
+RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/message_daemon-%%MAPS_VERSION%%-install.tar.gz && \
     tar -xf message_daemon-%%MAPS_VERSION%%-install.tar.gz  && \
     rm  message_daemon-%%MAPS_VERSION%%-install.tar.gz
 
@@ -94,4 +110,5 @@ VOLUME /data
 #----------------------------------------------------------------------------------------------
 CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
+    export PATH=${JAVA_HOME}/bin:${PATH} && \
     message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh

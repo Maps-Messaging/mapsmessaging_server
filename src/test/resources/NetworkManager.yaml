@@ -178,7 +178,7 @@ NetworkManager:
       -
         url: tcp://0.0.0.0:2001/
         name: "generic testing interface"
-        protocol: all
+        protocol: all, echo
         auth: test
 
       -

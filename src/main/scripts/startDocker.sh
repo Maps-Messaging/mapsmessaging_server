@@ -18,17 +18,22 @@
 #
 # Configure the java command on the path
 #
-export JAVA_HOME=/opt/jdk-13
+export JAVA_HOME=/usr/lib/jvm/zulu-17
 export PATH=$JAVA_HOME/bin:$PATH
+
+echo $PATH
 
 export VERSION=%%MAPS_VERSION%%
 
-# Get the value of the ConsulHost environment variable, or default to 127.0.0.1
-CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
-export CONSUL_URL
+# Check if FLY_CONSUL_URL is set and not empty
+if [[ -n "${FLY_CONSUL_URL}" ]]; then
+  # If FLY_CONSUL_URL is set, use its value for CONSUL_URL
+  CONSUL_URL="${FLY_CONSUL_URL}"
+fi
 
-JAVA_OPTS="${JavaOpts:-''}"
-export JAVA_OPTS
+# Export the CONSUL_URL so it becomes an environment variable
+export CONSUL_URL
+echo $CONSUL_URL
 
 if [ -z ${MAPS_HOME+x} ];
   then export MAPS_HOME=/opt/message_daemon-$VERSION;
@@ -46,5 +51,13 @@ export MAPS_CONF=$MAPS_HOME/conf
 export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*"
 #
 # Now start the the daemon
-#
-java -classpath $CLASSPATH $JAVA_OPTS -DUSE_UUID=false -DConsulUrl=$CONSUL_URL -DConsulPath=$ConsulPath -Djava.security.auth.login.config=$MAPS_CONF/jaasAuth.config -DMAPS_HOME=$MAPS_HOME io.mapsmessaging.MessageDaemon
+java -classpath $CLASSPATH $JAVA_OPTS \
+    -DUSE_UUID=false \
+    -DConsulUrl="${CONSUL_URL}" \
+    -DConsulPath="${CONSUL_PATH}" \
+    -DConsulToken="${CONSUL_TOKEN}" \
+    -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
+    -DMAPS_HOME="${MAPS_HOME}" \
+    io.mapsmessaging.MessageDaemon
+
+

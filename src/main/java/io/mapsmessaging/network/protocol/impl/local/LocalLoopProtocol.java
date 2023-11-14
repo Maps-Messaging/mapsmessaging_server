@@ -74,7 +74,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
         try {
           if (destination != null) {
             MessageBuilder messageBuilder = new MessageBuilder(messageEvent.getMessage());
-            messageBuilder.setDestinationTransformer(destinationTransformationLookup(messageEvent.getDestinationName()));
+            messageBuilder = messageBuilder.setDestinationTransformer(destinationTransformationLookup(messageEvent.getDestinationName()));
             destination.storeMessage(messageBuilder.build());
           }
           messageEvent.getCompletionTask().run();

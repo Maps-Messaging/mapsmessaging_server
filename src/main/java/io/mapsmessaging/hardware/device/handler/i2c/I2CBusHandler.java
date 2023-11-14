@@ -79,7 +79,6 @@ public class I2CBusHandler extends BusHandler {
       try {
         i2CBusManager.configureDevice(addr, name);
       } catch (IOException e) {
-        e.printStackTrace();
         // To Do
       }
       if(selector != null && !selector.isBlank()){

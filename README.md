@@ -1,41 +1,81 @@
 # MAPS Messaging Server
 
-[MAPS(Multi Adapter and Protocol Standards)messaging server](https://www.mapsmessaging.io/)
-
+[MAPS (Multi Adapter and Protocol Standards) Messaging Server](https://www.mapsmessaging.io/) addresses the complexities of IoT communication by supporting a wide range of protocols, ensuring compatibility and future-proof integration.
 
 ## Introduction
-Wire protocol standardisation for messaging has enabled an unprecidented interoperability for both clients and servers. It has come with the promise of no vendor lock in, healthy competition and the ability to swap out clients and servers as requirements change. While this is a noble approach, and has to some extent been fulfilled, there is an increasing realisation that as protocols evolve or new protocols are ratified the promise of interoperability is not attainable.
-Take for example MQTT [V3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) and [V5](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html), while evolution of the same protocol the functionality being offered in V5 far exceeds what was available in V3. Add to this AMQP V1.0, which is gaining ground in IoT, when trying to design a coherent messaging fabric it requires multiple messaging servers with standalone integration systems or messaging servers with plugins that have limited support of the protocol. This results in complex deployments, rigid client and server deployments and not achieving the utopia that open wire protocols were promising to deliver.
+Wire protocol standardization has promised interoperability and flexibility in IoT messaging. However, with the evolution of protocols, achieving this seamless interoperability has become challenging. MAPS Messaging Server bridges this gap by providing comprehensive support for multiple protocols and their versions, thus facilitating a unified messaging fabric.
 
 ## Features
-* MapsMessaging supports the following, For the complete list of [supported protocol versions](https://www.mapsmessaging.io/protocol_support.html).
-  - MQTT (3.1, 3.1.1, 5.0)
-  - MQTT-SN (1.2, 2.0)
-  - AMQP (1.0) 
-  - JMS over AMQP
-  - STOMP
-  - CoAP
-  - SemTech
-  - NMEA
-  - RestAPI
+- **Wide Protocol Support:** For a full list, see [supported protocol versions](https://www.mapsmessaging.io/protocol_support.html).
+- **Inter-Server Communication:** Directly publish or subscribe to data on other messaging servers. [Learn more](https://www.mapsmessaging.io/InterServerConnection_config.html).
+- **Advanced Filtering:** Utilize [JMS Selector](https://github.com/Maps-Messaging/jms_selector_parser) for fine-grained message control.
+- **Extensibility:** Easily integrate new or proprietary protocols.
+- **Payload Transformation:** Configurable translations, such as XML to [JSON](https://github.com/Maps-Messaging/mapsmessaging_server/tree/main/src/main/java/io/mapsmessaging/api/transformers).
+- **Namespace Partitioning:** Distinct namespaces for users and groups to enhance security.
+- **Comprehensive Management:** JMX, JMX - RestAPI via [Jolokia](https://jolokia.org/), and web-based management with [hawtio](https://hawt.io/).
+- **RestAPI Management:** Simple interface to manage connections, destinations, and schemas.
 
-* It also supports connections to other messaging servers that support MQTT, Stomp and AMQP allowing the server to either publish data to the remote servers or subscribe to data on
-  the remote servers. Removing the need to add extra hops in message delivery systems. More information can be
-  found [here](https://www.mapsmessaging.io/InterServerConnection_config.html)
+## Advanced Features
 
-* [JMS Selector](https://github.com/Maps-Messaging/jms_selector_parser) based filtering support for AMPQ_JMS, Stomp, MQTT V5.
+- **Schema Repository:** Centralized management for data integrity and format consistency. [More info](https://github.com/Maps-Messaging/schemas).
+- **Direct Device Integration:** Offers direct communication with I2C, 1-Wire, and SPI devices, mapping interactions to topic namespaces. [More info](https://github.com/Maps-Messaging/device_integration)
+- **Versatile Authentication:** Supports a variety of mechanisms, including `.htpasswd`, LDAP, JWT, Auth0, and more. [More info](https://github.com/Maps-Messaging/authentication_library)
+- **Cloud-Native Event Storage:** Event data at rest can be pushed to S3 buckets for long-term storage. [More info](https://github.com/Maps-Messaging/dynamic_storage)
+- **Event Filtering:** Advanced filtering between MAPS-servers or other servers with filtering capabilities, ensuring only relevant data is transmitted. [More info](https://github.com/Maps-Messaging/jms_selector_parser)
+- **Robust Logging:** Utilizes Logback for comprehensive and customizable logging configurations.  [More info](https://github.com/Maps-Messaging/simple_logging)
+- **Non-Blocking Async Engine:** Employs a highly efficient, non-blocking asynchronous engine and network layers, ensuring minimal locking and maximal concurrency for superior performance. [Learn more](https://github.com/Maps-Messaging/non_block_task_scheduler).
+- **LoRa Support:** Native support for LoRa devices, enabling direct communication without requiring a LoRaWAN network.
+- **Semtech Gateway Compatibility:** Acts as a LoRaWAN gateway in conjunction with Semtech's technology, expanding the server's IoT ecosystem.
+- **mDNS Discovery:** Provides service discovery via mDNS, with future enhancements planned for automatic connection and namespace/schema propagation.
+- **Security Domains:** Configurable security domains allow for tailored authentication and authorization on a per-adapter/protocol basis.
+- **Flexible Configuration:** Supports configuration through both Consul and file-based setups, catering to various deployment environments.
 
-* Designed to be able to plug in new protocols or add proprietary protocols to enable older closed systems to be able to interact with IoT systems
+## Getting Started: "Hello World" Example
 
-* Pluggable payload translations can be configured on the server such that in-flight data can be transmuted to other formats. For example data may come in as XML but be translated to [JSON](https://github.com/Maps-Messaging/mapsmessaging_server/tree/main/src/main/java/io/mapsmessaging/api/transformers) as it arrives.
+This example demonstrates a simple publish/subscribe scenario using the MQTT protocol.
 
-* Support for a partitioned namespace for users and groups
+### Starting the Server
 
-* Support for JMX management, RestAPI via [Jolokia](https://jolokia.org/) as well as web based management via [hawtio](https://hawt.io/)
-* Simple Rest API to manage interfaces, destinations and schemas
+Make sure the server is running and listening for MQTT connections on port 1883 (default for MQTT).
+
+### Producer: Sending a Message
+
+```java
+// Java-based pseudocode for an MQTT producer
+MqttClient producer = new MqttClient("tcp://localhost:1883", "producer");
+producer.connect();
+MqttMessage message = new MqttMessage("Hello, World!".getBytes());
+producer.publish("test/topic", message);
+producer.disconnect();
+```
+
+### Consumer: Receiving a Message
+```java
+// Java-based pseudocode for an MQTT consumer
+MqttClient consumer = new MqttClient("tcp://localhost:1883", "consumer");
+consumer.connect();
+consumer.subscribe("test/topic");
+consumer.setMessageCallback((topic, msg) -> System.out.println(new String(msg.getPayload())));
+// Keep the consumer running to listen for messages
+```
+Replace localhost with the server's IP address if running remotely. Ensure the topic names match in both producer and consumer.
+
+## Contributing
+We welcome contributions! Please refer to our contribution guidelines for how you can participate in making MAPS Messaging Server even better.
+
+## License
+
+The Maps Messaging Server is dual-licensed under the Mozilla Public License Version 2.0 (MPL 2.0) and the Apache License 2.0 with Commons Clause License Condition v1.0.
+
+Under the MPL 2.0 license, the software is provided for use, modification, and distribution under the terms of the MPL 2.0.
+
+Additionally, the "Commons Clause" restricts the selling of the software, which means you may not sell the software or services whose value derives entirely or substantially from the software's functionality.
+
+For full license terms, see the [LICENSE](LICENSE) file in the repository.
 
 
 [![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=Maps-Messaging_mapsmessaging_server)
+
 
 
 

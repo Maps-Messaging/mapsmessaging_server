@@ -28,8 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static io.mapsmessaging.logging.ServerLogMessages.PROPERTY_MANAGER_LOOKUP;
-import static io.mapsmessaging.logging.ServerLogMessages.PROPERTY_MANAGER_LOOKUP_FAILED;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class ConfigurationManager {
 
@@ -57,7 +56,8 @@ public class ConfigurationManager {
   public void initialise(@NonNull @NotNull String serverId) {
     ConsulPropertyManager defaultConsulManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
-      String consulConfigPath = System.getProperty("ConsulPath","/");
+      String consulConfigPath = System.getProperty("ConsulPath",ConsulManagerFactory.getInstance().getPath());
+      if (consulConfigPath.trim().isEmpty()) consulConfigPath=ConsulManagerFactory.getInstance().getPath();
       String defaultName = "default";
       if(consulConfigPath != null){
         if(!consulConfigPath.endsWith("/")){
@@ -83,13 +83,18 @@ public class ConfigurationManager {
       manager.load();
     }
 
-    // We have a consul link but there is no config loaded, so load up the configuration into the
-    // consul server to bootstrap the server
-    if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
-      defaultConsulManager.copy(yamlPropertyManager);
+    try {
+      // We have a consul link but there is no config loaded, so load up the configuration into the
+      // consul server to bootstrap the server
+      if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
+        defaultConsulManager.copy(yamlPropertyManager);
+      }
+      if (authoritative != null && authoritative.properties.size() == 0) {
+        authoritative.copy(defaultConsulManager); // Define the local host
+      }
     }
-    if(authoritative != null && authoritative.properties.size() == 0){
-      authoritative.copy(defaultConsulManager); // Define the local host
+    catch(Throwable th){
+      logger.log(CONSUL_CLIENT_EXCEPTION, th);
     }
   }
 
