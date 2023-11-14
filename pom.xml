@@ -23,7 +23,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>message_daemon</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>3.3.5</version>
+  <version>3.3.6-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
