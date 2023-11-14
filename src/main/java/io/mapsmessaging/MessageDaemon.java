@@ -40,6 +40,7 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
+import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -89,7 +90,7 @@ public class MessageDaemon {
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
     isStarted = new AtomicBoolean(false);
-    String tmpHome = System.getProperty("MAPS_HOME", ".");
+    String tmpHome = SystemProperties.getProperty("MAPS_HOME", ".");
     File testHome = new File(tmpHome);
     if (!testHome.exists()) {
       logger.log(ServerLogMessages.MESSAGE_DAEMON_NO_HOME_DIRECTORY, testHome);
@@ -112,12 +113,7 @@ public class MessageDaemon {
     if (serverId != null) {
       uniqueId = serverId;
     } else {
-      serverId = System.getProperty("SERVER_ID");
-      if (serverId == null) {
-        uniqueId = generateUniqueId();
-      } else {
-        uniqueId = serverId;
-      }
+      uniqueId = SystemProperties.getProperty("SERVER_ID", generateUniqueId());
       instanceConfig.setServerName(uniqueId);
       instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
@@ -295,7 +291,7 @@ public class MessageDaemon {
       return env;
     }
 
-    boolean useUUID = Boolean.parseBoolean(System.getProperty("USE_UUID", "TRUE"));
+    boolean useUUID = SystemProperties.getBooleanProperty("USE_UUID", true);
     if (useUUID) {
       return UUID.randomUUID().toString();
     }
