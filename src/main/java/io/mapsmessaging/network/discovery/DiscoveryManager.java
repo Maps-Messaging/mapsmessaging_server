@@ -56,7 +56,7 @@ public class DiscoveryManager implements Agent {
     logger = LoggerFactory.getLogger(DiscoveryManager.class);
     boundedNetworks = new ArrayList<>();
     properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
-    enabled = properties.getBooleanProperty("enabled", false);
+    enabled = properties.getBooleanProperty("enabled", true);
   }
 
   public void registerListener(String type, ServiceListener listener){
