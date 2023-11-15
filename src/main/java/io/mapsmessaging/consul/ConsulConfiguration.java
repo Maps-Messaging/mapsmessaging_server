@@ -38,7 +38,7 @@ public class ConsulConfiguration {
     String tokencfg;
     String path = "/";
 
-    String urlCfg = SystemProperties.getProperty("ConsulUrl");
+    String urlCfg = SystemProperties.getInstance().getProperty("ConsulUrl");
     if (urlCfg != null) {
       tokencfg = extractToken(urlCfg);
       path = extractPath(urlCfg);
@@ -48,27 +48,27 @@ public class ConsulConfiguration {
       urlCfg = removePath(urlCfg);
     } else {
       tokencfg = null;
-      String host = SystemProperties.getProperty("ConsulHost", "127.0.0.1");
-      int port = (int) SystemProperties.getLongProperty("ConsulPort", 8500);
+      String host = SystemProperties.getInstance().getProperty("ConsulHost", "127.0.0.1");
+      int port = (int) SystemProperties.getInstance().getLongProperty("ConsulPort", 8500);
       urlCfg = "http://" + host + ":" + port;
     }
 
-    consulAcl = SystemProperties.getProperty("ConsulAcl");
+    consulAcl = SystemProperties.getInstance().getProperty("ConsulAcl");
     consulToken = parseToken(tokencfg);
     consulUrl = urlCfg;
     urlPath = path;
   }
 
   public String getUrlPath() {
-    return SystemProperties.getProperty("ConsulPath", urlPath);
+    return SystemProperties.getInstance().getProperty("ConsulPath", urlPath);
   }
 
   public boolean registerAgent() {
-    return SystemProperties.getBooleanProperty("ConsulAgentRegister", false);
+    return SystemProperties.getInstance().getBooleanProperty("ConsulAgentRegister", false);
   }
 
   private String parseToken(String tokencfg) {
-    String tokenProp = SystemProperties.getProperty("ConsulToken", tokencfg);
+    String tokenProp = SystemProperties.getInstance().getProperty("ConsulToken", tokencfg);
     if (tokenProp != null && !tokenProp.isEmpty()) {
       tokencfg = tokenProp;
     }

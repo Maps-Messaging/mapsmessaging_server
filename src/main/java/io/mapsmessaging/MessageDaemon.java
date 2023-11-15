@@ -62,12 +62,11 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class MessageDaemon {
 
-  public static MessageDaemon getInstance(){
-    return instance;
-  }
+  @Getter
   private static MessageDaemon instance;
+
   static {
-    MessageDaemon tmp = null;
+    MessageDaemon tmp;
     try {
       tmp = new MessageDaemon();
     } catch (IOException e) {
@@ -90,7 +89,7 @@ public class MessageDaemon {
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
     isStarted = new AtomicBoolean(false);
-    String tmpHome = SystemProperties.getProperty("MAPS_HOME", ".");
+    String tmpHome = SystemProperties.getInstance().getProperty("MAPS_HOME", ".");
     File testHome = new File(tmpHome);
     if (!testHome.exists()) {
       logger.log(ServerLogMessages.MESSAGE_DAEMON_NO_HOME_DIRECTORY, testHome);
@@ -113,7 +112,7 @@ public class MessageDaemon {
     if (serverId != null) {
       uniqueId = serverId;
     } else {
-      uniqueId = SystemProperties.getProperty("SERVER_ID", generateUniqueId());
+      uniqueId = SystemProperties.getInstance().getProperty("SERVER_ID", generateUniqueId());
       instanceConfig.setServerName(uniqueId);
       instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
@@ -286,12 +285,12 @@ public class MessageDaemon {
   }
 
   private String generateUniqueId() {
-    String env = SystemProperties.getEnvProperty("SERVER_ID", null);
+    String env = SystemProperties.getInstance().getEnvProperty("SERVER_ID");
     if (env != null) {
       return env;
     }
 
-    boolean useUUID = SystemProperties.getBooleanProperty("USE_UUID", true);
+    boolean useUUID = SystemProperties.getInstance().getBooleanProperty("USE_UUID", true);
     if (useUUID) {
       return UUID.randomUUID().toString();
     }

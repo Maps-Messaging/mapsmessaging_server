@@ -17,60 +17,84 @@
 
 package io.mapsmessaging.utilities;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import lombok.Getter;
+
+import static io.mapsmessaging.logging.ServerLogMessages.CONFIG_PROPERTY_ACCESS;
+
 public class SystemProperties {
 
+  static {
+    instance = new SystemProperties();
+  }
 
-  public static String getProperty(String key) {
+  @Getter
+  private static final SystemProperties instance;
+
+  private final Logger logger = LoggerFactory.getLogger(SystemProperties.class);
+
+  private SystemProperties() {
+  }
+
+
+  public String getProperty(String key) {
     return getProperty(key, null);
   }
 
-  public static String getProperty(String key, String defaultValue) {
+  public String getProperty(String key, String defaultValue) {
     String value = System.getProperty(key);
-    if (value != null && !value.isEmpty()) {
-      return value;
+    if (value == null || value.isEmpty()) {
+      value = defaultValue;
     }
-    return defaultValue;
+    logger.log(CONFIG_PROPERTY_ACCESS, key, defaultValue);
+    return value;
   }
 
-  public static boolean getBooleanProperty(String key, boolean defaultValue) {
+  public boolean getBooleanProperty(String key, boolean defaultValue) {
     String value = System.getProperty(key);
+    boolean result = defaultValue;
     if (value != null && !value.isEmpty()) {
-      return Boolean.parseBoolean(value);
+      result = Boolean.parseBoolean(value);
     }
-    return defaultValue;
+    logger.log(CONFIG_PROPERTY_ACCESS, key, result);
+    return result;
   }
 
-  public static long getLongProperty(String key, long defaultValue) {
+  public long getLongProperty(String key, long defaultValue) {
     String value = System.getProperty(key);
+    long result = defaultValue;
     if (value != null && !value.isEmpty()) {
       try {
-        return Long.parseLong(value);
+        result = Long.parseLong(value);
       } catch (NumberFormatException e) {
         // ignore
       }
     }
-    return defaultValue;
+    logger.log(CONFIG_PROPERTY_ACCESS, key, result);
+    return result;
   }
 
-  public static double getDoubleProperty(String key, double defaultValue) {
+  public double getDoubleProperty(String key, double defaultValue) {
     String value = System.getProperty(key);
+    double result = defaultValue;
     if (value != null && !value.isEmpty()) {
       try {
-        return Double.parseDouble(value);
+        result = Double.parseDouble(value);
       } catch (NumberFormatException e) {
         // ignore
       }
     }
-    return defaultValue;
+    logger.log(CONFIG_PROPERTY_ACCESS, key, result);
+    return result;
   }
 
-  public static String getEnvProperty(String key, String defaultValue) {
+  public String getEnvProperty(String key) {
     String value = System.getenv(key);
     if (value != null && !value.isEmpty()) {
       return value;
     }
-    return defaultValue;
+    return null;
   }
-
 
 }

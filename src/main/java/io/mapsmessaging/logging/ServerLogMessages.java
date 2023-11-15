@@ -568,6 +568,10 @@ public enum ServerLogMessages implements LogMessage {
   CONSUL_PROPERTY_MANAGER_SAVE_ALL(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Saving all entries for {}"),
   CONSUL_PROPERTY_MANAGER_STORE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Storing entry for {}"),
   //</editor-fold>
+  //<editor-fold desc="System and Environment property access">
+  CONFIG_PROPERTY_ACCESS(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Getting property {} from system resulted in {}"),
+
+  //</editor-fold>
 
   //<editor-fold desc="NameSpace mapping used to support multi tenancy">
   NAMESPACE_MAPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Mapping {} to namespace {}"),

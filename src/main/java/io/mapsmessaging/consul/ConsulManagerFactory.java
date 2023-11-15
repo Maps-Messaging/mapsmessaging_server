@@ -112,7 +112,7 @@ public class ConsulManagerFactory {
   private ConsulManagerFactory() {
     boolean config;
     try {
-      config = SystemProperties.getBooleanProperty("ForceConsul", false);
+      config = SystemProperties.getInstance().getBooleanProperty("ForceConsul", false);
     } catch (Exception e) {
       config = false;
     }

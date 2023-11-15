@@ -108,6 +108,5 @@ public class ConsulPropertyManager extends YamlPropertyManager {
       String key = serverPrefix.trim() + entry.getKey().trim();
       ConsulManagerFactory.getInstance().getManager().putValue(key, source);
     }
-    // Now lets Store it in key value pairs in consul
   }
 }
