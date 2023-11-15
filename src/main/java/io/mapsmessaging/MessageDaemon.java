@@ -286,7 +286,7 @@ public class MessageDaemon {
   }
 
   private String generateUniqueId() {
-    String env = System.getenv("SERVER_ID");
+    String env = SystemProperties.getEnvProperty("SERVER_ID", null);
     if (env != null) {
       return env;
     }

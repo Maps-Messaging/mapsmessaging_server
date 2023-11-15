@@ -23,6 +23,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.rest.RestApiServerManager;
+import io.mapsmessaging.utilities.SystemProperties;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -111,7 +112,7 @@ public class ConsulManagerFactory {
   private ConsulManagerFactory() {
     boolean config;
     try {
-      config = Boolean.parseBoolean(System.getProperty("ForceConsul", "FALSE"));
+      config = SystemProperties.getBooleanProperty("ForceConsul", false);
     } catch (Exception e) {
       config = false;
     }

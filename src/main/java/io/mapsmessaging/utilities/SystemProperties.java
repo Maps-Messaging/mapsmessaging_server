@@ -19,6 +19,11 @@ package io.mapsmessaging.utilities;
 
 public class SystemProperties {
 
+
+  public static String getProperty(String key) {
+    return getProperty(key, null);
+  }
+
   public static String getProperty(String key, String defaultValue) {
     String value = System.getProperty(key);
     if (value != null && !value.isEmpty()) {
@@ -58,5 +63,14 @@ public class SystemProperties {
     }
     return defaultValue;
   }
+
+  public static String getEnvProperty(String key, String defaultValue) {
+    String value = System.getenv(key);
+    if (value != null && !value.isEmpty()) {
+      return value;
+    }
+    return defaultValue;
+  }
+
 
 }
