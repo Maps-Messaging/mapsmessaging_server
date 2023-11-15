@@ -32,23 +32,25 @@ import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import lombok.Getter;
+
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.*;
+
+import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
 
 public class DiscoveryManager implements Agent {
+  private static final String ALL_HOSTS = "0.0.0.0";
 
   private final Logger logger;
   private final String serverName;
   private final List<AdapterManager> boundedNetworks;
   private final ConfigurationProperties properties;
+  @Getter
   private final boolean enabled;
 
   public DiscoveryManager(String serverName) {
@@ -131,11 +133,12 @@ public class DiscoveryManager implements Agent {
 
       ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, restApiServerManager.getPort(), 0, 0, map);
       String host = restApiServerManager.getHost();
-      if (host.equals("0.0.0.0") || host.equals(manager.getAdapter())) {
+      if (host.equals(ALL_HOSTS) || host.equals(manager.getAdapter())) {
         try {
           manager.register(serviceInfo);
         } catch (IOException e) {
-          throw new RuntimeException(e);
+          logger.log(DISCOVERY_FAILED_TO_REGISTER, e);
+          return new ServiceInfo[0];
         }
       }
       registeredServices.add(serviceInfo);
@@ -155,7 +158,7 @@ public class DiscoveryManager implements Agent {
     List<String> protocolList = createProtocolList(protocolConfig, transport);
     String endPointHostName = endPointServer.getUrl().getHost();
     for(AdapterManager manager:boundedNetworks){
-      if(endPointHostName.equals("0.0.0.0") || endPointHostName.equals(manager.getAdapter())){
+      if (endPointHostName.equals(ALL_HOSTS) || endPointHostName.equals(manager.getAdapter())) {
         manager.register(endPointServer, transport, protocolList);
       }
     }
@@ -190,7 +193,7 @@ public class DiscoveryManager implements Agent {
   public synchronized List<ServiceInfo> register(String host, String type, String name, int port, String text) throws IOException {
     List<ServiceInfo> list = new ArrayList<>();
     for(AdapterManager manager:boundedNetworks) {
-      if (host.equals("0.0.0.0") || host.equals(manager.getAdapter())) {
+      if (host.equals(ALL_HOSTS) || host.equals(manager.getAdapter())) {
         ServiceInfo serviceInfo = ServiceInfo.create(type, name, port, text);
         manager.register(serviceInfo);
         list.add(serviceInfo);
@@ -215,9 +218,5 @@ public class DiscoveryManager implements Agent {
     for(AdapterManager manager:boundedNetworks){
       manager.deregisterAll();
     }
-  }
-
-  public boolean isEnabled() {
-    return enabled;
   }
 }
