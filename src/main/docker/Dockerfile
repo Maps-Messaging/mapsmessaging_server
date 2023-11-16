@@ -92,24 +92,24 @@ EXPOSE 2442/udp
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
 #----------------------------------------------------------------------------------------------
-RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/3.3.6-SNAPSHOT/message_daemon-3.3.6-SNAPSHOT-install.tar.gz && \
-    tar -xf message_daemon-3.3.6-SNAPSHOT-install.tar.gz  && \
-    rm  message_daemon-3.3.6-SNAPSHOT-install.tar.gz
+RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/message_daemon-%%MAPS_VERSION%%-install.tar.gz && \
+    tar -xf message_daemon-%%MAPS_VERSION%%-install.tar.gz  && \
+    rm  message_daemon-%%MAPS_VERSION%%-install.tar.gz
 
 #----------------------------------------------------------------------------------------------
 # Now configure the scripts
 #----------------------------------------------------------------------------------------------
-RUN chmod +x message_daemon-3.3.6-SNAPSHOT/bin/startDocker.sh && \
-    dos2unix message_daemon-3.3.6-SNAPSHOT/bin/startDocker.sh
+RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
+    dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
 
-RUN mv message_daemon-3.3.6-SNAPSHOT/conf/logback.xml message_daemon-3.3.6-SNAPSHOT/conf/logback.xml_orig && \
-    mv message_daemon-3.3.6-SNAPSHOT/conf/docker_logback.xml message_daemon-3.3.6-SNAPSHOT/conf/logback.xml
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
 
-RUN mv message_daemon-3.3.6-SNAPSHOT/conf/NetworkManager.yaml message_daemon-3.3.6-SNAPSHOT/conf/NetworkManager.yaml_orig && \
-    mv message_daemon-3.3.6-SNAPSHOT/conf/NetworkManagerDocker.yaml message_daemon-3.3.6-SNAPSHOT/conf/NetworkManager.yaml
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
-RUN mv message_daemon-3.3.6-SNAPSHOT/conf/DestinationManager.yaml message_daemon-3.3.6-SNAPSHOT/conf/DestinationManager.yaml_orig && \
-    mv message_daemon-3.3.6-SNAPSHOT/conf/DestinationManagerDocker.yaml message_daemon-3.3.6-SNAPSHOT/conf/DestinationManager.yaml
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
 
 
 
@@ -117,9 +117,9 @@ RUN mv message_daemon-3.3.6-SNAPSHOT/conf/DestinationManager.yaml message_daemon
 #----------------------------------------------------------------------------------------------
 # Now configure and download hawtio for web/JMX/Rest administration
 #----------------------------------------------------------------------------------------------
-RUN  cd ./message_daemon-3.3.6-SNAPSHOT &&  \
+RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
     mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
-    sed 's|/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-3.3.6-SNAPSHOT/hawtio-default-2.17.7.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
+    sed 's|/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.17.7.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
     wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.17.7/hawtio-default-2.17.7.war
 
@@ -132,7 +132,7 @@ VOLUME /data
 # We can now simply start the server
 # Increase the file descriptor count
 #----------------------------------------------------------------------------------------------
-CMD export MAPS_HOME=./message_daemon-3.3.6-SNAPSHOT/  && \
+CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
     export PATH=${JAVA_HOME}/bin:${PATH} && \
-    message_daemon-3.3.6-SNAPSHOT/bin/startDocker.sh
+    message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
