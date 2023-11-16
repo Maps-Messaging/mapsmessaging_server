@@ -8,6 +8,11 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+#----------------------------------------------------------------------------------------------
+# Install DNS tools
+#----------------------------------------------------------------------------------------------
+RUN apk add --update bind-tools
+
 # https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz
 # Setup the repos
 #
