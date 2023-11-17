@@ -34,6 +34,7 @@ import io.mapsmessaging.network.NetworkConnectionManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.network.discovery.ServerConnectionManager;
+import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
@@ -155,21 +156,22 @@ public class MessageDaemon {
     SecurityManager securityManager = new SecurityManager();
     DestinationManager destinationManager = new DestinationManager();
 
-    addToMap(5, 110, SchemaManager.getInstance());
-    addToMap(10, 90, TransactionManager.getInstance());
-    addToMap(30, 10, new DiscoveryManager(uniqueId));
-    addToMap(40, 120, securityManager);
-    addToMap(50, 95, destinationManager);
-    addToMap(60, 30, new SessionManager(securityManager, destinationManager, path));
-    addToMap(70, 15, new NetworkManager(mBean.getTypePath()));
-    addToMap(80, 5, new SystemTopicManager(destinationManager));
-    addToMap(90, 20, new NetworkConnectionManager(mBean.getTypePath()));
-    addToMap(100, 25, new JolokaManager());
-    addToMap(110, 30, new HawtioManager());
-    addToMap(120, 40, new RestApiServerManager());
-    addToMap(200, 2, new ServerConnectionManager());
-    addToMap(210, 0, new RoutingManager());
-    addToMap(220, 7, new DeviceManager());
+    addToMap(50, 1100, SchemaManager.getInstance());
+    addToMap(80, 20, NetworkInterfaceMonitor.getInstance());
+    addToMap(100, 900, TransactionManager.getInstance());
+    addToMap(300, 100, new DiscoveryManager(uniqueId));
+    addToMap(400, 1200, securityManager);
+    addToMap(500, 950, destinationManager);
+    addToMap(600, 300, new SessionManager(securityManager, destinationManager, path));
+    addToMap(700, 150, new NetworkManager(mBean.getTypePath()));
+    addToMap(800, 50, new SystemTopicManager(destinationManager));
+    addToMap(900, 200, new NetworkConnectionManager(mBean.getTypePath()));
+    addToMap(1000, 250, new JolokaManager());
+    addToMap(1100, 300, new HawtioManager());
+    addToMap(1200, 400, new RestApiServerManager());
+    addToMap(2000, 30, new ServerConnectionManager());
+    addToMap(2100, 10, new RoutingManager());
+    addToMap(2200, 70, new DeviceManager());
   }
 
   private void addToMap(int start, int stop, Agent agent) {
