@@ -55,6 +55,9 @@ public class NetworkManager implements ServiceManager, Agent {
     logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
     endPointServers = ServiceLoader.load(EndPointServerFactory.class);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
+    if (properties.getBooleanProperty("preferIPv6Addresses", true)) {
+      System.setProperty("java.net.preferIPv6Addresses", "true");
+    }
 
     bean = new NetworkManagerJMX(parent, this);
   }

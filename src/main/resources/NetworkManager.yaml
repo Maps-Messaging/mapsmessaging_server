@@ -86,6 +86,7 @@ NetworkManager:
       # Global configuration
       # ---------------------------------------------------------------------------------------------------------
         discoverable: false             # If the server registers a mdns entry for the adapter
+        preferIPv6Addresses: true       # If the server should prefer IPv6 addresses over IPv4 addresses
 
     data:
 
