@@ -25,6 +25,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.rest.RestApiServerManager;
@@ -44,7 +45,7 @@ import java.util.*;
 import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
 
 public class DiscoveryManager implements Agent {
-  private static final String ALL_HOSTS = "0.0.0.0";
+  private static final String ALL_HOSTS = "::";
 
   private final Logger logger;
   private final String serverName;
@@ -91,10 +92,19 @@ public class DiscoveryManager implements Agent {
         if (hostnames != null) {
           String[] hostnameList = hostnames.split(",");
           for (String hostname : hostnameList) {
-            InetAddress address = InetAddress.getByName(hostname.trim());
-            boundedNetworks.add(bindInterface(hostname, address, stampMeta));
+            List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getIpAddressByName(hostname.trim());
+            for (InetAddress address : addresses) {
+              String name = address.getHostName();
+              boundedNetworks.add(bindInterface(name, address, stampMeta));
+            }
           }
         } else {
+          List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getCurrentIpAddresses();
+          for (InetAddress address : addresses) {
+            String name = address.getHostName();
+            boundedNetworks.add(bindInterface(name, address, stampMeta));
+          }
+
           InetAddress address = InetAddress.getLocalHost();
           boundedNetworks.add(bindInterface(address.getHostName(), address, stampMeta));
         }

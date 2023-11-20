@@ -23,10 +23,7 @@ import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import lombok.Getter;
 
-import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +46,47 @@ public class NetworkInterfaceMonitor implements Agent {
   private NetworkInterfaceMonitor() {
   }
 
+  @Override
+  public String getName() {
+    return "Network Interface Monitor";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Monitors system network interfaces and updates end points dependent on the network state";
+  }
+
+  @Override
+  public void start() {
+    lastInterfaces = getCurrentNetworkInterfaces();
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::checkNetworkInterfaces, 0, 30, TimeUnit.SECONDS);
+  }
+
+  @Override
+  public void stop() {
+    if (scheduledFuture != null) {
+      scheduledFuture.cancel(true);
+    }
+  }
+
+  public List<InetAddress> getIpAddressByName(String adapterName) {
+    List<InetAddress> list = new ArrayList<>();
+    getCurrentNetworkInterfaces().forEach((s, networkInterfaceState) -> {
+      if (networkInterfaceState.getName().equals(adapterName)) {
+        list.addAll(networkInterfaceState.getIpAddresses());
+      } else if (adapterName.equals("0.0.0.0")) {
+        networkInterfaceState.getIpAddresses().forEach((inetAddress) -> {
+          if (inetAddress instanceof Inet4Address) {
+            list.add(inetAddress);
+          }
+        });
+      } else if (adapterName.equals("::")) {
+        list.addAll(networkInterfaceState.getIpAddresses());
+      }
+    });
+    return list;
+  }
+
   public List<InetAddress> getCurrentIpAddresses() {
     List<InetAddress> addresses = new ArrayList<>();
     getCurrentNetworkInterfaces().forEach((s, networkInterfaceState) -> addresses.addAll(networkInterfaceState.getIpAddresses()));
@@ -57,6 +95,10 @@ public class NetworkInterfaceMonitor implements Agent {
 
   public void addListener(Consumer<NetworkStateChange> listener) {
     listeners.add(listener);
+  }
+
+  public void removeListener(Consumer<NetworkStateChange> listener) {
+    listeners.remove(listener);
   }
 
   private void checkNetworkInterfaces() {
@@ -124,28 +166,5 @@ public class NetworkInterfaceMonitor implements Agent {
       logger.log(NETWORK_MONITOR_EXCEPTION, e);
     }
     return interfacesMap;
-  }
-
-  @Override
-  public String getName() {
-    return "Network Interface Monitor";
-  }
-
-  @Override
-  public String getDescription() {
-    return "Monitors system network interfaces and updates end points dependent on the network state";
-  }
-
-  @Override
-  public void start() {
-    lastInterfaces = getCurrentNetworkInterfaces();
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::checkNetworkInterfaces, 0, 30, TimeUnit.SECONDS);
-  }
-
-  @Override
-  public void stop() {
-    if (scheduledFuture != null) {
-      scheduledFuture.cancel(true);
-    }
   }
 }

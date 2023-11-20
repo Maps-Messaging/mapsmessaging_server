@@ -31,6 +31,7 @@ import java.util.List;
 @EqualsAndHashCode
 @ToString
 public class NetworkInterfaceState {
+
   private final String name;
   private final String displayName;
   private final boolean isUp;

@@ -18,5 +18,9 @@
 package io.mapsmessaging.network.monitor;
 
 public enum NetworkEvent {
-  ADDED, REMOVED, UP, DOWN, IP_CHANGED
+  ADDED,
+  REMOVED,
+  UP,
+  DOWN,
+  IP_CHANGED
 }
