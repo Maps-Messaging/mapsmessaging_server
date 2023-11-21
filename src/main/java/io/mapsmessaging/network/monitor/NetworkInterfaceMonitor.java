@@ -29,10 +29,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static io.mapsmessaging.logging.ServerLogMessages.NETWORK_MONITOR_EXCEPTION;
-import static io.mapsmessaging.logging.ServerLogMessages.NETWORK_MONITOR_STATE_CHANGE;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class NetworkInterfaceMonitor implements Agent {
+
+  private static final String IPv4_ALL_HOSTS = "0.0.0.0";
+  private static final String IPv6_ALL_HOSTS = "::";
 
   @Getter
   private static final NetworkInterfaceMonitor instance = new NetworkInterfaceMonitor();
@@ -59,6 +61,17 @@ public class NetworkInterfaceMonitor implements Agent {
   @Override
   public void start() {
     lastInterfaces = getCurrentNetworkInterfaces();
+    try {
+      Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+      while (interfaces.hasMoreElements()) {
+        NetworkInterface networkInterface = interfaces.nextElement();
+        if (networkInterface.isUp()) {
+          logger.log(NETWORK_MONITOR_DISCOVERED_DEVICES, networkInterface.getName(), networkInterface.getDisplayName());
+        }
+      }
+    } catch (SocketException e) {
+      // Ignore
+    }
     scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::checkNetworkInterfaces, 0, 30, TimeUnit.SECONDS);
   }
 
@@ -69,18 +82,24 @@ public class NetworkInterfaceMonitor implements Agent {
     }
   }
 
+  public boolean ipAddressMatches(String source, InetAddress test) {
+    return (source.equals(test.getHostAddress()) ||
+        test instanceof Inet4Address && source.equals(IPv4_ALL_HOSTS) ||
+        test instanceof Inet6Address && source.equals(IPv6_ALL_HOSTS));
+  }
+
   public List<InetAddress> getIpAddressByName(String adapterName) {
     List<InetAddress> list = new ArrayList<>();
     getCurrentNetworkInterfaces().forEach((s, networkInterfaceState) -> {
       if (networkInterfaceState.getName().equals(adapterName)) {
         list.addAll(networkInterfaceState.getIpAddresses());
-      } else if (adapterName.equals("0.0.0.0")) {
+      } else if (adapterName.equals(IPv4_ALL_HOSTS)) {
         networkInterfaceState.getIpAddresses().forEach((inetAddress) -> {
           if (inetAddress instanceof Inet4Address) {
             list.add(inetAddress);
           }
         });
-      } else if (adapterName.equals("::")) {
+      } else if (adapterName.equals(IPv6_ALL_HOSTS)) {
         list.addAll(networkInterfaceState.getIpAddresses());
       }
     });
@@ -132,10 +151,12 @@ public class NetworkInterfaceMonitor implements Agent {
       List<InetAddress> oldAddresses = oldInterface.getIpAddresses();
       List<InetAddress> newAddresses = newInterface.getIpAddresses();
       if (oldAddresses.size() != newAddresses.size()) {
+        notifyListeners(new NetworkStateChange(NetworkEvent.DOWN, oldInterface));
         notifyListeners(new NetworkStateChange(NetworkEvent.IP_CHANGED, newInterface));
       } else {
         for (int i = 0; i < oldAddresses.size(); i++) {
           if (!Arrays.equals(oldAddresses.get(i).getAddress(), newAddresses.get(i).getAddress())) {
+            notifyListeners(new NetworkStateChange(NetworkEvent.DOWN, oldInterface));
             notifyListeners(new NetworkStateChange(NetworkEvent.IP_CHANGED, newInterface));
           }
         }
