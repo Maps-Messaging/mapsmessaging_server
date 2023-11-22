@@ -667,6 +667,8 @@ public enum ServerLogMessages implements LogMessage {
   NETWORK_MONITOR_STATE_CHANGE(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Network interface {} changed state to {}"),
   NETWORK_MONITOR_DISCOVERED_DEVICES(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Discovered {} network device as {}"),
   NETWORK_MONITOR_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Network monitor raised exception {}"),
+  NETWORK_MONITOR_RESOLVE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Failed to resolve host name {} "),
+  NETWORK_MONITOR_RESOLVE_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Successfully resolved host name {} to {}"),
   //</editor-fold>
 
   //-------------------------------------------------------------------------------------------------------------

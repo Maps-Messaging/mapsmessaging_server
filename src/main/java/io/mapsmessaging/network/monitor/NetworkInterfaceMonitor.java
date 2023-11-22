@@ -103,6 +103,19 @@ public class NetworkInterfaceMonitor implements Agent {
         list.addAll(networkInterfaceState.getIpAddresses());
       }
     });
+    if (list.isEmpty()) {
+      try {
+        InetAddress inetAddress = InetAddress.getByName(adapterName);
+        if (inetAddress != null) {
+          list.add(inetAddress);
+          logger.log(NETWORK_MONITOR_RESOLVE_SUCCESS, adapterName, inetAddress.getHostAddress());
+        } else {
+          logger.log(NETWORK_MONITOR_RESOLVE_ERROR, adapterName);
+        }
+      } catch (UnknownHostException e) {
+        logger.log(NETWORK_MONITOR_RESOLVE_ERROR, adapterName, e);
+      }
+    }
     return list;
   }
 
