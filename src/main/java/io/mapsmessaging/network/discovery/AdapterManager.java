@@ -38,6 +38,7 @@ import java.util.Map;
 public class AdapterManager {
 
   private final Logger logger;
+  private final String domainName;
   private final String serverName;
   private final JmDNS mDNSAgent;
   private final Map<EndPointServer, List<ServiceInfo>> endPointList;
@@ -46,11 +47,15 @@ public class AdapterManager {
   @Getter
   private final String adapter;
 
-  public AdapterManager(String adapter, String serverName, JmDNS agent, boolean stampMeta) {
+  public AdapterManager(String adapter, String serverName, JmDNS agent, boolean stampMeta, String domainName) {
     this.serverName = serverName;
     this.adapter = adapter;
     this.mDNSAgent = agent;
     this.stampMeta = stampMeta;
+    if (!domainName.startsWith(".")) {
+      domainName = "." + domainName;
+    }
+    this.domainName = domainName;
     logger = LoggerFactory.getLogger(AdapterManager.class);
     endPointList = new LinkedHashMap<>();
   }
@@ -88,7 +93,7 @@ public class AdapterManager {
         map.put("server name", MessageDaemon.getInstance().getId());
         map.put("date", BuildInfo.getBuildDate());
       }
-      String service = "_" + lowerProtocol + "._"+transport+"._local";
+      String service = "_" + lowerProtocol + "._" + transport + domainName;
       ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, url.getPort(), 0, 0, map);
       serviceInfoList.add(serviceInfo);
     }
