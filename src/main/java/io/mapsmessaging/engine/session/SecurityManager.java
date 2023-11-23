@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
 import io.mapsmessaging.engine.session.security.JaasSecurityContext;
 import io.mapsmessaging.engine.session.security.SaslSecurityContext;
@@ -65,8 +66,12 @@ public class SecurityManager implements Agent {
       context = new SaslSecurityContext(username, endPointPrincipal);
     }
     else if (defined != null) {
-      LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal);
-      context = new JaasSecurityContext(username, loginContext);
+      if (AuthManager.getInstance().isAuthenticationEnabled()) {
+        LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal);
+        context = new JaasSecurityContext(username, loginContext);
+      } else {
+        context = new AnonymousSecurityContext(endPointPrincipal);
+      }
     }
     else {
       context = new AnonymousSecurityContext(endPointPrincipal);
