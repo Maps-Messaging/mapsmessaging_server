@@ -80,7 +80,7 @@ public class HawtioManager implements Agent {
 
     private void register() {
       if (properties.getBooleanProperty("discoverable", false)) {
-        String service = "_http._tcp.local.";
+        String service = "_http._tcp.local";
         try {
           MessageDaemon.getInstance().getDiscoveryManager().register(properties.getProperty("hostname", "0.0.0.0"), service, "hawtio", 8080, "/hawtio/");
         } catch (Exception e) {

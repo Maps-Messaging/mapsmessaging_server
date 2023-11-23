@@ -57,6 +57,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   private final List<AdapterManager> boundedNetworks;
   private final ConfigurationProperties properties;
   private final boolean stampMeta;
+  private final String domainName;
   @Getter
   private final boolean enabled;
 
@@ -67,6 +68,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
     properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
     enabled = properties.getBooleanProperty("enabled", true);
     stampMeta = properties.getBooleanProperty("addTxtRecords", false);
+    domainName = properties.getProperty("domainName", ".local");
   }
 
   public void registerListener(String type, ServiceListener listener){
@@ -122,7 +124,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   }
 
   private AdapterManager bindInterface(InetAddress homeAddress, boolean stampMeta) throws IOException {
-    return new AdapterManager(homeAddress.getHostAddress(), serverName, JmDNS.create(homeAddress, serverName), stampMeta);
+    return new AdapterManager(homeAddress.getHostAddress(), serverName, JmDNS.create(homeAddress, serverName), stampMeta, domainName);
   }
 
   public ServiceInfo[] register(RestApiServerManager restApiServerManager) {
