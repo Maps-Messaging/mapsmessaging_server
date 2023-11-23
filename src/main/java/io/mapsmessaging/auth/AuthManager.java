@@ -35,7 +35,10 @@ public class AuthManager implements Agent {
 
   private final Logger logger;
   private final ConfigurationProperties properties;
+
+  @Getter
   private final boolean authenticationEnabled;
+  @Getter
   private final boolean authorisationEnabled;
 
   private final IdentityLookup identityLookup;
