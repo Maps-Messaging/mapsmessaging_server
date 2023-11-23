@@ -19,6 +19,7 @@ package io.mapsmessaging;
 
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
+import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
@@ -156,6 +157,7 @@ public class MessageDaemon {
     SecurityManager securityManager = new SecurityManager();
     DestinationManager destinationManager = new DestinationManager();
 
+    addToMap(10, 2000, AuthManager.getInstance());
     addToMap(50, 1100, SchemaManager.getInstance());
     addToMap(80, 20, NetworkInterfaceMonitor.getInstance());
     addToMap(100, 900, TransactionManager.getInstance());

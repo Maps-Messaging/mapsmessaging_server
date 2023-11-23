@@ -71,7 +71,7 @@ public class InstanceConfig {
       serverName = obj.serverName;
       creationDate = obj.creationDate;
     } catch (FileNotFoundException e) {
-//      throw new RuntimeException(e);
+      // Not a big deal, since it might be the first run
     }
   }
 
