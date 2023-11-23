@@ -914,7 +914,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.1.0</version>
+      <version>6.1.1</version>
       <scope>test</scope>
     </dependency>
 
