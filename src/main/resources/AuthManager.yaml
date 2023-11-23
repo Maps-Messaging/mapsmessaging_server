@@ -17,8 +17,8 @@
 #-----------------------------------------------------------------------------
 ---
 AuthManager:
-  authenticationEnabled: true  # connections will be authorised according to the config
-  authorizationEnabled: true   # Requestes will be authorised according to the access control list for the resource
+  authenticationEnabled: false  # connections will be authorised according to the config
+  authorizationEnabled: false   # Requestes will be authorised according to the access control list for the resource
   config:
     defaultMechanism: SHA-512
     identityProvider: "Apache-Basic-Auth"

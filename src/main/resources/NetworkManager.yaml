@@ -90,31 +90,12 @@ NetworkManager:
 
     data:
 
-      -
-        name: "MQTT Interface"
+      - name: "Open Interface"
         url: tcp://:::9000/
         protocol : all
         selectorThreadCount : 5
+        auth: default
 
-      -
-        name: "MQTT Interface"
-        url: tcp://:::1883/
-        protocol : mqtt
-
-      -
-        name: "MQTT Interface"
-        url: tcp://:::2883/
-        protocol : mqtt
-
-      -
-        name: "Stomp Interface"
-        url: tcp://:::8675/
-        protocol : stomp
-
-      - url: tcp://:::5672/
-        name: "AMQP Interface"
-        protocol : amqp
-        SaslMechanisms : ANONYMOUS, CRAM_MD5, DIGEST-MD5, GSSAPI, NTLM
 
       - url: udp://:::1884/
         name: "MQTT-SN Interface"
@@ -125,31 +106,13 @@ NetworkManager:
         sasl:
           mechanism: SCRAM-SHA-512
           identityProvider: htpassword
-          passwordFile: htpasswd
-
+          passwordFile: ./security/htpassword
 
       - url: udp://:::5683/
         name: "CoAP Interface"
         protocol: coap
         maxBlockSize: 512
         idleTimePeriod: 120
-
-
-      - url: udp://:::2442/
-        name: "V2 predefined"
-        protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 5
-        maxTopicsInSleep: 10
-        advertiseGateway: true
-        preDefinedTopics:
-          -
-            id: 1
-            topic: predefined/topic
-            address: '*'
-          -
-            id: 1
-            topic: predefined/localhost/topic
-            address: '127.0.0.1'
 
       - url: udp://:::1700/
         name: "SemTech Gateway"

@@ -16,3 +16,4 @@
 
 ---
 SecurityManager:
+  - default: DefaultLoginAuth

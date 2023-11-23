@@ -53,7 +53,7 @@ public class InitialStateHelper {
           salt = passwordParser.getKey() + salt;
           byte[] hash = passwordParser.computeHash(password.getBytes(), salt.getBytes(), passwordParser.getCost());
           try (FileOutputStream fileOutputStream = new FileOutputStream(passwordFile)) {
-            fileOutputStream.write(("admin" + ":" + new String(hash)).getBytes());
+            fileOutputStream.write(("admin" + ":" + new String(hash) + "\n").getBytes());
           } catch (Exception e) {
             //throw new RuntimeException(e);
           }
@@ -61,10 +61,16 @@ public class InitialStateHelper {
         }
         if (!groupFile.exists()) {
           try (FileOutputStream fileOutputStream = new FileOutputStream(groupFile)) {
-            fileOutputStream.write(("admin:admin").getBytes());
+            fileOutputStream.write(("admin:admin\n").getBytes());
           } catch (Exception e) {
             //throw new RuntimeException(e);
           }
+        }
+        try {
+          FileOutputStream fileOutputStream = new FileOutputStream(new File(file, "Site_Password.txt"));
+          fileOutputStream.write(("Username:admin\nPassword:" + password + "\n").getBytes());
+        } catch (Exception e) {
+          //throw new RuntimeException(e);
         }
       }
     }
