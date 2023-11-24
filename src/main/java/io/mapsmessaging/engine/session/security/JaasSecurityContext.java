@@ -17,13 +17,19 @@
 
 package io.mapsmessaging.engine.session.security;
 
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.QuotaPrincipal;
+import io.mapsmessaging.auth.registry.Quotas;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import java.io.IOException;
+import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
+
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.UUID;
 
 public class JaasSecurityContext extends SecurityContext {
 
@@ -41,6 +47,16 @@ public class JaasSecurityContext extends SecurityContext {
     try {
       loginContext.login();
       subject = loginContext.getSubject();
+      UUID userId = subject.getPrincipals(UniqueIdentifierPrincipal.class).stream()
+          .findFirst()
+          .map(UniqueIdentifierPrincipal::getAuthId)
+          .orElse(null);
+      if (userId != null) {
+        Quotas quotas = AuthManager.getInstance().getQuota(userId);
+        if (quotas != null) {
+          subject.getPrincipals().add(new QuotaPrincipal(quotas));
+        }
+      }
       logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
       isLoggedIn = true;
     } catch (LoginException e) {

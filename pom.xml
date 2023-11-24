@@ -861,6 +861,14 @@
     </dependency>
 
 
+    <!-- https://mvnrepository.com/artifact/org.mapdb/mapdb -->
+    <dependency>
+      <groupId>org.mapdb</groupId>
+      <artifactId>mapdb</artifactId>
+      <version>3.0.10</version>
+    </dependency>
+
+
     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
     <dependency>
       <groupId>com.amazonaws</groupId>

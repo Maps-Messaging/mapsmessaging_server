@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.auth;
+package io.mapsmessaging.auth.registry;
 
 import java.security.SecureRandom;
 import java.util.stream.Collectors;
