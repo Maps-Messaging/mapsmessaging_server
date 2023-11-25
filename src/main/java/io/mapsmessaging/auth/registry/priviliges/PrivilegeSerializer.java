@@ -28,6 +28,9 @@ public class PrivilegeSerializer implements Serializer<SessionPrivileges> {
       } else if (p instanceof LongPrivilege) {
         dataOutput2.writeInt(1);
         dataOutput2.writeLong(((LongPrivilege) p).getValue());
+      } else if (p instanceof StringPrivilege) {
+        dataOutput2.writeInt(2);
+        dataOutput2.writeUTF(((StringPrivilege) p).getValue());
       }
     }
   }
@@ -43,8 +46,10 @@ public class PrivilegeSerializer implements Serializer<SessionPrivileges> {
       int type = dataInput2.readInt();
       if (type == 0) {
         list.add(new BooleanPrivilege(name, dataInput2.readBoolean()));
-      } else {
+      } else if (type == 1) {
         list.add(new LongPrivilege(name, dataInput2.readLong()));
+      } else if (type == 2) {
+        list.add(new StringPrivilege(name, dataInput2.readUTF()));
       }
     }
     return new SessionPrivileges(id, user, list);
