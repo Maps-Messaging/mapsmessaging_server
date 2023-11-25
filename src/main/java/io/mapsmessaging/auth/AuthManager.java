@@ -19,7 +19,7 @@ package io.mapsmessaging.auth;
 
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
-import io.mapsmessaging.auth.registry.Quotas;
+import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.identity.IdentityLookup;
@@ -71,7 +71,7 @@ public class AuthManager implements Agent {
       if (!authenticationStorage.getUserFile().exists()) {
         password = PasswordGenerator.generateRandomPassword(12);
         String username = "admin";
-        addUser(username, password, Quotas.createAdminQuota(username), new String[]{username});
+        addUser(username, password, SessionPrivileges.createAdminQuota(username), new String[]{username});
         String path = properties.getProperty("configDirectory", "./security");
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(path + File.separator + "admin_password", true))) {
@@ -108,7 +108,7 @@ public class AuthManager implements Agent {
     }
   }
 
-  public boolean addUser(String username, String password, Quotas quotas, String[] groups) {
+  public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
     if (identityLookup == null || identityLookup.findEntry(username) == null) {
       if (!quotas.getUsername().equalsIgnoreCase(username)) {
         // ToDo we need to check the quotas are valid
@@ -133,7 +133,7 @@ public class AuthManager implements Agent {
     authenticationStorage = new AuthenticationStorage(properties.getProperty("configDirectory", "./security"));
   }
 
-  public Quotas getQuota(UUID userId) {
+  public SessionPrivileges getQuota(UUID userId) {
     return authenticationStorage.getQuota(userId);
   }
 }

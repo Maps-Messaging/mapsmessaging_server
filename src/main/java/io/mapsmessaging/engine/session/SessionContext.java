@@ -43,7 +43,6 @@ public class SessionContext {
   private String username;
   private char[] password;
   private int receiveMaximum;
-  private int duration;
   private boolean isRestored;
   private boolean resetState;
   private boolean persistentSession;
@@ -55,7 +54,6 @@ public class SessionContext {
     expiry = -1;
     receiveMaximum = (1 << 16) - 1;
     isRestored = false;
-    duration = -1;
     uniqueId = UUID.randomUUID().toString();
   }
 }

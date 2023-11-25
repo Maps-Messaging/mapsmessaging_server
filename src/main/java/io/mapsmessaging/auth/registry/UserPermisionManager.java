@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.auth.registry;
 
+import io.mapsmessaging.auth.registry.priviliges.PrivilegeSerializer;
+import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
@@ -27,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class UserPermisionManager implements Closeable {
 
-  private final ConcurrentMap<UUID, Quotas> store;
+  private final ConcurrentMap<UUID, SessionPrivileges> store;
   private final DB db;
 
   public UserPermisionManager(String fileName) {
@@ -40,16 +42,16 @@ public class UserPermisionManager implements Closeable {
         .make();
 
     db.getStore().fileLoad();
-    store = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new Quotas()).createOrOpen();
+    store = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
   }
 
 
-  public void add(Quotas userDetails) {
-    store.put(userDetails.getUuid(), userDetails);
+  public void add(SessionPrivileges userDetails) {
+    store.put(userDetails.getUniqueId(), userDetails);
   }
 
-  public void update(Quotas userDetails) {
-    store.put(userDetails.getUuid(), userDetails);
+  public void update(SessionPrivileges userDetails) {
+    store.put(userDetails.getUniqueId(), userDetails);
   }
 
   public void delete(UUID uuid) {
@@ -61,7 +63,7 @@ public class UserPermisionManager implements Closeable {
     db.close();
   }
 
-  public Quotas get(UUID userId) {
+  public SessionPrivileges get(UUID userId) {
     return store.get(userId);
   }
 }

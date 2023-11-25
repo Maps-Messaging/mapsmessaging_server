@@ -19,7 +19,7 @@ package io.mapsmessaging.engine.session.security;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.QuotaPrincipal;
-import io.mapsmessaging.auth.registry.Quotas;
+import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -52,9 +52,9 @@ public class JaasSecurityContext extends SecurityContext {
           .map(UniqueIdentifierPrincipal::getAuthId)
           .orElse(null);
       if (userId != null) {
-        Quotas quotas = AuthManager.getInstance().getQuota(userId);
-        if (quotas != null) {
-          subject.getPrincipals().add(new QuotaPrincipal(quotas));
+        SessionPrivileges session = AuthManager.getInstance().getQuota(userId);
+        if (session != null) {
+          subject.getPrincipals().add(new QuotaPrincipal(session, null));
         }
       }
       logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);

@@ -135,7 +135,6 @@ public class SessionContextBuilder {
     sc.setWillDelay(willDelay);
     sc.setExpiry(sessionExpiry);
     sc.setReceiveMaximum(receiveMaximum);
-    sc.setDuration(duration);
     sc.setAuthorized(authorized);
     return sc;
   }

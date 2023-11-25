@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.auth.registry;
 
+import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
 import io.mapsmessaging.security.access.mapping.GroupMapManagement;
 import io.mapsmessaging.security.access.mapping.UserMapManagement;
 import io.mapsmessaging.security.identity.IdentityEntry;
@@ -61,11 +62,11 @@ public class AuthenticationStorage implements Closeable {
   }
 
 
-  public boolean addUser(String username, String password, Quotas quotas, String[] groups) {
+  public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
     try {
       UUID uuid = userFile.addUser(username, password);
       groupFile.addGroup(username, groups);
-      quotas.setUuid(uuid);
+      quotas.setUniqueId(uuid);
       userPermisionManager.add(quotas);
       return true;
     } catch (IOException e) {
@@ -103,7 +104,7 @@ public class AuthenticationStorage implements Closeable {
     userPermisionManager.close();
   }
 
-  public Quotas getQuota(UUID userId) {
+  public SessionPrivileges getQuota(UUID userId) {
     return userPermisionManager.get(userId);
   }
 }

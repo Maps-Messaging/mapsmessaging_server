@@ -17,7 +17,8 @@
 
 package io.mapsmessaging.auth;
 
-import io.mapsmessaging.auth.registry.Quotas;
+import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
+import io.mapsmessaging.auth.registry.priviliges.subscription.SubscriptionPrivileges;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -29,10 +30,15 @@ import java.security.Principal;
 public class QuotaPrincipal implements Principal {
 
   @Getter
-  private final Quotas quotas;
+  private final SessionPrivileges sessionPrivileges;
 
-  public QuotaPrincipal(Quotas quotas) {
-    this.quotas = quotas;
+  @Getter
+  private final SubscriptionPrivileges subscriptionPrivileges;
+
+
+  public QuotaPrincipal(SessionPrivileges sessionPrivileges, SubscriptionPrivileges subscriptionPrivileges) {
+    this.sessionPrivileges = sessionPrivileges;
+    this.subscriptionPrivileges = subscriptionPrivileges;
   }
 
   @Override
