@@ -22,8 +22,6 @@ import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.security.identity.IdentityLookup;
-import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -50,8 +48,6 @@ public class AuthManager implements Agent {
   @Getter
   private final boolean authorisationEnabled;
 
-  private IdentityLookup identityLookup;
-
   @Override
   public String getName() {
     return "AuthManager";
@@ -66,13 +62,12 @@ public class AuthManager implements Agent {
   public void start() {
     if (authenticationEnabled) {
       Map<String, Object> config = ((ConfigurationProperties) properties.get("config")).getMap();
-      String authProvider = config.get("identityProvider").toString().trim();
       String password = null;
-      if (!authenticationStorage.getUserFile().exists()) {
+      if (!authenticationStorage.isExisted()) {
         password = PasswordGenerator.generateRandomPassword(12);
         String username = "admin";
         addUser(username, password, SessionPrivileges.createAdminQuota(username), new String[]{username});
-        String path = properties.getProperty("configDirectory", "./security");
+        String path = config.get("configDirectory").toString();
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(path + File.separator + "admin_password", true))) {
           bw.write("admin=" + password);
@@ -81,20 +76,13 @@ public class AuthManager implements Agent {
           e.printStackTrace();
         }
       }
-      identityLookup = IdentityLookupFactory.getInstance().get(authProvider, config);
       if (password != null) {
-        if (authenticationStorage.validateUser("admin", password, identityLookup)) {
+        if (authenticationStorage.validateUser("admin", password)) {
           System.err.println("Successfully added admin");
         } else {
           System.err.println("Failed to add admin");
         }
       }
-
-    } else {
-      identityLookup = null;
-    }
-    if (identityLookup == null) {
-      // todo log the fact we have not authentication
     }
 
   }
@@ -109,20 +97,11 @@ public class AuthManager implements Agent {
   }
 
   public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
-    if (identityLookup == null || identityLookup.findEntry(username) == null) {
-      if (!quotas.getUsername().equalsIgnoreCase(username)) {
-        // ToDo we need to check the quotas are valid
-      }
-      return authenticationStorage.addUser(username, password, quotas, groups);
-    }
-    return false;
+    return authenticationStorage.addUser(username, password, quotas, groups);
   }
 
   public boolean delUser(String username) {
-    if (identityLookup.findEntry(username) != null) {
-      return authenticationStorage.delUser(username);
-    }
-    return false;
+    return authenticationStorage.delUser(username);
   }
 
   private AuthManager() {
@@ -130,7 +109,8 @@ public class AuthManager implements Agent {
     properties = ConfigurationManager.getInstance().getProperties("AuthManager");
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", false);
     authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
-    authenticationStorage = new AuthenticationStorage(properties.getProperty("configDirectory", "./security"));
+    ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
+    authenticationStorage = new AuthenticationStorage(config);
   }
 
   public SessionPrivileges getQuota(UUID userId) {

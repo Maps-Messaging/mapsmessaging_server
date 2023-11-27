@@ -17,32 +17,17 @@
 
 package io.mapsmessaging.auth.registry;
 
-import io.mapsmessaging.auth.registry.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
 
-public class UserPermisionManager implements Closeable {
+public class UserPermisionManager {
 
-  private final ConcurrentMap<UUID, SessionPrivileges> store;
-  private final DB db;
+  private final Map<UUID, SessionPrivileges> store;
 
-  public UserPermisionManager(String fileName) {
-    db = DBMaker.fileDB(fileName)
-        .checksumStoreEnable()
-        .fileChannelEnable()
-        .fileMmapEnableIfSupported()
-        .fileMmapPreclearDisable()
-        .closeOnJvmShutdown()
-        .make();
-
-    db.getStore().fileLoad();
-    store = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
+  public UserPermisionManager(Map<UUID, SessionPrivileges> map) {
+    store = map;
   }
 
 
@@ -56,11 +41,6 @@ public class UserPermisionManager implements Closeable {
 
   public void delete(UUID uuid) {
     store.remove(uuid);
-  }
-
-  @Override
-  public void close() throws IOException {
-    db.close();
   }
 
   public SessionPrivileges get(UUID userId) {

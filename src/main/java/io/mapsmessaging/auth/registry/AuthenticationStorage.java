@@ -17,55 +17,74 @@
 
 package io.mapsmessaging.auth.registry;
 
+import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
+import io.mapsmessaging.auth.registry.mapping.IdDbStore;
+import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
+import io.mapsmessaging.auth.registry.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
-import io.mapsmessaging.security.access.mapping.GroupMapManagement;
-import io.mapsmessaging.security.access.mapping.UserMapManagement;
+import io.mapsmessaging.security.access.IdentityAccessManager;
+import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.identity.IdentityEntry;
-import io.mapsmessaging.security.identity.IdentityLookup;
 import io.mapsmessaging.security.identity.parsers.PasswordParser;
 import io.mapsmessaging.security.identity.parsers.bcrypt.BCrypt2yPasswordParser;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 
 public class AuthenticationStorage implements Closeable {
 
-  @Getter
-  private final UserFileManager userFile;
-  @Getter
-  private final GroupFileManager groupFile;
-
-  private final PasswordParser passwordParser;
-  private final UserMapManagement userMapManagement;
-  private final GroupMapManagement groupMapManagement;
+  private final IdentityAccessManager identityAccessManager;
+  private final PasswordParser globalPasswordParser;
   private final UserPermisionManager userPermisionManager;
+  private final DB db;
+  @Getter
+  private final boolean existed;
 
-  public AuthenticationStorage(String securityDirectory) {
+  public AuthenticationStorage(ConfigurationProperties config) {
+    String securityDirectory = config.getProperty("configDirectory", "./.security");
     if (securityDirectory != null) {
       File file = new File(securityDirectory);
       if (!file.exists()) {
         file.mkdirs();
       }
     }
-    userMapManagement = new UserMapManagement(securityDirectory + File.separator + ".userMap");
-    groupMapManagement = new GroupMapManagement(securityDirectory + File.separator + ".groupMap");
-    UserMapManagement.setGlobalInstance(userMapManagement);
-    GroupMapManagement.setGlobalInstance(groupMapManagement);
-    passwordParser = new BCrypt2yPasswordParser();
-    this.groupFile = new GroupFileManager(securityDirectory + File.separator + ".htgroup", groupMapManagement);
-    this.userFile = new UserFileManager(securityDirectory + File.separator + ".htpassword", passwordParser, userMapManagement);
-    userPermisionManager = new UserPermisionManager(securityDirectory + File.separator + ".userPermissions");
-  }
 
+    existed = new File(securityDirectory + File.separator + ".auth.db").exists();
+    db = DBMaker.fileDB(securityDirectory + File.separator + ".auth.db")
+        .checksumStoreEnable()
+        .fileChannelEnable()
+        .fileMmapEnableIfSupported()
+        .fileMmapPreclearDisable()
+        .closeOnJvmShutdown()
+        .make();
+    db.getStore().fileLoad();
+    Map<UUID, UserIdMap> userMapSet = db.hashMap("userIdMap", new UUIDSerializer(), new UserIdSerializer()).createOrOpen();
+    Map<UUID, GroupIdMap> groupMapSet = db.hashMap("groupIdMap", new UUIDSerializer(), new GroupIdSerializer()).createOrOpen();
+    Map<UUID, SessionPrivileges> sessionPrivilegesMap = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
+    String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
+
+    identityAccessManager = new IdentityAccessManager(authProvider, Map.of("configDirectory", securityDirectory), new IdDbStore<UserIdMap>(userMapSet), new IdDbStore<GroupIdMap>(groupMapSet));
+    globalPasswordParser = new BCrypt2yPasswordParser();
+    userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
+  }
 
   public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
     try {
-      UUID uuid = userFile.addUser(username, password);
-      groupFile.addGroup(username, groups);
+      UserIdMap userIdMap = identityAccessManager.createUser(username, password, globalPasswordParser);
+      UUID uuid = userIdMap.getAuthId();
+      for (String group : groups) {
+        identityAccessManager.createGroup(group);
+        identityAccessManager.addUserToGroup(username, group);
+      }
       quotas.setUniqueId(uuid);
       userPermisionManager.add(quotas);
       return true;
@@ -77,10 +96,11 @@ public class AuthenticationStorage implements Closeable {
 
   public boolean delUser(String username) {
     try {
-      UUID userId = userFile.getUserUUID(username);
-      userFile.deleteUser(username);
-      //groupFile.deleteGroup(username);
-      userPermisionManager.delete(userId);
+      UserIdMap userIdMap = identityAccessManager.getUser(username);
+      if (userIdMap != null) {
+        identityAccessManager.deleteUser(username);
+        userPermisionManager.delete(userIdMap.getAuthId());
+      }
       return true;
     } catch (IOException e) {
 
@@ -89,8 +109,8 @@ public class AuthenticationStorage implements Closeable {
   }
 
 
-  public boolean validateUser(String username, String password, IdentityLookup identityLookup) {
-    IdentityEntry identityEntry = identityLookup.findEntry(username);
+  public boolean validateUser(String username, String password) {
+    IdentityEntry identityEntry = identityAccessManager.getUserIdentity(username);
     if (identityEntry != null) {
       PasswordParser passwordParser = identityEntry.getPasswordParser();
       byte[] hash = passwordParser.computeHash(password.getBytes(), passwordParser.getSalt(), passwordParser.getCost());
@@ -101,7 +121,7 @@ public class AuthenticationStorage implements Closeable {
 
   @Override
   public void close() throws IOException {
-    userPermisionManager.close();
+    db.close();
   }
 
   public SessionPrivileges getQuota(UUID userId) {
