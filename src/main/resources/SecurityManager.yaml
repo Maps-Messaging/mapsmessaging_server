@@ -16,4 +16,6 @@
 
 ---
 SecurityManager:
-  - default: DefaultLoginAuth
+
+    default: PublicAuthConfig
+    usernamePassword: UsernamePasswordLoginModule

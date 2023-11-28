@@ -47,7 +47,7 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
         serverReadBufferSize :  10K
         serverWriteBufferSize : 10K
-        selectorThreadCount   : 1
+        selectorThreadCount: 2
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT Protocol configuration
@@ -90,14 +90,32 @@ NetworkManager:
 
     data:
 
-      - name: "Open Interface"
-        url: tcp://:::9000/
-        protocol : all
-        selectorThreadCount : 5
-        auth: default
+      - name: "AMQP Interface"
+        url: tcp://:::5672/
+        protocol: amqp
+        auth: usernamePassword
 
+      - name: "AMQPs Interface"
+        url: ssl://:::5671/
+        protocol: amqp
+        auth: usernamePassword
 
-      - url: udp://:::1884/
+      - name: "MQTT Interface"
+        url: tcp://:::1883/
+        protocol: mqtt
+        auth: usernamePassword
+
+      - name: "Stomp Interface"
+        url: tcp://:::61613/
+        protocol: stomp
+        auth: usernamePassword
+
+      - name: "Stomp Interface"
+        url: ssl://:::61614/
+        protocol: stomp
+        auth: usernamePassword
+
+      - url: udp://:::1883/
         name: "MQTT-SN Interface"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 5
@@ -106,9 +124,26 @@ NetworkManager:
         sasl:
           mechanism: SCRAM-SHA-512
           identityProvider: htpassword
-          passwordFile: ./security/htpassword
+          passwordFile: ./.security/htpassword
+
+      - url: dtls://:::8883/
+        name: "MQTT-SN Interface"
+        protocol: mqtt-sn
+        eventsPerTopicDuringSleep: 5
+        maxTopicsInSleep: 10
+        advertiseGateway: true
+        sasl:
+          mechanism: SCRAM-SHA-512
+          identityProvider: htpassword
+          passwordFile: ./.security/htpassword
 
       - url: udp://:::5683/
+        name: "CoAP Interface"
+        protocol: coap
+        maxBlockSize: 512
+        idleTimePeriod: 120
+
+      - url: dtls://:::5684/
         name: "CoAP Interface"
         protocol: coap
         maxBlockSize: 512

@@ -626,8 +626,8 @@ public enum ServerLogMessages implements LogMessage {
   DISCOVERY_DEREGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Deregistered mDNS service {}"),
   DISCOVERY_DEREGISTERED_ALL(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed all registered mDNS services"),
 
-  DISCOVERY_RESOLVED_REMOTE_SERVER(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Discovered remote server {} on {} using {}"),
-  DISCOVERY_REMOVED_REMOTE_SERVER(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed remote server {} on {} using {}"),
+  DISCOVERY_RESOLVED_REMOTE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.DISCOVERY, "Discovered remote server {} on {} using {}"),
+  DISCOVERY_REMOVED_REMOTE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.DISCOVERY, "Removed remote server {} on {} using {}"),
   //</editor-fold>
 
   //<editor-fold desc="CoAP, log messages">

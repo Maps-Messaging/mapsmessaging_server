@@ -74,6 +74,7 @@ NetworkManager:
         url: tcp://0.0.0.0:9000/
         protocol : all
         selectorThreadCount : 5
+        auth: default
 
       -
         url: udp://0.0.0.0:1884/
