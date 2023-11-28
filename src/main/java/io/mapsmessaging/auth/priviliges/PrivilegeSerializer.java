@@ -1,6 +1,5 @@
-package io.mapsmessaging.auth.registry.priviliges;
+package io.mapsmessaging.auth.priviliges;
 
-import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;

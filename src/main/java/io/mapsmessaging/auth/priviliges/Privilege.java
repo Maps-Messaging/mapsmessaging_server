@@ -1,4 +1,4 @@
-package io.mapsmessaging.auth.registry.priviliges;
+package io.mapsmessaging.auth.priviliges;
 
 import lombok.*;
 

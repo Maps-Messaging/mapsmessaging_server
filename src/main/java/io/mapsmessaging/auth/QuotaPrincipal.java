@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.auth;
 
-import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
-import io.mapsmessaging.auth.registry.priviliges.subscription.SubscriptionPrivileges;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
+import io.mapsmessaging.auth.priviliges.subscription.SubscriptionPrivileges;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;

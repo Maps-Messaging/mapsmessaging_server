@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.auth.registry.principal;
 
-import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 
 import java.security.Principal;
 

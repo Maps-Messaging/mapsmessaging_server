@@ -15,26 +15,20 @@
  *
  */
 
-package io.mapsmessaging.auth.registry.priviliges.session;
+package io.mapsmessaging.auth.priviliges;
 
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.auth.registry.priviliges.BooleanPrivilege;
-import io.mapsmessaging.auth.registry.priviliges.LongPrivilege;
-import io.mapsmessaging.auth.registry.priviliges.Privilege;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Data
-@AllArgsConstructor
 @ToString
-@EqualsAndHashCode
-public class SessionPrivileges {
+@EqualsAndHashCode(callSuper = false)
+@Getter
+@Setter
+public class SessionPrivileges extends Privilege {
 
   public static SessionPrivileges create(String username) {
     return new SessionPrivileges(username);
@@ -44,7 +38,15 @@ public class SessionPrivileges {
   private final String username;
   private final List<Privilege> priviliges;
 
+  public SessionPrivileges(UUID id, String username, List<Privilege> priviliges) {
+    super("session");
+    this.uniqueId = id;
+    this.username = username;
+    this.priviliges = priviliges;
+  }
+
   protected SessionPrivileges(String username) {
+    super("session");
     this.username = username;
     priviliges = new ArrayList<>();
     priviliges.add(new BooleanPrivilege("Admin", false));

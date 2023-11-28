@@ -18,7 +18,7 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import lombok.Data;
 import lombok.ToString;
 

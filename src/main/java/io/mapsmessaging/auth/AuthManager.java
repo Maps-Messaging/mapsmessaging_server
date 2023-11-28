@@ -19,7 +19,7 @@ package io.mapsmessaging.auth;
 
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
-import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;

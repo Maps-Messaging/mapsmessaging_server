@@ -19,7 +19,7 @@ package io.mapsmessaging.engine.session.security;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.QuotaPrincipal;
-import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
