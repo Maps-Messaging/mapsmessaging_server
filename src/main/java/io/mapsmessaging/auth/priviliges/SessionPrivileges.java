@@ -18,7 +18,10 @@
 package io.mapsmessaging.auth.priviliges;
 
 import io.mapsmessaging.api.features.QualityOfService;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +52,7 @@ public class SessionPrivileges extends Privilege {
     super("session");
     this.username = username;
     priviliges = new ArrayList<>();
-    priviliges.add(new BooleanPrivilege("Admin", false));
     priviliges.add(new BooleanPrivilege("AccessSystemTopics", true));
-    priviliges.add(new BooleanPrivilege("PublishRetainedMessages", true));
     priviliges.add(new BooleanPrivilege("ForceReset", false));
     priviliges.add(new BooleanPrivilege("AllowPersistentSession", true));
 

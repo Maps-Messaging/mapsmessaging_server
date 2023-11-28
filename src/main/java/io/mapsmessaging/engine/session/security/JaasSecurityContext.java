@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.session.security;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.QuotaPrincipal;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
+import io.mapsmessaging.auth.registry.principal.AccessIdPrincipal;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -59,6 +60,7 @@ public class JaasSecurityContext extends SecurityContext {
       }
       isLoggedIn = true;
       subject = AuthManager.getInstance().update(subject);
+      subject.getPrincipals().add(new AccessIdPrincipal(getAccessIds()));
       buildAccessIds();
       logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
     } catch (LoginException e) {

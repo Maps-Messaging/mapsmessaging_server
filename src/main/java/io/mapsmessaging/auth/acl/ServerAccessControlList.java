@@ -17,39 +17,31 @@
 
 package io.mapsmessaging.auth.acl;
 
+import io.mapsmessaging.security.access.AccessControlList;
+import io.mapsmessaging.security.access.AccessControlListParser;
 import io.mapsmessaging.security.access.AccessControlMapping;
+import io.mapsmessaging.security.access.AclEntry;
 
-public enum ServerAccessControl implements AccessControlMapping {
-  CONNECT,
-  ADMIN,
-  MANAGE;
+import java.util.List;
 
+public class ServerAccessControlList extends BaseAccessControlList {
 
-  private final long value;
+  public ServerAccessControlList() {
+  }
 
-  ServerAccessControl() {
-    this.value = 1L << this.ordinal(); // Shift 1 left by 'ordinal' positions
+  public ServerAccessControlList(List<AclEntry> aclEntries) {
+    super(aclEntries);
   }
 
   @Override
-  public Long getAccessValue(String accessControl) {
-    if (accessControl == null) {
-      return 0L;
-    }
-    try {
-      return valueOf(accessControl.toUpperCase()).value;
-    } catch (IllegalArgumentException e) {
-      return 0L;
-    }
+  public String getName() {
+    return "ServerAccessControlList";
   }
 
   @Override
-  public String getAccessName(long value) {
-    for (ServerAccessControl ac : values()) {
-      if (ac.value == value) {
-        return ac.name().toLowerCase();
-      }
-    }
-    return null;
+  public AccessControlList create(AccessControlMapping accessControlMapping, List<String> config) {
+    AccessControlListParser parser = new AccessControlListParser();
+    return new ServerAccessControlList(parser.createList(accessControlMapping, config));
   }
+
 }

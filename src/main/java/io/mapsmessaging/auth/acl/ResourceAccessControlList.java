@@ -1,30 +1,36 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.auth.acl;
 
-import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.AccessControlList;
 import io.mapsmessaging.security.access.AccessControlListParser;
 import io.mapsmessaging.security.access.AccessControlMapping;
 import io.mapsmessaging.security.access.AclEntry;
-import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import io.mapsmessaging.security.identity.principals.GroupIdPrincipal;
 
-import javax.security.auth.Subject;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
-public class ResourceAccessControlList implements AccessControlList {
-
-
-  private final List<AclEntry> aclEntries;
+public class ResourceAccessControlList extends BaseAccessControlList {
 
   public ResourceAccessControlList() {
-    aclEntries = new ArrayList<>();
   }
 
   public ResourceAccessControlList(List<AclEntry> aclEntries) {
-    this.aclEntries = new ArrayList<>(aclEntries);
+    super(aclEntries);
   }
 
   @Override
@@ -38,61 +44,4 @@ public class ResourceAccessControlList implements AccessControlList {
     return new ResourceAccessControlList(parser.createList(accessControlMapping, config));
   }
 
-  public long getSubjectAccess(Subject subject) {
-    long mask = 0;
-    if (subject != null) {
-      long time = System.currentTimeMillis();
-      UUID authId = SubjectHelper.getUniqueId(subject);
-      for (AclEntry aclEntry : aclEntries) {
-        if (!aclEntry.getExpiryPolicy().hasExpired(time) &&
-            aclEntry.matches(authId)) {
-          mask = mask | aclEntry.getPermissions();
-        }
-      }
-
-      // Scan the groups for access
-      Set<GroupIdPrincipal> groups = subject.getPrincipals(GroupIdPrincipal.class);
-      for (GroupIdPrincipal group : groups) {
-        for (GroupIdMap groupIdMap : group.getGroupIds()) {
-          for (AclEntry aclEntry : aclEntries) {
-            if (!aclEntry.getExpiryPolicy().hasExpired(time)
-                && aclEntry.matches(groupIdMap.getAuthId())) {
-              mask = mask | aclEntry.getPermissions();
-            }
-          }
-        }
-      }
-    }
-    return mask;
-  }
-
-  public boolean canAccess(Subject subject, long requestedAccess) {
-    if (subject == null || requestedAccess == 0) {
-      return false;
-    }
-    UUID authId = SubjectHelper.getUniqueId(subject);
-
-    // Scan for authId for access
-    for (AclEntry aclEntry : aclEntries) {
-      if ((aclEntry.getPermissions() & requestedAccess) == requestedAccess
-          && aclEntry.matches(authId)) {
-        return true;
-      }
-    }
-
-    // Scan the groups for access
-    Set<GroupIdPrincipal> groups = subject.getPrincipals(GroupIdPrincipal.class);
-    for (GroupIdPrincipal group : groups) {
-      for (GroupIdMap groupIdMap : group.getGroupIds()) {
-        for (AclEntry aclEntry : aclEntries) {
-          if ((aclEntry.getPermissions() & requestedAccess) == requestedAccess
-              && aclEntry.matches(groupIdMap.getAuthId())) {
-            return true;
-          }
-        }
-      }
-    }
-    // This means neither user nor group has access
-    return false;
-  }
 }
