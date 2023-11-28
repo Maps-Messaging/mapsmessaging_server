@@ -21,4 +21,4 @@ AuthManager:
   authorizationEnabled: true   # Requestes will be authorised according to the access control list for the resource
   config:
     identityProvider: "Apache-Basic-Auth"
-    configDirectory: ./security
+    configDirectory: ./.security
