@@ -59,6 +59,7 @@ public class JaasSecurityContext extends SecurityContext {
       }
       logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
       isLoggedIn = true;
+      subject = AuthManager.getInstance().update(subject);
     } catch (LoginException e) {
       logger.log(ServerLogMessages.SECURITY_MANAGER_FAILED_LOG_IN, username, e.getMessage());
       IOException ioException = new IOException(e.getMessage());

@@ -27,11 +27,11 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 
+import javax.security.auth.Subject;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Map;
 import java.util.UUID;
 
 
@@ -41,7 +41,7 @@ public class AuthManager implements Agent {
 
   private final Logger logger;
   private final ConfigurationProperties properties;
-  private final AuthenticationStorage authenticationStorage;
+  private AuthenticationStorage authenticationStorage;
 
   @Getter
   private final boolean authenticationEnabled;
@@ -61,17 +61,28 @@ public class AuthManager implements Agent {
   @Override
   public void start() {
     if (authenticationEnabled) {
-      Map<String, Object> config = ((ConfigurationProperties) properties.get("config")).getMap();
+      ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
       String password = null;
+      String userpassword = null;
+      authenticationStorage = new AuthenticationStorage(config);
+
       if (!authenticationStorage.isExisted()) {
         password = PasswordGenerator.generateRandomPassword(12);
         String username = "admin";
-        addUser(username, password, SessionPrivileges.createAdminQuota(username), new String[]{username});
+        addUser(username, password, SessionPrivileges.create(username), new String[]{username, "everyone"});
+
+        userpassword = PasswordGenerator.generateRandomPassword(12);
+        username = "user";
+        addUser(username, userpassword, SessionPrivileges.create(username), new String[]{"everyone"});
+
         String path = config.get("configDirectory").toString();
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(path + File.separator + "admin_password", true))) {
           bw.write("admin=" + password);
           bw.newLine(); // Add a newline character after each line
+          bw.write("user=" + userpassword);
+          bw.newLine(); // Add a newline character after each line
+
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -81,6 +92,11 @@ public class AuthManager implements Agent {
           System.err.println("Successfully added admin");
         } else {
           System.err.println("Failed to add admin");
+        }
+        if (authenticationStorage.validateUser("user", userpassword)) {
+          System.err.println("Successfully added user");
+        } else {
+          System.err.println("Failed to add user");
         }
       }
     }
@@ -104,13 +120,15 @@ public class AuthManager implements Agent {
     return authenticationStorage.delUser(username);
   }
 
+  public Subject update(Subject subject) {
+    return authenticationStorage.update(subject);
+  }
+
   private AuthManager() {
     logger = LoggerFactory.getLogger(AuthManager.class);
     properties = ConfigurationManager.getInstance().getProperties("AuthManager");
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", false);
     authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
-    ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
-    authenticationStorage = new AuthenticationStorage(config);
   }
 
   public SessionPrivileges getQuota(UUID userId) {

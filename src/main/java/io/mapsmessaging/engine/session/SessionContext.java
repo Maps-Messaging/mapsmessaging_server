@@ -18,6 +18,7 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
 import lombok.Data;
 import lombok.ToString;
 
@@ -55,5 +56,9 @@ public class SessionContext {
     receiveMaximum = (1 << 16) - 1;
     isRestored = false;
     uniqueId = UUID.randomUUID().toString();
+  }
+
+  public void update(SessionPrivileges sessionPrivileges) {
+
   }
 }

@@ -18,11 +18,12 @@
 package io.mapsmessaging.engine.session.security;
 
 import com.sun.security.auth.UserPrincipal;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
-import javax.security.auth.Subject;
 
 public abstract class SecurityContext {
 

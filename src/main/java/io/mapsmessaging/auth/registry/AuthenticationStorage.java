@@ -20,8 +20,10 @@ package io.mapsmessaging.auth.registry;
 import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
 import io.mapsmessaging.auth.registry.mapping.IdDbStore;
 import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
+import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
 import io.mapsmessaging.auth.registry.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.registry.priviliges.session.SessionPrivileges;
+import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.IdentityAccessManager;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
@@ -33,6 +35,7 @@ import lombok.Getter;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
+import javax.security.auth.Subject;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -82,7 +85,9 @@ public class AuthenticationStorage implements Closeable {
       UserIdMap userIdMap = identityAccessManager.createUser(username, password, globalPasswordParser);
       UUID uuid = userIdMap.getAuthId();
       for (String group : groups) {
-        identityAccessManager.createGroup(group);
+        if (identityAccessManager.getGroup(group) == null) {
+          identityAccessManager.createGroup(group);
+        }
         identityAccessManager.addUserToGroup(username, group);
       }
       quotas.setUniqueId(uuid);
@@ -126,5 +131,17 @@ public class AuthenticationStorage implements Closeable {
 
   public SessionPrivileges getQuota(UUID userId) {
     return userPermisionManager.get(userId);
+  }
+
+  public Subject update(Subject subject) {
+    Subject subject1 = identityAccessManager.updateSubject(subject);
+    UUID userId = SubjectHelper.getUniqueId(subject1);
+    if (userId != null) {
+      SessionPrivileges sessionPrivileges = userPermisionManager.get(userId);
+      if (sessionPrivileges != null) {
+        subject1.getPrincipals().add(new SessionPrivilegePrincipal(sessionPrivileges));
+      }
+    }
+    return subject1;
   }
 }
