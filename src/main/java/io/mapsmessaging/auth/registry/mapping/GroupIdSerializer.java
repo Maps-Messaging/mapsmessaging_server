@@ -41,6 +41,6 @@ public class GroupIdSerializer implements Serializer<GroupIdMap> {
     java.util.UUID id = new UUID(dataInput2.readLong(), dataInput2.readLong());
     String auth = dataInput2.readUTF();
     String group = dataInput2.readUTF();
-    return new GroupIdMap(id, auth, group);
+    return new GroupIdMap(id, group, auth);
   }
 }

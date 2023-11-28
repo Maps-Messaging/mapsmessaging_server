@@ -33,4 +33,10 @@ public class SessionPrivilegePrincipal implements Principal {
   public String getName() {
     return "SessionPrivilegePrincipal";
   }
+
+  @Override
+  public String toString() {
+    return "Session Privileges : " + privileges.toString();
+  }
+
 }
