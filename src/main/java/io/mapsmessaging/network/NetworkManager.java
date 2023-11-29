@@ -99,10 +99,8 @@ public class NetworkManager implements ServiceManager, Agent {
           try {
             EndPointManager endPointManager = new EndPointManager(endPointURL, endPointServerFactory, networkConfig, bean);
             endPointManagers.put(endPointURL.toString(), endPointManager);
-          } catch (IOException iox) {
+          } catch (IOException | RuntimeException iox) {
             logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());
-          } catch (RuntimeException runtimeException) {
-            logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, runtimeException, endPointURL.toString());
           }
         } else {
           logger.log(ServerLogMessages.NETWORK_MANAGER_DEVICE_NOT_LOADED, endPointServerFactory.getName());
@@ -135,7 +133,7 @@ public class NetworkManager implements ServiceManager, Agent {
 
   public void stopAll() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STOP_ALL);
-    for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
+    endPointManagers.entrySet().parallelStream().forEach(entry -> {
       try {
         EndPointManager endPointManager = entry.getValue();
         if (endPointManager.getState() != STATE.STOPPED) {
@@ -144,7 +142,7 @@ public class NetworkManager implements ServiceManager, Agent {
       } catch (IOException e) {
         logger.log(ServerLogMessages.NETWORK_MANAGER_STOP_FAILED, e, entry.getKey());
       }
-    }
+    });
   }
 
   public void pauseAll() {
