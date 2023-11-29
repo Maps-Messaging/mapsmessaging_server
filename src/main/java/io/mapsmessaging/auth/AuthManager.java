@@ -36,8 +36,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.WeakHashMap;
 
 
 public class AuthManager implements Agent {
@@ -53,6 +55,7 @@ public class AuthManager implements Agent {
   private final Logger logger;
   private final ConfigurationProperties properties;
   private AuthenticationStorage authenticationStorage;
+  private final Map<String, Subject> subjectMap = new WeakHashMap<>();
 
   @Getter
   private final boolean authenticationEnabled;
@@ -153,13 +156,17 @@ public class AuthManager implements Agent {
   }
 
   public Subject getUser(String username) {
-    Subject subject = new Subject();
-    Set<Principal> principalList = subject.getPrincipals();
-    UserIdMap map = authenticationStorage.findUser(username);
-    if (map != null) {
-      principalList.add(new UniqueIdentifierPrincipal(map.getAuthId()));
-      principalList.add(new UserPrincipal(username));
-      authenticationStorage.update(subject);
+    Subject subject = subjectMap.get(username);
+    if (subject == null) {
+      subject = new Subject();
+      Set<Principal> principalList = subject.getPrincipals();
+      UserIdMap map = authenticationStorage.findUser(username);
+      if (map != null) {
+        principalList.add(new UniqueIdentifierPrincipal(map.getAuthId()));
+        principalList.add(new UserPrincipal(username));
+        authenticationStorage.update(subject);
+      }
+      subjectMap.put(username, subject);
     }
     return subject;
   }
