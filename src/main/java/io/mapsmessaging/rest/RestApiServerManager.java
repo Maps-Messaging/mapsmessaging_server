@@ -137,12 +137,15 @@ public class RestApiServerManager implements Agent {
 
   public void startServer() {
     try {
-
       final ResourceConfig config = new ResourceConfig();
-      config.packages(true, "io.mapsmessaging.rest.api.impl", "io.mapsmessaging.rest.api", "io.mapsmessaging.rest.translation");
+      config.packages(true,
+          "io.swagger.v3.jaxrs2.integration.resources",
+          "io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource",
+          "io.mapsmessaging.rest.api.impl",
+          "io.mapsmessaging.rest.api",
+          "io.mapsmessaging.rest.translation"
+      );
       if(map.getBooleanProperty("enableSwagger", false)) {
-//        config.register(io.swagger.jaxrs.listing.ApiListingResource.class);
-//        config.register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
       }
       boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
       if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {

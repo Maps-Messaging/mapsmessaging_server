@@ -22,8 +22,7 @@ import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceInfo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -33,14 +32,14 @@ import java.util.List;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-@Api(value = URI_PATH + "/server/interface", tags="Server Interface Management")
+//@Api(value = URI_PATH + "/server/interface", tags="Server Interface Management")
 @Path(URI_PATH)
 public class InterfaceInstanceApi extends BaseRestApi {
 
   @GET
   @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Get the endpoint current status and configuration")
+  //@ApiOperation(value = "Get the endpoint current status and configuration")
   public InterfaceInfo getInterface(@PathParam("endpoint") String endpointName) {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
@@ -54,7 +53,7 @@ public class InterfaceInstanceApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interface/{endpoint}/stop")
-  @ApiOperation(value = "Stops the specified endpoint and closes existing connections")
+  //@ApiOperation(value = "Stops the specified endpoint and closes existing connections")
   public Response stopInterface(@PathParam("endpoint") String endpointName) {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
@@ -68,7 +67,7 @@ public class InterfaceInstanceApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interface/{endpoint}/start")
-  @ApiOperation(value = "Starts the specified endpoint")
+  //@ApiOperation(value = "Starts the specified endpoint")
   public Response startInterface(@PathParam("endpoint") String endpointName) {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
@@ -83,7 +82,7 @@ public class InterfaceInstanceApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interface/{endpoint}/resume")
-  @ApiOperation(value = "Resumes the specified endpoint if the endpoint had been paused")
+  //@ApiOperation(value = "Resumes the specified endpoint if the endpoint had been paused")
   public Response resumeInterface(@PathParam("endpoint") String endpointName) {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
@@ -97,7 +96,7 @@ public class InterfaceInstanceApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interface/{endpoint}/pause")
-  @ApiOperation(value = "Pauses the specified endpoint, existing connections are maintained but no new connections can be made")
+  //@ApiOperation(value = "Pauses the specified endpoint, existing connections are maintained but no new connections can be made")
   public Response pauseInterface(@PathParam("endpoint") String endpointName) {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {

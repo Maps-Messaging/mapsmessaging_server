@@ -22,8 +22,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.data.Destination;
 import io.mapsmessaging.rest.responses.DestinationResponse;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -38,14 +37,14 @@ import java.util.concurrent.TimeoutException;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-@Api(value = URI_PATH + "/server/destination", tags="Destination Management")
+//@Api(value = URI_PATH + "/server/destination", tags="Destination Management")
 @Path(URI_PATH)
 public class DestinationManagementApi extends BaseDestinationApi {
 
   @GET
   @Path("/server/destination/{destination}")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Get the specific destination details")
+  //@ApiOperation(value = "Get the specific destination details")
   public DestinationResponse getDestination(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException, IOException {
     Destination destination = lookupDestination(destinationName);
     return new DestinationResponse(request, destination);
@@ -54,7 +53,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @GET
   @Path("/server/destination")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Get all the destination configuration")
+  //@ApiOperation(value = "Get all the destination configuration")
   public DestinationResponse getAllDestinations() throws IOException, ExecutionException, InterruptedException, TimeoutException {
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
     List<Destination> results  = new ArrayList<>();

@@ -511,7 +511,6 @@
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
 
     <jersey.version>3.1.3</jersey.version>
-    <swagger.version>2.0.2</swagger.version>
     <swagger-ui.version>3.17.0</swagger-ui.version>
 
   </properties>
@@ -655,23 +654,16 @@
       <version>${jersey.version}</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-jakarta -->
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-jakarta</artifactId>
       <version>2.2.19</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-annotations</artifactId>
+      <artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
       <version>2.2.19</version>
-    </dependency>
-    <dependency>
-      <groupId>io.swagger</groupId>
-      <artifactId>swagger-annotations</artifactId>
-      <version>1.6.12</version>
     </dependency>
 
     <dependency>

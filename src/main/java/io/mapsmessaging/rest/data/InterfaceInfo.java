@@ -18,7 +18,6 @@
 package io.mapsmessaging.rest.data;
 
 import io.mapsmessaging.network.EndPointManager;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -29,23 +28,23 @@ import java.util.Map;
 public class InterfaceInfo implements Serializable {
 
   @Getter
-  @ApiModelProperty(value = "Unique name of the interface")
+//  @ApiModelProperty(value = "Unique name of the interface")
   private final String name;
 
   @Getter
-  @ApiModelProperty(value = "Port that the interface is bound to")
+//  @ApiModelProperty(value = "Port that the interface is bound to")
   private final int port;
 
   @Getter
-  @ApiModelProperty(value="Host that the interface is bound to")
+//  @ApiModelProperty(value="Host that the interface is bound to")
   private final String host;
 
   @Getter
-  @ApiModelProperty(value="Current state of the interface")
+  // @ApiModelProperty(value="Current state of the interface")
   private final String state;
 
   @Getter
-  @ApiModelProperty(value="Configuration for the interface")
+  // @ApiModelProperty(value="Configuration for the interface")
   private final Map<String, Object> config;
 
   public InterfaceInfo(EndPointManager endPointManager){

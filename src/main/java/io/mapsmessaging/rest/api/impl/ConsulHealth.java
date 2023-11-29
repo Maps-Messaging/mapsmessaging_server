@@ -18,21 +18,19 @@
 package io.mapsmessaging.rest.api.impl;
 
 import io.mapsmessaging.rest.api.BaseRestApi;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-@Api(value = "/health")
+//@Api(value = "/health")
 @Path("/health")
 public class ConsulHealth extends BaseRestApi {
 
 
   @GET
   @Produces({MediaType.TEXT_PLAIN})
-  @ApiOperation(value = "Simple request to test if the server is running")
+//  @ApiOperation(value = "Simple request to test if the server is running")
   public String getPing() {
     return "Ok";
   }

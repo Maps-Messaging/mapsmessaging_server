@@ -19,7 +19,7 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.rest.data.InterfaceInfo;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.*;
 import lombok.Getter;
 
 import javax.ws.rs.core.Request;
@@ -29,11 +29,11 @@ import java.util.Map;
 public class InterfaceDetailResponse extends BaseResponse {
 
   @Getter
-  @ApiModelProperty(value="List of interfaces")
+//  @ApiModelProperty(value="List of interfaces")
   private final List<InterfaceInfo> data;
 
   @Getter
-  @ApiModelProperty(value="Default values for all interfaces used unless overridden by the specific config")
+  //@ApiModelProperty(value="Default values for all interfaces used unless overridden by the specific config")
   private final Map<String, Object> globalConfig;
 
 

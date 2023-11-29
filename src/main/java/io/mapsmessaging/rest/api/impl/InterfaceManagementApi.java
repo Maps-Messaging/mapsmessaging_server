@@ -24,8 +24,7 @@ import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceInfo;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -38,14 +37,14 @@ import java.util.List;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-@Api(value = URI_PATH + "/server/interfaces", tags="Interface Management")
+//@Api(value = URI_PATH + "/server/interfaces", tags="Interface Management")
 @Path(URI_PATH)
 public class InterfaceManagementApi extends BaseRestApi {
 
   @GET
   @Path("/server/interfaces")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Retrieve a list of all configured interfaces")
+  //@ApiOperation(value = "Retrieve a list of all configured interfaces")
   public InterfaceDetailResponse getAllInterfaces() {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     List<InterfaceInfo> protocols = new ArrayList<>();
@@ -63,7 +62,7 @@ public class InterfaceManagementApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interfaces/stopAll")
-  @ApiOperation(value = "Stops all all configured interfaces")
+  //@ApiOperation(value = "Stops all all configured interfaces")
   public Response stopAllInterfaces() {
     MessageDaemon.getInstance().getNetworkManager().stopAll();
     return Response.ok().build();
@@ -71,7 +70,7 @@ public class InterfaceManagementApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interfaces/startAll")
-  @ApiOperation(value = "Starts all all configured interfaces")
+  //@ApiOperation(value = "Starts all all configured interfaces")
   public Response startAllInterfaces() {
     MessageDaemon.getInstance().getNetworkManager().startAll();
     return Response.ok().build();
@@ -79,7 +78,7 @@ public class InterfaceManagementApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interfaces/pauseAll")
-  @ApiOperation(value = "Pauses all all configured interfaces")
+  //@ApiOperation(value = "Pauses all all configured interfaces")
   public Response pauseAllInterfaces() {
     MessageDaemon.getInstance().getNetworkManager().pauseAll();
     return Response.ok().build();
@@ -88,7 +87,7 @@ public class InterfaceManagementApi extends BaseRestApi {
 
   @PUT
   @Path("/server/interfaces/resumeAll")
-  @ApiOperation(value = "Resumes all all configured interfaces")
+  //@ApiOperation(value = "Resumes all all configured interfaces")
   public Response resumeAllInterfaces() {
     MessageDaemon.getInstance().getNetworkManager().resumeAll();
     return Response.ok().build();

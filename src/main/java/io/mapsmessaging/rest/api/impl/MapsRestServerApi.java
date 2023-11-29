@@ -23,16 +23,22 @@ import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.info.License;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 
 import static io.mapsmessaging.BuildInfo.buildVersion;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-@SwaggerDefinition(
+@OpenAPIDefinition(
     info = @Info(
         description = "Maps Messaging Server Rest API, provides simple Rest API to manage the server",
         version = buildVersion,
@@ -47,9 +53,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
             url = "http://www.apache.org/licenses/LICENSE-2.0"
         )
     ),
-    consumes = {"application/json", "application/xml"},
-    produces = {"application/json", "application/xml"},
-    schemes = {SwaggerDefinition.Scheme.HTTP, SwaggerDefinition.Scheme.HTTPS},
+    //schemes = {SwaggerDefinition.Scheme.HTTP, SwaggerDefinition.Scheme.HTTPS},
     tags = {
         @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
         @Tag(name = "Destination Management", description = "Used to manage the destinations (topic/queues) and the subscriptions"),
@@ -59,16 +63,17 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
         @Tag(name = "Messaging Server API", description = "Global APIs to manage and query the server"),
 
     },
-    externalDocs = @ExternalDocs(value = "Maps Messaging", url = "https://www.mapsmessaging.io/")
+    externalDocs = @ExternalDocumentation(description = "Maps Messaging", url = "https://www.mapsmessaging.io/")
 )
-@Api(value = URI_PATH, tags="Messaging Server API")
+//@Api(value = URI_PATH, tags="Messaging Server API")
+
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
 
   @GET
   @Path("/ping")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Simple request to test if the server is running")
+  //@ApiOperation(value = "Simple request to test if the server is running")
   public StringResponse getPing() {
     return new StringResponse(request, "ok");
   }
@@ -76,7 +81,7 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/name")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Returns the servers unique name")
+  // @ApiOperation(value = "Returns the servers unique name")
   public StringResponse getName() {
     return new StringResponse(request, MessageDaemon.getInstance().getId());
   }
@@ -84,7 +89,7 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/stats")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Retrieve the server statistics")
+//  @ApiOperation(value = "Retrieve the server statistics")
   public ServerStatisticsResponse getStats() {
     return new ServerStatisticsResponse(request);
   }
@@ -92,7 +97,7 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/updates")
   @Produces({MediaType.APPLICATION_JSON})
-  @ApiOperation(value = "Check for changes to the configuration update counts")
+  // @ApiOperation(value = "Check for changes to the configuration update counts")
   public UpdateCheckResponse checkForUpdates() {
     long schema = SchemaManager.getInstance().getUpdateCount();
     return new UpdateCheckResponse(schema, 0, 0);
