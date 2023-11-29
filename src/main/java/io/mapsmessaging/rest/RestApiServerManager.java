@@ -18,6 +18,7 @@
 package io.mapsmessaging.rest;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -141,6 +142,10 @@ public class RestApiServerManager implements Agent {
       if(map.getBooleanProperty("enableSwagger", false)) {
 //        config.register(io.swagger.jaxrs.listing.ApiListingResource.class);
 //        config.register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+      }
+      boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
+      if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
+        config.register(new AuthenticationFilter());
       }
       config.register(DebugMapper.class);
       ServletContainer sc = new ServletContainer(config);

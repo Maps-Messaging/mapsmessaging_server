@@ -35,7 +35,7 @@ public class ResourceAccessControlList extends BaseAccessControlList {
 
   @Override
   public String getName() {
-    return "ResourceAccessControlList";
+    return "ResourceACL";
   }
 
   @Override

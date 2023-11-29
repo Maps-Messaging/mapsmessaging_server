@@ -35,7 +35,7 @@ public class ServerAccessControlList extends BaseAccessControlList {
 
   @Override
   public String getName() {
-    return "ServerAccessControlList";
+    return "ServerACL";
   }
 
   @Override

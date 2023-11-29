@@ -35,7 +35,7 @@ public class InterfaceAccessControlList extends BaseAccessControlList {
 
   @Override
   public String getName() {
-    return "InterfaceAccessControlList";
+    return "InterfaceACL";
   }
 
   @Override

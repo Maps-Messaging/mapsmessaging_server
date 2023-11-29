@@ -17,9 +17,9 @@
 
 package io.mapsmessaging.auth;
 
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
-import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
@@ -36,6 +36,12 @@ import java.util.UUID;
 
 
 public class AuthManager implements Agent {
+  private static final String ADMIN_USER = "admin";
+  private static final String USER = "user";
+
+  private static final String ADMIN_GROUP = "admin";
+  private static final String EVERYONE = "everyone";
+
   @Getter
   private static final AuthManager instance = new AuthManager();
 
@@ -62,45 +68,22 @@ public class AuthManager implements Agent {
   public void start() {
     if (authenticationEnabled) {
       ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
-      String password = null;
-      String userpassword = null;
       authenticationStorage = new AuthenticationStorage(config);
-
-      if (!authenticationStorage.isExisted()) {
-        password = PasswordGenerator.generateRandomPassword(12);
-        String username = "admin";
-        addUser(username, password, SessionPrivileges.create(username), new String[]{username, "everyone"});
-
-        userpassword = PasswordGenerator.generateRandomPassword(12);
-        username = "user";
-        addUser(username, userpassword, SessionPrivileges.create(username), new String[]{"everyone"});
-
-        String path = config.get("configDirectory").toString();
-
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(path + File.separator + "admin_password", true))) {
-          bw.write("admin=" + password);
-          bw.newLine(); // Add a newline character after each line
-          bw.write("user=" + userpassword);
-          bw.newLine(); // Add a newline character after each line
-
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-      if (password != null) {
-        if (authenticationStorage.validateUser("admin", password)) {
-          System.err.println("Successfully added admin");
-        } else {
-          System.err.println("Failed to add admin");
-        }
-        if (authenticationStorage.validateUser("user", userpassword)) {
-          System.err.println("Successfully added user");
-        } else {
-          System.err.println("Failed to add user");
-        }
+      if (!authenticationStorage.isFirstBoot()) {
+        createInitialUsers(config.get("configDirectory").toString());
       }
     }
+  }
 
+  private void saveInitialUserDetails(String path, String[][] details) {
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(path + File.separator + "admin_password", true))) {
+      for (String[] detail : details) {
+        bw.write(detail[0] + "=" + detail[1]);
+        bw.newLine(); // Add a newline character after each line
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -124,6 +107,10 @@ public class AuthManager implements Agent {
     return authenticationStorage.update(subject);
   }
 
+  public SessionPrivileges getQuota(UUID userId) {
+    return authenticationStorage.getQuota(userId);
+  }
+
   private AuthManager() {
     logger = LoggerFactory.getLogger(AuthManager.class);
     properties = ConfigurationManager.getInstance().getProperties("AuthManager");
@@ -131,7 +118,32 @@ public class AuthManager implements Agent {
     authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
   }
 
-  public SessionPrivileges getQuota(UUID userId) {
-    return authenticationStorage.getQuota(userId);
+  private void createInitialUsers(String path) {
+    String password = PasswordGenerator.generateRandomPassword(12);
+    if (!addUser(ADMIN_USER, password, SessionPrivileges.create(ADMIN_USER), new String[]{ADMIN_GROUP, EVERYONE})) {
+      // ToDo : log
+    }
+
+    String userpassword = PasswordGenerator.generateRandomPassword(12);
+    if (addUser(USER, userpassword, SessionPrivileges.create(USER), new String[]{EVERYONE})) {
+      // ToDo : log
+
+    }
+
+    saveInitialUserDetails(path, new String[][]{{ADMIN_USER, password}, {USER, userpassword}});
+    if (authenticationStorage.validateUser(ADMIN_USER, password)) {
+      // To Do : log
+    } else {
+      // To Do : log
+    }
+    if (authenticationStorage.validateUser(USER, userpassword)) {
+      // To Do : log
+    } else {
+      // To Do : log
+    }
+  }
+
+  public boolean validate(String username, String password) {
+    return authenticationStorage.validateUser(username, password);
   }
 }

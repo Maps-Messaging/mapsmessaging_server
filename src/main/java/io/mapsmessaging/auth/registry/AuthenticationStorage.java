@@ -17,12 +17,12 @@
 
 package io.mapsmessaging.auth.registry;
 
+import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
 import io.mapsmessaging.auth.registry.mapping.IdDbStore;
 import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
 import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
-import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
-import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.IdentityAccessManager;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
@@ -50,7 +50,7 @@ public class AuthenticationStorage implements Closeable {
   private final UserPermisionManager userPermisionManager;
   private final DB db;
   @Getter
-  private final boolean existed;
+  private final boolean firstBoot;
 
   public AuthenticationStorage(ConfigurationProperties config) {
     String securityDirectory = config.getProperty("configDirectory", "./.security");
@@ -61,7 +61,7 @@ public class AuthenticationStorage implements Closeable {
       }
     }
 
-    existed = new File(securityDirectory + File.separator + ".auth.db").exists();
+    firstBoot = new File(securityDirectory + File.separator + ".auth.db").exists();
     db = DBMaker.fileDB(securityDirectory + File.separator + ".auth.db")
         .checksumStoreEnable()
         .fileChannelEnable()
