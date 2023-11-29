@@ -144,4 +144,8 @@ public class AuthenticationStorage implements Closeable {
     }
     return subject1;
   }
+
+  public UserIdMap findUser(String username) {
+    return identityAccessManager.getUser(username);
+  }
 }

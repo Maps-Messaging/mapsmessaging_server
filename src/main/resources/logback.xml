@@ -31,7 +31,7 @@
   <appender name="AsyncLogFile" class="ch.qos.logback.classic.AsyncAppender">
     <appender-ref ref="LogFile"/>
   </appender>
-  <root level="warn">
+  <root level="debug">
     <appender-ref ref="AsyncLogFile"/>
   </root>
 </configuration>

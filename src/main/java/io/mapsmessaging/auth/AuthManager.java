@@ -17,11 +17,14 @@
 
 package io.mapsmessaging.auth;
 
+import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -32,6 +35,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.Principal;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -145,5 +150,17 @@ public class AuthManager implements Agent {
 
   public boolean validate(String username, String password) {
     return authenticationStorage.validateUser(username, password);
+  }
+
+  public Subject getUser(String username) {
+    Subject subject = new Subject();
+    Set<Principal> principalList = subject.getPrincipals();
+    UserIdMap map = authenticationStorage.findUser(username);
+    if (map != null) {
+      principalList.add(new UniqueIdentifierPrincipal(map.getAuthId()));
+      principalList.add(new UserPrincipal(username));
+      authenticationStorage.update(subject);
+    }
+    return subject;
   }
 }

@@ -18,3 +18,4 @@
 io.mapsmessaging.auth.acl.InterfaceAccessControlList
 io.mapsmessaging.auth.acl.ServerAccessControlList
 io.mapsmessaging.auth.acl.ResourceAccessControlList
+io.mapsmessaging.auth.acl.RestAccessControlList

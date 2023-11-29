@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.rest;
+package io.mapsmessaging.rest.auth;
 
 import com.sun.jersey.core.util.Base64;
 import com.sun.jersey.core.util.Priority;
@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 
 @Provider
@@ -48,13 +49,44 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     if (auth == null)
       throw unauthorized;
 
+
     auth = auth.replaceFirst("[Bb]asic ", "");
     String userColonPass = Base64.base64Decode(auth);
     String[] split = userColonPass.split(":");
     String username = split[0];
     String password = split[1];
+
     if (AuthManager.getInstance().isAuthenticationEnabled() && !AuthManager.getInstance().validate(username, password)) {
       throw unauthorized;
     }
+    Subject subject = AuthManager.getInstance().getUser(username);
+    if (subject == null) {
+      throw unauthorized;
+    }
+    boolean isWrite = false;
+    switch (containerRequest.getMethod()) {
+      case "GET":
+      case "HEAD":
+      case "OPTIONS":
+        break;
+
+      case "PUT":
+      case "POST":
+      case "DELETE":
+        isWrite = true;
+        break;
+
+      default:
+        throw unauthorized;
+    }
+    /*
+    if(!isWrite && AuthManager.getInstance().isAuthorisationEnabled() && !AuthManager.getInstance().isAuthorised(subject, RestAccessControl.READ_ONLY)){
+      throw unauthorized;
+    }
+    if(isWrite && AuthManager.getInstance().isAuthorisationEnabled() && !AuthManager.getInstance().isAuthorised(subject, RestAccessControl.WRITE)){
+      throw unauthorized;
+    }
+
+     */
   }
 }

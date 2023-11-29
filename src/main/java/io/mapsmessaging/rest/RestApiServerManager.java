@@ -19,6 +19,7 @@ package io.mapsmessaging.rest;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
