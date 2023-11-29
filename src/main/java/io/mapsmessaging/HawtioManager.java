@@ -40,7 +40,8 @@ public class HawtioManager implements Agent {
 
   public HawtioManager() {
     properties = ConfigurationManager.getInstance().getProperties("hawtio");
-    System.setProperty("hawtio.authenticationEnabled", properties.getProperty("authenticationEnabled", "false"));
+    System.setProperty("hawtio.authenticationEnabled", "" + properties.getBooleanProperty("authenticationEnabled", false));
+
     String checkFile = properties.getProperty("warFileLocation", "");
     enabled = properties.getProperty("enable", "true").equalsIgnoreCase("true");
     if (enabled) {
@@ -73,8 +74,11 @@ public class HawtioManager implements Agent {
     }
   }
 
+  @Override
   public void stop() {
+    // nothing to stop
   }
+
 
   private class Startup implements Runnable {
 
@@ -90,9 +94,9 @@ public class HawtioManager implements Agent {
     }
 
     public void run() {
-      if (properties.getProperty("enable").equalsIgnoreCase("true")) {
+      if (properties.getBooleanProperty("enable", false)) {
         logger.log(HAWTIO_STARTUP);
-        if (warFile.length() > 0) {
+        if (!warFile.isEmpty()) {
           try {
             Class<?> hawtioMain = Class.forName("io.hawt.embedded.Main");
             Object main = hawtioMain.getConstructor().newInstance();

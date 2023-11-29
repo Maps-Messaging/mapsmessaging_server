@@ -121,7 +121,7 @@ public class NetworkManager implements ServiceManager, Agent {
 
   public void startAll() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
-    for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
+    endPointManagers.entrySet().parallelStream().forEach(entry -> {
       try {
         EndPointManager endPointManager = entry.getValue();
         if (endPointManager.getState() == STATE.STOPPED) {
@@ -130,7 +130,7 @@ public class NetworkManager implements ServiceManager, Agent {
       } catch (IOException e) {
         logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILED, e, entry.getKey());
       }
-    }
+    });
   }
 
   public void stopAll() {
