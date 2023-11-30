@@ -19,16 +19,16 @@ package io.mapsmessaging.rest;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import jakarta.servlet.Servlet;
-import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.grizzly.http.server.ServerConfiguration;
-import org.glassfish.grizzly.http.server.StaticHttpHandler;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.http.server.*;
 import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
@@ -43,9 +43,13 @@ import javax.jmdns.ServiceInfo;
 import java.io.IOException;
 import java.net.URI;
 
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_ACCESS;
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
+
 public class RestApiServerManager implements Agent {
 
   private final ConfigurationProperties map;
+  private final Logger logger = LoggerFactory.getLogger(RestApiServerManager.class);
 
   private boolean isSecure;
   private ServiceInfo[] serviceInfos;
@@ -146,6 +150,30 @@ public class RestApiServerManager implements Agent {
     }
   }
 
+  private void addLogging() {
+    httpServer.getServerConfiguration().getMonitoringConfig().getWebServerConfig()
+        .addProbes(new HttpServerProbe.Adapter() {
+
+          @Override
+          public void onRequestReceiveEvent(
+              HttpServerFilter filter,
+              Connection connection,
+              Request request) {
+          }
+
+          @Override
+          public void onRequestCompleteEvent(
+              HttpServerFilter filter,
+              Connection connection,
+              Response response) {
+
+            String uri = response.getRequest().getRequestURI();
+            String client = response.getRequest().getRemoteAddr();
+            long len = response.getContentLengthLong();
+            logger.log(REST_API_ACCESS, client, uri, response.getStatus(), len);
+          }
+        });
+  }
   public void startServer() {
     try {
       final ResourceConfig config = new ResourceConfig();
@@ -156,34 +184,24 @@ public class RestApiServerManager implements Agent {
           "io.mapsmessaging.rest.api",
           "io.mapsmessaging.rest.translation"
       );
-      if(map.getBooleanProperty("enableSwagger", false)) {
-      }
       boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
       if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
         config.register(new AuthenticationFilter());
       }
       config.register(DebugMapper.class);
       ServletContainer sc = new ServletContainer(config);
-
       SSLContextConfigurator sslConfig = setupSSL();
       String protocol = "http";
       if(isSecure){
         protocol = "https";
       }
       String baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
-
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
       loadStatic();
+      addLogging();
       httpServer.start();
-      if(map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
-        ServerConfiguration cfg = httpServer.getServerConfiguration();
-        ClassLoader loader = RestApiServerManager.class.getClassLoader();
-        CLStaticHttpHandler docsHandler = new CLStaticHttpHandler(loader, "swagger-ui/");
-        docsHandler.setFileCacheEnabled(false);
-        cfg.addHttpHandler(docsHandler, "/swagger-ui/");
-      }
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      logger.log(REST_API_FAILURE, e);
     }
   }
 

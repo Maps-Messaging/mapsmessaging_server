@@ -22,7 +22,7 @@ import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceInfo;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -33,6 +33,7 @@ import java.util.List;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 //@Api(value = URI_PATH + "/server/interface", tags="Server Interface Management")
+@Tag(name = "Server Interface Management")
 @Path(URI_PATH)
 public class InterfaceInstanceApi extends BaseRestApi {
 

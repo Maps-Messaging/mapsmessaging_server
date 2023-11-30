@@ -24,7 +24,7 @@ import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceInfo;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -37,7 +37,7 @@ import java.util.List;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-//@Api(value = URI_PATH + "/server/interfaces", tags="Interface Management")
+@Tag(name = "Server Interface Management")
 @Path(URI_PATH)
 public class InterfaceManagementApi extends BaseRestApi {
 

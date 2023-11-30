@@ -22,7 +22,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.data.Destination;
 import io.mapsmessaging.rest.responses.DestinationResponse;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeoutException;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-//@Api(value = URI_PATH + "/server/destination", tags="Destination Management")
+@Tag(name = "Destination Management")
 @Path(URI_PATH)
 public class DestinationManagementApi extends BaseDestinationApi {
 

@@ -24,6 +24,7 @@ import io.mapsmessaging.rest.responses.Group;
 import io.mapsmessaging.rest.responses.GroupListResponse;
 import io.mapsmessaging.rest.responses.User;
 import io.mapsmessaging.rest.responses.UserListResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -35,6 +36,7 @@ import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
+@Tag(name = "User Profile and Authentication")
 @Path(URI_PATH)
 public class UserManagementApi extends BaseDestinationApi {
 

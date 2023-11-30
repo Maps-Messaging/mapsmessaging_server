@@ -25,7 +25,7 @@ import io.mapsmessaging.rest.responses.SchemaResponse;
 import io.mapsmessaging.rest.responses.StringListResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import lombok.Getter;
@@ -40,7 +40,7 @@ import java.util.Map.Entry;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-//@Api(value = URI_PATH + "/server/schema", tags = "Schema Management")
+@Tag(name = "Schema Management")
 @Path(URI_PATH)
 public class SchemaQueryApi extends BaseRestApi {
 

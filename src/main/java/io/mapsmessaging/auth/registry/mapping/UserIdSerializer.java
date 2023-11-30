@@ -32,15 +32,15 @@ public class UserIdSerializer implements Serializer<UserIdMap> {
   public void serialize(@NotNull DataOutput2 dataOutput2, @NotNull UserIdMap userId) throws IOException {
     dataOutput2.writeLong(userId.getAuthId().getMostSignificantBits());
     dataOutput2.writeLong(userId.getAuthId().getLeastSignificantBits());
-    dataOutput2.writeUTF(userId.getAuthDomain());
     dataOutput2.writeUTF(userId.getUsername());
+    dataOutput2.writeUTF(userId.getAuthDomain());
   }
 
   @Override
   public UserIdMap deserialize(@NotNull DataInput2 dataInput2, int i) throws IOException {
     java.util.UUID id = new UUID(dataInput2.readLong(), dataInput2.readLong());
+    String username = dataInput2.readUTF();
     String auth = dataInput2.readUTF();
-    String group = dataInput2.readUTF();
-    return new UserIdMap(id, auth, group);
+    return new UserIdMap(id, username, auth);
   }
 }

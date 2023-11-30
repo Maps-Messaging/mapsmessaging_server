@@ -66,10 +66,11 @@ public class ServerStatistics implements Serializable {
     totalWriteBytes = EndPoint.totalWriteBytes.sum();
     totalDisconnections = EndPoint.totalDisconnections.sum();
 
+
     totalNoInterestMessages = DestinationStats.getTotalNoInterestMessages();
     totalSubscribedMessages = DestinationStats.getTotalSubscribedMessages();
     totalPublishedMessages = DestinationStats.getTotalPublishedMessages();
-    totalRetrievedMessages = DestinationStats.getTotalExpiredMessages();
+    totalRetrievedMessages = DestinationStats.getTotalRetrievedMessages();
     totalDeliveredMessages = DestinationStats.getTotalDeliveredMessages();
     totalExpiredMessages = DestinationStats.getTotalExpiredMessages();
     stats = DestinationStats.getGlobalStats();

@@ -57,15 +57,14 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
         @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
         @Tag(name = "Destination Management", description = "Used to manage the destinations (topic/queues) and the subscriptions"),
         @Tag(name = "Destination Statistics Management", description = "Used to retrieve the destinations (topic/queues) statistics"),
-        @Tag(name = "Interface Management", description = "Used to manage an individual network interface"),
         @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
-        @Tag(name = "Messaging Server API", description = "Global APIs to manage and query the server"),
+        @Tag(name = "Messaging Server Status", description = "Server status and simple queries"),
+        @Tag(name = "User Profile and Authentication", description = "Managers authentication and authorisation of users on the server"),
 
     },
     externalDocs = @ExternalDocumentation(description = "Maps Messaging", url = "https://www.mapsmessaging.io/")
 )
-//@Api(value = URI_PATH, tags="Messaging Server API")
-
+@Tag(name = "Messaging Server Status")
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
 
