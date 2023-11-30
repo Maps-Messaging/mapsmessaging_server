@@ -96,26 +96,38 @@ public class AuthManager implements Agent {
   @Override
   public void stop() {
     try {
-      authenticationStorage.close();
+      if (authenticationStorage != null) authenticationStorage.close();
     } catch (IOException e) {
 
     }
   }
 
   public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
-    return authenticationStorage.addUser(username, password, quotas, groups);
+    if (authenticationStorage != null) {
+      return authenticationStorage.addUser(username, password, quotas, groups);
+    }
+    return false;
   }
 
   public boolean delUser(String username) {
-    return authenticationStorage.delUser(username);
+    if (authenticationStorage != null) {
+      return authenticationStorage.delUser(username);
+    }
+    return false;
   }
 
   public Subject update(Subject subject) {
-    return authenticationStorage.update(subject);
+    if (authenticationStorage != null) {
+      return authenticationStorage.update(subject);
+    }
+    return null;
   }
 
   public SessionPrivileges getQuota(UUID userId) {
-    return authenticationStorage.getQuota(userId);
+    if (authenticationStorage != null) {
+      return authenticationStorage.getQuota(userId);
+    }
+    return null;
   }
 
   private AuthManager() {
