@@ -17,28 +17,27 @@
 
 package io.mapsmessaging.rest.hawtio;
 
-import java.util.Map;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class JolokiaLogHandler implements org.jolokia.util.LogHandler {
+  private final Logger logger = LoggerFactory.getLogger(JolokiaLogHandler.class);
+
   @Override
   public void error(String message, Throwable t) {
-    System.err.println(message);
-    t.printStackTrace();
+    logger.log(JOLOKIA_ERROR_LOG, message, t);
   }
 
   @Override
   public void info(String message) {
-    System.out.println(message);
+    logger.log(JOLOKIA_INFO_LOG, message);
   }
 
   @Override
   public void debug(String message) {
-    System.out.println(message);
+    logger.log(JOLOKIA_DEBUG_LOG, message);
   }
 
-  public void configure(Map<String, String> config) {
-    for (Map.Entry<String, String> entry : config.entrySet()) {
-      System.setProperty(entry.getKey(), entry.getValue());
-    }
-  }
 }
