@@ -129,7 +129,18 @@ public class RestApiServerManager implements Agent {
         if(staticConfig.getBooleanProperty("enabled", false)){
           String path = staticConfig.getProperty("path", "./html");
           StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
+          staticHttpHandler.setFileCacheEnabled(true);
           httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
+
+          if (map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
+            String swaggerPath = path;
+            if (!swaggerPath.endsWith("/")) {
+              swaggerPath = swaggerPath + "/";
+            }
+            StaticHttpHandler swaggerHttpHandler = new StaticHttpHandler(swaggerPath + "swagger-ui");
+            swaggerHttpHandler.setFileCacheEnabled(true);
+            httpServer.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/dist/");
+          }
         }
       }
     }

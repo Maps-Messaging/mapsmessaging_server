@@ -39,12 +39,12 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @OpenAPIDefinition(
     info = @Info(
-        description = "Maps Messaging Server Rest API, provides simple Rest API to manage the server",
+        description = "Maps Messaging Server Rest API, provides simple Rest API to manage and interact with the server",
         version = buildVersion,
         title = "Maps Messaging Rest Server",
         contact = @Contact(
             name = "Matthew Buckton",
-            email = "matthew.bucktone@mapsmessaging.io",
+            email = "info@mapsmessaging.io",
             url = "http://mapsmessaging.io"
         ),
         license = @License(
