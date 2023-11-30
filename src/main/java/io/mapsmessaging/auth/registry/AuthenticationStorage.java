@@ -27,6 +27,7 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.IdentityAccessManager;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.identity.GroupEntry;
 import io.mapsmessaging.security.identity.IdentityEntry;
 import io.mapsmessaging.security.identity.parsers.PasswordParser;
 import io.mapsmessaging.security.identity.parsers.bcrypt.BCrypt2yPasswordParser;
@@ -39,9 +40,7 @@ import javax.security.auth.Subject;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class AuthenticationStorage implements Closeable {
 
@@ -147,5 +146,51 @@ public class AuthenticationStorage implements Closeable {
 
   public UserIdMap findUser(String username) {
     return identityAccessManager.getUser(username);
+  }
+
+  public List<UserDetails> getUsers() {
+    List<UserIdMap> userIdMaps = identityAccessManager.getAllUsers();
+    List<UserDetails> users = new ArrayList<>();
+    for (UserIdMap userIdMap : userIdMaps) {
+      IdentityEntry entry = identityAccessManager.getUserIdentity(userIdMap.getUsername());
+      List<UUID> groupIds = new ArrayList<>();
+      List<GroupEntry> groupEntries = entry.getGroups();
+      for (GroupEntry groupEntry : groupEntries) {
+        GroupIdMap groupIdMap = identityAccessManager.getGroup(groupEntry.getName());
+        if (groupIdMap != null) {
+          groupIds.add(groupIdMap.getAuthId());
+        }
+      }
+      UserDetails details = new UserDetails(
+          userIdMap,
+          entry,
+          groupIds
+      );
+      users.add(details);
+    }
+    return users;
+  }
+
+  public List<GroupDetails> getGroups() {
+    List<GroupIdMap> groupIdMaps = identityAccessManager.getAllGroups();
+    List<GroupDetails> groups = new ArrayList<>();
+    for (GroupIdMap groupIdMap : groupIdMaps) {
+      GroupEntry entry = identityAccessManager.getGroupDetails(groupIdMap.getGroupName());
+      List<UUID> userIds = new ArrayList<>();
+      Set<String> userList = entry.getUsers();
+      for (String user : userList) {
+        UserIdMap userIdMap = identityAccessManager.getUser(user);
+        if (userIdMap != null) {
+          userIds.add(userIdMap.getAuthId());
+        }
+      }
+      GroupDetails details = new GroupDetails(
+          groupIdMap.getGroupName(),
+          groupIdMap.getAuthId(),
+          userIds
+      );
+      groups.add(details);
+    }
+    return groups;
   }
 }

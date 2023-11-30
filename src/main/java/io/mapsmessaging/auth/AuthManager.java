@@ -20,7 +20,9 @@ package io.mapsmessaging.auth;
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
+import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
+import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
@@ -36,10 +38,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.WeakHashMap;
+import java.util.*;
 
 
 public class AuthManager implements Agent {
@@ -155,7 +154,11 @@ public class AuthManager implements Agent {
     return authenticationStorage.validateUser(username, password);
   }
 
-  public Subject getUser(String username) {
+  public UserIdMap getUserIdentity(String username) {
+    return authenticationStorage.findUser(username);
+  }
+
+  public Subject getUserSubject(String username) {
     Subject subject = subjectMap.get(username);
     if (subject == null) {
       subject = new Subject();
@@ -169,5 +172,19 @@ public class AuthManager implements Agent {
       subjectMap.put(username, subject);
     }
     return subject;
+  }
+
+  public List<UserDetails> getUsers() {
+    if (authenticationStorage != null) {
+      return authenticationStorage.getUsers();
+    }
+    return new ArrayList<>();
+  }
+
+  public List<GroupDetails> getGroups() {
+    if (authenticationStorage != null) {
+      return authenticationStorage.getGroups();
+    }
+    return new ArrayList<>();
   }
 }

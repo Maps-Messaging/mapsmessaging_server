@@ -32,7 +32,7 @@ public class UserSecurityContext implements SecurityContext {
 
   public UserSecurityContext(String username) {
     userPrincipal = new AuthenticatedUserPrincipal(username);
-    subject = AuthManager.getInstance().getUser(username);
+    subject = AuthManager.getInstance().getUserSubject(username);
   }
 
   @Override

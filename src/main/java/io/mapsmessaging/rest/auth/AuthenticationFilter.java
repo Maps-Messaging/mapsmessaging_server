@@ -59,7 +59,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     if (AuthManager.getInstance().isAuthenticationEnabled() && !AuthManager.getInstance().validate(username, password)) {
       throw unauthorized;
     }
-    Subject subject = AuthManager.getInstance().getUser(username);
+    Subject subject = AuthManager.getInstance().getUserSubject(username);
     if (subject == null) {
       throw unauthorized;
     }
