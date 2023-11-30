@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging;
+package io.mapsmessaging.rest.hawtio;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -25,6 +26,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import org.jolokia.jvmagent.JolokiaServer;
 import org.jolokia.jvmagent.JolokiaServerConfig;
+import org.jolokia.util.LogHandler;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -40,7 +42,7 @@ public class JolokaManager implements Agent {
 
   public JolokaManager() {
     properties = ConfigurationManager.getInstance().getProperties("jolokia");
-    enabled = properties.getProperty("enable", "true").equalsIgnoreCase("true");
+    enabled = properties.getBooleanProperty("enable", true);
   }
 
   @Override
@@ -84,16 +86,22 @@ public class JolokaManager implements Agent {
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      for (Entry<String, Object> entry : properties.entrySet()) {
+      ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
+      for (Entry<String, Object> entry : config.entrySet()) {
         map.put(entry.getKey(), entry.getValue().toString());
       }
-      JolokiaServerConfig config = new JolokiaServerConfig(map);
+      map.put("agentId", MessageDaemon.getInstance().getId());
+      map.put("agentDescription", "Maps Messaging Server");
+      map.put("logHandlerClass", JolokiaLogHandler.class.getName());
+      JolokiaServerConfig jolokiaConfig = new JolokiaServerConfig(map);
       try {
-        jolokiaServer = new JolokiaServer(config, true);
+        jolokiaServer = new JolokiaServer(jolokiaConfig, true);
         jolokiaServer.start();
       } catch (IOException e) {
         logger.log(ServerLogMessages.JOLOKIA_STARTUP_FAILURE, e);
       }
+      LogHandler.StdoutLogHandler logg;
     }
   }
+
 }
