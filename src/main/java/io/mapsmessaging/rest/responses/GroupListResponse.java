@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.rest.responses;
 
+import io.mapsmessaging.rest.data.Group;
 import lombok.Getter;
 
 import javax.ws.rs.core.Request;

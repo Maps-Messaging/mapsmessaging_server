@@ -18,32 +18,28 @@
 package io.mapsmessaging.rest.data;
 
 import io.mapsmessaging.network.EndPointManager;
-import lombok.Getter;
+import lombok.Data;
 import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.Map;
 
 @ToString
+@Data
 public class InterfaceInfo implements Serializable {
 
-  @Getter
 //  @ApiModelProperty(value = "Unique name of the interface")
   private final String name;
 
-  @Getter
 //  @ApiModelProperty(value = "Port that the interface is bound to")
   private final int port;
 
-  @Getter
 //  @ApiModelProperty(value="Host that the interface is bound to")
   private final String host;
 
-  @Getter
   // @ApiModelProperty(value="Current state of the interface")
   private final String state;
 
-  @Getter
   // @ApiModelProperty(value="Configuration for the interface")
   private final Map<String, Object> config;
 

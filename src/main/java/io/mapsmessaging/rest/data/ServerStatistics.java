@@ -21,39 +21,26 @@ import io.mapsmessaging.engine.destination.DestinationStats;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
-import lombok.Getter;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Map;
 
+@Data
 public class ServerStatistics implements Serializable {
 
-  @Getter
   private final long packetsSent;
-  @Getter
   private final long packetsReceived;
-  @Getter
-  public final long totalReadBytes;
-  @Getter
-  public final long totalWriteBytes;
-  @Getter
-  public final long totalConnections;
-  @Getter
-  public final long totalDisconnections;
-  @Getter
+  private final long totalReadBytes;
+  private final long totalWriteBytes;
+  private final long totalConnections;
+  private final long totalDisconnections;
   private final long totalNoInterestMessages;
-  @Getter
   private final long totalSubscribedMessages;
-  @Getter
   private final long totalPublishedMessages;
-  @Getter
   private final long totalRetrievedMessages;
-  @Getter
   private final long totalExpiredMessages;
-  @Getter
   private final long totalDeliveredMessages;
-
-  @Getter
   private final Map<String, LinkedMovingAverageRecord> stats;
 
 

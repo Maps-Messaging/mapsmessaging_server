@@ -15,16 +15,12 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.rest.data;
 
 import lombok.Data;
 
-import java.util.List;
-import java.util.UUID;
-
 @Data
-public class Group {
-  private final String name;
-  private final UUID uniqueId;
-  private final List<UUID> usersList;
+public class NewUser {
+  private final String username;
+  private final String password;
 }

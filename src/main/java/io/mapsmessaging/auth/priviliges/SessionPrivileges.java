@@ -48,7 +48,7 @@ public class SessionPrivileges extends Privilege {
     this.priviliges = priviliges;
   }
 
-  protected SessionPrivileges(String username) {
+  public SessionPrivileges(String username) {
     super("session");
     this.username = username;
     priviliges = new ArrayList<>();

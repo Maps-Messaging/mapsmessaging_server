@@ -15,22 +15,16 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.rest.data;
 
-import io.mapsmessaging.rest.data.User;
-import lombok.Getter;
+import lombok.Data;
 
-import javax.ws.rs.core.Request;
 import java.util.List;
+import java.util.UUID;
 
-public class UserListResponse extends BaseResponse {
-
-  @Getter
-  private final List<User> data;
-
-
-  public UserListResponse(Request request, List<User> data) {
-    super(request);
-    this.data = data;
-  }
+@Data
+public class User {
+  private final String username;
+  private final UUID uniqueId;
+  private final List<UUID> groupList;
 }

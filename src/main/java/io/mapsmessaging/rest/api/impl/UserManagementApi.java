@@ -18,14 +18,15 @@
 package io.mapsmessaging.rest.api.impl;
 
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.auth.registry.GroupDetails;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
-import io.mapsmessaging.rest.responses.Group;
-import io.mapsmessaging.rest.responses.GroupListResponse;
-import io.mapsmessaging.rest.responses.User;
+import io.mapsmessaging.rest.data.NewUser;
+import io.mapsmessaging.rest.data.User;
+import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -56,22 +57,16 @@ public class UserManagementApi extends BaseDestinationApi {
     return new UserListResponse(request, results);
   }
 
-  @GET
-  @Path("/auth/groups")
+  @POST
+  @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get all the destination configuration")
-  public GroupListResponse getGroups() {
+  public BaseResponse createUser(NewUser newUser) {
     AuthManager authManager = AuthManager.getInstance();
-    List<GroupDetails> groups = authManager.getGroups();
-    List<Group> results = new ArrayList<>();
-    for (GroupDetails group : groups) {
-      String groupName = group.getName();
-      UUID groupId = group.getGroupId();
-
-      results.add(new Group(groupName, groupId, group.getUsers()));
+    SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
+    if (authManager.addUser(newUser.getUsername(), newUser.getPassword(), sessionPrivileges, new String[0])) {
+      return new BaseResponse(request);
     }
-    return new GroupListResponse(request, results);
+    return new BaseResponse(request);//, 500, "Failed to create user");
   }
-
 
 }
