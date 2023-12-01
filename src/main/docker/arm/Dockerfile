@@ -111,7 +111,7 @@ RUN mv message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml message_daemon-%%MA
 #----------------------------------------------------------------------------------------------
 RUN mkdir /data && \
     mv /message_daemon-%%MAPS_VERSION%%/html /data/html && \
-    sed -i 's|path: html/|/data/html|' /message_daemon-%%MAPS_VERSION%%/conf/RestApi.yaml
+    sed -i 's|path: html/|path: /data/html|' /message_daemon-%%MAPS_VERSION%%/conf/RestApi.yaml
 
 #----------------------------------------------------------------------------------------------
 # Now configure and download hawtio for web/JMX/Rest administration
