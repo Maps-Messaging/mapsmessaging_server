@@ -121,6 +121,13 @@ RUN mv message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml message_daemon-%%MA
     mv message_daemon-%%MAPS_VERSION%%/conf/AuthManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml
 
 #----------------------------------------------------------------------------------------------
+# Set up the static files for the rest api engine
+#----------------------------------------------------------------------------------------------
+RUN mkdir /data && \
+    mv /message_daemon-%%MAPS_VERSION%%/html /data/html && \
+    sed -i 's|path: html/|/data/html|' /message_daemon-%%MAPS_VERSION%%/conf/RestApi.yaml
+
+#----------------------------------------------------------------------------------------------
 # Now configure and download hawtio for web/JMX/Rest administration
 #----------------------------------------------------------------------------------------------
 RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
