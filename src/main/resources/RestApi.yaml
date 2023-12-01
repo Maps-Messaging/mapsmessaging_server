@@ -30,4 +30,4 @@ RestApi:
 
   static:
     enabled: true
-    path: src/main/resources/html/
+    path: src/main/html/
