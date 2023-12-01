@@ -83,21 +83,28 @@ RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/down
     tar -xf message_daemon-%%MAPS_VERSION%%-install.tar.gz  && \
     rm  message_daemon-%%MAPS_VERSION%%-install.tar.gz
 
+
 #----------------------------------------------------------------------------------------------
 # Now configure the scripts
 #----------------------------------------------------------------------------------------------
 RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
     dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
 
+#Set the docker log configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
 
+# Set the network configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
+# Set the destination configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
 
+# set the authentication configuration
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/AuthManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml
 
 
 #----------------------------------------------------------------------------------------------
