@@ -16,5 +16,42 @@
 ---
 jolokia:
     enable: true # Flag to indicate if the jolokia plugin should be started
-    port: 8778   # The port that jolokia should use
-    host: 0.0.0.0 # The host that jolokia should bind to
+    config:
+        port: 8778   # The port that jolokia should use
+        host: 0.0.0.0 # The host that jolokia should bind to
+        backlog: 10 # The backlog for the jolokia server
+        canonicalNaming: true # Flag to enable canonical naming
+        historyMaxEntries: 10 # The number of history entries to keep
+        maxDepth: 7 # The maximum depth to allow for requests
+        maxCollectionSize: 200 # The maximum number of items to return in a collection
+        allowDnsReverseLookup: false # Flag to enable reverse dns lookups
+        cors: false # Flag to enable cors
+        #Debugging
+        debug: true # Flag to enable debug logging
+        debugMaxEntries: 100 # The maximum number of debug entries to keep
+        includeStackTrace: false # Flag to enable stack traces
+        allowErrorDetails: false # Flag to enable error details
+        serializeException: false # Flag to enable exception serialization
+        #Discovery
+        discoveryEnabled: false # Flag to enable discovery
+        discoveryAgentUrl: http://localhost:8181/hawtio/discovery/agent # The url to use for discovery
+        multicastGroup: 239.192.48.48
+        multicastPort: 24884
+
+#SSl Config
+#        keystore: my-keystore.jks
+#        caCert: my-keystore.jks
+#        serverCert: serverCertName
+#        serverKey: serverKeyName
+#        secureSocketProtocol: TLSv1.2
+#        keyStoreType: JKS
+#        keyManagerAlgorithm: SunX509
+#        trustManagerAlgorithm: SunX509
+#        useSslClientAuthentication: false
+#        keystorePassword: password
+#        serverKeyAlgorithm: RSA
+#        clientPrincipal: CN=client, OU=client, O=client, L=client, ST=client, C=client
+#        extendedClientCheck: false
+#        sslProtocol: TLSv1.2
+#        truststorePassword: password
+#        sslCipherSuite: TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA

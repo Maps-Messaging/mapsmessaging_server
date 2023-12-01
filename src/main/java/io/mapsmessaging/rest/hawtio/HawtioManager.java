@@ -15,8 +15,10 @@
  *
  */
 
-package io.mapsmessaging;
+package io.mapsmessaging.rest.hawtio;
 
+import io.hawt.embedded.Main;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -25,7 +27,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.File;
-import java.lang.reflect.Method;
+import java.util.Map;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
@@ -43,7 +45,8 @@ public class HawtioManager implements Agent {
     System.setProperty("hawtio.authenticationEnabled", "" + properties.getBooleanProperty("authenticationEnabled", false));
 
     String checkFile = properties.getProperty("warFileLocation", "");
-    enabled = properties.getProperty("enable", "true").equalsIgnoreCase("true");
+    enabled = properties.getBooleanProperty("enable", true) && isJolokiaEnabled();
+
     if (enabled) {
       File winFile = new File(checkFile);
       if (winFile.exists()) {
@@ -54,6 +57,11 @@ public class HawtioManager implements Agent {
     } else {
       warFile = "";
     }
+  }
+
+  private boolean isJolokiaEnabled() {
+    ConfigurationProperties jolokia = ConfigurationManager.getInstance().getProperties("jolokia");
+    return jolokia.getBooleanProperty("enable", true);
   }
 
   @Override
@@ -96,15 +104,17 @@ public class HawtioManager implements Agent {
     public void run() {
       if (properties.getBooleanProperty("enable", false)) {
         logger.log(HAWTIO_STARTUP);
+        ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
         if (!warFile.isEmpty()) {
           try {
-            Class<?> hawtioMain = Class.forName("io.hawt.embedded.Main");
-            Object main = hawtioMain.getConstructor().newInstance();
-            Method setWar = hawtioMain.getMethod("setWar", String.class);
-            setWar.invoke(main, warFile);
-            logger.log(HAWTIO_INITIALISATION, warFile);
-            Method run = hawtioMain.getMethod("run");
-            run.invoke(main);
+            for (Map.Entry<String, Object> entry : config.entrySet()) {
+              System.setProperty(entry.getKey(), entry.getValue().toString());
+            }
+            int port = config.getIntProperty("hawtio.port", 8181);
+            Main main = new Main();
+            main.setPort(port);
+            main.setWar(warFile);
+            main.run();
             register();
           } catch (Exception e) {
             logger.log(HAWTIO_STARTUP_FAILURE, e);

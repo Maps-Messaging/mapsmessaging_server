@@ -72,8 +72,9 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 # -------------------------
 #
 # ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
-# Admin       8080        TCP - Hawtio
-# Admin       8082        TCP - Native RestAPI
+# Admin       8080        TCP - Native RestAPI
+# Admin       8181        TCP - Hawtio
+# Admin       8778        TCP - Jolokia
 #
 # SemTech     1700        UDP
 # MQTT-SN     1884        UDP
@@ -82,7 +83,8 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 8082/tcp
+EXPOSE 8181/tcp
+EXPOSE 8778/tcp
 
 EXPOSE 1700/udp
 EXPOSE 1884/udp
@@ -102,17 +104,28 @@ RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/down
 RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
     dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
 
+#Set the docker log configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
 
+# Set the network configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
+# Set the destination configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
 
+# set the authentication configuration
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/AuthManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml
 
-
+#----------------------------------------------------------------------------------------------
+# Set up the static files for the rest api engine
+#----------------------------------------------------------------------------------------------
+RUN mkdir /data && \
+    mv /message_daemon-%%MAPS_VERSION%%/html /data/html && \
+    sed -i 's|path: html/|path: /data/html/|' /message_daemon-%%MAPS_VERSION%%/conf/RestApi.yaml
 
 #----------------------------------------------------------------------------------------------
 # Now configure and download hawtio for web/JMX/Rest administration

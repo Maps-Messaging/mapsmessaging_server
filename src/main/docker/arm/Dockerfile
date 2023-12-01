@@ -53,18 +53,23 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #   d) Configure Hawtio for JMX / Rest / Web management
 #   e) Define a volume mount for the data directory
 #   f) Register the command to start the server
-#----------------------------------------------------------------------------------------------
 # Expose the protocol ports
-# MQTT      1882, 1883
-# MQTT-SN   1884
-# AMQP      5672
-# Stomp     8675
-# Admin     8080
-# SemTech   1700
+# -------------------------
+#
+# ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
+# Admin       8080        TCP - Native RestAPI
+# Admin       8181        TCP - Hawtio
+# Admin       8778        TCP - Jolokia
+#
+# SemTech     1700        UDP
+# MQTT-SN     1884        UDP
+# CoAP        5683        UDP
+# MQTT-SN V2  2442        UDP
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 8082/tcp
+EXPOSE 8181/tcp
+EXPOSE 8778/tcp
 
 EXPOSE 1700/udp
 EXPOSE 1884/udp
@@ -78,22 +83,35 @@ RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/down
     tar -xf message_daemon-%%MAPS_VERSION%%-install.tar.gz  && \
     rm  message_daemon-%%MAPS_VERSION%%-install.tar.gz
 
+
 #----------------------------------------------------------------------------------------------
 # Now configure the scripts
 #----------------------------------------------------------------------------------------------
 RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
     dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
 
+#Set the docker log configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
 
+# Set the network configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
+# Set the destination configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
 
+# set the authentication configuration
+RUN mv message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml_orig && \
+    mv message_daemon-%%MAPS_VERSION%%/conf/AuthManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml
 
+#----------------------------------------------------------------------------------------------
+# Set up the static files for the rest api engine
+#----------------------------------------------------------------------------------------------
+RUN mkdir /data && \
+    mv /message_daemon-%%MAPS_VERSION%%/html /data/html && \
+    sed -i 's|path: html/|path: /data/html|' /message_daemon-%%MAPS_VERSION%%/conf/RestApi.yaml
 
 #----------------------------------------------------------------------------------------------
 # Now configure and download hawtio for web/JMX/Rest administration
@@ -103,6 +121,7 @@ RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
     sed 's|/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.17.7.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
     rm conf/hawtio.yaml_old && \
     wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.17.7/hawtio-default-2.17.7.war
+
 
 #----------------------------------------------------------------------------------------------
 # Define the data directory in the install as a volume so destination data is stored external

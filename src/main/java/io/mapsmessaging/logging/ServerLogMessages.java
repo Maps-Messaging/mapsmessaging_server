@@ -518,6 +518,9 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Jolokia log messages">
   JOLOKIA_SHUTDOWN_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia failed to shutdown the HTTP server"),
+  JOLOKIA_DEBUG_LOG(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Jolokia debug log {}"),
+  JOLOKIA_INFO_LOG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Jolokia info log {}"),
+  JOLOKIA_ERROR_LOG(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia error log {}"),
   JOLOKIA_STARTUP_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia failed to load the HTTP server"),
   //</editor-fold>
 

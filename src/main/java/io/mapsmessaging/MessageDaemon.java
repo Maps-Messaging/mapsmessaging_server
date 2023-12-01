@@ -39,6 +39,8 @@ import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
+import io.mapsmessaging.rest.hawtio.HawtioManager;
+import io.mapsmessaging.rest.hawtio.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;

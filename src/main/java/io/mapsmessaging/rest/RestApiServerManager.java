@@ -205,34 +205,25 @@ public class RestApiServerManager implements Agent {
     }
   }
 
-  private HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig){
-    if (uri == null) {
-      throw new IllegalArgumentException("The URI must not be null");
-    } else {
-      String path = uri.getPath();
-      if (path == null) {
-        throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null");
-      } else if (path.isEmpty()) {
-        throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be present");
-      } else if (path.charAt(0) != '/') {
-        throw new IllegalArgumentException("The URI path, of the URI " + uri + ". must start with a '/'");
-      } else {
-        path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
-        WebappContext context = new WebappContext("GrizzlyContext", path);
-        ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
-
-        registration.addMapping("/*");
-        HttpServer server;
-        if(sslConfig != null) {
-          SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
-          server = GrizzlyHttpServerFactory.createHttpServer(uri,  ((GrizzlyHttpContainer)null), true,sslEngineConfigurator, false);
-        }
-        else{
-          server = GrizzlyHttpServerFactory.createHttpServer(uri);
-        }
-        context.deploy(server);
-        return server;
-      }
+  public HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig) {
+    String path = uri.getPath();
+    if (path == null || path.isEmpty() || path.charAt(0) != '/') {
+      throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null, present and start with a '/'");
     }
+
+    path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
+    WebappContext context = new WebappContext("GrizzlyContext", path);
+    ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
+
+    registration.addMapping("/*");
+    HttpServer server;
+    if (sslConfig != null) {
+      SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
+      server = GrizzlyHttpServerFactory.createHttpServer(uri, ((GrizzlyHttpContainer) null), true, sslEngineConfigurator, false);
+    } else {
+      server = GrizzlyHttpServerFactory.createHttpServer(uri);
+    }
+    context.deploy(server);
+    return server;
   }
 }
