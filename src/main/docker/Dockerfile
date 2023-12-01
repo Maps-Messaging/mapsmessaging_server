@@ -72,8 +72,9 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 # -------------------------
 #
 # ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
-# Admin       8080        TCP - Hawtio
-# Admin       8082        TCP - Native RestAPI
+# Admin       8080        TCP - Native RestAPI
+# Admin       8181        TCP - Hawtio
+# Admin       8778        TCP - Jolokia
 #
 # SemTech     1700        UDP
 # MQTT-SN     1884        UDP
@@ -82,7 +83,8 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 8082/tcp
+EXPOSE 8181/tcp
+EXPOSE 8778/tcp
 
 EXPOSE 1700/udp
 EXPOSE 1884/udp

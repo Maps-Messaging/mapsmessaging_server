@@ -53,18 +53,23 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #   d) Configure Hawtio for JMX / Rest / Web management
 #   e) Define a volume mount for the data directory
 #   f) Register the command to start the server
-#----------------------------------------------------------------------------------------------
 # Expose the protocol ports
-# MQTT      1882, 1883
-# MQTT-SN   1884
-# AMQP      5672
-# Stomp     8675
-# Admin     8080
-# SemTech   1700
+# -------------------------
+#
+# ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
+# Admin       8080        TCP - Native RestAPI
+# Admin       8181        TCP - Hawtio
+# Admin       8778        TCP - Jolokia
+#
+# SemTech     1700        UDP
+# MQTT-SN     1884        UDP
+# CoAP        5683        UDP
+# MQTT-SN V2  2442        UDP
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 8082/tcp
+EXPOSE 8181/tcp
+EXPOSE 8778/tcp
 
 EXPOSE 1700/udp
 EXPOSE 1884/udp
