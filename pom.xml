@@ -478,7 +478,7 @@
   </repositories>
 
   <properties>
-    <logback.version>1.4.13</logback.version>
+    <logback.version>1.4.14</logback.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonar.sources>src/main</sonar.sources>
     <pi4j.version>2.4.0</pi4j.version>
