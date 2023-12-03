@@ -143,7 +143,7 @@ public class RestApiServerManager implements Agent {
             }
             StaticHttpHandler swaggerHttpHandler = new StaticHttpHandler(swaggerPath + "swagger-ui");
             swaggerHttpHandler.setFileCacheEnabled(true);
-            httpServer.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/dist/");
+            httpServer.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/swagger-ui/");
           }
         }
       }
@@ -180,8 +180,9 @@ public class RestApiServerManager implements Agent {
       config.packages(true,
           "io.swagger.v3.jaxrs2.integration.resources",
           "io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource",
-          "io.mapsmessaging.rest.api.impl",
           "io.mapsmessaging.rest.api",
+          "io.mapsmessaging.rest.api.impl",
+          "io.mapsmessaging.rest.api.impl.messaging",
           "io.mapsmessaging.rest.translation"
       );
       boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
