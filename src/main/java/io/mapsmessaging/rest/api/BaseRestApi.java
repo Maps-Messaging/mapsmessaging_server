@@ -17,22 +17,19 @@
 
 package io.mapsmessaging.rest.api;
 
-import org.glassfish.grizzly.http.server.SessionManager;
-import org.glassfish.grizzly.http.server.HttpServer;
-
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.core.Context;
 
 public class BaseRestApi {
+  @Context
+  protected HttpServletRequest request;
 
   @Context
-  protected Request request;
+  protected HttpServletResponse response;
 
-  @Context
-  private HttpServer httpServer; // Inject the HttpServer
-
-
-  protected SessionManager getSessionManager() {
-    return httpServer.getServerConfiguration().getSessionManager();
+  protected HttpSession getSession() {
+    return request.getSession(true);
   }
 }

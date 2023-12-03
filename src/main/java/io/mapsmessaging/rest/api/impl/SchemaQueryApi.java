@@ -19,6 +19,7 @@ package io.mapsmessaging.rest.api.impl;
 
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.BaseRestApi;
+import io.mapsmessaging.rest.data.SchemaPostData;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.SchemaMapResponse;
 import io.mapsmessaging.rest.responses.SchemaResponse;
@@ -26,10 +27,9 @@ import io.mapsmessaging.rest.responses.StringListResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,8 +71,8 @@ public class SchemaQueryApi extends BaseRestApi {
   @POST
   @Consumes({MediaType.APPLICATION_JSON})
   public BaseResponse addSchema(SchemaPostData jsonString) throws IOException {
-    SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.schema);
-    SchemaManager.getInstance().addSchema(jsonString.context, config);
+    SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.getSchema());
+    SchemaManager.getInstance().addSchema(jsonString.getContext(), config);
     return new BaseResponse(request);
   }
 
@@ -117,6 +117,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the schema configuration")
   public SchemaResponse getAllSchemas() throws IOException {
+    HttpSession session = getSession();
     return new SchemaResponse(request, convert(SchemaManager.getInstance().getAll()));
   }
 
@@ -155,19 +156,5 @@ public class SchemaQueryApi extends BaseRestApi {
       data.add(config.pack());
     }
     return data;
-  }
-
-  private static final class SchemaPostData {
-
-    @Getter
-    @Setter
-    private String schema;
-
-    @Getter
-    @Setter
-    private String context;
-
-    public SchemaPostData() {
-    }
   }
 }

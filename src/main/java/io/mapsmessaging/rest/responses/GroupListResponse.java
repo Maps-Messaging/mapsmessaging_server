@@ -20,7 +20,7 @@ package io.mapsmessaging.rest.responses;
 import io.mapsmessaging.rest.data.Group;
 import lombok.Getter;
 
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public class GroupListResponse extends BaseResponse {
@@ -29,7 +29,7 @@ public class GroupListResponse extends BaseResponse {
   private final List<Group> data;
 
 
-  public GroupListResponse(Request request, List<Group> data) {
+  public GroupListResponse(HttpServletRequest request, List<Group> data) {
     super(request);
     this.data = data;
   }

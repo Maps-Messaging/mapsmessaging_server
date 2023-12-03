@@ -22,7 +22,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.*;
 import lombok.Getter;
 
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +37,7 @@ public class InterfaceDetailResponse extends BaseResponse {
   private final Map<String, Object> globalConfig;
 
 
-  public InterfaceDetailResponse(Request request, List<InterfaceInfo> list, ConfigurationProperties map){
+  public InterfaceDetailResponse(HttpServletRequest request, List<InterfaceInfo> list, ConfigurationProperties map) {
     super(request);
     data = list;
     if(map != null) {

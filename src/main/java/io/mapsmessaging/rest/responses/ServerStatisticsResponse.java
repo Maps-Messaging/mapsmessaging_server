@@ -20,14 +20,14 @@ package io.mapsmessaging.rest.responses;
 import io.mapsmessaging.rest.data.ServerStatistics;
 import lombok.Getter;
 
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class ServerStatisticsResponse extends BaseResponse {
 
   @Getter
   private final ServerStatistics data;
 
-  public ServerStatisticsResponse(Request request){
+  public ServerStatisticsResponse(HttpServletRequest request) {
     super(request);
     data = new ServerStatistics();
   }

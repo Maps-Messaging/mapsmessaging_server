@@ -19,7 +19,8 @@ package io.mapsmessaging.rest.responses;
 
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.Request;
+
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 
 public class SchemaMapResponse extends BaseResponse {
@@ -28,7 +29,7 @@ public class SchemaMapResponse extends BaseResponse {
   private final Map<String, List<String>> data;
 
 
-  public SchemaMapResponse(Request request, Map<String, List<String>> data) {
+  public SchemaMapResponse(HttpServletRequest request, Map<String, List<String>> data) {
     super(request);
     this.data = data;
   }
