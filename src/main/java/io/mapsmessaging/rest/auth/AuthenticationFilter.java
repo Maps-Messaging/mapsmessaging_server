@@ -23,9 +23,12 @@ import io.mapsmessaging.auth.AuthManager;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.SessionManager;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
@@ -79,6 +82,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       default:
         throw unauthorized;
     }
+
     /*
     if(!isWrite && AuthManager.getInstance().isAuthorisationEnabled() && !AuthManager.getInstance().isAuthorised(subject, RestAccessControl.READ_ONLY)){
       throw unauthorized;

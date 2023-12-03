@@ -17,6 +17,9 @@
 
 package io.mapsmessaging.rest.api;
 
+import org.glassfish.grizzly.http.server.SessionManager;
+import org.glassfish.grizzly.http.server.HttpServer;
+
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Request;
 
@@ -24,4 +27,12 @@ public class BaseRestApi {
 
   @Context
   protected Request request;
+
+  @Context
+  private HttpServer httpServer; // Inject the HttpServer
+
+
+  protected SessionManager getSessionManager() {
+    return httpServer.getServerConfiguration().getSessionManager();
+  }
 }

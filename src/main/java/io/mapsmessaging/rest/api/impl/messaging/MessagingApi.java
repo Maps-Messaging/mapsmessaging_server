@@ -1,5 +1,6 @@
 package io.mapsmessaging.rest.api.impl.messaging;
 
+import io.mapsmessaging.rest.api.BaseRestApi;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +16,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Messaging Interface")
 @Path(URI_PATH + "/messaging")
-public class MessagingApi {
+public class MessagingApi extends BaseRestApi {
 
   @Path("/publish")
   @Consumes(MediaType.APPLICATION_JSON)
