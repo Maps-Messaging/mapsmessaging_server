@@ -18,6 +18,8 @@
 package io.mapsmessaging.rest.api.impl.messaging;
 
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.mapsmessaging.rest.data.messaging.PublishRequest;
+import io.mapsmessaging.rest.data.messaging.SubscriptionRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

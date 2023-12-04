@@ -17,10 +17,10 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.Destination;
+import io.mapsmessaging.rest.data.destination.Destination;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 

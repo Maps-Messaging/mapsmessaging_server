@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.DestinationStatus;
+import io.mapsmessaging.rest.data.destination.DestinationStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 

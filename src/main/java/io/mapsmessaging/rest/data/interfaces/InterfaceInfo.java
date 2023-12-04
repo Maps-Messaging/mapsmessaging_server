@@ -15,9 +15,10 @@
  *
  */
 
-package io.mapsmessaging.rest.data;
+package io.mapsmessaging.rest.data.interfaces;
 
 import io.mapsmessaging.network.EndPointManager;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 
@@ -28,19 +29,15 @@ import java.util.Map;
 @Data
 public class InterfaceInfo implements Serializable {
 
-//  @ApiModelProperty(value = "Unique name of the interface")
+  @Schema(description = "Unique name of the interface")
   private final String name;
-
-//  @ApiModelProperty(value = "Port that the interface is bound to")
+  @Schema(description = "Port that the interface is bound to")
   private final int port;
-
-//  @ApiModelProperty(value="Host that the interface is bound to")
+  @Schema(description = "Host that the interface is bound to")
   private final String host;
-
-  // @ApiModelProperty(value="Current state of the interface")
+  @Schema(description = "Current state of the interface")
   private final String state;
-
-  // @ApiModelProperty(value="Configuration for the interface")
+  @Schema(description = "Configuration for the interface")
   private final Map<String, Object> config;
 
   public InterfaceInfo(EndPointManager endPointManager){

@@ -15,9 +15,10 @@
  *
  */
 
-package io.mapsmessaging.rest.data;
+package io.mapsmessaging.rest.data.destination;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.IOException;
@@ -26,11 +27,17 @@ import java.io.Serializable;
 @Data
 public class Destination implements Serializable {
 
+  @Schema(description = "The name of the destination", example = "myDestination")
   private final String name;
+  @Schema(description = "The type of the destination", example = "queue")
   private final String type;
+  @Schema(description = "The number of messages stored in the destination", example = "123")
   private final long storedMessages;
+  @Schema(description = "The number of messages delayed in the destination", example = "123")
   private final long delayedMessages;
+  @Schema(description = "The number of messages pending in the destination", example = "123")
   private final long pendingMessages;
+  @Schema(description = "The schema id of the destination", example = "123")
   private final String schemaId;
 
   public Destination(DestinationImpl destinationImpl) throws IOException {

@@ -17,12 +17,11 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.InterfaceInfo;
+import io.mapsmessaging.rest.data.interfaces.InterfaceInfo;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.swagger.v3.oas.annotations.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 

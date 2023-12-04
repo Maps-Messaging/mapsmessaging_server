@@ -20,7 +20,7 @@ package io.mapsmessaging.rest.api.impl.destination;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.rest.data.Destination;
+import io.mapsmessaging.rest.data.destination.Destination;
 import io.mapsmessaging.rest.responses.DestinationResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;

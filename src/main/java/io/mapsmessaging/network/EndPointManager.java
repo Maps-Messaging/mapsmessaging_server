@@ -29,6 +29,7 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolAcceptRunner;
+import lombok.Getter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,8 +38,11 @@ public class EndPointManager implements Closeable, AcceptHandler {
 
   private final Logger logger;
   private final EndPointURL endPointURL;
+  @Getter
   private final String protocols;
+  @Getter
   private STATE state;
+  @Getter
   private EndPointServer endPointServer;
 
   public EndPointManager(EndPointURL url, EndPointServerFactory factory, NetworkConfig nc, NetworkManagerJMX managerBean) throws IOException {
@@ -52,14 +56,6 @@ public class EndPointManager implements Closeable, AcceptHandler {
     EndPointManagerJMX bean = new EndPointManagerJMX(managerBean.getTypePath(), this, nc);
     endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, nc, bean);
     ThreadContext.clearAll();
-  }
-
-  public STATE getState() {
-    return state;
-  }
-
-  public String getProtocols() {
-    return protocols;
   }
 
   public String getName() {
@@ -125,10 +121,6 @@ public class EndPointManager implements Closeable, AcceptHandler {
       logger.log(ServerLogMessages.END_POINT_MANAGER_CLOSE_SERVER);
       endpoint.close();
     }
-  }
-
-  public EndPointServer getEndPointServer() {
-    return endPointServer;
   }
 
   public enum STATE {

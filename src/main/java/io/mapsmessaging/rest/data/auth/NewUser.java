@@ -15,22 +15,12 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.rest.data.auth;
 
-import io.mapsmessaging.rest.data.auth.User;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.Getter;
+import lombok.Data;
 
-import java.util.List;
-
-public class UserListResponse extends BaseResponse {
-
-  @Getter
-  private final List<User> data;
-
-
-  public UserListResponse(HttpServletRequest request, List<User> data) {
-    super(request);
-    this.data = data;
-  }
+@Data
+public class NewUser {
+  private final String username;
+  private final String password;
 }

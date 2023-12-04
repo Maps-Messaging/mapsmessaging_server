@@ -15,12 +15,24 @@
  *
  */
 
-package io.mapsmessaging.rest.data;
+package io.mapsmessaging.rest.data.messaging;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.ToString;
 
 @Data
-public class NewUser {
-  private final String username;
-  private final String password;
+@ToString
+public class PublishRequest {
+  @NotNull
+  @Schema(description = "Topic to which the message will be published")
+  private String destinationName;
+
+  @NotNull
+  @Schema(description = "Message object containing the data to be published")
+  private Message message;
+
+  @Schema(description = "Should the message be retained on the destination", defaultValue = "false")
+  private boolean retain = false;
 }

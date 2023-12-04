@@ -15,15 +15,28 @@
  *
  */
 
-package io.mapsmessaging.rest.data;
+package io.mapsmessaging.rest.data.interfaces;
 
+import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.ToString;
+
+import java.util.Map;
 
 @Data
+@ToString
 public class InterfaceStatus {
+  @Schema(description = "Name of the interface")
   private final String name;
+  @Schema(description = "Number of bytes sent")
   private final long bytesSent;
+  @Schema(description = "Number of bytes received")
   private final long bytesReceived;
+  @Schema(description = "Number of messages sent")
   private final long messagesSent;
+  @Schema(description = "Number of messages received")
   private final long messagesReceived;
+  @Schema(description = "Map of moving averages")
+  private final Map<String, LinkedMovingAverageRecord> statistics;
 }

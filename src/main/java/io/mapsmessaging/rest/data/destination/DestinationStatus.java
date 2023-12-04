@@ -15,10 +15,11 @@
  *
  */
 
-package io.mapsmessaging.rest.data;
+package io.mapsmessaging.rest.data.destination;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -27,8 +28,11 @@ import java.util.Map;
 @Data
 public class DestinationStatus implements Serializable {
 
+  @Schema(description = "Name of the destination")
   private final String name;
+  @Schema(description = "Map of moving averages")
   private final Map<String, LinkedMovingAverageRecord> statistics;
+  @Schema(description = "Map of storage statistics")
   private final Map<String, Map<String, LinkedMovingAverageRecord>> storeageStatistics;
 
   public DestinationStatus(DestinationImpl destinationImpl) {

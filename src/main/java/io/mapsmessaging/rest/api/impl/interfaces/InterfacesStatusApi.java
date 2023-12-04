@@ -19,7 +19,8 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
-import io.mapsmessaging.rest.data.InterfaceStatus;
+import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
+import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -28,7 +29,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -44,13 +47,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
-        return new InterfaceStatus(
-            endpointName,
-            endPointManager.getEndPointServer().getTotalBytesSent(),
-            endPointManager.getEndPointServer().getTotalBytesRead(),
-            endPointManager.getEndPointServer().getTotalPacketsSent(),
-            endPointManager.getEndPointServer().getTotalPacketsRead()
-        );
+        return createStatus(endPointManager);
       }
     }
     return null;
@@ -63,14 +60,29 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
     List<InterfaceStatus> results = new ArrayList<>();
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
-      results.add(new InterfaceStatus(
-          endPointManager.getName(),
-          endPointManager.getEndPointServer().getTotalBytesSent(),
-          endPointManager.getEndPointServer().getTotalBytesRead(),
-          endPointManager.getEndPointServer().getTotalPacketsSent(),
-          endPointManager.getEndPointServer().getTotalPacketsRead()
-      ));
+      results.add(createStatus(endPointManager));
     }
     return results;
+  }
+
+  private InterfaceStatus createStatus(EndPointManager endPointManager) {
+    Map<String, LinkedMovingAverageRecord> statistics = new LinkedHashMap<>();
+    addToMap(statistics, endPointManager.getEndPointServer().getAverageBytesRead());
+    addToMap(statistics, endPointManager.getEndPointServer().getAverageBytesSent());
+    addToMap(statistics, endPointManager.getEndPointServer().getAveragePacketsRead());
+    addToMap(statistics, endPointManager.getEndPointServer().getAveragePacketsSent());
+
+    return new InterfaceStatus(
+        endPointManager.getName(),
+        endPointManager.getEndPointServer().getTotalBytesSent(),
+        endPointManager.getEndPointServer().getTotalBytesRead(),
+        endPointManager.getEndPointServer().getTotalPacketsSent(),
+        endPointManager.getEndPointServer().getTotalPacketsRead(),
+        statistics
+    );
+  }
+
+  private void addToMap(Map<String, LinkedMovingAverageRecord> map, LinkedMovingAverageRecord record) {
+    map.put(record.getName(), record);
   }
 }

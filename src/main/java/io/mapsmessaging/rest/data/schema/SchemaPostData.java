@@ -15,22 +15,14 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.rest.data.schema;
 
-import io.mapsmessaging.rest.data.auth.User;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.Getter;
+import lombok.Data;
 
-import java.util.List;
+@Data
+public class SchemaPostData {
 
-public class UserListResponse extends BaseResponse {
+  private String schema;
+  private String context;
 
-  @Getter
-  private final List<User> data;
-
-
-  public UserListResponse(HttpServletRequest request, List<User> data) {
-    super(request);
-    this.data = data;
-  }
 }

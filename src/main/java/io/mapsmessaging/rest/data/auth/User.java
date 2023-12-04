@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.rest.data;
+package io.mapsmessaging.rest.data.auth;
 
 import lombok.Data;
 
@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
-public class Group {
-  private final String name;
+public class User {
+  private final String username;
   private final UUID uniqueId;
-  private final List<UUID> usersList;
+  private final List<UUID> groupList;
 }

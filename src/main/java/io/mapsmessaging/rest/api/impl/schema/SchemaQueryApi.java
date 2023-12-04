@@ -19,7 +19,7 @@ package io.mapsmessaging.rest.api.impl.schema;
 
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.SchemaPostData;
+import io.mapsmessaging.rest.data.schema.SchemaPostData;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.SchemaMapResponse;
 import io.mapsmessaging.rest.responses.SchemaResponse;

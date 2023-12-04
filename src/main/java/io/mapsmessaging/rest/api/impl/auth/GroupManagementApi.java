@@ -21,7 +21,7 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.Group;
+import io.mapsmessaging.rest.data.auth.Group;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.GroupListResponse;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;

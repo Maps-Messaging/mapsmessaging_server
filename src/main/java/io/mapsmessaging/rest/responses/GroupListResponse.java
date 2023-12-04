@@ -17,10 +17,10 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.Group;
+import io.mapsmessaging.rest.data.auth.Group;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public class GroupListResponse extends BaseResponse {
