@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 
-@Tag(name = "Destination Statistics Management")
+@Tag(name = "Destination Management")
 @Path(URI_PATH)
 public class DestinationStatusApi extends BaseDestinationApi {
 

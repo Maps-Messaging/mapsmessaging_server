@@ -55,7 +55,6 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
     tags = {
         @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
         @Tag(name = "Destination Management", description = "Used to manage the destinations (topic/queues) and the subscriptions"),
-        @Tag(name = "Destination Statistics Management", description = "Used to retrieve the destinations (topic/queues) statistics"),
         @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
         @Tag(name = "Messaging Server Status", description = "Server status and simple queries"),
         @Tag(name = "User Profile and Authentication", description = "Managers authentication and authorisation of users on the server"),
