@@ -182,7 +182,11 @@ public class RestApiServerManager implements Agent {
           "io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource",
           "io.mapsmessaging.rest.api",
           "io.mapsmessaging.rest.api.impl",
+          "io.mapsmessaging.rest.api.impl.auth",
+          "io.mapsmessaging.rest.api.impl.destination",
+          "io.mapsmessaging.rest.api.impl.interfaces",
           "io.mapsmessaging.rest.api.impl.messaging",
+          "io.mapsmessaging.rest.api.impl.schema",
           "io.mapsmessaging.rest.translation"
       );
       boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);

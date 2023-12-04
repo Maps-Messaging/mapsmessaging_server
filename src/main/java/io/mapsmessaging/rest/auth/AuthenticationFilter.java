@@ -20,6 +20,8 @@ package io.mapsmessaging.rest.auth;
 import com.sun.jersey.core.util.Base64;
 import com.sun.jersey.core.util.Priority;
 import io.mapsmessaging.auth.AuthManager;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -27,8 +29,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.grizzly.http.server.SessionManager;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
@@ -43,6 +43,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
           Response.status(Response.Status.UNAUTHORIZED)
               .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"realm\"")
               .entity("Page requires login.").build());
+
+  @Context
+  private HttpServletRequest httpRequest;
 
   @Override
   public void filter(ContainerRequestContext containerRequest) throws IOException {
@@ -59,13 +62,29 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     String username = split[0];
     String password = split[1];
 
-    if (AuthManager.getInstance().isAuthenticationEnabled() && !AuthManager.getInstance().validate(username, password)) {
-      throw unauthorized;
+    Subject subject;
+    HttpSession session = httpRequest.getSession(true);
+    if (!session.isNew()) {
+      subject = (Subject) session.getAttribute("subject");
+      if (subject == null ||
+          session.getAttribute("username") == null ||
+          !session.getAttribute("username").equals(username)
+      ) {
+        throw unauthorized;
+      }
+    } else {
+      if (AuthManager.getInstance().isAuthenticationEnabled() && !AuthManager.getInstance().validate(username, password)) {
+        throw unauthorized;
+      }
+      subject = AuthManager.getInstance().getUserSubject(username);
+      session.setAttribute("username", username);
+      session.setAttribute("subject", subject);
     }
-    Subject subject = AuthManager.getInstance().getUserSubject(username);
+
     if (subject == null) {
       throw unauthorized;
     }
+
     boolean isWrite = false;
     switch (containerRequest.getMethod()) {
       case "GET":
@@ -92,5 +111,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
      */
+
+    // If new session, add security objects
+    if (session.isNew()) {
+    }
+
   }
+
 }

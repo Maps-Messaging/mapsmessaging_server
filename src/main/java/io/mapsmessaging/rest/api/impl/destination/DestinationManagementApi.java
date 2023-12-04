@@ -15,12 +15,13 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl;
+package io.mapsmessaging.rest.api.impl.destination;
+
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.rest.data.DestinationStatus;
-import io.mapsmessaging.rest.responses.DestinationStatusResponse;
+import io.mapsmessaging.rest.data.Destination;
+import io.mapsmessaging.rest.responses.DestinationResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -28,6 +29,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -35,38 +37,37 @@ import java.util.concurrent.TimeoutException;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-
-@Tag(name = "Destination Statistics Management")
+@Tag(name = "Destination Management")
 @Path(URI_PATH)
-public class DestinationStatusApi extends BaseDestinationApi {
+public class DestinationManagementApi extends BaseDestinationApi {
 
   @GET
-  @Path("/server/destination/status/{destination}")
+  @Path("/server/destination/{destination}")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public DestinationStatusResponse getDestination(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
-    DestinationStatus destination = lookupDestination(destinationName);
-    return new DestinationStatusResponse(request, destination);
+  public DestinationResponse getDestination(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException, IOException {
+    Destination destination = lookupDestination(destinationName);
+    return new DestinationResponse(request, destination);
   }
 
   @GET
-  @Path("/server/destination/status")
+  @Path("/server/destination")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the destination configuration")
-  public DestinationStatusResponse getAllDestinations() throws ExecutionException, InterruptedException, TimeoutException {
+  public DestinationResponse getAllDestinations() throws IOException, ExecutionException, InterruptedException, TimeoutException {
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
-    List<DestinationStatus> results = new ArrayList<>();
-    for (String name : destinations) {
+    List<Destination> results  = new ArrayList<>();
+    for(String name:destinations){
       results.add(lookupDestination(name));
     }
-    return new DestinationStatusResponse(request, results);
+    return new DestinationResponse(request, results);
   }
-  protected DestinationStatus lookupDestination(String name) throws ExecutionException, InterruptedException, TimeoutException {
+
+  protected Destination lookupDestination(String name) throws IOException, ExecutionException, InterruptedException, TimeoutException {
     DestinationImpl destinationImpl = super.lookup(name);
     if(destinationImpl == null){
       return null;
     }
-    return new DestinationStatus(destinationImpl);
+    return new Destination(destinationImpl);
   }
-
 }

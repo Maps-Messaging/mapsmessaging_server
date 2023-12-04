@@ -15,12 +15,14 @@
  *
  */
 
-package io.mapsmessaging.rest.api;
+package io.mapsmessaging.rest.api.impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.core.Context;
+
+import javax.security.auth.Subject;
 
 public class BaseRestApi {
   @Context
@@ -31,5 +33,9 @@ public class BaseRestApi {
 
   protected HttpSession getSession() {
     return request.getSession(true);
+  }
+
+  protected Subject getSubject() {
+    return (Subject) getSession().getAttribute("subject");
   }
 }

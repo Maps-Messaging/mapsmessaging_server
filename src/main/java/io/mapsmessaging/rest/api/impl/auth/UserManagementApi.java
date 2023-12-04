@@ -15,11 +15,12 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl;
+package io.mapsmessaging.rest.api.impl.auth;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.NewUser;
 import io.mapsmessaging.rest.data.User;
 import io.mapsmessaging.rest.responses.BaseResponse;
@@ -39,7 +40,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "User Profile and Authentication")
 @Path(URI_PATH)
-public class UserManagementApi extends BaseDestinationApi {
+public class UserManagementApi extends BaseRestApi {
 
   @GET
   @Path("/auth/users")

@@ -19,7 +19,6 @@ package io.mapsmessaging.rest.api.impl;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.rest.api.BaseRestApi;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;

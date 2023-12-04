@@ -15,10 +15,10 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl;
+package io.mapsmessaging.rest.api.impl.schema;
 
 import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.rest.api.BaseRestApi;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.SchemaPostData;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.SchemaMapResponse;
@@ -26,11 +26,13 @@ import io.mapsmessaging.rest.responses.SchemaResponse;
 import io.mapsmessaging.rest.responses.StringListResponse;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -47,7 +49,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @DELETE
   @Path("/server/schema/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Delete the schema configuration by unique id")
+  @Operation(summary = "Delete specific schema", description = "Delete the schema configuration by unique id")
   public BaseResponse deleteSchemaById(@PathParam("schemaId") String schemaId) {
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
@@ -60,7 +62,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @DELETE
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Delete all schema configuration in the repository")
+  @Operation(summary = "Delete all schemas", description = "Deletes all the schema configurations")
   public BaseResponse deleteAllSchemas() {
     SchemaManager.getInstance().removeAllSchemas();
     return new BaseResponse(request);
@@ -70,6 +72,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema")
   @POST
   @Consumes({MediaType.APPLICATION_JSON})
+  @Operation(summary = "Add new schema", description = "Adds a new schema to the registry")
   public BaseResponse addSchema(SchemaPostData jsonString) throws IOException {
     SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.getSchema());
     SchemaManager.getInstance().addSchema(jsonString.getContext(), config);
@@ -79,7 +82,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the schema configuration by unique id")
+  @Operation(summary = "Get schema", description = "Returns a specific schema")
   public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) throws IOException {
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
@@ -91,7 +94,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/context/{context}")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the schema configuration by context name")
+  @Operation(summary = "Get schema by context", description = "Returns all schemas that match the context")
   public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
     if (config != null) {
@@ -103,7 +106,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/type/{type}")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the schema configuration by schema type")
+  @Operation(summary = "Get schema by type", description = "Returns all schemas that match the type")
   public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
     if (config != null) {
@@ -115,16 +118,20 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get all the schema configuration")
+  @Operation(summary = "Get all schemas", description = "Returns all schemas")
   public SchemaResponse getAllSchemas() throws IOException {
     HttpSession session = getSession();
+    Subject subject = getSubject();
+    System.err.println(session);
+    System.err.println(subject);
+
     return new SchemaResponse(request, convert(SchemaManager.getInstance().getAll()));
   }
 
   @GET
   @Path("/server/schema/map")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get all the schema configuration")
+  @Operation(summary = "Get schemas and the configuration", description = "Returns all schemas and mapping information")
   public SchemaMapResponse getSchemaMapping() throws IOException {
     Map<String, List<SchemaConfig>> map = SchemaManager.getInstance().getMappedSchemas();
     Map<String, List<String>> responseMap = new LinkedHashMap<>();
@@ -137,7 +144,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/formats")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get all known formats currently supported by the schema")
+  @Operation(summary = "Get all known formats supported", description = "Returns list of supported formats")
   public StringListResponse getKnownFormats() {
     return new StringListResponse(request, SchemaManager.getInstance().getMessageFormats());
   }
@@ -145,7 +152,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/link-format")
   @Produces({MediaType.TEXT_PLAIN})
-  //@ApiOperation(value = "Get link format string")
+  @Operation(summary = "Get the link-format config", description = "Returns link-format list")
   public String getLinkFormat() {
     return SchemaManager.getInstance().buildLinkFormatResponse();
   }

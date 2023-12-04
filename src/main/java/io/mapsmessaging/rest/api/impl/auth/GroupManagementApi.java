@@ -15,10 +15,11 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl;
+package io.mapsmessaging.rest.api.impl.auth;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.registry.GroupDetails;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.Group;
 import io.mapsmessaging.rest.responses.GroupListResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +36,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "User Profile and Authentication")
 @Path(URI_PATH)
-public class GroupManagementApi extends BaseDestinationApi {
+public class GroupManagementApi extends BaseRestApi {
 
 
   @GET

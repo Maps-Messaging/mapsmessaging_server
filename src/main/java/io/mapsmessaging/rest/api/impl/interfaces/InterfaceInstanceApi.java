@@ -15,12 +15,12 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl;
+package io.mapsmessaging.rest.api.impl.interfaces;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
-import io.mapsmessaging.rest.api.BaseRestApi;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceInfo;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
