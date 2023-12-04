@@ -15,24 +15,14 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl;
+package io.mapsmessaging.rest.api.impl.interfaces;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
+import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 
-@Tag(name = "Server Health")
-@Path("/health")
-public class ConsulHealth extends BaseRestApi {
-
-
-  @GET
-  @Produces({MediaType.TEXT_PLAIN})
-//  @ApiOperation(value = "Simple request to test if the server is running")
-  public String getPing() {
-    return "Ok";
+public class BaseInterfaceApi extends BaseRestApi {
+  protected boolean isMatch(String name, EndPointManager endPointManager) {
+    return (endPointManager.getEndPointServer().getConfig().getProperties().getProperty("name").equals(name));
   }
 
 }

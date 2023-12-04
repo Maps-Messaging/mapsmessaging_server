@@ -20,7 +20,6 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.InterfaceInfo;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
@@ -32,10 +31,9 @@ import java.util.List;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-//@Api(value = URI_PATH + "/server/interface", tags="Server Interface Management")
 @Tag(name = "Server Interface Management")
 @Path(URI_PATH)
-public class InterfaceInstanceApi extends BaseRestApi {
+public class InterfaceInstanceApi extends BaseInterfaceApi {
 
   @GET
   @Path("/server/interface/{endpoint}")
@@ -50,7 +48,6 @@ public class InterfaceInstanceApi extends BaseRestApi {
     }
     return null;
   }
-
 
   @PUT
   @Path("/server/interface/{endpoint}/stop")
@@ -107,10 +104,6 @@ public class InterfaceInstanceApi extends BaseRestApi {
     }
     return Response.noContent()
         .build();
-  }
-
-  private boolean isMatch(String name, EndPointManager endPointManager){
-    return (endPointManager.getEndPointServer().getConfig().getProperties().getProperty("name").equals(name));
   }
 
   private Response handleRequest(STATE newState, EndPointManager endPointManager) {

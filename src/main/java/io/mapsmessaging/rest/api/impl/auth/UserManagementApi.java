@@ -36,7 +36,7 @@ import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-@Tag(name = "User Profile and Authentication")
+@Tag(name = "Authentication and Authorisation Management")
 @Path(URI_PATH)
 public class UserManagementApi extends BaseRestApi {
 

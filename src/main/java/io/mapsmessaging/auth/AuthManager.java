@@ -25,6 +25,7 @@ import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
@@ -202,5 +203,21 @@ public class AuthManager implements Agent {
       return authenticationStorage.getGroups();
     }
     return new ArrayList<>();
+  }
+
+  public void delGroup(String groupName) throws IOException {
+    authenticationStorage.delGroup(groupName);
+  }
+
+  public GroupIdMap addGroup(String groupName) throws IOException {
+    return authenticationStorage.addGroup(groupName);
+  }
+
+  public void addUserToGroup(String user, String group) throws IOException {
+    authenticationStorage.addUserToGroup(user, group);
+  }
+
+  public void removeUserFromGroup(String username, String groupName) throws IOException {
+    authenticationStorage.removeUserFromGroup(username, groupName);
   }
 }

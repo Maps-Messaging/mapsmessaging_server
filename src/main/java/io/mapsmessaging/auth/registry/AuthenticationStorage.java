@@ -197,4 +197,20 @@ public class AuthenticationStorage implements Closeable {
     }
     return groups;
   }
+
+  public void delGroup(String groupName) throws IOException {
+    identityAccessManager.deleteGroup(groupName);
+  }
+
+  public GroupIdMap addGroup(String groupName) throws IOException {
+    return identityAccessManager.createGroup(groupName);
+  }
+
+  public void addUserToGroup(String user, String group) throws IOException {
+    identityAccessManager.addUserToGroup(user, group);
+  }
+
+  public void removeUserFromGroup(String username, String groupName) throws IOException {
+    identityAccessManager.removeUserFromGroup(username, groupName);
+  }
 }

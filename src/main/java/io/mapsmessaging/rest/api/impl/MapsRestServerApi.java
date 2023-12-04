@@ -53,12 +53,13 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
     ),
     //schemes = {SwaggerDefinition.Scheme.HTTP, SwaggerDefinition.Scheme.HTTPS},
     tags = {
-        @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
+        @Tag(name = "Authentication and Authorisation Management", description = "Managers authentication and authorisation of users on the server"),
         @Tag(name = "Destination Management", description = "Used to manage the destinations (topic/queues) and the subscriptions"),
+        @Tag(name = "Messaging Interface", description = "Used to send and receive messages from the server"),
+        @Tag(name = "Server Health", description = "Simple server health endpoint"),
+        @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
         @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
         @Tag(name = "Server Status", description = "Server status and simple queries"),
-        @Tag(name = "User Profile and Authentication", description = "Managers authentication and authorisation of users on the server"),
-        @Tag(name = "Messaging Interface", description = "Used to send and receive messages from the server"),
     },
     externalDocs = @ExternalDocumentation(description = "Maps Messaging", url = "https://www.mapsmessaging.io/")
 )

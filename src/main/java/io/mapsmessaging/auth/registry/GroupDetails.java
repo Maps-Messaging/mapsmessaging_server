@@ -28,7 +28,6 @@ import java.util.UUID;
 @ToString
 @AllArgsConstructor
 public class GroupDetails {
-
   private final String name;
   private final UUID groupId;
   private final List<UUID> users;
