@@ -148,6 +148,10 @@ public class AuthenticationStorage implements Closeable {
     return identityAccessManager.getUser(username);
   }
 
+  public UserIdMap findUser(UUID uuid) {
+    return identityAccessManager.getAllUsers().stream().filter(userIdMap -> userIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
+  }
+
   public List<UserDetails> getUsers() {
     List<UserIdMap> userIdMaps = identityAccessManager.getAllUsers();
     List<UserDetails> users = new ArrayList<>();

@@ -37,6 +37,8 @@ import java.io.IOException;
 @Priority(1)
 public class AuthenticationFilter implements ContainerRequestFilter {
 
+  private static final String USERNAME = "username";
+
   // Exception thrown if user is unauthorized.
   private static final WebApplicationException unauthorized =
       new WebApplicationException(
@@ -67,8 +69,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     if (!session.isNew()) {
       subject = (Subject) session.getAttribute("subject");
       if (subject == null ||
-          session.getAttribute("username") == null ||
-          !session.getAttribute("username").equals(username)
+          session.getAttribute(USERNAME) == null ||
+          !session.getAttribute(USERNAME).equals(username)
       ) {
         throw unauthorized;
       }
@@ -77,7 +79,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         throw unauthorized;
       }
       subject = AuthManager.getInstance().getUserSubject(username);
-      session.setAttribute("username", username);
+      session.setAttribute(USERNAME, username);
       session.setAttribute("subject", subject);
     }
 
@@ -111,11 +113,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
      */
-
-    // If new session, add security objects
-    if (session.isNew()) {
-    }
-
   }
 
 }

@@ -170,6 +170,10 @@ public class AuthManager implements Agent {
     return authenticationStorage.findUser(username);
   }
 
+  public UserIdMap getUserIdentity(UUID uuid) {
+    return authenticationStorage.findUser(uuid);
+  }
+
   public Subject getUserSubject(String username) {
     Subject subject = subjectMap.get(username);
     if (subject == null) {

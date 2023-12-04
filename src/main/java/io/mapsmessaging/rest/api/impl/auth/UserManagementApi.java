@@ -25,11 +25,9 @@ import io.mapsmessaging.rest.data.NewUser;
 import io.mapsmessaging.rest.data.User;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
+import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.ArrayList;
@@ -61,7 +59,7 @@ public class UserManagementApi extends BaseRestApi {
   @POST
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse createUser(NewUser newUser) {
+  public BaseResponse addUser(NewUser newUser) {
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
     if (authManager.addUser(newUser.getUsername(), newUser.getPassword(), sessionPrivileges, new String[0])) {
@@ -70,4 +68,17 @@ public class UserManagementApi extends BaseRestApi {
     return new BaseResponse(request);//, 500, "Failed to create user");
   }
 
+  @DELETE
+  @Path("/auth/users/{userUuid}")
+  @Produces({MediaType.APPLICATION_JSON})
+  public BaseResponse deleteUser(@PathParam("userUuid") String userUuid) {
+    AuthManager authManager = AuthManager.getInstance();
+    UserIdMap userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
+    if (userIdMap != null) {
+      authManager.delUser(userIdMap.getUsername());
+      return new BaseResponse(request);
+    }
+    response.setStatus(500);
+    return new BaseResponse(request);
+  }
 }

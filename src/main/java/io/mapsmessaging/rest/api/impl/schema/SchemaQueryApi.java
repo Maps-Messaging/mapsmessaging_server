@@ -28,11 +28,9 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -120,11 +118,6 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get all schemas", description = "Returns all schemas")
   public SchemaResponse getAllSchemas() throws IOException {
-    HttpSession session = getSession();
-    Subject subject = getSubject();
-    System.err.println(session);
-    System.err.println(subject);
-
     return new SchemaResponse(request, convert(SchemaManager.getInstance().getAll()));
   }
 
