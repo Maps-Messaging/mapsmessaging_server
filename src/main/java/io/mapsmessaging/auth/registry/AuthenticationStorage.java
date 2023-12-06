@@ -43,7 +43,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class AuthenticationStorage implements Closeable {
-
+  @Getter
   private final IdentityAccessManager identityAccessManager;
   private final PasswordParser globalPasswordParser;
   private final UserPermisionManager userPermisionManager;
@@ -74,7 +74,7 @@ public class AuthenticationStorage implements Closeable {
     Map<UUID, SessionPrivileges> sessionPrivilegesMap = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
 
-    identityAccessManager = new IdentityAccessManager(authProvider, Map.of("configDirectory", securityDirectory), new IdDbStore<UserIdMap>(userMapSet), new IdDbStore<GroupIdMap>(groupMapSet));
+    identityAccessManager = new IdentityAccessManager(authProvider, Map.of("configDirectory", securityDirectory), new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet));
     globalPasswordParser = new BCrypt2yPasswordParser();
     userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
   }

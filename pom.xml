@@ -830,21 +830,26 @@
       <version>1.7.2</version>
     </dependency>
 
-    <!-- *********************** -->
-    <!-- Test Dependency Imports -->
-    <!-- *********************** -->
-
     <!-- Authentication via Amazon Cognito -->
     <dependency>
-      <scope>test</scope>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
+      <version>2.21.37</version>
     </dependency>
 
     <dependency>
-      <scope>test</scope>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
+      <version>2.21.37</version>
+    </dependency>
+
+
+    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-cognitoidp</artifactId>
+      <version>1.12.604</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -861,14 +866,9 @@
       <version>3.0.10</version>
     </dependency>
 
-
-    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.604</version>
-      <scope>test</scope>
-    </dependency>
+    <!-- *********************** -->
+    <!-- Test Dependency Imports -->
+    <!-- *********************** -->
 
 
     <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
