@@ -67,6 +67,52 @@
   -->
   <profiles>
     <profile>
+      <id>native</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <version>0.9.28</version>
+            <extensions>true</extensions>
+            <executions>
+              <execution>
+                <id>build-native</id>
+                <goals>
+                  <goal>compile-no-fork</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+              <execution>
+                <id>test-native</id>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+                <phase>test</phase>
+              </execution>
+            </executions>
+            <configuration>
+              <!-- ... -->
+                <imageName>maps_daemon</imageName>
+                <mainClass>io.mapsmessaging.MessageDaemon</mainClass>
+                <fallback>false</fallback>
+                <verbose>true</verbose>
+              <metadataRepository>
+                <enabled>true</enabled>
+                <version>0.2.3</version>
+              </metadataRepository>
+              <!--<classpath>
+              <param>${project.build.directory}/${project.artifactId}-${project.version}-jar-with-dependencies.jar</param>
+              </classpath>-->
+              <agent>
+                <enabled>true</enabled>
+              </agent>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>Windows</id>
       <activation>
         <os>
@@ -167,6 +213,13 @@
           <groupId>io.mapsmessaging</groupId>
           <artifactId>device_library</artifactId>
           <version>1.0.8-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.buildtools</groupId>
+          <artifactId>graalvm-reachability-metadata</artifactId>
+          <version>0.3.5</version>
+          <classifier>repository</classifier>
+          <type>zip</type>
         </dependency>
       </dependencies>
       <repositories>
