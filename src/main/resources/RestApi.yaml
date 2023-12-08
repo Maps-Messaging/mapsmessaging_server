@@ -22,6 +22,11 @@ RestApi:
   port: 8080
   enableSwagger: true
   enableSwaggerUI: true
+  enableUserManagement: true
+  enableSchemaManagement: true
+  enableInterfaceManagement: true
+  enableDestinationManagement: true
+
 
   #ssl_keyStoreFile: my-keystore.jks
   #ssl_keyStorePassphrase: password
