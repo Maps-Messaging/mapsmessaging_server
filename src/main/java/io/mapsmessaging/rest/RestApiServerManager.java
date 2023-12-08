@@ -42,6 +42,8 @@ import org.glassfish.jersey.uri.UriComponent;
 import javax.jmdns.ServiceInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import static io.mapsmessaging.logging.ServerLogMessages.REST_API_ACCESS;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
@@ -174,21 +176,38 @@ public class RestApiServerManager implements Agent {
           }
         });
   }
+
   public void startServer() {
+    boolean enableSwagger = map.getBooleanProperty("enableSwagger", true);
+    boolean enableUserManagement = map.getBooleanProperty("enableUserManagement", true);
+    boolean enableSchemaManagement = map.getBooleanProperty("enableSchemaManagement", true);
+    boolean enableInterfaceManagement = map.getBooleanProperty("enableInterfaceManagement", true);
+    boolean enableDestinationManagement = map.getBooleanProperty("enableDestinationManagement", true);
+    List<String> endpoints = new ArrayList<>();
+    endpoints.add("io.mapsmessaging.rest.api.impl");
+    endpoints.add("io.mapsmessaging.rest.api.impl.messaging");
+    endpoints.add("io.mapsmessaging.rest.translation");
+
+    if (enableSwagger) {
+      endpoints.add("io.swagger.v3.jaxrs2.integration.resources");
+      endpoints.add("io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource");
+    }
+    if (enableUserManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.auth");
+    }
+    if (enableDestinationManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.destination");
+    }
+    if (enableInterfaceManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
+    }
+    if (enableSchemaManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.schema");
+    }
+
     try {
       final ResourceConfig config = new ResourceConfig();
-      config.packages(true,
-          "io.swagger.v3.jaxrs2.integration.resources",
-          "io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource",
-          "io.mapsmessaging.rest.api",
-          "io.mapsmessaging.rest.api.impl",
-          "io.mapsmessaging.rest.api.impl.auth",
-          "io.mapsmessaging.rest.api.impl.destination",
-          "io.mapsmessaging.rest.api.impl.interfaces",
-          "io.mapsmessaging.rest.api.impl.messaging",
-          "io.mapsmessaging.rest.api.impl.schema",
-          "io.mapsmessaging.rest.translation"
-      );
+      config.packages(false, endpoints.toArray(new String[0]));
       boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
       if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
         config.register(new AuthenticationFilter());
