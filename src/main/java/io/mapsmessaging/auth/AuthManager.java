@@ -92,7 +92,7 @@ public class AuthManager implements Agent {
         bw.newLine(); // Add a newline character after each line
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      // todo add log
     }
   }
 
@@ -101,7 +101,7 @@ public class AuthManager implements Agent {
     try {
       if (authenticationStorage != null) authenticationStorage.close();
     } catch (IOException e) {
-
+      // todo add log
     }
   }
 
