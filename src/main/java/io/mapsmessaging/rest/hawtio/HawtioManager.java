@@ -53,11 +53,29 @@ public class HawtioManager implements Agent {
       if (winFile.exists()) {
         warFile = checkFile;
       } else {
-        warFile = "";
+        warFile = scanForWarFileInLib();
       }
     } else {
       warFile = "";
     }
+  }
+
+  private String scanForWarFileInLib() {
+    String libString = MessageDaemon.getInstance().getEnvironmentConfig().getHomePath() + "/lib";
+    libString = libString.replace("//", "/");
+    File file = new File(libString);
+    if (file.isDirectory()) {
+      String[] libraries = file.list();
+      if (libraries != null) {
+        for (String library : libraries) {
+          String test = library.toLowerCase().trim();
+          if (test.startsWith("hawtio-default-") && test.endsWith(".war")) {
+            return library;
+          }
+        }
+      }
+    }
+    return "";
   }
 
   private boolean isJolokiaEnabled() {
