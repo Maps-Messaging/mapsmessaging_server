@@ -34,7 +34,7 @@ if not "%FLY_CONSUL_URL%"=="" (
     set CONSUL_URL=%FLY_CONSUL_URL%
 ) else (
     :: If FLY_CONSUL_URL is not set, use the default value
-    set CONSUL_URL=%ConsulUrl:http://127.0.0.1:8500/%
+    set CONSUL_URL=%ConsulUrl:http://127.0.0.1/%
 )
 
 echo Maps Home is set to '%MAPS_HOME%'

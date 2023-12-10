@@ -34,7 +34,7 @@ if [[ -n "${FLY_CONSUL_URL}" ]]; then
   CONSUL_URL="${FLY_CONSUL_URL}"
 else
   # If FLY_CONSUL_URL is not set, use the default value
-  CONSUL_URL="${ConsulUrl:-'http://127.0.0.1:8500/'}"
+  CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
 fi
 
 # Export the CONSUL_URL so it becomes an environment variable
