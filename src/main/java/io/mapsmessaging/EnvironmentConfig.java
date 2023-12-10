@@ -1,7 +1,24 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging;
 
-import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.SystemProperties;
 import lombok.Getter;
@@ -12,6 +29,9 @@ import java.nio.file.Files;
 
 @Getter
 public class EnvironmentConfig {
+  private static final String MAPS_HOME = "MAPS_HOME";
+  private static final String MAPS_DATA = "MAPS_DATA";
+
   private final Logger logger = LoggerFactory.getLogger(EnvironmentConfig.class);
 
   private final String homeDirectory;
@@ -20,8 +40,8 @@ public class EnvironmentConfig {
   private final File dataPath;
 
   public EnvironmentConfig() throws IOException {
-    homeDirectory = loadAndCreatePath("MAPS_HOME", ".", false);
-    dataDirectory = loadAndCreatePath("MAPS_DATA", homeDirectory + "data", true);
+    homeDirectory = loadAndCreatePath(MAPS_HOME, ".", false);
+    dataDirectory = loadAndCreatePath(MAPS_DATA, homeDirectory + "data", true);
     homePath = new File(homeDirectory);
     dataPath = new File(dataDirectory);
     logger.log(ServerLogMessages.MESSAGE_DAEMON_HOME_DIRECTORY, homeDirectory);
@@ -44,4 +64,26 @@ public class EnvironmentConfig {
     }
     return directoryPath;
   }
+
+
+  public String translatePath(String path) {
+    String updated = path;
+    updated = updated.replace("{{" + MAPS_DATA + "}}", dataDirectory);
+    updated = updated.replace("{{" + MAPS_HOME + "}}", homeDirectory);
+    while (updated.contains("//")) {
+      updated = updated.replace("//", File.separator);
+    }
+    while (updated.contains("\\\\")) {
+      updated = updated.replace("\\\\", File.separator);
+    }
+    while (updated.contains("/\\")) {
+      updated = updated.replace("/\\", File.separator);
+    }
+    while (updated.contains("\\/")) {
+      updated = updated.replace("\\/", File.separator);
+    }
+    return updated;
+  }
+
+
 }

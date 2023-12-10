@@ -112,29 +112,6 @@ RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VE
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
-# Set the destination configuration
-RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
-
-# set the authentication configuration
-RUN mv message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml_orig && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/AuthManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/AuthManager.yaml
-
-#----------------------------------------------------------------------------------------------
-# Set up the static files for the rest api engine
-#----------------------------------------------------------------------------------------------
-RUN mkdir /data && \
-    mv /message_daemon-%%MAPS_VERSION%%/html /data/html && \
-    sed -i 's|path: html/|path: /data/html/|' /message_daemon-%%MAPS_VERSION%%/conf/RestApi.yaml
-
-#----------------------------------------------------------------------------------------------
-# Now configure and download hawtio for web/JMX/Rest administration
-#----------------------------------------------------------------------------------------------
-RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
-    mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
-    sed 's|/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.17.7.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
-    rm conf/hawtio.yaml_old && \
-    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.17.7/hawtio-default-2.17.7.war
 
 #----------------------------------------------------------------------------------------------
 # Define the data directory in the install as a volume so destination data is stored external

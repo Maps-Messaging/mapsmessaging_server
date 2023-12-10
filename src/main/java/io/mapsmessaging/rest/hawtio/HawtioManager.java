@@ -47,6 +47,7 @@ public class HawtioManager implements Agent {
     String checkFile = properties.getProperty("warFileLocation", "");
     enabled = properties.getBooleanProperty("enable", true) && isJolokiaEnabled();
 
+    checkFile = MessageDaemon.getInstance().getEnvironmentConfig().translatePath(checkFile);
     if (enabled) {
       File winFile = new File(checkFile);
       if (winFile.exists()) {

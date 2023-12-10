@@ -39,7 +39,13 @@ if [ -z ${MAPS_HOME+x} ];
   then export MAPS_HOME=/opt/message_daemon-$VERSION;
 fi
 
+if [ -z ${MAPS_DATA+x} ];
+  then export MAPS_DATA=/opt/data
+fi
+
 echo "Maps Home is set to '$MAPS_HOME'"
+echo "Maps Data is set to '$MAPS_DATA'"
+
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
 
