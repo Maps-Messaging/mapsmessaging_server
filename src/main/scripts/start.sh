@@ -24,13 +24,17 @@ if [ -z ${MAPS_HOME+x} ];
   then export MAPS_HOME=/opt/message_daemon-$VERSION;
 fi
 
+if [ -z ${MAPS_DATA+x} ];
+  then export MAPS_DATA=$MAPS_HOME/data;
+fi
+
 # Check if FLY_CONSUL_URL is set and not empty
 if [[ -n "${FLY_CONSUL_URL}" ]]; then
   # If FLY_CONSUL_URL is set, use its value for CONSUL_URL
   CONSUL_URL="${FLY_CONSUL_URL}"
 else
   # If FLY_CONSUL_URL is not set, use the default value
-  CONSUL_URL="${ConsulUrl:-'http://127.0.0.1/'}"
+  CONSUL_URL="${ConsulUrl:-'http://127.0.0.1:8500/'}"
 fi
 
 # Export the CONSUL_URL so it becomes an environment variable
