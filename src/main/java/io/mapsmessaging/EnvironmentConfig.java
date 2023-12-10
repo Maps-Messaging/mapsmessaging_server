@@ -21,7 +21,7 @@ public class EnvironmentConfig {
 
   public EnvironmentConfig() throws IOException {
     homeDirectory = loadAndCreatePath("MAPS_HOME", ".", false);
-    dataDirectory = loadAndCreatePath("MAPS_DATA", homeDirectory + "/data", true);
+    dataDirectory = loadAndCreatePath("MAPS_DATA", homeDirectory + "data", true);
     homePath = new File(homeDirectory);
     dataPath = new File(dataDirectory);
     logger.log(ServerLogMessages.MESSAGE_DAEMON_HOME_DIRECTORY, homeDirectory);
@@ -39,8 +39,8 @@ public class EnvironmentConfig {
         directoryPath = defaultPath;
       }
     }
-    if (directoryPath.endsWith(File.separator)) {
-      directoryPath = directoryPath.substring(0, directoryPath.length() - 1);
+    if (!directoryPath.endsWith(File.separator)) {
+      directoryPath = defaultPath + File.separator;
     }
     return directoryPath;
   }
