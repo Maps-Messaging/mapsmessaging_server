@@ -18,7 +18,7 @@
 
 hawtio:
     enable: true                    # If true then the server will start the hawtio server else the server will not run the service
-    warFileLocation: "{{MAPS_HOME}}/lib/hawtio-default-2.17.7.war"
+    warFileLocation: ""             # Unless moved out of MAPS_HOME/lib/ directory then simply let the server discover it
     discoverable: false             # If the server registers a mdns entry for hawtio
     config:
         hawtio.host: 0.0.0.0                   # Host name / ip address to bind to
