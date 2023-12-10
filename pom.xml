@@ -81,7 +81,7 @@
                 <goals>
                   <goal>compile-no-fork</goal>
                 </goals>
-                <phase>package</phase>
+                <phase>install</phase>
               </execution>
               <execution>
                 <id>test-native</id>
@@ -99,13 +99,22 @@
                 <verbose>true</verbose>
               <metadataRepository>
                 <enabled>true</enabled>
-                <version>0.2.3</version>
               </metadataRepository>
               <!--<classpath>
               <param>${project.build.directory}/${project.artifactId}-${project.version}-jar-with-dependencies.jar</param>
               </classpath>-->
               <agent>
-                <enabled>true</enabled>
+                <defaultMode>Standard</defaultMode>
+                <options>
+                  <builtinCallerFilter>true</builtinCallerFilter>
+                  <builtinHeuristicFilter>true</builtinHeuristicFilter>
+                  <enableExperimentalPredefinedClasses>true</enableExperimentalPredefinedClasses>
+                  <enableExperimentalUnsafeAllocationTracing>true</enableExperimentalUnsafeAllocationTracing>
+                  <trackReflectionMetadata>true</trackReflectionMetadata>
+                </options>
+                <metadataCopy>
+                  <merge>true</merge>
+                </metadataCopy>
               </agent>
             </configuration>
           </plugin>
@@ -164,6 +173,24 @@
     <profile>
       <id>snapshot</id>
       <dependencies>
+
+        <!-- Experimenting with dependency hint so as to have 1 bouncycastle version -->
+        <!--<dependency>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk15on</artifactId>
+          <version>1.70</version>
+        </dependency>
+        <dependency>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
+          <version>1.70</version>
+        </dependency>
+        <dependency>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcutil-jdk15on</artifactId>
+          <version>1.70</version>
+        </dependency>-->
+
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
