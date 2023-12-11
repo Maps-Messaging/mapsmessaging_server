@@ -70,7 +70,11 @@ public class ConfigurationProperties {
     Object val = get(key, defaultValue);
     if (val != null) {
       String response = val.toString();
-      if (key.toLowerCase().contains("file") || key.toLowerCase().contains("directory")) {
+      String check = key.toLowerCase();
+      if (check.contains("file") ||
+          check.contains("directory") ||
+          check.contains("path")
+      ) {
         response = MessageDaemon.getInstance().getEnvironmentConfig().translatePath(response);
       }
       return response;
