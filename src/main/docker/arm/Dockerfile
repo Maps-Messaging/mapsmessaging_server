@@ -98,6 +98,12 @@ RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%
     mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
 #----------------------------------------------------------------------------------------------
+# Set up the static files for the rest api engine
+#----------------------------------------------------------------------------------------------
+RUN mkdir /data && \
+    mv /message_daemon-%%MAPS_VERSION%%/html /data/html
+
+#----------------------------------------------------------------------------------------------
 # Define the data directory in the install as a volume so destination data is stored external
 #----------------------------------------------------------------------------------------------
 VOLUME /data
