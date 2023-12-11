@@ -17,6 +17,7 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.utilities.SystemProperties;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -27,7 +28,7 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ServerRunner implements WrapperListener {
 
-  private static final String PID_FILE = "pid";
+  private static String PID_FILE = "pid";
   private static ExitRunner exitRunner;
   private static ServerRunner serverRunner;
 
@@ -36,6 +37,11 @@ public class ServerRunner implements WrapperListener {
   //  call the application's start method.  Otherwise, the start method
   //  will be called immediately.
   public static void main(String[] args) throws IOException {
+    String directoryPath = SystemProperties.getInstance().locateProperty("MAPS_HOME", "");
+    if (!directoryPath.isEmpty()) {
+      PID_FILE = directoryPath + File.separator + PID_FILE;
+      PID_FILE = PID_FILE.replace("//", "/");
+    }
     File pidFile = new File(PID_FILE);
 
     if (pidFile.exists()) {

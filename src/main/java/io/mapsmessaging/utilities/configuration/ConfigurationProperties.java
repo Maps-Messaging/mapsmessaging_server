@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -68,7 +69,15 @@ public class ConfigurationProperties {
   public String getProperty(String key, String defaultValue) {
     Object val = get(key, defaultValue);
     if (val != null) {
-      return val.toString();
+      String response = val.toString();
+      String check = key.toLowerCase();
+      if (check.contains("file") ||
+          check.contains("directory") ||
+          check.contains("path")
+      ) {
+        response = MessageDaemon.getInstance().getEnvironmentConfig().translatePath(response);
+      }
+      return response;
     }
     return null;
   }

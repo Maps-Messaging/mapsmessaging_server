@@ -133,7 +133,7 @@ public class RestApiServerManager implements Agent {
       if(obj instanceof ConfigurationProperties){
         ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
         if(staticConfig.getBooleanProperty("enabled", false)){
-          String path = staticConfig.getProperty("path", "./html");
+          String path = staticConfig.getProperty("directory", "./html");
           StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
           staticHttpHandler.setFileCacheEnabled(true);
           httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");

@@ -19,7 +19,7 @@
 <configuration>
   <shutdownHook/>
   <appender name="LogFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>messaging.log</file>
+    <file>${MAPS_HOME}/log/messaging.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <fileNamePattern>messaging.log-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
       <maxHistory>7</maxHistory>
@@ -31,7 +31,7 @@
   <appender name="AsyncLogFile" class="ch.qos.logback.classic.AsyncAppender">
     <appender-ref ref="LogFile"/>
   </appender>
-  <root level="debug">
+  <root level="info">
     <appender-ref ref="AsyncLogFile"/>
   </root>
 </configuration>

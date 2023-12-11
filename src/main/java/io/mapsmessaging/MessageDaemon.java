@@ -53,11 +53,9 @@ import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,7 +65,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 public class MessageDaemon {
 
   @Getter
-  private static MessageDaemon instance;
+  private static final MessageDaemon instance;
 
   static {
     MessageDaemon tmp;
@@ -82,9 +80,11 @@ public class MessageDaemon {
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final Map<String, AgentOrder> agentMap;
   private final String uniqueId;
-  private final String path;
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
+
+  @Getter
+  private final EnvironmentConfig environmentConfig;
 
   @Getter
   private boolean enableResourceStatistics;
@@ -93,24 +93,8 @@ public class MessageDaemon {
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
     isStarted = new AtomicBoolean(false);
-    String tmpHome = SystemProperties.getInstance().getProperty("MAPS_HOME", ".");
-    File testHome = new File(tmpHome);
-    if (!testHome.exists()) {
-      logger.log(ServerLogMessages.MESSAGE_DAEMON_NO_HOME_DIRECTORY, testHome);
-      tmpHome = ".";
-    }
-    if (tmpHome.endsWith(File.separator)) {
-      tmpHome = tmpHome.substring(0, tmpHome.length() - 1);
-    }
-    String homeDirectory = tmpHome;
-    File data = new File(homeDirectory + "/data");
-    if (!data.exists()) {
-      Files.createDirectories(data.toPath());
-    }
-    path = homeDirectory + "/data/";
-    File file = new File(path);
-    logger.log(ServerLogMessages.MESSAGE_DAEMON_HOME_DIRECTORY, file.getAbsolutePath());
-    InstanceConfig instanceConfig = new InstanceConfig(path);
+    environmentConfig = new EnvironmentConfig();
+    InstanceConfig instanceConfig = new InstanceConfig(environmentConfig.getDataDirectory());
     instanceConfig.loadState();
     String serverId = instanceConfig.getServerName();
     if (serverId != null) {
@@ -154,7 +138,7 @@ public class MessageDaemon {
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
   }
 
-  private void createAgentStartStopList(String path) throws IOException {
+  private void createAgentStartStopList() throws IOException {
     // Start the Schema manager to it has the defaults and has loaded the required classes
     SecurityManager securityManager = new SecurityManager();
     DestinationManager destinationManager = new DestinationManager();
@@ -166,7 +150,7 @@ public class MessageDaemon {
     addToMap(300, 100, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
-    addToMap(600, 300, new SessionManager(securityManager, destinationManager, path));
+    addToMap(600, 300, new SessionManager(securityManager, destinationManager, environmentConfig.getDataDirectory()));
     addToMap(700, 150, new NetworkManager(mBean.getTypePath()));
     addToMap(800, 50, new SystemTopicManager(destinationManager));
     addToMap(900, 200, new NetworkConnectionManager(mBean.getTypePath()));
@@ -232,7 +216,7 @@ public class MessageDaemon {
     isStarted.set(true);
     mBean = new MessageDaemonJMX(this);
     loadConstants();
-    createAgentStartStopList(path);
+    createAgentStartStopList();
 
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
