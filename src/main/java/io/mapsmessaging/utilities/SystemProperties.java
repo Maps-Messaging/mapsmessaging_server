@@ -37,6 +37,16 @@ public class SystemProperties {
   private SystemProperties() {
   }
 
+  public String locateProperty(String key, String defaultValue) {
+    String response = getProperty(key);
+    if (response == null) {
+      response = getEnvProperty(key);
+    }
+    if (response == null) {
+      return defaultValue;
+    }
+    return response;
+  }
 
   public String getProperty(String key) {
     return getProperty(key, null);

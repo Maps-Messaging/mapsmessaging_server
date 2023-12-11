@@ -69,8 +69,8 @@ public class HawtioManager implements Agent {
       if (libraries != null) {
         for (String library : libraries) {
           String test = library.toLowerCase().trim();
-          if (test.startsWith("hawtio-default-") && test.endsWith(".war")) {
-            return library;
+          if (test.contains("hawtio-default-") && test.endsWith(".war")) {
+            return file.getAbsolutePath() + File.separator + library;
           }
         }
       }

@@ -48,7 +48,7 @@ public class EnvironmentConfig {
   }
 
   private String loadAndCreatePath(String name, String defaultPath, boolean create) throws IOException {
-    String directoryPath = SystemProperties.getInstance().getProperty(name, defaultPath);
+    String directoryPath = SystemProperties.getInstance().locateProperty(name, defaultPath);
     File testPath = new File(directoryPath);
     if (!testPath.exists()) {
       if (create) {
@@ -56,11 +56,10 @@ public class EnvironmentConfig {
 
       } else {
         logger.log(ServerLogMessages.MESSAGE_DAEMON_NO_HOME_DIRECTORY, directoryPath);
-        directoryPath = defaultPath;
       }
     }
     if (!directoryPath.endsWith(File.separator)) {
-      directoryPath = defaultPath + File.separator;
+      directoryPath = directoryPath + File.separator;
     }
     return directoryPath;
   }
