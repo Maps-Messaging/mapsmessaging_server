@@ -69,6 +69,10 @@ public class EnvironmentConfig {
     String updated = path;
     updated = updated.replace("{{" + MAPS_DATA + "}}", dataDirectory);
     updated = updated.replace("{{" + MAPS_HOME + "}}", homeDirectory);
+
+    while (updated.contains("{{") && updated.contains("}}")) {
+      updated = scanForNonStandardSub(updated);
+    }
     while (updated.contains("//")) {
       updated = updated.replace("//", File.separator);
     }
@@ -84,5 +88,16 @@ public class EnvironmentConfig {
     return updated;
   }
 
+  private String scanForNonStandardSub(String path) {
+    int start = path.indexOf("{{");
+    int end = path.indexOf("}}");
+    String env = path.substring(start + 2, end);
+    String located = SystemProperties.getInstance().locateProperty(env, "");
+    path = path.replace("{{" + env + "}}", located);
+    while (path.contains("\"")) {
+      path = path.replace("\"", "");
+    }
+    return path;
+  }
 
 }
