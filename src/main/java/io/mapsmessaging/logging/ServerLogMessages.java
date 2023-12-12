@@ -506,7 +506,7 @@ public enum ServerLogMessages implements LogMessage {
   LORA_DEVICE_PACKET_READER_EXITED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Packet Reader thread has exited, no more LoRa packets will be processed"),
   LORA_DEVICE_IDLE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Packet Reader is currently idle"),
   LORA_REGISTER_NETWORK_ACTIVITY(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa device registering network task for {}"),
-  LORA_QUEUED_EVENT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa message queued, {} outstanding events"),
+  LORA_QUEUED_EVENT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa message queued, {} outstanding events, has select handler:{} "),
   LORA_DEVICE_NO_REGISTERED_ENDPOINT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa Device has no registered end points for {} address"),
   //</editor-fold>
 
