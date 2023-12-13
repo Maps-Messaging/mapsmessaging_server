@@ -19,7 +19,6 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import lombok.NonNull;
@@ -120,28 +119,29 @@ public class SessionManager {
    *
    * @param destination The destination that this message is bound for
    * @param message The message to send
-   * @return If the publish was successful then true, else false if it failed
-   * @throws IOException Thrown if the message write failed, typically due to file system errors
+   * @return If the publishing was successful then true, else false if it failed
    */
-  public CompletableFuture<Integer> publish(@NonNull @NotNull String destination, @NonNull @NotNull Message message) throws IOException {
-    CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
-    Callable<CompletableFuture<DestinationImpl>> task = (() -> {
-      CompletableFuture<DestinationImpl> future = MessageDaemon.getInstance().getDestinationManager().find(destination);
-      future.thenApply(destinationImpl -> {
-        if (destinationImpl != null) {
+  public CompletableFuture<Integer> publish(@NonNull @NotNull String destination, @NonNull @NotNull Message message) {
+    return CompletableFuture.supplyAsync(() -> {
           try {
-            return destinationImpl.storeMessage(message);
-          } catch (IOException e) {
-            future.completeExceptionally(e);
+            return MessageDaemon.getInstance().getDestinationManager().find(destination).get();
+          } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Error finding destination", e);
           }
-        }
-        return -1;
-      });
-      return future;
-    });
-    publisherScheduler.submit(task);
-    return completableFuture;
+        }, publisherScheduler)
+        .thenCompose(destinationImpl -> {
+          if (destinationImpl != null) {
+            try {
+              return CompletableFuture.completedFuture(destinationImpl.storeMessage(message));
+            } catch (Throwable e) {
+              return CompletableFuture.failedFuture(e);
+            }
+          } else {
+            return CompletableFuture.completedFuture(-1);
+          }
+        });
   }
+
 
   private SessionManager() {
     publisherScheduler = Executors.newCachedThreadPool();

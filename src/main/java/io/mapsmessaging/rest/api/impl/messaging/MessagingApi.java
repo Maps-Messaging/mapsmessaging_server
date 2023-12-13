@@ -45,6 +45,7 @@ public class MessagingApi extends BaseRestApi {
       content = @Content(schema = @Schema(implementation = String.class)))
   @POST
   public Response publishMessage(@Valid PublishRequest publishRequest) {
+
     // Implement the logic to publish a message
     // messagingService.publish(publishRequest.getTopic(), publishRequest.getMessage());
     return Response.ok().entity("Message published successfully").build();

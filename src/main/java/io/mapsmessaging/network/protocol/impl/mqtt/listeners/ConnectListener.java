@@ -30,7 +30,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -57,10 +56,10 @@ public class ConnectListener extends BaseConnectionListener {
     boolean strict = checkStrict(connect, protocol);
 
     String sessionId = connect.getSessionId();
-    if ((!connect.isCleanSession() && sessionId.length() == 0) || !clientIdAllowed(sessionId, strict)) {
+    if ((!connect.isCleanSession() && sessionId.isEmpty()) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
     } else {
-      createSession(sessionId, connect, connAck, endPoint, protocol);
+      createSession(sessionId, connect, connAck, endPoint, (MQTTProtocol) protocol);
       return null; // Delayed response
     }
     return connAck;
@@ -71,43 +70,49 @@ public class ConnectListener extends BaseConnectionListener {
     return false;
   }
 
-  @SneakyThrows
-  void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, ProtocolImpl protocol) {
+  void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, MQTTProtocol protocol) {
+    CompletableFuture<Session> sessionFuture = constructSession(endPoint, protocol, sessionId, connect);
+    sessionFuture.whenComplete((session, throwable) -> {
+      if (throwable != null) {
+        handleSessionException(throwable, connAck, protocol);
+      } else {
+        try {
+          setupConnAck(session, connAck);
+          protocol.registerRead();
+          protocol.writeFrame(connAck);
+        } catch (IOException e) {
+          handleSessionException(e, connAck, protocol);
+        }
+      }
+    });
+  }
+
+
+  private void setupConnAck(Session session, ConnAck connAck) {
+    connAck.setResponseCode(ConnAck.SUCCESS);
+    connAck.setRestoredFlag(session.isRestored());
+    connAck.setCallback(session::resumeState);
+  }
+
+  private CompletableFuture<Session> constructSession(EndPoint endPoint, ProtocolImpl protocol, String sessionId, Connect connect) {
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
       Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }
     protocol.setKeepAlive(connect.getKeepAlive());
-    CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sessionId);
-    sessionFuture.thenApply(session -> {
-      connAck.setResponseCode(ConnAck.SUCCESS);
-      connAck.setRestoredFlag(session.isRestored());
-      connAck.setCallback(session::resumeState);
-      try {
-        ((MQTTProtocol) protocol).registerRead();
-      } catch (IOException e) {
-        sessionFuture.completeExceptionally(e);
-        connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
-        connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
-          try {
-            protocol.close();
-          } catch (IOException e1) {
-            logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e1);
-          }
-        }, 100, TimeUnit.MILLISECONDS));
-      }
-      ((MQTTProtocol) protocol).writeFrame(connAck);
-      return session;
-    });
-    sessionFuture.exceptionally(throwable -> {
+    return createSession(endPoint, protocol, scb, sessionId);
+  }
+
+  private void handleSessionException(Throwable e, ConnAck connAck, ProtocolImpl protocol) {
+    connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
+    connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
       try {
         protocol.close();
       } catch (IOException e1) {
         logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e1);
       }
-      return null;
-    });
+    }, 100, TimeUnit.MILLISECONDS));
   }
 
   boolean checkStrict(Connect connect, ProtocolImpl protocol) {

@@ -147,7 +147,7 @@ public class MessageDaemon {
     addToMap(50, 1100, SchemaManager.getInstance());
     addToMap(80, 20, NetworkInterfaceMonitor.getInstance());
     addToMap(100, 900, TransactionManager.getInstance());
-    addToMap(300, 100, new DiscoveryManager(uniqueId));
+    addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, environmentConfig.getDataDirectory()));
