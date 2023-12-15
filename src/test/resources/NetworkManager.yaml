@@ -114,13 +114,25 @@ NetworkManager:
         protocol: stomp,wss
         auth: public
 
-
-      -
+      - name: "AMQP anon tcp Interface"
         url: "tcp://0.0.0.0:5672/"
-        name: "AMQP Interface"
         protocol : amqp
+        auth: anon
+
+      - name: "AMQP Authenticated over tcp Interface"
+        url: "tcp://0.0.0.0:5673/"
+        protocol: amqp
         auth : public
 
+      - name: "AMQP anon tcp Interface"
+        url: "ssl://0.0.0.0:5692/"
+        protocol: amqp
+        auth: anon
+
+      - name: "AMQP Authenticated over tcp Interface"
+        url: "ssl://0.0.0.0:5693/"
+        protocol: amqp
+        auth: public
 
       -
         url: udp://0.0.0.0:1884/
@@ -222,13 +234,6 @@ NetworkManager:
         protocol: stomp,mqtt,all
         auth: public
         ssl_keyStorePassphrase: invalidPassword
-
-      -
-        url: ssl://0.0.0.0:8445/
-        name: "generic interface for all protocols on SSL"
-        protocol: all
-        auth: ssl
-        ssl_clientCertificateRequired: true
 
       -
         name: NMEA GPS port
