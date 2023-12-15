@@ -119,14 +119,13 @@ public class NetworkManager implements ServiceManager, Agent {
 
   public void startAll() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
-    endPointManagers.entrySet().parallelStream().forEach(entry -> {
+    endPointManagers.forEach((key, endPointManager) -> {
       try {
-        EndPointManager endPointManager = entry.getValue();
         if (endPointManager.getState() == STATE.STOPPED) {
-          entry.getValue().start();
+          endPointManager.start();
         }
       } catch (IOException e) {
-        logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILED, e, entry.getKey());
+        logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILED, e, key);
       }
     });
   }
