@@ -219,7 +219,7 @@ NetworkManager:
       -
         url: ssl://0.0.0.0:8444/
         protocol: all, echo
-        auth: public
+        auth: anon
 
       -
         url: udp://0.0.0.0:5683/
