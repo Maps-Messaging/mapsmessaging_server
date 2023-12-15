@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 
-@Timeout(value = 1200000, unit = TimeUnit.MILLISECONDS)
+@Timeout(value = 120000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
 
   protected static MessageDaemon md = null;
