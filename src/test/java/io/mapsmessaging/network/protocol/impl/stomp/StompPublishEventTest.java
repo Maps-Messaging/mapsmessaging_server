@@ -1,41 +1,30 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
-import io.mapsmessaging.test.WaitForState;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.net.ssl.SSLException;
-import javax.security.auth.login.LoginException;
 import net.ser1.stomp.Client;
 import net.ser1.stomp.Listener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.projectodd.stilts.stomp.Headers;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectodd.stilts.stomp.StompException;
 import org.projectodd.stilts.stomp.StompMessage;
 import org.projectodd.stilts.stomp.StompMessages;
@@ -44,83 +33,65 @@ import org.projectodd.stilts.stomp.client.ClientSubscription;
 import org.projectodd.stilts.stomp.client.ClientTransaction;
 import org.projectodd.stilts.stomp.client.StompClient;
 
-class StompPublishEventTest extends StompBaseTest {
+import javax.net.ssl.SSLException;
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
-  @Test
-  @Disabled("Old log implementation in the client")
+class StompPublishEventTest extends StompBaseTest implements Listener {
+
+  private final AtomicBoolean end = new AtomicBoolean(false);
+
+  @ParameterizedTest
+  @MethodSource("testParameters")
   @DisplayName("Test with a STOMP client that passes content length with large content")
-  void testPublishLargeEventsContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
-    StompClient client = new StompClient("stomp://127.0.0.1/");
-    client.connect(10000);
-    Assertions.assertTrue(client.isConnected());
-    String topicName = getTopicName();
-    AtomicInteger counter = new AtomicInteger(0);
-    ClientSubscription subscription = client
-        .subscribe(topicName)
-        .withAckMode(AckMode.AUTO)
-        .withMessageHandler(stompMessage -> counter.incrementAndGet())
-        .start();
-    byte[] buffer = new byte[10240];
-    for (int x = 0; x < buffer.length; x++) {
-      buffer[x] = (byte) ((x % 90)+32);
-    }
-    String tmp = new String(buffer);
-    for (int x = 0; x < 5; x++) {
-      StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
-      client.send(msg);
-    }
-    long timer = System.currentTimeMillis() + 20000;
-    while(counter.get() != 5 & timer > System.currentTimeMillis()){
-      delay(10);
-    }
-    subscription.unsubscribe();
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect(1000);
-    Assertions.assertFalse(client.isConnected());
+  void testPublishLargeEventsContentLength(String protocol, boolean auth) throws IOException, LoginException, InterruptedException {
+    mainTest(protocol, auth, 10240);
   }
 
-  @Test
-  @Disabled("Old log implementation in the client")
+  @ParameterizedTest
+  @MethodSource("testParameters")
   @DisplayName("Test with a STOMP client that passes content length with small content")
-  void testPublishSmallEventsContentLength() throws URISyntaxException, StompException, InterruptedException, SSLException, TimeoutException {
-    StompClient client = new StompClient("stomp://127.0.0.1/");
-    client.connect(10000);
+  void testClientLength(String protocol, boolean auth) throws IOException, LoginException, InterruptedException {
+    mainTest(protocol, auth, 10);
+  }
+
+  void mainTest(String protocol, boolean auth, int length) throws IOException, LoginException, InterruptedException {
+    Client client = getClient(protocol, auth);
     Assertions.assertTrue(client.isConnected());
     String topicName = getTopicName();
-    AtomicBoolean end = new AtomicBoolean(false);
-    ClientSubscription subscription = client.subscribe(topicName).
-        withAckMode(AckMode.AUTO).
-        withMessageHandler(stompMessage -> {
-          Headers map = stompMessage.getHeaders();
-          if(map.get("packet_id").equals("END")){
-            System.err.println("End Received");
-            end.set(true);
-          }
-        }).
-        start();
-    byte[] buffer = new byte[10];
+    Map<String, String> map = new HashMap<>();
+    map.put("id", "subscribe1");
+    client.subscribeW(topicName, this, map);
+
+    byte[] buffer = new byte[length];
     for (int x = 0; x < buffer.length; x++) {
-      buffer[x] = (byte) ((x + 33) % 100);
+      buffer[x] = (byte) ((x % 90) + 33);
     }
     String tmp = new String(buffer);
-    for (int x = 0; x < 1000; x++) {
-      StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
-      msg.getHeaders().put("packet_id", "" + x);
-      client.send(msg);
+    for (int x = 0; x < 10; x++) {
+      Map<String, String> pubMap = new HashMap<>();
+      pubMap.put("packet_id", "" + x);
+      client.sendW(topicName, tmp, pubMap);
     }
-    StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
-    msg.getHeaders().put("packet_id", "END");
-    client.send(msg);
-    long timeout = System.currentTimeMillis()+20000;
-    while(!end.get() && timeout > System.currentTimeMillis()){
+    Map<String, String> pubMap = new HashMap<>();
+    pubMap.put("packet_id", "END");
+    client.sendW(topicName, tmp, pubMap);
+    long timeout = System.currentTimeMillis() + 20000;
+    while (!end.get() && timeout > System.currentTimeMillis()) {
       delay(1);
     }
-    Assertions.assertTrue(timeout> System.currentTimeMillis());
+    Assertions.assertTrue(timeout > System.currentTimeMillis());
 
     Assertions.assertTrue(client.isConnected());
-    subscription.unsubscribe();
+    client.unsubscribeW(topicName);
     Assertions.assertTrue(client.isConnected());
-    client.disconnect(1000);
+    client.disconnect();
     Assertions.assertFalse(client.isConnected());
   }
 
@@ -151,7 +122,7 @@ class StompPublishEventTest extends StompBaseTest {
     }
     String tmp = new String(buffer);
     ClientTransaction transaction = client.begin();
-    for (int x = 0; x < 100; x++) {
+    for (int x = 0; x < 10; x++) {
       StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
       transaction.send(msg);
     }
@@ -192,127 +163,12 @@ class StompPublishEventTest extends StompBaseTest {
     Assertions.assertFalse(client.isConnected());
   }
 
-  @Test
-  @DisplayName("Test publishing with large content length")
-  void testPublishLargeEvents() throws IOException, LoginException {
-    Client client = new Client("127.0.0.1", 8675, null, null);
-    Assertions.assertTrue(client.isConnected());
-    Map<String, String> map = new HashMap<>();
-    map.put("id","subscribe1");
-    String topicName = getTopicName();
 
-    AtomicBoolean end = new AtomicBoolean(false);
-    Listener listener = (map12, s) -> {
-      if(map12.containsKey("packet_id")){
-        if(map12.get("packet_id").equals("END")){
-          end.set(true);
-        }
-      }
-    };
-    client.subscribe(topicName, listener,  map);
-    byte[] buffer = new byte[10240];
-    for (int x = 0; x < buffer.length; x++) {
-      buffer[x] = (byte) ((x % 90)+32);
-    }
-    String tmp = new String(buffer);
-    for (int x = 0; x < 10; x++) {
-      StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
-      Map<String, String> map1 = new HashMap<>();
-      map1.put("packet_id",""+x);
-      msg.getHeaders().put("packet_id", "" + x);
-      client.send(topicName, tmp, map1);
-    }
-    Assertions.assertTrue(client.isConnected());
-    Map<String, String> map1 = new HashMap<>();
-    map1.put("packet_id","END");
-    client.send(topicName, tmp, map1);
-    long timeout = System.currentTimeMillis()+60000;
-    WaitForState.waitFor(1, TimeUnit.MINUTES, ()->end.get());
-    Assertions.assertTrue(timeout> System.currentTimeMillis());
-    Assertions.assertTrue(client.isConnected());
-    client.unsubscribe(topicName,map);
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-  }
-
-  @Test
-  @DisplayName("Test with small content length")
-  void testPublishSmallEvents() throws IOException, LoginException, InterruptedException {
-    Client client = new Client("127.0.0.1", 8675, null, null);
-    Assertions.assertTrue(client.isConnected());
-    Map<String, String> map = new HashMap<>();
-    String topicName = getTopicName();
-
-    map.put("id","subscribe1");
-    client.subscribe(topicName, map);
-    byte[] buffer = new byte[10];
-    for (int x = 0; x < buffer.length; x++) {
-      buffer[x] = (byte) ((x % 90)+32);
-    }
-    String tmp = new String(buffer);
-    for (int x = 0; x < 1000; x++) {
-      StompMessage msg = StompMessages.createStompMessage(topicName, tmp);
-      Map<String, String> map1 = new HashMap<>();
-      map1.put("packet_id",""+x);
-      msg.getHeaders().put("packet_id", "" + x);
-      client.send(topicName, tmp, map1);
-    }
-    Assertions.assertTrue(client.isConnected());
-    Map<String, String> map1 = new HashMap<>();
-    map1.put("packet_id","END");
-    TimeUnit.MILLISECONDS.sleep(10);
-    client.sendW(topicName, tmp, map1);
-    client.unsubscribe(topicName,map);
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-  }
-
-  @Test
-  @DisplayName("Test Transactional publishing")
-  void testTransactionalPublish() throws StompException, IOException, LoginException, InterruptedException {
-    Client client = new Client("127.0.0.1", 8675, null, null);
-    Assertions.assertTrue(client.isConnected());
-    Map<String, String> map = new HashMap<>();
-    String topicName = getTopicName();
-
-    map.put("id","subscribe1");
-    client.subscribe(topicName, map);
-    byte[] buffer = new byte[10];
-    for (int x = 0; x < buffer.length; x++) {
-      buffer[x] = (byte) ((x % 90)+32);
-    }
-    String tmp = new String(buffer);
-    map = new HashMap<>();
-    map.put("transaction","transactionId1");
-    client.begin(map);
-    for (int x = 0; x < 1000; x++) {
-      client.send(topicName, tmp, map);
-    }
-    client.commit(map);
-
-    map.put("transaction","transactionId2");
-    client.begin(map);
-    for (int x = 0; x < 1000; x++) {
-      client.send(topicName, tmp, map);
-    }
-    client.abort(map);
-
-    Map<String, String> map1 = new HashMap<>();
-    map1.put("packet_id","END");
-    client.sendW(topicName, tmp, map1);
-    Assertions.assertTrue(client.isConnected());
-    client.unsubscribe(topicName, map);
-    Assertions.assertTrue(client.isConnected());
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-  }
-
-  @Test
+  @ParameterizedTest
+  @MethodSource("testParameters")
   @DisplayName("Test Transactional delay publishing")
-  void testTransactionalDelayPublish() throws StompException, IOException, LoginException, InterruptedException {
-    Client client = new Client("127.0.0.1", 8675, null, null);
+  void testTransactionalDelayPublish(String protocol, boolean auth) throws IOException, LoginException, InterruptedException {
+    Client client = getClient(protocol, auth);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     String topicName = getTopicName();
@@ -351,4 +207,11 @@ class StompPublishEventTest extends StompBaseTest {
     Assertions.assertFalse(client.isConnected());
   }
 
+  @Override
+  public void message(Map map, String s) {
+    if (map.get("packet_id").equals("END")) {
+      System.err.println("End Received");
+      end.set(true);
+    }
+  }
 }

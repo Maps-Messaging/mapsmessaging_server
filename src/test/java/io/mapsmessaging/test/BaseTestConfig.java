@@ -19,12 +19,14 @@ package io.mapsmessaging.test;
 
 import io.mapsmessaging.BaseTest;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.session.SessionManagerTest;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,11 +34,14 @@ import org.junit.jupiter.api.Timeout;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 
 @Timeout(value = 1200000, unit = TimeUnit.MILLISECONDS)
@@ -44,6 +49,8 @@ public class BaseTestConfig extends BaseTest {
 
   protected static MessageDaemon md = null;
   private static Thread th;
+
+  private static Map<String, String> usernamePasswordMap = null;
 
   static{
     Runtime.getRuntime().addShutdownHook(new TestExitHandler());
@@ -153,7 +160,24 @@ public class BaseTestConfig extends BaseTest {
     }
   }
 
-    private static final class TestExitHandler extends Thread{
+  public String getPassword(String user) throws IOException {
+    if (usernamePasswordMap == null) {
+      if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
+        ConfigurationProperties properties = (ConfigurationProperties) AuthManager.getInstance().getProperties().get("config");
+        String path = properties.getProperty("configDirectory");
+        usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
+            .map(line -> line.split("="))
+            .collect(Collectors.toMap(arr -> arr[0], arr -> arr[1]));
+
+      }
+    }
+    if (usernamePasswordMap != null) {
+      return usernamePasswordMap.get(user);
+    }
+    return "";
+  }
+
+  private static final class TestExitHandler extends Thread {
 
     @Override
     public void run() {

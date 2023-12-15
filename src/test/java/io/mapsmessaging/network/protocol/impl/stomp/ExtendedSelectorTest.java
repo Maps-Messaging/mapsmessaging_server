@@ -1,34 +1,35 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import io.mapsmessaging.test.WaitForState;
+import net.ser1.stomp.Client;
+import net.ser1.stomp.Listener;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import javax.security.auth.login.LoginException;
-import net.ser1.stomp.Client;
-import net.ser1.stomp.Listener;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.WaitForState;
 
 class ExtendedSelectorTest extends StompBaseTest implements Listener {
 
@@ -89,37 +90,41 @@ class ExtendedSelectorTest extends StompBaseTest implements Listener {
 
   LongAdder adder = new LongAdder();
 
-  @Test
-  void testTrueSelectors() throws LoginException, InterruptedException, IOException {
+  @ParameterizedTest
+  @MethodSource("testParameters")
+  void testTrueSelectors(String protocol, boolean auth) throws LoginException, InterruptedException, IOException {
     for(String selector:trueSelectors){
-      shouldReceiveAllEvents(selector);
+      shouldReceiveAllEvents(protocol, auth, selector);
     }
   }
 
-  @Test
-  void testFalseSelectors() throws LoginException, InterruptedException, IOException {
+  @ParameterizedTest
+  @MethodSource("testParameters")
+  void testFalseSelectors(String protocol, boolean auth) throws LoginException, InterruptedException, IOException {
     for(String selector:falseSelectors){
-      shouldReceiveANoEvents(selector);
+      shouldReceiveANoEvents(protocol, auth, selector);
     }
   }
 
-  @Test
-  void testStringSelectors() throws LoginException, InterruptedException, IOException {
+  @ParameterizedTest
+  @MethodSource("testParameters")
+  void testStringSelectors(String protocol, boolean auth) throws LoginException, InterruptedException, IOException {
     for(String[] selector:complexStringSelectors){
-      shouldReceiveAllEvents(selector[0], selector[1], selector[2]);
+      shouldReceiveAllEvents(protocol, auth, selector[0], selector[1], selector[2]);
     }
   }
 
-  @Test
-  void testDoubleSelectors() throws LoginException, InterruptedException, IOException {
+  @ParameterizedTest
+  @MethodSource("testParameters")
+  void testDoubleSelectors(String protocol, boolean auth) throws LoginException, InterruptedException, IOException {
     for(String[] selector:complexDoubleSelectors){
-      shouldReceiveAllEvents(selector[0], selector[1], selector[2]);
+      shouldReceiveAllEvents(protocol, auth, selector[0], selector[1], selector[2]);
     }
   }
 
-  void shouldReceiveAllEvents(String selector, String key, String val) throws IOException, LoginException, InterruptedException {
+  void shouldReceiveAllEvents(String protocol, boolean auth, String selector, String key, String val) throws IOException, LoginException, InterruptedException {
     adder.reset();
-    Client client = new Client("127.0.0.1", 8675, null, null);
+    Client client = getClient(protocol, auth);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");
@@ -138,10 +143,9 @@ class ExtendedSelectorTest extends StompBaseTest implements Listener {
   }
 
 
-
-  void shouldReceiveAllEvents(String selector) throws IOException, LoginException, InterruptedException {
+  void shouldReceiveAllEvents(String protocol, boolean auth, String selector) throws IOException, LoginException, InterruptedException {
     adder.reset();
-    Client client = new Client("127.0.0.1", 8675, null, null);
+    Client client = getClient(protocol, auth);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");
@@ -157,9 +161,9 @@ class ExtendedSelectorTest extends StompBaseTest implements Listener {
     Assertions.assertEquals(EVENT_COUNT, adder.sum(), selector);
   }
 
-  void shouldReceiveANoEvents(String selector) throws IOException, LoginException, InterruptedException {
+  void shouldReceiveANoEvents(String protocol, boolean auth, String selector) throws IOException, LoginException, InterruptedException {
     adder.reset();
-    Client client = new Client("127.0.0.1", 8675, null, null);
+    Client client = getClient(protocol, auth);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");

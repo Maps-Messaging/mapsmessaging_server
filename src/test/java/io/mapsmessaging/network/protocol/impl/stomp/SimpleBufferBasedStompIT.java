@@ -1,28 +1,28 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.test.SimpleBufferBasedTest;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
 
@@ -38,7 +38,7 @@ class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
   @Test
   @DisplayName("Send Stomp frame single character at a time with no delay")
   void simpleCharByCharFastTest() throws IOException,  URISyntaxException {
-    simpleByteWrite("/input.txt", 0x0, 1,  "localhost", 8675, TOTAL_FRAMES, null, true);
+    simpleByteWrite("/input.txt", 0x0, 1, "localhost", 8674, TOTAL_FRAMES, null, true);
 
   }
 
@@ -88,15 +88,15 @@ class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
   @DisplayName("Send Stomp frames but delay the framing bytes")
   void frameCharacterTest() throws IOException, URISyntaxException {
     int[] frames = {0x0, 0xA};
-    super.frameCharacter("/input.txt", "localhost", 8675, frames, TOTAL_FRAMES);
+    super.frameCharacter("/input.txt", "localhost", 8674, frames, TOTAL_FRAMES);
   }
 
   private void simpleByteWriteTest(int size) throws IOException, URISyntaxException {
-    simpleByteWrite("/input.txt", 0x0, size,  "localhost", 8675, TOTAL_FRAMES);
+    simpleByteWrite("/input.txt", 0x0, size, "localhost", 8674, TOTAL_FRAMES);
   }
 
   private void slowSubscriberTest(int delay)throws IOException, URISyntaxException {
-    super.slowSubscriberTest("/subscribeLargeEvents.txt", "localhost", 8675, 72, 0x0, delay);
+    super.slowSubscriberTest("/subscribeLargeEvents.txt", "localhost", 8674, 72, 0x0, delay);
   }
 
 }

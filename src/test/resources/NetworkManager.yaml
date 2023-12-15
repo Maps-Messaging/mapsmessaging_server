@@ -36,7 +36,7 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
         maximumSessionExpiry : 86400
         maximumBufferSize: 10M
-        serverReceiveMaximum : 10
+        serverReceiveMaximum: 100
         clientReceiveMaximum : 65535
         clientMaximumTopicAlias : 32767
         serverMaximumTopicAlias : 0
@@ -62,25 +62,57 @@ NetworkManager:
 
 
     data:
-      -
-          name: "Stomp Interface - used for anonymous mqtt, stomp and stomp over ws tests"
-          url: "tcp://0.0.0.0:8675/"
-          protocol : stomp,ws, mqtt
 
-      -
-          name: "MQTT Interface"
-          url: "tcp://0.0.0.0:1883/"
-          protocol : mqtt
-          auth : public
+      - name: "MQTT TCP Test anon Interface for raw buffer writes"
+        url: "tcp://0.0.0.0:1888/"
+        protocol: mqtt, ws
+        auth: anon
 
-      -
-        name: "MQTT Interface"
-        url: "tcp://0.0.0.0:2883/"
-        protocol : mqtt
+      - name: "MQTT TCP Test anon Interface"
+        url: "tcp://0.0.0.0:1882/"
+        protocol: mqtt, ws
+        auth: anon
+
+      - name: "MQTT SSL Test anon Interface"
+        url: "ssl://0.0.0.0:1892/"
+        protocol: mqtt, wss
+        auth: anon
+
+      - name: "MQTT TCP Test Auth Interface"
+        url: "tcp://0.0.0.0:1883/"
+        protocol: mqtt, ws
+        auth: public
         sasl:
           mechanism: SCRAM-BCRYPT-SHA-512
-          identityProvider: htpassword
-          passwordFile: ./src/test/resources/htpassword
+          identityProvider: system
+
+      - name: "MQTT SSL Test Auth Interface"
+        url: "ssl://0.0.0.0:1893/"
+        protocol: mqtt, wss
+        auth: public
+        sasl:
+          mechanism: SCRAM-BCRYPT-SHA-512
+          identityProvider: system
+
+      - name: "Stomp Interface - Anonymous Stomp over TCP"
+        url: "tcp://0.0.0.0:8674/"
+        protocol: stomp,ws
+        auth: anon
+
+      - name: "Stomp Interface - Anonymous Stomp over SSL"
+        url: "ssl://0.0.0.0:8694/"
+        protocol: stomp,wss
+        auth: anon
+
+      - name: "Stomp Interface - Authenticated Stomp over TCP"
+        url: "tcp://0.0.0.0:8675/"
+        protocol: stomp,ws
+        auth: public
+
+      - name: "Stomp Interface - Authenticated Stomp over SSL"
+        url: "ssl://0.0.0.0:8695/"
+        protocol: stomp,wss
+        auth: public
 
 
       -
@@ -88,16 +120,7 @@ NetworkManager:
         name: "AMQP Interface"
         protocol : amqp
         auth : public
-        Sasl:
-          mechanism: SCRAM-SHA-512
-          identityProvider: htpassword
-          passwordFile: htpasswd
 
-      -
-        url: "tcp://0.0.0.0:1882/"
-        name: "MQTT WebSocket Interface"
-        protocol : mqtt,ws
-        auth : public
 
       -
         url: udp://0.0.0.0:1884/

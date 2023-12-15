@@ -16,5 +16,9 @@
 
 ---
 
+
 DiscoveryManager:
-  enabled: false                    # If true then the server will start the discovery server else the server will not run the service
+  enabled: false                               # If true then the server will start the discovery server else the server will not run the service
+  hostnames: "::"                             # Array list of adapters to bind the discovery server to
+  addTxtRecords: true                         # Add more information to the TXT records
+  domainName: ".local"                        # Domain name to use
