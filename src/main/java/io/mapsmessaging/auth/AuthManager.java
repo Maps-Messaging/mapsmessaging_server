@@ -54,6 +54,8 @@ public class AuthManager implements Agent {
   private static final AuthManager instance = new AuthManager();
 
   private final Logger logger;
+
+  @Getter
   private final ConfigurationProperties properties;
   private AuthenticationStorage authenticationStorage;
   private final Map<String, Subject> subjectMap = new WeakHashMap<>();
@@ -78,8 +80,8 @@ public class AuthManager implements Agent {
     if (authenticationEnabled) {
       ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
       authenticationStorage = new AuthenticationStorage(config);
-      if (!authenticationStorage.isFirstBoot()) {
-        createInitialUsers(config.get("configDirectory").toString());
+      if (authenticationStorage.isFirstBoot()) {
+        createInitialUsers(config.getProperty("configDirectory"));
       }
       IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
     }
@@ -120,6 +122,7 @@ public class AuthManager implements Agent {
   }
 
   public Subject update(Subject subject) {
+    if (subject == null) subject = new Subject();
     if (authenticationStorage != null) {
       return authenticationStorage.update(subject);
     }

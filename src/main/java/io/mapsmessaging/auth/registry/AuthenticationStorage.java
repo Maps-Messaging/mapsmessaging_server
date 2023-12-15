@@ -60,7 +60,7 @@ public class AuthenticationStorage implements Closeable {
       }
     }
 
-    firstBoot = new File(securityDirectory + File.separator + ".auth.db").exists();
+    firstBoot = !(new File(securityDirectory + File.separator + ".auth.db").exists());
     db = DBMaker.fileDB(securityDirectory + File.separator + ".auth.db")
         .checksumStoreEnable()
         .fileChannelEnable()
@@ -134,6 +134,7 @@ public class AuthenticationStorage implements Closeable {
 
   public Subject update(Subject subject) {
     Subject subject1 = identityAccessManager.updateSubject(subject);
+    if (subject1 == null) return subject;
     UUID userId = SubjectHelper.getUniqueId(subject1);
     if (userId != null) {
       SessionPrivileges sessionPrivileges = userPermisionManager.get(userId);
