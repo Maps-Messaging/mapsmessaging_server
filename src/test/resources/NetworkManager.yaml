@@ -213,8 +213,8 @@ NetworkManager:
       -
         url: tcp://0.0.0.0:2001/
         name: "generic testing interface"
-        protocol: all, echo
-        auth: test
+        protocol: echo
+        auth: anon
 
       -
         url: ssl://0.0.0.0:8444/
