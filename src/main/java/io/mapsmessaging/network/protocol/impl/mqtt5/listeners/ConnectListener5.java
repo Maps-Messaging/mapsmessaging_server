@@ -58,7 +58,7 @@ public class ConnectListener5 extends PacketListener5 {
     ConnAck5 connAck = new ConnAck5();
 
     String sessionId = connect.getSessionId();
-    if (sessionId.length() == 0) {
+    if (sessionId.isEmpty()) {
       sessionId = UUID.randomUUID().toString();
       connAck.add(new AssignedClientIdentifier(sessionId));
     }
@@ -67,7 +67,7 @@ public class ConnectListener5 extends PacketListener5 {
     scb.setReceiveMaximum(((MQTT5Protocol) protocol).getClientReceiveMaximum());
     boolean sendResponseInfo = parseProperties((MQTT5Protocol) protocol, connect, scb);
 
-    if (!connect.isCleanSession() && sessionId.length() == 0) {
+    if (!connect.isCleanSession() && sessionId.isEmpty()) {
       connAck.setStatusCode(StatusCode.CLIENT_IDENTIFIER_NOT_VALID);
     } else {
       handleSessionCreation(protocol, sessionId, connect, connAck, scb, endPoint);
@@ -141,7 +141,7 @@ public class ConnectListener5 extends PacketListener5 {
 
   private Session createSession(MQTT5Protocol protocol, String sessionId, Connect5 connect, SessionContextBuilder scb) throws LoginException, IOException {
     int keepAlive = connect.getKeepAlive();
-    int minKeepAlive = protocol.getMinKeepAlive();
+    int minKeepAlive = protocol.getMinimumKeepAlive();
     int maxKeepAlive = (int) protocol.getTimeOut() / 1000;
 
     if (keepAlive == 0 && minKeepAlive != 0) { // Special case
@@ -183,7 +183,7 @@ public class ConnectListener5 extends PacketListener5 {
       }
     }
     String duplicateReport = connect.getProperties().getDuplicateReport();
-    if (duplicateReport.length() > 0) {
+    if (!duplicateReport.isEmpty()) {
       logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
     }
     AuthenticationContext context = protocol.getAuthenticationContext();
@@ -206,7 +206,7 @@ public class ConnectListener5 extends PacketListener5 {
           break;
 
         case MessagePropertyFactory.MAXIMUM_PACKET_SIZE:
-          protocol.setMaximumBufferSize(((MaximumPacketSize) property).getMaximumPacketSize());
+          protocol.setMaxBufferSize(((MaximumPacketSize) property).getMaximumPacketSize());
           break;
 
         case MessagePropertyFactory.TOPIC_ALIAS_MAXIMUM:
@@ -218,7 +218,7 @@ public class ConnectListener5 extends PacketListener5 {
           break;
 
         case MessagePropertyFactory.REQUEST_PROBLEM_INFORMATION:
-          protocol.sendProblemInformation(true);
+          protocol.setSendProblemInformation(true);
           break;
 
         case MessagePropertyFactory.USER_PROPERTY:

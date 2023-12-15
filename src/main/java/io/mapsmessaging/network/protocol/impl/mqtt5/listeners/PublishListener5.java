@@ -132,7 +132,7 @@ public class PublishListener5 extends PacketListener5 {
     if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
       TopicAliasMapping topicAliasMapping = ((MQTT5Protocol) protocol).getClientTopicAliasMapping();
       String destinationName = publish.getDestinationName();
-      if (destinationName == null || destinationName.length() == 0) {
+      if (destinationName == null || destinationName.isEmpty()) {
         for (MessageProperty property : publish.getProperties().values()) {
           if (property.getId() == MessagePropertyFactory.TOPIC_ALIAS) {
             TopicAlias topicAlias = (TopicAlias) property;
@@ -176,7 +176,7 @@ public class PublishListener5 extends PacketListener5 {
       }
 
       String duplicateReport = publish.getProperties().getDuplicateReport();
-      if (duplicateReport.length() > 0) {
+      if (!duplicateReport.isEmpty()) {
         logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
       }
 

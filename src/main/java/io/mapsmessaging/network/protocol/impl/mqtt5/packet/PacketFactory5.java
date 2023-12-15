@@ -59,7 +59,7 @@ public class PacketFactory5 {
       throws MalformedException, EndOfBufferException {
     switch (packetId) {
       case MQTTPacket.PUBLISH:
-        return new Publish5(fixedHeader, remainingLen, packet, protocolImpl.getMaximumBufferSize());
+        return new Publish5(fixedHeader, remainingLen, packet, protocolImpl.getMaxBufferSize());
 
       case MQTTPacket5.AUTH:
         return new Auth5(fixedHeader, remainingLen, packet);

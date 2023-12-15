@@ -41,8 +41,8 @@ public class AuthListener5 extends PacketListener5 {
     AuthenticationContext context= null;
     if (mqttPacket instanceof Connect5) {
       MQTT5Protocol mqtt5Protocol = ((MQTT5Protocol) protocol);
-      if(mqtt5Protocol.getAuthenticationContext() != null) {
-        AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
+      AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
+      if (mqtt5Protocol.getAuthenticationContext() != null && authMethod != null) {
         String serverConfig = mqtt5Protocol.getAuthenticationContext().getAuthMethod();
         String clientConfig = authMethod.getAuthenticationMethod();
         if (!serverConfig.equalsIgnoreCase(clientConfig)) {
