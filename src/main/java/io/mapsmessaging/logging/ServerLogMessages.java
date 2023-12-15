@@ -235,6 +235,8 @@ public enum ServerLogMessages implements LogMessage {
   SECURITY_MANAGER_LOADING(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Security Manager properties"),
   SECURITY_MANAGER_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loaded Security Manager Properties"),
   SECURITY_MANAGER_SECURITY_CONTEXT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Created security context for {}"),
+  SECURITY_MANAGER_FAILED_TO_CREATE_USER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to create user {} during initial setup"),
+  SECURITY_MANAGER_FAILED_TO_INITIALISE_USER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to initialise user {} during initial setup"),
 
   // </editor-fold>
 

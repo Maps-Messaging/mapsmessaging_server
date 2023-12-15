@@ -126,7 +126,7 @@ public class SessionManager {
           try {
             return MessageDaemon.getInstance().getDestinationManager().find(destination).get();
           } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Error finding destination", e);
+            throw new CompletionException(e);
           }
         }, publisherScheduler)
         .thenCompose(destinationImpl -> {

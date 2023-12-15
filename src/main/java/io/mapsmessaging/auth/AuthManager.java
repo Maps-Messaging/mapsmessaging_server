@@ -42,6 +42,9 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_CREATE_USER;
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_INITIALISE_USER;
+
 
 public class AuthManager implements Agent {
   private static final String ADMIN_USER = "admin";
@@ -146,25 +149,20 @@ public class AuthManager implements Agent {
   private void createInitialUsers(String path) {
     String password = PasswordGenerator.generateRandomPassword(12);
     if (!addUser(ADMIN_USER, password, SessionPrivileges.create(ADMIN_USER), new String[]{ADMIN_GROUP, EVERYONE})) {
-      // ToDo : log
+      logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, ADMIN_USER);
     }
 
     String userpassword = PasswordGenerator.generateRandomPassword(12);
     if (addUser(USER, userpassword, SessionPrivileges.create(USER), new String[]{EVERYONE})) {
-      // ToDo : log
-
+      logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, USER);
     }
 
     saveInitialUserDetails(path, new String[][]{{ADMIN_USER, password}, {USER, userpassword}});
-    if (authenticationStorage.validateUser(ADMIN_USER, password)) {
-      // To Do : log
-    } else {
-      // To Do : log
+    if (!authenticationStorage.validateUser(ADMIN_USER, password)) {
+      logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
-    if (authenticationStorage.validateUser(USER, userpassword)) {
-      // To Do : log
-    } else {
-      // To Do : log
+    if (!authenticationStorage.validateUser(USER, userpassword)) {
+      logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
   }
 
