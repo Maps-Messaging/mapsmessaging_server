@@ -17,6 +17,9 @@
 
 package io.mapsmessaging.network.io;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
@@ -33,8 +36,9 @@ public class Packet {
   /**
    * SocketAddress is used for non stream based protocols, like UDP to set where this packet arrived from
    */
+  @Getter
+  @Setter
   private SocketAddress fromAddress;
-
 
   public Packet(int size, boolean direct) {
     if (direct) {
@@ -156,14 +160,6 @@ public class Packet {
   public Packet put(Packet packet) {
     buffer.put(packet.buffer);
     return this;
-  }
-
-  public SocketAddress getFromAddress() {
-    return fromAddress;
-  }
-
-  public void setFromAddress(SocketAddress fromAddress) {
-    this.fromAddress = fromAddress;
   }
 
   /*
