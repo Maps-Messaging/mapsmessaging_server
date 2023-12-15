@@ -37,7 +37,11 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
 
   public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, ConfigurationProperties properties) throws SaslException {
     ConfigurationProperties config = (ConfigurationProperties) properties.get("sasl");
-    identityLookup = IdentityLookupFactory.getInstance().get(config.getProperty("identityProvider"), config.getMap());
+    if (config.getProperty("identityProvider").equalsIgnoreCase("system")) {
+      identityLookup = IdentityLookupFactory.getInstance().getSiteWide("system");
+    } else {
+      identityLookup = IdentityLookupFactory.getInstance().get(config.getProperty("identityProvider"), config.getMap());
+    }
     if(identityLookup == null){
       throw new SaslException("Unable to locate identity look up mechanism for "+config.getProperty("identityProvider"));
     }
