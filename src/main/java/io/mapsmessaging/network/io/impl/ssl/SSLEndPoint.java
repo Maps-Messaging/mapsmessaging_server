@@ -135,11 +135,14 @@ public class SSLEndPoint extends TCPEndPoint {
         response = encryptedIn.limit();
       }
       logger.log(ServerLogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
-      handleSSLEngineResult(sslEngine.unwrap(encryptedIn, applicationIn));
+      while (encryptedIn.hasRemaining() && applicationIn.remaining() != 0) {
+        handleSSLEngineResult(sslEngine.unwrap(encryptedIn, applicationIn));
+      }
       if (encryptedIn.position() == encryptedIn.limit()) {
         encryptedIn.clear();
       } else {
         encryptedIn.compact();
+        encryptedIn.flip();
       }
     }
     return response;
@@ -180,4 +183,5 @@ public class SSLEndPoint extends TCPEndPoint {
   protected Logger createLogger() {
     return LoggerFactory.getLogger(SSLEndPoint.class.getName() + "_" + getId());
   }
+
 }

@@ -274,8 +274,6 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
           }
         }
       }
-    } else {
-      System.err.println(networkStateChange.toString());
     }
   }
 
