@@ -195,7 +195,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    System.err.println("Send Message::"+messageEvent);
     if (stateEngine.getMaxBufferSize() > 0 &&
         stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9) {
       messageEvent.getCompletionTask().run();
