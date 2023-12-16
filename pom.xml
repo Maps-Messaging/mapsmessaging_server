@@ -362,6 +362,11 @@
             <goals>
               <goal>report</goal>
             </goals>
+            <configuration>
+              <formats>
+                <format>XML</format>
+              </formats>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -558,28 +563,31 @@
   </repositories>
 
   <properties>
-    <logback.version>1.4.14</logback.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <sonar.sources>src/main</sonar.sources>
-    <pi4j.version>2.4.0</pi4j.version>
 
-    <!-- Below property indicates the pattern of the test suite -->
+    <logback.version>1.4.14</logback.version>
+    <pi4j.version>2.4.0</pi4j.version>
+    <jersey.version>3.1.5</jersey.version>
+    <swagger-ui.version>3.17.0</swagger-ui.version>
+
     <runSuite>**/*Suite.class</runSuite>
+
+    <sonar.sources>src/main</sonar.sources>
     <sonar.test.exclusions>
       **/*Test.*,**/*IT.*,**/apache_pulsar/*, **.*JMH.*
     </sonar.test.exclusions>
 
-    <!-- The use of the 'var' keyword does not really add anything to the code, rather, it makes it less readable without an IDE, we ignore the code smell across the project -->
+    <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
     <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
     <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
     <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
       **/*.java
     </sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
 
-    <!-- Sonar-JaCoCo properties -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco</sonar.coverage.jacoco.xmlReportPaths>
     <sonar.language>java</sonar.language>
 
     <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
@@ -590,8 +598,6 @@
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
 
-    <jersey.version>3.1.5</jersey.version>
-    <swagger-ui.version>3.17.0</swagger-ui.version>
 
   </properties>
 
