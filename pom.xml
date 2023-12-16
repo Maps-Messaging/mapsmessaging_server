@@ -172,6 +172,9 @@
     </profile>
     <profile>
       <id>snapshot</id>
+      <properties>
+        <branchName>development</branchName>
+      </properties>
       <dependencies>
 
         <!-- Experimenting with dependency hint so as to have 1 bouncycastle version -->
@@ -262,6 +265,10 @@
     </profile>
     <profile>
       <id>release</id>
+      <properties>
+        <branchName>main</branchName>
+      </properties>
+
       <dependencies>
         <dependency>
           <groupId>io.mapsmessaging</groupId>
@@ -597,7 +604,7 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-
+    <sonar.branch.name>${branchName}</sonar.branch.name>
 
   </properties>
 
