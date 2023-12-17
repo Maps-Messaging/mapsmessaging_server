@@ -3,20 +3,24 @@
 # Get Alpine linux image and add the Zulu JDK 13, as per
 # https://github.com/zulu-openjdk/zulu-openjdk/blob/master/alpine/13.0.1-13.28/Dockerfile
 #----------------------------------------------------------------------------------------------
-FROM arm64v8/alpine
+FROM arm64v8/alpine:3.19.0
+
+#----------------------------------------------------------------------------------------------
+# setup env variables
+#----------------------------------------------------------------------------------------------
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
+ENV JAVA_HOME=/usr/lib/jvm/zulu-17
 
 #----------------------------------------------------------------------------------------------
 # Install DNS tools
 #----------------------------------------------------------------------------------------------
-RUN apk add --update bind-tools
+RUN apk add --update --no-cache bind-tools
 
-# https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_musl_aarch64.tar.gz
+#----------------------------------------------------------------------------------------------
 # Setup the repos
-#
-ENV JAVA_HOME=/usr/lib/jvm/zulu-17
+#----------------------------------------------------------------------------------------------
 ENV ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz
 
 RUN wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH}
@@ -109,10 +113,27 @@ RUN mkdir /data && \
 VOLUME /data
 
 #----------------------------------------------------------------------------------------------
+# Create a new user and group specifically for messaging
+#----------------------------------------------------------------------------------------------
+RUN addgroup -S messaginggroup && \
+    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /message_daemon-%%MAPS_VERSION%%
+
+#----------------------------------------------------------------------------------------------
+# Change ownership of the /data directory and the installation directory
+#----------------------------------------------------------------------------------------------
+RUN chown -R messaginguser:messaginggroup /data && \
+    chown -R messaginguser:messaginggroup /message_daemon-%%MAPS_VERSION%%
+
+#----------------------------------------------------------------------------------------------
+# Optionally set permissions on the installation directory, if necessary
+#----------------------------------------------------------------------------------------------
+RUN chmod -R 755 /message_daemon-%%MAPS_VERSION%%
+
+#----------------------------------------------------------------------------------------------
 # We can now simply start the server
 # Increase the file descriptor count
 #----------------------------------------------------------------------------------------------
 CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
     export PATH=${JAVA_HOME}/bin:${PATH} && \
-    message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
+    su -c "message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh" messaginguser
