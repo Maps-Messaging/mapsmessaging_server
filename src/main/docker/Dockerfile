@@ -127,7 +127,7 @@ VOLUME /data
 # Create a new user and group specifically for messaging
 #----------------------------------------------------------------------------------------------
 RUN addgroup -S messaginggroup && \
-    adduser -S messaginguser -G messaginggroup
+    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /message_daemon-%%MAPS_VERSION%%
 
 #----------------------------------------------------------------------------------------------
 # Change ownership of the /data directory and the installation directory
