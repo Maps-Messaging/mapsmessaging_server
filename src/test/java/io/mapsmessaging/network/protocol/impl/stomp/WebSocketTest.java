@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class WebSocketTest extends StompBaseTest {
+class WebSocketTest extends StompBaseTest {
 
   @Test
   @DisplayName("WebSocket Stomp Publish Test")
@@ -49,7 +49,7 @@ public class WebSocketTest extends StompBaseTest {
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     webSocketStompClient.setMessageConverter(new SimpleMessageConverter());
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:1888", handler);
+    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
 
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
@@ -82,7 +82,7 @@ public class WebSocketTest extends StompBaseTest {
     WebSocketClient client = new StandardWebSocketClient();
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:1888", handler);
+    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
 
