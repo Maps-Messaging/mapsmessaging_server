@@ -604,7 +604,7 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-    <sonar.branch.name>${branchName}</sonar.branch.name>
+    <sonar.branch.name>development</sonar.branch.name>
 
   </properties>
 
