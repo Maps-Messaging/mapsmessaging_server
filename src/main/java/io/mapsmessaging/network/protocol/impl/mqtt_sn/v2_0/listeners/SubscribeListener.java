@@ -64,13 +64,14 @@ public class SubscribeListener extends PacketListener {
       //
       // Do NOT register wildcard subscriptions
       //
-      short topicAlias = (short) subscribe.getTopicIdType();
+      short topicIdType = (short) subscribe.getTopicIdType();
       if(topicName.contains("+") || topicName.contains("#")){
-        topicAlias = 0;
+        topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
+        topicIdType = 0;
       }
       else if(topicId == 0 ){
         topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
-        topicAlias = 0;
+        topicIdType = 0;
       }
       ClientAcknowledgement ackManger = subscribe.getQos().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
@@ -82,7 +83,7 @@ public class SubscribeListener extends PacketListener {
         SubscriptionContext context = builder.build();
         session.addSubscription(context);
         SubAck subAck = new SubAck(
-            topicId, topicAlias,
+            topicId, topicIdType,
             subscribe.getQos(),
             subscribe.getMsgId(),
             ReasonCodes.SUCCESS);
@@ -90,6 +91,7 @@ public class SubscribeListener extends PacketListener {
         stateEngine.addSubscribeResponse(topicName, subAck);
         return subAck;
       } catch (IOException e) {
+        e.printStackTrace();
         SubAck subAck = new SubAck(
             topicId, TOPIC_NAME,
             subscribe.getQos(),
