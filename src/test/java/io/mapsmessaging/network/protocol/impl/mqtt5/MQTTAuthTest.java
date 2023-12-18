@@ -50,7 +50,7 @@ class MQTTAuthTest extends MQTTBaseTest {
   @MethodSource("mqttGetAuthUrls")
   void testSasl(int version, String protocol) throws MqttException, IOException {
     MqttConnectionOptions options = getOptions(true);
-    SaslClient saslClient = setForSasl(options);
+    SaslClient saslClient = setForSasl(options, "admin", getPassword("admin"));
     MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UUID.randomUUID().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
@@ -153,7 +153,7 @@ class MQTTAuthTest extends MQTTBaseTest {
   @MethodSource("mqttGetAuthUrls")
   void testInvalidPassword(int version, String protocol) throws MqttException, IOException {
     MqttConnectionOptions options = getOptions(true);
-    SaslClient saslClient = setForSasl(options);
+    SaslClient saslClient = setForSasl(options, "admin", "bad password");
     MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UUID.randomUUID().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
