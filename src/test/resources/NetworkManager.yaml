@@ -75,7 +75,7 @@ NetworkManager:
 
       - name: "MQTT SSL Test anon Interface"
         url: "ssl://0.0.0.0:1892/"
-        protocol: mqtt, wss
+        protocol: mqtt, ws
         auth: anon
 
       - name: "MQTT TCP Test Auth Interface"
@@ -88,7 +88,7 @@ NetworkManager:
 
       - name: "MQTT SSL Test Auth Interface"
         url: "ssl://0.0.0.0:1893/"
-        protocol: mqtt, wss
+        protocol: mqtt, ws
         auth: public
         sasl:
           mechanism: SCRAM-BCRYPT-SHA-512

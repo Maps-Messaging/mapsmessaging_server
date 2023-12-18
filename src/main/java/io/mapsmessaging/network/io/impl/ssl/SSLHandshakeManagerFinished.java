@@ -19,9 +19,18 @@ package io.mapsmessaging.network.io.impl.ssl;
 
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
+import lombok.Getter;
+
+import java.nio.ByteBuffer;
 
 public class SSLHandshakeManagerFinished implements SSLHandshakeManager {
 
+  @Getter
+  private final ByteBuffer handshakeBufferIn;
+  public SSLHandshakeManagerFinished(ByteBuffer byteBuffer){
+    handshakeBufferIn = byteBuffer;
+    handshakeBufferIn.flip();
+  }
   @Override
   public boolean handleSSLHandshakeStatus() {
     return false;

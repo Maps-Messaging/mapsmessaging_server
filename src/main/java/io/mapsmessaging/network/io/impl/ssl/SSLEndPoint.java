@@ -103,7 +103,14 @@ public class SSLEndPoint extends TCPEndPoint {
   @Override
   public int readPacket(Packet packet) throws IOException {
     if (!handshakeManager.handleSSLHandshakeStatus()) {
-      int len = readBuffer(packet.getRawBuffer());
+      int len;
+      if(handshakeManager.getHandshakeBufferIn().hasRemaining()){
+        packet.put(new Packet(handshakeManager.getHandshakeBufferIn()));
+        len = packet.position();
+      }
+      else {
+        len = readBuffer(packet.getRawBuffer());
+      }
       logger.log(ServerLogMessages.SSL_READ, len);
       return len;
     }

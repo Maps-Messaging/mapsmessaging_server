@@ -88,6 +88,10 @@ public class MQTTBaseTest extends BaseTestConfig {
       options.setUserName("admin");
       options.setPassword(getPassword("admin").toCharArray());
     }
+    options.setHttpsHostnameVerificationEnabled(false);
+    options.setSSLHostnameVerifier((hostname, session) -> true);
+    options.setExecutorServiceTimeout(20000);
+    options.setConnectionTimeout(20000);
     return options;
   }
 
