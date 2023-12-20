@@ -62,9 +62,7 @@ public class SubscribeListener extends PacketListener {
       //
       // Do NOT register wildcard subscriptions
       //
-      if (topicId == 0 && !(topicName.contains("+") || topicName.contains("#"))) {
-        topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
-      }
+      topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
       builder.setReceiveMaximum(RECEIVE_MAXIMUM);
