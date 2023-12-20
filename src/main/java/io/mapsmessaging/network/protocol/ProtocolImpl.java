@@ -29,6 +29,7 @@ import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
+import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
@@ -80,7 +81,11 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     this.endPoint = endPoint;
     sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
     receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
-    mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
+    if (JMXManager.isEnableJMX()) {
+      mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
+    } else {
+      mbean = null;
+    }
     connected = false;
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
@@ -95,7 +100,11 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     List<String> jmsList = new ArrayList<>(endPoint.getJMXTypePath());
     jmsList.add("remoteEndPoint=" + endPointName);
 
-    mbean = new ProtocolJMX(jmsList, this);
+    if (JMXManager.isEnableJMX()) {
+      mbean = new ProtocolJMX(jmsList, this);
+    } else {
+      mbean = null;
+    }
     connected = false;
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();

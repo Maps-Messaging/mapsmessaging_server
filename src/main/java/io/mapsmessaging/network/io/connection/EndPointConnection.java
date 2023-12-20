@@ -36,6 +36,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +83,9 @@ public class EndPointConnection extends EndPointServerStatus {
     running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
     logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProperty("protocol"));
-    manager.addConnection(this);
+    if (manager != null) {
+      manager.addConnection(this);
+    }
     logger.log(ServerLogMessages.END_POINT_CONNECTION_INITIALISED);
   }
 
@@ -91,7 +94,9 @@ public class EndPointConnection extends EndPointServerStatus {
       futureTask.cancel(false);
     }
     running.set(false);
-    manager.delConnection(this);
+    if (manager != null) {
+      manager.delConnection(this);
+    }
     if (endPoint != null) {
       try {
         endPoint.close();
@@ -146,6 +151,9 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   public List<String> getJMXPath() {
+    if (manager == null) {
+      return new ArrayList<>();
+    }
     return manager.getTypePath();
   }
 

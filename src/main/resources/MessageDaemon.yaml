@@ -86,4 +86,4 @@ MessageDaemon:
     # Enable or Disable the addition of statistics to the JMX beans
     #
     # Default: true
-    EnableJMXStatistics: false
+    EnableJMXStatistics: true

@@ -83,6 +83,7 @@ public class MessageDaemon {
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
   private boolean enableSystemTopics;
+  private boolean enableDeviceIntegration;
 
   @Getter
   private final EnvironmentConfig environmentConfig;
@@ -139,6 +140,10 @@ public class MessageDaemon {
     SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopics", true));
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
+
+    ConfigurationProperties deviceManager = ConfigurationManager.getInstance().getProperties("DeviceManager");
+    enableDeviceIntegration = deviceManager.getBooleanProperty("enabled", false);
+
   }
 
   private void createAgentStartStopList() throws IOException {
@@ -155,16 +160,21 @@ public class MessageDaemon {
     addToMap(500, 950, destinationManager);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, environmentConfig.getDataDirectory()));
     addToMap(700, 150, new NetworkManager(mBean));
-    if (enableSystemTopics) {
-      addToMap(800, 50, new SystemTopicManager(destinationManager));
-    }
     addToMap(900, 200, new NetworkConnectionManager(mBean));
-    addToMap(1000, 250, new JolokaManager());
-    addToMap(1100, 300, new HawtioManager());
     addToMap(1200, 400, new RestApiServerManager());
     addToMap(2000, 30, new ServerConnectionManager());
     addToMap(2100, 10, new RoutingManager());
-    addToMap(2200, 70, new DeviceManager());
+    addToMap(1000, 250, new JolokaManager());
+    addToMap(1100, 300, new HawtioManager());
+
+    // Optional modules that if not enabled do not load
+    if (enableSystemTopics) {
+      addToMap(800, 50, new SystemTopicManager(destinationManager));
+    }
+    if (enableDeviceIntegration) {
+      addToMap(2200, 70, new DeviceManager());
+    }
+
   }
 
   private void addToMap(int start, int stop, Agent agent) {

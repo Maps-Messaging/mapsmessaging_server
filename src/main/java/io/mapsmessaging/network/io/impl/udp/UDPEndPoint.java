@@ -31,6 +31,7 @@ import java.net.StandardSocketOptions;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 
@@ -56,9 +57,13 @@ public class UDPEndPoint extends EndPoint {
     datagramChannel.setOption(StandardSocketOptions.SO_BROADCAST, true);
     datagramChannel.socket().bind(null);
     name = getProtocol() + "_" + datagramChannel.getLocalAddress().toString();
-    mbean = new EndPointJMX(jmxParent, this);
-    jmxParentPath = mbean.getTypePath();
-    jmxParentPath = mbean.getTypePath();
+    if (jmxParent != null && !jmxParent.isEmpty()) {
+      mbean = new EndPointJMX(jmxParent, this);
+      jmxParentPath = mbean.getTypePath();
+    } else {
+      mbean = null;
+      jmxParentPath = new ArrayList<>();
+    }
     logger.log(UDP_CREATED, datagramChannel.getLocalAddress());
   }
 
@@ -74,8 +79,13 @@ public class UDPEndPoint extends EndPoint {
     datagramChannel.socket().bind(inetSocketAddress);
     authenticationConfig = authConfig;
     name = getProtocol() + "_" + datagramChannel.getLocalAddress().toString();
-    mbean = new EndPointJMX(managerMBean.getTypePath(), this);
-    jmxParentPath = mbean.getTypePath();
+    if (managerMBean != null) {
+      mbean = new EndPointJMX(managerMBean.getTypePath(), this);
+      jmxParentPath = mbean.getTypePath();
+    } else {
+      mbean = null;
+      jmxParentPath = new ArrayList<>();
+    }
     logger.log(UDP_CREATED, inetSocketAddress);
   }
 

@@ -90,7 +90,10 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
       if (!destinationMappings.isEmpty()) {
         for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
           if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-            EndPointConnectionHostJMX hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxParent, endPointURL.host));
+            EndPointConnectionHostJMX hostJMXBean = null;
+            if (!jmxParent.isEmpty()) {
+              hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxParent, endPointURL.host));
+            }
             endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
           }
         }

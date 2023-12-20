@@ -53,7 +53,10 @@ public class EndPointManager implements Closeable, AcceptHandler {
     endPointServer = null;
     state = STATE.STOPPED;
     int selectorCount = nc.getProperties().getIntProperty("selectorThreadCount", 5);
-    EndPointManagerJMX bean = new EndPointManagerJMX(managerBean.getTypePath(), this, nc);
+    EndPointManagerJMX bean = null;
+    if (managerBean != null) {
+      bean = new EndPointManagerJMX(managerBean.getTypePath(), this, nc);
+    }
     endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, nc, bean);
     ThreadContext.clearAll();
   }
