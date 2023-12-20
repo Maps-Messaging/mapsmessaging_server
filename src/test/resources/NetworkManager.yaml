@@ -199,8 +199,7 @@ NetworkManager:
             address: '*'
         sasl:
           mechanism: SCRAM-BCRYPT-SHA-512
-          identityProvider: htpassword
-          passwordFile: ./src/test/resources/htpassword
+          identityProvider: system
 
 
       -
