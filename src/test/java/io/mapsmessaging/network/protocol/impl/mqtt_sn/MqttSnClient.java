@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import java.util.concurrent.ThreadLocalRandom;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.client.impl.MqttsnClient;
 import org.slj.mqtt.sn.client.impl.MqttsnClientRuntimeRegistry;
@@ -32,12 +31,9 @@ import org.slj.mqtt.sn.model.session.impl.WillDataImpl;
 import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
 import org.slj.mqtt.sn.net.NetworkAddress;
-import org.slj.mqtt.sn.spi.IMqttsnCodec;
-import org.slj.mqtt.sn.spi.IMqttsnPublishFailureListener;
-import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
-import org.slj.mqtt.sn.spi.IMqttsnPublishSentListener;
-import org.slj.mqtt.sn.spi.IMqttsnStorageService;
-import org.slj.mqtt.sn.spi.MqttsnException;
+import org.slj.mqtt.sn.spi.*;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MqttSnClient {
 
@@ -82,6 +78,10 @@ public class MqttSnClient {
     return (MqttsnClientRuntimeRegistry) MqttsnClientRuntimeRegistry.defaultConfiguration(storageService, options).
         withTransport(new MqttsnUdpTransport(udpOptions)).
         withCodec(codecs);
+  }
+
+  public void ping() throws MqttsnException {
+    client.ping();
   }
 
   public void connect(int keepAlive, boolean cleanSession) throws MqttsnClientConnectException, MqttsnException {

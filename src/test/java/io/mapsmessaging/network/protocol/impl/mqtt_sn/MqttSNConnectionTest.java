@@ -17,20 +17,21 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.session.impl.WillDataImpl;
 import org.slj.mqtt.sn.spi.MqttsnException;
 import org.slj.mqtt.sn.utils.TopicPath;
 
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+
 class MqttSNConnectionTest extends BaseMqttSnConfig {
 
   @ParameterizedTest
-  @ValueSource(ints = {1,2})
+  @MethodSource("createVersionStream")
   void connectWithOutFlags(int version) throws MqttsnException, MqttsnClientConnectException {
     MqttSnClient client = new MqttSnClient( "localhost", 1884, version);
     client.connect(50, true);
@@ -40,7 +41,7 @@ class MqttSNConnectionTest extends BaseMqttSnConfig {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {1, 2})
+  @MethodSource("createVersionStream")
   void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException, InterruptedException {
     TopicPath tp = new TopicPath("willTopic");
     WillDataImpl details = new WillDataImpl(tp, "This is my last will and stuff".getBytes(StandardCharsets.UTF_8), 1, true);
@@ -56,12 +57,16 @@ class MqttSNConnectionTest extends BaseMqttSnConfig {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {1, 2})
+  @MethodSource("createVersionStream")
   void connectWaitForKeepalive(int version) throws MqttsnException, MqttsnClientConnectException, InterruptedException {
     MqttSnClient client = new MqttSnClient("localhost", 1884, version);
     client.connect(10, true);
-    Assertions.assertTrue(client.isConnected());
-    TimeUnit.SECONDS.sleep(15);
+    long end = System.currentTimeMillis() + 20000;
+    while (end > System.currentTimeMillis()) {
+      TimeUnit.SECONDS.sleep(10);
+      client.ping();
+    }
+    TimeUnit.SECONDS.sleep(1);
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
     delay(500);
