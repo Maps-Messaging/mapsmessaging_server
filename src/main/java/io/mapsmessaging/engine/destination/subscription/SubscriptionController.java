@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.engine.destination.subscription;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.admin.SubscriptionControllerJMX;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.RetainHandler;
@@ -99,7 +100,11 @@ public class SubscriptionController implements DestinationManagerListener {
     activeSubscriptions = new LinkedHashMap<>();
     schemaSubscriptions = new LinkedHashMap<>();
     isPersistent = sessionContext.isPersistentSession();
-    subscriptionControllerJMX = new SubscriptionControllerJMX(this);
+    if (MessageDaemon.getInstance().getMBean() != null) {
+      subscriptionControllerJMX = new SubscriptionControllerJMX(this);
+    } else {
+      subscriptionControllerJMX = null;
+    }
   }
 
   public SubscriptionController(String sessionId, String uniqueSessionId, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
@@ -123,7 +128,12 @@ public class SubscriptionController implements DestinationManagerListener {
         logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
       }
     }
-    subscriptionControllerJMX = new SubscriptionControllerJMX(this);
+    if (MessageDaemon.getInstance().getMBean() != null) {
+      subscriptionControllerJMX = new SubscriptionControllerJMX(this);
+    } else {
+      subscriptionControllerJMX = null;
+    }
+
   }
 
   public void shutdown(){
@@ -148,7 +158,9 @@ public class SubscriptionController implements DestinationManagerListener {
         logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
       }
     }
-    subscriptionControllerJMX.close();
+    if (subscriptionControllerJMX != null) {
+      subscriptionControllerJMX.close();
+    }
   }
 
   public void close() {
@@ -174,7 +186,9 @@ public class SubscriptionController implements DestinationManagerListener {
       }
     }
     contextMap.clear();
-    subscriptionControllerJMX.close();
+    if (subscriptionControllerJMX != null) {
+      subscriptionControllerJMX.close();
+    }
   }
 
   public boolean isPersistent() {
