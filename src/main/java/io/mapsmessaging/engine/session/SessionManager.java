@@ -27,6 +27,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
@@ -65,7 +66,11 @@ public class SessionManager implements Agent {
     Arrays.setAll(sessionPipeLines, x -> new SessionManagerPipeLine(destinationManager, storeLookup, security, connectedSessions, disconnectedSessions, expiredSessions));
     securityManager = security;
     willTaskManager = WillTaskManager.getInstance();
-    sessionManagerJMX = new SessionManagerJMX(this);
+    if (JMXManager.isEnableJMX()) {
+      sessionManagerJMX = new SessionManagerJMX(this);
+    } else {
+      sessionManagerJMX = null;
+    }
   }
 
   @Override

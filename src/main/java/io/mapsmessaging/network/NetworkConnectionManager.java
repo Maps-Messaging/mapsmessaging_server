@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -47,9 +48,8 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
 
   private final List<String> jmxParent;
 
-  public NetworkConnectionManager(List<String> parent) throws IOException {
+  public NetworkConnectionManager(MessageDaemonJMX mBean) throws IOException {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
-    jmxParent = parent;
     ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
     connectionConfiguration = new ArrayList<>();
     Object rootObj = networkConnectionProperties.get("data");
@@ -63,6 +63,12 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     selectorLoadManager = new SelectorLoadManager(10,networkConnectionProperties.getProperty("name", "Network Connection") );
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
+    if (mBean != null) {
+      jmxParent = mBean.getTypePath();
+    } else {
+      jmxParent = new ArrayList<>();
+    }
+
   }
 
   public void initialise() {

@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -24,6 +25,7 @@ import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
@@ -40,7 +42,7 @@ public class NetworkManager implements ServiceManager, Agent {
   private final NetworkManagerJMX bean;
   private final List<ConfigurationProperties> adapters;
 
-  public NetworkManager(List<String> parent) {
+  public NetworkManager(MessageDaemonJMX mBean) {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
 
@@ -58,8 +60,11 @@ public class NetworkManager implements ServiceManager, Agent {
     if (properties.getBooleanProperty("preferIPv6Addresses", true)) {
       System.setProperty("java.net.preferIPv6Addresses", "true");
     }
-
-    bean = new NetworkManagerJMX(parent, this);
+    if (JMXManager.isEnableJMX()) {
+      bean = new NetworkManagerJMX(mBean.getTypePath(), this);
+    } else {
+      bean = null;
+    }
   }
 
   @Override

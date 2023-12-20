@@ -82,6 +82,7 @@ public class MessageDaemon {
   private final String uniqueId;
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
+  private boolean enableSystemTopics;
 
   @Getter
   private final EnvironmentConfig environmentConfig;
@@ -122,12 +123,14 @@ public class MessageDaemon {
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
-
+    enableSystemTopics = properties.getBooleanProperty("EnableSystemTopics", false);
     if (properties.getBooleanProperty("EnableJMX", true)) {
       JMXManager.setEnableJMX(true);
+      mBean = new MessageDaemonJMX(this);
       new SimpleTaskSchedulerJMX(mBean.getTypePath());
       JMXManager.setEnableJMXStatistics(properties.getBooleanProperty("EnableJMXStatistics", true));
     } else {
+      mBean = null;
       JMXManager.setEnableJMX(false);
       JMXManager.setEnableJMXStatistics(false);
     }
@@ -151,9 +154,11 @@ public class MessageDaemon {
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, environmentConfig.getDataDirectory()));
-    addToMap(700, 150, new NetworkManager(mBean.getTypePath()));
-    addToMap(800, 50, new SystemTopicManager(destinationManager));
-    addToMap(900, 200, new NetworkConnectionManager(mBean.getTypePath()));
+    addToMap(700, 150, new NetworkManager(mBean));
+    if (enableSystemTopics) {
+      addToMap(800, 50, new SystemTopicManager(destinationManager));
+    }
+    addToMap(900, 200, new NetworkConnectionManager(mBean));
     addToMap(1000, 250, new JolokaManager());
     addToMap(1100, 300, new HawtioManager());
     addToMap(1200, 400, new RestApiServerManager());
@@ -214,7 +219,6 @@ public class MessageDaemon {
 
   public Integer start(String[] strings) throws IOException {
     isStarted.set(true);
-    mBean = new MessageDaemonJMX(this);
     loadConstants();
     createAgentStartStopList();
 
