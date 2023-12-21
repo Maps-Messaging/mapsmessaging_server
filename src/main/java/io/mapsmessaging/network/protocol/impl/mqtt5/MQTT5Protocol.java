@@ -85,7 +85,6 @@ public class MQTT5Protocol extends ProtocolImpl {
   private final int minimumKeepAlive;
 
   @Getter
-  @Setter
   private Session session;
   @Getter
   @Setter

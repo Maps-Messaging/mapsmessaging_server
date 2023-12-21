@@ -32,6 +32,7 @@ import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
+import lombok.Getter;
 
 import javax.management.ObjectInstance;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import java.util.List;
 @JMXBean(description = "Message Daemon JMX Bean")
 public class MessageDaemonJMX implements HealthMonitor {
 
+  @Getter
   private final List<String> typePath;
   private final MessageDaemon daemon;
   private final ObjectInstance mbean;
@@ -53,15 +55,16 @@ public class MessageDaemonJMX implements HealthMonitor {
     typePath = new ArrayList<>();
     typePath.add("type=Broker");
     typePath.add("brokerName=" + daemon.getId());
+    List<String> resourceList = new ArrayList<>(typePath);
     mbean = JMXManager.getInstance().register(this, typePath);
     healthMonitor = new HealthMonitorJMX(typePath);
     entryJMX = new MessageDaemonEntryJMX(daemon);
-    List<String> resourceList = new ArrayList<>(typePath);
     movingAveragesJMXList = new ArrayList<>();
-    for (LinkedMovingAverages linkedMovingAverages : DestinationStats.getGlobalAverages()) {
-      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
+    if (JMXManager.isEnableJMXStatistics()) {
+      for (LinkedMovingAverages linkedMovingAverages : DestinationStats.getGlobalAverages()) {
+        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
+      }
     }
-
   }
 
   @JMXBeanOperation(name = "shutdown", description = "Initiates a server shutdown")
@@ -130,10 +133,6 @@ public class MessageDaemonJMX implements HealthMonitor {
   @JMXBeanAttribute(name = "build Version", description = "Returns the build version of the server")
   public String getBuildVersion() {
     return BuildInfo.getBuildVersion();
-  }
-
-  public List<String> getTypePath() {
-    return typePath;
   }
 
   public void close() {

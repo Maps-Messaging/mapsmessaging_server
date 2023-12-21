@@ -86,7 +86,9 @@ NetworkManager:
       # Global configuration
       # ---------------------------------------------------------------------------------------------------------
         discoverable: true             # If the server registers a mdns entry for the adapter
-        preferIPv6Addresses: true       # If the server should prefer IPv6 addresses over IPv4 addresses
+        preferIPv6Addresses: true      # If the server should prefer IPv6 addresses over IPv4 addresses
+        scanNetworkChanges: false      # If true, the server will scan for new interfaces or disconnected interfaces
+        scanInterval: 60000            # Time in milliseconds to scan for network changes
 
     data:
 

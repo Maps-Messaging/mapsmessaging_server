@@ -33,11 +33,10 @@ public class SessionManagerJMX {
 
   private final SessionManager sessionManager;
   private final ObjectInstance mbean;
-  private final List<String> typePath;
 
   public SessionManagerJMX(SessionManager sessionManager) {
     this.sessionManager = sessionManager;
-    typePath = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
+    List<String> typePath = new ArrayList<>(MessageDaemon.getInstance().getTypePath());
     typePath.add("SessionManager=SessionManager");
     mbean = JMXManager.getInstance().register(this, typePath);
   }

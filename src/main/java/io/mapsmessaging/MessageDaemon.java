@@ -159,8 +159,8 @@ public class MessageDaemon {
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, environmentConfig.getDataDirectory()));
-    addToMap(700, 150, new NetworkManager(mBean));
-    addToMap(900, 200, new NetworkConnectionManager(mBean));
+    addToMap(700, 150, new NetworkManager());
+    addToMap(900, 200, new NetworkConnectionManager());
     addToMap(1200, 400, new RestApiServerManager());
     addToMap(2000, 30, new ServerConnectionManager());
     addToMap(2100, 10, new RoutingManager());
@@ -223,8 +223,11 @@ public class MessageDaemon {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
-  public MessageDaemonJMX getMBean() {
-    return mBean;
+  public List<String> getTypePath() {
+    if (mBean != null) {
+      return mBean.getTypePath();
+    }
+    return new ArrayList<>();
   }
 
   public Integer start(String[] strings) throws IOException {

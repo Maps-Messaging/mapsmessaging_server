@@ -20,6 +20,8 @@ package io.mapsmessaging.network.monitor;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import lombok.Getter;
 
@@ -42,10 +44,16 @@ public class NetworkInterfaceMonitor implements Agent {
   private final Logger logger = LoggerFactory.getLogger(NetworkInterfaceMonitor.class);
   private final List<Consumer<NetworkStateChange>> listeners = new ArrayList<>();
 
+  private final boolean enabled;
+  private final long interval;
+
   private ScheduledFuture<?> scheduledFuture;
   private Map<String, NetworkInterfaceState> lastInterfaces;
 
   private NetworkInterfaceMonitor() {
+    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
+    enabled = properties.getBooleanProperty("scanNetworkChanges", true);
+    interval = properties.getIntProperty("scanInterval", 60000);
   }
 
   @Override
@@ -72,7 +80,9 @@ public class NetworkInterfaceMonitor implements Agent {
     } catch (SocketException e) {
       // Ignore
     }
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::checkNetworkInterfaces, 0, 30, TimeUnit.SECONDS);
+    if (enabled) {
+      scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::checkNetworkInterfaces, interval, interval, TimeUnit.SECONDS);
+    }
   }
 
   @Override

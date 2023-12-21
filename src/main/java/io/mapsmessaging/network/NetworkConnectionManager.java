@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network;
 
-import io.mapsmessaging.admin.MessageDaemonJMX;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -46,9 +46,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final List<ConfigurationProperties> connectionConfiguration;
 
-  private final List<String> jmxParent;
-
-  public NetworkConnectionManager(MessageDaemonJMX mBean) throws IOException {
+  public NetworkConnectionManager() throws IOException {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
     connectionConfiguration = new ArrayList<>();
@@ -63,12 +61,6 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     selectorLoadManager = new SelectorLoadManager(10,networkConnectionProperties.getProperty("name", "Network Connection") );
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
-    if (mBean != null) {
-      jmxParent = mBean.getTypePath();
-    } else {
-      jmxParent = new ArrayList<>();
-    }
-
   }
 
   public void initialise() {
@@ -91,8 +83,9 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
           if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
             EndPointConnectionHostJMX hostJMXBean = null;
-            if (!jmxParent.isEmpty()) {
-              hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxParent, endPointURL.host));
+            List<String> jmxList = MessageDaemon.getInstance().getTypePath();
+            if (!jmxList.isEmpty()) {
+              hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
             }
             endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
           }
@@ -132,9 +125,5 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
       service.add(endPointConnectionFactory);
     }
     return service.listIterator();
-  }
-
-  public List<String> getJMXParent() {
-    return jmxParent;
   }
 }

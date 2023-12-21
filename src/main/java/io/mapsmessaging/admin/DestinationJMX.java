@@ -28,6 +28,7 @@ import io.mapsmessaging.utilities.admin.*;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import lombok.Getter;
 
 import javax.management.ObjectInstance;
 import java.io.IOException;
@@ -40,19 +41,22 @@ public class DestinationJMX implements HealthMonitor {
 
   private final DestinationImpl destinationImpl;
   private final ObjectInstance mbean;
+  @Getter
   private final List<String> typePath;
-  private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
+  private List<LinkedMovingAveragesJMX> movingAveragesJMXList;
   private final TaskQueueJMX publishTaskQueueJMX;
   private final TaskQueueJMX subscriptionTaskQueueJMX;
 
   public DestinationJMX(DestinationImpl destinationImpl, TaskScheduler resource, TaskScheduler subscription) {
     this.destinationImpl = destinationImpl;
-    typePath = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
+    typePath = new ArrayList<>(MessageDaemon.getInstance().getTypePath());
     typePath.add("destinationType=" + destinationImpl.getResourceType().getName());
     parseName(destinationImpl.getFullyQualifiedNamespace());
-    mbean = JMXManager.getInstance().register(this, typePath);
     movingAveragesJMXList = new ArrayList<>();
-    if(JMXManager.isEnableJMXStatistics() && !destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
+    mbean = JMXManager.getInstance().register(this, typePath);
+    if (JMXManager.isEnableJMX() &&
+        JMXManager.isEnableJMXStatistics() &&
+        !destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
       DestinationStats stats = destinationImpl.getStats();
       for (LinkedMovingAverages linkedMovingAverages : stats.getAverageList()) {
         movingAveragesJMXList.add(new LinkedMovingAveragesJMX(typePath, linkedMovingAverages));
@@ -68,7 +72,6 @@ public class DestinationJMX implements HealthMonitor {
         movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
       }
     }
-
     List<String> pubList = new ArrayList<>(typePath);
     pubList.add("name=ResourceScheduler");
     publishTaskQueueJMX = new TaskQueueJMX(resource, pubList);
@@ -92,10 +95,6 @@ public class DestinationJMX implements HealthMonitor {
       }
       typePath.add("destinationName=" + parse.get(parse.size() - 1));
     }
-  }
-
-  public List<String> getTypePath() {
-    return typePath;
   }
 
   public void close() {

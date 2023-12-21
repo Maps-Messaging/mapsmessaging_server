@@ -73,14 +73,9 @@ DeviceManager:
 
     -
       name: oneWire
-      enabled: true  # enable / disable one wire interface
+      enabled: false  # enable / disable one wire interface
       autoScan: true
 
-    -
-      name: demo
-      enabled: false
-      autoScan: true
-      topicNameTemplate: /device/demo/time
 
     -
       # Note: each SPI device needs to be defined, there is no generic way to scan for SPI devices

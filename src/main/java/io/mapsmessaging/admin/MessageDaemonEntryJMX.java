@@ -29,13 +29,12 @@ import java.util.List;
 @JMXBean(description = "Message Daemon Info")
 public class MessageDaemonEntryJMX {
 
-  private final List<String> typePath;
   private final ObjectInstance mbean;
   private final MessageDaemon daemon;
 
   MessageDaemonEntryJMX(MessageDaemon daemon) {
     this.daemon = daemon;
-    typePath = new ArrayList<>();
+    List<String> typePath = new ArrayList<>();
     typePath.add("type=Broker");
     mbean = JMXManager.getInstance().register(this, typePath);
   }

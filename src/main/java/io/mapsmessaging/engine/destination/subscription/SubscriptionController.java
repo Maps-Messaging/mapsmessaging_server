@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.engine.destination.subscription;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.admin.SubscriptionControllerJMX;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.RetainHandler;
@@ -100,11 +99,7 @@ public class SubscriptionController implements DestinationManagerListener {
     activeSubscriptions = new LinkedHashMap<>();
     schemaSubscriptions = new LinkedHashMap<>();
     isPersistent = sessionContext.isPersistentSession();
-    if (MessageDaemon.getInstance().getMBean() != null) {
-      subscriptionControllerJMX = new SubscriptionControllerJMX(this);
-    } else {
-      subscriptionControllerJMX = null;
-    }
+    subscriptionControllerJMX = new SubscriptionControllerJMX(this);
   }
 
   public SubscriptionController(String sessionId, String uniqueSessionId, DestinationFactory destinationManager, Map<String, SubscriptionContext> contextMap) {
@@ -128,12 +123,7 @@ public class SubscriptionController implements DestinationManagerListener {
         logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
       }
     }
-    if (MessageDaemon.getInstance().getMBean() != null) {
-      subscriptionControllerJMX = new SubscriptionControllerJMX(this);
-    } else {
-      subscriptionControllerJMX = null;
-    }
-
+    subscriptionControllerJMX = new SubscriptionControllerJMX(this);
   }
 
   public void shutdown(){

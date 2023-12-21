@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.engine.destination;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.admin.DestinationJMX;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
@@ -41,7 +40,6 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
-import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
@@ -153,11 +151,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
-      destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
-    } else {
-      destinationJMXBean = null;
-    }
+    destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
@@ -191,11 +185,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
-      destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
-    } else {
-      destinationJMXBean = null;
-    }
+    destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     completionQueue = new EventReaperQueue();
@@ -238,11 +228,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
-      destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
-    } else {
-      destinationJMXBean = null;
-    }
+    destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
     delayScheduler = null;
