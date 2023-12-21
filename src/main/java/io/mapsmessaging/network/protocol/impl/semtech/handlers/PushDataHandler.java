@@ -43,7 +43,7 @@ public class PushDataHandler extends Handler {
     PushData pushData = (PushData) packet;
     if (pushData.isValid()) {
       protocol.sendPacket(new PushAck(pushData.getToken(), packet.getFromAddress()));
-      if (pushData.getJsonObject() != null && pushData.getJsonObject().length() > 0) {
+      if (pushData.getJsonObject() != null && !pushData.getJsonObject().isEmpty()) {
         try {
           JSONObject jsonObject = new JSONObject(pushData.getJsonObject());
           boolean status = jsonObject.has("stat");

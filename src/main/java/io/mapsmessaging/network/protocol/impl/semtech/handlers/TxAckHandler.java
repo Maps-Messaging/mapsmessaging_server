@@ -44,7 +44,7 @@ public class TxAckHandler extends Handler {
     if (info != null) {
       sendMessage(protocol, info, packet.getFromAddress());
     }
-    if (txAck.getJsonObject().length() > 0) {
+    if (!txAck.getJsonObject().isEmpty()) {
       Map<String, String> meta = new LinkedHashMap<>();
       meta.put("protocol", "SemTech");
       meta.put("version", "" + VERSION);

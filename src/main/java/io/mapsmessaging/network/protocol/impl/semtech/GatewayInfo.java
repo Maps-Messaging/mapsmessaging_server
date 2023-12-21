@@ -27,26 +27,18 @@ import lombok.Setter;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+@Getter
+@Setter
 public class GatewayInfo {
 
-  @Getter
   private final Destination inbound;
-  @Getter
   private final Destination status;
-
-  @Getter
   private final SubscribedEventManager outbound;
-  @Getter
   private final byte[] rawIdentifier;
-  @Getter
   private final String name;
-  @Getter
-  @Setter
-  private long lastAccess;
-
-
-  @Getter
   private final Queue<MessageEvent> waitingMessages;
+
+  private long lastAccess;
 
   public GatewayInfo(byte[] raw_identifier, String name, Destination inbound, Destination status, SubscribedEventManager outbound) {
     this.rawIdentifier = raw_identifier;
