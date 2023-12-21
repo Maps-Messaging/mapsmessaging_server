@@ -279,7 +279,7 @@ public class MessageDaemon {
       agent.getAgent().stop();
       logger.log(MESSAGE_DAEMON_AGENT_STOPPED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
     }
-    mBean.close();
+    if (mBean != null) mBean.close();
     return i;
   }
 
