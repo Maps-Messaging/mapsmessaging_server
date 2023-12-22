@@ -52,7 +52,7 @@ public class SSLEndPointServer extends TCPEndPointServer {
     requiresClientAuth = Boolean.parseBoolean(config.getProperties().getProperty("ssl_clientCertificateRequired", "false"));
 
     try {
-      sslContext = SSLHelper.getInstance().createContext(config.getProperties(), logger);
+      sslContext = SSLHelper.getInstance().createContext("tls", config.getProperties(), logger);
     } finally {
       logger.log(ServerLogMessages.SSL_SERVER_COMPLETED);
     }

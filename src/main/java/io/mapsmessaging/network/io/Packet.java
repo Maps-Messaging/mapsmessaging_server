@@ -96,11 +96,19 @@ public class Packet {
 
   public Packet clear() {
     buffer.clear();
+    for (int x = 0; x < buffer.capacity(); x++) {
+      buffer.put(x, (byte) 0);
+    }
+    buffer.clear();
     return this;
   }
 
   public void compact() {
-    buffer.compact();
+    if (buffer.position() == buffer.limit()) {
+      clear();
+    } else {
+      buffer.compact();
+    }
   }
 
   public byte get(int pos) {

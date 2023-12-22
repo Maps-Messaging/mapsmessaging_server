@@ -56,7 +56,7 @@ public class DTLSEndPointServer extends UDPEndPointServer {
     this.acceptHandler = acceptHandler;
     this.protocolFactory = protocolFactory;
 
-    sslContext = SSLHelper.getInstance().createContext(config.getProperties(), logger);
+    sslContext = SSLHelper.getInstance().createContext("dtls", config.getProperties(), logger);
     bondedEndPoints = new ArrayList<>();
     port = url.getPort();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);

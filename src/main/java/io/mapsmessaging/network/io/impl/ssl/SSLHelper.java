@@ -21,9 +21,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.*;
@@ -41,10 +39,12 @@ public class SSLHelper {
   }
 
 
-  public SSLContext createContext(ConfigurationProperties configurationProperties, Logger logger) throws IOException {
+  public SSLContext createContext(String context, ConfigurationProperties configurationProperties, Logger logger) throws IOException {
     SSLContext sslContext;
     // We have a physical socket bound, so now build up the SSL Context for this interface
     //
+
+    String alias = configurationProperties.getProperty("ssl_alias");
     try {
       // <editor-fold desc="Load and initialize the Key Store">
       //
@@ -64,6 +64,15 @@ public class SSLHelper {
       KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(sslKeyManagerFactory);
       keyManagerFactory.init(keyStore, configurationProperties.getProperty("ssl_keyStorePassphrase").toCharArray());
       logger.log(ServerLogMessages.SSL_SERVER_INITIALISE, sslKeyManagerFactory);
+      KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
+      if (alias != null && !alias.isEmpty()) {
+        for (int i = 0; i < keyManagers.length; i++) {
+          if (keyManagers[i] instanceof X509ExtendedKeyManager) {
+            keyManagers[i] = new CustomKeyManager((X509ExtendedKeyManager) keyManagers[i], alias);
+          }
+        }
+      }
+
       // </editor-fold>
 
       // <editor-fold desc="Load and initialise the Trust Store">
@@ -91,9 +100,13 @@ public class SSLHelper {
       //
       // Put it all together and create the SSL Context to generate SSL Engines
       logger.log(ServerLogMessages.SSL_SERVER_CONTEXT_CONSTRUCT);
-      sslContext = SSLContext.getInstance(configurationProperties.getProperty("ssl_SSLContext"));
+      String contextConfig = configurationProperties.getProperty("ssl_SSLContext", context);
+      if (!contextConfig.substring(0, 3).equalsIgnoreCase(context.substring(0, 3))) {
+        contextConfig = context; //
+      }
+      sslContext = SSLContext.getInstance(contextConfig);
       sslContext.init(
-          keyManagerFactory.getKeyManagers(),
+          keyManagers,
           trustManagerFactory.getTrustManagers(),
           new SecureRandom());
       logger.log(ServerLogMessages.SSL_SERVER_SSL_CONTEXT_COMPLETE);

@@ -98,9 +98,11 @@ public class StateEngine {
   }
 
   void pushToInBoundQueue(Packet packet) {
-    inboundQueue.add(packet);
-    if (selectableTask != null) {
-      selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
+    if (packet.hasRemaining()) {
+      inboundQueue.add(packet);
+      if (selectableTask != null) {
+        selectableTask.selected(selectableTask, null, SelectionKey.OP_READ);
+      }
     }
   }
 

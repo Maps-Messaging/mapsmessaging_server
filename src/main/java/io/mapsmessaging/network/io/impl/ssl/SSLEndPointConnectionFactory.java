@@ -42,7 +42,7 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
   @Override
   public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)
       throws IOException {
-    SSLContext context = SSLHelper.getInstance().createContext(endPointServerStatus.getConfig().getProperties(), logger);
+    SSLContext context = SSLHelper.getInstance().createContext("tls", endPointServerStatus.getConfig().getProperties(), logger);
     SSLEngine engine = context.createSSLEngine();
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());

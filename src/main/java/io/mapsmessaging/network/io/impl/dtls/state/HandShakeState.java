@@ -40,14 +40,19 @@ public class HandShakeState extends State {
 
   @Override
   int inbound(Packet packet) throws IOException {
-    handshake(packet);
-    while (stateEngine.getSslEngine().getHandshakeStatus() != NEED_UNWRAP) {
+    int loop = 0;
+    while (loop < 2 && packet.hasRemaining()) {
       handshake(packet);
-      if (stateEngine.getSslEngine().getHandshakeStatus() == NOT_HANDSHAKING) {
-        stateEngine.setCurrentState(new NormalState(stateEngine));
-        stateEngine.handshakeComplete();
-        return 0;
+      while (stateEngine.getSslEngine().getHandshakeStatus() != NEED_UNWRAP) {
+        handshake(packet);
+        if (stateEngine.getSslEngine().getHandshakeStatus() == NOT_HANDSHAKING) {
+          stateEngine.setCurrentState(new NormalState(stateEngine));
+          stateEngine.handshakeComplete();
+          System.err.println("Complete!");
+          return 0;
+        }
       }
+      loop++;
     }
     return 0;
   }
@@ -85,7 +90,7 @@ public class HandShakeState extends State {
   }
 
   private void processPackets(SSLEngineResult.HandshakeStatus hs) throws IOException {
-    if (hs == NEED_WRAP) {
+    while (hs == NEED_WRAP) {
       List<Packet> packets = new ArrayList<>();
       produceHandshakePackets(packets);
       for (Packet p : packets) {

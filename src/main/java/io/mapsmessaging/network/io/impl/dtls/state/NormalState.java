@@ -44,7 +44,11 @@ public class NormalState extends State {
   @Override
   int inbound(Packet packet) throws SSLException {
     Packet networkOut = new Packet(2048, false);
-    SSLEngineResult rs = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), networkOut.getRawBuffer());
+    SSLEngineResult rs;
+    do {
+      rs = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), networkOut.getRawBuffer());
+    } while (rs.getStatus() == Status.OK && packet.hasRemaining());
+
     if (rs.getStatus() == Status.OK) {
       networkOut.flip();
       networkOut.setFromAddress(packet.getFromAddress());
