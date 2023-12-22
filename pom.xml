@@ -613,7 +613,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.22.2</version>
+        <version>2.22.3</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -927,13 +927,13 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.22.2</version>
+      <version>2.22.3</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.22.1</version>
+      <version>2.22.3</version>
     </dependency>
 
 
@@ -941,7 +941,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.622</version>
+      <version>1.12.623</version>
       <scope>test</scope>
     </dependency>
 
@@ -1015,7 +1015,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-websocket</artifactId>
-      <version>3.2.0</version>
+      <version>3.2.1</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
