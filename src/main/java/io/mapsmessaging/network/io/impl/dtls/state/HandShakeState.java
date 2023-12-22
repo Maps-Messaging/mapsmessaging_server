@@ -40,19 +40,14 @@ public class HandShakeState extends State {
 
   @Override
   int inbound(Packet packet) throws IOException {
-    int loop = 0;
-    while (loop < 2 && packet.hasRemaining()) {
+    handshake(packet);
+    while (stateEngine.getSslEngine().getHandshakeStatus() != NEED_UNWRAP) {
       handshake(packet);
-      while (stateEngine.getSslEngine().getHandshakeStatus() != NEED_UNWRAP) {
-        handshake(packet);
-        if (stateEngine.getSslEngine().getHandshakeStatus() == NOT_HANDSHAKING) {
-          stateEngine.setCurrentState(new NormalState(stateEngine));
-          stateEngine.handshakeComplete();
-          System.err.println("Complete!");
-          return 0;
-        }
+      if (stateEngine.getSslEngine().getHandshakeStatus() == NOT_HANDSHAKING) {
+        stateEngine.setCurrentState(new NormalState(stateEngine));
+        stateEngine.handshakeComplete();
+        return 0;
       }
-      loop++;
     }
     return 0;
   }
