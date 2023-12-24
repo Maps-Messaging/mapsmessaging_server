@@ -81,6 +81,7 @@ NetworkManager:
         advertiseGateway: false
         enablePortChanges: true
         enableAddressChanges: true
+        packetReuseTimeout: 1000
 
       # ---------------------------------------------------------------------------------------------------------
       # Global configuration

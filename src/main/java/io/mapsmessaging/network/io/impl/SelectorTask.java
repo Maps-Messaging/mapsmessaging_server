@@ -55,9 +55,9 @@ public class SelectorTask implements Selectable {
     logger = LoggerFactory.getLogger(SelectorTask.class);
     int readBufferSize = properties.getIntProperty("serverReadBufferSize", DefaultConstants.TCP_READ_BUFFER_SIZE);
     int writeBufferSize = properties.getIntProperty("serverWriteBufferSize", DefaultConstants.TCP_WRITE_BUFFER_SIZE);
-
+    long packetThreshold = properties.getLongProperty("packetReuseTimeout", 1000L);
     if (isUDP) {
-      readTask = new UDPReadTask(selectorCallback, readBufferSize, logger);
+      readTask = new UDPReadTask(selectorCallback, readBufferSize, packetThreshold, logger);
       writeTask = new UDPWriteTask(selectorCallback, writeBufferSize, this, logger);
     } else {
       int readDelay = -1;

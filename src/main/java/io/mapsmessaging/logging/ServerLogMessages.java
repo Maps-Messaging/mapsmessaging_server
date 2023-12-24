@@ -226,6 +226,12 @@ public enum ServerLogMessages implements LogMessage {
   UDP_WRITE_TASK_SENT_PACKET(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "UDP EndPoint sent packet {}"),
   UDP_WRITE_TASK_SEND_PACKET_ERROR(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised during packet send"),
   UDP_WRITE_TASK_UNABLE_TO_REMOVE_WRITE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Unable to remove WRITE interest from the selector"),
+
+  UDP_READ_TASK_STATE(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Read packet from {} of {} bytes"),
+  UDP_READ_TASK_STATE_PREVIOUS(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Previous packet from {} of {} bytes found"),
+  UDP_READ_TASK_STATE_RECOMBINED(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Recombined packet from {} of {} bytes found"),
+  UDP_READ_TASK_STATE_REMAINING(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Remaining data in packet from {} of {} bytes"),
+
   // </editor-fold>
 
   // <editor-fold desc="Security Manager based log messages">
