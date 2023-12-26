@@ -84,6 +84,7 @@ public class MessageDaemon {
   private final AtomicBoolean isStarted;
   private boolean enableSystemTopics;
   private boolean enableDeviceIntegration;
+  private DeviceManager deviceManager;
 
   @Getter
   private final EnvironmentConfig environmentConfig;
@@ -172,9 +173,15 @@ public class MessageDaemon {
       addToMap(800, 50, new SystemTopicManager(destinationManager));
     }
     if (enableDeviceIntegration) {
-      addToMap(2200, 70, new DeviceManager());
+      deviceManager = new DeviceManager();
+      addToMap(2200, 70, deviceManager);
+    } else {
+      deviceManager = null;
     }
+  }
 
+  public boolean hasDeviceManager() {
+    return deviceManager != null && deviceManager.isEnabled();
   }
 
   private void addToMap(int start, int stop, Agent agent) {

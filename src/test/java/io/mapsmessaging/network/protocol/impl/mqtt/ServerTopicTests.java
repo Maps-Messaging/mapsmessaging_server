@@ -29,11 +29,11 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class SystemTopicTest extends MQTTBaseTest {
+class ServerTopicTests extends MQTTBaseTest {
 
   @ParameterizedTest
   @MethodSource("mqttPublishTestParameters")
-  @DisplayName("Test QoS wildcard subscription")
+  @DisplayName("Test System Topics")
   void testSystemTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
     MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UUID.randomUUID().toString(), version), new MemoryPersistence());
@@ -68,6 +68,48 @@ class SystemTopicTest extends MQTTBaseTest {
     endTime = System.currentTimeMillis() + 20000;
     while (SessionManagerTest.getInstance().hasIdleSessions() && endTime > System.currentTimeMillis()) {
       delay(100);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("mqttPublishTestParameters")
+  @DisplayName("Test Device topics")
+  void testDeviceTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
+    if (md.hasDeviceManager()) {
+      MqttConnectOptions options = getOptions(auth, version);
+      MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UUID.randomUUID().toString(), version), new MemoryPersistence());
+      AtomicInteger counter = new AtomicInteger(0);
+      client.setCallback(new MqttCallback() {
+        @Override
+        public void connectionLost(Throwable throwable) {
+
+        }
+
+        @Override
+        public void messageArrived(String s, MqttMessage mqttMessage) {
+          counter.incrementAndGet();
+        }
+
+        @Override
+        public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+
+        }
+      });
+      options.setCleanSession(true);
+      options.setKeepAliveInterval(30);
+      client.connect(options);
+      client.subscribe("/device/#", QoS); // ALL System topics
+      long endTime = System.currentTimeMillis() + 20000;
+      while (counter.get() == 0 && endTime > System.currentTimeMillis()) {
+        delay(10);
+      }
+      Assertions.assertNotEquals(counter.get(), 0);
+      client.disconnect();
+      client.close();
+      endTime = System.currentTimeMillis() + 20000;
+      while (SessionManagerTest.getInstance().hasIdleSessions() && endTime > System.currentTimeMillis()) {
+        delay(100);
+      }
     }
   }
 }

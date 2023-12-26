@@ -70,6 +70,10 @@ public class DeviceManager implements ServiceManager, Agent {
     loadConfig(properties);
   }
 
+  public boolean isEnabled() {
+    return deviceBusManager != null;
+  }
+
   private void loadConfig(ConfigurationProperties properties){
     if( properties.getBooleanProperty("enabled", false) && deviceBusManager != null) {
       Object obj = properties.get("data");
