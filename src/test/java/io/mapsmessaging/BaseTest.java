@@ -49,7 +49,8 @@ public class BaseTest {
     Date dt = new Date();
     System.err.println(getHeaderPartition());
     if(testInfo != null) {
-      System.err.println(pad("Starting:: " + testInfo.getDisplayName(), " "));
+      String path = testInfo.getTestClass().get().getSimpleName() + "::" + testInfo.getTestMethod().get().getName();
+      System.err.println(pad("Starting:: " + path, " "));
     }
     System.err.println(pad("Date    :: "+dt.toString(), " "));
     System.err.println(getHeaderPartition());

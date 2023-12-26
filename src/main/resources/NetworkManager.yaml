@@ -23,11 +23,11 @@ NetworkManager:
 
         ssl_keyStoreFile: my-keystore.jks
         ssl_keyStorePassphrase: password
-        ssl_trustStoreFile: my-keystore.jks
+        ssl_trustStoreFile: my-truststore.jks
         ssl_trustStorePassphrase: password
         ssl_keyManagerFactory: SunX509
         ssl_trustManagerFactory: SunX509
-        ssl_SSLContext: TLS
+        ssl_SSLContext: TLS  # DTLS or TLS
         ssl_keyStore: JKS
         ssl_trustStore: JKS
 
