@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class ServerTopicTests extends MQTTBaseTest {
+class ServerTopicTest extends MQTTBaseTest {
 
   @ParameterizedTest
   @MethodSource("mqttPublishTestParameters")
