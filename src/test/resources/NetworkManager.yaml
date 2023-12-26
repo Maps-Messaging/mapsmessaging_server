@@ -184,7 +184,6 @@ NetworkManager:
         eventsPerTopicDuringSleep: 10
         maxTopicsInSleep: 10
         advertiseGateway: true
-        ssl_SSLContext: DTLS
 
       -
         url: udp://0.0.0.0:1887/
