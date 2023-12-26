@@ -46,6 +46,7 @@ DeviceManager:
           autoScan: true
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           trigger: everySecond
-                     - devices:
-                     address: 0x10
-                     name: DebugDevice
+          devices:
+            - address: 0x10
+              name: DebugDevice
+
