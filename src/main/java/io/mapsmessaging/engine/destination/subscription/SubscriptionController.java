@@ -332,7 +332,6 @@ public class SubscriptionController implements DestinationManagerListener {
       try {
         createSubscription(interested.get(0), destinationImpl);
       } catch (IOException e) {
-        e.printStackTrace();
         throw new RuntimeException(e);
       }
     }

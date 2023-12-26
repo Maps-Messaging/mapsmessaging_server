@@ -65,7 +65,8 @@ public class SubscribeListener extends PacketListener {
       // Do NOT register wildcard subscriptions
       //
       short topicIdType = (short) subscribe.getTopicIdType();
-      if(topicName.contains("+") || topicName.contains("#")){
+      if (topicName.contains("+") ||
+          topicName.contains("#")) {
         topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
         topicIdType = 0;
       }
@@ -91,7 +92,6 @@ public class SubscribeListener extends PacketListener {
         stateEngine.addSubscribeResponse(topicName, subAck);
         return subAck;
       } catch (IOException e) {
-        e.printStackTrace();
         SubAck subAck = new SubAck(
             topicId, TOPIC_NAME,
             subscribe.getQos(),
