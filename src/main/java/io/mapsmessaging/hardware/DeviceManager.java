@@ -17,8 +17,6 @@
 
 package io.mapsmessaging.hardware;
 
-import com.pi4j.Pi4J;
-import com.pi4j.io.i2c.I2C;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
@@ -63,12 +61,10 @@ public class DeviceManager implements ServiceManager, Agent {
 
     DeviceBusManager manager = null;
     try {
-      var pi4j = Pi4J.newAutoContext();
-      try (var i2c = pi4j.create(I2C.newConfigBuilder(pi4j).id("Test I2C").build())) {
-        i2c.getDevice();
-      }
-      pi4j.shutdown();  // Clean up, adjust as needed
       manager = DeviceBusManager.getInstance();
+      if (!manager.isAvailable()) {
+        manager = null;
+      }
     } catch (Throwable th) {
     }
 
