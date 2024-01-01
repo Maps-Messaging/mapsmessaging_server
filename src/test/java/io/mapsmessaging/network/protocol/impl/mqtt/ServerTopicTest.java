@@ -18,10 +18,12 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.engine.session.SessionManagerTest;
+import io.mapsmessaging.utilities.SystemProperties;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -30,6 +32,11 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class ServerTopicTest extends MQTTBaseTest {
+
+  static boolean isHardwareSupported() {
+    String hardware = SystemProperties.getInstance().getProperty("pi4jSupported", "false");
+    return Boolean.parseBoolean(hardware);
+  }
 
   @ParameterizedTest
   @MethodSource("mqttPublishTestParameters")
@@ -74,6 +81,7 @@ class ServerTopicTest extends MQTTBaseTest {
   @ParameterizedTest
   @MethodSource("mqttPublishTestParameters")
   @DisplayName("Test Device topics")
+  @EnabledIf("isHardwareSupported")
   void testDeviceTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     if (md.hasDeviceManager()) {
       MqttConnectOptions options = getOptions(auth, version);
