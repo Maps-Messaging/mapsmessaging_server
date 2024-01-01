@@ -34,8 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 class ServerTopicTest extends MQTTBaseTest {
 
   static boolean isHardwareSupported() {
-    String hardware = SystemProperties.getInstance().getProperty("pi4jSupported", "false");
-    return Boolean.parseBoolean(hardware);
+    return (md != null && md.hasDeviceManager());
   }
 
   @ParameterizedTest

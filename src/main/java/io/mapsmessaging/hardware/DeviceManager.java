@@ -42,10 +42,10 @@ public class DeviceManager implements ServiceManager, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(DeviceManager.class);
   private final List<ConfigurationProperties> devices;
-  private final DeviceBusManager deviceBusManager;
   private final List<BusHandler> busHandlers;
   private final List<Trigger> triggers;
   private final Map<String, Trigger> configuredTriggers;
+  private DeviceBusManager deviceBusManager;
 
   public DeviceManager() {
     logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP);
@@ -65,19 +65,19 @@ public class DeviceManager implements ServiceManager, Agent {
       if (!manager.isAvailable()) {
         manager = null;
       }
+      manager = loadConfig(properties, manager);
     } catch (Throwable th) {
     }
 
     deviceBusManager = manager;
-    loadConfig(properties);
   }
 
   public boolean isEnabled() {
     return deviceBusManager != null;
   }
 
-  private void loadConfig(ConfigurationProperties properties){
-    if( properties.getBooleanProperty("enabled", false) && deviceBusManager != null) {
+  private DeviceBusManager loadConfig(ConfigurationProperties properties, DeviceBusManager manager) {
+    if (properties.getBooleanProperty("enabled", false) && manager != null) {
       Object obj = properties.get("data");
       if (obj instanceof List) {
         for(ConfigurationProperties props:(List<ConfigurationProperties>) obj){
@@ -92,23 +92,30 @@ public class DeviceManager implements ServiceManager, Agent {
         devices.add((ConfigurationProperties) obj);
       }
       logger.log(ServerLogMessages.DEVICE_MANAGER_LOAD_PROPERTIES);
-
-      for(ConfigurationProperties deviceConfig: devices) {
-        if (deviceConfig.containsKey("name") &&
-            deviceConfig.getProperty("name").equalsIgnoreCase("i2c") &&
-            deviceConfig.getBooleanProperty("enabled", false)) {
-          loadI2CConfig(deviceConfig);
+      try {
+        for (ConfigurationProperties deviceConfig : devices) {
+          if (deviceConfig.containsKey("name") &&
+              deviceConfig.getProperty("name").equalsIgnoreCase("i2c") &&
+              deviceConfig.getBooleanProperty("enabled", false)) {
+            loadI2CConfig(deviceConfig);
+          }
+          if (deviceConfig.containsKey("name") &&
+              deviceConfig.getProperty("name").equalsIgnoreCase("oneWire") &&
+              deviceConfig.getBooleanProperty("enabled", false)) {
+            String triggerName = deviceConfig.getProperty("trigger", "default");
+            Trigger trigger = locateNamedTrigger(triggerName);
+            busHandlers.add(new OneWireBusHandler(manager.getOneWireBusManager(), deviceConfig, trigger));
+          }
         }
-        if (deviceConfig.containsKey("name") &&
-            deviceConfig.getProperty("name").equalsIgnoreCase("oneWire") &&
-            deviceConfig.getBooleanProperty("enabled", false)) {
-          String triggerName = deviceConfig.getProperty("trigger", "default");
-          Trigger trigger = locateNamedTrigger(triggerName);
-          busHandlers.add(new OneWireBusHandler(deviceBusManager.getOneWireBusManager(), deviceConfig, trigger));
-        }
+        logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_COMPLETE);
+      } catch (Throwable th) {
+        devices.clear();
+        busHandlers.clear();
+        manager = null;
+        logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_COMPLETE, th);
       }
-      logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_COMPLETE);
     }
+    return manager;
   }
 
   private void loadTriggers(ConfigurationProperties deviceConfig){

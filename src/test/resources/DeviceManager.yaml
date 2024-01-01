@@ -39,7 +39,7 @@ DeviceManager:
 
 
     - name: i2c
-      enabled: false  # Enable or disable I2C bus interface
+      enabled: true  # Enable or disable I2C bus interface
       config:
         - bus: 1
           enabled: true
