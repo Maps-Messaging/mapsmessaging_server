@@ -69,7 +69,7 @@ NetworkManager:
         auth: anon
 
       - name: "MQTT TCP Test anon Interface"
-        url: "tcp://0.0.0.0:1882/"
+        url: "tcp://0.0.0.0:1883/"
         protocol: mqtt, ws
         auth: anon
 
@@ -79,7 +79,7 @@ NetworkManager:
         auth: anon
 
       - name: "MQTT TCP Test Auth Interface"
-        url: "tcp://0.0.0.0:1883/"
+        url: "tcp://0.0.0.0:1882/"
         protocol: mqtt, ws
         auth: public
         sasl:

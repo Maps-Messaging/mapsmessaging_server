@@ -58,7 +58,7 @@ abstract class PahoConformance extends BaseTestConfig {
 
     String pythonCommand = System.getProperty("python_command", "python");
 
-    String command = pythonCommand + " " + getFileName() + " Test." + testName + " -p 1882";
+    String command = pythonCommand + " " + getFileName() + " Test." + testName;
     System.err.println("Working Dir:" + workingDirectory + " Exists::" + workingDirectory.exists());
     System.err.println("Command :: "+command);
     Process process = Runtime.getRuntime().exec(command, null, workingDirectory);

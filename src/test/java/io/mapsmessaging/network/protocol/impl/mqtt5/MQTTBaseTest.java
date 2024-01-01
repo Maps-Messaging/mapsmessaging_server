@@ -34,7 +34,7 @@ public class MQTTBaseTest extends BaseTestConfig {
 
   public static final int MQTT_5_0 = 5;
 
-  int[] tcp_ports = {1882, 1883};
+  int[] tcp_ports = {1883, 1882};
   int[] ssl_ports = {1892, 1893};
 
 

@@ -31,7 +31,7 @@ public class MQTTBaseTest extends BaseTestConfig {
   public static final int MQTT_3_1 = 3;
   public static final int MQTT_3_1_1 = 4;
 
-  int[] tcp_ports = {1882, 1883};
+  int[] tcp_ports = {1883, 1882};
   int[] ssl_ports = {1892, 1893};
 
   static Stream<Arguments> mqttTestParameters() {
