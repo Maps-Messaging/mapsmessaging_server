@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -50,33 +50,33 @@ class SimpleBufferBasedMQTT5IT extends SimpleBufferBasedTest {
   @DisplayName("Send MQTT frame single character at a time but fast")
   void simpleCharByCharFastTest() throws IOException, URISyntaxException {
     recordResponses = true;
-    simpleByteWrite("/mqtt_5_0.txt", 0x20, 1, "localhost", 1882, -1, END_FRAME, true);
+    simpleByteWrite("/mqtt_5_0.txt", 0x20, 1, "localhost", 1883, -1, END_FRAME, true);
   }
 
   private void simpleByteWriteTest(int size) throws IOException, URISyntaxException {
     recordResponses = true;
-    simpleByteWrite("/mqtt_5_0.txt", 0x20, size, "localhost", 1882, -1, END_FRAME);
+    simpleByteWrite("/mqtt_5_0.txt", 0x20, size, "localhost", 1883, -1, END_FRAME);
   }
 
   @Test
   @DisplayName("Delay subscriber by 1ms to force flow control back to the server")
   void slowSubscriberWith1msDelay() throws IOException, URISyntaxException {
     recordResponses = true;
-    slowSubscriberTest("/mqtt_5_0.txt", "localhost", 1882, -1, 0x20, 1, END_FRAME);
+    slowSubscriberTest("/mqtt_5_0.txt", "localhost", 1883, -1, 0x20, 1, END_FRAME);
   }
 
   @Test
   @DisplayName("Delay subscriber by 10ms to force flow control back to the server")
   void slowSubscriberWith10msDelay() throws IOException, URISyntaxException {
     recordResponses = true;
-    slowSubscriberTest("/mqtt_5_0.txt", "localhost", 1882, -1, 0x20, 10, END_FRAME);
+    slowSubscriberTest("/mqtt_5_0.txt", "localhost", 1883, -1, 0x20, 10, END_FRAME);
   }
 
   @Test
   @DisplayName("Delay subscriber by 50ms to force flow control back to the server")
   void slowSubscriberWith50msDelay() throws IOException, URISyntaxException {
     recordResponses = true;
-    slowSubscriberTest("/mqtt_5_0.txt", "localhost", 1882, -1, 0x20, 50, END_FRAME);
+    slowSubscriberTest("/mqtt_5_0.txt", "localhost", 1883, -1, 0x20, 50, END_FRAME);
   }
 
 }
