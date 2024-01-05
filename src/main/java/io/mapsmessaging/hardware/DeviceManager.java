@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class DeviceManager implements ServiceManager, Agent {
           if (deviceConfig.containsKey("name") &&
               deviceConfig.getProperty("name").equalsIgnoreCase("i2c") &&
               deviceConfig.getBooleanProperty("enabled", false)) {
-            loadI2CConfig(deviceConfig);
+            loadI2CConfig(manager, deviceConfig);
           }
           if (deviceConfig.containsKey("name") &&
               deviceConfig.getProperty("name").equalsIgnoreCase("oneWire") &&
@@ -147,22 +147,22 @@ public class DeviceManager implements ServiceManager, Agent {
     }
   }
 
-  private void loadI2CConfig(ConfigurationProperties deviceConfig){
+  private void loadI2CConfig(DeviceBusManager manager, ConfigurationProperties deviceConfig) {
     Object configList = deviceConfig.get("config");
     if (configList instanceof List) {
       for (Object busConfigObj : (List) configList) {
         if (busConfigObj instanceof ConfigurationProperties) {
           ((ConfigurationProperties) busConfigObj).setGlobal(deviceConfig.getGlobal());
-          configureI2CConfig((ConfigurationProperties) busConfigObj);
+          configureI2CConfig(manager, (ConfigurationProperties) busConfigObj);
         }
       }
     }
   }
 
-  private void configureI2CConfig(ConfigurationProperties busConfig){
-    for (int x = 0; x < deviceBusManager.getI2cBusManager().length; x++) {
+  private void configureI2CConfig(DeviceBusManager manager, ConfigurationProperties busConfig) {
+    for (int x = 0; x < manager.getI2cBusManager().length; x++) {
       if (busConfig.getIntProperty("bus", -1) == x && busConfig.getBooleanProperty("enabled", false)) {
-        I2CBusManager busManager = deviceBusManager.getI2cBusManager()[x];
+        I2CBusManager busManager = manager.getI2cBusManager()[x];
         String triggerName = busConfig.getProperty("trigger", "default");
         Trigger trigger = locateNamedTrigger(triggerName);
         busHandlers.add(new I2CBusHandler(busManager, busConfig, trigger));
