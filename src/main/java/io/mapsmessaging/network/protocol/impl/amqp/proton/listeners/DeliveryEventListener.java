@@ -72,7 +72,7 @@ public class DeliveryEventListener extends BaseEventListener {
     Delivery dlv = event.getDelivery();
     if (eventLink instanceof Sender) {
       dlv.settle();
-      long id = engine.unpackLong(dlv.getTag());
+      long id = unpackLong(dlv.getTag());
       Object context = dlv.getContext();
       if (context instanceof SubscribedEventManager) {
         SubscribedEventManager manager = (SubscribedEventManager) context;
@@ -81,6 +81,15 @@ public class DeliveryEventListener extends BaseEventListener {
     } else if (eventLink instanceof Receiver) {
       topUp((Receiver) eventLink);
     }
+  }
+
+  private long unpackLong(byte[] buff) {
+    long value = 0;
+    for (int x = 0; x < buff.length; x++) {
+      long val = buff[x];
+      value ^= (val & 0xff) << (8 * x);
+    }
+    return value;
   }
 
   private void handleReceiveEvent(Event event, Delivery delivery, Receiver receiver) {

@@ -36,6 +36,11 @@ import java.util.Map;
 
 public class BaseMessageTranslator implements MessageTranslator {
 
+  private static final String AMQP_TYPE = "amqpType";
+  private static final String STRING_TYPE = "string";
+  private static final String BYTE_ARRAY_TYPE = "byteArray";
+  private static final String DATA_TYPE = "data";
+
   @Override
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     Map<String, TypedData> dataMap = new LinkedHashMap<>();
@@ -63,10 +68,10 @@ public class BaseMessageTranslator implements MessageTranslator {
       byte[] buf;
       if (val instanceof String) {
         buf = ((String) val).getBytes();
-        meta.put("amqpType", "String");
+        meta.put(AMQP_TYPE, STRING_TYPE);
       } else if (val instanceof byte[]) {
         buf = (byte[]) val;
-        meta.put("amqpType", "byteArray");
+        meta.put(AMQP_TYPE, BYTE_ARRAY_TYPE);
       } else {
         buf = new byte[0];
       }
@@ -74,7 +79,7 @@ public class BaseMessageTranslator implements MessageTranslator {
     } else if (section instanceof Data) {
       Data data = (Data) section;
       messageBuilder.setOpaqueData(data.getValue().getArray());
-      meta.put("amqpType", "data");
+      meta.put(AMQP_TYPE, DATA_TYPE);
     }
     return messageBuilder;
   }
@@ -101,13 +106,18 @@ public class BaseMessageTranslator implements MessageTranslator {
 
     protonMessage.setContentType(message.getContentType());
     if (message.getOpaqueData() != null) {
-      String encoding = message.getMeta().get("amqpType");
-      if (encoding.equalsIgnoreCase("String")) {
-        protonMessage.setBody(new AmqpValue(new String(message.getOpaqueData())));
-      } else if (encoding.equalsIgnoreCase("data")) {
-        protonMessage.setBody(new Data(new Binary(message.getOpaqueData())));
-      } else {
-        protonMessage.setBody(new AmqpValue(message.getOpaqueData()));
+      String encoding = message.getMeta().get(AMQP_TYPE);
+      switch (encoding) {
+        case STRING_TYPE:
+          protonMessage.setBody(new AmqpValue(new String(message.getOpaqueData())));
+          break;
+        case BYTE_ARRAY_TYPE:
+          protonMessage.setBody(new AmqpValue(message.getOpaqueData()));
+          break;
+        case DATA_TYPE:
+        default:
+          protonMessage.setBody(new Data(new Binary(message.getOpaqueData())));
+          break;
       }
     }
     return protonMessage;

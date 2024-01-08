@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
-import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.Packet;
@@ -32,9 +31,6 @@ import lombok.Getter;
 import org.apache.qpid.proton.engine.*;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +57,7 @@ public class ProtonEngine {
   private final SaslAuthenticationMechanism saslContext;
   private final Sasl sasl;
 
-  public ProtonEngine(AMQPProtocol protocol) throws IOException {
+  public ProtonEngine(AMQPProtocol protocol) {
     engineScheduler = new SingleConcurrentTaskScheduler(PROTON_ENGINE_KEY);
 
     this.protocol = protocol;
@@ -101,14 +97,5 @@ public class ProtonEngine {
 
   public void sendMessage(Message message, SubscribedEventManager manager) {
     engineScheduler.submit(new SendMessageTask(this, message, manager));
-  }
-
-  public long unpackLong(byte[] buff) {
-    long value = 0;
-    for (int x = 0; x < buff.length; x++) {
-      long val = buff[x];
-      value ^= (val & 0xff) << (8 * x);
-    }
-    return value;
   }
 }
