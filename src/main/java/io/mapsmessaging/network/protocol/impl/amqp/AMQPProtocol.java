@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,11 +27,17 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.sasl.Sasl;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -47,6 +53,9 @@ public class AMQPProtocol extends ProtocolImpl {
   private volatile boolean closed;
   private String sessionId;
   private boolean isJms;
+  @Getter
+  @Setter
+  private SaslAuthenticationMechanism authenticationContext;
 
   public AMQPProtocol(EndPoint endPoint, Packet packet) throws IOException {
     super(endPoint);
@@ -59,10 +68,21 @@ public class AMQPProtocol extends ProtocolImpl {
     activeSessions = new LinkedHashMap<>();
     closed = false;
     isJms = false;
+    sessionId = "";
+    ConfigurationProperties config = endPoint.getConfig().getProperties();
+
+    if (config.containsKey("sasl")) {
+      ConfigurationProperties saslProps = (ConfigurationProperties) config.get("sasl");
+      Map<String, String> props = new HashMap<>();
+      props.put(Sasl.QOP, "auth");
+      authenticationContext = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "ServerNameHere", getName(), props, config);
+      System.err.println("SASL:" + authenticationContext.getMechanism());
+    } else {
+      authenticationContext = null;
+    }
     protonEngine = new ProtonEngine(this);
     protonEngine.processPacket(packet);
     registerRead();
-    sessionId = "";
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -203,7 +203,7 @@ public class DeliveryEventListener extends BaseEventListener {
   @SneakyThrows
   private void processIncomingMessage(Event evt, Delivery delivery, Receiver receiver, String destinationName) {
 
-    // Lets parse the data into a Proton Message so we can then create the appropriate internal message
+    // Let's parse the data into a Proton Message so we can then create the appropriate internal message
     org.apache.qpid.proton.message.Message protonMsg = parseIncomingMessage(receiver);
 
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(protonMsg.getMessageAnnotations());
