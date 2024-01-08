@@ -52,7 +52,6 @@ abstract class MessageTypeTest extends BaseConnection {
     MessageConsumer messageConsumer = session.createConsumer(destination);
     MessageProducer messageProducer = session.createProducer(destination);
 
-
     Message message = getMessage(session);
     messageProducer.send(message);
     testMessage(messageConsumer.receive(1000));

@@ -62,7 +62,6 @@ public class EventListenerFactory {
   public void handleEvent(Event event) {
     EventListener listener = listeners.get(event.getEventType());
     if (listener != null) {
-      System.err.println("Listener::" + listener.getClass());
       listener.handleEvent(event);
     }
   }

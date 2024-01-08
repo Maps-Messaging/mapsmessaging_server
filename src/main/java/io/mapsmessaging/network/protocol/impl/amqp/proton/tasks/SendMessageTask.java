@@ -21,6 +21,7 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.SubscriptionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslatorFactory;
 import org.apache.qpid.proton.codec.DroppingWritableBuffer;
@@ -35,7 +36,7 @@ public class SendMessageTask extends PacketTask {
 
   private final Message message;
   private final SubscribedEventManager manager;
-  private final Map<String, Sender> subscriptions;
+  private final SubscriptionManager subscriptions;
 
   public SendMessageTask(ProtonEngine engine, Message message, SubscribedEventManager manager) {
     super(engine);

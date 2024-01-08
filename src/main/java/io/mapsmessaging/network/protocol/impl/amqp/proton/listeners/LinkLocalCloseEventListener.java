@@ -43,7 +43,7 @@ public class LinkLocalCloseEventListener extends BaseEventListener {
         if (!eventManager.getContexts().isEmpty()) {
           String alias = eventManager.getContext().getAlias();
           session.removeSubscription(alias);
-          engine.removeSubscription(alias);
+          engine.getSubscriptions().remove(alias);
           protocol.getLogger().log(ServerLogMessages.AMQP_DELETED_SUBSCRIPTION, alias);
         }
         link.setContext(null);

@@ -62,26 +62,20 @@ public class InputPacketProcessTask extends PacketTask {
   }
 
   private void handleEvents() {
-    Event ev = collector.peek();
-    while (ev != null) {
-      System.err.println("Processing " + ev);
+    for (Event ev = collector.peek(); ev != null; ev = collector.peek()) {
       eventListenerFactory.handleEvent(ev);
       collector.pop();
-      ev = collector.peek();
     }
   }
+
 
   private void pushDataIntoEngine() throws IOException {
     while (incomingPacket.hasRemaining()) {
       processBuffers();
       TransportResult result = transport.processInput();
-      if (!isInSasl()) {
-        if (!result.isOk()) {
-          if (result.getException() != null) {
-            protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());
-          }
-        } else {
-          handleEvents();
+      if (!result.isOk()) {
+        if (result.getException() != null) {
+          protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());
         }
       } else {
         handleEvents();

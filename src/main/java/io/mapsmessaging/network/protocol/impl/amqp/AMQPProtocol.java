@@ -46,13 +46,20 @@ public class AMQPProtocol extends ProtocolImpl {
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final ProtonEngine protonEngine;
+  private final Map<String, SessionManager> activeSessions;
+  private boolean isJms;
+
+  @Getter
   private final String version;
 
-  private final Map<String, SessionManager> activeSessions;
-
+  @Getter
+  @Setter
   private volatile boolean closed;
+
+  @Getter
+  @Setter
   private String sessionId;
-  private boolean isJms;
+
   @Getter
   @Setter
   private SaslAuthenticationMechanism authenticationContext;
@@ -76,7 +83,6 @@ public class AMQPProtocol extends ProtocolImpl {
       Map<String, String> props = new HashMap<>();
       props.put(Sasl.QOP, "auth");
       authenticationContext = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "ServerNameHere", getName(), props, config);
-      System.err.println("SASL:" + authenticationContext.getMechanism());
     } else {
       authenticationContext = null;
     }
@@ -145,14 +151,6 @@ public class AMQPProtocol extends ProtocolImpl {
     return logger;
   }
 
-  public boolean isClosed() {
-    return closed;
-  }
-
-  public void setClosed(boolean closed) {
-    this.closed = closed;
-  }
-
   public boolean isJMS() {
     return isJms;
   }
@@ -165,19 +163,4 @@ public class AMQPProtocol extends ProtocolImpl {
   public void sendKeepAlive() {
     // This needs to be done
   }
-
-  @Override
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
-
-  @Override
-  public String getVersion() {
-    return version;
-  }
-
 }

@@ -53,7 +53,7 @@ public class ProtonEngine {
   @Getter
   private final EventListenerFactory eventListenerFactory;
   @Getter
-  private final Map<String, Sender> subscriptions;
+  private final SubscriptionManager subscriptions;
 
   private final Connection connection;
   private TaskScheduler engineScheduler;
@@ -69,7 +69,7 @@ public class ProtonEngine {
     connection = Connection.Factory.create();
     connection.collect(collector);
     transport = Transport.Factory.create();
-    subscriptions = new LinkedHashMap<>();
+    subscriptions = new SubscriptionManager();
     eventListenerFactory = new EventListenerFactory(protocol, this);
     saslContext = protocol.getAuthenticationContext();
     sasl = transport.sasl();
@@ -82,14 +82,7 @@ public class ProtonEngine {
   public void close() {
     transport.close();
     connection.close();
-    for (Entry<String, Sender> entry : subscriptions.entrySet()) {
-      Object sessionContext = entry.getValue().getSession().getContext();
-      if (sessionContext != null) {
-        Session session = (Session) sessionContext;
-        session.removeSubscription(entry.getKey());
-      }
-    }
-    subscriptions.clear();
+    subscriptions.close();
     engineScheduler = null;
   }
 
@@ -117,18 +110,5 @@ public class ProtonEngine {
       value ^= (val & 0xff) << (8 * x);
     }
     return value;
-  }
-
-
-  public void addSubscription(String alias, Sender sender) {
-    synchronized (subscriptions) {
-      subscriptions.put(alias, sender);
-    }
-  }
-
-  public void removeSubscription(String alias) {
-    synchronized (subscriptions) {
-      subscriptions.remove(alias);
-    }
   }
 }

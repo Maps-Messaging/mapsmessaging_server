@@ -25,9 +25,9 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.enco
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.HeaderEncoder;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.PropertiesEncoder;
 import lombok.NonNull;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.messaging.Header;
-import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.amqp.messaging.*;
 import org.apache.qpid.proton.message.Message;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,9 +42,11 @@ public class BaseMessageTranslator implements MessageTranslator {
     messageBuilder.setContentType(protonMessage.getContentType());
 
     HeaderEncoder.unpackHeader(messageBuilder, protonMessage.getHeader());
-    PropertiesEncoder.unpackProperties(protonMessage.getProperties(), dataMap, messageBuilder);
+    Properties props = protonMessage.getProperties();
+    if (props != null) {
+      PropertiesEncoder.unpackProperties(props, dataMap, messageBuilder);
+    }
     ApplicationMapEncoder.unpackApplicationMap(dataMap, protonMessage);
-
     messageBuilder.setDataMap(dataMap);
 
     Map<String, String> meta = messageBuilder.getMeta();
@@ -53,6 +55,27 @@ public class BaseMessageTranslator implements MessageTranslator {
       messageBuilder.setMeta(meta);
     }
     meta.put("type", "" + getType());
+
+    Section section = protonMessage.getBody();
+    if (section instanceof AmqpValue) {
+      AmqpValue value = (AmqpValue) section;
+      Object val = value.getValue();
+      byte[] buf;
+      if (val instanceof String) {
+        buf = ((String) val).getBytes();
+        meta.put("amqpType", "String");
+      } else if (val instanceof byte[]) {
+        buf = (byte[]) val;
+        meta.put("amqpType", "byteArray");
+      } else {
+        buf = new byte[0];
+      }
+      messageBuilder.setOpaqueData(buf);
+    } else if (section instanceof Data) {
+      Data data = (Data) section;
+      messageBuilder.setOpaqueData(data.getValue().getArray());
+      meta.put("amqpType", "data");
+    }
     return messageBuilder;
   }
 
@@ -77,6 +100,16 @@ public class BaseMessageTranslator implements MessageTranslator {
     protonMessage.setMessageAnnotations(annotations);
 
     protonMessage.setContentType(message.getContentType());
+    if (message.getOpaqueData() != null) {
+      String encoding = message.getMeta().get("amqpType");
+      if (encoding.equalsIgnoreCase("String")) {
+        protonMessage.setBody(new AmqpValue(new String(message.getOpaqueData())));
+      } else if (encoding.equalsIgnoreCase("data")) {
+        protonMessage.setBody(new Data(new Binary(message.getOpaqueData())));
+      } else {
+        protonMessage.setBody(new AmqpValue(message.getOpaqueData()));
+      }
+    }
     return protonMessage;
   }
 
