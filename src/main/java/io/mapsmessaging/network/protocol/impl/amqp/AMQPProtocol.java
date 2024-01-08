@@ -60,10 +60,6 @@ public class AMQPProtocol extends ProtocolImpl {
   @Setter
   private String sessionId;
 
-  @Getter
-  @Setter
-  private SaslAuthenticationMechanism authenticationContext;
-
   public AMQPProtocol(EndPoint endPoint, Packet packet) throws IOException {
     super(endPoint);
     version = "1.0";
@@ -76,16 +72,6 @@ public class AMQPProtocol extends ProtocolImpl {
     closed = false;
     isJms = false;
     sessionId = "";
-    ConfigurationProperties config = endPoint.getConfig().getProperties();
-
-    if (config.containsKey("sasl")) {
-      ConfigurationProperties saslProps = (ConfigurationProperties) config.get("sasl");
-      Map<String, String> props = new HashMap<>();
-      props.put(Sasl.QOP, "auth");
-      authenticationContext = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "ServerNameHere", getName(), props, config);
-    } else {
-      authenticationContext = null;
-    }
     protonEngine = new ProtonEngine(this);
     protonEngine.processPacket(packet);
     registerRead();
@@ -100,6 +86,7 @@ public class AMQPProtocol extends ProtocolImpl {
     for (SessionManager sessionManager : activeSessions.values()) {
       sessionManager.close();
     }
+    deregisterRead();
   }
 
   public SessionManager getSession(String sessionId) {

@@ -30,6 +30,7 @@ import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import lombok.Getter;
 import org.apache.qpid.proton.engine.*;
 
+import javax.security.sasl.SaslException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -51,15 +52,15 @@ public class ProtonEngine {
   @Getter
   private final SubscriptionManager subscriptions;
 
+  @Getter
+  private final SaslManager saslManager;
+
+  @Getter
   private final Connection connection;
   private TaskScheduler engineScheduler;
 
-  private final SaslAuthenticationMechanism saslContext;
-  private final Sasl sasl;
-
-  public ProtonEngine(AMQPProtocol protocol) {
+  public ProtonEngine(AMQPProtocol protocol) throws IOException {
     engineScheduler = new SingleConcurrentTaskScheduler(PROTON_ENGINE_KEY);
-
     this.protocol = protocol;
     collector = Collector.Factory.create();
     connection = Connection.Factory.create();
@@ -67,12 +68,10 @@ public class ProtonEngine {
     transport = Transport.Factory.create();
     subscriptions = new SubscriptionManager();
     eventListenerFactory = new EventListenerFactory(protocol, this);
-    saslContext = protocol.getAuthenticationContext();
-    sasl = transport.sasl();
-    sasl.setMechanisms("ANONYMOUS");
-    sasl.server();
-    sasl.done(Sasl.PN_SASL_OK);
-    transport.bind(connection);
+    saslManager = new SaslManager(this);
+    if (saslManager.isDone()) {
+      transport.bind(connection);
+    }
   }
 
   public void close() {

@@ -96,7 +96,9 @@ NetworkManager:
       - name: "AMQP Interface"
         url: tcp://:::5672/
         protocol: amqp
-        auth: default
+        sasl:
+          mechanism: "CRAM-MD5"
+          identityProvider: system
         map: "/{{virtualHostName}}"
         virtualHost:
           - name: "hosta"

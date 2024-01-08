@@ -21,8 +21,10 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.tasks;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.SaslManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.listeners.EventListenerFactory;
 import org.apache.qpid.proton.engine.Collector;
+import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.TransportResult;
 
@@ -34,11 +36,16 @@ public class InputPacketProcessTask extends PacketTask {
   private final Collector collector;
   private final EventListenerFactory eventListenerFactory;
   private final Packet incomingPacket;
+  private final SaslManager saslManager;
+  private final Connection connection;
 
   public InputPacketProcessTask(ProtonEngine engine, Packet packet) {
     super(engine);
+    System.err.println(packet);
     this.incomingPacket = packet;
     collector = engine.getCollector();
+    saslManager = engine.getSaslManager();
+    connection = engine.getConnection();
     eventListenerFactory = engine.getEventListenerFactory();
   }
 
@@ -73,6 +80,7 @@ public class InputPacketProcessTask extends PacketTask {
     while (incomingPacket.hasRemaining()) {
       processBuffers();
       TransportResult result = transport.processInput();
+      isInSasl();
       if (!result.isOk()) {
         if (result.getException() != null) {
           protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());
@@ -88,36 +96,12 @@ public class InputPacketProcessTask extends PacketTask {
   }
 
 
-  private boolean isInSasl() {
-    return false;
-  }
-/*
-  private boolean isInSasl() throws IOException {
-    if (saslContext == null || saslContext.complete()) return false;
-
-    if (initialChallenge || (!sasl.getState().equals(Sasl.SaslState.PN_SASL_PASS) && sasl.pending() > 0)) {
-      initialChallenge = false;
-      int pending = Math.max(0, sasl.pending());
-      byte[] challenge;
-      if (pending > 0) {
-        challenge = new byte[pending];
-        sasl.recv(challenge, 0, challenge.length);
-      } else {
-        challenge = new byte[0];
-      }
-      byte[] response = saslContext.challenge(challenge);
-      if (response != null) {
-        sasl.send(response, 0, response.length);
+  private void isInSasl() throws IOException {
+    if (!saslManager.isDone()) {
+      saslManager.challenge();
+      if (saslManager.isDone()) {
+        transport.bind(connection);
       }
     }
-
-    if (sasl.getState() != Sasl.SaslState.PN_SASL_PASS) {
-      return true;
-    }
-
-    sasl.done(Sasl.PN_SASL_OK);
-    transport.bind(connection);
-    return false;
   }
-  */
 }

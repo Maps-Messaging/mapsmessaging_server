@@ -84,6 +84,7 @@ public class Selector implements SelectorInt {
       } catch (CancelledKeyException cancelled) {
         logger.log(ServerLogMessages.SELECTOR_CONNECTION_CLOSE);
       } catch (Exception e) {
+        e.printStackTrace();
         if (logger.isDebugEnabled()) {
           logger.log(ServerLogMessages.SELECTOR_TASK_FAILED, e, key.toString());
         } else {
