@@ -1,5 +1,23 @@
+/*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import org.apache.qpid.proton.engine.Sasl;
@@ -33,9 +51,14 @@ public class SaslManager {
     } else {
       challenge = new byte[0];
     }
-    byte[] response = saslAuthenticationMechanism.challenge(challenge);
-    if (response != null) {
-      sasl.send(response, 0, response.length);
+    try {
+      byte[] response = saslAuthenticationMechanism.challenge(challenge);
+      if (response != null && response.length > 0) {
+        sasl.send(response, 0, response.length);
+      }
+    } catch (Throwable ex) {
+      ex.printStackTrace(System.err);
+      throw ex;
     }
   }
 
@@ -45,7 +68,9 @@ public class SaslManager {
       ConfigurationProperties saslProps = (ConfigurationProperties) config.get("sasl");
       Map<String, String> props = new HashMap<>();
       props.put(javax.security.sasl.Sasl.QOP, "auth");
-      authenticationContext = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "ServerNameHere", "AMQP", props, config);
+      String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
+      String mechanism = saslProps.getProperty("mechanism");
+      authenticationContext = new SaslAuthenticationMechanism(mechanism, serverName, "AMQP", props, config);
     }
     return authenticationContext;
   }

@@ -24,13 +24,13 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.listeners.EventListenerFactory;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.tasks.InputPacketProcessTask;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.tasks.SendMessageTask;
-import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
 import lombok.Getter;
-import org.apache.qpid.proton.engine.*;
+import org.apache.qpid.proton.engine.Collector;
+import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.Transport;
 
-import javax.security.sasl.SaslException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -68,9 +68,14 @@ public class ProtonEngine {
     transport = Transport.Factory.create();
     subscriptions = new SubscriptionManager();
     eventListenerFactory = new EventListenerFactory(protocol, this);
-    saslManager = new SaslManager(this);
-    if (saslManager.isDone()) {
-      transport.bind(connection);
+    try {
+      saslManager = new SaslManager(this);
+      if (saslManager.isDone()) {
+        transport.bind(connection);
+      }
+    } catch (IOException ioException) {
+      ioException.printStackTrace(System.err);
+      throw ioException;
     }
   }
 
