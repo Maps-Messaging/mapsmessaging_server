@@ -56,6 +56,9 @@ public class SaslManager {
       if (response != null && response.length > 0) {
         sasl.send(response, 0, response.length);
       }
+      if (saslAuthenticationMechanism.complete()) {
+        sasl.done(Sasl.SaslOutcome.PN_SASL_OK);
+      }
     } catch (Throwable ex) {
       ex.printStackTrace(System.err);
       throw ex;
@@ -77,7 +80,7 @@ public class SaslManager {
 
   public boolean isDone() {
     if (saslAuthenticationMechanism != null && saslAuthenticationMechanism.complete()) {
-      sasl.done(Sasl.PN_SASL_AUTH);
+      sasl.done(Sasl.PN_SASL_OK);
     }
 
     return saslAuthenticationMechanism == null ||
