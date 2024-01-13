@@ -30,7 +30,7 @@ import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.identity.GroupEntry;
 import io.mapsmessaging.security.identity.IdentityEntry;
 import io.mapsmessaging.security.identity.parsers.PasswordParser;
-import io.mapsmessaging.security.identity.parsers.sha.Sha512PasswordParser;
+import io.mapsmessaging.security.identity.parsers.sha.UnixSha512PasswordParser;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 import org.mapdb.DB;
@@ -75,7 +75,7 @@ public class AuthenticationStorage implements Closeable {
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
 
     identityAccessManager = new IdentityAccessManager(authProvider, Map.of("configDirectory", securityDirectory), new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet));
-    globalPasswordParser = new Sha512PasswordParser();
+    globalPasswordParser = new UnixSha512PasswordParser();
     userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
   }
 
@@ -117,7 +117,7 @@ public class AuthenticationStorage implements Closeable {
     IdentityEntry identityEntry = identityAccessManager.getUserIdentity(username);
     if (identityEntry != null) {
       PasswordParser passwordParser = identityEntry.getPasswordParser();
-      byte[] hash = passwordParser.computeHash(password.getBytes(), passwordParser.getSalt(), passwordParser.getCost());
+      byte[] hash = passwordParser.transformPassword(password.getBytes(), passwordParser.getSalt(), passwordParser.getCost());
       return Arrays.equals(hash, identityEntry.getPassword().getBytes());
     }
     return false;
