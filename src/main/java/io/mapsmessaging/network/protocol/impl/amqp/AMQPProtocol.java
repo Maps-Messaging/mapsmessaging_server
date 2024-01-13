@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,11 +27,17 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.sasl.Sasl;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -40,13 +46,19 @@ public class AMQPProtocol extends ProtocolImpl {
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final ProtonEngine protonEngine;
+  private final Map<String, SessionManager> activeSessions;
+  private boolean isJms;
+
+  @Getter
   private final String version;
 
-  private final Map<String, SessionManager> activeSessions;
-
+  @Getter
+  @Setter
   private volatile boolean closed;
+
+  @Getter
+  @Setter
   private String sessionId;
-  private boolean isJms;
 
   public AMQPProtocol(EndPoint endPoint, Packet packet) throws IOException {
     super(endPoint);
@@ -59,10 +71,10 @@ public class AMQPProtocol extends ProtocolImpl {
     activeSessions = new LinkedHashMap<>();
     closed = false;
     isJms = false;
+    sessionId = "";
     protonEngine = new ProtonEngine(this);
     protonEngine.processPacket(packet);
     registerRead();
-    sessionId = "";
   }
 
   @Override
@@ -74,6 +86,7 @@ public class AMQPProtocol extends ProtocolImpl {
     for (SessionManager sessionManager : activeSessions.values()) {
       sessionManager.close();
     }
+    deregisterRead();
   }
 
   public SessionManager getSession(String sessionId) {
@@ -125,14 +138,6 @@ public class AMQPProtocol extends ProtocolImpl {
     return logger;
   }
 
-  public boolean isClosed() {
-    return closed;
-  }
-
-  public void setClosed(boolean closed) {
-    this.closed = closed;
-  }
-
   public boolean isJMS() {
     return isJms;
   }
@@ -145,19 +150,4 @@ public class AMQPProtocol extends ProtocolImpl {
   public void sendKeepAlive() {
     // This needs to be done
   }
-
-  @Override
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
-
-  @Override
-  public String getVersion() {
-    return version;
-  }
-
 }

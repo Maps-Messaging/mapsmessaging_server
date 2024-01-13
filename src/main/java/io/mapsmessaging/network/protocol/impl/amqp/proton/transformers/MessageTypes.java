@@ -18,7 +18,9 @@
 package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers;
 
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.*;
+import lombok.Getter;
 
+@Getter
 public enum MessageTypes {
 
   MESSAGE(0, "Generic JMS Message", new BaseMessageTranslator()),
@@ -55,17 +57,5 @@ public enum MessageTypes {
     this.value = value;
     this.description = description;
     this.messageTranslator = messageTranslator;
-  }
-
-  public int getValue() {
-    return value;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public MessageTranslator getMessageTranslator() {
-    return messageTranslator;
   }
 }

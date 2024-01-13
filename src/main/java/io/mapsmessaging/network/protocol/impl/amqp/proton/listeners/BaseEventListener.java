@@ -108,6 +108,9 @@ public abstract class BaseEventListener implements EventListener {
     } else {
       symbols = new Symbol[0];
     }
+    if (symbols == null) {
+      symbols = new Symbol[0];
+    }
     for (Symbol symbol : symbols) {
       if (symbol.equals(Symbol.getSymbol("queue"))) {
         if (dynamic) {

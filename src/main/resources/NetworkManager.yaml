@@ -96,7 +96,18 @@ NetworkManager:
       - name: "AMQP Interface"
         url: tcp://:::5672/
         protocol: amqp
-        auth: usernamePassword
+        sasl:
+          mechanism: "PLAIN"
+          identityProvider: system
+        map: "/{{virtualHostName}}"
+        virtualHost:
+          - name: "hosta"
+            auth: anon
+            map: "/amqp/hosta/"
+
+          - name: "hostb"
+            auth: usernamePassword
+
 
       - name: "AMQPs Interface"
         url: ssl://:::5671/

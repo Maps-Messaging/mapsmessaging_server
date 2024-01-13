@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -132,7 +133,8 @@ public class MQTT5Protocol extends ProtocolImpl {
 
     if(props.containsKey("sasl")){
       ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
-      authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"),"ServerNameHere", getName(), endPoint.getConfig().getProperties());
+      String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
+      authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"), serverName, getName(), endPoint.getConfig().getProperties());
     }
     else{
       authenticationContext = null;

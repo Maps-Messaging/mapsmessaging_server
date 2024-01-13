@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.identity.GroupEntry;
 import io.mapsmessaging.security.identity.IdentityEntry;
 import io.mapsmessaging.security.identity.parsers.PasswordParser;
-import io.mapsmessaging.security.identity.parsers.bcrypt.BCrypt2yPasswordParser;
+import io.mapsmessaging.security.identity.parsers.sha.UnixSha512PasswordParser;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 import org.mapdb.DB;
@@ -75,7 +75,7 @@ public class AuthenticationStorage implements Closeable {
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
 
     identityAccessManager = new IdentityAccessManager(authProvider, Map.of("configDirectory", securityDirectory), new IdDbStore<>(userMapSet), new IdDbStore<>(groupMapSet));
-    globalPasswordParser = new BCrypt2yPasswordParser();
+    globalPasswordParser = new UnixSha512PasswordParser();
     userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
   }
 
@@ -117,7 +117,7 @@ public class AuthenticationStorage implements Closeable {
     IdentityEntry identityEntry = identityAccessManager.getUserIdentity(username);
     if (identityEntry != null) {
       PasswordParser passwordParser = identityEntry.getPasswordParser();
-      byte[] hash = passwordParser.computeHash(password.getBytes(), passwordParser.getSalt(), passwordParser.getCost());
+      byte[] hash = passwordParser.transformPassword(password.getBytes(), passwordParser.getSalt(), passwordParser.getCost());
       return Arrays.equals(hash, identityEntry.getPassword().getBytes());
     }
     return false;

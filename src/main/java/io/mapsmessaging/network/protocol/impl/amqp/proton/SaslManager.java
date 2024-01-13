@@ -1,0 +1,90 @@
+/*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package io.mapsmessaging.network.protocol.impl.amqp.proton;
+
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import org.apache.qpid.proton.engine.Sasl;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class SaslManager {
+
+  private final Sasl sasl;
+  private final SaslAuthenticationMechanism saslAuthenticationMechanism;
+
+  public SaslManager(ProtonEngine protonEngine) throws IOException {
+    saslAuthenticationMechanism = buildMechansim(protonEngine.getProtocol().getEndPoint().getConfig().getProperties());
+    sasl = protonEngine.getTransport().sasl();
+    String mechanism = saslAuthenticationMechanism != null ? saslAuthenticationMechanism.getMechanism() : "ANONYMOUS";
+    sasl.setMechanisms(mechanism);
+    sasl.server();
+    if (mechanism.equalsIgnoreCase("ANONYMOUS")) {
+      sasl.done(Sasl.PN_SASL_OK);
+    }
+  }
+
+  public void challenge() throws IOException {
+    int pending = Math.max(0, sasl.pending());
+    byte[] challenge;
+    if (pending > 0) {
+      challenge = new byte[pending];
+      sasl.recv(challenge, 0, challenge.length);
+    } else {
+      challenge = new byte[0];
+    }
+    try {
+      byte[] response = saslAuthenticationMechanism.challenge(challenge);
+      if (response != null && response.length > 0) {
+        sasl.send(response, 0, response.length);
+      }
+      if (saslAuthenticationMechanism.complete()) {
+        sasl.done(Sasl.SaslOutcome.PN_SASL_OK);
+      }
+    } catch (Throwable ex) {
+      ex.printStackTrace(System.err);
+      throw ex;
+    }
+  }
+
+  private SaslAuthenticationMechanism buildMechansim(ConfigurationProperties config) throws IOException {
+    SaslAuthenticationMechanism authenticationContext = null;
+    if (config.containsKey("sasl")) {
+      ConfigurationProperties saslProps = (ConfigurationProperties) config.get("sasl");
+      Map<String, String> props = new HashMap<>();
+      props.put(javax.security.sasl.Sasl.QOP, "auth");
+      String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
+      String mechanism = saslProps.getProperty("mechanism");
+      authenticationContext = new SaslAuthenticationMechanism(mechanism, serverName, "AMQP", props, config);
+    }
+    return authenticationContext;
+  }
+
+  public boolean isDone() {
+    if (saslAuthenticationMechanism != null && saslAuthenticationMechanism.complete()) {
+      sasl.done(Sasl.PN_SASL_OK);
+    }
+
+    return saslAuthenticationMechanism == null ||
+        sasl.getOutcome().equals(Sasl.SaslOutcome.PN_SASL_OK);
+  }
+
+}
