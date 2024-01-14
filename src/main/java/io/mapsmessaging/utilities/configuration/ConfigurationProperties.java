@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -324,7 +324,7 @@ public class ConfigurationProperties {
         response.put(entry.getKey(), replacement);
       }
       else{
-        response.put(entry.getKey(), entry.getValue());
+        response.put(entry.getKey(), getProperty(entry.getKey(), (String) entry.getValue()));
       }
     }
     return response;

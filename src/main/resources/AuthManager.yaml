@@ -28,7 +28,7 @@
 
 ---
 AuthManager:
-  authenticationEnabled: true  # connections will be authorised according to the config
+  authenticationEnabled: false  # connections will be authorised according to the config
   authorizationEnabled: true   # Requestes will be authorised according to the access control list for the resource
   config:
     identityProvider: "Encrypted-Auth"
@@ -36,7 +36,7 @@ AuthManager:
     configDirectory: "{{MAPS_DATA}}/.security"
     certificateStore:
       keystore.type: JKS
-      keystore.path: authKeystore.jks
+      keystore.path: "{{MAPS_DATA}}/.security/authKeystore.jks"
       keystore.password: keyStorePassword
       certificate.alias: default
       privateKey.name: default
