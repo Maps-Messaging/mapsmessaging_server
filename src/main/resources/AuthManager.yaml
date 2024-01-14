@@ -31,5 +31,13 @@ AuthManager:
   authenticationEnabled: false  # connections will be authorised according to the config
   authorizationEnabled: true   # Requestes will be authorised according to the access control list for the resource
   config:
-    identityProvider: "Apache-Basic-Auth"
+    identityProvider: "Encrypted-Auth"
+    passwordHander: "EncryptedPasswordCipher"
     configDirectory: "{{MAPS_DATA}}/.security"
+    certificateStore:
+      keystore.type: JKS
+      keystore.path: authKeystore.jks
+      keystore.password: keyStorePassword
+      certificate.alias: default
+      privateKey.name: default
+      privateKey.password: privateKeyPassword

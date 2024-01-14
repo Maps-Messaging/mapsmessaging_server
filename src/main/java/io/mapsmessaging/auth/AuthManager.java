@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -82,11 +82,16 @@ public class AuthManager implements Agent {
   public void start() {
     if (authenticationEnabled) {
       ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
-      authenticationStorage = new AuthenticationStorage(config);
-      if (authenticationStorage.isFirstBoot()) {
-        createInitialUsers(config.getProperty("configDirectory"));
+      try {
+        authenticationStorage = new AuthenticationStorage(config);
+        if (authenticationStorage.isFirstBoot()) {
+          createInitialUsers(config.getProperty("configDirectory"));
+        }
+        IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
+      } catch (Exception e) {
+        e.printStackTrace();
+        throw new RuntimeException(e);
       }
-      IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
     }
   }
 
