@@ -29,7 +29,6 @@ import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.identity.GroupEntry;
 import io.mapsmessaging.security.identity.IdentityEntry;
-import io.mapsmessaging.security.passwords.PasswordHandler;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 import org.mapdb.DB;
@@ -123,8 +122,7 @@ public class AuthenticationStorage implements Closeable {
   public boolean validateUser(String username, String password) {
     IdentityEntry identityEntry = identityAccessManager.getUserIdentity(username);
     if (identityEntry != null) {
-      PasswordHandler passwordParser = identityEntry.getPasswordHasher();
-      byte[] passwordTest = passwordParser.getPassword();
+      byte[] passwordTest = identityEntry.getPasswordHasher().getPassword();
       boolean res = Arrays.equals(password.getBytes(StandardCharsets.UTF_8), passwordTest);
       Arrays.fill(passwordTest, (byte) 0x0);
       return res;
