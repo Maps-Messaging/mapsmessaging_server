@@ -324,7 +324,7 @@ public class ConfigurationProperties {
         response.put(entry.getKey(), replacement);
       }
       else{
-        response.put(entry.getKey(), getProperty(entry.getKey(), (String) entry.getValue()));
+        response.put(entry.getKey(), getProperty(entry.getKey()));
       }
     }
     return response;
