@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -98,22 +98,31 @@ public class RestApiServerManager implements Agent {
   }
 
   private SSLContextConfigurator setupSSL() {
-    String keyStore = map.getProperty("ssl_keyStoreFile", null);
-    String keyStorePass = map.getProperty("ssl_keyStorePassphrase", null);
-    String trustStore = map.getProperty("ssl_trustStoreFile", null);
-    String trustStorePass = map.getProperty("ssl_trustStorePassphrase", null);
-    if (keyStore != null &&
-        keyStorePass != null &&
-        trustStore != null &&
-        trustStorePass != null
-    ) {
-      isSecure = true;
-      SSLContextConfigurator sslCon = new SSLContextConfigurator();
-      sslCon.setKeyStoreFile(keyStore);
-      sslCon.setKeyStorePass(keyStorePass);
-      sslCon.setTrustStoreFile(trustStore);
-      sslCon.setTrustStorePass(trustStorePass);
-      return sslCon;
+    ConfigurationProperties securityProps = (ConfigurationProperties) map.get("security");
+    if (securityProps != null && securityProps.containsKey("tls")) {
+      ConfigurationProperties tls = (ConfigurationProperties) securityProps.get("tls");
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) tls.get("keyStore");
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) tls.get("trustStore");
+
+      String keyStore = keyStoreProps.getProperty("file", null);
+      String keyStorePass = keyStoreProps.getProperty("passphrase", null);
+
+      String trustStore = trustStoreProps.getProperty("file", null);
+      String trustStorePass = trustStoreProps.getProperty("passphrase", null);
+
+      if (keyStore != null &&
+          keyStorePass != null &&
+          trustStore != null &&
+          trustStorePass != null
+      ) {
+        isSecure = true;
+        SSLContextConfigurator sslCon = new SSLContextConfigurator();
+        sslCon.setKeyStoreFile(keyStore);
+        sslCon.setKeyStorePass(keyStorePass);
+        sslCon.setTrustStoreFile(trustStore);
+        sslCon.setTrustStorePass(trustStorePass);
+        return sslCon;
+      }
     }
     return null;
   }

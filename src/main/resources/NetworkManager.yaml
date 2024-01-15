@@ -20,16 +20,59 @@ NetworkManager:
         # ---------------------------------------------------------------------------------------------------------
         # Global configuration for SSL
         # ---------------------------------------------------------------------------------------------------------
+      security:
+        tls:
+          clientCertificateRequired: false
 
-        ssl_keyStoreFile: my-keystore.jks
-        ssl_keyStorePassphrase: password
-        ssl_trustStoreFile: my-truststore.jks
-        ssl_trustStorePassphrase: password
-        ssl_keyManagerFactory: SunX509
-        ssl_trustManagerFactory: SunX509
-        ssl_SSLContext: TLS  # DTLS or TLS
-        ssl_keyStore: JKS
-        ssl_trustStore: JKS
+          keyStore:
+            #alias: server  # Optional
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard keystores
+            managerFactory: SunX509
+            # Standard Key Store parameters
+            path: my-keystore.jks
+            passphrase: password
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # config: pkcs11-config.cfg
+
+          trustStore:
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard truststores
+            # Standard Key Store parameters
+            path: my-truststore.jks
+            passphrase: password
+            managerFactory: SunX509
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # config: pkcs11-config.cfg
+
+        dtls:
+          clientCertificateRequired: false
+
+          keyStore:
+            #alias: server  # Optional
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard keystores
+            managerFactory: SunX509
+            # Standard Key Store parameters
+            path: my-keystore.jks
+            passphrase: password
+
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # config: pkcs11-config.cfg
+
+          trustStore:
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard truststores
+            # Standard Key Store parameters
+            path: my-truststore.jks
+            passphrase: password
+            managerFactory: SunX509
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # configPath: pkcs11-config.cfg
 
       # ---------------------------------------------------------------------------------------------------------
       # tcp layer configuration
@@ -109,10 +152,19 @@ NetworkManager:
             auth: usernamePassword
 
 
+
       - name: "AMQPs Interface"
         url: ssl://:::5671/
         protocol: amqp
-        auth: usernamePassword
+        auth: default
+        map: "/{{virtualHostName}}"
+        virtualHost:
+          - name: "hosta"
+            auth: anon
+            map: "/amqp/hosta/"
+
+          - name: "hostb"
+            auth: usernamePassword
 
       - name: "MQTT Interface"
         url: tcp://:::1883/
@@ -136,9 +188,9 @@ NetworkManager:
         maxTopicsInSleep: 10
         advertiseGateway: true
         sasl:
+          realmName: "mapsMessaging"
           mechanism: SCRAM-SHA-512
-          identityProvider: htpassword
-          passwordFile: ./.security/htpassword
+          identityProvider: system
 
       - url: dtls://:::8883/
         name: "MQTT-SN Interface"
@@ -147,9 +199,9 @@ NetworkManager:
         maxTopicsInSleep: 10
         advertiseGateway: true
         sasl:
+          realmName: "mapsMessaging"
           mechanism: SCRAM-SHA-512
-          identityProvider: htpassword
-          passwordFile: ./.security/htpassword
+          identityProvider: system
 
       - url: udp://:::5683/
         name: "CoAP Interface"

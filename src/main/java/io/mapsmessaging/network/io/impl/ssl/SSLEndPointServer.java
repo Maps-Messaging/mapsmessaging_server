@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPointServer;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -49,10 +50,11 @@ public class SSLEndPointServer extends TCPEndPointServer {
       throws IOException {
     super(bindAddr, sel, accept, config, url, managerMBean);
     logger.log(ServerLogMessages.SSL_SERVER_START);
-    requiresClientAuth = Boolean.parseBoolean(config.getProperties().getProperty("ssl_clientCertificateRequired", "false"));
-
+    ConfigurationProperties securityProps = (ConfigurationProperties) config.getProperties().get("security");
+    ConfigurationProperties tls = (ConfigurationProperties) securityProps.get("tls");
+    requiresClientAuth = Boolean.parseBoolean(tls.getProperty("clientCertificateRequired", "false"));
     try {
-      sslContext = SSLHelper.getInstance().createContext("tls", config.getProperties(), logger);
+      sslContext = SSLHelper.getInstance().createContext("tls", tls, logger);
     } finally {
       logger.log(ServerLogMessages.SSL_SERVER_COMPLETED);
     }
