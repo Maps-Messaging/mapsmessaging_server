@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -80,14 +80,15 @@ class SystemTopicTest extends MQTTBaseTest {
     options.setKeepAliveInterval(30);
     client.connect(options);
     subscribe(client, "$SYS/#", counter, QoS);
-    long endTime = System.currentTimeMillis() + 20000;
+
+    long endTime = System.currentTimeMillis() + 10000;
     while (counter.get() == 0 && endTime > System.currentTimeMillis()) {
       delay(10);
     }
     Assertions.assertTrue(counter.get() != 0);
     client.disconnect();
     client.close();
-    endTime = System.currentTimeMillis() + 20000;
+    endTime = System.currentTimeMillis() + 10000;
     while (SessionManagerTest.getInstance().hasIdleSessions() && endTime > System.currentTimeMillis()) {
       delay(100);
     }

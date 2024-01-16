@@ -50,7 +50,7 @@ class StandardClientTest extends BaseTestConfig {
 
 // You can specify the SASL mechanism if needed
     factory.setUsername("guest");
-    factory.setPassword("guest");
+    factory.setPassword(getPassword("guest"));
 
 // Create and start the JMS connection
     Connection connection = factory.createConnection();

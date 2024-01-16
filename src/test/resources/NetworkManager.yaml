@@ -2,17 +2,59 @@
 NetworkManager:
   -
     global:
-      -
-        ssl_keyStoreFile: my-keystore.jks
-        ssl_keyStorePassphrase: password
-        ssl_trustStoreFile: my-keystore.jks
-        ssl_trustStorePassphrase: password
-        ssl_keyManagerFactory: SunX509
-        ssl_trustManagerFactory: SunX509
-        ssl_SSLContext: TLS
-        ssl_keyStore: JKS
-        ssl_trustStore: JKS
+      security:
+        tls:
+          clientCertificateRequired: false
 
+          keyStore:
+            #alias: server  # Optional
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard keystores
+            managerFactory: SunX509
+            # Standard Key Store parameters
+            path: my-keystore.jks
+            passphrase: password
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # config: pkcs11-config.cfg
+
+          trustStore:
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard truststores
+            # Standard Key Store parameters
+            path: my-truststore.jks
+            passphrase: password
+            managerFactory: SunX509
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # config: pkcs11-config.cfg
+
+        dtls:
+          clientCertificateRequired: false
+
+          keyStore:
+            #alias: server  # Optional
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard keystores
+            managerFactory: SunX509
+            # Standard Key Store parameters
+            path: my-keystore.jks
+            passphrase: password
+
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # config: pkcs11-config.cfg
+
+          trustStore:
+            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+            # providerName: SunJSSE  # Typically not required for standard truststores
+            # Standard Key Store parameters
+            path: my-truststore.jks
+            passphrase: password
+            managerFactory: SunX509
+            # PKCS11 specific settings
+            # provider: SunPKCS11
+            # configPath: pkcs11-config.cfg
       # ---------------------------------------------------------------------------------------------------------
       # tcp layer configuration
       # ---------------------------------------------------------------------------------------------------------
@@ -36,10 +78,10 @@ NetworkManager:
       # ---------------------------------------------------------------------------------------------------------
         maximumSessionExpiry : 86400
         maximumBufferSize: 10M
-        serverReceiveMaximum: 100
-        clientReceiveMaximum : 65535
-        clientMaximumTopicAlias : 32767
-        serverMaximumTopicAlias : 0
+        serverReceiveMaximum: 1024
+        clientReceiveMaximum: 1024
+        clientMaximumTopicAlias: 8192
+        serverMaximumTopicAlias: 8192
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT 5.0 specific
@@ -83,7 +125,7 @@ NetworkManager:
         protocol: mqtt, ws
         auth: public
         sasl:
-          mechanism: SCRAM-BCRYPT-SHA-512
+          mechanism: SCRAM-SHA-512
           identityProvider: system
 
       - name: "MQTT SSL Test Auth Interface"
@@ -91,7 +133,7 @@ NetworkManager:
         protocol: mqtt, ws
         auth: public
         sasl:
-          mechanism: SCRAM-BCRYPT-SHA-512
+          mechanism: SCRAM-SHA-512
           identityProvider: system
 
       - name: "Stomp Interface - Anonymous Stomp over TCP"
@@ -133,6 +175,15 @@ NetworkManager:
         url: "ssl://0.0.0.0:5693/"
         protocol: amqp
         auth: public
+
+      - name: "AMQP Authenticated over tcp Interface"
+        url: "tcp://0.0.0.0:5674/"
+        protocol: amqp
+        auth: public
+        sasl:
+          mechanism: SCRAM-SHA-512
+          identityProvider: system
+
 
       -
         url: udp://0.0.0.0:1884/
@@ -197,7 +248,7 @@ NetworkManager:
             topic: predefined/topic
             address: '*'
         sasl:
-          mechanism: SCRAM-BCRYPT-SHA-512
+          mechanism: SCRAM-SHA-512
           identityProvider: system
 
 
