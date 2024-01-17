@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright [ 2020 - 2023 ] [Matthew Buckton]
+  ~ Copyright [ 2020 - 2024 ] [Matthew Buckton]
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -863,7 +863,7 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-embedded</artifactId>
-      <version>3.0.1</version>
+      <version>3.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -876,7 +876,7 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-war</artifactId>
-      <version>3.0.1</version>
+      <version>3.0.0</version>
       <scope>provided</scope>
       <type>war</type>
       <exclusions>
