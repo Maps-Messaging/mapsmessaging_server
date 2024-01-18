@@ -41,7 +41,7 @@ AuthManager:
       passphrase: keyStorePassword
       alias: default
       privateKey.name: default
-      privateKey.password: privateKeyPassword
+      privateKey.passphrase: privateKeyPassword
       # PKCS11 specific settings
       # provider: SunPKCS11
       # config: pkcs11-config.cfg

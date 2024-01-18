@@ -140,7 +140,7 @@ NetworkManager:
         url: tcp://:::5672/
         protocol: amqp
         sasl:
-          mechanism: "PLAIN"
+          mechanism: "SCRAM-SHA-512"
           identityProvider: system
         map: "/{{virtualHostName}}"
         virtualHost:

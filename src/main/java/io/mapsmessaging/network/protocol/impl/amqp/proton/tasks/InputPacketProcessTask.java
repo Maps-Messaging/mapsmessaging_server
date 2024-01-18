@@ -41,7 +41,6 @@ public class InputPacketProcessTask extends PacketTask {
 
   public InputPacketProcessTask(ProtonEngine engine, Packet packet) {
     super(engine);
-    System.err.println(packet);
     this.incomingPacket = packet;
     collector = engine.getCollector();
     saslManager = engine.getSaslManager();
@@ -83,8 +82,6 @@ public class InputPacketProcessTask extends PacketTask {
       try {
         isInSasl();
       } catch (IOException e) {
-        System.err.println("Authentication error");
-        e.printStackTrace(System.err);
         throw e;
       }
       if (!result.isOk()) {
