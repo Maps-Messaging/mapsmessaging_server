@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.EventType;
-
-import java.util.UUID;
 
 public class ConnectionLocalOpenEventListener extends BaseEventListener {
 
@@ -37,7 +36,7 @@ public class ConnectionLocalOpenEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     Connection conn = event.getConnection();
     if (conn.getRemoteState() == EndpointState.UNINITIALIZED) {
-      conn.setContainer(UUID.randomUUID().toString());
+      conn.setContainer(UuidGenerator.generate().toString());
     }
     return true;
   }

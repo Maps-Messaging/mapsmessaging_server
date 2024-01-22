@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.test.WaitForState;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -26,7 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,7 +39,7 @@ class MQTTWildCardSubscriptionImplTest extends MQTTBaseTest implements MqttCallb
   @DisplayName("Test QoS wildcard subscription")
   void testWildcardSubscription(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UUID.randomUUID().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
     options.setWill("/topic/will", "this is my will msg".getBytes(), QoS, true);
     client.connect(options);
     client.setCallback(this);

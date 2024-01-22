@@ -45,6 +45,7 @@ import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.SystemProperties;
+import io.mapsmessaging.utilities.UuidGenerator;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -307,7 +308,7 @@ public class MessageDaemon {
 
     boolean useUUID = SystemProperties.getInstance().getBooleanProperty("USE_UUID", true);
     if (useUUID) {
-      return UUID.randomUUID().toString();
+      return UuidGenerator.generate().toString();
     }
 
     try {

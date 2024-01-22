@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.engine.session.SessionManagerTest;
-import io.mapsmessaging.utilities.SystemProperties;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -28,7 +28,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class ServerTopicTest extends MQTTBaseTest {
@@ -42,7 +41,7 @@ class ServerTopicTest extends MQTTBaseTest {
   @DisplayName("Test System Topics")
   void testSystemTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UUID.randomUUID().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
       @Override
@@ -84,7 +83,7 @@ class ServerTopicTest extends MQTTBaseTest {
   void testDeviceTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     if (md.hasDeviceManager()) {
       MqttConnectOptions options = getOptions(auth, version);
-      MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UUID.randomUUID().toString(), version), new MemoryPersistence());
+      MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
       AtomicInteger counter = new AtomicInteger(0);
       client.setCallback(new MqttCallback() {
         @Override

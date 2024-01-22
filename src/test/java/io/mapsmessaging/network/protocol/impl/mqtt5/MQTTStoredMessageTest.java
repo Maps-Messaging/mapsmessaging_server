@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
 import io.mapsmessaging.test.WaitForState;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
@@ -30,7 +31,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -40,7 +40,7 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
   @MethodSource("mqttPublishTestParameters")
   @DisplayName("Test QoS wildcard subscription")
   void connectSubscribeDisconnectPublishAndCheck(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
-    String subId = UUID.randomUUID().toString();
+    String subId = UuidGenerator.generate().toString();
     MqttClientPersistence persistence = new MemoryPersistence();
     MqttClient subscribe = new MqttClient(getUrl(protocol, auth), subId, persistence);
     MqttConnectionOptions subOption = getOptions(auth);
@@ -88,7 +88,7 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
 
-    MqttClient publish = new MqttClient(getUrl(protocol, auth), UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttClient publish = new MqttClient(getUrl(protocol, auth), UuidGenerator.generate().toString(), new MemoryPersistence());
     MqttConnectionOptions pubOption = getOptions(auth);
 
     publish.connect(pubOption);

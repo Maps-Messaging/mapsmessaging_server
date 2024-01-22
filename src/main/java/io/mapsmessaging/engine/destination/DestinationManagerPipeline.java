@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.UuidGenerator;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -156,7 +157,7 @@ public class DestinationManagerPipeline {
   private DestinationImpl createInternal(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     DestinationImpl destinationImpl = destinationList.get(name);
     if (destinationImpl == null) {
-      UUID destinationUUID = UUID.randomUUID();
+      UUID destinationUUID = UuidGenerator.generate();
       DestinationPathManager pathManager = rootPath;
       String namespace = "";
       for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {

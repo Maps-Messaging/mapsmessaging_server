@@ -18,6 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
 import io.mapsmessaging.engine.session.SessionManagerTest;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
@@ -30,7 +31,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class SystemTopicTest extends MQTTBaseTest {
@@ -40,7 +40,7 @@ class SystemTopicTest extends MQTTBaseTest {
   @DisplayName("Test QoS wildcard subscription")
   void testSystemTopics(int version, String protocol, boolean auth, int QoS) throws IOException, MqttException {
 
-    MqttClient client = new MqttClient(getUrl(protocol, auth), UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.generate().toString(), new MemoryPersistence());
     MqttConnectionOptions options = getOptions(auth);
 
     AtomicInteger counter = new AtomicInteger(0);

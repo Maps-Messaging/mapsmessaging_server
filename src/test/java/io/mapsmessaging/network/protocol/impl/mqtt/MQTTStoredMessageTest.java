@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.test.WaitForState;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -26,7 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -39,7 +39,7 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
   void connectSubscribeDisconnectPublishAndCheck(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     String topicName = getTopicName();
 
-    String subId = UUID.randomUUID().toString().substring(0, 12).replaceAll("-", "A");
+    String subId = UuidGenerator.generate().toString().substring(0, 12).replaceAll("-", "A");
     MqttClientPersistence persistence = new MemoryPersistence();
 
     MqttClient subscribe = new MqttClient(getUrl(protocol, auth), subId, persistence);
@@ -53,7 +53,7 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
 
-    String pubId = UUID.randomUUID().toString().substring(0, 12).replaceAll("-", "A");
+    String pubId = UuidGenerator.generate().toString().substring(0, 12).replaceAll("-", "A");
     MqttClient publish = new MqttClient(getUrl(protocol, auth), pubId, new MemoryPersistence());
     MqttConnectOptions pubOption = getOptions(auth, version);
 

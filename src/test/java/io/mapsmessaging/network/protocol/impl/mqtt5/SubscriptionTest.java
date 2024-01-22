@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttClient;
@@ -31,7 +32,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 
 class SubscriptionTest extends MQTTBaseTest  {
 
@@ -39,7 +39,7 @@ class SubscriptionTest extends MQTTBaseTest  {
   @MethodSource("mqttPublishTestParameters")
   @DisplayName("Test QoS wildcard subscription")
   void testSubscription(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
-    MqttClient client = new MqttClient(getUrl(protocol, auth), UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.generate().toString(), new MemoryPersistence());
     MqttConnectionOptions options = getOptions(auth);
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
