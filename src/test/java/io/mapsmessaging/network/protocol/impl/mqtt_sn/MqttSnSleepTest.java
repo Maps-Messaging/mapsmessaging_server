@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,16 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig.createQoSVersionStream;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
-
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -34,6 +26,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
 import org.slj.mqtt.sn.spi.MqttsnException;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
+
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig.createQoSVersionStream;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.PUBLISH_COUNT;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.Configuration.TIMEOUT;
 
 class MqttSnSleepTest extends BaseTestConfig {
 
@@ -43,7 +44,7 @@ class MqttSnSleepTest extends BaseTestConfig {
   @ParameterizedTest
   @MethodSource
   void sleepingClientTest(int qos, int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException {
-    int expectedCount = qos!=0 ? PUBLISH_COUNT: 1;
+    int expectedCount = PUBLISH_COUNT;
 
     AtomicLong publishCount = new AtomicLong(0);
     AtomicLong receiveCounter = new AtomicLong(0);
@@ -139,10 +140,15 @@ class MqttSnSleepTest extends BaseTestConfig {
     sleepy.connect(120, true);
 
     hyper.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
+    sleepy.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
+    sleepy.registerPublishFailedListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage, string) -> {
+      receiveCounter.incrementAndGet();
+    });
     sleepy.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
     sleepy.subscribe("/mqttsn/test", qos);
 
     sleepy.sleep(120);// We sleep for 120 seconds
+
     for (int x = 0; x < PUBLISH_COUNT; x++) {
       hyper.publish("/mqttsn/test", qos, "These should be waiting for sleepy".getBytes());
     }
