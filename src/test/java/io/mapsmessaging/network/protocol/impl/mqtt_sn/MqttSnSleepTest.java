@@ -44,7 +44,7 @@ class MqttSnSleepTest extends BaseTestConfig {
   @ParameterizedTest
   @MethodSource
   void sleepingClientTest(int qos, int version) throws IOException, MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException, InterruptedException {
-    int expectedCount = PUBLISH_COUNT;
+    int expectedCount = qos != 0 ? PUBLISH_COUNT : 1;
 
     AtomicLong publishCount = new AtomicLong(0);
     AtomicLong receiveCounter = new AtomicLong(0);
@@ -140,10 +140,6 @@ class MqttSnSleepTest extends BaseTestConfig {
     sleepy.connect(120, true);
 
     hyper.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> publishCount.incrementAndGet());
-    sleepy.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
-    sleepy.registerPublishFailedListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage, string) -> {
-      receiveCounter.incrementAndGet();
-    });
     sleepy.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> receiveCounter.incrementAndGet());
     sleepy.subscribe("/mqttsn/test", qos);
 

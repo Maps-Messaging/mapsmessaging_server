@@ -111,7 +111,9 @@ public class MessagePipeline {
           logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
           publishContexts.offer(messageEvent);
         }
-        send(messageEvent);
+        if (!send(messageEvent)) {
+          publishContexts.offer(messageEvent);
+        }
       } else {
         logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
         publishContexts.offer(messageEvent);
@@ -133,8 +135,8 @@ public class MessagePipeline {
       QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
       if (messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
         if (qos.getLevel() == 0) {
-          empty.decrementAndGet();
           if (send(messageEvent)) {
+            empty.decrementAndGet();
             completed();
           }
         } else {

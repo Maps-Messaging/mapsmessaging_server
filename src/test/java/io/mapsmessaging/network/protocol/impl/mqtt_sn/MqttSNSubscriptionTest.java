@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -279,7 +279,11 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
         Assertions.assertFalse(timeout < System.currentTimeMillis());
       }
       count = published.getCount();
-      delay(20);
+      if (qos == 0) {
+        delay(100);
+      } else {
+        delay(20);
+      }
     }
     Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS), "Expected "+PUBLISH_COUNT+" received count down at "+received.getCount());
     publisher.disconnect();

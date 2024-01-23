@@ -2,6 +2,54 @@
 NetworkManager:
   -
     global:
+
+      # ---------------------------------------------------------------------------------------------------------
+      # tcp layer configuration
+      # ---------------------------------------------------------------------------------------------------------
+      receiveBufferSize: 128000
+      sendBufferSize: 128000
+      timeout: 60000
+      backlog: 100
+
+      readDelayOnFragmentation: 100
+      enableReadDelayOnFragmentation: true
+
+      # ---------------------------------------------------------------------------------------------------------
+      # Generic protocol configuration
+      # ---------------------------------------------------------------------------------------------------------
+      serverReadBufferSize: 1M
+      serverWriteBufferSize: 1M
+      selectorThreadCount: 5
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT Protocol configuration
+      # ---------------------------------------------------------------------------------------------------------
+      maximumSessionExpiry: 86400
+      maximumBufferSize: 10M
+      serverReceiveMaximum: 1024
+      clientReceiveMaximum: 1024
+      clientMaximumTopicAlias: 8192
+      serverMaximumTopicAlias: 8192
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT 5.0 specific
+      # ---------------------------------------------------------------------------------------------------------
+      minServerKeepAlive: 0
+      maxServerKeepAlive: 60
+
+      # ---------------------------------------------------------------------------------------------------------
+      # LoRa Gateway specific
+      # ---------------------------------------------------------------------------------------------------------
+      # Maximum Packets per second limit to ensure the radio isn't flooded
+      LoRaMaxTransmissionRate: 20
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT-SN specific configuration
+      # ---------------------------------------------------------------------------------------------------------
+      maxInFlightEvents: 1
+      dropQoS0Events: true
+      eventQueueTimeout: 10
+
       security:
         tls:
           clientCertificateRequired: false
@@ -55,52 +103,6 @@ NetworkManager:
             # PKCS11 specific settings
             # provider: SunPKCS11
             # configPath: pkcs11-config.cfg
-      # ---------------------------------------------------------------------------------------------------------
-      # tcp layer configuration
-      # ---------------------------------------------------------------------------------------------------------
-        receiveBufferSize: 128000
-        sendBufferSize: 128000
-        timeout: 60000
-        backlog: 100
-
-        readDelayOnFragmentation: 100
-        enableReadDelayOnFragmentation: true
-
-      # ---------------------------------------------------------------------------------------------------------
-      # Generic protocol configuration
-      # ---------------------------------------------------------------------------------------------------------
-        serverReadBufferSize :  1M
-        serverWriteBufferSize : 1M
-        selectorThreadCount   : 5
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT Protocol configuration
-      # ---------------------------------------------------------------------------------------------------------
-        maximumSessionExpiry : 86400
-        maximumBufferSize: 10M
-        serverReceiveMaximum: 1024
-        clientReceiveMaximum: 1024
-        clientMaximumTopicAlias: 8192
-        serverMaximumTopicAlias: 8192
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT 5.0 specific
-      # ---------------------------------------------------------------------------------------------------------
-        minServerKeepAlive : 0
-        maxServerKeepAlive : 60
-
-      # ---------------------------------------------------------------------------------------------------------
-      # LoRa Gateway specific
-      # ---------------------------------------------------------------------------------------------------------
-      # Maximum Packets per second limit to ensure the radio isn't flooded
-        LoRaMaxTransmissionRate : 20
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT-SN specific configuration
-      # ---------------------------------------------------------------------------------------------------------
-        maxInFlightEvents : 1
-        dropQoS0Events: true
-        eventQueueTimeout: 10
 
 
     data:
@@ -125,7 +127,7 @@ NetworkManager:
         protocol: mqtt, ws
         auth: public
         sasl:
-          mechanism: SCRAM-SHA-512
+          mechanism: "CRAM-MD5"
           identityProvider: system
 
       - name: "MQTT SSL Test Auth Interface"
@@ -133,7 +135,7 @@ NetworkManager:
         protocol: mqtt, ws
         auth: public
         sasl:
-          mechanism: SCRAM-SHA-512
+          mechanism: "CRAM-MD5"
           identityProvider: system
 
       - name: "Stomp Interface - Anonymous Stomp over TCP"
@@ -161,29 +163,29 @@ NetworkManager:
         protocol : amqp
         auth: anon
 
-      - name: "AMQP Authenticated over tcp Interface"
+      - name: "AMQP anon over tcp Interface"
         url: "tcp://0.0.0.0:5673/"
         protocol: amqp
-        auth : public
+        auth: anon
 
-      - name: "AMQP anon tcp Interface"
+      - name: "AMQP anon ssl Interface"
         url: "ssl://0.0.0.0:5692/"
         protocol: amqp
         auth: anon
 
       - name: "AMQP Authenticated over tcp Interface"
-        url: "ssl://0.0.0.0:5693/"
-        protocol: amqp
-        auth: public
-
-      - name: "AMQP Authenticated over tcp Interface"
         url: "tcp://0.0.0.0:5674/"
         protocol: amqp
-        auth: public
         sasl:
           mechanism: SCRAM-SHA-512
           identityProvider: system
 
+      - name: "AMQP Authenticated over ssl Interface"
+        url: "ssl://0.0.0.0:5693/"
+        protocol: amqp
+        sasl:
+          mechanism: SCRAM-SHA-512
+          identityProvider: system
 
       -
         url: udp://0.0.0.0:1884/
