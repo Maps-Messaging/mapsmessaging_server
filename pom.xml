@@ -581,8 +581,17 @@
 
     <sonar.sources>src/main</sonar.sources>
     <sonar.test.exclusions>
-      **/*Test.*,**/*IT.*,**/apache_pulsar/*, **.*JMH.* , **/META-INF/services/**, **/html/swagger-ui/**
+      **/*Test.*,
+      **/*IT.*,
+      **/apache_pulsar/*,
+      **.*JMH.*
     </sonar.test.exclusions>
+
+    <sonar.exclusions>
+      **/META-INF/services/**,
+      **/html/swagger-ui/**
+    </sonar.exclusions>
+
 
     <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
