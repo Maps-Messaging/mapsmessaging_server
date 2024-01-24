@@ -29,7 +29,7 @@ NetworkManager:
       serverReceiveMaximum: 1024
       clientReceiveMaximum: 1024
       clientMaximumTopicAlias: 8192
-      serverMaximumTopicAlias: 8192
+      serverMaximumTopicAlias: 0
 
       # ---------------------------------------------------------------------------------------------------------
       # MQTT 5.0 specific
