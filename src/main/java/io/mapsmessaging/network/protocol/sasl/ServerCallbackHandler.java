@@ -27,6 +27,7 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 public class ServerCallbackHandler implements CallbackHandler {
 
@@ -50,7 +51,11 @@ public class ServerCallbackHandler implements CallbackHandler {
       } else if (cb instanceof NameCallback) {
         NameCallback nc = (NameCallback) cb;
         username = nc.getDefaultName();
-        hashedPassword = identityLookup.getPasswordHash(username);
+        try {
+          hashedPassword = identityLookup.getPasswordHash(username);
+        } catch (GeneralSecurityException e) {
+          throw new IOException(e);
+        }
         nc.setName(nc.getDefaultName());
       } else if (cb instanceof PasswordCallback) {
         PasswordCallback pc = (PasswordCallback) cb;

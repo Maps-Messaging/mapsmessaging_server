@@ -39,6 +39,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.*;
 
 public class AuthenticationStorage implements Closeable {
@@ -98,7 +99,7 @@ public class AuthenticationStorage implements Closeable {
       quotas.setUniqueId(uuid);
       userPermisionManager.add(quotas);
       return true;
-    } catch (IOException e) {
+    } catch (IOException | GeneralSecurityException e) {
 
     }
     return false;
@@ -122,10 +123,14 @@ public class AuthenticationStorage implements Closeable {
   public boolean validateUser(String username, String password) {
     IdentityEntry identityEntry = identityAccessManager.getUserIdentity(username);
     if (identityEntry != null) {
-      byte[] passwordTest = identityEntry.getPasswordHasher().getPassword();
-      boolean res = Arrays.equals(password.getBytes(StandardCharsets.UTF_8), passwordTest);
-      Arrays.fill(passwordTest, (byte) 0x0);
-      return res;
+      try {
+        byte[] passwordTest = identityEntry.getPasswordHasher().getPassword();
+        boolean res = Arrays.equals(password.getBytes(StandardCharsets.UTF_8), passwordTest);
+        Arrays.fill(passwordTest, (byte) 0x0);
+        return res;
+      } catch (IOException | GeneralSecurityException e) {
+        throw new RuntimeException(e);
+      }
     }
     return false;
   }
