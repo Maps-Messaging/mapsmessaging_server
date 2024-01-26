@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -85,13 +85,14 @@ public class MQTTBaseTest extends BaseTestConfig {
   }
 
   public SaslClient setForSasl(MqttConnectionOptions options, String username, String password) throws IOException {
+    String mechanism = "CRAM-MD5";
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
-    String[] mechanisms = {"SCRAM-BCRYPT-SHA-512"};
+    String[] mechanisms = {mechanism};
     ClientCallbackHandler clientHandler = new ClientCallbackHandler(username, password, "servername");
     SaslClient saslClient = Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
-    options.setAuthMethod("SCRAM-BCRYPT-SHA-512");
-    options.setAuthData(saslClient.evaluateChallenge(null));
+    options.setAuthMethod(mechanism);
+    options.setAuthData(new byte[0]);
     return saslClient;
   }
 
@@ -109,6 +110,7 @@ public class MQTTBaseTest extends BaseTestConfig {
       options.setPassword(getPassword("admin").getBytes());
     }
     options.setReceiveMaximum(100);
+    options.setTopicAliasMaximum(8192);
     return options;
   }
 

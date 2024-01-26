@@ -74,7 +74,6 @@ public class ProtonEngine {
         transport.bind(connection);
       }
     } catch (IOException ioException) {
-      ioException.printStackTrace(System.err);
       throw ioException;
     }
   }

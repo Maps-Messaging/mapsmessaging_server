@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,10 +36,10 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.utilities.UuidGenerator;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.util.UUID;
 
 public class ConnectListener5 extends PacketListener5 {
 
@@ -59,7 +59,7 @@ public class ConnectListener5 extends PacketListener5 {
 
     String sessionId = connect.getSessionId();
     if (sessionId.isEmpty()) {
-      sessionId = UUID.randomUUID().toString();
+      sessionId = UuidGenerator.generate().toString();
       connAck.add(new AssignedClientIdentifier(sessionId));
     }
 

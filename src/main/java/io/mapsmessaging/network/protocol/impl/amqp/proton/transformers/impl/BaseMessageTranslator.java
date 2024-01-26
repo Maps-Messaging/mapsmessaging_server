@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -107,6 +107,9 @@ public class BaseMessageTranslator implements MessageTranslator {
     protonMessage.setContentType(message.getContentType());
     if (message.getOpaqueData() != null) {
       String encoding = message.getMeta().get(AMQP_TYPE);
+      if (encoding == null) {
+        encoding = DATA_TYPE;
+      }
       switch (encoding) {
         case STRING_TYPE:
           protonMessage.setBody(new AmqpValue(new String(message.getOpaqueData())));

@@ -27,17 +27,13 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-import javax.security.sasl.Sasl;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -149,5 +145,23 @@ public class AMQPProtocol extends ProtocolImpl {
   @Override
   public void sendKeepAlive() {
     // This needs to be done
+  }
+
+  public String getUsername() {
+    String username = "";
+    if (protonEngine.getSaslManager() != null) {
+      username = protonEngine.getSaslManager().getUsername();
+      if (username == null) {
+        username = "anonymous";
+      }
+    }
+    return username;
+  }
+
+  public boolean isAuthorised() {
+    if (protonEngine.getSaslManager() != null) {
+      return (protonEngine.getSaslManager().isDone());
+    }
+    return false;
   }
 }

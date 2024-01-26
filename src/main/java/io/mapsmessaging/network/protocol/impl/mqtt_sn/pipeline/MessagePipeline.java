@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -87,6 +87,10 @@ public class MessagePipeline {
     sendNext();
   }
 
+  public void ackReceived() {
+    sendNext();
+  }
+
   public void queue(@NotNull @NonNull MessageEvent messageEvent) {
     QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
     if (paused.get()) {
@@ -107,7 +111,9 @@ public class MessagePipeline {
           logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
           publishContexts.offer(messageEvent);
         }
-        send(messageEvent);
+        if (!send(messageEvent)) {
+          publishContexts.offer(messageEvent);
+        }
       } else {
         logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
         publishContexts.offer(messageEvent);
@@ -129,9 +135,10 @@ public class MessagePipeline {
       QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
       if (messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
         if (qos.getLevel() == 0) {
-          empty.decrementAndGet();
-          send(messageEvent);
-          completed();
+          if (send(messageEvent)) {
+            empty.decrementAndGet();
+            completed();
+          }
         } else {
           send(messageEvent);
         }
@@ -151,7 +158,7 @@ public class MessagePipeline {
     }
   }
 
-  private void send(MessageEvent messageEvent) {
+  private boolean send(MessageEvent messageEvent) {
     QualityOfService qos = messageEvent.getSubscription().getContext().getQualityOfService();
     int messageId = 0;
     if (qos.isSendPacketId()) {
@@ -176,10 +183,12 @@ public class MessagePipeline {
       alias = stateEngine.getTopicAliasManager().getTopicAlias(messageEvent.getDestinationName());
       Register register = new Register(alias, TOPIC_NAME, messageEvent.getDestinationName());
       protocol.writeFrame(register);
+      return false;
     }
     MQTT_SNPacket publish = protocol.buildPublish(alias, messageId, messageEvent, qos, topicTypeId);
     stateEngine.sendPublish(protocol, messageEvent.getDestinationName(), publish);
     logger.log(MQTT_SN_PIPELINE_EVENT_SENT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
+    return true;
   }
 
   public void emptyQueue(int sendSize, Runnable task) {

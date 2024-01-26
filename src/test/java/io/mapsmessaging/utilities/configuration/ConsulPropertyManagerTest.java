@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,18 +18,18 @@
 package io.mapsmessaging.utilities.configuration;
 
 import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.UUID;
 
 class ConsulPropertyManagerTest {
 
   @BeforeEach
   public void beforeMethod() {
-    ConsulManagerFactory.getInstance().start(UUID.randomUUID().toString());
+    ConsulManagerFactory.getInstance().start(UuidGenerator.generate().toString());
     if(ConsulManagerFactory.getInstance().isStarted()) {
       ConsulManagerFactory.getInstance().getManager();
     }

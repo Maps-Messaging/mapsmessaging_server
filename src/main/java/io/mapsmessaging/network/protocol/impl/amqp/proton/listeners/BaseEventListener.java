@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -81,12 +81,15 @@ public abstract class BaseEventListener implements EventListener {
     String sessionId = parseSessionId(connection.getRemoteContainer());
     io.mapsmessaging.network.protocol.impl.amqp.SessionManager sessionManager = protocol.getSession(sessionId);
     if (sessionManager == null) {
+      String username = protocol.getUsername();
+      boolean isAuthorised = protocol.isAuthorised();
       SessionContextBuilder contextBuilder = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
       contextBuilder.setKeepAlive(60)
           .setPersistentSession(true)
           .setSessionExpiry(600)
           .setPassword(new char[0])
-          .setUsername("anonymous"); // To Do, wire in the username
+          .isAuthorized(isAuthorised)
+          .setUsername(username);
       Session session = SessionManager.getInstance().create(contextBuilder.build(), protocol);
       session.start();
       session.login();

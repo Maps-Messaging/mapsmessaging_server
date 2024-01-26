@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import io.mapsmessaging.network.io.impl.udp.UDPEndPointServer;
 import io.mapsmessaging.network.io.impl.udp.UDPInterfaceInformation;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -56,7 +57,10 @@ public class DTLSEndPointServer extends UDPEndPointServer {
     this.acceptHandler = acceptHandler;
     this.protocolFactory = protocolFactory;
 
-    sslContext = SSLHelper.getInstance().createContext("dtls", config.getProperties(), logger);
+    ConfigurationProperties securityProps = (ConfigurationProperties) config.getProperties().get("security");
+    ConfigurationProperties dtls = (ConfigurationProperties) securityProps.get("dtls");
+
+    sslContext = SSLHelper.getInstance().createContext("dtls", dtls, logger);
     bondedEndPoints = new ArrayList<>();
     port = url.getPort();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);

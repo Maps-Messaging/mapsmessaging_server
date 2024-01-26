@@ -35,9 +35,13 @@ AuthManager:
     passwordHander: "EncryptedPasswordCipher"
     configDirectory: "{{MAPS_DATA}}/.security"
     certificateStore:
-      keystore.type: JKS
-      keystore.path: "{{MAPS_DATA}}/.security/authKeystore.jks"
-      keystore.password: keyStorePassword
-      certificate.alias: default
+      type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+      # providerName: SunJSSE  # Typically not required for standard keystores
+      path: "{{MAPS_DATA}}/.security/authKeystore.jks"
+      passphrase: keyStorePassword
+      alias: default
       privateKey.name: default
-      privateKey.password: privateKeyPassword
+      privateKey.passphrase: privateKeyPassword
+      # PKCS11 specific settings
+      # provider: SunPKCS11
+      # config: pkcs11-config.cfg

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
 import io.mapsmessaging.security.MapsSecurityProvider;
+import io.mapsmessaging.utilities.UuidGenerator;
 import lombok.SneakyThrows;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
@@ -32,11 +33,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 class MQTTAuthTest extends MQTTBaseTest {
 
@@ -51,7 +50,7 @@ class MQTTAuthTest extends MQTTBaseTest {
   void testSasl(int version, String protocol) throws MqttException, IOException {
     MqttConnectionOptions options = getOptions(true);
     SaslClient saslClient = setForSasl(options, "admin", getPassword("admin"));
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
@@ -83,9 +82,7 @@ class MQTTAuthTest extends MQTTBaseTest {
             client.authenticate(authState, this, mqttProperties);
             System.err.println("sent response to auth");
           }
-        } catch (SaslException e) {
-          e.printStackTrace();
-        } catch (MqttException e) {
+        } catch (Throwable e) {
           e.printStackTrace();
         }
       }
@@ -106,13 +103,13 @@ class MQTTAuthTest extends MQTTBaseTest {
   void testInvalidUser(int version, String protocol) throws MqttException, IOException {
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
-    String[] mechanisms = {"SCRAM-BCRYPT-SHA-512"};
+    String[] mechanisms = {"SCRAM-SHA-512"};
     ClientCallbackHandler clientHandler = new ClientCallbackHandler("admin1", "This is an bcrypt password", "servername");
     SaslClient saslClient =  Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
     MqttConnectionOptions options = getOptions(true);
-    options.setAuthMethod("SCRAM-BCRYPT-SHA-512");
+    options.setAuthMethod("SCRAM-SHA-512");
     options.setAuthData(saslClient.evaluateChallenge(null));
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
@@ -154,7 +151,7 @@ class MQTTAuthTest extends MQTTBaseTest {
   void testInvalidPassword(int version, String protocol) throws MqttException, IOException {
     MqttConnectionOptions options = getOptions(true);
     SaslClient saslClient = setForSasl(options, "admin", "bad password");
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
@@ -196,13 +193,13 @@ class MQTTAuthTest extends MQTTBaseTest {
   void testInvalidMechanism(int version, String protocol) throws MqttException, IOException {
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
-    String[] mechanisms = {"SCRAM-BCRYPT-SHA-512"};
+    String[] mechanisms = {"SCRAM-SHA-512"};
     ClientCallbackHandler clientHandler = new ClientCallbackHandler("admin", getPassword("admin"), "servername");
     SaslClient saslClient =  Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
     MqttConnectionOptions options = getOptions(true);
     options.setAuthMethod("SomeRandomMechanism");
     options.setAuthData(saslClient.evaluateChallenge(null));
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UUID.randomUUID().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {

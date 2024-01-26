@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.utilities.UuidGenerator;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @ToString
 public class Connect extends MQTT_SN_2_Packet {
@@ -70,7 +70,7 @@ public class Connect extends MQTT_SN_2_Packet {
         throw new IOException(e);
       }
     } else if (cleanStart) {
-      clientId = UUID.randomUUID().toString();
+      clientId = UuidGenerator.generate().toString();
     } else {
       throw new IOException("Must supply a client Id");
     }

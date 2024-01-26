@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright [ 2020 - 2023 ] [Matthew Buckton]
+  ~ Copyright [ 2020 - 2024 ] [Matthew Buckton]
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -382,7 +382,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.3</version>
+        <version>3.2.5</version>
         <configuration>
           <argLine>
             @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
@@ -581,8 +581,17 @@
 
     <sonar.sources>src/main</sonar.sources>
     <sonar.test.exclusions>
-      **/*Test.*,**/*IT.*,**/apache_pulsar/*, **.*JMH.*
+      **/*Test.*,
+      **/*IT.*,
+      **/apache_pulsar/*,
+      **.*JMH.*
     </sonar.test.exclusions>
+
+    <sonar.exclusions>
+      **/META-INF/services/**,
+      **/html/swagger-ui/**
+    </sonar.exclusions>
+
 
     <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -613,7 +622,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.23.1</version>
+        <version>2.23.3</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -656,6 +665,14 @@
       <artifactId>jackson-datatype-jsr310</artifactId>
       <version>2.16.1</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator -->
+    <dependency>
+      <groupId>com.fasterxml.uuid</groupId>
+      <artifactId>java-uuid-generator</artifactId>
+      <version>4.3.0</version>
+    </dependency>
+
 
     <!-- https://mvnrepository.com/artifact/tanukisoft/wrapper -->
     <dependency>
@@ -927,13 +944,13 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.23.1</version>
+      <version>2.23.3</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.23.1</version>
+      <version>2.23.3</version>
     </dependency>
 
 
@@ -941,7 +958,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.635</version>
+      <version>1.12.637</version>
       <scope>test</scope>
     </dependency>
 
@@ -1008,7 +1025,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.1.2</version>
+      <version>6.1.3</version>
       <scope>test</scope>
     </dependency>
 

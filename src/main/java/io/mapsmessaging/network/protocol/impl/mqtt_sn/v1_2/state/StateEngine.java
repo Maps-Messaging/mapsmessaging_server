@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -113,6 +113,14 @@ public class StateEngine {
 
   public void sendNextPublish() {
     pipeline.completed();
+  }
+
+  public void resumePublish() {
+    pipeline.resume();
+  }
+
+  public void ackReceived() {
+    pipeline.ackReceived();
   }
 
   public void sleep() {

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.UuidGenerator;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +43,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
@@ -98,7 +98,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         boolean found = manager.getAll().stream()
             .anyMatch(configured -> configured.getSource().equalsIgnoreCase(schemaConfig.getSource()));
         if(!found) {
-          schemaConfig.setUniqueId(UUID.randomUUID());
+          schemaConfig.setUniqueId(UuidGenerator.generate());
           destination.updateSchema(schemaConfig, null);
         }
       }

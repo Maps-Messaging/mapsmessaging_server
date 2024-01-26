@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
+import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -42,7 +43,9 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
   @Override
   public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)
       throws IOException {
-    SSLContext context = SSLHelper.getInstance().createContext("tls", endPointServerStatus.getConfig().getProperties(), logger);
+    ConfigurationProperties securityProps = (ConfigurationProperties) endPointServerStatus.getConfig().getProperties().get("security");
+    ConfigurationProperties tls = (ConfigurationProperties) securityProps.get("tls");
+    SSLContext context = SSLHelper.getInstance().createContext("tls", tls, logger);
     SSLEngine engine = context.createSSLEngine();
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());

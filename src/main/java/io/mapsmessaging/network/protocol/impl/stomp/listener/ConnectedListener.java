@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ClientConnectedState;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.utilities.UuidGenerator;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -66,7 +66,7 @@ public class ConnectedListener extends BaseConnectListener {
   }
 
   private CompletableFuture<Session> createSession(StateEngine engine) {
-    SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), new ProtocolClientConnection(engine.getProtocol()));
+    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     scb.setPersistentSession(false);
     scb.setKeepAlive(120);
     scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.utilities.UuidGenerator;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.Target;
@@ -59,7 +60,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
   private void handleDynamicTarget(Event event, Link link, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
     if (messagingTarget.getDynamic()) {
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
-      UUID uuid = UUID.randomUUID();
+      UUID uuid = UuidGenerator.generate();
       String address = "/dynamic/temporary/";
       if (scanForQueue(messagingTarget)) {
         type = DestinationType.TEMPORARY_QUEUE;

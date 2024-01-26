@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
 import org.apache.qpid.proton.engine.Sasl;
 
 import java.io.IOException;
@@ -30,6 +31,8 @@ public class SaslManager {
 
   private final Sasl sasl;
   private final SaslAuthenticationMechanism saslAuthenticationMechanism;
+  @Getter
+  private String username;
 
   public SaslManager(ProtonEngine protonEngine) throws IOException {
     saslAuthenticationMechanism = buildMechansim(protonEngine.getProtocol().getEndPoint().getConfig().getProperties());
@@ -51,17 +54,13 @@ public class SaslManager {
     } else {
       challenge = new byte[0];
     }
-    try {
-      byte[] response = saslAuthenticationMechanism.challenge(challenge);
-      if (response != null && response.length > 0) {
-        sasl.send(response, 0, response.length);
-      }
-      if (saslAuthenticationMechanism.complete()) {
-        sasl.done(Sasl.SaslOutcome.PN_SASL_OK);
-      }
-    } catch (Throwable ex) {
-      ex.printStackTrace(System.err);
-      throw ex;
+    byte[] response = saslAuthenticationMechanism.challenge(challenge);
+    if (response != null && response.length > 0) {
+      sasl.send(response, 0, response.length);
+    }
+    if (saslAuthenticationMechanism.complete()) {
+      sasl.done(Sasl.SaslOutcome.PN_SASL_OK);
+      username = saslAuthenticationMechanism.getUsername();
     }
   }
 
@@ -83,8 +82,7 @@ public class SaslManager {
       sasl.done(Sasl.PN_SASL_OK);
     }
 
-    return saslAuthenticationMechanism == null ||
-        sasl.getOutcome().equals(Sasl.SaslOutcome.PN_SASL_OK);
+    return saslAuthenticationMechanism == null || sasl.getOutcome().equals(Sasl.SaslOutcome.PN_SASL_OK);
   }
 
 }
