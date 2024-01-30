@@ -42,10 +42,10 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.hawtio.HawtioManager;
 import io.mapsmessaging.rest.hawtio.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.SystemProperties;
-import io.mapsmessaging.utilities.UuidGenerator;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -93,7 +93,6 @@ public class MessageDaemon {
 
   @Getter
   private boolean enableResourceStatistics;
-
 
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
@@ -308,7 +307,7 @@ public class MessageDaemon {
 
     boolean useUUID = SystemProperties.getInstance().getBooleanProperty("USE_UUID", true);
     if (useUUID) {
-      return UuidGenerator.generate().toString();
+      return UuidGenerator.getInstance().generate().toString();
     }
 
     try {

@@ -47,7 +47,7 @@ DeviceManager:
 
     -
       name: i2c
-      enabled: false  # Enable or disable I2C bus interface
+      enabled: true  # Enable or disable I2C bus interface
       config:
         -
           bus: 0
@@ -69,8 +69,10 @@ DeviceManager:
           enabled: true
           autoScan: true
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
-          trigger: everyHundredth
-
+          trigger: everySecond
+          devices:
+            - address: 0x10
+              name: DebugDevice
     -
       name: oneWire
       enabled: false  # enable / disable one wire interface

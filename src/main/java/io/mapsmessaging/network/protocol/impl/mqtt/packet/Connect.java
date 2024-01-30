@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt.packet;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 
 import java.io.ByteArrayOutputStream;
 
@@ -145,7 +145,7 @@ public class Connect extends MQTTPacket {
     String id = readUTF8(packet);
 
     if (id.length() == 0 && cleanSession) {
-      id = UuidGenerator.generate().toString();
+      id = UuidGenerator.getInstance().generate().toString();
     }
     sessionId = id;
     //

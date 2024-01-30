@@ -36,7 +36,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class ConnectListener5 extends PacketListener5 {
 
     String sessionId = connect.getSessionId();
     if (sessionId.isEmpty()) {
-      sessionId = UuidGenerator.generate().toString();
+      sessionId = UuidGenerator.getInstance().generate().toString();
       connAck.add(new AssignedClientIdentifier(sessionId));
     }
 

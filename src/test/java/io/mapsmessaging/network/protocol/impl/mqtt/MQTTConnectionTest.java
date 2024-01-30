@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -32,7 +32,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
 
   void justRun(int version, String protocol, boolean auth) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     client.connect(options);
     byte[] payload = new byte[1024];
     for(int x=0;x<payload.length;x++){
@@ -51,7 +51,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
   @MethodSource("mqttTestParameters")
   void testValidUser(int version, String protocol, boolean auth) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
 
     options.setWill("/topic/will", "this is my will msg".getBytes(), 2, true);
     client.connect(options);
@@ -66,7 +66,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
   @MethodSource("mqttTestParameters")
   void testValidUserResetState(int version, String protocol, boolean auth) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     options.setCleanSession(true);
 
     client.connect(options);
@@ -76,7 +76,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
     client.close();
 
     options = getOptions(auth, version);
-    client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     options.setCleanSession(false);
 
     client.connect(options);
@@ -92,7 +92,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
   @MethodSource("mqttTestParameters")
   void testInvalidUser(int version, String protocol, boolean auth) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     MqttCallback callback = new MqttCallback(){
 
       @Override

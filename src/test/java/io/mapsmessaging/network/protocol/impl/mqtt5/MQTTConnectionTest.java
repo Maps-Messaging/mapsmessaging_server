@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
@@ -36,7 +36,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
   @ParameterizedTest
   @MethodSource("mqttTestParameters")
   void testValidUser(int version, String protocol, boolean auth) throws MqttException, IOException {
-    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.generate().toString(), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     MqttConnectionOptions options = getOptions(auth);
     MqttMessage mqttMessage = new MqttMessage();
     mqttMessage.setPayload("this is my will msg".getBytes());
@@ -54,7 +54,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
   @ParameterizedTest
   @MethodSource("mqttTestParameters")
   void testValidUserResetState(int version, String protocol, boolean auth) throws MqttException, IOException {
-    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.generate().toString(), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     MqttConnectionOptions options = getOptions(auth);
     options.setCleanStart(true);
 
@@ -64,7 +64,7 @@ class MQTTConnectionTest extends MQTTBaseTest {
     Assertions.assertFalse(client.isConnected());
     client.close();
 
-    client = new MqttClient(getUrl(protocol, auth), UuidGenerator.generate().toString(), new MemoryPersistence());
+    client = new MqttClient(getUrl(protocol, auth), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     options = getOptions();
     options.setCleanStart(false);
 

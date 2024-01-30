@@ -19,7 +19,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
@@ -36,7 +36,7 @@ public class ConnectionLocalOpenEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     Connection conn = event.getConnection();
     if (conn.getRemoteState() == EndpointState.UNINITIALIZED) {
-      conn.setContainer(UuidGenerator.generate().toString());
+      conn.setContainer(UuidGenerator.getInstance().generate().toString());
     }
     return true;
   }

@@ -19,7 +19,7 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Data;
 import lombok.ToString;
 
@@ -54,7 +54,7 @@ public class SessionContext {
     expiry = -1;
     receiveMaximum = (1 << 16) - 1;
     isRestored = false;
-    uniqueId = UuidGenerator.generate().toString();
+    uniqueId = UuidGenerator.getInstance().generate().toString();
   }
 
   public void update(SessionPrivileges sessionPrivileges) {

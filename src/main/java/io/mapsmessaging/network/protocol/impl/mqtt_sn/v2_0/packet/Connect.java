@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -70,7 +70,7 @@ public class Connect extends MQTT_SN_2_Packet {
         throw new IOException(e);
       }
     } else if (cleanStart) {
-      clientId = UuidGenerator.generate().toString();
+      clientId = UuidGenerator.getInstance().generate().toString();
     } else {
       throw new IOException("Must supply a client Id");
     }

@@ -22,7 +22,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.Target;
@@ -60,7 +60,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
   private void handleDynamicTarget(Event event, Link link, org.apache.qpid.proton.amqp.messaging.Target messagingTarget) {
     if (messagingTarget.getDynamic()) {
       DestinationType type = DestinationType.TEMPORARY_TOPIC;
-      UUID uuid = UuidGenerator.generate();
+      UUID uuid = UuidGenerator.getInstance().generate();
       String address = "/dynamic/temporary/";
       if (scanForQueue(messagingTarget)) {
         type = DestinationType.TEMPORARY_QUEUE;

@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.test.WaitForState;
-import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -39,7 +39,7 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
   void connectSubscribeDisconnectPublishAndCheck(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     String topicName = getTopicName();
 
-    String subId = UuidGenerator.generate().toString().substring(0, 12).replaceAll("-", "A");
+    String subId = UuidGenerator.getInstance().generate().toString().substring(0, 12).replaceAll("-", "A");
     MqttClientPersistence persistence = new MemoryPersistence();
 
     MqttClient subscribe = new MqttClient(getUrl(protocol, auth), subId, persistence);
@@ -53,7 +53,7 @@ class MQTTStoredMessageTest extends MQTTBaseTest {
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
 
-    String pubId = UuidGenerator.generate().toString().substring(0, 12).replaceAll("-", "A");
+    String pubId = UuidGenerator.getInstance().generate().toString().substring(0, 12).replaceAll("-", "A");
     MqttClient publish = new MqttClient(getUrl(protocol, auth), pubId, new MemoryPersistence());
     MqttConnectOptions pubOption = getOptions(auth, version);
 

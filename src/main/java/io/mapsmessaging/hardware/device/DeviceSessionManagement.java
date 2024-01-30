@@ -31,10 +31,10 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import io.mapsmessaging.utilities.UuidGenerator;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -98,7 +98,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         boolean found = manager.getAll().stream()
             .anyMatch(configured -> configured.getSource().equalsIgnoreCase(schemaConfig.getSource()));
         if(!found) {
-          schemaConfig.setUniqueId(UuidGenerator.generate());
+          schemaConfig.setUniqueId(UuidGenerator.getInstance().generate());
           destination.updateSchema(schemaConfig, null);
         }
       }

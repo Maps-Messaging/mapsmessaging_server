@@ -21,7 +21,7 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Getter;
 
 import java.io.File;
@@ -66,7 +66,7 @@ public class PersistentSessionManager {
   }
 
   public SessionDetails getSessionDetails(String sessionId){
-    return persistentMap.computeIfAbsent(sessionId, k -> new SessionDetails(sessionId, UuidGenerator.generate().toString()));
+    return persistentMap.computeIfAbsent(sessionId, k -> new SessionDetails(sessionId, UuidGenerator.getInstance().generate().toString()));
   }
 
   public Map<String, SubscriptionContext> getSubscriptionContextMap(String sessionId, boolean isPersistent) {

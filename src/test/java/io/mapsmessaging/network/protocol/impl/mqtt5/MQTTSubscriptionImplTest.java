@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
@@ -40,7 +40,7 @@ class MQTTSubscriptionImplTest extends MQTTBaseTest implements IMqttMessageListe
   @MethodSource("mqttPublishTestParameters")
   @DisplayName("Test QoS wildcard subscription")
   void testSubscription(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
-    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.generate().toString(), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     MqttConnectionOptions options = getOptions(auth);
     MqttMessage mqttMessage = new MqttMessage();
     mqttMessage.setPayload("this is my will msg".getBytes());

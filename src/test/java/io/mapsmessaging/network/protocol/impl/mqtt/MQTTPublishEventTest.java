@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -38,7 +38,7 @@ class MQTTPublishEventTest extends MQTTBaseTest {
   @DisplayName("Test QoS publishing")
   void testPublish(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     client.connect(options);
     String topicName = getTopicName();
     Assertions.assertTrue(client.isConnected());

@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.test.WaitForState;
-import io.mapsmessaging.utilities.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -39,7 +39,7 @@ class MQTTWildCardSubscriptionImplTest extends MQTTBaseTest implements MqttCallb
   @DisplayName("Test QoS wildcard subscription")
   void testWildcardSubscription(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     options.setWill("/topic/will", "this is my will msg".getBytes(), QoS, true);
     client.connect(options);
     client.setCallback(this);

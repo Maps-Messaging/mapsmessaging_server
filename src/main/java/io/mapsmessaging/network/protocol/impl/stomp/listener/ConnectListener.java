@@ -29,7 +29,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.HeartBeat;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ConnectedState;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -79,7 +79,7 @@ public class ConnectListener extends BaseConnectListener {
   }
 
   private CompletableFuture<Session> createSession(StateEngine engine, Connect connect, HeartBeat hb) {
-    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
+    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     String username = connect.getLogin();
     if (username == null) {
       scb.setUsername("anonymous").setPassword("".toCharArray());

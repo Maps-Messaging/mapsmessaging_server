@@ -18,7 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
 import io.mapsmessaging.security.MapsSecurityProvider;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.SneakyThrows;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
@@ -50,7 +50,7 @@ class MQTTAuthTest extends MQTTBaseTest {
   void testSasl(int version, String protocol) throws MqttException, IOException {
     MqttConnectionOptions options = getOptions(true);
     SaslClient saslClient = setForSasl(options, "admin", getPassword("admin"));
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
@@ -109,7 +109,7 @@ class MQTTAuthTest extends MQTTBaseTest {
     MqttConnectionOptions options = getOptions(true);
     options.setAuthMethod("SCRAM-SHA-512");
     options.setAuthData(saslClient.evaluateChallenge(null));
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
@@ -151,7 +151,7 @@ class MQTTAuthTest extends MQTTBaseTest {
   void testInvalidPassword(int version, String protocol) throws MqttException, IOException {
     MqttConnectionOptions options = getOptions(true);
     SaslClient saslClient = setForSasl(options, "admin", "bad password");
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
@@ -199,7 +199,7 @@ class MQTTAuthTest extends MQTTBaseTest {
     MqttConnectionOptions options = getOptions(true);
     options.setAuthMethod("SomeRandomMechanism");
     options.setAuthData(saslClient.evaluateChallenge(null));
-    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.generate().toString(), new MemoryPersistence());
+    MqttAsyncClient client = new MqttAsyncClient(getUrl(protocol, true), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     client.setCallback(new MqttCallback() {
       @Override
       public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {

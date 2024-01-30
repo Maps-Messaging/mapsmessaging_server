@@ -27,7 +27,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ClientConnectedState;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -66,7 +66,7 @@ public class ConnectedListener extends BaseConnectListener {
   }
 
   private CompletableFuture<Session> createSession(StateEngine engine) {
-    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
+    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     scb.setPersistentSession(false);
     scb.setKeepAlive(120);
     scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);

@@ -18,7 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.engine.session.SessionManagerTest;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -41,7 +41,7 @@ class ServerTopicTest extends MQTTBaseTest {
   @DisplayName("Test System Topics")
   void testSystemTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
       @Override
@@ -83,7 +83,7 @@ class ServerTopicTest extends MQTTBaseTest {
   void testDeviceTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     if (md.hasDeviceManager()) {
       MqttConnectOptions options = getOptions(auth, version);
-      MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.generate().toString(), version), new MemoryPersistence());
+      MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
       AtomicInteger counter = new AtomicInteger(0);
       client.setCallback(new MqttCallback() {
         @Override

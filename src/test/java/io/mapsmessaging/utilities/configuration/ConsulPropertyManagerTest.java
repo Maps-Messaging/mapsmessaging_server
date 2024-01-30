@@ -18,7 +18,7 @@
 package io.mapsmessaging.utilities.configuration;
 
 import io.mapsmessaging.consul.ConsulManagerFactory;
-import io.mapsmessaging.utilities.UuidGenerator;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ class ConsulPropertyManagerTest {
 
   @BeforeEach
   public void beforeMethod() {
-    ConsulManagerFactory.getInstance().start(UuidGenerator.generate().toString());
+    ConsulManagerFactory.getInstance().start(UuidGenerator.getInstance().generate().toString());
     if(ConsulManagerFactory.getInstance().isStarted()) {
       ConsulManagerFactory.getInstance().getManager();
     }
