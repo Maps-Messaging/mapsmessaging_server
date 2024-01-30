@@ -78,13 +78,18 @@ public class MessageDaemon {
     instance = tmp;
   }
 
+  private final String uniqueId;
+
+  @Getter
+  private final UUID uuid;
+
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final Map<String, AgentOrder> agentMap;
-  private final String uniqueId;
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
   private boolean enableSystemTopics;
   private boolean enableDeviceIntegration;
+
   @Getter
   private DeviceManager deviceManager;
 
@@ -109,6 +114,7 @@ public class MessageDaemon {
       instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
     }
+    uuid = instanceConfig.getUuid();
     // </editor-fold>
 
     //<editor-fold desc="Now see if we can start the Consul Manager">
