@@ -20,6 +20,7 @@ package io.mapsmessaging;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Getter;
 import lombok.Setter;
 import org.yaml.snakeyaml.DumperOptions;
@@ -30,6 +31,7 @@ import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static io.mapsmessaging.logging.ServerLogMessages.INSTANCE_STATE_ERROR;
 
@@ -43,6 +45,10 @@ public class InstanceConfig {
   @Getter
   @Setter
   private String serverName;
+
+  @Getter
+  @Setter
+  private UUID uuid;
 
   @Getter
   @Setter
@@ -68,9 +74,17 @@ public class InstanceConfig {
       fileInputStream = new FileInputStream(path + INSTANCE_CONFIG_YAML);
       InstanceConfig obj;
       obj = yaml.loadAs(fileInputStream, InstanceConfig.class);
+      fileInputStream.close();
       serverName = obj.serverName;
       creationDate = obj.creationDate;
-    } catch (FileNotFoundException e) {
+      if (obj.uuid == null) {
+        uuid = UuidGenerator.getInstance().generate();
+        saveState();
+      } else {
+        uuid = obj.getUuid();
+      }
+
+    } catch (IOException e) {
       // Not a big deal, since it might be the first run
     }
   }
