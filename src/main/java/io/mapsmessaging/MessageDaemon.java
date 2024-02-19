@@ -98,8 +98,8 @@ public class MessageDaemon {
   @Getter
   private boolean enableResourceStatistics;
 
-  private static String MAPS_HOME = "MAPS_HOME";
-  private static String MAPS_DATA = "MAPS_DATA";
+  private static final String MAPS_HOME = "MAPS_HOME";
+  private static final String MAPS_DATA = "MAPS_DATA";
 
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
