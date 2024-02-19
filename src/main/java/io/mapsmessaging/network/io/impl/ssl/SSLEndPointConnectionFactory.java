@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
@@ -25,7 +26,7 @@ import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import io.mapsmessaging.security.ssl.SslHelper;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -45,8 +46,8 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
       throws IOException {
     ConfigurationProperties securityProps = (ConfigurationProperties) endPointServerStatus.getConfig().getProperties().get("security");
     ConfigurationProperties tls = (ConfigurationProperties) securityProps.get("tls");
-    SSLContext context = SSLHelper.getInstance().createContext("tls", tls, logger);
-    SSLEngine engine = context.createSSLEngine();
+    SSLContext context = SslHelper.createContext("tls", tls, logger);
+    SSLEngine engine = SslHelper.createSSLEngine(context, tls);
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
     channel.configureBlocking(true);

@@ -23,6 +23,7 @@ import io.mapsmessaging.auth.registry.AuthenticationStorage;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.auth.registry.UserDetails;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
@@ -31,7 +32,6 @@ import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 
 import javax.security.auth.Subject;

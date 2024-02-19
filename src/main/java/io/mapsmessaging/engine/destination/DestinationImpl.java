@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.admin.DestinationJMX;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
@@ -42,7 +43,6 @@ import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.queue.EventReaperQueue;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;

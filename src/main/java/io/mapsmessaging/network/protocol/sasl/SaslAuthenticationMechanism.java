@@ -17,10 +17,10 @@
 
 package io.mapsmessaging.network.protocol.sasl;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.AuthenticationMechanism;
 import io.mapsmessaging.security.identity.IdentityLookup;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 
 import javax.security.sasl.Sasl;

@@ -18,8 +18,8 @@
 package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.Getter;
 import org.apache.qpid.proton.engine.Sasl;
 

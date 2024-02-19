@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.hardware;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
@@ -29,7 +30,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 

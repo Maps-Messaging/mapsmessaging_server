@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.interfaces.InterfaceInfo;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;

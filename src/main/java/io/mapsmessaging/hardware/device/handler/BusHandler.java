@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package io.mapsmessaging.hardware.device.handler;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.hardware.device.DeviceClientConnection;
@@ -27,7 +28,6 @@ import io.mapsmessaging.hardware.device.DeviceSessionManagement;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import lombok.SneakyThrows;
 

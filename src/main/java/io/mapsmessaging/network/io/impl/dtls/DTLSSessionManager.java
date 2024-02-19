@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPoint;
@@ -30,6 +31,7 @@ import io.mapsmessaging.network.io.impl.udp.UDPInterfaceInformation;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.security.ssl.SslHelper;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,6 +57,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
   private final AcceptHandler acceptHandler;
   private final UDPInterfaceInformation inetAddress;
   private final EndPointManagerJMX managerMBean;
+  private final ConfigurationProperties dtls;
 
   public DTLSSessionManager(UDPEndPoint udpEndPoint,
       NetworkInterface inetAddress,
@@ -62,7 +65,8 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
       ProtocolImplFactory protocolImplFactory,
       SSLContext sslContext,
       AcceptHandler acceptHandler,
-      EndPointManagerJMX managerMBean)
+      EndPointManagerJMX managerMBean,
+     ConfigurationProperties dtls)
       throws IOException {
     this.udpEndPoint = udpEndPoint;
     this.sslContext = sslContext;
@@ -71,6 +75,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     this.protocolImplFactory = protocolImplFactory;
     this.inetAddress = new UDPInterfaceInformation(inetAddress);
     this.managerMBean = managerMBean;
+    this.dtls = dtls;
     selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getProperties(), udpEndPoint.isUDP());
     long timeout = udpEndPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
     sessionMapping = new UDPSessionManager<>(timeout);
@@ -83,7 +88,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     DTLSEndPoint endPoint;
     if (state == null) {
       StateEngine stateEngine;
-      SSLEngine sslEngine = sslContext.createSSLEngine();
+      SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, dtls);
       SSLParameters paras = sslEngine.getSSLParameters();
       //int mtu = inetAddress.getMTU()-40;
       int mtu = 8192;

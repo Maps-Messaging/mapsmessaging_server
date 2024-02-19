@@ -19,6 +19,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
@@ -26,7 +27,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Register;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 

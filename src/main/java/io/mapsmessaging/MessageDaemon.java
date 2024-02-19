@@ -20,6 +20,9 @@ package io.mapsmessaging;
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.configuration.EnvironmentConfig;
+import io.mapsmessaging.configuration.EnvironmentPathLookup;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
@@ -49,7 +52,6 @@ import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
@@ -94,16 +96,17 @@ public class MessageDaemon {
   private DeviceManager deviceManager;
 
   @Getter
-  private final EnvironmentConfig environmentConfig;
-
-  @Getter
   private boolean enableResourceStatistics;
+
+  private static String MAPS_HOME = "MAPS_HOME";
+  private static String MAPS_DATA = "MAPS_DATA";
 
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
     isStarted = new AtomicBoolean(false);
-    environmentConfig = new EnvironmentConfig();
-    InstanceConfig instanceConfig = new InstanceConfig(environmentConfig.getDataDirectory());
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, "{{MAPS_HOME}}/data", true));
+    InstanceConfig instanceConfig = new InstanceConfig(EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA));
     instanceConfig.loadState();
     String serverId = instanceConfig.getServerName();
     if (serverId != null) {
@@ -166,7 +169,7 @@ public class MessageDaemon {
     addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
-    addToMap(600, 300, new SessionManager(securityManager, destinationManager, environmentConfig.getDataDirectory()));
+    addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA)));
     addToMap(700, 150, new NetworkManager());
     addToMap(900, 200, new NetworkConnectionManager());
     addToMap(1200, 400, new RestApiServerManager());

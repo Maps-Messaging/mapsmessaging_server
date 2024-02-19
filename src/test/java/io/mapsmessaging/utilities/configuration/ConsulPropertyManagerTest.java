@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.junit.jupiter.api.Assumptions;

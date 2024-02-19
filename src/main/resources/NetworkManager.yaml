@@ -23,6 +23,12 @@ NetworkManager:
       security:
         tls:
           clientCertificateRequired: false
+          clientCertificateWanted: false
+            #-----------------------------------
+            # CRL Specific
+            # crlUrl: <URL TO CRL>
+            # crlInterval: <time in seconds to reload CRL>
+            #-----------------------------------
 
           keyStore:
             #alias: server  # Optional
@@ -32,9 +38,12 @@ NetworkManager:
             # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
+
+            #-----------------------------------
             # PKCS11 specific settings
             # provider: SunPKCS11
             # config: pkcs11-config.cfg
+            #-----------------------------------
 
           trustStore:
             type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"

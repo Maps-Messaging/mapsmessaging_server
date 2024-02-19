@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging.network;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -27,7 +28,6 @@ import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
@@ -80,16 +80,20 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         destinationMappings.addAll((List<ConfigurationProperties>) linkReference);
       }
       if (!destinationMappings.isEmpty()) {
-        for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-          if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-            EndPointConnectionHostJMX hostJMXBean = null;
-            List<String> jmxList = MessageDaemon.getInstance().getTypePath();
-            if (!jmxList.isEmpty()) {
-              hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
-            }
-            endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
-          }
+        processEndPoint(endPointURL, properties,destinationMappings );
+      }
+    }
+  }
+
+  private void processEndPoint(EndPointURL endPointURL, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings){
+    for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
+      if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
+        EndPointConnectionHostJMX hostJMXBean = null;
+        List<String> jmxList = MessageDaemon.getInstance().getTypePath();
+        if (!jmxList.isEmpty()) {
+          hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
         }
+        endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
       }
     }
   }

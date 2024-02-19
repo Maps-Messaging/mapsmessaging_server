@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.hmac;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
@@ -27,7 +28,6 @@ import io.mapsmessaging.network.io.security.NodeSecurity;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
 import io.mapsmessaging.network.io.security.PacketIntegrityFactory;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

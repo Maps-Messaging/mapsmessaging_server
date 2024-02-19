@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@
 package io.mapsmessaging.hardware.trigger;
 
 import com.pi4j.io.gpio.digital.DigitalState;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.gpio.InterruptFactory;
 import io.mapsmessaging.devices.gpio.InterruptListener;
 import io.mapsmessaging.devices.gpio.InterruptPin;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;

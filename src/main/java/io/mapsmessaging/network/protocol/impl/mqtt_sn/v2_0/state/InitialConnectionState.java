@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
@@ -36,7 +37,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;

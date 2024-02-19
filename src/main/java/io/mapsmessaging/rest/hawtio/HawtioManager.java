@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@ package io.mapsmessaging.rest.hawtio;
 
 import io.hawt.embedded.Main;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.File;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class HawtioManager implements Agent {
     String checkFile = properties.getProperty("warFileLocation", "");
     enabled = properties.getBooleanProperty("enable", true) && isJolokiaEnabled();
 
-    checkFile = MessageDaemon.getInstance().getEnvironmentConfig().translatePath(checkFile);
+    checkFile = EnvironmentConfig.getInstance().translatePath(checkFile);
     if (enabled) {
       File winFile = new File(checkFile);
       if (winFile.exists()) {
@@ -61,7 +62,7 @@ public class HawtioManager implements Agent {
   }
 
   private String scanForWarFileInLib() {
-    String libString = MessageDaemon.getInstance().getEnvironmentConfig().getHomePath() + "/lib";
+    String libString = EnvironmentConfig.getInstance().getPathLocations().get("MAPS_HOME") + "/lib";
     libString = libString.replace("//", "/");
     File file = new File(libString);
     if (file.isDirectory()) {

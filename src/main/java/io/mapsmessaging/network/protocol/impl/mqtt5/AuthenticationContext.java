@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationMethod;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.security.sasl.Sasl;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.security.sasl.Sasl;
-import lombok.Getter;
-import lombok.Setter;
 
 public class AuthenticationContext {
 
