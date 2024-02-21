@@ -20,7 +20,6 @@ package io.mapsmessaging.network.discovery;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.consul.ConsulManagerFactory;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -157,7 +156,6 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
       }
       registeredServices.add(serviceInfo);
     }
-    ConsulManagerFactory.getInstance().register(restApiServerManager);
     return registeredServices.toArray(new ServiceInfo[0]);
   }
 
@@ -176,7 +174,6 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
         manager.register(endPointServer, transport, protocolList);
       }
     }
-    ConsulManagerFactory.getInstance().register(endPointServer);
   }
 
   private List<String> createProtocolList(String protocolConfig, String transport){

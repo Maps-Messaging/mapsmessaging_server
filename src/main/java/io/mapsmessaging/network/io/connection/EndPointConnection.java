@@ -31,7 +31,7 @@ import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.connection.state.*;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 
 package io.mapsmessaging.utilities.stats;
 
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.stats.processors.AdderDataProcessor;
 import io.mapsmessaging.utilities.stats.processors.AverageDataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DifferenceDataProcessor;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.util.ArrayList;
 import java.util.List;

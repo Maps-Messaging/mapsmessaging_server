@@ -176,24 +176,6 @@
         <branchName>development</branchName>
       </properties>
       <dependencies>
-
-        <!-- Experimenting with dependency hint so as to have 1 bouncycastle version -->
-        <!--<dependency>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcprov-jdk15on</artifactId>
-          <version>1.70</version>
-        </dependency>
-        <dependency>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcpkix-jdk15on</artifactId>
-          <version>1.70</version>
-        </dependency>
-        <dependency>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcutil-jdk15on</artifactId>
-          <version>1.70</version>
-        </dependency>-->
-
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
@@ -225,6 +207,12 @@
           <groupId>io.mapsmessaging</groupId>
           <artifactId>non_block_task_scheduler</artifactId>
           <version>2.1.9-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>configuration_library</artifactId>
+          <version>1.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -288,7 +276,11 @@
           <artifactId>jms_selector_parser</artifactId>
           <version>1.1.14</version>
         </dependency>
-
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>configuration_library</artifactId>
+          <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- Naturally order long collection -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>

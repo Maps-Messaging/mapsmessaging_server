@@ -23,7 +23,7 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.configuration.EnvironmentPathLookup;
-import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.schema.SchemaManager;

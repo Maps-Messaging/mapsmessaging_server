@@ -18,7 +18,11 @@
 package io.mapsmessaging.utilities.configuration;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.configuration.PropertyManager;
+import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
+import io.mapsmessaging.configuration.consul.ConsulPropertyManager;
+import io.mapsmessaging.configuration.file.FileYamlPropertyManager;
+import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -31,12 +35,14 @@ import java.util.List;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {
+  private static class Holder {
+    static final ConfigurationManager INSTANCE = new ConfigurationManager();
+  }
 
-  private static final ConfigurationManager instance;
-
-  static {
-    instance = new ConfigurationManager();
+  public static ConfigurationManager getInstance() {
+    return Holder.INSTANCE;
   }
 
   private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
@@ -50,8 +56,8 @@ public class ConfigurationManager {
     authoritative = null;
   }
 
-  public static ConfigurationManager getInstance() {
-    return instance;
+  public void register(){
+
   }
 
   public void initialise(@NonNull @NotNull String serverId) {
@@ -87,10 +93,10 @@ public class ConfigurationManager {
     try {
       // We have a consul link but there is no config loaded, so load up the configuration into the
       // consul server to bootstrap the server
-      if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
+      if (defaultConsulManager != null && defaultConsulManager.getProperties().size() == 0) {
         defaultConsulManager.copy(yamlPropertyManager);
       }
-      if (authoritative != null && authoritative.properties.size() == 0) {
+      if (authoritative != null && authoritative.getProperties().size() == 0) {
         authoritative.copy(defaultConsulManager); // Define the local host
       }
     }
