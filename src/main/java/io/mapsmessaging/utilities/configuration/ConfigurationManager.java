@@ -61,28 +61,28 @@ public class ConfigurationManager {
   }
 
   public void initialise(@NonNull @NotNull String serverId) {
-    ConsulPropertyManager defaultConsulManager = null;
+    PropertyManager defaultManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
-      String consulConfigPath = ConsulManagerFactory.getInstance().getPath();
-      if (consulConfigPath == null) {
-        consulConfigPath = "/";
+      String configPath = ConsulManagerFactory.getInstance().getPath();
+      if (configPath == null) {
+        configPath = "/";
       }
       String defaultName = "default";
-      if (!consulConfigPath.endsWith("/")) {
-        consulConfigPath = consulConfigPath + "/";
+      if (!configPath.endsWith("/")) {
+        configPath = configPath + "/";
       }
-      serverId = consulConfigPath + serverId;
-      defaultName = consulConfigPath + defaultName;
+      serverId = configPath + serverId;
+      defaultName = configPath + defaultName;
       authoritative = new ConsulPropertyManager(serverId);
       authoritative.load();
-      String locatedDefault = ConsulManagerFactory.getInstance().getManager().scanForDefaultConfig(consulConfigPath);
+      String locatedDefault = authoritative.scanForDefaultConfig(configPath);
       if(!locatedDefault.isEmpty()){
         defaultName = locatedDefault;
       }
 
-      defaultConsulManager = new ConsulPropertyManager(defaultName);
-      defaultConsulManager.load();
-      propertyManagers.add(defaultConsulManager);
+      defaultManager = new ConsulPropertyManager(defaultName);
+      defaultManager.load();
+      propertyManagers.add(defaultManager);
     }
     YamlPropertyManager yamlPropertyManager = new FileYamlPropertyManager();
     propertyManagers.add(yamlPropertyManager);
@@ -93,11 +93,11 @@ public class ConfigurationManager {
     try {
       // We have a consul link but there is no config loaded, so load up the configuration into the
       // consul server to bootstrap the server
-      if (defaultConsulManager != null && defaultConsulManager.getProperties().size() == 0) {
-        defaultConsulManager.copy(yamlPropertyManager);
+      if (defaultManager != null && defaultManager.getProperties().isEmpty()) {
+        defaultManager.copy(yamlPropertyManager);
       }
-      if (authoritative != null && authoritative.getProperties().size() == 0) {
-        authoritative.copy(defaultConsulManager); // Define the local host
+      if (authoritative != null && authoritative.getProperties().isEmpty()) {
+        authoritative.copy(defaultManager); // Define the local host
       }
     }
     catch(Throwable th){
