@@ -137,7 +137,7 @@ public class MessageDaemon {
     if (properties.containsKey("latitude") && properties.containsKey("longitude")) {
       double lat = properties.getDoubleProperty("latitude", Double.NaN);
       double lon = properties.getDoubleProperty("longitude", Double.NaN);
-      if (lat != Double.NaN && lon != Double.NaN) {
+      if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
         LocationManager.getInstance().setPosition(lat, lon);
       }
     }
