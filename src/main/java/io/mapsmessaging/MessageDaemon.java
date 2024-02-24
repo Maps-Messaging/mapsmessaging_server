@@ -86,6 +86,8 @@ public class MessageDaemon {
   @Getter
   private final UUID uuid;
 
+  @Getter
+  private boolean tagMetaData;
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final Map<String, AgentOrder> agentMap;
   private MessageDaemonJMX mBean;
@@ -139,6 +141,7 @@ public class MessageDaemon {
         LocationManager.getInstance().setPosition(lat, lon);
       }
     }
+    tagMetaData = properties.getBooleanProperty("tagMetaData", false);
     int transactionExpiry = properties.getIntProperty("TransactionExpiry", 3600000);
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);

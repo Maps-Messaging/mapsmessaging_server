@@ -89,6 +89,12 @@ MessageDaemon:
     EnableJMXStatistics: true
 
     #
+    # Add entries to the meta data in the messages with time (ms), lar and long if available and server name
+    #
+    # Default: false
+    tagMetaData: true
+
+    #
     # Set the Longitude of the server
     #
     # Default: None

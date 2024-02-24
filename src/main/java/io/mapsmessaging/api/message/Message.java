@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.api.message;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.api.features.Priority;
@@ -98,11 +99,12 @@ public class Message implements IdentifierResolver, Storable {
 
     identifier = builder.getId();
     meta = builder.getMeta();
-    if (meta != null) {
+    if (meta != null && MessageDaemon.getInstance().isTagMetaData()) {
       meta.put("time_ms", "" + System.currentTimeMillis());
       if (LocationManager.getInstance().isSet()) {
         meta.put("longitude", "" + LocationManager.getInstance().getLongitude());
         meta.put("latitude", "" + LocationManager.getInstance().getLatitude());
+        meta.put("server", MessageDaemon.getInstance().getId());
       }
     }
     Map<String, TypedData> map = builder.getDataMap();
