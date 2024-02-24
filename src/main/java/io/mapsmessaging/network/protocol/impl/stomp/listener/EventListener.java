@@ -45,7 +45,6 @@ public abstract class EventListener implements FrameListener {
     Map<String, String> metaData = new HashMap<>();
     metaData.put("protocol", "STOMP");
     metaData.put("version", engine.getProtocol().getVersion());
-    metaData.put("time_ms", "" + System.currentTimeMillis());
     metaData.put("sessionId", engine.getSession().getName());
 
     MessageBuilder mb = new MessageBuilder();

@@ -48,7 +48,6 @@ public class TxAckHandler extends Handler {
       Map<String, String> meta = new LinkedHashMap<>();
       meta.put("protocol", "SemTech");
       meta.put("version", "" + VERSION);
-      meta.put("time_ms", "" + System.currentTimeMillis());
       MessageBuilder builder = new MessageBuilder();
       builder.setOpaqueData(txAck.getJsonObject().getBytes(StandardCharsets.UTF_8));
       builder.setMeta(meta);

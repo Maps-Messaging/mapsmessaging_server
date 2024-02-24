@@ -21,6 +21,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
@@ -97,6 +98,13 @@ public class Message implements IdentifierResolver, Storable {
 
     identifier = builder.getId();
     meta = builder.getMeta();
+    if (meta != null) {
+      meta.put("time_ms", "" + System.currentTimeMillis());
+      if (LocationManager.getInstance().isSet()) {
+        meta.put("longitude", "" + LocationManager.getInstance().getLongitude());
+        meta.put("latitude", "" + LocationManager.getInstance().getLatitude());
+      }
+    }
     Map<String, TypedData> map = builder.getDataMap();
     if (map instanceof DataMap) {
       dataMap = map;

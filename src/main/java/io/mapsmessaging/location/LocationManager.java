@@ -16,7 +16,10 @@
  */
 package io.mapsmessaging.location;
 
+import lombok.Getter;
+
 @SuppressWarnings("java:S6548") // yes it is a singleton
+@Getter
 public class LocationManager {
 
   private static class Holder {
@@ -26,20 +29,13 @@ public class LocationManager {
     return Holder.INSTANCE;
   }
 
+  private boolean set;
   private double longitude;
   private double latitude;
 
   public synchronized void setPosition(double latitude, double longitude) {
     this.latitude = (latitude);
     this.longitude = (longitude);
-  }
-
-  public synchronized double getLatitude() {
-    return latitude;
-  }
-
-  public synchronized double getLongitude() {
-    return longitude;
   }
 
   private LocationManager() {

@@ -50,7 +50,6 @@ public class PublishListener5 extends PacketListener5 {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "5");
-    meta.put("time_ms", "" + System.currentTimeMillis());
     meta.put("sessionId", sessionId);
 
     MessageBuilder mb = new MessageBuilder();
