@@ -16,12 +16,14 @@
  */
 package io.mapsmessaging.location;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class LocationManager {
 
-  private static final LocationManager instance = new LocationManager();
-
+  private static class Holder {
+    static final LocationManager INSTANCE = new LocationManager();
+  }
   public static LocationManager getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
 
   private double longitude;

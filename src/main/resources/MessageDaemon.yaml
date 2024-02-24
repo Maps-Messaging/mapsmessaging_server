@@ -87,3 +87,15 @@ MessageDaemon:
     #
     # Default: true
     EnableJMXStatistics: true
+
+    #
+    # Set the Longitude of the server
+    #
+    # Default: None
+    latitude: -33.85549472611678
+
+    #
+    # Set the Latitude of the server
+    #
+    # Default : None
+    longitude: 151.21555930455023

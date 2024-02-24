@@ -31,6 +31,7 @@ import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
 import io.mapsmessaging.hardware.DeviceManager;
+import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -131,6 +132,13 @@ public class MessageDaemon {
 
   private void loadConstants() {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
+    if (properties.containsKey("latitude") && properties.containsKey("longitude")) {
+      double lat = properties.getDoubleProperty("latitude", Double.NaN);
+      double lon = properties.getDoubleProperty("longitude", Double.NaN);
+      if (lat != Double.NaN && lon != Double.NaN) {
+        LocationManager.getInstance().setPosition(lat, lon);
+      }
+    }
     int transactionExpiry = properties.getIntProperty("TransactionExpiry", 3600000);
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
