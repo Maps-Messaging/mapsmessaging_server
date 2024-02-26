@@ -89,7 +89,6 @@ public class AuthManager implements Agent {
         }
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {
-        e.printStackTrace();
         throw new RuntimeException(e);
       }
     }

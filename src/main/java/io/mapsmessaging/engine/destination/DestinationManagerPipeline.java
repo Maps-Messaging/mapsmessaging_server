@@ -248,4 +248,16 @@ public class DestinationManagerPipeline {
     }
     return response;
   }
+
+  public long getStorageSize() {
+    long size =0;
+    for (DestinationImpl destinationImpl : destinationList.values()) {
+      try {
+        size += destinationImpl.getStoredMessages();
+      } catch (IOException e) {
+        logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING, e);
+      }
+    }
+    return size;
+  }
 }

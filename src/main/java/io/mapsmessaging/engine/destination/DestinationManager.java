@@ -279,6 +279,15 @@ public class DestinationManager implements DestinationFactory, Agent {
     return new ArrayList<>(response.keySet());
   }
 
+  public long getStorageSize() {
+    long count = 0;
+    for(DestinationManagerPipeline pipeline:creatorPipelines){
+      pipeline.getStorageSize();
+    }
+
+    return count;
+  }
+
   public class ResourceLoaderManagement {
 
     private final Queue<File> fileList;

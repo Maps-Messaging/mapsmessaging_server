@@ -87,6 +87,9 @@ public class MessageDaemon {
   private final UUID uuid;
 
   @Getter
+  private final long startTime = System.currentTimeMillis();
+
+  @Getter
   private boolean tagMetaData;
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final Map<String, AgentOrder> agentMap;

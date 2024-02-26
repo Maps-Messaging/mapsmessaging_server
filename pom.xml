@@ -960,6 +960,14 @@
       <version>3.1.0</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/com.googlecode.lanterna/lanterna -->
+    <dependency>
+      <groupId>com.googlecode.lanterna</groupId>
+      <artifactId>lanterna</artifactId>
+      <version>3.1.2</version>
+    </dependency>
+
+
     <!-- *********************** -->
     <!-- Test Dependency Imports -->
     <!-- *********************** -->
@@ -978,7 +986,6 @@
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
       <version>1.2.5</version>
-      <scope>test</scope>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.eclipse.paho/org.eclipse.paho.mqttv5.client -->

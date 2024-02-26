@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ public abstract class EndPointServerStatus {
 
   public static final LongAdder SystemTotalPacketsSent = new LongAdder();
   public static final LongAdder SystemTotalPacketsReceived = new LongAdder();
+  public static final LongAdder CurrentConnections = new LongAdder();
 
   private final LongAdder totalPacketsSent;
   private final LongAdder totalPacketsRead;
@@ -52,6 +53,18 @@ public abstract class EndPointServerStatus {
     totalPacketsRead = new LongAdder();
     totalBytesSent = new LongAdder();
     totalBytesRead = new LongAdder();
+  }
+
+  public static  void incrementConnections(){
+    CurrentConnections.increment();
+  }
+
+  public static  void decrementConnections(){
+    CurrentConnections.decrement();
+  }
+
+  public static long getCurrentConnections(){
+    return CurrentConnections.sum();
   }
 
   public abstract NetworkConfig getConfig();

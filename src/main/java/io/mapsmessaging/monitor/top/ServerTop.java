@@ -15,23 +15,32 @@
  *
  */
 
-package io.mapsmessaging.utilities.stats;
+package io.mapsmessaging.monitor.top;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.eclipse.paho.client.mqttv3.MqttException;
 
-import java.util.Map;
+import java.io.IOException;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Data
-public class LinkedMovingAverageRecord {
+public class ServerTop {
 
-  private String name;
-  private String unitName;
-  private long timeSpan;
-  private long current;
-  private Map<String, Long> stats;
 
+
+
+  public static void main(String[] args) throws IOException, MqttException, InterruptedException {
+    String url = "tcp://localhost:1883";
+    String username = null;
+    String password = null;
+    if(args.length > 0){
+      url = args[0];
+    }
+    if(args.length > 1){
+      username = args[1];
+    }
+    if(args.length > 2){
+      username = args[2];
+    }
+    new TerminalTop(url, username, password);
+
+    Thread.sleep(120000);
+  }
 }

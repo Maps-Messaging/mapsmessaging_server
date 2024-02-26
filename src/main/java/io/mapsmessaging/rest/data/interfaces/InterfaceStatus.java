@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 
 package io.mapsmessaging.rest.data.interfaces;
 
+import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Data
@@ -39,4 +41,22 @@ public class InterfaceStatus {
   private final long messagesReceived;
   @Schema(description = "Map of moving averages")
   private final Map<String, LinkedMovingAverageRecord> statistics;
+
+  public InterfaceStatus(EndPointServer server){
+    name = server.getName();
+    bytesSent = server.getTotalBytesSent();
+    bytesReceived = server.getTotalBytesRead();
+    messagesSent = server.getTotalPacketsSent();
+    messagesReceived = server.getTotalPacketsRead();
+    statistics = new LinkedHashMap<>();
+    addToMap(statistics, server.getAverageBytesRead());
+    addToMap(statistics, server.getAverageBytesSent());
+    addToMap(statistics, server.getAveragePacketsRead());
+    addToMap(statistics, server.getAveragePacketsSent());
+  }
+
+  private void addToMap(Map<String, LinkedMovingAverageRecord> stats, LinkedMovingAverageRecord average){
+    stats.put(average.getName(), average);
+  }
+
 }

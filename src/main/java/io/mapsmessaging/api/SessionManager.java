@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,17 +32,15 @@ import java.util.concurrent.*;
 /**
  * Session lifetime management class. This class handles the life cycle of a Session, as well as the ability to perform anonymous publishes, if configured and allowed.
  */
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class SessionManager {
 
-  private static final SessionManager instance = new SessionManager();
+  private static class Holder {
+    static final SessionManager INSTANCE = new SessionManager();
+  }
 
-  /**
-   * This is a singleton class and, as such, can only be accessed via this function
-   *
-   * @return Returns the singleton instance of this class
-   */
   public static SessionManager getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
 
   private final ExecutorService publisherScheduler;

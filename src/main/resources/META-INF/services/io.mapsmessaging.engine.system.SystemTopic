@@ -1,5 +1,5 @@
 #
-# Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -37,3 +37,6 @@ io.mapsmessaging.engine.system.impl.messages.Sent
 io.mapsmessaging.engine.system.impl.messages.publish.Dropped
 io.mapsmessaging.engine.system.impl.messages.publish.Received
 io.mapsmessaging.engine.system.impl.messages.publish.Sent
+io.mapsmessaging.engine.system.impl.server.ServerStatusTopic
+io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic
+io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic

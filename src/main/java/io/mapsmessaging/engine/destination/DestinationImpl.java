@@ -103,6 +103,13 @@ public class DestinationImpl implements BaseDestination {
 
   private final DelayedMessageManager delayedMessageManager;
   private final TransactionalMessageManager transactionMessageManager;
+  /**
+   * -- GETTER --
+   *  Returns the stats object for this destination. All metrics about this destination are maintained in this class
+   *
+   * @return DestinationStats for this instance
+   */
+  @Getter
   private final DestinationStats stats;
 
   @Getter
@@ -113,6 +120,13 @@ public class DestinationImpl implements BaseDestination {
   private final Resource resource;
   private final DestinationType destinationType;
 
+  /**
+   * -- GETTER --
+   *  This returns the user supplied name for the destination
+   *
+   * @return String name of the destination
+   */
+  @Getter
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
   private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
@@ -120,6 +134,7 @@ public class DestinationImpl implements BaseDestination {
 
   @Getter
   private final Schema schema;
+  @Getter
   private volatile boolean closed;
   //</editor-fold>
 
@@ -391,10 +406,6 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  public boolean isClosed() {
-    return closed;
-  }
-
   //</editor-fold>
 
   //<editor-fold desc="Get functions to query the destination">
@@ -406,15 +417,6 @@ public class DestinationImpl implements BaseDestination {
    */
   public boolean isPersistent() {
     return resource.isPersistent();
-  }
-
-  /**
-   * This returns the user supplied name for the destination
-   *
-   * @return String name of the destination
-   */
-  public String getFullyQualifiedNamespace() {
-    return fullyQualifiedNamespace;
   }
 
   /**
@@ -459,15 +461,6 @@ public class DestinationImpl implements BaseDestination {
   }
 
   /**
-   * Returns the stats object for this destination. All metrics about this destination are maintained in this class
-   *
-   * @return DestinationStats for this instance
-   */
-  public DestinationStats getStats() {
-    return stats;
-  }
-
-  /**
    * There are 2 types of messages, ones that are visible to subscribers, normal message flow, and then ones that we have but are not able to release to the clients yet. This could
    * be because they are delayed publishes or they are part of a transaction that has yet to be committed
    *
@@ -500,6 +493,7 @@ public class DestinationImpl implements BaseDestination {
    * @throws IOException If unable to get the size from the underlying resource implementation
    */
   public long getStoredMessages() throws IOException {
+    resource.getStatistics();
     return resource.size();
   }
 
