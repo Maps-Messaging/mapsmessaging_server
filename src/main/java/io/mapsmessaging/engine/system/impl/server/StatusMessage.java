@@ -19,6 +19,7 @@ package io.mapsmessaging.engine.system.impl.server;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.rest.data.ServerStatistics;
 import lombok.AllArgsConstructor;
@@ -57,7 +58,7 @@ public class StatusMessage {
 
     destinations = messageDaemon.getDestinationManager().size();
     storageSize = messageDaemon.getDestinationManager().getStorageSize();
-    connections = EndPointServerStatus.getCurrentConnections();
+    connections = EndPoint.currentConnections.sum();
 
     //----------------------------------------------------
     // Overall server statistics

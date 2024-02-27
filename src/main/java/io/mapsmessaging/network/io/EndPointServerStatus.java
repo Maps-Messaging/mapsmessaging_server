@@ -32,7 +32,6 @@ public abstract class EndPointServerStatus {
 
   public static final LongAdder SystemTotalPacketsSent = new LongAdder();
   public static final LongAdder SystemTotalPacketsReceived = new LongAdder();
-  public static final LongAdder CurrentConnections = new LongAdder();
 
   private final LongAdder totalPacketsSent;
   private final LongAdder totalPacketsRead;
@@ -53,18 +52,6 @@ public abstract class EndPointServerStatus {
     totalPacketsRead = new LongAdder();
     totalBytesSent = new LongAdder();
     totalBytesRead = new LongAdder();
-  }
-
-  public static  void incrementConnections(){
-    CurrentConnections.increment();
-  }
-
-  public static  void decrementConnections(){
-    CurrentConnections.decrement();
-  }
-
-  public static long getCurrentConnections(){
-    return CurrentConnections.sum();
   }
 
   public abstract NetworkConfig getConfig();

@@ -23,9 +23,6 @@ import java.io.IOException;
 
 public class ServerTop {
 
-
-
-
   public static void main(String[] args) throws IOException, MqttException, InterruptedException {
     String url = "tcp://localhost:1883";
     String username = null;
@@ -40,7 +37,6 @@ public class ServerTop {
       username = args[2];
     }
     new TerminalTop(url, username, password);
-
-    Thread.sleep(120000);
+    System.exit(1);
   }
 }

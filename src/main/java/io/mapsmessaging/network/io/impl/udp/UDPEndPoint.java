@@ -70,6 +70,7 @@ public class UDPEndPoint extends EndPoint {
   public UDPEndPoint(InetSocketAddress inetSocketAddress, Selector selector, long id, EndPointServer server, String authConfig, EndPointManagerJMX managerMBean)
       throws IOException {
     super(id, server);
+    currentConnections.decrement();
     remoteAddress = null;
     this.selector = selector;
     datagramChannel = DatagramChannel.open();

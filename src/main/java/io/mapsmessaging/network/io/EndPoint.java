@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 public abstract class EndPoint implements Closeable {
 
+  public static final LongAdder currentConnections = new LongAdder();
   public static final LongAdder totalReadBytes = new LongAdder();
   public static final LongAdder totalWriteBytes = new LongAdder();
   public static final LongAdder totalConnections = new LongAdder();
@@ -57,6 +58,7 @@ public abstract class EndPoint implements Closeable {
 
   private final boolean isClient;
   private final long id;
+  private boolean isClosed;
 
   protected List<String> jmxParentPath;
   private CloseHandler closeHandler;
@@ -72,6 +74,8 @@ public abstract class EndPoint implements Closeable {
     bufferUnderFlow = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Buffer Underflow", 1, 5, 4, TimeUnit.MINUTES, "Packets");
     logger = createLogger();
     totalConnections.increment();
+    currentConnections.increment();
+    isClosed = false;
   }
 
   @Override
@@ -79,7 +83,13 @@ public abstract class EndPoint implements Closeable {
     if (closeHandler != null) {
       closeHandler.close();
     }
-    totalDisconnections.increment();
+    synchronized (this) {
+      if (!isClosed) {
+        isClosed = true;
+        totalDisconnections.increment();
+        currentConnections.decrement();
+      }
+    }
   }
 
   public boolean isClient() {

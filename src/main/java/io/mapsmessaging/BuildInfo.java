@@ -24,8 +24,8 @@ import lombok.ToString;
 public class BuildInfo {
 
   @Getter
-  public static final String buildDate = "dd-mmm-yyyy";
+  public static final String buildDate = "dd-mmm-yyyy HH:MM:SS";
   @Getter
-  public static final String buildVersion = "BuildVersionSetAtBuildTime";
+  public static final String buildVersion = "00.00.00-SNAPSHOT";
 
 }

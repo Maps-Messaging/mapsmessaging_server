@@ -26,6 +26,8 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import io.mapsmessaging.engine.system.impl.server.StatusMessage;
+import io.mapsmessaging.monitor.top.network.MqttConnection;
+import io.mapsmessaging.monitor.top.panes.ServerStatusPane;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -36,20 +38,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TerminalTop {
 
-  private static final long KB = 1024L;
-  private static final long MB = KB * 1024;
-  private static final long GB = MB * 1024;
-  private static final long TB = GB * 1024;
   private final MqttConnection mqttConnection;
 
   private final Terminal terminal;
   private final  Screen screen;
-  private final LinkedList<StatusMessage> queue;
   private final AtomicBoolean runFlag;
+  private final ServerStatusPane serverStatusPane;
+  private boolean disconnected = false;
 
-
-  public TerminalTop(String url, String username, String password) throws IOException, MqttException, InterruptedException {
-    queue = new LinkedList<>();
+  public TerminalTop(String url, String username, String password) throws IOException, MqttException {
     runFlag = new AtomicBoolean(true);
     mqttConnection = new MqttConnection(url, username, password);
 
@@ -57,6 +54,12 @@ public class TerminalTop {
     terminal = new DefaultTerminalFactory().createTerminal();
     screen = new TerminalScreen(terminal);
     screen.startScreen();
+    screen.clear();
+    TextGraphics normalText = screen.newTextGraphics();
+    TextGraphics boldText = screen.newTextGraphics();
+    normalText.setForegroundColor(TextColor.ANSI.WHITE);
+    boldText.setForegroundColor(TextColor.ANSI.WHITE_BRIGHT);
+    serverStatusPane = new ServerStatusPane(normalText, boldText);
     connectAndSubscribeToServer();
     runLoop();
   }
@@ -65,37 +68,52 @@ public class TerminalTop {
     runFlag.set(false);
   }
 
-  private void runLoop() throws InterruptedException {
-    StatusMessage message;
+  private void runLoop() throws IOException {
+    Object message;
     long nextUpdate = System.currentTimeMillis()+60000;
     while(runFlag.get()){
-      synchronized (queue){
-        while(queue.isEmpty()){
-          if(System.currentTimeMillis() > nextUpdate){
-            disconnectDisplay();
-            nextUpdate = System.currentTimeMillis()+60000;
-          }
-          queue.wait(100);
-          try {
-            KeyStroke keyStroke = screen.pollInput();
-            if(keyStroke != null && keyStroke.getCharacter().equals('q')){
-              System.exit(1);
-            }
-          } catch (IOException e) {
-          }
+      nextUpdate = waitForSomething(nextUpdate);
+      message = mqttConnection.getUpdate();
+      if (message != null) {
+        if (disconnected) {
+          disconnected = false;
+          screen.clear();
         }
-        message = queue.removeFirst();
-      }
-      if(message != null){
-        nextUpdate = System.currentTimeMillis()+60000;
-        updateWindow(message);
+        serverStatusPane.update(message);
+        screen.refresh();
+        nextUpdate = System.currentTimeMillis() + 60000;
       }
     }
     try {
       screen.stopScreen(); // Properly stop the screen when done
-    } catch (IOException e) {
+      mqttConnection.close();
+    } catch (IOException | MqttException e) {
       e.printStackTrace();
     }
+  }
+
+  private long waitForSomething(long nextUpdate) {
+    while (mqttConnection.isQueueEmpty()) {
+      if (!runFlag.get()) {
+        return 0;
+      }
+      if (!mqttConnection.isConnected() && System.currentTimeMillis() > nextUpdate) {
+        disconnectDisplay();
+        nextUpdate = System.currentTimeMillis() + 60000;
+      }
+      try {
+        Thread.sleep(10);
+        KeyStroke keyStroke = screen.pollInput();
+        if (keyStroke != null && keyStroke.getCharacter().equals('q')) {
+          runFlag.set(false);
+          return 0;
+        }
+      } catch (IOException e) {
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return nextUpdate;
   }
 
   public void disconnectDisplay() {
@@ -106,101 +124,14 @@ public class TerminalTop {
       invertTextGraphics.setBackgroundColor(TextColor.ANSI.WHITE);
       invertTextGraphics.putString(0, 0, "No Data received from server                                                  ");
       screen.refresh();
+      disconnected = true;
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-
-  public void updateWindow(StatusMessage serverStatus) {
-    try {
-
-      String messageState = String.format("Pub: %d, Sub: %d, No Int: %d, Received: %d, Disk: %d",
-          serverStatus.getServerStatistics().getTotalPublishedMessages(),
-          serverStatus.getServerStatistics().getTotalSubscribedMessages(),
-          serverStatus.getServerStatistics().getTotalNoInterestMessages(),
-          serverStatus.getServerStatistics().getTotalDeliveredMessages(),
-          serverStatus.getServerStatistics().getTotalRetrievedMessages());
-
-      String tasksText = String.format(serverStatus.getNumberOfThreads()+" threads, Running: %d, Waiting: %d, Timed_Waiting: %d",
-          serverStatus.getThreadState().getOrDefault("RUNNABLE", 0),
-          serverStatus.getThreadState().getOrDefault("WAITING", 0),
-          serverStatus.getThreadState().getOrDefault("TIMED_WAITING", 0));
-
-      String networkStats = String.format("Pkts Out: %s, In: %s | Bytes Out: %s, In: %s",
-          formatSize(serverStatus.getServerStatistics().getPacketsSent()),
-          formatSize(serverStatus.getServerStatistics().getPacketsReceived()),
-          formatSize(serverStatus.getServerStatistics().getTotalWriteBytes()),
-          formatSize(serverStatus.getServerStatistics().getTotalReadBytes())
-      );
-
-      long usedMemory = serverStatus.getTotalMemory() - serverStatus.getFreeMemory();
-
-      String connectionsString = String.format("Connections: %d, Destinations: %d", serverStatus.getConnections(), serverStatus.getDestinations());
-      String memoryString = String.format("Memory Total: %s, Free: %s, Used: %s", formatSize(serverStatus.getTotalMemory()), formatSize(serverStatus.getFreeMemory()), formatSize(usedMemory));
-      screen.clear();
-      TextGraphics textGraphics = screen.newTextGraphics();
-      TextGraphics invertTextGraphics = screen.newTextGraphics();
-      invertTextGraphics.setForegroundColor(TextColor.ANSI.BLACK);
-      invertTextGraphics.setBackgroundColor(TextColor.ANSI.WHITE);
-
-      // Drawing directly to the screen using textGraphics
-      textGraphics.putString(0, 0, "Messaging Server Top - Server: "+serverStatus.getServerName());
-      textGraphics.putString(0, 1, "Uptime: " + formatUptime(serverStatus.getUptime()) + ",  Version : "+ serverStatus.getVersion()+" - " + serverStatus.getBuildDate());
-      textGraphics.putString(0, 2, tasksText);
-      textGraphics.putString(0, 3, connectionsString);
-      textGraphics.putString(0, 4,memoryString);
-      textGraphics.putString(0, 5, messageState);
-      textGraphics.putString(0, 6, networkStats);
-      invertTextGraphics.putString(0, 7, "Header line for the top 10 connections                                        ");
-      screen.refresh();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private String formatUptime(long uptimeMillis) {
-    long uptimeSeconds = uptimeMillis / 1000;
-    long hours = uptimeSeconds / 3600;
-    long minutes = (uptimeSeconds % 3600) / 60;
-    long seconds = uptimeSeconds % 60;
-
-    return String.format("%02d:%02d:%02d", hours, minutes, seconds);
-  }
-
-
-  public static String formatSize(long bytes) {
-    if (bytes >= TB) {
-      return String.format("%.2f TB", bytes / (double) TB);
-    } else if (bytes >= GB) {
-      return String.format("%.2f GB", bytes / (double) GB);
-    } else if (bytes >= MB) {
-      return String.format("%.2f MB", bytes / (double) MB);
-    } else if (bytes >= KB) {
-      return String.format("%.2f KB", bytes / (double) KB);
-    } else {
-      return bytes + " bytes";
-    }
-  }
   public void connectAndSubscribeToServer() throws MqttException {
-    mqttConnection.subscribe("$SYS/server/status", new ServerStatusListener());
-  }
-
-  private class ServerStatusListener implements IMqttMessageListener{
-    ObjectMapper mapper = new ObjectMapper();
-
-    @Override
-    public void messageArrived(String topic, MqttMessage message) throws Exception {
-      String jsonString = new String(message.getPayload());
-      try {
-        synchronized (queue){
-          queue.add(mapper.readValue(jsonString, StatusMessage.class));
-          queue.notify();
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
+    mqttConnection.subscribe("$SYS/server/status");
   }
 
 }
