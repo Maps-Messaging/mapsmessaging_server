@@ -7,7 +7,7 @@ import io.mapsmessaging.monitor.top.formatters.DecimalSizeFormatter;
 public class TotalTopicsPanel extends ServerStatusUpdate {
 
   public TotalTopicsPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Topics : ", labelText, valueText, new DecimalSizeFormatter());
+    super(row, col, "Topics : ", labelText, valueText, new DecimalSizeFormatter(7));
   }
 
   @Override

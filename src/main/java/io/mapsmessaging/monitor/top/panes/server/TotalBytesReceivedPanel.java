@@ -8,7 +8,7 @@ import io.mapsmessaging.monitor.top.formatters.DecimalSizeFormatter;
 public class TotalBytesReceivedPanel extends ServerStatusUpdate {
 
   public TotalBytesReceivedPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Bytes In: ", labelText, valueText, new ByteSizeFormatter());
+    super(row, col, "Bytes In: ", labelText, valueText, new ByteSizeFormatter(7));
   }
 
   @Override

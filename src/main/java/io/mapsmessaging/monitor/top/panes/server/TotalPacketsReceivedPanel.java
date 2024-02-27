@@ -7,7 +7,7 @@ import io.mapsmessaging.monitor.top.formatters.DecimalSizeFormatter;
 public class TotalPacketsReceivedPanel extends ServerStatusUpdate {
 
   public TotalPacketsReceivedPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Pkts In: ", labelText, valueText, new DecimalSizeFormatter());
+    super(row, col, "Pkts In: ", labelText, valueText, new DecimalSizeFormatter(6));
   }
 
   @Override

@@ -7,11 +7,17 @@ public class DecimalSizeFormatter implements Formatter {
   private static final long G = M * 1000;
   private static final long T = G * 1000;
 
+  private final int len;
+
+  public DecimalSizeFormatter(int len) {
+    this.len = len;
+  }
+
   @Override
   public String format(Object value) {
     if (value instanceof Number) {
       long val = ((Number) value).longValue();
-      return formatSize(val);
+      return pad(formatSize(val), len, false);
     }
     return null;
   }

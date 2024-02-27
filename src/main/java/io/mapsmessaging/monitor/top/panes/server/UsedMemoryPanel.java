@@ -7,7 +7,7 @@ import io.mapsmessaging.monitor.top.formatters.ByteSizeFormatter;
 public class UsedMemoryPanel extends ServerStatusUpdate {
 
   public UsedMemoryPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Used ", labelText, valueText, new ByteSizeFormatter());
+    super(row, col, "Used ", labelText, valueText, new ByteSizeFormatter(7));
   }
 
   @Override

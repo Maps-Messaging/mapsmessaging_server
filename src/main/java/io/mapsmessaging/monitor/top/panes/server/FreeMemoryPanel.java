@@ -7,7 +7,7 @@ import io.mapsmessaging.monitor.top.formatters.ByteSizeFormatter;
 public class FreeMemoryPanel extends ServerStatusUpdate {
 
   public FreeMemoryPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Free ", labelText, valueText, new ByteSizeFormatter());
+    super(row, col, "Free ", labelText, valueText, new ByteSizeFormatter(7));
   }
 
   @Override

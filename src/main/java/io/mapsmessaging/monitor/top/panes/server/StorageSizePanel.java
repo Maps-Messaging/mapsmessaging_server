@@ -8,7 +8,7 @@ import io.mapsmessaging.monitor.top.formatters.DecimalSizeFormatter;
 public class StorageSizePanel extends ServerStatusUpdate {
 
   public StorageSizePanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Disk Usage : ", labelText, valueText, new ByteSizeFormatter());
+    super(row, col, "Disk Usage : ", labelText, valueText, new ByteSizeFormatter(7));
   }
 
   @Override
