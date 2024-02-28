@@ -96,6 +96,7 @@ public class MessageDaemon {
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
   private boolean enableSystemTopics;
+  private boolean enableAdvancedSystemTopics;
   private boolean enableDeviceIntegration;
 
   @Getter
@@ -150,6 +151,7 @@ public class MessageDaemon {
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
     enableSystemTopics = properties.getBooleanProperty("EnableSystemTopics", false);
+    enableAdvancedSystemTopics = properties.getBooleanProperty("EnableSystemStatusTopics", false);
     if (properties.getBooleanProperty("EnableJMX", true)) {
       JMXManager.setEnableJMX(true);
       mBean = new MessageDaemonJMX(this);
@@ -162,7 +164,8 @@ public class MessageDaemon {
     }
     enableResourceStatistics = properties.getBooleanProperty("EnableResourceStatistics", false);
 
-    SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopics", true));
+    SystemTopicManager.setEnableStatistics(enableSystemTopics);
+    SystemTopicManager.setEnableAdvancedStats(enableAdvancedSystemTopics);
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
 

@@ -36,6 +36,12 @@ public class ServerStatusTopic extends SystemTopic {
   }
 
   @Override
+  public boolean isAdvanced() {
+    return true;
+  }
+
+
+  @Override
   public String getSchemaUUID() {
     return SchemaManager.DEFAULT_JSON_SCHEMA;
   }

@@ -69,6 +69,13 @@ MessageDaemon:
     EnableSystemTopics: true
 
     #
+    # Enable or Disable $SYS/server topics that offer advanced JSON statistics from the server
+    # if disabled then the server will not populate any $SYS/server topics
+    #
+    # Default: true
+    EnableSystemStatusTopics: true
+
+    #
     # Enables or disables the moving averages for specific $SYS topics
     # if enabled then 1, 5, 10 and 15 minute moving averages are calculated and $SYS topics constructed and populated
     #

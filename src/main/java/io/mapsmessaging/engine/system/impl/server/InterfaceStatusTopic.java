@@ -37,13 +37,18 @@ public class InterfaceStatusTopic extends SystemTopic {
   }
 
   @Override
+  public boolean isAdvanced() {
+    return true;
+  }
+
+  @Override
   public String getSchemaUUID() {
     return SchemaManager.DEFAULT_JSON_SCHEMA;
   }
 
   @Override
   protected Message generateMessage() {
-    StatusMessage statusMessage = new StatusMessage(MessageDaemon.getInstance());
+    InterfaceStatusMessage statusMessage = new InterfaceStatusMessage();
     ObjectMapper mapper = new ObjectMapper();
     try {
       String jsonString = mapper.writeValueAsString(statusMessage);
@@ -74,7 +79,6 @@ public class InterfaceStatusTopic extends SystemTopic {
       for (EndPointManager endPointManager : endPointManagers) {
         interfaceStatusList.add(new InterfaceStatus(endPointManager.getEndPointServer()));
       }
-
     }
   }
 }

@@ -39,6 +39,10 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   @Setter
   private static boolean enableStatistics = true;
 
+  @Getter
+  @Setter
+  private static boolean enableAdvancedStats = true;
+
   private final ServiceLoader<SystemTopic> systemTopics;
   private final List<SystemTopic> completeList;
   private final DestinationManager destinationManager;
@@ -78,12 +82,14 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   public void start() {
     if (enableStatistics) {
       for (SystemTopic systemTopic : systemTopics) {
-        systemTopic.start();
-        destinationManager.addSystemTopic(systemTopic);
-        String[] aliases = systemTopic.aliases();
-        completeList.add(systemTopic);
-        createAliases(aliases, systemTopic);
-        addChildren(systemTopic.getChildren());
+        if (!systemTopic.isAdvanced() || enableAdvancedStats) {
+          systemTopic.start();
+          destinationManager.addSystemTopic(systemTopic);
+          String[] aliases = systemTopic.aliases();
+          completeList.add(systemTopic);
+          createAliases(aliases, systemTopic);
+          addChildren(systemTopic.getChildren());
+        }
       }
       scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 1, 10, TimeUnit.SECONDS);
     }
