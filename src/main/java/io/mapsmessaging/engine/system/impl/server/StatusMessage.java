@@ -20,7 +20,6 @@ package io.mapsmessaging.engine.system.impl.server;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.rest.data.ServerStatistics;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -46,6 +45,7 @@ public class StatusMessage {
   private long uptime;
   private long connections;
   private long destinations;
+  private long cpuTime;
   private long storageSize;
   private Map<String, Integer> threadState = new LinkedHashMap<>();
 
@@ -83,5 +83,4 @@ public class StatusMessage {
     //----------------------------------------------------
 
   }
-
 }

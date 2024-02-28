@@ -19,16 +19,16 @@ package io.mapsmessaging.monitor.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.engine.system.impl.server.StatusMessage;
-import io.mapsmessaging.monitor.top.formatters.StringFormatter;
+import io.mapsmessaging.monitor.top.formatters.UptimeFormatter;
 
-public class ConnectedPanel extends ServerStatusUpdate {
+public class CpuTimePanel extends ServerStatusUpdate {
 
-  public ConnectedPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Con: ", labelText, valueText, new StringFormatter(5, true));
+  public CpuTimePanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
+    super(row, col, "Cpu ", labelText, valueText, new UptimeFormatter(20, false));
   }
 
   @Override
   public void update(StatusMessage statusMessage) {
-    panel.update(statusMessage.getConnections());
+    panel.update(statusMessage.getCpuTime());
   }
 }

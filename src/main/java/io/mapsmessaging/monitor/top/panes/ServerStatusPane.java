@@ -1,3 +1,20 @@
+/*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.monitor.top.panes;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
@@ -15,7 +32,8 @@ public class ServerStatusPane {
     panes = new ArrayList<>();
     panes.add(new TimePanel(0, 0, labelText, labelText));
     panes.add(new UptimePanel(10, 0, labelText, valueText));
-    panes.add(new ConnectedPanel(40, 0, labelText, valueText));
+    panes.add(new CpuTimePanel(28, 0, labelText, valueText));
+    panes.add(new ConnectedPanel(48, 0, labelText, valueText));
     panes.add(new StorageSizePanel(60, 0, labelText, valueText));
 
     panes.add(new FreeMemoryPanel(0, 1, labelText, valueText));
