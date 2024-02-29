@@ -28,17 +28,16 @@ import java.util.List;
 
 public class DestinationPane implements PaneUpdate {
   private final int startRow;
-  private final int maxRows;
   private final List<DestinationStatusRowPanel> rowList;
+  private final TextGraphics headerText;
 
   public DestinationPane(int startRow, int maxRows, TextGraphics labelText, TextGraphics valueText, TextGraphics headerText){
     this.startRow = startRow+1;
-    this.maxRows = maxRows - startRow;
+    this.headerText = headerText;
     rowList = new ArrayList<>();
     for(int x=0;x<maxRows-this.startRow;x++){
       rowList.add(new DestinationStatusRowPanel(this.startRow+x, labelText, valueText));
     }
-    headerText.putString(0, startRow, "     NAME      |PUB |SENT|DISK|DROP|PTX |RTV |EXP |DLY |I/O R S|I/O W S|I/O D S|");
   }
 
 
@@ -51,7 +50,7 @@ public class DestinationPane implements PaneUpdate {
     DestinationStatusTopic.DestinationStatusMessage statusMessage = (DestinationStatusTopic.DestinationStatusMessage) obj;
     List<DestinationStatus> destinationStatusList = statusMessage.getDestinationStatusList();
     sort(destinationStatusList);
-
+    headerText.putString(0, startRow, "     NAME      |PUB |SENT|DISK|DROP|PTX |RTV |EXP |DLY |I/O R S|I/O W S|I/O D S|");
     int len = Math.min(rowList.size(), destinationStatusList.size());
     for(int x=0;x<len;x++) {
       DestinationStatus destinationStatus = destinationStatusList.get(x);

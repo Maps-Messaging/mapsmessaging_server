@@ -26,6 +26,7 @@ import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -81,13 +82,18 @@ public class MqttConnection implements IMqttMessageListener {
     } else {
       if (!online) {
         online = true;
-        for (String topic : topics) {
+        int[] qos  = new int[topics.size()];
+        IMqttMessageListener[] listeners = new IMqttMessageListener[topics.size()];
+        Arrays.fill(qos, 0);
+        Arrays.fill(listeners, this);
+        Thread t = new Thread(() -> {
           try {
-            client.subscribe(topic, 0, this);
+            client.subscribe(topics.toArray(new String[topics.size()]), qos, listeners);
           } catch (MqttException e) {
             e.printStackTrace();
           }
-        }
+        });
+        t.start();
       }
     }
     return client.isConnected();
