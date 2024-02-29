@@ -17,14 +17,14 @@
 
 package io.mapsmessaging.monitor.top.network;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.lanterna.input.KeyStroke;
+import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
 import io.mapsmessaging.engine.system.impl.server.StatusMessage;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -120,15 +120,27 @@ public class MqttConnection implements IMqttMessageListener {
   public void messageArrived(String topic, MqttMessage message) throws Exception {
     String jsonString = new String(message.getPayload());
     try {
-      synchronized (queue) {
-        queue.add(mapper.readValue(jsonString, StatusMessage.class));
-        queue.notify();
+      Object obj = parse(jsonString);
+      if(obj != null) {
+        synchronized (queue) {
+          queue.add(obj);
+          queue.notify();
+        }
       }
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
+  private Object parse(String jsonString) throws JsonProcessingException {
+    if(jsonString.contains("buildDate")) {
+      return mapper.readValue(jsonString, StatusMessage.class);
+    }
+    if(jsonString.contains("destinationStatusList")){
+      return mapper.readValue(jsonString, DestinationStatusTopic.DestinationStatusMessage.class);
+    }
+    return null;
+  }
   private MqttConnectOptions getOptions() {
     MqttConnectOptions options = new MqttConnectOptions();
     options.setMqttVersion(4); // 3.1.1

@@ -24,7 +24,7 @@ import io.mapsmessaging.monitor.top.panes.server.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ServerStatusPane {
+public class ServerStatusPane implements PaneUpdate{
 
   private final List<ServerStatusUpdate> panes;
 
@@ -55,9 +55,11 @@ public class ServerStatusPane {
     panes.add(new TotalBytesReceivedPanel(40, 4, labelText, valueText));
     panes.add(new TotalBytesSentPanel(60, 4, labelText, valueText));
 
-
+/*
     labelText.putString(0, 10, "         1         2         3         4         5         6         7         8");
     labelText.putString(0, 11, "12345678901234567890123456789012345678901234567890123456789012345678901234567890");
+
+ */
   }
 
   public void update(Object obj) {

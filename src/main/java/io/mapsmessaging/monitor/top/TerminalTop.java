@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.monitor.top;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
@@ -25,25 +24,24 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
-import io.mapsmessaging.engine.system.impl.server.StatusMessage;
 import io.mapsmessaging.monitor.top.network.MqttConnection;
 import io.mapsmessaging.monitor.top.panes.ServerStatusPane;
-import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
+import io.mapsmessaging.monitor.top.panes.destination.DestinationPane;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TerminalTop {
 
   private final MqttConnection mqttConnection;
 
+  private final ServerStatusPane serverStatusPane;
+  private final DestinationPane destinationPane;
+
   private final Terminal terminal;
   private final  Screen screen;
   private final AtomicBoolean runFlag;
-  private final ServerStatusPane serverStatusPane;
   private boolean disconnected = false;
 
   public TerminalTop(String url, String username, String password) throws IOException, MqttException {
@@ -55,11 +53,16 @@ public class TerminalTop {
     screen = new TerminalScreen(terminal);
     screen.startScreen();
     screen.clear();
+    int rows = terminal.getTerminalSize().getRows();
     TextGraphics normalText = screen.newTextGraphics();
     TextGraphics boldText = screen.newTextGraphics();
+    TextGraphics headerText = screen.newTextGraphics();
+    headerText.setBackgroundColor(TextColor.ANSI.WHITE);
+    headerText.setForegroundColor(TextColor.ANSI.BLACK);
     normalText.setForegroundColor(TextColor.ANSI.WHITE);
     boldText.setForegroundColor(TextColor.ANSI.WHITE_BRIGHT);
     serverStatusPane = new ServerStatusPane(normalText, boldText);
+    destinationPane = new DestinationPane(6, rows,  normalText, boldText, headerText);
     connectAndSubscribeToServer();
     runLoop();
   }
@@ -80,6 +83,7 @@ public class TerminalTop {
           screen.clear();
         }
         serverStatusPane.update(message);
+        destinationPane.update(message);
         screen.refresh();
         nextUpdate = System.currentTimeMillis() + 60000;
       }
@@ -132,6 +136,7 @@ public class TerminalTop {
 
   public void connectAndSubscribeToServer() throws MqttException {
     mqttConnection.subscribe("$SYS/server/status");
+    mqttConnection.subscribe("$SYS/server/destination/status");
   }
 
 }
