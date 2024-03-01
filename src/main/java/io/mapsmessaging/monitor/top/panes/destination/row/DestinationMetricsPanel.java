@@ -39,8 +39,8 @@ public class DestinationMetricsPanel extends DestinationStatusUpdate {
     value.append(unitFormatter.format(statusMessage.getPublishedMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getDeliveredMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getStoredMessages())).append(" ");
-    value.append(unitFormatter.format(statusMessage.getPendingTransactions())).append(" ");
     value.append(unitFormatter.format(statusMessage.getNoInterestMessages())).append(" ");
+    value.append(unitFormatter.format(statusMessage.getPendingTransactions())).append(" ");
     value.append(unitFormatter.format(statusMessage.getRetrievedMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getExpiredMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getDelayedMessages())).append(" ");

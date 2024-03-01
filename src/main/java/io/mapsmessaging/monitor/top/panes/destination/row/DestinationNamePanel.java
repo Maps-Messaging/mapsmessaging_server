@@ -38,7 +38,7 @@ public class DestinationNamePanel extends DestinationStatusUpdate {
         name = name.substring(0, name.length() - 1);
       }
       if (name.contains("/")) {
-        name = name.substring(name.indexOf("/"));
+        name = "~" + name.substring(name.indexOf("/"));
       }
     }
     panel.update(name);
