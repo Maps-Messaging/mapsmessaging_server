@@ -20,6 +20,7 @@ package io.mapsmessaging.network.io.impl;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
+import io.mapsmessaging.network.io.ServerPublishPacket;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
@@ -44,13 +45,32 @@ public class FrameHandler {
   }
 
   public void processSelection() {
+    boolean sent = packPacket();
+    // Outstanding data in packet so lets empty it
+    if(!sent) {
+      writeBuffer();
+    }
+    if (!packet.hasData()) {
+      packet.clear();
+      while (!completedFrames.isEmpty()) {
+        completedFrames.poll().complete();
+      }
+      // Completed the packet and the queue is empty, so cancel the write
+      if ( writeTask.outboundFrame.isEmpty()) {
+        cancel();
+      }
+    }
+  }
+
+  private boolean packPacket(){
+    boolean sent = false;
     if (!packet.hasData()) {
       int count = 0;
       ServerPacket serverPacket = writeTask.outboundFrame.poll();
       while (count < writeTask.getCoalesceSize() && serverPacket != null) {
         int startPos = packet.position();
         try {
-          serverPacket.packFrame(packet);
+          sent = processPacket(serverPacket);
           completedFrames.add(serverPacket);
           count++;
         } catch (BufferOverflowException overflow) {
@@ -65,20 +85,27 @@ public class FrameHandler {
           serverPacket =  writeTask.outboundFrame.poll();
         }
       }
-      packet.flip();
-    }
-    // Outstanding data in packet so lets empty it
-    writeBuffer();
-    if (!packet.hasData()) {
-      packet.clear();
-      while (!completedFrames.isEmpty()) {
-        completedFrames.poll().complete();
-      }
-      // Completed the packet and the queue is empty, so cancel the write
-      if ( writeTask.outboundFrame.isEmpty()) {
-        cancel();
+      if(!sent) {
+        packet.flip();
       }
     }
+    return sent;
+  }
+
+  private boolean processPacket(ServerPacket serverPacket){
+    boolean sent = false;
+    if(serverPacket instanceof ServerPublishPacket){
+      Packet[] packets = ((ServerPublishPacket)serverPacket).packAdvancedFrame(packet);
+      packets[0].flip();
+      for(Packet packetParts:packets){
+        writeBuffer(packetParts);
+      }
+      sent = true;
+    }
+    else {
+      serverPacket.packFrame(packet);
+    }
+    return sent;
   }
 
   public synchronized void registerWrite() {
@@ -103,12 +130,15 @@ public class FrameHandler {
     }
   }
 
-  public boolean writeBuffer() {
+  public void writeBuffer(){
+    writeBuffer(packet);
+  }
+
+  private void writeBuffer(Packet packetToSend) {
     try {
       writeTask.logger.log(ServerLogMessages.WRITE_TASK_WRITE_PACKET, packet);
-      if ( writeTask.selectorCallback.getEndPoint().sendPacket(packet) == 0) {
+      if ( writeTask.selectorCallback.getEndPoint().sendPacket(packetToSend) == 0) {
         writeTask.logger.log(WRITE_TASK_BLOCKED);
-        return false;
       }
     } catch (IOException e) {
       try {
@@ -118,6 +148,5 @@ public class FrameHandler {
       }
       writeTask.logger.log(WRITE_TASK_SEND_FAILED, e);
     }
-    return true;
   }
 }
