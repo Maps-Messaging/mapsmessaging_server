@@ -18,35 +18,40 @@
 package io.mapsmessaging.monitor.top.panes.destination.row;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
+import io.mapsmessaging.monitor.top.formatters.Formatter;
 import io.mapsmessaging.monitor.top.formatters.StringFormatter;
 import io.mapsmessaging.monitor.top.panes.destination.DestinationStatusUpdate;
 import io.mapsmessaging.rest.data.destination.DestinationStatus;
 
 public class DestinationDiskPanel extends DestinationStatusUpdate {
 
+  private final Formatter formatter;
+
   protected DestinationDiskPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "", labelText, valueText, new StringFormatter(24, false));
+    formatter = new StringFormatter(7, true);
   }
 
   @Override
   public void update( DestinationStatus statusMessage) {
     StringBuilder value = new StringBuilder();
-    value.append(convertNanoToSecond(statusMessage.getReadTimeAve_ns())).append(" ");
-    value.append(convertNanoToSecond(statusMessage.getWriteTimeAve_ns())).append(" ");
-    value.append(convertNanoToSecond(statusMessage.getDeleteTimeAve_ns()));
+    value.append(formatNanoseconds(statusMessage.getReadTimeAve_ns())).append(" ");
+    value.append(formatNanoseconds(statusMessage.getWriteTimeAve_ns())).append(" ");
+    value.append(formatNanoseconds(statusMessage.getDeleteTimeAve_ns()));
     panel.update(value.toString());
   }
 
-  private String convertNanoToSecond(long nano){
-    float value = nano/1_000_000f;
-    int integerPartLength = Integer.toString((int)value).length();
-    int decimalPlaces = 6 - integerPartLength; // 5 characters - integer part length - 1 for the decimal point
-    decimalPlaces = Math.max(decimalPlaces, 0);
-    String format = "%." + decimalPlaces + "f";
-    String formatted = String.format(format, value);
-    if (formatted.length() > 7) {
-      formatted = formatted.substring(0, 7);
+  public String formatNanoseconds(long nanoseconds) {
+    String val = "";
+    if (nanoseconds < 1000) { // Nanoseconds
+      val = String.format("%d ns", nanoseconds);
+    } else if (nanoseconds < 1_000_000) { // Microseconds
+      val = String.format("%d µs", nanoseconds / 1000);
+    } else if (nanoseconds < 1_000_000_000) { // Milliseconds
+      val = String.format("%d ms", nanoseconds / 1_000_000);
+    } else { // Seconds
+      val = String.format("%d s", nanoseconds / 1_000_000_000);
     }
-    return formatted;
+    return formatter.pad(val, 7, true);
   }
 }

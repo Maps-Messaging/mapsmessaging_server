@@ -31,7 +31,7 @@ public class DestinationStatusRowPanel {
     rowItems = new ArrayList<>();
     rowItems.add(new DestinationNamePanel(0, row, labelText, valueText));
     rowItems.add(new DestinationMetricsPanel(16, row, labelText, valueText));
-    rowItems.add(new DestinationDiskPanel(56, row, labelText, valueText));
+    rowItems.add(new DestinationDiskPanel(55, row, labelText, valueText));
 
   }
 

@@ -50,7 +50,7 @@ public class DestinationPane implements PaneUpdate {
     DestinationStatusTopic.DestinationStatusMessage statusMessage = (DestinationStatusTopic.DestinationStatusMessage) obj;
     List<DestinationStatus> destinationStatusList = statusMessage.getDestinationStatusList();
     sort(destinationStatusList);
-    headerText.putString(0, startRow-1, "     NAME      |PUB |SENT|DISK|DROP|PTX |RTV |EXP |DLY |I/O R S|I/O W S|I/O D S|");
+    headerText.putString(0, startRow-1, "     NAME      |PUB |SENT|DISK|DROP|PTX |RTV |EXP |DLY | Read | Write |Delete |");
     int len = Math.min(rowList.size(), destinationStatusList.size());
     for(int x=0;x<len;x++) {
       DestinationStatus destinationStatus = destinationStatusList.get(x);
