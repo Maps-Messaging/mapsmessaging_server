@@ -33,7 +33,13 @@ public class DestinationNamePanel extends DestinationStatusUpdate {
     String name = statusMessage.getName();
     if(name.length() > 15){
 
-      name = name.substring(name.length()-15);
+      name = name.substring(name.length() - 15).trim();
+      if (name.endsWith("/")) {
+        name = name.substring(0, name.length() - 1);
+      }
+      if (name.contains("/")) {
+        name = name.substring(name.indexOf("/"));
+      }
     }
     panel.update(name);
   }
