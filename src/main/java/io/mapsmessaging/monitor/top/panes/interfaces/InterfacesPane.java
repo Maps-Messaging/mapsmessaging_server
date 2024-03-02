@@ -9,14 +9,18 @@ import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InterfacesPane implements PaneUpdate {
+public class InterfacesPane extends PaneUpdate {
+
   private final int startRow;
   private final List<InterfacesStatusRowPanel> rowList;
   private final TextGraphics headerText;
+  private final TextGraphics labelText;
 
   public InterfacesPane(int startRow, int maxRows, TextGraphics labelText, TextGraphics valueText, TextGraphics headerText) {
     this.startRow = startRow + 1;
     this.headerText = headerText;
+    this.labelText = labelText;
+
     rowList = new ArrayList<>();
     for (int x = 0; x < maxRows - this.startRow; x++) {
       rowList.add(new InterfacesStatusRowPanel(this.startRow + x, labelText, valueText));
@@ -25,9 +29,11 @@ public class InterfacesPane implements PaneUpdate {
 
   @Override
   public void update(Object obj) {
+    if (!enabled) return;
     if (!(obj instanceof InterfaceStatusTopic.InterfaceStatusMessage)) {
       return;
     }
+    clear(labelText, startRow - 1, startRow + rowList.size());
     InterfaceStatusTopic.InterfaceStatusMessage statusMessage = (InterfaceStatusTopic.InterfaceStatusMessage) obj;
     List<InterfaceStatus> statusList = statusMessage.getInterfaceStatusList();
     sort(statusList);

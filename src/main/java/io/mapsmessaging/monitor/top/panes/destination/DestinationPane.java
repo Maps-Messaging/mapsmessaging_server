@@ -26,27 +26,29 @@ import io.mapsmessaging.rest.data.destination.DestinationStatus;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DestinationPane implements PaneUpdate {
+public class DestinationPane extends PaneUpdate {
+
   private final int startRow;
   private final List<DestinationStatusRowPanel> rowList;
   private final TextGraphics headerText;
+  private final TextGraphics labelText;
 
   public DestinationPane(int startRow, int maxRows, TextGraphics labelText, TextGraphics valueText, TextGraphics headerText){
     this.startRow = startRow+1;
     this.headerText = headerText;
     rowList = new ArrayList<>();
+    this.labelText = labelText;
     for(int x=0;x<maxRows-this.startRow;x++){
       rowList.add(new DestinationStatusRowPanel(this.startRow+x, labelText, valueText));
     }
   }
 
-
-
-  @Override
   public void update(Object obj) {
+    if (!enabled) return;
     if (!(obj instanceof DestinationStatusTopic.DestinationStatusMessage)) {
       return;
     }
+    clear(labelText, startRow - 1, startRow + rowList.size());
     DestinationStatusTopic.DestinationStatusMessage statusMessage = (DestinationStatusTopic.DestinationStatusMessage) obj;
     List<DestinationStatus> destinationStatusList = statusMessage.getDestinationStatusList();
     sort(destinationStatusList);

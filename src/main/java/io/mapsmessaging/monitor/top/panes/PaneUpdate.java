@@ -17,6 +17,26 @@
 
 package io.mapsmessaging.monitor.top.panes;
 
-public interface PaneUpdate {
-  void update(Object update);
+import com.googlecode.lanterna.graphics.TextGraphics;
+
+public abstract class PaneUpdate {
+
+  protected boolean enabled;
+
+  protected abstract void update(Object update);
+
+  public void clear(TextGraphics headerText, int startRow, int endRow) {
+    for (int x = startRow; x < endRow; x++) {
+      headerText.putString(0, x, "                                                                                ");
+    }
+
+  }
+
+  public void enable() {
+    enabled = true;
+  }
+
+  public void disable() {
+    enabled = false;
+  }
 }

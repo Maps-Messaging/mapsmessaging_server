@@ -25,6 +25,7 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import io.mapsmessaging.monitor.top.network.MqttConnection;
+import io.mapsmessaging.monitor.top.panes.PaneUpdate;
 import io.mapsmessaging.monitor.top.panes.ServerStatusPane;
 import io.mapsmessaging.monitor.top.panes.destination.DestinationPane;
 import io.mapsmessaging.monitor.top.panes.interfaces.InterfacesPane;
@@ -45,6 +46,10 @@ public class TerminalTop {
   private final  Screen screen;
   private final AtomicBoolean runFlag;
   private boolean disconnected = false;
+  private final PaneUpdate[] panels;
+  private int idx = 0;
+  private long switchDisplay = System.currentTimeMillis() + 3000;
+
 
   public TerminalTop(String url, String username, String password) throws IOException, MqttException {
     runFlag = new AtomicBoolean(true);
@@ -66,6 +71,10 @@ public class TerminalTop {
     serverStatusPane = new ServerStatusPane(normalText, boldText);
     destinationPane = new DestinationPane(6, rows,  normalText, boldText, headerText);
     interfacesPane = new InterfacesPane(6, rows, normalText, boldText, headerText);
+    panels = new PaneUpdate[2];
+    panels[0] = destinationPane;
+    panels[1] = interfacesPane;
+    panels[0].enable();
     connectAndSubscribeToServer();
     runLoop();
   }
@@ -87,7 +96,7 @@ public class TerminalTop {
         }
         serverStatusPane.update(message);
         destinationPane.update(message);
-        //interfacesPane.update(message);
+        interfacesPane.update(message);
         screen.refresh();
         nextUpdate = System.currentTimeMillis() + 60000;
       }
@@ -104,6 +113,12 @@ public class TerminalTop {
     while (mqttConnection.isQueueEmpty()) {
       if (!runFlag.get()) {
         return 0;
+      }
+      if (System.currentTimeMillis() > switchDisplay) {
+        panels[idx].disable();
+        idx = (idx + 1) % panels.length;
+        panels[idx].enable();
+        switchDisplay = System.currentTimeMillis() + 10000;
       }
       if (!mqttConnection.isConnected() && System.currentTimeMillis() > nextUpdate) {
         disconnectDisplay();

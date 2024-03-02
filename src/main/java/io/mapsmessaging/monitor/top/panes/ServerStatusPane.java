@@ -24,7 +24,7 @@ import io.mapsmessaging.monitor.top.panes.server.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ServerStatusPane implements PaneUpdate{
+public class ServerStatusPane extends PaneUpdate {
 
   private final List<ServerStatusUpdate> panes;
 
