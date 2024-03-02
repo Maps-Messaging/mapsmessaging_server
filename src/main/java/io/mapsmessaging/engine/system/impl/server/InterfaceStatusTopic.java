@@ -48,7 +48,7 @@ public class InterfaceStatusTopic extends SystemTopic {
 
   @Override
   protected Message generateMessage() {
-    InterfaceStatusMessage statusMessage = new InterfaceStatusMessage();
+    InterfaceStatusMessage statusMessage = new InterfaceStatusMessage(MessageDaemon.getInstance().getNetworkManager().getAll());
     ObjectMapper mapper = new ObjectMapper();
     try {
       String jsonString = mapper.writeValueAsString(statusMessage);
@@ -74,8 +74,10 @@ public class InterfaceStatusTopic extends SystemTopic {
 
     public InterfaceStatusMessage(){
       interfaceStatusList = new ArrayList<>();
+    }
 
-      List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    public InterfaceStatusMessage(List<EndPointManager> endPointManagers) {
+      interfaceStatusList = new ArrayList<>();
       for (EndPointManager endPointManager : endPointManagers) {
         interfaceStatusList.add(new InterfaceStatus(endPointManager.getEndPointServer()));
       }

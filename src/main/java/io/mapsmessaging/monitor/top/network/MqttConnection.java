@@ -20,6 +20,7 @@ package io.mapsmessaging.monitor.top.network;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
+import io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic;
 import io.mapsmessaging.engine.system.impl.server.StatusMessage;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
@@ -121,7 +122,6 @@ public class MqttConnection implements IMqttMessageListener {
     return null;
   }
 
-
   @Override
   public void messageArrived(String topic, MqttMessage message) throws Exception {
     String jsonString = new String(message.getPayload());
@@ -144,6 +144,9 @@ public class MqttConnection implements IMqttMessageListener {
     }
     if(jsonString.contains("destinationStatusList")){
       return mapper.readValue(jsonString, DestinationStatusTopic.DestinationStatusMessage.class);
+    }
+    if (jsonString.contains("interfaceName")) {
+      return mapper.readValue(jsonString, InterfaceStatusTopic.InterfaceStatusMessage.class);
     }
     return null;
   }

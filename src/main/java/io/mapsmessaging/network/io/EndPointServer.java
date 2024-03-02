@@ -73,6 +73,10 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
     acceptHandler.accept(endPoint);
   }
 
+  public String getConfigName() {
+    return config.getProperties().getProperty("name", getName());
+  }
+
   public String getName() {
     return url.getProtocol() + "_" + url.getHost() + "_" + url.getPort();
   }

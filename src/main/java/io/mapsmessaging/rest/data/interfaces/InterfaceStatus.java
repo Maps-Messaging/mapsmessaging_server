@@ -30,23 +30,27 @@ import java.util.Map;
 @ToString
 public class InterfaceStatus {
   @Schema(description = "Name of the interface")
-  private final String name;
+  private String interfaceName;
   @Schema(description = "Number of bytes sent")
-  private final long bytesSent;
+  private long bytesSent;
   @Schema(description = "Number of bytes received")
-  private final long bytesReceived;
+  private long bytesReceived;
   @Schema(description = "Number of messages sent")
-  private final long messagesSent;
+  private long messagesSent;
   @Schema(description = "Number of messages received")
-  private final long messagesReceived;
+  private long messagesReceived;
   @Schema(description = "Number current connections")
-  private final long connections;
+  private long connections;
 
   @Schema(description = "Map of moving averages")
-  private final Map<String, LinkedMovingAverageRecord> statistics;
+  private Map<String, LinkedMovingAverageRecord> statistics;
+
+  public InterfaceStatus() {
+
+  }
 
   public InterfaceStatus(EndPointServer server){
-    name = server.getName();
+    interfaceName = server.getConfigName();
     bytesSent = server.getTotalBytesSent();
     bytesReceived = server.getTotalBytesRead();
     messagesSent = server.getTotalPacketsSent();

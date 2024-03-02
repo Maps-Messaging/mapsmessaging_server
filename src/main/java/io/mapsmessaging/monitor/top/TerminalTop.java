@@ -27,6 +27,7 @@ import com.googlecode.lanterna.terminal.Terminal;
 import io.mapsmessaging.monitor.top.network.MqttConnection;
 import io.mapsmessaging.monitor.top.panes.ServerStatusPane;
 import io.mapsmessaging.monitor.top.panes.destination.DestinationPane;
+import io.mapsmessaging.monitor.top.panes.interfaces.InterfacesPane;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class TerminalTop {
 
   private final ServerStatusPane serverStatusPane;
   private final DestinationPane destinationPane;
+  private final InterfacesPane interfacesPane;
 
   private final Terminal terminal;
   private final  Screen screen;
@@ -63,6 +65,7 @@ public class TerminalTop {
     boldText.setForegroundColor(TextColor.ANSI.WHITE_BRIGHT);
     serverStatusPane = new ServerStatusPane(normalText, boldText);
     destinationPane = new DestinationPane(6, rows,  normalText, boldText, headerText);
+    interfacesPane = new InterfacesPane(6, rows, normalText, boldText, headerText);
     connectAndSubscribeToServer();
     runLoop();
   }
@@ -84,6 +87,7 @@ public class TerminalTop {
         }
         serverStatusPane.update(message);
         destinationPane.update(message);
+        //interfacesPane.update(message);
         screen.refresh();
         nextUpdate = System.currentTimeMillis() + 60000;
       }
@@ -137,6 +141,7 @@ public class TerminalTop {
   public void connectAndSubscribeToServer() throws MqttException {
     mqttConnection.subscribe("$SYS/server/status");
     mqttConnection.subscribe("$SYS/server/destination/status");
+    mqttConnection.subscribe("$SYS/server/interface/status");
   }
 
 }
