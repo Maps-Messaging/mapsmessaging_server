@@ -176,10 +176,12 @@ public class TCPEndPoint extends EndPoint {
 
   protected int readBuffer(ByteBuffer bb) throws IOException {
     if (!socketChannel.isConnected() || isClosed.get()) {
+      this.server.incrementError();
       throw new IOException("Socket closed");
     }
     int count = socketChannel.read(bb);
     if (count < 0) {
+      this.server.incrementError();
       throw new IOException("Socket closed");
     }
     updateReadBytes(count);

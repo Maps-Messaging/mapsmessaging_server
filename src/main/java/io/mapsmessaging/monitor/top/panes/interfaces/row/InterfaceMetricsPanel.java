@@ -32,15 +32,16 @@ public class InterfaceMetricsPanel extends InterfacesStatusUpdate {
   private final Formatter unitFormatter;
 
   protected InterfaceMetricsPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "", labelText, valueText, new StringFormatter(52, true));
-    connectionFormatter = new DecimalSizeFormatter(7, true, false);
-    unitFormatter = new DecimalSizeFormatter(10, true, false);
+    super(row, col, "", labelText, valueText, new StringFormatter(52, false));
+    connectionFormatter = new DecimalSizeFormatter(4, true, false);
+    unitFormatter = new DecimalSizeFormatter(8, true, false);
   }
 
   @Override
   public void update(InterfaceStatus statusMessage) {
     StringBuilder value = new StringBuilder();
     value.append(connectionFormatter.format(statusMessage.getConnections())).append(" ");
+    value.append(connectionFormatter.format(statusMessage.getErrors())).append(" ");
     value.append(unitFormatter.format(statusMessage.getMessagesReceived())).append(" ");
     value.append(unitFormatter.format(statusMessage.getMessagesSent())).append(" ");
     value.append(unitFormatter.format(statusMessage.getBytesReceived())).append(" ");

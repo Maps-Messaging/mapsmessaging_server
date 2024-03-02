@@ -42,6 +42,9 @@ public class InterfaceStatus {
   @Schema(description = "Number current connections")
   private long connections;
 
+  @Schema(description = "Number connection errors")
+  private long errors;
+
   @Schema(description = "Map of moving averages")
   private Map<String, LinkedMovingAverageRecord> statistics;
 
@@ -57,6 +60,7 @@ public class InterfaceStatus {
     messagesReceived = server.getTotalPacketsRead();
     connections = server.size();
     statistics = new LinkedHashMap<>();
+    errors = server.getTotalErrors();
     addToMap(statistics, server.getAverageBytesRead());
     addToMap(statistics, server.getAverageBytesSent());
     addToMap(statistics, server.getAveragePacketsRead());

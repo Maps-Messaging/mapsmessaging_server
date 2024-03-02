@@ -23,6 +23,7 @@ import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -45,6 +46,7 @@ public abstract class EndPoint implements Closeable {
 
   @Getter
   protected final EndPointServerStatus server;
+  @Getter
   protected final Logger logger;
 
   private final AtomicLong lastRead = new AtomicLong();
@@ -57,10 +59,12 @@ public abstract class EndPoint implements Closeable {
   private final LinkedMovingAverages bufferUnderFlow;
 
   private final boolean isClient;
+  @Getter
   private final long id;
   private boolean isClosed;
 
   protected List<String> jmxParentPath;
+  @Setter
   private CloseHandler closeHandler;
 
   protected EndPoint(long id, EndPointServerStatus server) {
@@ -128,14 +132,6 @@ public abstract class EndPoint implements Closeable {
     return jmxParentPath;
   }
 
-  public void setCloseHandler(CloseHandler closeHandler) {
-    this.closeHandler = closeHandler;
-  }
-
-  public long getId() {
-    return id;
-  }
-
   public boolean isUDP() {
     return false;
   }
@@ -154,10 +150,6 @@ public abstract class EndPoint implements Closeable {
 
   public long getLastWrite() {
     return lastWrite.get();
-  }
-
-  public Logger getLogger() {
-    return logger;
   }
 
   public Principal getEndPointPrincipal() {

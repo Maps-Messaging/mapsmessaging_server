@@ -37,7 +37,7 @@ public class InterfacesStatusRowPanel {
   public InterfacesStatusRowPanel(int row, TextGraphics labelText, TextGraphics valueText) {
     rowItems = new ArrayList<>();
     rowItems.add(new InterfaceNamePanel(0, row, labelText, valueText));
-    rowItems.add(new InterfaceMetricsPanel(29, row, labelText, valueText));
+    rowItems.add(new InterfaceMetricsPanel(32, row, labelText, valueText));
   }
 
   public void update(InterfaceStatus statusMessage) {

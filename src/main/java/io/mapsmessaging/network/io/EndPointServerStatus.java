@@ -33,6 +33,7 @@ public abstract class EndPointServerStatus {
   public static final LongAdder SystemTotalPacketsSent = new LongAdder();
   public static final LongAdder SystemTotalPacketsReceived = new LongAdder();
 
+  private final LongAdder totalErrors;
   private final LongAdder totalPacketsSent;
   private final LongAdder totalPacketsRead;
   private final LongAdder totalBytesSent;
@@ -52,6 +53,7 @@ public abstract class EndPointServerStatus {
     totalPacketsRead = new LongAdder();
     totalBytesSent = new LongAdder();
     totalBytesRead = new LongAdder();
+    totalErrors = new LongAdder();
   }
 
   public abstract NetworkConfig getConfig();
@@ -112,6 +114,14 @@ public abstract class EndPointServerStatus {
 
   public LinkedMovingAverageRecord getAveragePacketsRead() {
     return averagePacketsRead.getRecord();
+  }
+
+  public void incrementError() {
+    totalErrors.increment();
+  }
+
+  public long getTotalErrors() {
+    return totalErrors.sum();
   }
 }
 

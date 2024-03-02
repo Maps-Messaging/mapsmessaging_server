@@ -36,8 +36,8 @@ public class InterfacesPane extends PaneUpdate {
     clear(labelText, startRow - 1, startRow + rowList.size());
     InterfaceStatusTopic.InterfaceStatusMessage statusMessage = (InterfaceStatusTopic.InterfaceStatusMessage) obj;
     List<InterfaceStatus> statusList = statusMessage.getInterfaceStatusList();
-    sort(statusList);
-    headerText.putString(0, startRow - 1, "        NAME                 | CONN |PKTS READ |PKTS SENT |BYTES READ|BYTES SENT|");
+    sort(statusList);                         //  "12345678901234567890123456789012345"
+    headerText.putString(0, startRow - 1, "        NAME                   |CONN|ERRS|PKTS IN |PKTS OUT|BYTES IN|BYTES OUT|");
     int len = Math.min(rowList.size(), statusList.size());
     for (int x = 0; x < len; x++) {
       InterfaceStatus status = statusList.get(x);
