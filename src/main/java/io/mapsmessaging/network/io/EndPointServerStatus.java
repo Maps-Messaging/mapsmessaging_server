@@ -79,7 +79,6 @@ public abstract class EndPointServerStatus {
   }
 
   public void incrementPacketsSent() {
-    System.err.println("Inc Packet sent");
     totalPacketsSent.increment();
     SystemTotalPacketsSent.increment();
     averagePacketsSent.increment();
