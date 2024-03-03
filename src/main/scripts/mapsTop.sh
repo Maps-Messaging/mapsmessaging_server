@@ -43,4 +43,4 @@ export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*
 #
 # Now start the the daemon
 #
-java -classpath $CLASSPATH $JAVA_OPTS io.mapsmessaging.monitor.top.ServerTop $*
+java -classpath $CLASSPATH $JAVA_OPTS io.mapsmessaging.app.top.ServerTop $*
