@@ -18,6 +18,7 @@
 package io.mapsmessaging.app.top.panes.interfaces.row;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
+import io.mapsmessaging.app.top.formatters.ByteSizeFormatter;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
@@ -28,11 +29,13 @@ public class InterfaceMetricsPanel extends InterfacesStatusUpdate {
 
   private final Formatter connectionFormatter;
   private final Formatter unitFormatter;
+  private final Formatter bytesFormatter;
 
   protected InterfaceMetricsPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "", labelText, valueText, new StringFormatter(52, false));
     connectionFormatter = new DecimalSizeFormatter(4, true, false);
     unitFormatter = new DecimalSizeFormatter(8, true, false);
+    bytesFormatter = new ByteSizeFormatter(8, true);
   }
 
   @Override
@@ -42,8 +45,8 @@ public class InterfaceMetricsPanel extends InterfacesStatusUpdate {
     value.append(connectionFormatter.format(statusMessage.getErrors())).append(" ");
     value.append(unitFormatter.format(statusMessage.getMessagesReceived())).append(" ");
     value.append(unitFormatter.format(statusMessage.getMessagesSent())).append(" ");
-    value.append(unitFormatter.format(statusMessage.getBytesReceived())).append(" ");
-    value.append(unitFormatter.format(statusMessage.getBytesSent())).append(" ");
+    value.append(bytesFormatter.format(statusMessage.getBytesReceived())).append("  ");
+    value.append(bytesFormatter.format(statusMessage.getBytesSent())).append(" ");
     panel.update(value.toString());
   }
 }

@@ -8,16 +8,22 @@ public class ByteSizeFormatter implements Formatter {
   private static final long TB = GB * 1024;
 
   private final int len;
+  private final boolean prepend;
 
   public ByteSizeFormatter(int len) {
+    this(len, false);
+  }
+
+  public ByteSizeFormatter(int len, boolean prepend) {
     this.len = len;
+    this.prepend = prepend;
   }
 
   @Override
   public String format(Object value) {
     if (value instanceof Number) {
       long val = ((Number) value).longValue();
-      return pad(formatSize(val), len, false);
+      return pad(formatSize(val), len, prepend);
     }
     return null;
   }

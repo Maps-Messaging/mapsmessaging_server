@@ -20,7 +20,7 @@ package io.mapsmessaging.app.top.formatters;
 public class DecimalSizeFormatter implements Formatter {
 
   private static final long K = 1000;
-  private static final long M = K * 100;
+  private static final long M = K * 1000;
   private static final long G = M * 1000;
   private static final long T = G * 1000;
 
