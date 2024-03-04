@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.listener.FrameListener;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -34,13 +36,17 @@ public abstract class Frame implements ServerPacket {
   static final byte END_OF_LINE = 0x0A;
   static final byte DELIMITER = ':';
 
+  @Getter
   private final Map<String, String> header;
   private final Map<String, String> caseHeader;
+  @Getter
   private FrameListener frameListener;
 
   protected boolean endOfHeader;
   protected boolean hasEndOfFrame;
 
+  @Setter
+  @Getter
   String receipt;
   private CompletionHandler completionHandler;
 
@@ -52,14 +58,6 @@ public abstract class Frame implements ServerPacket {
     hasEndOfFrame = false;
   }
 
-  public String getReceipt() {
-    return receipt;
-  }
-
-  public void setReceipt(String receipt) {
-    this.receipt = receipt;
-  }
-
   protected String getHeader(String key) {
     String val = header.get(key);
     if (val == null) {
@@ -69,10 +67,6 @@ public abstract class Frame implements ServerPacket {
       }
     }
     return val;
-  }
-
-  public Map<String, String> getHeader() {
-    return header;
   }
 
   protected void putHeader(String key, String val) {
@@ -91,7 +85,7 @@ public abstract class Frame implements ServerPacket {
 
   abstract byte[] getCommand();
 
-  public int packFrame(Packet packet) {
+  protected int packHeader(Packet packet){
     int start = packet.position();
     //
     // Pack the command
@@ -115,9 +109,12 @@ public abstract class Frame implements ServerPacket {
       packet.put(END_OF_LINE);
     }
     packet.put(END_OF_LINE);
+    return start;
+  }
 
+  public int packFrame(Packet packet) {
+    int start = packHeader(packet);
     packBody(packet);
-
     packet.put((byte) 0x0);
     return packet.position() - start;
   }
@@ -154,10 +151,6 @@ public abstract class Frame implements ServerPacket {
     if (tmp != null) {
       tmp.run();
     }
-  }
-
-  public FrameListener getFrameListener() {
-    return frameListener;
   }
 
   public void setListener(FrameListener frameListener) {

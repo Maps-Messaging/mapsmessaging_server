@@ -36,6 +36,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +53,7 @@ public class StompProtocol extends ProtocolImpl {
   private final StateEngine stateEngine;
   private final SelectorTask selectorTask;
   private Frame activeFrame;
+  @Getter
   private String version;
 
   public StompProtocol(EndPoint endPoint) {
@@ -130,10 +132,6 @@ public class StompProtocol extends ProtocolImpl {
 
   public String getName() {
     return "STOMP";
-  }
-
-  public String getVersion() {
-    return version;
   }
 
   public void setVersion(float version) {

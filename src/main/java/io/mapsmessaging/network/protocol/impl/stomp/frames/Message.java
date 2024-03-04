@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +17,12 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
-public class Message extends Event {
+import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.ServerPublishPacket;
+
+import java.nio.ByteBuffer;
+
+public class Message extends Event implements ServerPublishPacket {
 
   private static final byte[] COMMAND = "MESSAGE".getBytes();
 
@@ -47,4 +52,25 @@ public class Message extends Event {
   public String toString() {
     return "STOMP Message[ Header:" + getHeaderAsString() + "]";
   }
+
+  @Override
+  public Packet[] packAdvancedFrame(Packet packet) {
+    packHeader(packet);
+    if(this.getData().length < packet.available()) {
+      packet.put(this.getData());
+      packet.put((byte) 0x0);
+      return new Packet[]{packet};
+    }
+    Packet payloadPacket = new Packet(ByteBuffer.wrap(this.getData()));
+    ByteBuffer endOfFrame = ByteBuffer.allocate(1);
+    endOfFrame.put((byte)0);
+    endOfFrame.flip();
+    return new Packet[]{packet, payloadPacket, new Packet(endOfFrame) };
+  }
+
+  @Override
+  public void packBody(Packet packet) {
+    // requires the extending class to provide this mechanism, if one is required
+  }
+
 }
