@@ -40,9 +40,11 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   @Getter
   private final SelectorLoadManager selectorLoadManager;
 
+  @Getter
+  private final List<EndPointConnection> endPointConnectionList;
+
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
-  private final List<EndPointConnection> endPointConnectionList;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final List<ConfigurationProperties> connectionConfiguration;
 

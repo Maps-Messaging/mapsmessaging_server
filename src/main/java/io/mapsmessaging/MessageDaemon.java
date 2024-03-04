@@ -249,6 +249,9 @@ public class MessageDaemon {
     return (NetworkManager) agentMap.get("Network Manager").getAgent();
   }
 
+  public NetworkConnectionManager getNetworkConnectionManager(){
+    return (NetworkConnectionManager) agentMap.get("Network Connection Manager").getAgent();
+  }
   public DestinationManager getDestinationManager() {
     return (DestinationManager) agentMap.get("Destination Manager").getAgent();
   }

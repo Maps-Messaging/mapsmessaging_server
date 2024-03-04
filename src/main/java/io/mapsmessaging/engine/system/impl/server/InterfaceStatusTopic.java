@@ -23,6 +23,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
 import lombok.Data;
 
@@ -48,7 +49,7 @@ public class InterfaceStatusTopic extends SystemTopic {
 
   @Override
   protected Message generateMessage() {
-    InterfaceStatusMessage statusMessage = new InterfaceStatusMessage(MessageDaemon.getInstance().getNetworkManager().getAll());
+    InterfaceStatusMessage statusMessage = new InterfaceStatusMessage(MessageDaemon.getInstance());
     ObjectMapper mapper = new ObjectMapper();
     try {
       String jsonString = mapper.writeValueAsString(statusMessage);
@@ -76,10 +77,13 @@ public class InterfaceStatusTopic extends SystemTopic {
       interfaceStatusList = new ArrayList<>();
     }
 
-    public InterfaceStatusMessage(List<EndPointManager> endPointManagers) {
+    public InterfaceStatusMessage(MessageDaemon messageDaemon) {
       interfaceStatusList = new ArrayList<>();
-      for (EndPointManager endPointManager : endPointManagers) {
+      for (EndPointManager endPointManager : messageDaemon.getNetworkManager().getAll()) {
         interfaceStatusList.add(new InterfaceStatus(endPointManager.getEndPointServer()));
+      }
+      for(EndPointConnection endPointConnection:messageDaemon.getNetworkConnectionManager().getEndPointConnectionList()){
+        interfaceStatusList.add(new InterfaceStatus(endPointConnection));
       }
     }
   }

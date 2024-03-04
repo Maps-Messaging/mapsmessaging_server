@@ -18,6 +18,7 @@
 package io.mapsmessaging.rest.data.interfaces;
 
 import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -65,6 +66,21 @@ public class InterfaceStatus {
     addToMap(statistics, server.getAverageBytesSent());
     addToMap(statistics, server.getAveragePacketsRead());
     addToMap(statistics, server.getAveragePacketsSent());
+  }
+
+  public InterfaceStatus(EndPointConnection endPointConnection) {
+    interfaceName = endPointConnection.getConfigName();
+    bytesSent = endPointConnection.getTotalBytesSent();
+    bytesReceived = endPointConnection.getTotalBytesRead();
+    messagesSent = endPointConnection.getTotalPacketsSent();
+    messagesReceived = endPointConnection.getTotalPacketsRead();
+    connections = 1;
+    statistics = new LinkedHashMap<>();
+    errors = endPointConnection.getTotalErrors();
+    addToMap(statistics, endPointConnection.getAverageBytesRead());
+    addToMap(statistics, endPointConnection.getAverageBytesSent());
+    addToMap(statistics, endPointConnection.getAveragePacketsRead());
+    addToMap(statistics, endPointConnection.getAveragePacketsSent());
   }
 
   private void addToMap(Map<String, LinkedMovingAverageRecord> stats, LinkedMovingAverageRecord average){

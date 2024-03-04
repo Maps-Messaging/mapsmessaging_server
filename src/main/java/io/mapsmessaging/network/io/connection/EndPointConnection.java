@@ -112,6 +112,9 @@ public class EndPointConnection extends EndPointServerStatus {
     return new NetworkConfig(properties);
   }
 
+  public String getConfigName() {
+    return properties.getProperty("name", "");
+  }
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
     State stateChange;

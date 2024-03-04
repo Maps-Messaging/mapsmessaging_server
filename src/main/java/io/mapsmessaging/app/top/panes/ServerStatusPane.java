@@ -32,7 +32,7 @@ public class ServerStatusPane extends PaneUpdate {
     panes = new ArrayList<>();
     panes.add(new TimePanel(0, 0, labelText, labelText));
     panes.add(new UptimePanel(10, 0, labelText, valueText));
-    panes.add(new CpuTimePanel(28, 0, labelText, valueText));
+    panes.add(new CpuTimePanel(30, 0, labelText, valueText));
     panes.add(new ConnectedPanel(48, 0, labelText, valueText));
     panes.add(new StorageSizePanel(60, 0, labelText, valueText));
 
