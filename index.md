@@ -32,3 +32,4 @@ For more in-depth information on specific features and technical details of Maps
 - [Installation Guide](/installation.md)
 - [Source Code](/source.md)
 - [Protocol Support](/protocol_support.md)
+- [Release Versions](/version.md)

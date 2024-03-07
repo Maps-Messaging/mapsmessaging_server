@@ -6,8 +6,8 @@ Ensure you have JDK 13 or higher installed. You can download a suitable JDK from
 
 Download the MapsMessaging Server from the [Releases](https://github.com/Maps-Messaging/mapsmessaging_server/releases) section of the mapsmessaging_server GitHub repository.
 
-- For the latest stable release, look for the release version (e.g., "3.3.4").
-- For the latest development version, download the snapshot (e.g., "3.3.5-SNAPSHOT").
+- For the latest stable release, look for the release version (e.g., "3.3.6").
+- For the latest development version, download the snapshot (e.g., "3.3.7-SNAPSHOT").
 
 ## Installation on Linux / OS-X
 
