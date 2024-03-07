@@ -23,7 +23,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>message_daemon</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>3.3.6-SNAPSHOT</version>
+  <version>3.3.6</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -100,9 +100,6 @@
               <metadataRepository>
                 <enabled>true</enabled>
               </metadataRepository>
-              <!--<classpath>
-              <param>${project.build.directory}/${project.artifactId}-${project.version}-jar-with-dependencies.jar</param>
-              </classpath>-->
               <agent>
                 <defaultMode>Standard</defaultMode>
                 <options>
@@ -179,58 +176,58 @@
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
-          <version>1.0.5-SNAPSHOT</version>
+          <version>1.0.6-SNAPSHOT</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>simple_logging</artifactId>
-          <version>2.0.12-SNAPSHOT</version>
+          <version>2.0.13-SNAPSHOT</version>
         </dependency>
 
         <!-- JMS Selector logic module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>jms_selector_parser</artifactId>
-          <version>1.1.15-SNAPSHOT</version>
+          <version>1.1.16-SNAPSHOT</version>
         </dependency>
 
         <!-- Naturally order long collection -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.1.9-SNAPSHOT</version>
+          <version>1.1.10-SNAPSHOT</version>
         </dependency>
 
         <!-- Non Blocking Task Queue module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.9-SNAPSHOT</version>
+          <version>2.1.10-SNAPSHOT</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>configuration_library</artifactId>
-          <version>1.0.0-SNAPSHOT</version>
+          <version>1.0.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>dynamic_storage</artifactId>
-          <version>2.4.12-SNAPSHOT</version>
+          <version>2.4.13-SNAPSHOT</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>schemas</artifactId>
-          <version>2.1.4-SNAPSHOT</version>
+          <version>2.1.5-SNAPSHOT</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>device_library</artifactId>
-          <version>1.0.8-SNAPSHOT</version>
+          <version>1.0.9-SNAPSHOT</version>
         </dependency>
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
@@ -261,56 +258,56 @@
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
-          <version>1.0.4</version>
+          <version>1.0.5</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>simple_logging</artifactId>
-          <version>2.0.11</version>
+          <version>2.0.12</version>
         </dependency>
 
         <!-- JMS Selector logic module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>jms_selector_parser</artifactId>
-          <version>1.1.14</version>
+          <version>1.1.15</version>
         </dependency>
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>configuration_library</artifactId>
-          <version>1.0-SNAPSHOT</version>
+          <version>1.0.1-SNAPSHOT</version>
         </dependency>
         <!-- Naturally order long collection -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>naturally_ordered_long_collections</artifactId>
-          <version>1.1.8</version>
+          <version>1.1.9</version>
         </dependency>
 
         <!-- Non Blocking Task Queue module -->
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>non_block_task_scheduler</artifactId>
-          <version>2.1.8</version>
+          <version>2.1.9</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>dynamic_storage</artifactId>
-          <version>2.4.11</version>
+          <version>2.4.12</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>schemas</artifactId>
-          <version>2.1.3</version>
+          <version>2.1.4</version>
         </dependency>
 
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>device_library</artifactId>
-          <version>1.0.7</version>
+          <version>1.0.8</version>
         </dependency>
       </dependencies>
 
