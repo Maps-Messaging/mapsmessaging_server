@@ -160,6 +160,54 @@ Similarly, for the `keyStore`, omitting the `path` but providing a `passphrase` 
 It's essential to ensure that the default JVM keystore and truststore configurations meet your application's security requirements when relying on this behavior.
 
 
+# SSL/TLS and DTLS Configuration Guide with Storage Options
+
+This document outlines the configuration settings available for setting up SSL/TLS and DTLS security for your application, emphasizing the support for various storage options. These include loading configurations from files (the default method), AWS Secrets, and Consul Vault. Each method provides a secure and flexible way to manage your security settings.
+
+## Configuration Storage Options
+
+Depending on your operational environment and security requirements, you may choose to load your configuration from a file, AWS Secrets, or Consul Vault. Below are the parameters required for each storage option:
+
+### File Storage
+
+The default storage option requires no additional parameters. If no storage option is explicitly specified, the system will attempt to load the configuration from the specified file paths for `keyStore` and `trustStore`.
+
+### AWS Secrets
+
+To load configurations from AWS Secrets, include the following parameters:
+``` YAML
+- region: AWS region where the secrets are stored.
+- accessKeyId: AWS Access Key ID.
+- secretAccessKey: AWS Secret Access Key associated with the Access Key ID.
+```
+
+This option securely retrieves `keyStore` and `trustStore` configurations stored as secrets in AWS Secrets Manager, ensuring that sensitive information is managed securely and in accordance with AWS best practices.
+
+### Consul Vault
+
+For configurations stored in Consul Vault, specify:
+``` YAML
+- vaultAddress: URL of the Consul Vault server.
+- vaultToken: Token for authenticating with the Consul Vault.
+- sslverify: Optional boolean to validate the remote host's certificate. Defaults to true.
+- secretEngine: The name of the secret engine. Defaults to "data".
+```
+
+Consul Vault provides a centralized secret management solution, and these parameters ensure secure access to your `keyStore` and `trustStore` configurations.
+
+### Note on Using JVM Defaults
+
+If only the `passphrase` is supplied for the `keyStore` or `trustStore` without specifying a path or storage option, the system defaults to using the JVM's keystore and truststore with the provided passphrase. This behavior simplifies configurations when the JVM's defaults are sufficient for your security requirements.
+
+## Configuring Storage Options
+
+Include the storage option parameters in your `config.yaml` file under the respective `keyStore` or `trustStore` sections, depending on where your configurations are stored. The system will prioritize the storage option specified, falling back to file storage if no storage option is defined.
+
+## Conclusion
+
+This guide provides a comprehensive overview of the SSL/TLS and DTLS configuration options available, including support for various storage backends. By selecting the appropriate storage option and specifying the required parameters, you can enhance the security and flexibility of your application's configuration management.
+
+
 ### Example Configuration
 
 Below is an example configuration snippet for the SSL/TLS setup:
@@ -174,6 +222,10 @@ security:
             path: my-keystore.jks
             passphrase: password
             managerFactory: SunX509
+            store: vault
+            vaultAddress: "https://localhost:8200"
+            vaultToken: "xxxxxxxxxxxxxxxxxxxxxx" # your token
+            secretEngine: "myCertStore"
         trustStore:
             type: JKS
             path: my-truststore.jks
