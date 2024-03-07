@@ -16,20 +16,6 @@ In the example below we can see that the SSL keystores are set up, this configur
 ```yaml
   global:
     # ---------------------------------------------------------------------------------------------------------
-    # Global configuration for SSL
-    # ---------------------------------------------------------------------------------------------------------
-
-    ssl_keyStoreFile: my-keystore.jks
-    ssl_keyStorePassphrase: password
-    ssl_trustStoreFile: my-keystore.jks
-    ssl_trustStorePassphrase: password
-    ssl_keyManagerFactory: SunX509
-    ssl_trustManagerFactory: SunX509
-    ssl_SSLContext: TLS
-    ssl_keyStore: JKS
-    ssl_trustStore: JKS
-
-    # ---------------------------------------------------------------------------------------------------------
     # tcp layer configuration
     # ---------------------------------------------------------------------------------------------------------
     receiveBufferSize: 128000
@@ -39,6 +25,24 @@ In the example below we can see that the SSL keystores are set up, this configur
     soLingerDelaySec: 10
     readDelayOnFragmentation: 100
     enableReadDelayOnFragmentation: true
+
+    # ---------------------------------------------------------------------------------------------------------
+    # Global configuration for SSL
+    # ---------------------------------------------------------------------------------------------------------
+    security:
+      tls:
+        clientCertificateRequired: false
+        clientCertificateWanted: false
+        keyStore:
+          type: JKS
+          path: my-keystore.jks
+          passphrase: password
+          managerFactory: SunX509
+        trustStore:
+          type: JKS
+          path: my-truststore.jks
+          passphrase: password
+          managerFactory: SunX509
 ```
 
 Any configuration specified in the global section is used for all interfaces, unless overwritten by the individual configuration. 
@@ -53,7 +57,7 @@ The example below binds ALL address on the machine to port 1883 and offers MQTT 
 ```yaml
   data:
     -
-      url: tcp://0.0.0.0:1883/
+      url: ws://:::1883/
       name: "MQTT WebSocket Interface"
       protocol : mqtt
       selectorThreadCount : 2
@@ -100,21 +104,83 @@ In the example above, the server will bind to 192.168.1.12 port 8443 and listen 
     readDelayOnFragmentation: 100
     enableReadDelayOnFragmentation: true
 ```
+## SSL/TLS and DTLS Configuration Guide
 
-### SSL Configuration parameters
+This document provides an overview of the configuration settings available for setting up SSL/TLS and DTLS security for your application. The configuration is defined within a `config.yaml` file, which outlines the necessary parameters for both `keyStore` and `trustStore`, among other settings.
 
-To configure the SSL interfaces the server needs to know the location, type, passwords of the relevant key stores that it meant to use
+### Configuration Structure
 
-```yaml
-    ssl_keyStoreFile: <required> - Full path and name of the key store to use
-    ssl_keyStorePassphrase:  <required> - Passphrase of the keystore file
-    ssl_trustStoreFile:  <required> - Full path and name of the trust store to use
-    ssl_trustStorePassphrase:  <required> - Passphrase of the truststore file
-    ssl_keyManagerFactory:  <required> - Factory type to use for the key management
-    ssl_trustManagerFactory:  <required> - Factory type to use for the trust store
-    ssl_SSLContext:  <required> - Context that the SSLEngine is to use this for (TLS/SSL)
-    ssl_keyStore:  <required> - The type of keystore (x509, PKCS12 etc)
-    ssl_trustStore:  <required> - The type of trust store (x509, PKCS12 etc)
+The configuration file is structured under the `security` key, with separate subsections for `tls` (SSL/TLS configuration) and `dtls` (DTLS configuration). Each section allows you to define parameters related to the `keyStore` and `trustStore`, as well as settings specific to client certificate requirements.
+
+#### Common Configuration Parameters
+
+Both SSL/TLS and DTLS configurations share a common set of parameters, detailed below:
+
+```YAML
+  - clientCertificateRequired: Boolean indicating whether a client certificate is required for connection. Set to `false` by default.
+  - clientCertificateWanted: Boolean indicating whether a client certificate is requested but not required. Set to `false` by default.
 ```
+
+##### CRL Specific (Optional)
+```YAML
+- crlUrl: URL to the Certificate Revocation List (CRL). Optional, but if supplied, will load the CRL to confirm that the certificates are not revoked.
+- crlInterval: Time in seconds to reload the CRL. Optional.
+```
+
+#### KeyStore Configuration
+
+The `keyStore` section allows configuration of the keystore used for SSL/TLS or DTLS. Available parameters include:
+
+```YAML
+  - type: Type of the KeyStore (e.g., `JKS`, `PKCS11`, `PKCS12`, `JCEKS`, `BKS`, `UBER`). Required.
+  - path: File path to the keystore file. Required for standard KeyStore types except `PKCS11`.
+  - passphrase: Password for accessing the keystore. Required.
+  - managerFactory: The `KeyManagerFactory` algorithm name (e.g., `SunX509`). Required.
+  - providerName: Security provider name (e.g., `SunJSSE`). Typically not required for standard keystores.
+  - alias: Alias name of the server certificate in the keystore. Optional.
+```
+##### PKCS11 Specific Settings (Optional)
+```YAML
+    - provider: Specifies the security provider, e.g., `SunPKCS11` for PKCS11 keystores.
+    - config: File path to the PKCS11 configuration file.
+```
+
+#### TrustStore Configuration
+
+The `trustStore` section configures the truststore for SSL/TLS or DTLS. Parameters mirror those of the `keyStore`, with the addition of `provider` and `config` for PKCS11 specific settings.
+
+#### Note on Using JVM Defaults
+
+When configuring both the `keyStore` and `trustStore`, if only the `passphrase` is supplied without specifying a `path`, the configuration utilizes the JVM's default keystore and truststore. This behavior allows for a simplified configuration when the defaults provided by the JVM are sufficient for the application's security requirements.
+
+For the `trustStore`, this means that if the `path` is not specified and a `passphrase` is provided, the JVM will use its default truststore (typically located at `<JAVA_HOME>/lib/security/cacerts` or a similar path depending on the JVM version and vendor) with the supplied passphrase. If no passphrase is supplied, the default truststore passphrase will be attempted.
+
+Similarly, for the `keyStore`, omitting the `path` but providing a `passphrase` instructs the application to attempt to use the JVM's default keystore with the provided passphrase. This approach is particularly useful for applications that require minimal deviation from the JVM's built-in security settings.
+
+It's essential to ensure that the default JVM keystore and truststore configurations meet your application's security requirements when relying on this behavior.
+
+
+### Example Configuration
+
+Below is an example configuration snippet for the SSL/TLS setup:
+
+```YAML
+security:
+   tls:
+        clientCertificateRequired: false
+        clientCertificateWanted: false
+        keyStore:
+            type: JKS
+            path: my-keystore.jks
+            passphrase: password
+            managerFactory: SunX509
+        trustStore:
+            type: JKS
+            path: my-truststore.jks
+            passphrase: password
+            managerFactory: SunX509
+```
+
+Similar configuration applies for `dtls`, adjusting the `keyStore` and `trustStore` paths and passwords as necessary.
 
 These configuration parameters can be set on an individual interface or in the global section
