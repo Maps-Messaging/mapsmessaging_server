@@ -61,7 +61,7 @@ public class LoRaClientStats {
     jmxPath.add("NodeId=" + clientId);
     mbean = JMXManager.getInstance().register(this, jmxPath);
 
-    if(JMXManager.isEnableJMXStatistics()) {
+    if (JMXManager.isEnableJMX() && JMXManager.isEnableJMXStatistics()) {
       List<String> rssiPath = new ArrayList<>(jmxPath);
       List<String> missed = new ArrayList<>(jmxPath);
       List<String> received = new ArrayList<>(jmxPath);

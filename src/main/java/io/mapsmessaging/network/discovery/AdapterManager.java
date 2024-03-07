@@ -24,19 +24,21 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
+import lombok.Getter;
+
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
-import lombok.Getter;
 
 public class AdapterManager {
 
   private final Logger logger;
+  private final String domainName;
   private final String serverName;
   private final JmDNS mDNSAgent;
   private final Map<EndPointServer, List<ServiceInfo>> endPointList;
@@ -45,13 +47,22 @@ public class AdapterManager {
   @Getter
   private final String adapter;
 
-  public AdapterManager(String adapter, String serverName, JmDNS agent, boolean stampMeta) {
+  public AdapterManager(String adapter, String serverName, JmDNS agent, boolean stampMeta, String domainName) {
     this.serverName = serverName;
     this.adapter = adapter;
     this.mDNSAgent = agent;
     this.stampMeta = stampMeta;
+    if (!domainName.startsWith(".")) {
+      domainName = "." + domainName;
+    }
+    this.domainName = domainName;
     logger = LoggerFactory.getLogger(AdapterManager.class);
     endPointList = new LinkedHashMap<>();
+  }
+
+  public void close() throws IOException {
+    mDNSAgent.close();
+    endPointList.clear();
   }
 
   public synchronized void register(EndPointServer endPointServer, String transport, List<String> protocolList){
@@ -82,7 +93,7 @@ public class AdapterManager {
         map.put("server name", MessageDaemon.getInstance().getId());
         map.put("date", BuildInfo.getBuildDate());
       }
-      String service = "_" + lowerProtocol + "._"+transport+"._local";
+      String service = "_" + lowerProtocol + "._" + transport + domainName;
       ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, url.getPort(), 0, 0, map);
       serviceInfoList.add(serviceInfo);
     }

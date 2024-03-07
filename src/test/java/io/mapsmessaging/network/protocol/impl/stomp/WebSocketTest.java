@@ -1,13 +1,23 @@
+/*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.test.WaitForState;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +32,15 @@ import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
-public class WebSocketTest extends StompBaseTest {
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
+
+class WebSocketTest extends StompBaseTest {
 
   @Test
   @DisplayName("WebSocket Stomp Publish Test")
@@ -31,7 +49,7 @@ public class WebSocketTest extends StompBaseTest {
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     webSocketStompClient.setMessageConverter(new SimpleMessageConverter());
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8675", handler);
+    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
 
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
@@ -64,7 +82,7 @@ public class WebSocketTest extends StompBaseTest {
     WebSocketClient client = new StandardWebSocketClient();
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8675", handler);
+    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
 

@@ -1,58 +1,44 @@
 /*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.security.uuid.UuidGenerator;
+import io.mapsmessaging.test.WaitForState;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.BaseTestConfig;
-import io.mapsmessaging.test.WaitForState;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-class QueueSubscriptionTest extends BaseTestConfig {
+class QueueSubscriptionTest extends MQTTBaseTest {
 
 
-  @Test
-  void simpleQueueSubscriptionQoS0() throws MqttException, IOException {
-    simpleQueueSubscription(0);
-  }
-
-  @Test
-  void simpleQueueSubscriptionQoS1() throws MqttException, IOException {
-    simpleQueueSubscription(1);
-  }
-
-  @Test
-  void simpleQueueSubscriptionQoS2() throws MqttException, IOException {
-    simpleQueueSubscription(2);
-  }
-
-  private void simpleQueueSubscription(int QoS) throws MqttException, IOException {
-    MqttClient client = new MqttClient("tcp://localhost:1883", UUID.randomUUID().toString(), new MemoryPersistence());
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setUserName("user1");
-    options.setPassword("password1".toCharArray());
+  @ParameterizedTest
+  @MethodSource("mqttPublishTestParameters")
+  @DisplayName("Test QoS wildcard subscription")
+  void simpleQueueSubscription(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
+    MqttConnectOptions options = getOptions(auth, version);
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     client.connect(options);
     Assertions.assertTrue(client.isConnected());
     for(int y=0;y<10;y++) {

@@ -33,24 +33,19 @@ import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Advertise;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.GatewayInfo;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PacketFactory;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PingRequest;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Publish;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.SearchGateway;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MQTT_SNProtocolV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PacketFactoryV2;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 // The protocol is MQTT_SN so it makes sense
 @java.lang.SuppressWarnings("squid:S00101")
@@ -188,6 +183,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   private void processIncomingPacket(Packet packet, PacketFactory factory) throws IOException {
+    int len = packet.available();
     MQTT_SNPacket mqttSn = factory.parseFrame(packet);
 
     if (mqttSn instanceof Connect) {
@@ -198,6 +194,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier( ((Connect) mqttSn).getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
+      facade.updateReadBytes(len);
+      facade.updateWriteBytes(len);
     } else if (mqttSn instanceof io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
@@ -207,6 +205,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier(connectV2.getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
+      facade.updateReadBytes(len);
+      facade.updateWriteBytes(len);
     } else if (mqttSn instanceof SearchGateway) {
       handleSearch(packet);
     } else if (mqttSn instanceof Publish) {
@@ -266,8 +266,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     }
     messageBuilder.setOpaqueData(publish.getMessage());
     try {
-      SessionManager.getInstance().publish(topic, messageBuilder.build()).get();
-    } catch (ExecutionException | InterruptedException e) {
+      SessionManager.getInstance().publish(topic, messageBuilder.build()).get(1, TimeUnit.MINUTES);
+    } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Thread.currentThread().interrupt();
       throw new IOException(e);
     }

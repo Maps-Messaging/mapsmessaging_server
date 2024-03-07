@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationData;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationMethod;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -41,8 +41,8 @@ public class AuthListener5 extends PacketListener5 {
     AuthenticationContext context= null;
     if (mqttPacket instanceof Connect5) {
       MQTT5Protocol mqtt5Protocol = ((MQTT5Protocol) protocol);
-      if(mqtt5Protocol.getAuthenticationContext() != null) {
-        AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
+      AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
+      if (mqtt5Protocol.getAuthenticationContext() != null && authMethod != null) {
         String serverConfig = mqtt5Protocol.getAuthenticationContext().getAuthMethod();
         String clientConfig = authMethod.getAuthenticationMethod();
         if (!serverConfig.equalsIgnoreCase(clientConfig)) {

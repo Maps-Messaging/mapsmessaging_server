@@ -22,6 +22,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
+import lombok.Getter;
 
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.io.IOException;
@@ -30,6 +31,8 @@ import java.nio.ByteBuffer;
 public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
 
   private final SSLEndPoint sslEndPointImpl;
+
+  @Getter
   private final ByteBuffer handshakeBufferIn;
   private final ByteBuffer handshakeBufferOut;
   private final EndPointConnectedCallback callback;
@@ -62,7 +65,7 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
     }
     logger.log(ServerLogMessages.SSL_HANDSHAKE_FINISHED);
     logger.log(ServerLogMessages.SSL_HANDSHAKE_ENCRYPTED, handshakeBufferIn.position(), handshakeBufferIn.limit());
-    sslEndPointImpl.handshakeManager = new SSLHandshakeManagerFinished(); // All done, no longer required
+    sslEndPointImpl.handshakeManager = new SSLHandshakeManagerFinished(handshakeBufferIn); // All done, no longer required
     if (callback != null) {
       callback.connected(sslEndPointImpl);
     }

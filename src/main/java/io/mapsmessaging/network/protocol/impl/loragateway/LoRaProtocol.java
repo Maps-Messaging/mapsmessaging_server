@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.DataHandlerFactory;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.admin.JMXManager;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,10 +63,14 @@ public class LoRaProtocol extends ProtocolImpl {
   private final int transmissionRate;
   private final AtomicInteger transmitCount;
   private final DataHandlerFactory dataHandler;
+  @Getter
   private final byte[] configBuffer;
   private volatile boolean closed;
+  @Getter
   private boolean sentConfig = false;
+  @Getter
   private boolean started = false;
+  @Getter
   private boolean sentVersion = false;
   private Future<?> rateResetFuture;
   private final LinkedHashMap<Integer, LoRaClientStats> clientStats;
@@ -234,28 +240,12 @@ public class LoRaProtocol extends ProtocolImpl {
     // This should not be called since this protocol is NOT registered with the messaging engine
   }
 
-  public byte[] getConfigBuffer() {
-    return configBuffer;
-  }
-
-  public boolean isSentConfig() {
-    return sentConfig;
-  }
-
   public void setSentConfig(boolean sentConfig) {
     this.sentConfig = sentConfig;
   }
 
-  public boolean isStarted() {
-    return started;
-  }
-
   public void setStarted(boolean started) {
     this.started = started;
-  }
-
-  public boolean isSentVersion() {
-    return sentVersion;
   }
 
   public void setSentVersion(boolean sentVersion) {
@@ -263,8 +253,10 @@ public class LoRaProtocol extends ProtocolImpl {
   }
 
   public void handleIncomingPacket(Packet packet, int clientId, int rssi) throws IOException {
-    LoRaClientStats stats = clientStats.computeIfAbsent(clientId, f -> new LoRaClientStats(endPoint.getJMXTypePath(), f));
-    stats.update(clientId, rssi);
+    if (JMXManager.isEnableJMX()) {
+      LoRaClientStats stats = clientStats.computeIfAbsent(clientId, f -> new LoRaClientStats(endPoint.getJMXTypePath(), f));
+      stats.update(clientId, rssi);
+    }
     protocolInterfaceManager.processPacket(packet);
   }
 

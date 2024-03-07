@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -26,7 +28,6 @@ import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
@@ -39,17 +40,16 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   @Getter
   private final SelectorLoadManager selectorLoadManager;
 
+  @Getter
+  private final List<EndPointConnection> endPointConnectionList;
+
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
-  private final List<EndPointConnection> endPointConnectionList;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final List<ConfigurationProperties> connectionConfiguration;
 
-  private final List<String> jmxParent;
-
-  public NetworkConnectionManager(List<String> parent) throws IOException {
+  public NetworkConnectionManager() throws IOException {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
-    jmxParent = parent;
     ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
     connectionConfiguration = new ArrayList<>();
     Object rootObj = networkConnectionProperties.get("data");
@@ -82,12 +82,20 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         destinationMappings.addAll((List<ConfigurationProperties>) linkReference);
       }
       if (!destinationMappings.isEmpty()) {
-        for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-          if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-            EndPointConnectionHostJMX hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxParent, endPointURL.host));
-            endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
-          }
+        processEndPoint(endPointURL, properties,destinationMappings );
+      }
+    }
+  }
+
+  private void processEndPoint(EndPointURL endPointURL, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings){
+    for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
+      if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
+        EndPointConnectionHostJMX hostJMXBean = null;
+        List<String> jmxList = MessageDaemon.getInstance().getTypePath();
+        if (!jmxList.isEmpty()) {
+          hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
         }
+        endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
       }
     }
   }
@@ -123,9 +131,5 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
       service.add(endPointConnectionFactory);
     }
     return service.listIterator();
-  }
-
-  public List<String> getJMXParent() {
-    return jmxParent;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 
 package io.mapsmessaging.engine.destination;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.admin.DestinationJMX;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
@@ -41,12 +41,10 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
-import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.queue.EventReaperQueue;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
@@ -105,6 +103,13 @@ public class DestinationImpl implements BaseDestination {
 
   private final DelayedMessageManager delayedMessageManager;
   private final TransactionalMessageManager transactionMessageManager;
+  /**
+   * -- GETTER --
+   *  Returns the stats object for this destination. All metrics about this destination are maintained in this class
+   *
+   * @return DestinationStats for this instance
+   */
+  @Getter
   private final DestinationStats stats;
 
   @Getter
@@ -115,6 +120,13 @@ public class DestinationImpl implements BaseDestination {
   private final Resource resource;
   private final DestinationType destinationType;
 
+  /**
+   * -- GETTER --
+   *  This returns the user supplied name for the destination
+   *
+   * @return String name of the destination
+   */
+  @Getter
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
   private final String fullyQualifiedDirectoryRoot;   // This is the physical root directory for all files associated with this destination
 
@@ -122,6 +134,7 @@ public class DestinationImpl implements BaseDestination {
 
   @Getter
   private final Schema schema;
+  @Getter
   private volatile boolean closed;
   //</editor-fold>
 
@@ -153,11 +166,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
-      destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
-    } else {
-      destinationJMXBean = null;
-    }
+    destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
@@ -191,11 +200,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
-      destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
-    } else {
-      destinationJMXBean = null;
-    }
+    destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     completionQueue = new EventReaperQueue();
@@ -238,11 +243,7 @@ public class DestinationImpl implements BaseDestination {
 
     stats = new DestinationStats();
     resourceStatistics = new ResourceStatistics(resource);
-    if (JMXManager.isEnableJMX() && MessageDaemon.getInstance() != null) {
-      destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
-    } else {
-      destinationJMXBean = null;
-    }
+    destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
     delayScheduler = null;
@@ -405,10 +406,6 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  public boolean isClosed() {
-    return closed;
-  }
-
   //</editor-fold>
 
   //<editor-fold desc="Get functions to query the destination">
@@ -420,15 +417,6 @@ public class DestinationImpl implements BaseDestination {
    */
   public boolean isPersistent() {
     return resource.isPersistent();
-  }
-
-  /**
-   * This returns the user supplied name for the destination
-   *
-   * @return String name of the destination
-   */
-  public String getFullyQualifiedNamespace() {
-    return fullyQualifiedNamespace;
   }
 
   /**
@@ -473,15 +461,6 @@ public class DestinationImpl implements BaseDestination {
   }
 
   /**
-   * Returns the stats object for this destination. All metrics about this destination are maintained in this class
-   *
-   * @return DestinationStats for this instance
-   */
-  public DestinationStats getStats() {
-    return stats;
-  }
-
-  /**
    * There are 2 types of messages, ones that are visible to subscribers, normal message flow, and then ones that we have but are not able to release to the clients yet. This could
    * be because they are delayed publishes or they are part of a transaction that has yet to be committed
    *
@@ -514,6 +493,7 @@ public class DestinationImpl implements BaseDestination {
    * @throws IOException If unable to get the size from the underlying resource implementation
    */
   public long getStoredMessages() throws IOException {
+    resource.getStatistics();
     return resource.size();
   }
 

@@ -19,7 +19,7 @@ package io.mapsmessaging.rest.responses;
 
 import lombok.Getter;
 
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public class StringListResponse extends BaseResponse {
@@ -27,7 +27,7 @@ public class StringListResponse extends BaseResponse {
   @Getter
   private final List<String> data;
 
-  public StringListResponse(Request request, List<String> data){
+  public StringListResponse(HttpServletRequest request, List<String> data) {
     super(request);
     this.data = data;
   }

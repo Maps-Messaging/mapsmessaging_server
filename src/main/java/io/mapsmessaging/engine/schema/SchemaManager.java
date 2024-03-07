@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging.engine.schema;
 
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig.TYPE;
 import io.mapsmessaging.schemas.config.impl.RawSchemaConfig;
@@ -26,28 +27,27 @@ import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
 import io.mapsmessaging.utilities.Agent;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
 import lombok.Getter;
 
+import java.util.*;
+import java.util.Map.Entry;
+
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class SchemaManager implements SchemaRepository, Agent {
+
+  private static final String MONITOR = "monitor";
 
   public static final String DEFAULT_RAW_UUID = UUID.fromString("10000000-0000-1000-a000-100000000000").toString();
   public static final String DEFAULT_NUMERIC_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000001").toString();
   public static final String DEFAULT_STRING_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000002").toString();
+  public static final String DEFAULT_JSON_SCHEMA = UUID.fromString("10000000-0000-1000-a000-100000000003").toString();
 
-  private static final SchemaManager instance;
-
-  public static SchemaManager getInstance() {
-    return instance;
+  private static class Holder {
+    static final SchemaManager INSTANCE = new SchemaManager();
   }
 
-  static {
-    instance = new SchemaManager();
+  public static SchemaManager getInstance() {
+    return Holder.INSTANCE;
   }
 
   private final SchemaRepository repository;
@@ -159,16 +159,23 @@ public class SchemaManager implements SchemaRepository, Agent {
     nativeSchemaConfig.setUniqueId(DEFAULT_NUMERIC_STRING_SCHEMA);
     nativeSchemaConfig.setType(TYPE.NUMERIC_STRING);
     nativeSchemaConfig.setInterfaceDescription("numeric");
-    nativeSchemaConfig.setResourceType("monitor");
+    nativeSchemaConfig.setResourceType(MONITOR);
     addSchema("$SYS", nativeSchemaConfig);
 
     nativeSchemaConfig = new NativeSchemaConfig();
     nativeSchemaConfig.setUniqueId(DEFAULT_STRING_SCHEMA);
     nativeSchemaConfig.setType(TYPE.STRING);
     nativeSchemaConfig.setInterfaceDescription("string");
-    nativeSchemaConfig.setResourceType("monitor");
+    nativeSchemaConfig.setResourceType(MONITOR);
     addSchema("$SYS", nativeSchemaConfig);
 
+    JsonSchemaConfig jsonSchemaConfig = new JsonSchemaConfig();
+    jsonSchemaConfig.setUniqueId(DEFAULT_JSON_SCHEMA);
+    jsonSchemaConfig.setInterfaceDescription("json");
+    jsonSchemaConfig.setResourceType(MONITOR);
+    addSchema("$SYS", jsonSchemaConfig);
+
+    // This ensures the factory is loaded
     MessageFormatterFactory.getInstance();
   }
 

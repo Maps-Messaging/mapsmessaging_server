@@ -17,10 +17,10 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.DestinationStatus;
+import io.mapsmessaging.rest.data.destination.DestinationStatus;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 
-import javax.ws.rs.core.Request;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,14 +29,14 @@ public class DestinationStatusResponse extends BaseResponse {
   @Getter
   private final List<DestinationStatus> data;
 
-  public DestinationStatusResponse(Request request, DestinationStatus data ){
+  public DestinationStatusResponse(HttpServletRequest request, DestinationStatus data) {
     super(request);
     this.data = new ArrayList<>();
     this.data.add(data);
   }
 
 
-  public DestinationStatusResponse(Request request, List<DestinationStatus> data ){
+  public DestinationStatusResponse(HttpServletRequest request, List<DestinationStatus> data) {
     super(request);
     this.data = data;
   }

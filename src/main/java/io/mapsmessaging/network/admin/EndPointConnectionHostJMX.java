@@ -24,6 +24,7 @@ import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
+import lombok.Getter;
 
 import javax.management.ObjectInstance;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.List;
 public class EndPointConnectionHostJMX implements HealthMonitor {
 
   private final List<EndPointConnection> connections;
+  @Getter
   private final List<String> typePath;
   private final ObjectInstance mbean;
 
@@ -54,10 +56,6 @@ public class EndPointConnectionHostJMX implements HealthMonitor {
 
   public void delConnection(EndPointConnection connection) {
     connections.remove(connection);
-  }
-
-  public List<String> getTypePath() {
-    return typePath;
   }
 
 

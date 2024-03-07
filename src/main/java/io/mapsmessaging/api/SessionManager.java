@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import lombok.NonNull;
@@ -33,17 +32,15 @@ import java.util.concurrent.*;
 /**
  * Session lifetime management class. This class handles the life cycle of a Session, as well as the ability to perform anonymous publishes, if configured and allowed.
  */
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class SessionManager {
 
-  private static final SessionManager instance = new SessionManager();
+  private static class Holder {
+    static final SessionManager INSTANCE = new SessionManager();
+  }
 
-  /**
-   * This is a singleton class and, as such, can only be accessed via this function
-   *
-   * @return Returns the singleton instance of this class
-   */
   public static SessionManager getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
 
   private final ExecutorService publisherScheduler;
@@ -120,28 +117,29 @@ public class SessionManager {
    *
    * @param destination The destination that this message is bound for
    * @param message The message to send
-   * @return If the publish was successful then true, else false if it failed
-   * @throws IOException Thrown if the message write failed, typically due to file system errors
+   * @return If the publishing was successful then true, else false if it failed
    */
-  public CompletableFuture<Integer> publish(@NonNull @NotNull String destination, @NonNull @NotNull Message message) throws IOException {
-    CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
-    Callable<CompletableFuture<DestinationImpl>> task = (() -> {
-      CompletableFuture<DestinationImpl> future = MessageDaemon.getInstance().getDestinationManager().find(destination);
-      future.thenApply(destinationImpl -> {
-        if (destinationImpl != null) {
+  public CompletableFuture<Integer> publish(@NonNull @NotNull String destination, @NonNull @NotNull Message message) {
+    return CompletableFuture.supplyAsync(() -> {
           try {
-            return destinationImpl.storeMessage(message);
-          } catch (IOException e) {
-            future.completeExceptionally(e);
+            return MessageDaemon.getInstance().getDestinationManager().find(destination).get();
+          } catch (InterruptedException | ExecutionException e) {
+            throw new CompletionException(e);
           }
-        }
-        return -1;
-      });
-      return future;
-    });
-    publisherScheduler.submit(task);
-    return completableFuture;
+        }, publisherScheduler)
+        .thenCompose(destinationImpl -> {
+          if (destinationImpl != null) {
+            try {
+              return CompletableFuture.completedFuture(destinationImpl.storeMessage(message));
+            } catch (Throwable e) {
+              return CompletableFuture.failedFuture(e);
+            }
+          } else {
+            return CompletableFuture.completedFuture(-1);
+          }
+        });
   }
+
 
   private SessionManager() {
     publisherScheduler = Executors.newCachedThreadPool();

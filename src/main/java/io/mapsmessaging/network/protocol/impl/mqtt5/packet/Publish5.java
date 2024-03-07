@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.ServerPublishPacket;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
+import lombok.Getter;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 
 /**
@@ -32,13 +35,18 @@ import java.util.Collection;
  */
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("common-java:DuplicatedBlocks")
-public class Publish5 extends MQTTPacket5 {
+public class Publish5 extends MQTTPacket5 implements ServerPublishPacket {
 
+  @Getter
   private final boolean retain;
   private final boolean isDup;
+  @Getter
   private final QualityOfService qos;
+  @Getter
   private final String destinationName;
+  @Getter
   private final int packetId;
+  @Getter
   private final byte[] payload;
 
   public Publish5(byte[] payload, QualityOfService qos, int packetId, String destination, boolean retain) {
@@ -88,28 +96,8 @@ public class Publish5 extends MQTTPacket5 {
     }
   }
 
-  public boolean isRetain() {
-    return retain;
-  }
-
   public boolean isDuplicate() {
     return isDup;
-  }
-
-  public String getDestinationName() {
-    return destinationName;
-  }
-
-  public int getPacketId() {
-    return packetId;
-  }
-
-  public byte[] getPayload() {
-    return payload;
-  }
-
-  public QualityOfService getQos() {
-    return qos;
   }
 
   public Priority getPriority() {
@@ -140,8 +128,7 @@ public class Publish5 extends MQTTPacket5 {
     return sb.toString();
   }
 
-  @Override
-  public int packFrame(Packet packet) {
+  private long packHeader(Packet packet){
     //
     // Pack the header
     //
@@ -167,7 +154,25 @@ public class Publish5 extends MQTTPacket5 {
       writeShort(packet, packetId);
     }
     packProperties(packet, len);
+    return remaining;
+  }
+
+  @Override
+  public int packFrame(Packet packet) {
+    long remaining = packHeader(packet);
     packet.put(payload);
     return (int) (remaining);
+  }
+
+
+  @Override
+  public Packet[] packAdvancedFrame(Packet packet) {
+    packHeader(packet);
+    if(payload.length < packet.available()) {
+      packet.put(payload);
+      return new Packet[]{packet};
+    }
+    Packet payloadPacket = new Packet(ByteBuffer.wrap(payload));
+    return new Packet[]{packet, payloadPacket };
   }
 }

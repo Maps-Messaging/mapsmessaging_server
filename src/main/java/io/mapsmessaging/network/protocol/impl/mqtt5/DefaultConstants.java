@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import io.mapsmessaging.api.features.Priority;
 public class DefaultConstants {
 
 
-  public static final int SERVER_RECEIVE_MAXIMUM = 65535;
-  public static final int CLIENT_RECEIVE_MAXIMUM = 65535;
-  public static final int SERVER_TOPIC_ALIAS_MAX = 32767;
-  public static final int CLIENT_TOPIC_ALIAS_MAX = 32767;
+  public static final int SERVER_RECEIVE_MAXIMUM = 2048;
+  public static final int CLIENT_RECEIVE_MAXIMUM = 2048;
+  public static final int SERVER_TOPIC_ALIAS_MAX = 2048;
+  public static final int CLIENT_TOPIC_ALIAS_MAX = 2048;
   public static final int SESSION_TIME_OUT = 86400;
   public static final Priority PRIORITY = Priority.NORMAL;
 

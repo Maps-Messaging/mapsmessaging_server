@@ -56,7 +56,7 @@ DestinationManager:
    data:
       -
          name: root
-         directory: ./data/destinations
+         directory: "{{MAPS_DATA}}/destinations"
          namespace: /
          type: Partition # could be either Partition, Memory or MemoryTier
          sync: disable # Enable or Disable
@@ -71,18 +71,10 @@ DestinationManager:
             writeThrough: enable # Could be either enable or disable
          archive:
             name: None # Options : None, Compress, S3. Please note if S3 selected the s3 config will need to be supplied
-            idleTime: 86400000 # time in milliseconds for an idle partition to be archived, this is 1 day
-            digestAlgorithm: MD5 # Digest algorithm to use, can be None, MD5, SHA-1, SHA-256 or any supported by the JVM
-            s3:
-               regionName: <aws region to use>
-               accessKeyId: <Unique S3 Access id>
-               secretAccessKey: <Unique S3 Secret Key>
-               bucketName: <s3 bucket name to use>
-               compression: true # Options true/false if the file is compressed before pushing to S3
 
       -
          name: device
-         directory: ./data/devices
+         directory: "{{MAPS_DATA}}/devices"
          namespace: /device/
          type: Memory # could be either Partition, Memory or MemoryTier
          sync: disable # Enable or Disable
@@ -91,3 +83,13 @@ DestinationManager:
          archive:
             name: None # Options : None, Compress, S3. Please note if S3 selected the s3 config will need to be supplied
 
+#         archive:
+#            name: None # Options : None, Compress, S3. Please note if S3 selected the s3 config will need to be supplied
+#            idleTime: 86400000 # time in milliseconds for an idle partition to be archived, this is 1 day
+#            digestAlgorithm: MD5 # Digest algorithm to use, can be None, MD5, SHA-1, SHA-256 or any supported by the JVM
+#            s3:
+#               regionName: <aws region to use>
+#               accessKeyId: <Unique S3 Access id>
+#               secretAccessKey: <Unique S3 Secret Key>
+#               bucketName: <s3 bucket name to use>
+#               compression: true # Options true/false if the file is compressed before pushing to S3

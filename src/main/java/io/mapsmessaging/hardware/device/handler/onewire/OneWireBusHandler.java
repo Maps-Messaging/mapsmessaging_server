@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 
 package io.mapsmessaging.hardware.device.handler.onewire;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.onewire.OneWireBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.util.Map;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ public class PublishListener extends PacketListener {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "4");
-    meta.put("time_ms", "" + System.currentTimeMillis());
 
     HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
     MessageBuilder mb = new MessageBuilder();
@@ -78,6 +77,16 @@ public class PublishListener extends PacketListener {
       lookup = map.get(publish.getDestinationName());
       if (lookup == null) {
         lookup = publish.getDestinationName();
+        for(Map.Entry<String, String> remote:map.entrySet()){
+          if(remote.getKey().endsWith("#")){
+            String check = remote.getValue();
+            String tmp = remote.getKey().substring(0, remote.getKey().length()-1);
+            if(lookup.startsWith(tmp)){
+              lookup = check + lookup;
+              lookup = lookup.replaceAll("//", "/");
+            }
+          }
+        }
       }
     }
     return lookup;

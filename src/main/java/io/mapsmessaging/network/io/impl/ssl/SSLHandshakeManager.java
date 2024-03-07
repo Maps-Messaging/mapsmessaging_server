@@ -20,8 +20,11 @@ package io.mapsmessaging.network.io.impl.ssl;
 import io.mapsmessaging.network.io.Selectable;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public interface SSLHandshakeManager extends Selectable {
 
   boolean handleSSLHandshakeStatus() throws IOException;
+
+  ByteBuffer getHandshakeBufferIn();
 }

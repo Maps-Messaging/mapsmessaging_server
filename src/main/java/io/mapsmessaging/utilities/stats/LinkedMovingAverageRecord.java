@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,30 +17,21 @@
 
 package io.mapsmessaging.utilities.stats;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 public class LinkedMovingAverageRecord {
 
-  @Getter
-  private final String name;
-  @Getter
-  private final String unitName;
-  @Getter
-  private final long timeSpan;
-  @Getter
-  private final long current;
-
-  @Getter
-  private final Map<String, Long> stats;
-
-  public LinkedMovingAverageRecord(String name, String unitName, long timeSpan, long current, Map<String, Long> stats ){
-    this.name = name;
-    this.unitName = unitName;
-    this.timeSpan = timeSpan;
-    this.current = current;
-    this.stats = stats;
-  }
+  private String name;
+  private String unitName;
+  private long timeSpan;
+  private long current;
+  private Map<String, Long> stats;
 
 }

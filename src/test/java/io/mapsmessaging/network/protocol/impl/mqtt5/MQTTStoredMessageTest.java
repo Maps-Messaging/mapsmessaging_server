@@ -1,72 +1,52 @@
 /*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.test.BaseTestConfig;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.test.WaitForState;
-import java.io.IOException;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
-import org.eclipse.paho.mqttv5.client.IMqttToken;
-import org.eclipse.paho.mqttv5.client.MqttCallback;
-import org.eclipse.paho.mqttv5.client.MqttClient;
-import org.eclipse.paho.mqttv5.client.MqttClientPersistence;
-import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
-import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
+import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-class MQTTStoredMessageTest extends BaseTestConfig {
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
+class MQTTStoredMessageTest extends MQTTBaseTest {
 
-  @Test
-  void testQos0() throws MqttException, IOException, InterruptedException {
-    connectSubscribeDisconnectPublishAndCheck(0);
-  }
-
-  @Test
-  void testQos1() throws MqttException, IOException, InterruptedException {
-    connectSubscribeDisconnectPublishAndCheck(1);
-  }
-
-  @Test
-  void testQos2() throws MqttException, IOException, InterruptedException {
-    connectSubscribeDisconnectPublishAndCheck(2);
-  }
-
-  void connectSubscribeDisconnectPublishAndCheck(int QoS) throws MqttException, IOException, InterruptedException {
-
-    String subId = UUID.randomUUID().toString();
+  @ParameterizedTest
+  @MethodSource("mqttPublishTestParameters")
+  @DisplayName("Test QoS wildcard subscription")
+  void connectSubscribeDisconnectPublishAndCheck(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
+    String subId = UuidGenerator.getInstance().generate().toString();
     MqttClientPersistence persistence = new MemoryPersistence();
-    MqttClient subscribe = new MqttClient("tcp://localhost:2001", subId, persistence);
-    MessageListener ml = new MessageListener();
-    MqttConnectionOptions subOption = new MqttConnectionOptions();
-    subOption.setUserName("user1");
-    subOption.setPassword("password1".getBytes());
+    MqttClient subscribe = new MqttClient(getUrl(protocol, auth), subId, persistence);
+    MqttConnectionOptions subOption = getOptions(auth);
     subOption.setCleanStart(false);
+
+    MessageListener ml = new MessageListener();
 
     subscribe.connectWithResult(subOption).waitForCompletion(2000);
     MqttSubscription[] subscriptions = new MqttSubscription[1];
@@ -108,10 +88,9 @@ class MQTTStoredMessageTest extends BaseTestConfig {
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
 
-    MqttClient publish = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
-    MqttConnectionOptions pubOption = new MqttConnectionOptions();
-    pubOption.setUserName("user1");
-    pubOption.setPassword("password1".getBytes());
+    MqttClient publish = new MqttClient(getUrl(protocol, auth), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
+    MqttConnectionOptions pubOption = getOptions(auth);
+
     publish.connect(pubOption);
     Assertions.assertTrue(publish.isConnected());
 

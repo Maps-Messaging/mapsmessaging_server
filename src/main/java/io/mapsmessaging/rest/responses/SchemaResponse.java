@@ -19,7 +19,7 @@ package io.mapsmessaging.rest.responses;
 
 import lombok.Getter;
 
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,14 +28,14 @@ public class SchemaResponse extends BaseResponse {
   @Getter
   private final List<String> data;
 
-  public SchemaResponse(Request request, String schema) {
+  public SchemaResponse(HttpServletRequest request, String schema) {
     super(request);
     this.data = new ArrayList<>();
     data.add(schema);
   }
 
 
-  public SchemaResponse(Request request, List<String> data) {
+  public SchemaResponse(HttpServletRequest request, List<String> data) {
     super(request);
     this.data = data;
   }

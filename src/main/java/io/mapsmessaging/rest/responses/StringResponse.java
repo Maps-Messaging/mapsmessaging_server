@@ -19,14 +19,14 @@ package io.mapsmessaging.rest.responses;
 
 import lombok.Getter;
 
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class StringResponse extends BaseResponse {
 
   @Getter
   private final String data;
 
-  public StringResponse(Request request, String data){
+  public StringResponse(HttpServletRequest request, String data) {
     super(request);
     this.data = data;
   }

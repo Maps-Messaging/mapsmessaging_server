@@ -62,7 +62,7 @@ public class SubscribeListener extends PacketListener {
       //
       // Do NOT register wildcard subscriptions
       //
-      if (topicId == 0 && !(topicName.contains("+") || topicName.contains("#"))) {
+      if (topicId == 0) {
         topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
       }
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();

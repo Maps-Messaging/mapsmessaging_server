@@ -20,14 +20,15 @@ package io.mapsmessaging.network.admin;
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import com.udojava.jmx.wrapper.JMXBeanOperation;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
+import lombok.Getter;
 
 import javax.management.ObjectInstance;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -35,18 +36,15 @@ import java.util.List;
 public class NetworkManagerJMX implements HealthMonitor {
 
   private final NetworkManager networkManager;
+  @Getter
   private final List<String> typePath;
   private final ObjectInstance mbean;
 
-  public NetworkManagerJMX(List<String> parent, NetworkManager network) {
+  public NetworkManagerJMX(NetworkManager network) {
     networkManager = network;
-    typePath = new ArrayList<>(parent);
+    typePath = MessageDaemon.getInstance().getTypePath();
     typePath.add("networkType=NetworkController");
     mbean = JMXManager.getInstance().register(this, typePath);
-  }
-
-  public List<String> getTypePath() {
-    return typePath;
   }
 
   //<editor-fold desc="JMX Bean functions">

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -256,15 +256,19 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
-    MqttSnClient client = new MqttSnClient("localhost",1884, version );
-    client.connect(120, true);
-    client.subscribe("/mqttsn/test/wild/+", qos);
-    client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());
+    MqttSnClient subscriber = new MqttSnClient("localhost", 1884, version);
+    subscriber.connect(120, true);
+    subscriber.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
+      received.countDown();
+    });
+    subscriber.subscribe("/mqttsn/test/wild/+", qos);
 
-    Thread.sleep(10000);
+    Thread.sleep(2000);
     MqttSnClient publisher = new MqttSnClient( "localhost",1884, version );
     publisher.connect(120, true);
-    publisher.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> published.countDown());
+    publisher.registerSentListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> {
+      published.countDown();
+    });
 
     long count = published.getCount();
     for(int x=0;x<PUBLISH_COUNT;x++){
@@ -275,11 +279,15 @@ class MqttSNSubscriptionTest extends BaseMqttSnConfig {
         Assertions.assertFalse(timeout < System.currentTimeMillis());
       }
       count = published.getCount();
-      delay(20);
+      if (qos == 0) {
+        delay(100);
+      } else {
+        delay(20);
+      }
     }
     Assertions.assertTrue(received.await(TIMEOUT, TimeUnit.MILLISECONDS), "Expected "+PUBLISH_COUNT+" received count down at "+received.getCount());
     publisher.disconnect();
-    client.disconnect();
+    subscriber.disconnect();
   }
 
 }

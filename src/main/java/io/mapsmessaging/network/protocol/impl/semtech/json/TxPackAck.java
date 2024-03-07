@@ -17,13 +17,15 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.json;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
+@Data
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class TxPackAck {
-
-  @Getter
-  @Setter
   private String error;
-
 }

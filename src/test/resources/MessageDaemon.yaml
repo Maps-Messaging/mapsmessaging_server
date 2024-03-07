@@ -30,14 +30,19 @@ MessageDaemon:
     # Enable or Disable the construction of JMX Beans for server management / monitoring
     #
     # Default: true
-    EnableJMX: false
+    EnableJMX: true
 
+    #
+    # Enable / Disable advanced resource statistics
+    #
+    # Default: false
+    EnableResourceStatistics: false
 
     #
     # Enable or Disable the addition of statistics to the JMX beans
     #
     # Default: true
-    EnableJMXStatistics: false
+    EnableJMXStatistics: true
 
     #
     # Enable or Disable $SYS topics, if disabled then the server will not populate any $SYS topics
@@ -50,4 +55,4 @@ MessageDaemon:
     # if enabled then 1, 5, 10 and 15 minute moving averages are calculated and $SYS topics constructed and populated
     #
     # Default: true
-    EnableSystemTopicAverages: false
+    EnableSystemTopicAverages: true

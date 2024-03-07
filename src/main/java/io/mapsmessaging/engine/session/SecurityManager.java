@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
 import io.mapsmessaging.engine.session.security.JaasSecurityContext;
 import io.mapsmessaging.engine.session.security.SaslSecurityContext;
@@ -28,7 +30,6 @@ import io.mapsmessaging.security.MapsSecurityProvider;
 import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -65,8 +66,12 @@ public class SecurityManager implements Agent {
       context = new SaslSecurityContext(username, endPointPrincipal);
     }
     else if (defined != null) {
-      LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal);
-      context = new JaasSecurityContext(username, loginContext);
+      if (AuthManager.getInstance().isAuthenticationEnabled()) {
+        LoginContext loginContext = getLoginContext(defined, username, passCode, endPointPrincipal);
+        context = new JaasSecurityContext(username, loginContext);
+      } else {
+        context = new AnonymousSecurityContext(endPointPrincipal);
+      }
     }
     else {
       context = new AnonymousSecurityContext(endPointPrincipal);

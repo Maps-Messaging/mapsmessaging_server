@@ -49,9 +49,11 @@ public class ProtocolFactory implements ServiceManager {
   public ProtocolImplFactory detect(Packet packet) throws IOException {
     int potential = 0;
     int failed = 0;
+    StringBuilder sb = new StringBuilder();
     for (ProtocolImplFactory protocol : protocolServiceLoader) {
       if ((protocols.contains("all") && !protocol.getName().equalsIgnoreCase("echo") && !protocol.getName().equalsIgnoreCase("nmea")) ||
           protocols.contains(protocol.getName().toLowerCase())) {
+        sb.append(protocol.getName()).append(",");
         potential++;
         try {
           if (protocol.detect(packet)) {
@@ -65,7 +67,7 @@ public class ProtocolFactory implements ServiceManager {
       }
     }
     if (potential == failed) {
-      throw new IOException("No known protocol detected " + packet.toString()+" <"+potential+" != "+failed+">");
+      throw new IOException("No known protocol detected " + packet.toString() + " <" + potential + " != " + failed + "> " + sb.toString());
     }
     return null;
   }

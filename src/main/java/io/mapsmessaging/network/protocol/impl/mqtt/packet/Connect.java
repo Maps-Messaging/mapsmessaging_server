@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt.packet;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 
 import java.io.ByteArrayOutputStream;
-import java.util.UUID;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718028
@@ -145,7 +145,7 @@ public class Connect extends MQTTPacket {
     String id = readUTF8(packet);
 
     if (id.length() == 0 && cleanSession) {
-      id = UUID.randomUUID().toString();
+      id = UuidGenerator.getInstance().generate().toString();
     }
     sessionId = id;
     //

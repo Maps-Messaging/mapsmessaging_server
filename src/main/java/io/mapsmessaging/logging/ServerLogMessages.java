@@ -226,6 +226,12 @@ public enum ServerLogMessages implements LogMessage {
   UDP_WRITE_TASK_SENT_PACKET(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "UDP EndPoint sent packet {}"),
   UDP_WRITE_TASK_SEND_PACKET_ERROR(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Exception raised during packet send"),
   UDP_WRITE_TASK_UNABLE_TO_REMOVE_WRITE(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Unable to remove WRITE interest from the selector"),
+
+  UDP_READ_TASK_STATE(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Read packet from {} of {} bytes"),
+  UDP_READ_TASK_STATE_PREVIOUS(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Previous packet from {} of {} bytes found"),
+  UDP_READ_TASK_STATE_RECOMBINED(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Recombined packet from {} of {} bytes found"),
+  UDP_READ_TASK_STATE_REMAINING(LEVEL.TRACE, SERVER_CATEGORY.NETWORK, "Remaining data in packet from {} of {} bytes"),
+
   // </editor-fold>
 
   // <editor-fold desc="Security Manager based log messages">
@@ -235,6 +241,8 @@ public enum ServerLogMessages implements LogMessage {
   SECURITY_MANAGER_LOADING(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Security Manager properties"),
   SECURITY_MANAGER_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loaded Security Manager Properties"),
   SECURITY_MANAGER_SECURITY_CONTEXT(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Created security context for {}"),
+  SECURITY_MANAGER_FAILED_TO_CREATE_USER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to create user {} during initial setup"),
+  SECURITY_MANAGER_FAILED_TO_INITIALISE_USER(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to initialise user {} during initial setup"),
 
   // </editor-fold>
 
@@ -506,7 +514,7 @@ public enum ServerLogMessages implements LogMessage {
   LORA_DEVICE_PACKET_READER_EXITED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Packet Reader thread has exited, no more LoRa packets will be processed"),
   LORA_DEVICE_IDLE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Packet Reader is currently idle"),
   LORA_REGISTER_NETWORK_ACTIVITY(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa device registering network task for {}"),
-  LORA_QUEUED_EVENT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa message queued, {} outstanding events"),
+  LORA_QUEUED_EVENT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa message queued, {} outstanding events, has select handler:{} "),
   LORA_DEVICE_NO_REGISTERED_ENDPOINT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "LoRa Device has no registered end points for {} address"),
   //</editor-fold>
 
@@ -518,6 +526,9 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Jolokia log messages">
   JOLOKIA_SHUTDOWN_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia failed to shutdown the HTTP server"),
+  JOLOKIA_DEBUG_LOG(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Jolokia debug log {}"),
+  JOLOKIA_INFO_LOG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Jolokia info log {}"),
+  JOLOKIA_ERROR_LOG(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia error log {}"),
   JOLOKIA_STARTUP_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Jolokia failed to load the HTTP server"),
   //</editor-fold>
 
@@ -556,7 +567,7 @@ public enum ServerLogMessages implements LogMessage {
   CONSUL_INVALID_KEY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Consul Key/Value, invalid key received {}, changed to {}"),
   CONSUL_MANAGER_START_ABORTED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted due to configuration, id {}"),
   CONSUL_MANAGER_START_DELAYED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup delaying server startup due to configuration for id {}"),
-  CONSUL_MANAGER_START_SERVER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted since Consol Server is not responding, id {}"),
+  CONSUL_MANAGER_START_SERVER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Startup aborted since Consul Server is not responding, id {}"),
   //</editor-fold>
 
   //<editor-fold desc="CONSUL Key/Value management log messages">
@@ -567,6 +578,10 @@ public enum ServerLogMessages implements LogMessage {
   CONSUL_PROPERTY_MANAGER_INVALID_JSON(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Value returned is not valid json for key {}"),
   CONSUL_PROPERTY_MANAGER_SAVE_ALL(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Saving all entries for {}"),
   CONSUL_PROPERTY_MANAGER_STORE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Storing entry for {}"),
+  //</editor-fold>
+  //<editor-fold desc="System and Environment property access">
+  CONFIG_PROPERTY_ACCESS(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Getting property {} from system resulted in {}"),
+
   //</editor-fold>
 
   //<editor-fold desc="NameSpace mapping used to support multi tenancy">
@@ -622,8 +637,8 @@ public enum ServerLogMessages implements LogMessage {
   DISCOVERY_DEREGISTERED_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Deregistered mDNS service {}"),
   DISCOVERY_DEREGISTERED_ALL(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed all registered mDNS services"),
 
-  DISCOVERY_RESOLVED_REMOTE_SERVER(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Discovered remote server {} on {} using {}"),
-  DISCOVERY_REMOVED_REMOTE_SERVER(LEVEL.INFO, SERVER_CATEGORY.DISCOVERY, "Removed remote server {} on {} using {}"),
+  DISCOVERY_RESOLVED_REMOTE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.DISCOVERY, "Discovered remote server {} on {} using {}"),
+  DISCOVERY_REMOVED_REMOTE_SERVER(LEVEL.DEBUG, SERVER_CATEGORY.DISCOVERY, "Removed remote server {} on {} using {}"),
   //</editor-fold>
 
   //<editor-fold desc="CoAP, log messages">
@@ -657,9 +672,20 @@ public enum ServerLogMessages implements LogMessage {
   DEVICE_MANAGER_RESUME_ALL(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Resuming all registered devices"),
   DEVICE_MANAGER_LOAD_PROPERTIES(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loading Device Manager Properties"),
   DEVICE_MANAGER_STARTUP_COMPLETE(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Completed startup Device Manager"),
-
   //</editor-fold>
 
+  //<editor-fold desc="Network Interface status log messages">
+  NETWORK_MONITOR_STATE_CHANGE(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Network interface {} changed state to {}"),
+  NETWORK_MONITOR_DISCOVERED_DEVICES(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Discovered {} network device as {}"),
+  NETWORK_MONITOR_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Network monitor raised exception {}"),
+  NETWORK_MONITOR_RESOLVE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Failed to resolve host name {} "),
+  NETWORK_MONITOR_RESOLVE_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Successfully resolved host name {} to {}"),
+  //</editor-fold>
+
+  //<editor-fold desc="Rest API log messages">
+  REST_API_ACCESS(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Address {} requested {}, returning Status:{} with length {} bytes"),
+  REST_API_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Rest Server unable to start due to exception"),
+  //</editor-fold>
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

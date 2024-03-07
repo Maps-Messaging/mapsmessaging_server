@@ -39,13 +39,12 @@ public class HealthMonitorJMX {
   private static final String[] ITEM_DESCRIPTIONS = new String[]{"Resource ID name", "current status", "description of the current state", "Object Name of the resource"};
   private static final OpenType<?>[] OBJECT_TYPES = new OpenType[]{SimpleType.STRING, SimpleType.STRING, SimpleType.STRING, SimpleType.STRING};
 
-  private final List<String> typePath;
   private final ObjectInstance mbean;
 
   private String myStatus;
 
   public HealthMonitorJMX(List<String> parent) {
-    typePath = new ArrayList<>(parent);
+    List<String> typePath = new ArrayList<>(parent);
     typePath.add("service=Health");
     myStatus = "";
     mbean = JMXManager.getInstance().register(this, typePath);

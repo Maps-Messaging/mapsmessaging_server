@@ -3,42 +3,26 @@
 # Get Alpine linux image and add the Zulu JDK 13, as per
 # https://github.com/zulu-openjdk/zulu-openjdk/blob/master/alpine/13.0.1-13.28/Dockerfile
 #----------------------------------------------------------------------------------------------
-FROM alpine
+FROM alpine:3.19.0
 
 #----------------------------------------------------------------------------------------------
 # setup env variables
-#
+#----------------------------------------------------------------------------------------------
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV JAVA_HOME=/usr/lib/jvm/zulu-17
 
 #----------------------------------------------------------------------------------------------
-# Install cURL for debugging
+# Install DNS tools
 #----------------------------------------------------------------------------------------------
-#RUN apk --no-cache add curl
-
-#----------------------------------------------------------------------------------------------
-# Install locales
-#----------------------------------------------------------------------------------------------
-#ENV MUSL_LOCALE_DEPS cmake make musl-dev gcc gettext-dev libintl
-#ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
-
-#RUN apk add --no-cache \
-#    $MUSL_LOCALE_DEPS \
-#    && wget https://gitlab.com/rilian-la-te/musl-locales/-/archive/master/musl-locales-master.zip \
-#    && unzip musl-locales-master.zip \
-#      && cd musl-locales-master \
-#      && cmake -DLOCALE_PROFILE=OFF -D CMAKE_INSTALL_PREFIX:PATH=/usr . && make && make install \
-#      && cd .. && rm -r musl-locales-master
+RUN apk add --update --no-cache bind-tools
 
 #----------------------------------------------------------------------------------------------
 # Install the JDK from Azul
 #----------------------------------------------------------------------------------------------
 
 # Pull down the java jdk and install it
-#RUN ZULU_ARCH=zulu13.28.11-ca-jdk13.0.1-linux_musl_x64.tar.gz && \
-
 RUN ZULU_ARCH=zulu17.46.19-ca-jdk17.0.9-linux_musl_x64.tar.gz && \
     INSTALL_DIR=$( dirname $JAVA_HOME ) && \
     ZULU_DIR=$( basename ${ZULU_ARCH} .tar.gz ) && \
@@ -67,8 +51,9 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 # -------------------------
 #
 # ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
-# Admin       8080        TCP - Hawtio
-# Admin       8082        TCP - Native RestAPI
+# Admin       8080        TCP - Native RestAPI
+# Admin       8181        TCP - Hawtio
+# Admin       8778        TCP - Jolokia
 #
 # SemTech     1700        UDP
 # MQTT-SN     1884        UDP
@@ -77,7 +62,8 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 8082/tcp
+EXPOSE 8181/tcp
+EXPOSE 8778/tcp
 
 EXPOSE 1700/udp
 EXPOSE 1884/udp
@@ -97,31 +83,43 @@ RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/down
 RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
     dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
 
+#Set the docker log configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
 
+# Set the network configuration
 RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
     mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
-RUN mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml_orig && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/DestinationManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/DestinationManager.yaml
-
-
-
 
 #----------------------------------------------------------------------------------------------
-# Now configure and download hawtio for web/JMX/Rest administration
+# Set up the static files for the rest api engine
 #----------------------------------------------------------------------------------------------
-RUN  cd ./message_daemon-%%MAPS_VERSION%% &&  \
-    mv conf/hawtio.yaml conf/hawtio.yaml_old  && \
-    sed 's|/Users/matthew/Downloads/hawtio-war-2.15.0.war|./message_daemon-%%MAPS_VERSION%%/hawtio-default-2.17.7.war|' conf/hawtio.yaml_old > conf/hawtio.yaml && \
-    rm conf/hawtio.yaml_old && \
-    wget https://repo1.maven.org/maven2/io/hawt/hawtio-default/2.17.7/hawtio-default-2.17.7.war
+RUN mkdir /data && \
+    mv /message_daemon-%%MAPS_VERSION%%/html /data/html
+
 
 #----------------------------------------------------------------------------------------------
 # Define the data directory in the install as a volume so destination data is stored external
 #----------------------------------------------------------------------------------------------
 VOLUME /data
+
+#----------------------------------------------------------------------------------------------
+# Create a new user and group specifically for messaging
+#----------------------------------------------------------------------------------------------
+RUN addgroup -S messaginggroup && \
+    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /message_daemon-%%MAPS_VERSION%%
+
+#----------------------------------------------------------------------------------------------
+# Change ownership of the /data directory and the installation directory
+#----------------------------------------------------------------------------------------------
+RUN chown -R messaginguser:messaginggroup /data && \
+    chown -R messaginguser:messaginggroup /message_daemon-%%MAPS_VERSION%%
+
+#----------------------------------------------------------------------------------------------
+# Optionally set permissions on the installation directory, if necessary
+#----------------------------------------------------------------------------------------------
+RUN chmod -R 755 /message_daemon-%%MAPS_VERSION%%
 
 #----------------------------------------------------------------------------------------------
 # We can now simply start the server
@@ -130,4 +128,4 @@ VOLUME /data
 CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
     export PATH=${JAVA_HOME}/bin:${PATH} && \
-    message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
+    su -c "message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh" messaginguser

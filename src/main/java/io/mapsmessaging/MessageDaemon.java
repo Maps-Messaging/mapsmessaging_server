@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ package io.mapsmessaging;
 
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
-import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.configuration.EnvironmentConfig;
+import io.mapsmessaging.configuration.EnvironmentPathLookup;
+import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
@@ -27,6 +31,7 @@ import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
 import io.mapsmessaging.hardware.DeviceManager;
+import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -34,25 +39,27 @@ import io.mapsmessaging.network.NetworkConnectionManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.network.discovery.ServerConnectionManager;
+import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
+import io.mapsmessaging.rest.hawtio.HawtioManager;
+import io.mapsmessaging.rest.hawtio.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
+import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,12 +68,11 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class MessageDaemon {
 
-  public static MessageDaemon getInstance(){
-    return instance;
-  }
-  private static MessageDaemon instance;
+  @Getter
+  private static final MessageDaemon instance;
+
   static {
-    MessageDaemon tmp = null;
+    MessageDaemon tmp;
     try {
       tmp = new MessageDaemon();
     } catch (IOException e) {
@@ -75,53 +81,50 @@ public class MessageDaemon {
     instance = tmp;
   }
 
+  private final String uniqueId;
+
+  @Getter
+  private final UUID uuid;
+
+  @Getter
+  private final long startTime = System.currentTimeMillis();
+
+  @Getter
+  private boolean tagMetaData;
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final Map<String, AgentOrder> agentMap;
-  private final String uniqueId;
-  private final String path;
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
+  private boolean enableSystemTopics;
+  private boolean enableAdvancedSystemTopics;
+  private boolean enableDeviceIntegration;
+
+  @Getter
+  private DeviceManager deviceManager;
 
   @Getter
   private boolean enableResourceStatistics;
 
+  private static final String MAPS_HOME = "MAPS_HOME";
+  private static final String MAPS_DATA = "MAPS_DATA";
 
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
     isStarted = new AtomicBoolean(false);
-    String tmpHome = System.getProperty("MAPS_HOME", ".");
-    File testHome = new File(tmpHome);
-    if (!testHome.exists()) {
-      logger.log(ServerLogMessages.MESSAGE_DAEMON_NO_HOME_DIRECTORY, testHome);
-      tmpHome = ".";
-    }
-    if (tmpHome.endsWith(File.separator)) {
-      tmpHome = tmpHome.substring(0, tmpHome.length() - 1);
-    }
-    String homeDirectory = tmpHome;
-    File data = new File(homeDirectory + "/data");
-    if (!data.exists()) {
-      Files.createDirectories(data.toPath());
-    }
-    path = homeDirectory + "/data/";
-    File file = new File(path);
-    logger.log(ServerLogMessages.MESSAGE_DAEMON_HOME_DIRECTORY, file.getAbsolutePath());
-    InstanceConfig instanceConfig = new InstanceConfig(path);
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, "{{MAPS_HOME}}/data", true));
+    InstanceConfig instanceConfig = new InstanceConfig(EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA));
     instanceConfig.loadState();
     String serverId = instanceConfig.getServerName();
     if (serverId != null) {
       uniqueId = serverId;
     } else {
-      serverId = System.getProperty("SERVER_ID");
-      if (serverId == null) {
-        uniqueId = generateUniqueId();
-      } else {
-        uniqueId = serverId;
-      }
+      uniqueId = SystemProperties.getInstance().getProperty("SERVER_ID", generateUniqueId());
       instanceConfig.setServerName(uniqueId);
       instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
     }
+    uuid = instanceConfig.getUuid();
     // </editor-fold>
 
     //<editor-fold desc="Now see if we can start the Consul Manager">
@@ -135,46 +138,77 @@ public class MessageDaemon {
 
   private void loadConstants() {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
+    if (properties.containsKey("latitude") && properties.containsKey("longitude")) {
+      double lat = properties.getDoubleProperty("latitude", Double.NaN);
+      double lon = properties.getDoubleProperty("longitude", Double.NaN);
+      if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
+        LocationManager.getInstance().setPosition(lat, lon);
+      }
+    }
+    tagMetaData = properties.getBooleanProperty("tagMetaData", false);
     int transactionExpiry = properties.getIntProperty("TransactionExpiry", 3600000);
     int transactionScan = properties.getIntProperty("TransactionScan", 1000);
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
-
+    enableSystemTopics = properties.getBooleanProperty("EnableSystemTopics", false);
+    enableAdvancedSystemTopics = properties.getBooleanProperty("EnableSystemStatusTopics", false);
     if (properties.getBooleanProperty("EnableJMX", true)) {
       JMXManager.setEnableJMX(true);
+      mBean = new MessageDaemonJMX(this);
       new SimpleTaskSchedulerJMX(mBean.getTypePath());
       JMXManager.setEnableJMXStatistics(properties.getBooleanProperty("EnableJMXStatistics", true));
     } else {
+      mBean = null;
       JMXManager.setEnableJMX(false);
       JMXManager.setEnableJMXStatistics(false);
     }
     enableResourceStatistics = properties.getBooleanProperty("EnableResourceStatistics", false);
 
-    SystemTopicManager.setEnableStatistics(properties.getBooleanProperty("EnableSystemTopics", true));
+    SystemTopicManager.setEnableStatistics(enableSystemTopics);
+    SystemTopicManager.setEnableAdvancedStats(enableAdvancedSystemTopics);
     Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
     Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
+
+    ConfigurationProperties deviceManager = ConfigurationManager.getInstance().getProperties("DeviceManager");
+    enableDeviceIntegration = deviceManager.getBooleanProperty("enabled", false);
+
   }
 
-  private void createAgentStartStopList(String path) throws IOException {
+  private void createAgentStartStopList() throws IOException {
     // Start the Schema manager to it has the defaults and has loaded the required classes
     SecurityManager securityManager = new SecurityManager();
     DestinationManager destinationManager = new DestinationManager();
 
-    addToMap(5, 110, SchemaManager.getInstance());
-    addToMap(10, 90, TransactionManager.getInstance());
-    addToMap(30, 10, new DiscoveryManager(uniqueId));
-    addToMap(40, 120, securityManager);
-    addToMap(50, 95, destinationManager);
-    addToMap(60, 30, new SessionManager(securityManager, destinationManager, path));
-    addToMap(70, 15, new NetworkManager(mBean.getTypePath()));
-    addToMap(80, 5, new SystemTopicManager(destinationManager));
-    addToMap(90, 20, new NetworkConnectionManager(mBean.getTypePath()));
-    addToMap(100, 25, new JolokaManager());
-    addToMap(110, 30, new HawtioManager());
-    addToMap(120, 40, new RestApiServerManager());
-    addToMap(200, 2, new ServerConnectionManager());
-    addToMap(210, 0, new RoutingManager());
-    addToMap(220, 7, new DeviceManager());
+    addToMap(10, 2000, AuthManager.getInstance());
+    addToMap(50, 1100, SchemaManager.getInstance());
+    addToMap(80, 20, NetworkInterfaceMonitor.getInstance());
+    addToMap(100, 900, TransactionManager.getInstance());
+    addToMap(300, 11, new DiscoveryManager(uniqueId));
+    addToMap(400, 1200, securityManager);
+    addToMap(500, 950, destinationManager);
+    addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA)));
+    addToMap(700, 150, new NetworkManager());
+    addToMap(900, 200, new NetworkConnectionManager());
+    addToMap(1200, 400, new RestApiServerManager());
+    addToMap(2000, 30, new ServerConnectionManager());
+    addToMap(2100, 10, new RoutingManager());
+    addToMap(1000, 250, new JolokaManager());
+    addToMap(1100, 300, new HawtioManager());
+
+    // Optional modules that if not enabled do not load
+    if (enableSystemTopics) {
+      addToMap(800, 50, new SystemTopicManager(destinationManager));
+    }
+    if (enableDeviceIntegration) {
+      deviceManager = new DeviceManager();
+      addToMap(2200, 70, deviceManager);
+    } else {
+      deviceManager = null;
+    }
+  }
+
+  public boolean hasDeviceManager() {
+    return deviceManager != null && deviceManager.isEnabled();
   }
 
   private void addToMap(int start, int stop, Agent agent) {
@@ -215,6 +249,9 @@ public class MessageDaemon {
     return (NetworkManager) agentMap.get("Network Manager").getAgent();
   }
 
+  public NetworkConnectionManager getNetworkConnectionManager(){
+    return (NetworkConnectionManager) agentMap.get("Network Connection Manager").getAgent();
+  }
   public DestinationManager getDestinationManager() {
     return (DestinationManager) agentMap.get("Destination Manager").getAgent();
   }
@@ -223,15 +260,17 @@ public class MessageDaemon {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
-  public MessageDaemonJMX getMBean() {
-    return mBean;
+  public List<String> getTypePath() {
+    if (mBean != null) {
+      return mBean.getTypePath();
+    }
+    return new ArrayList<>();
   }
 
   public Integer start(String[] strings) throws IOException {
     isStarted.set(true);
-    mBean = new MessageDaemonJMX(this);
     loadConstants();
-    createAgentStartStopList(path);
+    createAgentStartStopList();
 
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
@@ -277,7 +316,7 @@ public class MessageDaemon {
       agent.getAgent().stop();
       logger.log(MESSAGE_DAEMON_AGENT_STOPPED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
     }
-    mBean.close();
+    if (mBean != null) mBean.close();
     return i;
   }
 
@@ -290,14 +329,14 @@ public class MessageDaemon {
   }
 
   private String generateUniqueId() {
-    String env = System.getenv("SERVER_ID");
+    String env = SystemProperties.getInstance().getEnvProperty("SERVER_ID");
     if (env != null) {
       return env;
     }
 
-    boolean useUUID = Boolean.parseBoolean(System.getProperty("USE_UUID", "TRUE"));
+    boolean useUUID = SystemProperties.getInstance().getBooleanProperty("USE_UUID", true);
     if (useUUID) {
-      return UUID.randomUUID().toString();
+      return UuidGenerator.getInstance().generate().toString();
     }
 
     try {

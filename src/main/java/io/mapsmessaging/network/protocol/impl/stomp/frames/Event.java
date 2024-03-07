@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
+import lombok.Getter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,10 +40,15 @@ public abstract class Event extends Frame {
   protected byte[] buffer;
   protected int bufferPos;
   private ByteArrayOutputStream byteArrayOutputStream;
+  @Getter
   protected String transaction;
+  @Getter
   protected String destination;
+  @Getter
   protected int priority;
+  @Getter
   protected long expiry;
+  @Getter
   protected long delay;
 
   protected Event(int maxBufferSize) {
@@ -218,23 +224,4 @@ public abstract class Event extends Frame {
     return new Send(maxBufferSize);
   }
 
-  public String getDestination() {
-    return destination;
-  }
-
-  public String getTransaction() {
-    return transaction;
-  }
-
-  public int getPriority() {
-    return priority;
-  }
-
-  public long getExpiry() {
-    return expiry;
-  }
-
-  public long getDelay() {
-    return delay;
-  }
 }

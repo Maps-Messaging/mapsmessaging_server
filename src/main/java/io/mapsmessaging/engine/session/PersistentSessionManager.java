@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,13 +21,17 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Getter;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
@@ -62,7 +66,7 @@ public class PersistentSessionManager {
   }
 
   public SessionDetails getSessionDetails(String sessionId){
-    return persistentMap.computeIfAbsent(sessionId, k -> new SessionDetails(sessionId, UUID.randomUUID().toString()));
+    return persistentMap.computeIfAbsent(sessionId, k -> new SessionDetails(sessionId, UuidGenerator.getInstance().generate().toString()));
   }
 
   public Map<String, SubscriptionContext> getSubscriptionContextMap(String sessionId, boolean isPersistent) {

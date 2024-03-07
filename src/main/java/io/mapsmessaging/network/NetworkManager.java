@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -25,7 +26,6 @@ import io.mapsmessaging.network.admin.NetworkManagerJMX;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 
@@ -40,7 +40,7 @@ public class NetworkManager implements ServiceManager, Agent {
   private final NetworkManagerJMX bean;
   private final List<ConfigurationProperties> adapters;
 
-  public NetworkManager(List<String> parent) {
+  public NetworkManager() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
 
@@ -55,8 +55,10 @@ public class NetworkManager implements ServiceManager, Agent {
     logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
     endPointServers = ServiceLoader.load(EndPointServerFactory.class);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
-
-    bean = new NetworkManagerJMX(parent, this);
+    if (properties.getBooleanProperty("preferIPv6Addresses", true)) {
+      System.setProperty("java.net.preferIPv6Addresses", "true");
+    }
+    bean = new NetworkManagerJMX(this);
   }
 
   @Override
@@ -96,10 +98,8 @@ public class NetworkManager implements ServiceManager, Agent {
           try {
             EndPointManager endPointManager = new EndPointManager(endPointURL, endPointServerFactory, networkConfig, bean);
             endPointManagers.put(endPointURL.toString(), endPointManager);
-          } catch (IOException iox) {
+          } catch (IOException | RuntimeException iox) {
             logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());
-          } catch (RuntimeException runtimeException) {
-            logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, runtimeException, endPointURL.toString());
           }
         } else {
           logger.log(ServerLogMessages.NETWORK_MANAGER_DEVICE_NOT_LOADED, endPointServerFactory.getName());
@@ -118,21 +118,20 @@ public class NetworkManager implements ServiceManager, Agent {
 
   public void startAll() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
-    for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
+    endPointManagers.forEach((key, endPointManager) -> {
       try {
-        EndPointManager endPointManager = entry.getValue();
         if (endPointManager.getState() == STATE.STOPPED) {
-          entry.getValue().start();
+          endPointManager.start();
         }
       } catch (IOException e) {
-        logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILED, e, entry.getKey());
+        logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILED, e, key);
       }
-    }
+    });
   }
 
   public void stopAll() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STOP_ALL);
-    for (Map.Entry<String, EndPointManager> entry : endPointManagers.entrySet()) {
+    endPointManagers.entrySet().parallelStream().forEach(entry -> {
       try {
         EndPointManager endPointManager = entry.getValue();
         if (endPointManager.getState() != STATE.STOPPED) {
@@ -141,7 +140,7 @@ public class NetworkManager implements ServiceManager, Agent {
       } catch (IOException e) {
         logger.log(ServerLogMessages.NETWORK_MANAGER_STOP_FAILED, e, entry.getKey());
       }
-    }
+    });
   }
 
   public void pauseAll() {

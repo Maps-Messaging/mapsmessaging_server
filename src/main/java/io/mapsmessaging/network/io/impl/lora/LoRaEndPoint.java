@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -137,7 +137,7 @@ public class LoRaEndPoint extends EndPoint {
     logger.log(ServerLogMessages.LORA_REGISTER_NETWORK_ACTIVITY, selectionKey);
     selectable = runner;
     if ((selectionKey & SelectionKey.OP_READ) != 0) {
-      SimpleTaskScheduler.getInstance().submit(new LoRaReader(runner));
+      SimpleTaskScheduler.getInstance().submit(new LoRaReader());
     }
     if ((selectionKey & SelectionKey.OP_WRITE) != 0) {
       SimpleTaskScheduler.getInstance().submit(new LoRaWriter(runner));
@@ -173,25 +173,18 @@ public class LoRaEndPoint extends EndPoint {
     synchronized (this) {
       lastRSSI = datagram.getRssi();
       incoming.add(datagram);
-      logger.log(ServerLogMessages.LORA_QUEUED_EVENT, incoming.size());
-
-      int from = datagram.getFrom();
-      LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
-      stats.update(datagram);
       if (!isQueued && selectable != null) {
         isQueued = true;
         register(SelectionKey.OP_READ, selectable);
       }
+      logger.log(ServerLogMessages.LORA_QUEUED_EVENT, incoming.size(), selectable != null);
+      int from = datagram.getFrom();
+      LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
+      stats.update(datagram);
     }
   }
 
   public class LoRaReader implements Runnable {
-
-    private final Selectable runner;
-
-    public LoRaReader(Selectable selectable) {
-      runner = selectable;
-    }
 
     public void run() {
       try {
@@ -200,11 +193,11 @@ public class LoRaEndPoint extends EndPoint {
             return; // Nothing to do
           }
         }
-        runner.selected(runner, null, SelectionKey.OP_READ);
+        selectable.selected(selectable, null, SelectionKey.OP_READ);
       } finally {
         synchronized (LoRaEndPoint.this) {
           if (!incoming.isEmpty()) {
-            register(SelectionKey.OP_READ, runner);
+            register(SelectionKey.OP_READ, selectable);
           } else {
             isQueued = false;
           }

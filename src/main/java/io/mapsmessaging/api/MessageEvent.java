@@ -18,22 +18,32 @@
 package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.message.Message;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+@Data
 public class MessageEvent {
 
-  private final @Getter String destinationName;
-  private final @Getter SubscribedEventManager subscription;
-  private final @Getter Message message;
-  private final @Getter Runnable completionTask;
+  private final String destinationName;
+  private final SubscribedEventManager subscription;
+  private final Message message;
+  private final Runnable completionTask;
 
   public MessageEvent(
-      @NonNull @NotNull String destinationName,
-      @NonNull @NotNull SubscribedEventManager subscription,
-      @NonNull @NotNull Message message,
-      @NonNull @NotNull Runnable completionTask) {
+      @NonNull
+      @NotNull
+      String destinationName,
+      @NonNull
+      @NotNull
+      SubscribedEventManager subscription,
+      @NonNull
+      @NotNull
+      Message message,
+      @NonNull
+      @NotNull
+      Runnable completionTask) {
     this.destinationName = destinationName;
     this.subscription = subscription;
     this.message = message;

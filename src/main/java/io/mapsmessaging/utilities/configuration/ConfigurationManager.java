@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +17,12 @@
 
 package io.mapsmessaging.utilities.configuration;
 
-import io.mapsmessaging.consul.ConsulManagerFactory;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.configuration.PropertyManager;
+import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
+import io.mapsmessaging.configuration.consul.ConsulPropertyManager;
+import io.mapsmessaging.configuration.file.FileYamlPropertyManager;
+import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -30,12 +35,14 @@ import java.util.List;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {
+  private static class Holder {
+    static final ConfigurationManager INSTANCE = new ConfigurationManager();
+  }
 
-  private static final ConfigurationManager instance;
-
-  static {
-    instance = new ConfigurationManager();
+  public static ConfigurationManager getInstance() {
+    return Holder.INSTANCE;
   }
 
   private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
@@ -49,33 +56,33 @@ public class ConfigurationManager {
     authoritative = null;
   }
 
-  public static ConfigurationManager getInstance() {
-    return instance;
+  public void register(){
+
   }
 
   public void initialise(@NonNull @NotNull String serverId) {
-    ConsulPropertyManager defaultConsulManager = null;
+    PropertyManager defaultManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
-      String consulConfigPath = System.getProperty("ConsulPath",ConsulManagerFactory.getInstance().getPath());
-      if (consulConfigPath.trim().isEmpty()) consulConfigPath=ConsulManagerFactory.getInstance().getPath();
-      String defaultName = "default";
-      if(consulConfigPath != null){
-        if(!consulConfigPath.endsWith("/")){
-          consulConfigPath = consulConfigPath+"/";
-        }
-        serverId = consulConfigPath+serverId;
-        defaultName = consulConfigPath+defaultName;
+      String configPath = ConsulManagerFactory.getInstance().getPath();
+      if (configPath == null) {
+        configPath = "/";
       }
+      String defaultName = "default";
+      if (!configPath.endsWith("/")) {
+        configPath = configPath + "/";
+      }
+      serverId = configPath + serverId;
+      defaultName = configPath + defaultName;
       authoritative = new ConsulPropertyManager(serverId);
       authoritative.load();
-      String locatedDefault = ConsulManagerFactory.getInstance().getManager().scanForDefaultConfig(consulConfigPath);
+      String locatedDefault = authoritative.scanForDefaultConfig(configPath);
       if(!locatedDefault.isEmpty()){
         defaultName = locatedDefault;
       }
 
-      defaultConsulManager = new ConsulPropertyManager(defaultName);
-      defaultConsulManager.load();
-      propertyManagers.add(defaultConsulManager);
+      defaultManager = new ConsulPropertyManager(defaultName);
+      defaultManager.load();
+      propertyManagers.add(defaultManager);
     }
     YamlPropertyManager yamlPropertyManager = new FileYamlPropertyManager();
     propertyManagers.add(yamlPropertyManager);
@@ -86,11 +93,11 @@ public class ConfigurationManager {
     try {
       // We have a consul link but there is no config loaded, so load up the configuration into the
       // consul server to bootstrap the server
-      if (defaultConsulManager != null && defaultConsulManager.properties.size() == 0) {
-        defaultConsulManager.copy(yamlPropertyManager);
+      if (defaultManager != null && defaultManager.getProperties().isEmpty()) {
+        defaultManager.copy(yamlPropertyManager);
       }
-      if (authoritative != null && authoritative.properties.size() == 0) {
-        authoritative.copy(defaultConsulManager); // Define the local host
+      if (authoritative != null && authoritative.getProperties().isEmpty()) {
+        authoritative.copy(defaultManager); // Define the local host
       }
     }
     catch(Throwable th){

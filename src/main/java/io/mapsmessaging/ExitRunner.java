@@ -20,22 +20,48 @@ package io.mapsmessaging;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
-import java.util.concurrent.locks.LockSupport;
+
+import java.nio.file.*;
+import java.io.IOException;
 
 public class ExitRunner extends Thread {
+  private final Path pidFilePath;
+  private final WatchService watchService;
 
-  private final File pidFile;
-
-  ExitRunner(File pidFile) {
-    this.pidFile = pidFile;
+  ExitRunner(File pidFile) throws IOException {
+    this.pidFilePath = pidFile.toPath().toAbsolutePath();
+    this.watchService = FileSystems.getDefault().newWatchService();
+    pidFilePath.getParent().register(watchService, StandardWatchEventKinds.ENTRY_DELETE);
     super.start();
   }
 
   @Override
   public void run() {
-    while (pidFile.exists()) {
-      LockSupport.parkNanos(1000000);
+    while (!Thread.interrupted()) {
+      WatchKey key;
+      try {
+        key = watchService.take(); // Blocks here until an event occurs
+      } catch (InterruptedException x) {
+        Thread.currentThread().interrupt(); // Restore interrupted status
+        return;
+      }
+
+      for (WatchEvent<?> event : key.pollEvents()) {
+        WatchEvent.Kind<?> kind = event.kind();
+
+        WatchEvent<Path> ev = (WatchEvent<Path>) event;
+        Path fileName = ev.context();
+
+        if (kind == StandardWatchEventKinds.ENTRY_DELETE && fileName.equals(pidFilePath.getFileName())) {
+          WrapperManager.stop(1);
+          return;
+        }
+      }
+
+      boolean valid = key.reset();
+      if (!valid) {
+        break;
+      }
     }
-    WrapperManager.stop(1);
   }
 }

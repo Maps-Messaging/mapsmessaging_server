@@ -1,18 +1,17 @@
 /*
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -21,7 +20,8 @@ package io.mapsmessaging.network.protocol.impl.stomp;
 import net.ser1.stomp.Client;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectodd.stilts.stomp.StompMessage;
 import org.projectodd.stilts.stomp.StompMessages;
 
@@ -32,10 +32,11 @@ import java.util.Map;
 
 class StompTransactionalPublishTest extends StompBaseTest {
 
-  @Test
+  @ParameterizedTest
+  @MethodSource("testParameters")
   @DisplayName("Test transactional publishing with commit")
-  void testPublishTransactionalWithCommit() throws IOException, LoginException, InterruptedException {
-    Client client = new Client("127.0.0.1", 8675, null, null);
+  void testPublishTransactionalWithCommit(String protocol, boolean auth) throws IOException, LoginException, InterruptedException {
+    Client client = getClient(protocol, auth);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");
@@ -65,10 +66,12 @@ class StompTransactionalPublishTest extends StompBaseTest {
     client.disconnect();
   }
 
-  @Test
+
+  @ParameterizedTest
+  @MethodSource("testParameters")
   @DisplayName("Test transactional publishing with abort")
-  void testPublishTransactionalWithAbort() throws IOException, LoginException, InterruptedException {
-    Client client = new Client("127.0.0.1", 8675, null, null);
+  void testPublishTransactionalWithAbort(String protocol, boolean auth) throws IOException, LoginException, InterruptedException {
+    Client client = getClient(protocol, auth);
     Assertions.assertTrue(client.isConnected());
     Map<String, String> map = new HashMap<>();
     map.put("id", "subscribe1");

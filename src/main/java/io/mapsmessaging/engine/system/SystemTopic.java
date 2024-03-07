@@ -40,6 +40,10 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
     empty = new ArrayList<>();
   }
 
+  public boolean isAdvanced() {
+    return false;
+  }
+
   @Override
   public String getName() {
     return getFullyQualifiedNamespace();

@@ -26,13 +26,11 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString
+@Getter
 public class SubAck extends MQTT_SNPacket {
 
-  @Getter
   private final int msgId;
-  @Getter
   private final int topicId;
-  @Getter
   private final ReasonCodes status;
 
   private byte flags;

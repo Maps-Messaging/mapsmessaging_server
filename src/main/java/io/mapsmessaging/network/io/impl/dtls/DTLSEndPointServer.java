@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
@@ -26,12 +27,12 @@ import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-import io.mapsmessaging.network.io.impl.ssl.SSLHelper;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPoint;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPointServer;
 import io.mapsmessaging.network.io.impl.udp.UDPInterfaceInformation;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.security.ssl.SslHelper;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class DTLSEndPointServer extends UDPEndPointServer {
   private final List<DTLSSessionManager> bondedEndPoints;
   private final int port;
   private final SSLContext sslContext;
+  private final ConfigurationProperties dtls;
 
   public DTLSEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url,
       SelectorLoadManager selectorLoadManager, AcceptHandler acceptHandler, EndPointManagerJMX managerMBean,
@@ -56,7 +58,10 @@ public class DTLSEndPointServer extends UDPEndPointServer {
     this.acceptHandler = acceptHandler;
     this.protocolFactory = protocolFactory;
 
-    sslContext = SSLHelper.getInstance().createContext(config.getProperties(), logger);
+    ConfigurationProperties securityProps = (ConfigurationProperties) config.getProperties().get("security");
+    dtls = (ConfigurationProperties) securityProps.get("dtls");
+
+    sslContext = SslHelper.createContext("dtls", dtls, logger);
     bondedEndPoints = new ArrayList<>();
     port = url.getPort();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);
@@ -81,7 +86,7 @@ public class DTLSEndPointServer extends UDPEndPointServer {
         NetworkInterface inetAddress = NetworkInterface.getByInetAddress(interfaceAddress.getAddress());
 
         UDPEndPoint udpEndPoint = new UDPEndPoint(bonded, selectorLoadManager.allocate(), 1, this, authenticationConfig, managerMBean);
-        DTLSSessionManager endPoint = new DTLSSessionManager(udpEndPoint, inetAddress, this, protocolImplFactory, sslContext, acceptHandler, managerMBean);
+        DTLSSessionManager endPoint = new DTLSSessionManager(udpEndPoint, inetAddress, this, protocolImplFactory, sslContext, acceptHandler, managerMBean, dtls);
         bondedEndPoints.add(endPoint);
       }
     }

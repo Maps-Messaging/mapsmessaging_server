@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfigurati
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.InitialConnectionState;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -54,6 +54,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   protected final SelectorTask selectorTask;
   protected final MQTTSNInterfaceManager factory;
   protected final StateEngine stateEngine;
+  @Getter
   protected final PacketIdManager packetIdManager;
   private final ScheduledFuture<?> monitor;
 
@@ -62,6 +63,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   protected SocketAddress addressKey;
 
   protected volatile boolean closed;
+  @Getter
   protected Session session;
 
   public MQTT_SNProtocol(@NonNull @NotNull MQTTSNInterfaceManager factory,
@@ -132,16 +134,13 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     return "1.2";
   }
 
-  public Session getSession() {
-    return session;
-  }
-
   public void setSession(Session session) {
     this.session = session;
   }
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
+    endPoint.updateReadBytes(packet.available());
     MQTT_SNPacket mqtt = packetFactory.parseFrame(packet);
     if (mqtt != null) {
       handleMQTTEvent(mqtt);
@@ -172,7 +171,8 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   @Override
   public void sendKeepAlive() {
     logger.log(ServerLogMessages.MQTT_SN_KEEP_ALIVE_SEND, endPoint.getName());
-    writeFrame(getPingRequest());
+    //writeFrame(getPingRequest());
+    endPoint.updateWriteBytes(2);
     long timeout = System.currentTimeMillis() - (keepAlive + 1000);
     if (endPoint.getLastRead() < timeout && endPoint.getLastWrite() < timeout) {
       try {
@@ -184,18 +184,12 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     }
   }
 
-  @Override
-  public long getTimeOut() {
-    return keepAlive;
-  }
-
   public String getName() {
     return "MQTT_SN 1.2";
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    System.err.println("Send Message::"+messageEvent);
     if (stateEngine.getMaxBufferSize() > 0 &&
         stateEngine.getMaxBufferSize() < messageEvent.getMessage().getOpaqueData().length + 9) {
       messageEvent.getCompletionTask().run();
@@ -222,10 +216,6 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     publish.setCallback(messageEvent.getCompletionTask());
     publish.setTopicIdType(stateEngine.getTopicAliasManager().getTopicAliasType(messageEvent.getDestinationName()));
     return publish;
-  }
-
-  public PacketIdManager getPacketIdManager() {
-    return packetIdManager;
   }
 
   public MQTT_SNPacket getPingRequest() {

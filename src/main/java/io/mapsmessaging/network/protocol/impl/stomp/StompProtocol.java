@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -35,7 +36,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +53,7 @@ public class StompProtocol extends ProtocolImpl {
   private final StateEngine stateEngine;
   private final SelectorTask selectorTask;
   private Frame activeFrame;
+  @Getter
   private String version;
 
   public StompProtocol(EndPoint endPoint) {
@@ -130,10 +132,6 @@ public class StompProtocol extends ProtocolImpl {
 
   public String getName() {
     return "STOMP";
-  }
-
-  public String getVersion() {
-    return version;
   }
 
   public void setVersion(float version) {

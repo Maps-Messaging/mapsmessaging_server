@@ -1,64 +1,46 @@
 /*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.security.uuid.UuidGenerator;
+import io.mapsmessaging.test.WaitForState;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import io.mapsmessaging.test.BaseTestConfig;
-import io.mapsmessaging.test.WaitForState;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class MQTTWildCardSubscriptionImplTest extends BaseTestConfig implements MqttCallback {
+class MQTTWildCardSubscriptionImplTest extends MQTTBaseTest implements MqttCallback {
 
   private final AtomicInteger eventCounter = new AtomicInteger(0);
 
-  @Test
-  @DisplayName("Test QoS:0 wildcard subscription")
-  void testWildcardSubscribeQOS0hEvent() throws MqttException, InterruptedException, IOException {
-    testWildcardSubscription(0);
-  }
-
-  @Test
-  @DisplayName("Test QoS:1  wildcard subscription")
-  void testWildcardSubscribeQOS1hEvent() throws MqttException, InterruptedException, IOException {
-    testWildcardSubscription(1);
-  }
-
-  @Test
-  @DisplayName("Test QoS:2  wildcard subscription")
-  void testWildcardSubscribeQOS2hEvent() throws MqttException, InterruptedException, IOException {
-    testWildcardSubscription(2);
-  }
-
-  private void testWildcardSubscription(int QoS) throws MqttException, InterruptedException, IOException {
-    MqttClient client = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(),  new MemoryPersistence());
-    MqttConnectOptions options = new MqttConnectOptions();
+  @ParameterizedTest
+  @MethodSource("mqttPublishTestParameters")
+  @DisplayName("Test QoS wildcard subscription")
+  void testWildcardSubscription(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
+    MqttConnectOptions options = getOptions(auth, version);
+    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     options.setWill("/topic/will", "this is my will msg".getBytes(), QoS, true);
-    options.setUserName("user1");
-    options.setPassword("password1".toCharArray());
     client.connect(options);
     client.setCallback(this);
     client.subscribe("/wildcard/topic/#");

@@ -1,77 +1,62 @@
 /*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *   Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
-import io.mapsmessaging.test.BaseTestConfig;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.test.WaitForState;
-import java.io.IOException;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttClientPersistence;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-class MQTTStoredMessageTest extends BaseTestConfig {
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+class MQTTStoredMessageTest extends MQTTBaseTest {
 
 
-  @Test
-  void testQos0() throws MqttException, IOException, InterruptedException {
-    connectSubscribeDisconnectPublishAndCheck(0);
-  }
+  @ParameterizedTest
+  @MethodSource("mqttPublishTestParameters")
+  @DisplayName("Test QoS publishing")
+  void connectSubscribeDisconnectPublishAndCheck(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
+    String topicName = getTopicName();
 
-  @Test
-  void testQos1() throws MqttException, IOException, InterruptedException {
-    connectSubscribeDisconnectPublishAndCheck(1);
-  }
-
-  @Test
-  void testQos2() throws MqttException, IOException, InterruptedException {
-    connectSubscribeDisconnectPublishAndCheck(2);
-  }
-
-  void connectSubscribeDisconnectPublishAndCheck(int QoS) throws MqttException, IOException, InterruptedException {
-
-    String subId = UUID.randomUUID().toString();
+    String subId = UuidGenerator.getInstance().generate().toString().substring(0, 12).replaceAll("-", "A");
     MqttClientPersistence persistence = new MemoryPersistence();
-    MqttClient subscribe = new MqttClient("tcp://localhost:2001", subId, persistence);
-    MessageListener ml = new MessageListener();
-    MqttConnectOptions subOption = new MqttConnectOptions();
-    subOption.setUserName("user1");
-    subOption.setPassword("password1".toCharArray());
+
+    MqttClient subscribe = new MqttClient(getUrl(protocol, auth), subId, persistence);
+    MqttConnectOptions subOption = getOptions(auth, version);
     subOption.setCleanSession(false);
 
+    MessageListener ml = new MessageListener();
+
     subscribe.connectWithResult(subOption).waitForCompletion(2000);
-    subscribe.subscribeWithResponse("/topic/test", QoS, ml).waitForCompletion(2000);
+    subscribe.subscribeWithResponse(topicName, QoS, ml).waitForCompletion(2000);
     Assertions.assertTrue(subscribe.isConnected());
     subscribe.disconnect();
 
-    MqttClient publish = new MqttClient("tcp://localhost:2001", UUID.randomUUID().toString(), new MemoryPersistence());
-    MqttConnectOptions pubOption = new MqttConnectOptions();
-    pubOption.setUserName("user1");
-    pubOption.setPassword("password1".toCharArray());
+    String pubId = UuidGenerator.getInstance().generate().toString().substring(0, 12).replaceAll("-", "A");
+    MqttClient publish = new MqttClient(getUrl(protocol, auth), pubId, new MemoryPersistence());
+    MqttConnectOptions pubOption = getOptions(auth, version);
+
     publish.connect(pubOption);
     Assertions.assertTrue(publish.isConnected());
 
@@ -80,7 +65,7 @@ class MQTTStoredMessageTest extends BaseTestConfig {
       message.setQos(QoS);
       message.setId(x);
       message.setRetained(false);
-      publish.publish("/topic/test", message);
+      publish.publish(topicName, message);
     }
     publish.disconnect();
     Assertions.assertFalse(publish.isConnected());
@@ -99,7 +84,7 @@ class MQTTStoredMessageTest extends BaseTestConfig {
       WaitForState.waitFor(15, TimeUnit.SECONDS,() -> ml.getCounter() == 10 );
       Assertions.assertEquals(10, ml.getCounter());
     }
-    subscribe.unsubscribe("/topic/test");
+    subscribe.unsubscribe(topicName);
     subscribe.disconnect();
     subscribe.close();
   }

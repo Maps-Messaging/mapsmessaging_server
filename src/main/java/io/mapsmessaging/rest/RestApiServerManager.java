@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@
 package io.mapsmessaging.rest;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import jakarta.servlet.Servlet;
-import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.grizzly.http.server.ServerConfiguration;
-import org.glassfish.grizzly.http.server.StaticHttpHandler;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.http.server.*;
 import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
@@ -40,10 +42,16 @@ import org.glassfish.jersey.uri.UriComponent;
 import javax.jmdns.ServiceInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_ACCESS;
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
 
 public class RestApiServerManager implements Agent {
 
   private final ConfigurationProperties map;
+  private final Logger logger = LoggerFactory.getLogger(RestApiServerManager.class);
 
   private boolean isSecure;
   private ServiceInfo[] serviceInfos;
@@ -90,22 +98,31 @@ public class RestApiServerManager implements Agent {
   }
 
   private SSLContextConfigurator setupSSL() {
-    String keyStore = map.getProperty("ssl_keyStoreFile", null);
-    String keyStorePass = map.getProperty("ssl_keyStorePassphrase", null);
-    String trustStore = map.getProperty("ssl_trustStoreFile", null);
-    String trustStorePass = map.getProperty("ssl_trustStorePassphrase", null);
-    if (keyStore != null &&
-        keyStorePass != null &&
-        trustStore != null &&
-        trustStorePass != null
-    ) {
-      isSecure = true;
-      SSLContextConfigurator sslCon = new SSLContextConfigurator();
-      sslCon.setKeyStoreFile(keyStore);
-      sslCon.setKeyStorePass(keyStorePass);
-      sslCon.setTrustStoreFile(trustStore);
-      sslCon.setTrustStorePass(trustStorePass);
-      return sslCon;
+    ConfigurationProperties securityProps = (ConfigurationProperties) map.get("security");
+    if (securityProps != null && securityProps.containsKey("tls")) {
+      ConfigurationProperties tls = (ConfigurationProperties) securityProps.get("tls");
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) tls.get("keyStore");
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) tls.get("trustStore");
+
+      String keyStore = keyStoreProps.getProperty("file", null);
+      String keyStorePass = keyStoreProps.getProperty("passphrase", null);
+
+      String trustStore = trustStoreProps.getProperty("file", null);
+      String trustStorePass = trustStoreProps.getProperty("passphrase", null);
+
+      if (keyStore != null &&
+          keyStorePass != null &&
+          trustStore != null &&
+          trustStorePass != null
+      ) {
+        isSecure = true;
+        SSLContextConfigurator sslCon = new SSLContextConfigurator();
+        sslCon.setKeyStoreFile(keyStore);
+        sslCon.setKeyStorePass(keyStorePass);
+        sslCon.setTrustStoreFile(trustStore);
+        sslCon.setTrustStorePass(trustStorePass);
+        return sslCon;
+      }
     }
     return null;
   }
@@ -125,76 +142,121 @@ public class RestApiServerManager implements Agent {
       if(obj instanceof ConfigurationProperties){
         ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
         if(staticConfig.getBooleanProperty("enabled", false)){
-          String path = staticConfig.getProperty("path", "./html");
+          String path = staticConfig.getProperty("directory", "./html");
           StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
+          staticHttpHandler.setFileCacheEnabled(true);
           httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
+
+          if (map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
+            String swaggerPath = path;
+            if (!swaggerPath.endsWith("/")) {
+              swaggerPath = swaggerPath + "/";
+            }
+            StaticHttpHandler swaggerHttpHandler = new StaticHttpHandler(swaggerPath + "swagger-ui");
+            swaggerHttpHandler.setFileCacheEnabled(true);
+            httpServer.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/swagger-ui/");
+          }
         }
       }
     }
   }
 
-  public void startServer() {
-    try {
+  private void addLogging() {
+    httpServer.getServerConfiguration().getMonitoringConfig().getWebServerConfig()
+        .addProbes(new HttpServerProbe.Adapter() {
 
+          @Override
+          public void onRequestReceiveEvent(
+              HttpServerFilter filter,
+              Connection connection,
+              Request request) {
+          }
+
+          @Override
+          public void onRequestCompleteEvent(
+              HttpServerFilter filter,
+              Connection connection,
+              Response response) {
+
+            String uri = response.getRequest().getRequestURI();
+            String client = response.getRequest().getRemoteAddr();
+            long len = response.getContentLengthLong();
+            logger.log(REST_API_ACCESS, client, uri, response.getStatus(), len);
+          }
+        });
+  }
+
+  public void startServer() {
+    boolean enableSwagger = map.getBooleanProperty("enableSwagger", true);
+    boolean enableUserManagement = map.getBooleanProperty("enableUserManagement", true);
+    boolean enableSchemaManagement = map.getBooleanProperty("enableSchemaManagement", true);
+    boolean enableInterfaceManagement = map.getBooleanProperty("enableInterfaceManagement", true);
+    boolean enableDestinationManagement = map.getBooleanProperty("enableDestinationManagement", true);
+    List<String> endpoints = new ArrayList<>();
+    endpoints.add("io.mapsmessaging.rest.api.impl");
+    endpoints.add("io.mapsmessaging.rest.api.impl.messaging");
+    endpoints.add("io.mapsmessaging.rest.translation");
+
+    if (enableSwagger) {
+      endpoints.add("io.swagger.v3.jaxrs2.integration.resources");
+      endpoints.add("io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource");
+    }
+    if (enableUserManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.auth");
+    }
+    if (enableDestinationManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.destination");
+    }
+    if (enableInterfaceManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
+    }
+    if (enableSchemaManagement) {
+      endpoints.add("io.mapsmessaging.rest.api.impl.schema");
+    }
+
+    try {
       final ResourceConfig config = new ResourceConfig();
-      config.packages(true, "io.mapsmessaging.rest.api.impl", "io.mapsmessaging.rest.api", "io.mapsmessaging.rest.translation");
-      if(map.getBooleanProperty("enableSwagger", false)) {
-//        config.register(io.swagger.jaxrs.listing.ApiListingResource.class);
-//        config.register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+      config.packages(false, endpoints.toArray(new String[0]));
+      boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
+      if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
+        config.register(new AuthenticationFilter());
       }
       config.register(DebugMapper.class);
       ServletContainer sc = new ServletContainer(config);
-
       SSLContextConfigurator sslConfig = setupSSL();
       String protocol = "http";
       if(isSecure){
         protocol = "https";
       }
       String baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
-
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
       loadStatic();
+      addLogging();
       httpServer.start();
-      if(map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
-        ServerConfiguration cfg = httpServer.getServerConfiguration();
-        ClassLoader loader = RestApiServerManager.class.getClassLoader();
-        CLStaticHttpHandler docsHandler = new CLStaticHttpHandler(loader, "swagger-ui/");
-        docsHandler.setFileCacheEnabled(false);
-        cfg.addHttpHandler(docsHandler, "/swagger-ui/");
-      }
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      logger.log(REST_API_FAILURE, e);
     }
   }
 
-  private HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig){
-    if (uri == null) {
-      throw new IllegalArgumentException("The URI must not be null");
-    } else {
-      String path = uri.getPath();
-      if (path == null) {
-        throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null");
-      } else if (path.isEmpty()) {
-        throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be present");
-      } else if (path.charAt(0) != '/') {
-        throw new IllegalArgumentException("The URI path, of the URI " + uri + ". must start with a '/'");
-      } else {
-        path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
-        WebappContext context = new WebappContext("GrizzlyContext", path);
-        ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
-
-        registration.addMapping("/*");
-        HttpServer server;
-        if(sslConfig != null) {
-          SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
-          server = GrizzlyHttpServerFactory.createHttpServer(uri,  ((GrizzlyHttpContainer)null), true,sslEngineConfigurator, false);
-        }
-        else{
-          server = GrizzlyHttpServerFactory.createHttpServer(uri);
-        }
-        context.deploy(server);
-        return server;
-      }
+  public HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig) {
+    String path = uri.getPath();
+    if (path == null || path.isEmpty() || path.charAt(0) != '/') {
+      throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null, present and start with a '/'");
     }
+
+    path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
+    WebappContext context = new WebappContext("GrizzlyContext", path);
+    ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
+
+    registration.addMapping("/*");
+    HttpServer server;
+    if (sslConfig != null) {
+      SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
+      server = GrizzlyHttpServerFactory.createHttpServer(uri, ((GrizzlyHttpContainer) null), true, sslEngineConfigurator, false);
+    } else {
+      server = GrizzlyHttpServerFactory.createHttpServer(uri);
+    }
+    context.deploy(server);
+    return server;
   }
 }

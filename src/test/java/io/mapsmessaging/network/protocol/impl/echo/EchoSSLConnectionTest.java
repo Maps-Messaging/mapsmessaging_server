@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.echo;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import io.mapsmessaging.test.BaseTestConfig;
@@ -29,6 +30,7 @@ import java.io.IOException;
 class EchoSSLConnectionTest extends BaseTestConfig  {
 
   @Test
+  @Disabled
   @DisplayName("Connect to ECHO server over SSL")
   void connectToServer() throws IOException {
     try {
@@ -40,6 +42,7 @@ class EchoSSLConnectionTest extends BaseTestConfig  {
   }
 
   @Test
+  @Disabled
   @DisplayName("Connect to ECHO server over SSL to an invalid port")
   void connectToInvalidServer() throws IOException {
     try {

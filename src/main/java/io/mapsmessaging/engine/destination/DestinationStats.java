@@ -47,9 +47,9 @@ public class DestinationStats extends Statistics {
 
   static {
     globalAverageStatistics = new Statistics();
-    totalPublishedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "No Interest", MESSAGES);
-    totalSubscribedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Published messages", MESSAGES);
-    totalNoInterestMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Subscribed messages", MESSAGES);
+    totalPublishedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Published messages", MESSAGES);
+    totalSubscribedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Subscribed messages", MESSAGES);
+    totalNoInterestMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "No Interest", MESSAGES);
     totalRetrievedMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Retrieved messages", MESSAGES);
     totalExpiredMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Expired messages", MESSAGES);
     totalDeliveredMessagesAverages = globalAverageStatistics.create(ACCUMULATOR.ADD, "Delivered messages", MESSAGES);

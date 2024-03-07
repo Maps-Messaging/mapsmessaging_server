@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.TopicAliasMapping;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
@@ -50,7 +50,6 @@ public class PublishListener5 extends PacketListener5 {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "5");
-    meta.put("time_ms", "" + System.currentTimeMillis());
     meta.put("sessionId", sessionId);
 
     MessageBuilder mb = new MessageBuilder();
@@ -132,7 +131,7 @@ public class PublishListener5 extends PacketListener5 {
     if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
       TopicAliasMapping topicAliasMapping = ((MQTT5Protocol) protocol).getClientTopicAliasMapping();
       String destinationName = publish.getDestinationName();
-      if (destinationName == null || destinationName.length() == 0) {
+      if (destinationName == null || destinationName.isEmpty()) {
         for (MessageProperty property : publish.getProperties().values()) {
           if (property.getId() == MessagePropertyFactory.TOPIC_ALIAS) {
             TopicAlias topicAlias = (TopicAlias) property;
@@ -176,7 +175,7 @@ public class PublishListener5 extends PacketListener5 {
       }
 
       String duplicateReport = publish.getProperties().getDuplicateReport();
-      if (duplicateReport.length() > 0) {
+      if (!duplicateReport.isEmpty()) {
         logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
       }
 

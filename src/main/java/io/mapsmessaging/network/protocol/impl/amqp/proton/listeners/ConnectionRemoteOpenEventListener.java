@@ -27,8 +27,10 @@ import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.EventType;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class ConnectionRemoteOpenEventListener extends BaseEventListener {
 
@@ -46,7 +48,8 @@ public class ConnectionRemoteOpenEventListener extends BaseEventListener {
       Symbol[] off = new Symbol[offered.size()];
       conn.setOfferedCapabilities(offered.toArray(off));
       Connection connection = (Connection) event.getContext();
-      Map<Symbol, Object> remoteProperties = connection.getRemoteProperties();
+      Map<Symbol, Object> remoteProperties = Optional.ofNullable(connection.getRemoteProperties())
+          .orElse(new LinkedHashMap<>());
       protocol.setJMS(false);
       remoteProperties.keySet().forEach(symbol -> {
         Object val = remoteProperties.get(symbol);

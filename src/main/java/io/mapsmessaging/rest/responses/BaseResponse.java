@@ -18,13 +18,14 @@
 package io.mapsmessaging.rest.responses;
 
 
-import javax.ws.rs.core.Request;
+import jakarta.servlet.http.HttpServletRequest;
+
 import java.io.Serializable;
 
 public class BaseResponse implements Serializable {
 
 
-  public BaseResponse(Request request) {
+  public BaseResponse(HttpServletRequest request) {
 
   }
 }

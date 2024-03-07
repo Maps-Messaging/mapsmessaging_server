@@ -33,7 +33,7 @@ public class Auth5 extends MQTTPacket5 {
 
   public Auth5(byte fixedHeader, long remainingLen, Packet packet)
       throws MalformedException, EndOfBufferException {
-    super(fixedHeader >> 4);
+    super((fixedHeader >> 4)&0xf);
     if ((fixedHeader & 0xf) != 0) {
       throw new MalformedException("Auth: Reserved bits in command byte not 0");
     }

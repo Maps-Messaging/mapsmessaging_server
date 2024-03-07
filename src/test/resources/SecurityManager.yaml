@@ -1,7 +1,7 @@
 SecurityManager:
   -
     default: PublicAuthConfig
-    public: PublicAuthConfig
+    public: UsernamePasswordLoginModule
     private: PrivateAuthConfig
     admin: MessagingAuthConfig
     anon: PublicAuthConfig

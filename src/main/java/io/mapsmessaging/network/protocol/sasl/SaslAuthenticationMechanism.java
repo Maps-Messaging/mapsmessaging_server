@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 
 package io.mapsmessaging.network.protocol.sasl;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.AuthenticationMechanism;
 import io.mapsmessaging.security.identity.IdentityLookup;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
@@ -30,19 +31,30 @@ import java.util.Map;
 
 public class SaslAuthenticationMechanism implements AuthenticationMechanism {
 
+  private static final String IDENTITY_PROVIDER = "identityProvider";
+
   private final SaslServer saslServer;
-  private final IdentityLookup identityLookup;
-  private final ServerCallbackHandler serverCallbackHandler;
+
+  @Getter
   private final String mechanism;
 
-  public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, ConfigurationProperties properties) throws SaslException {
+  public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, ConfigurationProperties properties) throws IOException {
     ConfigurationProperties config = (ConfigurationProperties) properties.get("sasl");
-    identityLookup = IdentityLookupFactory.getInstance().get(config.getProperty("identityProvider"), config.getMap());
-    if(identityLookup == null){
-      throw new SaslException("Unable to locate identity look up mechanism for "+config.getProperty("identityProvider"));
+    IdentityLookup identityLookup;
+    ServerCallbackHandler serverCallbackHandler;
+    if (config.getProperty(IDENTITY_PROVIDER).equalsIgnoreCase("system")) {
+      identityLookup = IdentityLookupFactory.getInstance().getSiteWide("system");
+    } else {
+      identityLookup = IdentityLookupFactory.getInstance().get(config.getProperty(IDENTITY_PROVIDER), config.getMap());
     }
-    serverCallbackHandler = new ServerCallbackHandler(serverName,identityLookup );
+    if(identityLookup == null){
+      throw new SaslException("Unable to locate identity look up mechanism for " + config.getProperty(IDENTITY_PROVIDER));
+    }
+    serverCallbackHandler = new ServerCallbackHandler(serverName, identityLookup);
     saslServer = Sasl.createSaslServer(mechanism, protocol, serverName, props, serverCallbackHandler);
+    if (saslServer == null) {
+      throw new IOException("Unsupported Sasl Mechanism : " + mechanism);
+    }
     this.mechanism = mechanism;
   }
 
@@ -53,6 +65,9 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
 
   @Override
   public boolean complete() {
+    if (saslServer == null) {
+      return true;
+    }
     return saslServer.isComplete();
   }
 
@@ -66,5 +81,4 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
     }
     return null;
   }
-
 }

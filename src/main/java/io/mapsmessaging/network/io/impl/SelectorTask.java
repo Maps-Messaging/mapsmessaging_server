@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 
 package io.mapsmessaging.network.io.impl;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -55,9 +55,9 @@ public class SelectorTask implements Selectable {
     logger = LoggerFactory.getLogger(SelectorTask.class);
     int readBufferSize = properties.getIntProperty("serverReadBufferSize", DefaultConstants.TCP_READ_BUFFER_SIZE);
     int writeBufferSize = properties.getIntProperty("serverWriteBufferSize", DefaultConstants.TCP_WRITE_BUFFER_SIZE);
-
+    long packetThreshold = properties.getLongProperty("packetReuseTimeout", 1000L);
     if (isUDP) {
-      readTask = new UDPReadTask(selectorCallback, readBufferSize, logger);
+      readTask = new UDPReadTask(selectorCallback, readBufferSize, packetThreshold, logger);
       writeTask = new UDPWriteTask(selectorCallback, writeBufferSize, this, logger);
     } else {
       int readDelay = -1;

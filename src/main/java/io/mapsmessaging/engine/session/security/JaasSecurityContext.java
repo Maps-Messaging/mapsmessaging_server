@@ -17,13 +17,20 @@
 
 package io.mapsmessaging.engine.session.security;
 
+import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.auth.QuotaPrincipal;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
+import io.mapsmessaging.auth.registry.principal.AccessIdPrincipal;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import java.io.IOException;
+import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
+
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.UUID;
 
 public class JaasSecurityContext extends SecurityContext {
 
@@ -41,8 +48,21 @@ public class JaasSecurityContext extends SecurityContext {
     try {
       loginContext.login();
       subject = loginContext.getSubject();
-      logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
+      UUID userId = subject.getPrincipals(UniqueIdentifierPrincipal.class).stream()
+          .findFirst()
+          .map(UniqueIdentifierPrincipal::getAuthId)
+          .orElse(null);
+      if (userId != null) {
+        SessionPrivileges session = AuthManager.getInstance().getQuota(userId);
+        if (session != null) {
+          subject.getPrincipals().add(new QuotaPrincipal(session, null));
+        }
+      }
       isLoggedIn = true;
+      subject = AuthManager.getInstance().update(subject);
+      subject.getPrincipals().add(new AccessIdPrincipal(getAccessIds()));
+      buildAccessIds();
+      logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);
     } catch (LoginException e) {
       logger.log(ServerLogMessages.SECURITY_MANAGER_FAILED_LOG_IN, username, e.getMessage());
       IOException ioException = new IOException(e.getMessage());

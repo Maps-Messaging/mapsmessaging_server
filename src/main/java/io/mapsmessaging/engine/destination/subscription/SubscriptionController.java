@@ -148,7 +148,9 @@ public class SubscriptionController implements DestinationManagerListener {
         logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
       }
     }
-    subscriptionControllerJMX.close();
+    if (subscriptionControllerJMX != null) {
+      subscriptionControllerJMX.close();
+    }
   }
 
   public void close() {
@@ -174,7 +176,9 @@ public class SubscriptionController implements DestinationManagerListener {
       }
     }
     contextMap.clear();
-    subscriptionControllerJMX.close();
+    if (subscriptionControllerJMX != null) {
+      subscriptionControllerJMX.close();
+    }
   }
 
   public boolean isPersistent() {
@@ -328,7 +332,6 @@ public class SubscriptionController implements DestinationManagerListener {
       try {
         createSubscription(interested.get(0), destinationImpl);
       } catch (IOException e) {
-        e.printStackTrace();
         throw new RuntimeException(e);
       }
     }

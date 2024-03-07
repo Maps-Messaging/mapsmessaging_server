@@ -49,7 +49,7 @@ public class ProtocolJMX implements HealthMonitor {
     mbean = JMXManager.getInstance().register(this, list);
     movingAveragesJMXList = new ArrayList<>();
     List<String> typePath = new ArrayList<>(list);
-    if(JMXManager.isEnableJMXStatistics()) {
+    if (JMXManager.isEnableJMX() && JMXManager.isEnableJMXStatistics()) {
       registerMovingAverage(protocol.getReceivedMessages(), typePath);
       registerMovingAverage(protocol.getSentMessages(), typePath);
     }

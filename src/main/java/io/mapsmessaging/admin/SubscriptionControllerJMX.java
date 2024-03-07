@@ -37,11 +37,11 @@ public class SubscriptionControllerJMX {
 
   public SubscriptionControllerJMX(SubscriptionController subscription) {
     this.subscription = subscription;
-    List<String> local = new ArrayList<>(MessageDaemon.getInstance().getMBean().getTypePath());
+    List<String> local;
+    local = new ArrayList<>(MessageDaemon.getInstance().getTypePath());
     local.add("SessionManager=SessionManager");
     local.add("session=" + subscription.getSessionId());
     mbean = JMXManager.getInstance().register(this, local);
-
   }
 
   public void close() {

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.auth.priviliges.SessionPrivileges;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Data;
 import lombok.ToString;
-
-import java.util.UUID;
 
 @ToString
 @Data
@@ -43,7 +43,6 @@ public class SessionContext {
   private String username;
   private char[] password;
   private int receiveMaximum;
-  private int duration;
   private boolean isRestored;
   private boolean resetState;
   private boolean persistentSession;
@@ -55,7 +54,10 @@ public class SessionContext {
     expiry = -1;
     receiveMaximum = (1 << 16) - 1;
     isRestored = false;
-    duration = -1;
-    uniqueId = UUID.randomUUID().toString();
+    uniqueId = UuidGenerator.getInstance().generate().toString();
+  }
+
+  public void update(SessionPrivileges sessionPrivileges) {
+
   }
 }

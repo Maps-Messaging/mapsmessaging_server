@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
@@ -35,7 +37,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
@@ -57,7 +58,7 @@ public class InitialConnectionState implements State {
   }
 
   @Override
-  public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
+  public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws IOException {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
       ConfigurationProperties props = endPoint.getConfig().getProperties();
@@ -99,7 +100,8 @@ public class InitialConnectionState implements State {
             Map<String, String> authProps = new HashMap<>();
             authProps.put(Sasl.QOP, "auth");
             try {
-              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), "", "mqtt-sn", authProps, props);
+              String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
+              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), serverName, "mqtt-sn", authProps, props);
               stateEngine.setState(new AuthenticationState(connect, saslAuthenticationMechanism));
               ((MQTT_SNProtocolV2)protocol).setSaslAuthenticationMechanism(saslAuthenticationMechanism);
               return new Auth(ReasonCodes.CONTINUE_AUTHENTICATION, saslAuthenticationMechanism.getName(), new byte[0]);

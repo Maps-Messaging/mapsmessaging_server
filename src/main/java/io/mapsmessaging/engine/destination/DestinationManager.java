@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
@@ -29,7 +30,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -277,6 +277,15 @@ public class DestinationManager implements DestinationFactory, Agent {
       pipeline.copy(name -> true, response);
     }
     return new ArrayList<>(response.keySet());
+  }
+
+  public long getStorageSize() {
+    long count = 0;
+    for(DestinationManagerPipeline pipeline:creatorPipelines){
+      pipeline.getStorageSize();
+    }
+
+    return count;
   }
 
   public class ResourceLoaderManagement {

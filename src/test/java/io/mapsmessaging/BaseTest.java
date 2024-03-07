@@ -1,18 +1,17 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2023 ] [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -21,11 +20,12 @@ package io.mapsmessaging;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class BaseTest {
 
@@ -49,12 +49,14 @@ public class BaseTest {
     Date dt = new Date();
     System.err.println(getHeaderPartition());
     if(testInfo != null) {
-      System.err.println(pad("Starting:: " + testInfo.getDisplayName(), " "));
+      String path = testInfo.getTestClass().get().getSimpleName() + "::" + testInfo.getTestMethod().get().getName();
+      System.err.println(pad("Starting:: " + path, " "));
     }
     System.err.println(pad("Date    :: "+dt.toString(), " "));
     System.err.println(getHeaderPartition());
     if(testInfo != null && testInfo.getDisplayName() != null) {
-      logger.log(LogMessages.DEBUG, "Starting " + testInfo.getDisplayName());
+      logger.log(LogMessages.ERROR, getHeaderPartition());
+      logger.log(LogMessages.ERROR, "Starting " + testInfo.getDisplayName());
     }
   }
 
@@ -62,7 +64,7 @@ public class BaseTest {
   public void logTestFinish(TestInfo testInfo){
     System.err.println(pad("Completed:: "+testInfo.getDisplayName()+", "+(System.currentTimeMillis()-start)+"ms", " "));
     System.err.println(getHeaderPartition());
-    logger.log(LogMessages.DEBUG, "Completed "+ testInfo.getDisplayName()+" " +(System.currentTimeMillis()-start)+"ms");
+    logger.log(LogMessages.ERROR, "Completed " + testInfo.getDisplayName() + " " + (System.currentTimeMillis() - start) + "ms");
   }
 
   private String getHeaderPartition(){

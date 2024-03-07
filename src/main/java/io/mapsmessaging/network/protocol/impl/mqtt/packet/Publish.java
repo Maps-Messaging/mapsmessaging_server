@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,20 +20,29 @@ package io.mapsmessaging.network.protocol.impl.mqtt.packet;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.ServerPublishPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
+import lombok.Getter;
+
+import java.nio.ByteBuffer;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718037
  */
 
 @java.lang.SuppressWarnings({"common-java:DuplicatedBlocks"})
-public class Publish extends MQTTPacket {
+public class Publish extends MQTTPacket implements ServerPublishPacket {
 
+  @Getter
   private final boolean retain;
   private final boolean isDup;
+  @Getter
   private final QualityOfService qos;
+  @Getter
   private final String destinationName;
+  @Getter
   private final int packetId;
+  @Getter
   private final byte[] payload;
 
   public Publish(boolean retain, byte[] payload, QualityOfService qos, int packetId, String destination) {
@@ -91,28 +100,8 @@ public class Publish extends MQTTPacket {
   }
 
 
-  public boolean isRetain() {
-    return retain;
-  }
-
   public boolean isDuplicate() {
     return isDup;
-  }
-
-  public String getDestinationName() {
-    return destinationName;
-  }
-
-  public int getPacketId() {
-    return packetId;
-  }
-
-  public byte[] getPayload() {
-    return payload;
-  }
-
-  public QualityOfService getQos() {
-    return qos;
   }
 
   public Priority getPriority() {
@@ -134,9 +123,7 @@ public class Publish extends MQTTPacket {
         + "]";
   }
 
-  @java.lang.SuppressWarnings({"common-java:DuplicatedBlocks"})
-  @Override
-  public int packFrame(Packet packet) {
+  private long packHeader(Packet packet){
     //
     // Pack the header
     //
@@ -160,7 +147,25 @@ public class Publish extends MQTTPacket {
     if (qos.isSendPacketId()) {
       writeShort(packet, packetId);
     }
+    return remaining;
+  }
+
+  @java.lang.SuppressWarnings({"common-java:DuplicatedBlocks"})
+  @Override
+  public int packFrame(Packet packet) {
+    long remaining = packHeader(packet);
     packet.put(payload);
     return (int) (remaining + 1);
+  }
+
+  @Override
+  public Packet[] packAdvancedFrame(Packet packet) {
+    packHeader(packet);
+    if(payload.length < packet.available()) {
+      packet.put(payload);
+      return new Packet[]{packet};
+    }
+    Packet payloadPacket = new Packet(ByteBuffer.wrap(payload));
+    return new Packet[]{packet, payloadPacket };
   }
 }

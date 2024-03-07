@@ -1,0 +1,52 @@
+#
+#   Copyright [ 2020 - 2023 ] [Matthew Buckton]
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+#
+# Configures the physical devices that the server can mount into the namespace
+#
+
+DeviceManager:
+  global:
+    enabled: true    # Enabled hardware interface
+    trigger: everyMinute
+    scanTime: 300000 # Scan time looking for new hardware
+    topicNameTemplate: /device/[bus_name]/[device_name]
+    filter: ON_CHANGE # Option is ALWAYS_SEND or ON_CHANGE. If ON_CHANGE then when the data changes will the event be published
+    selector: '' # JMS Selector to use when filtering the actual data from the sensor
+
+  data:
+    - name: triggers
+      config:
+        - type: cron
+          name: everyMinute
+          cron: 0 0/1 * * * ?
+        - type: periodic
+          name: everySecond
+          interval: 1000
+
+
+    - name: i2c
+      enabled: true  # Enable or disable I2C bus interface
+      config:
+        - bus: 1
+          enabled: true
+          autoScan: true
+          topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
+          trigger: everySecond
+          devices:
+            - address: 0x10
+              name: DebugDevice
+

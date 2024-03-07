@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -38,6 +38,10 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   @Getter
   @Setter
   private static boolean enableStatistics = true;
+
+  @Getter
+  @Setter
+  private static boolean enableAdvancedStats = true;
 
   private final ServiceLoader<SystemTopic> systemTopics;
   private final List<SystemTopic> completeList;
@@ -78,12 +82,14 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   public void start() {
     if (enableStatistics) {
       for (SystemTopic systemTopic : systemTopics) {
-        systemTopic.start();
-        destinationManager.addSystemTopic(systemTopic);
-        String[] aliases = systemTopic.aliases();
-        completeList.add(systemTopic);
-        createAliases(aliases, systemTopic);
-        addChildren(systemTopic.getChildren());
+        if (!systemTopic.isAdvanced() || enableAdvancedStats) {
+          systemTopic.start();
+          destinationManager.addSystemTopic(systemTopic);
+          String[] aliases = systemTopic.aliases();
+          completeList.add(systemTopic);
+          createAliases(aliases, systemTopic);
+          addChildren(systemTopic.getChildren());
+        }
       }
       scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 1, 10, TimeUnit.SECONDS);
     }

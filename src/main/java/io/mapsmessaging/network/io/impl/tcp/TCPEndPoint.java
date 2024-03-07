@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.tcp;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -24,7 +25,6 @@ import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -32,6 +32,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,8 +68,13 @@ public class TCPEndPoint extends EndPoint {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
     }
-    mbean = new EndPointJMX(jmxParent, this);
-    jmxParentPath = mbean.getTypePath();
+    if (jmxParent != null && !jmxParent.isEmpty()) {
+      mbean = new EndPointJMX(jmxParent, this);
+      jmxParentPath = mbean.getTypePath();
+    } else {
+      mbean = null;
+      jmxParentPath = new ArrayList<>();
+    }
   }
 
   public TCPEndPoint(long id, Socket accepted, Selector select, String authConfig, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
@@ -86,8 +92,13 @@ public class TCPEndPoint extends EndPoint {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
     }
-    mbean = new EndPointJMX(managerMBean.getTypePath(), this);
-    jmxParentPath = mbean.getTypePath();
+    if (managerMBean != null) {
+      mbean = new EndPointJMX(managerMBean.getTypePath(), this);
+      jmxParentPath = mbean.getTypePath();
+    } else {
+      mbean = null;
+      jmxParentPath = new ArrayList<>();
+    }
   }
 
 
@@ -107,7 +118,7 @@ public class TCPEndPoint extends EndPoint {
       } catch (IOException e) {
         logger.log(ServerLogMessages.TCP_CLOSE_EXCEPTION, e, name);
       } finally {
-        mbean.close();
+        if (mbean != null) mbean.close();
         if (server != null) {
           server.handleCloseEndPoint(this);
         }
@@ -165,10 +176,12 @@ public class TCPEndPoint extends EndPoint {
 
   protected int readBuffer(ByteBuffer bb) throws IOException {
     if (!socketChannel.isConnected() || isClosed.get()) {
+      this.server.incrementError();
       throw new IOException("Socket closed");
     }
     int count = socketChannel.read(bb);
     if (count < 0) {
+      this.server.incrementError();
       throw new IOException("Socket closed");
     }
     updateReadBytes(count);

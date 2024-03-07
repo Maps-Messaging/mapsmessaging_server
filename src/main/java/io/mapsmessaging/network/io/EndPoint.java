@@ -23,6 +23,7 @@ import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 public abstract class EndPoint implements Closeable {
 
+  public static final LongAdder currentConnections = new LongAdder();
   public static final LongAdder totalReadBytes = new LongAdder();
   public static final LongAdder totalWriteBytes = new LongAdder();
   public static final LongAdder totalConnections = new LongAdder();
@@ -44,6 +46,7 @@ public abstract class EndPoint implements Closeable {
 
   @Getter
   protected final EndPointServerStatus server;
+  @Getter
   protected final Logger logger;
 
   private final AtomicLong lastRead = new AtomicLong();
@@ -56,9 +59,12 @@ public abstract class EndPoint implements Closeable {
   private final LinkedMovingAverages bufferUnderFlow;
 
   private final boolean isClient;
+  @Getter
   private final long id;
+  private boolean isClosed;
 
   protected List<String> jmxParentPath;
+  @Setter
   private CloseHandler closeHandler;
 
   protected EndPoint(long id, EndPointServerStatus server) {
@@ -72,6 +78,8 @@ public abstract class EndPoint implements Closeable {
     bufferUnderFlow = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Buffer Underflow", 1, 5, 4, TimeUnit.MINUTES, "Packets");
     logger = createLogger();
     totalConnections.increment();
+    currentConnections.increment();
+    isClosed = false;
   }
 
   @Override
@@ -79,7 +87,13 @@ public abstract class EndPoint implements Closeable {
     if (closeHandler != null) {
       closeHandler.close();
     }
-    totalDisconnections.increment();
+    synchronized (this) {
+      if (!isClosed) {
+        isClosed = true;
+        totalDisconnections.increment();
+        currentConnections.decrement();
+      }
+    }
   }
 
   public boolean isClient() {
@@ -118,14 +132,6 @@ public abstract class EndPoint implements Closeable {
     return jmxParentPath;
   }
 
-  public void setCloseHandler(CloseHandler closeHandler) {
-    this.closeHandler = closeHandler;
-  }
-
-  public long getId() {
-    return id;
-  }
-
   public boolean isUDP() {
     return false;
   }
@@ -144,10 +150,6 @@ public abstract class EndPoint implements Closeable {
 
   public long getLastWrite() {
     return lastWrite.get();
-  }
-
-  public Logger getLogger() {
-    return logger;
   }
 
   public Principal getEndPointPrincipal() {

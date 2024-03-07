@@ -18,39 +18,35 @@
 package io.mapsmessaging.engine.session.security;
 
 import com.sun.security.auth.UserPrincipal;
+import io.mapsmessaging.security.SubjectHelper;
+import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.security.identity.principals.GroupIdPrincipal;
+import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
+import lombok.Getter;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.HashSet;
-import java.util.Set;
-import javax.security.auth.Subject;
+import java.util.*;
 
+@Getter
 public abstract class SecurityContext {
 
+  protected boolean isLoggedIn;
   protected final String username;
   protected Subject subject;
-  protected boolean isLoggedIn;
+
+  private List<UUID> accessIds;
 
   protected SecurityContext(String username){
     this.username = username;
-  }
-
-  public String getUsername(){
-    return username;
-  }
-
-  public Subject getSubject(){
-    return subject;
-  }
-
-  public boolean isLoggedIn(){
-    return isLoggedIn;
   }
 
   public abstract void login() throws IOException;
 
   public abstract void logout();
 
-  protected Subject buildSubject(String user, Principal endPointPrincipal){
+  static protected Subject buildSubject(String user, Principal endPointPrincipal) {
     Set<Principal> principalSet = new HashSet<>();
     Set<String> credentials = new HashSet<>();
     Set<String> privileges = new HashSet<>();
@@ -59,8 +55,21 @@ public abstract class SecurityContext {
     return new Subject(true, principalSet, credentials, privileges);
   }
 
+  public void buildAccessIds() {
+    if (accessIds == null) {
+      accessIds = new ArrayList<>();
+      accessIds.add(SubjectHelper.getUniqueId(subject));
+      for (GroupIdPrincipal groupIdPrincipal : subject.getPrincipals(GroupIdPrincipal.class)) {
+        for (GroupIdMap g : groupIdPrincipal.getGroupIds()) {
+          accessIds.add(g.getAuthId());
+        }
+      }
+    }
+  }
+
   @Override
   public String toString(){
     return "Username:"+username+"/tSubject:"+subject;
   }
+
 }

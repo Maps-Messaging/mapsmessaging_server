@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.enco
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.HeaderEncoder;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.PropertiesEncoder;
 import lombok.NonNull;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.messaging.Header;
-import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.amqp.messaging.*;
 import org.apache.qpid.proton.message.Message;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,15 +36,22 @@ import java.util.Map;
 
 public class BaseMessageTranslator implements MessageTranslator {
 
+  private static final String AMQP_TYPE = "amqpType";
+  private static final String STRING_TYPE = "string";
+  private static final String BYTE_ARRAY_TYPE = "byteArray";
+  private static final String DATA_TYPE = "data";
+
   @Override
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     Map<String, TypedData> dataMap = new LinkedHashMap<>();
     messageBuilder.setContentType(protonMessage.getContentType());
 
     HeaderEncoder.unpackHeader(messageBuilder, protonMessage.getHeader());
-    PropertiesEncoder.unpackProperties(protonMessage.getProperties(), dataMap, messageBuilder);
+    Properties props = protonMessage.getProperties();
+    if (props != null) {
+      PropertiesEncoder.unpackProperties(props, dataMap, messageBuilder);
+    }
     ApplicationMapEncoder.unpackApplicationMap(dataMap, protonMessage);
-
     messageBuilder.setDataMap(dataMap);
 
     Map<String, String> meta = messageBuilder.getMeta();
@@ -53,6 +60,27 @@ public class BaseMessageTranslator implements MessageTranslator {
       messageBuilder.setMeta(meta);
     }
     meta.put("type", "" + getType());
+
+    Section section = protonMessage.getBody();
+    if (section instanceof AmqpValue) {
+      AmqpValue value = (AmqpValue) section;
+      Object val = value.getValue();
+      byte[] buf;
+      if (val instanceof String) {
+        buf = ((String) val).getBytes();
+        meta.put(AMQP_TYPE, STRING_TYPE);
+      } else if (val instanceof byte[]) {
+        buf = (byte[]) val;
+        meta.put(AMQP_TYPE, BYTE_ARRAY_TYPE);
+      } else {
+        buf = new byte[0];
+      }
+      messageBuilder.setOpaqueData(buf);
+    } else if (section instanceof Data) {
+      Data data = (Data) section;
+      messageBuilder.setOpaqueData(data.getValue().getArray());
+      meta.put(AMQP_TYPE, DATA_TYPE);
+    }
     return messageBuilder;
   }
 
@@ -77,6 +105,24 @@ public class BaseMessageTranslator implements MessageTranslator {
     protonMessage.setMessageAnnotations(annotations);
 
     protonMessage.setContentType(message.getContentType());
+    if (message.getOpaqueData() != null) {
+      String encoding = message.getMeta().get(AMQP_TYPE);
+      if (encoding == null) {
+        encoding = DATA_TYPE;
+      }
+      switch (encoding) {
+        case STRING_TYPE:
+          protonMessage.setBody(new AmqpValue(new String(message.getOpaqueData())));
+          break;
+        case BYTE_ARRAY_TYPE:
+          protonMessage.setBody(new AmqpValue(message.getOpaqueData()));
+          break;
+        case DATA_TYPE:
+        default:
+          protonMessage.setBody(new Data(new Binary(message.getOpaqueData())));
+          break;
+      }
+    }
     return protonMessage;
   }
 

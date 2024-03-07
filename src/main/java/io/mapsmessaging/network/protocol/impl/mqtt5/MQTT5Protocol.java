@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -24,6 +25,7 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -43,15 +45,15 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
-import java.util.List;
 import java.util.Map;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
@@ -60,21 +62,42 @@ public class MQTT5Protocol extends ProtocolImpl {
 
   private final Logger logger;
   private final PacketFactory5 packetFactory;
-  private final PacketListenerFactory5 packetListenerFactory;
   private final SelectorTask selectorTask;
+
+  @Getter
+  private final PacketListenerFactory5 packetListenerFactory;
+  @Getter
   private final PacketIdManager packetIdManager;
+  @Getter
   private final NaturalOrderedLongList clientOutstanding;
+  @Getter
   private final TopicAliasMapping clientTopicAliasMapping;
+  @Getter
   private final TopicAliasMapping serverTopicAliasMapping;
-  private final int serverReceiveMaximum;
-  private final int clientReceiveMaximum;
-  private final int minimumKeepAlive;
+
+  @Getter
   private volatile boolean closed;
 
+  @Getter
+  private final int serverReceiveMaximum;
+  @Getter
+  private final int clientReceiveMaximum;
+  @Getter
+  private final int minimumKeepAlive;
+
+  @Getter
   private Session session;
+  @Getter
+  @Setter
   private AuthenticationContext authenticationContext;
+  @Getter
+  @Setter
   private long maxBufferSize;
+  @Getter
+  @Setter
   private boolean isClosing;
+  @Getter
+  @Setter
   private boolean sendProblemInformation;
 
 
@@ -110,7 +133,8 @@ public class MQTT5Protocol extends ProtocolImpl {
 
     if(props.containsKey("sasl")){
       ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
-      authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"),"ServerNameHere", getName(), endPoint.getConfig().getProperties());
+      String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
+      authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"), serverName, getName(), endPoint.getConfig().getProperties());
     }
     else{
       authenticationContext = null;
@@ -133,24 +157,12 @@ public class MQTT5Protocol extends ProtocolImpl {
     selectorTask.register(SelectionKey.OP_READ);
   }
 
-  public TopicAliasMapping getClientTopicAliasMapping() {
-    return clientTopicAliasMapping;
-  }
-
-  public TopicAliasMapping getServerTopicAliasMapping() {
-    return serverTopicAliasMapping;
-  }
-
   @Override
   public String getSessionId() {
     if (session == null) {
       return "waiting";
     }
     return session.getName();
-  }
-
-  public Session getSession() {
-    return session;
   }
 
   public void setSession(Session session) {
@@ -193,17 +205,17 @@ public class MQTT5Protocol extends ProtocolImpl {
     if (mqtt != null) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
       receivedMessageAverages.increment();
-
-      boolean initialAuth = false;
+      boolean clientHasAuth = false;
+      MessageProperty authMethod = null;
       if (mqtt instanceof Connect5) {
         // We may have an auth / sasl request so lets check first, if so we need to park the connect until after
         // we have authenticated
         Connect5 connect5 = (Connect5) mqtt;
-        MessageProperty authMethod = connect5.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
-        initialAuth = (authMethod != null && authMethod.getName() != null && authMethod.getName().length() > 0);
+        authMethod = connect5.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
+        clientHasAuth = !(authMethod == null || (authMethod.getName() != null && authMethod.getName().isEmpty()));
       }
       MQTTPacket5 response;
-      if (initialAuth || authenticationContext != null) {
+      if (clientHasAuth && authenticationContext != null) {
         response = packetListenerFactory.getListener(MQTTPacket5.AUTH).handlePacket(mqtt, null, endPoint, this);
       } else {
         response = packetListenerFactory.getListener(mqtt.getControlPacketId()).handlePacket(mqtt, session, endPoint, this);
@@ -224,18 +236,6 @@ public class MQTT5Protocol extends ProtocolImpl {
       }
       selectorTask.push(response);
     }
-  }
-
-  public PacketListenerFactory5 getPacketListenerFactory() {
-    return packetListenerFactory;
-  }
-
-  public AuthenticationContext getAuthenticationContext() {
-    return authenticationContext;
-  }
-
-  public void setAuthenticationContext(AuthenticationContext authenticationContext) {
-    this.authenticationContext = authenticationContext;
   }
 
   @Override
@@ -353,45 +353,5 @@ public class MQTT5Protocol extends ProtocolImpl {
     sentMessage();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);
-  }
-
-  public PacketIdManager getPacketIdManager() {
-    return packetIdManager;
-  }
-
-  public long getMaximumBufferSize() {
-    return maxBufferSize;
-  }
-
-  public void setMaximumBufferSize(long maximumPacketSize) {
-    maxBufferSize = maximumPacketSize;
-  }
-
-  public int getServerReceiveMaximum() {
-    return serverReceiveMaximum;
-  }
-
-  public int getClientReceiveMaximum() {
-    return clientReceiveMaximum;
-  }
-
-  public List<Long> getClientOutstanding() {
-    return clientOutstanding;
-  }
-
-  public void setClosing(boolean flag) {
-    isClosing = flag;
-  }
-
-  public void sendProblemInformation(boolean flag) {
-    sendProblemInformation = flag;
-  }
-
-  public boolean sendProblemInformation() {
-    return sendProblemInformation;
-  }
-
-  public int getMinKeepAlive() {
-    return minimumKeepAlive;
   }
 }

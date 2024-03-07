@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.HeartBeat;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ConnectedState;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -79,7 +79,7 @@ public class ConnectListener extends BaseConnectListener {
   }
 
   private CompletableFuture<Session> createSession(StateEngine engine, Connect connect, HeartBeat hb) {
-    SessionContextBuilder scb = new SessionContextBuilder(UUID.randomUUID().toString(), new ProtocolClientConnection(engine.getProtocol()));
+    SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     String username = connect.getLogin();
     if (username == null) {
       scb.setUsername("anonymous").setPassword("".toCharArray());

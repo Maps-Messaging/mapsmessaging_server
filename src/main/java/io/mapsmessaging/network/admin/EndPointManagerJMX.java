@@ -26,6 +26,7 @@ import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
+import lombok.Getter;
 
 import javax.management.ObjectInstance;
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.util.List;
 public class EndPointManagerJMX implements HealthMonitor {
 
   private final EndPointManager endPointManager;
+  @Getter
   private final List<String> typePath;
   private final ObjectInstance mbean;
 
@@ -48,9 +50,6 @@ public class EndPointManagerJMX implements HealthMonitor {
     new NetworkConfigJMX(typePath, nc);
   }
 
-  public List<String> getTypePath() {
-    return typePath;
-  }
   //</editor-fold>
 
   //<editor-fold desc="JMX Bean operation functions">

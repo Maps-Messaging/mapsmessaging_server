@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.connection;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -30,12 +31,12 @@ import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.connection.state.*;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.utilities.configuration.ConfigurationProperties;
-import io.mapsmessaging.utilities.scheduler.SimpleTaskScheduler;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +83,9 @@ public class EndPointConnection extends EndPointServerStatus {
     running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
     logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProperty("protocol"));
-    manager.addConnection(this);
+    if (manager != null) {
+      manager.addConnection(this);
+    }
     logger.log(ServerLogMessages.END_POINT_CONNECTION_INITIALISED);
   }
 
@@ -91,7 +94,9 @@ public class EndPointConnection extends EndPointServerStatus {
       futureTask.cancel(false);
     }
     running.set(false);
-    manager.delConnection(this);
+    if (manager != null) {
+      manager.delConnection(this);
+    }
     if (endPoint != null) {
       try {
         endPoint.close();
@@ -107,6 +112,9 @@ public class EndPointConnection extends EndPointServerStatus {
     return new NetworkConfig(properties);
   }
 
+  public String getConfigName() {
+    return properties.getProperty("name", "");
+  }
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
     State stateChange;
@@ -146,6 +154,9 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   public List<String> getJMXPath() {
+    if (manager == null) {
+      return new ArrayList<>();
+    }
     return manager.getTypePath();
   }
 

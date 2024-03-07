@@ -20,8 +20,19 @@
 #
 export VERSION=%%MAPS_VERSION%%
 
-if [ -z ${MAPS_HOME+x} ];
-  then export MAPS_HOME=/opt/message_daemon-$VERSION;
+current_dir=$(pwd)
+if [[ "$current_dir" == */bin ]]; then
+    parent_dir=$(dirname "$current_dir")
+else
+    parent_dir="$current_dir"
+fi
+
+if [ -z ${MAPS_HOME+x} ]; then
+    export MAPS_HOME="$parent_dir"
+fi
+
+if [ -z ${MAPS_DATA+x} ];
+  then export MAPS_DATA=$MAPS_HOME/data;
 fi
 
 # Check if FLY_CONSUL_URL is set and not empty
@@ -37,6 +48,8 @@ fi
 export CONSUL_URL
 
 echo "Maps Home is set to '$MAPS_HOME'"
+echo "Maps Data is set to '$MAPS_DATA'"
+
 export MAPS_LIB=$MAPS_HOME/lib
 export MAPS_CONF=$MAPS_HOME/conf
 

@@ -69,11 +69,18 @@ MessageDaemon:
     EnableSystemTopics: true
 
     #
+    # Enable or Disable $SYS/server topics that offer advanced JSON statistics from the server
+    # if disabled then the server will not populate any $SYS/server topics
+    #
+    # Default: true
+    EnableSystemStatusTopics: true
+
+    #
     # Enables or disables the moving averages for specific $SYS topics
     # if enabled then 1, 5, 10 and 15 minute moving averages are calculated and $SYS topics constructed and populated
     #
     # Default: true
-    EnableSystemTopicAverages: true
+    EnableSystemTopicAverages: false
 
     #
     # Enable or Disable the construction of JMX Beans for server management / monitoring
@@ -86,4 +93,22 @@ MessageDaemon:
     # Enable or Disable the addition of statistics to the JMX beans
     #
     # Default: true
-    EnableJMXStatistics: false
+    EnableJMXStatistics: true
+
+    #
+    # Add entries to the meta data in the messages with time (ms), lar and long if available and server name
+    #
+    # Default: false
+    tagMetaData: true
+
+    #
+    # Set the Longitude of the server
+    #
+    # Default: None
+    latitude: -33.85549472611678
+
+    #
+    # Set the Latitude of the server
+    #
+    # Default : None
+    longitude: 151.21555930455023
