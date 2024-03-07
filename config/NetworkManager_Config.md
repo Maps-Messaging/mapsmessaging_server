@@ -121,6 +121,19 @@ Both SSL/TLS and DTLS configurations share a common set of parameters, detailed 
   - clientCertificateWanted: Boolean indicating whether a client certificate is requested but not required. Set to `false` by default.
 ```
 
+#### Supported and tested keystore types
+
+The following table is a list of key  store types that have been tested and supported by the SSL library.
+
+| Keystore Type | Description                                                                                      |
+|---------------|--------------------------------------------------------------------------------------------------|
+| JKS           | Java KeyStore, the original keystore type in Java for storing cryptographic keys and certificates. |
+| PKCS12        | Public Key Cryptography Standards #12, a versatile, widely supported format for storing cryptographic keys and certificates. |
+| JCEKS         | Java Cryptography Extension KeyStore, an extension of JKS with stronger cryptographic algorithms. |
+| BKS           | Bouncy Castle KeyStore, a format provided by the BouncyCastle cryptographic library, known for its flexibility and support for additional cryptographic algorithms. |
+| UBER          | Another Bouncy Castle KeyStore format, similar to BKS but encrypts the entire keystore with a PBE algorithm, providing a higher security level. |
+| PKCS11        | Public Key Cryptography Standards #11, defines a platform-independent API to cryptographic tokens such as hardware security modules (HSMs) and smart cards, allowing for secure cryptographic operations. |
+
 ##### CRL Specific (Optional)
 ```YAML
 - crlUrl: URL to the Certificate Revocation List (CRL). Optional, but if supplied, will load the CRL to confirm that the certificates are not revoked.
