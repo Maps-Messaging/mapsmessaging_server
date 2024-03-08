@@ -29,6 +29,7 @@ MapsMessaging is more than a platform; it's a catalyst for smarter, faster, and 
 
 For more in-depth information on specific features and technical details of MapsMessaging, please refer to the following resources:
 
+- [Authentication Library Overview](/authentication/overview.md)
 - [Installation Guide](/installation.md)
 - [Source Code](/source.md)
 - [Protocol Support](/protocol_support.md)
