@@ -7,6 +7,12 @@ The backbone of MapsMessaging, this server facilitates IoT communications and pr
 - **Language:** Java
 - **License:** MPL-2.0
 
+## [authentication_library](https://github.com/Maps-Messaging/authentication_library)
+An authentication library that implements JAAS, SASL with support for Auth0, Cognito, Unix, Ldap, htaccess and built in identity support.
+- **Language:** Java
+- **License:** MPL-2.0
+
+
 ## [dynamic_storage](https://github.com/mapsmessaging/dynamic_storage)
 A flexible storage layer for managing data lifecycle and state transitions.
 - **Language:** Java
