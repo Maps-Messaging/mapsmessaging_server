@@ -562,7 +562,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <logback.version>1.4.14</logback.version>
-    <pi4j.version>2.4.0</pi4j.version>
+    <pi4j.version>2.5.0</pi4j.version>
     <jersey.version>3.1.5</jersey.version>
     <swagger-ui.version>3.17.0</swagger-ui.version>
 
