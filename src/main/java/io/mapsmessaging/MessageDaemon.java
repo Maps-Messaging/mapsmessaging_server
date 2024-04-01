@@ -66,6 +66,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
+/**
+ * This is the MessageDaemon class, which represents a message daemon in the system.
+ * It is responsible for managing various agents and starting/stopping them.
+ * The MessageDaemon class implements the Agent interface.
+ * It has a logger, a map of agents, a unique ID, a MessageDaemonJMX object, and an AtomicBoolean to track if it is started or not.
+ * It also has an EnvironmentConfig object and a boolean flag to enable resource statistics.
+ * The MessageDaemon class provides methods to start and stop the daemon, get the discovery manager, network manager, destination manager, and session manager.
+ * It also has methods to get the MessageDaemonJMX object, check if the daemon is started, and get the unique ID.
+ * The class has private methods to load constants, create the agent start/stop list, log service managers, and generate a unique ID.
+ * The main method is used to start the daemon.
+ */
 public class MessageDaemon {
 
   @Getter
@@ -108,6 +119,14 @@ public class MessageDaemon {
   private static final String MAPS_HOME = "MAPS_HOME";
   private static final String MAPS_DATA = "MAPS_DATA";
 
+  /**
+   * The constructor of the MessageDaemon class.
+   * It initializes the instance by setting up various configurations and properties.
+   * It also registers the paths for the environment variables MAPS_HOME and MAPS_DATA.
+   * It loads the instance configuration from the specified path and retrieves the server ID.
+   * If the server ID is not found, it generates a unique ID using the SystemProperties class.
+   * It then initializes the Consul Manager and the ConfigurationManager with the server ID.
+   */
   public MessageDaemon() throws IOException {
     agentMap = new LinkedHashMap<>();
     isStarted = new AtomicBoolean(false);
