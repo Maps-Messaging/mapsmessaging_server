@@ -20,6 +20,13 @@ package io.mapsmessaging;
 import lombok.Getter;
 import lombok.ToString;
 
+/**
+ * This class wraps two public static final String variables: buildDate and buildVersion.
+ * The buildDate variable represents the date and time of the build in the format "dd-mmm-yyyy HH:MM:SS".
+ * The buildVersion variable represents the version of the build in the format "00.00.00-SNAPSHOT".
+ * The class is annotated with @ToString, which generates a toString() method for the class.
+ * This allows the class to be printed in a human-readable format.
+ */
 @ToString
 public class BuildInfo {
 

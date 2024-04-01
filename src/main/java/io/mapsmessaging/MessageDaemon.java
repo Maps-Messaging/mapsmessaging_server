@@ -154,7 +154,14 @@ public class MessageDaemon {
     ConfigurationManager.getInstance().initialise(uniqueId);
   }
 
-
+  /**
+   * Loads the constants for the MessageDaemon.
+   * This method retrieves the configuration properties for the MessageDaemon and sets the corresponding constants.
+   * It also initializes the JMXManager and sets the enablement of JMX and JMX statistics.
+   * Additionally, it sets the enablement of system topics and advanced system topics.
+   * It sets the message compression and minimum message size for Constants.
+   * Finally, it retrieves the configuration properties for the DeviceManager and sets the enablement of device integration.
+   */
   private void loadConstants() {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
     if (properties.containsKey("latitude") && properties.containsKey("longitude")) {
@@ -193,6 +200,32 @@ public class MessageDaemon {
 
   }
 
+  /**
+   * Creates a list of agents to start and stop in the MessageDaemon.
+   * The method initializes and adds various agents to the agentMap, which is used to manage the start and stop order of the agents.
+   * The agents added to the agentMap include:
+   * - AuthManager
+   * - SchemaManager
+   * - NetworkInterfaceMonitor
+   * - TransactionManager
+   * - DiscoveryManager
+   * - SecurityManager
+   * - DestinationManager
+   * - SessionManager
+   * - NetworkManager
+   * - NetworkConnectionManager
+   * - RestApiServerManager
+   * - ServerConnectionManager
+   * - RoutingManager
+   * - JolokaManager
+   * - HawtioManager
+   *
+   * The method also adds optional modules to the agentMap based on the values of enableSystemTopics and enableDeviceIntegration flags.
+   * If enableSystemTopics is true, a SystemTopicManager is added to the agentMap.
+   * If enableDeviceIntegration is true, a DeviceManager is created and added to the agentMap.
+   *
+   * @throws IOException if an I/O error occurs
+   */
   private void createAgentStartStopList() throws IOException {
     // Start the Schema manager to it has the defaults and has loaded the required classes
     SecurityManager securityManager = new SecurityManager();
@@ -234,6 +267,19 @@ public class MessageDaemon {
     agentMap.put(agent.getName(), new AgentOrder(start, stop, agent));
   }
 
+  /**
+   * Logs the service managers and their services.
+   *
+   * This method iterates over the agentMap and logs the service managers and their services.
+   * It first checks if the agent is an instance of ServiceManager. If it is, it logs the agent's name using the logger.
+   * Then, it calls the logServices method to log the services of the ServiceManager.
+   *
+   * After logging the service managers, it logs the "Protocol Manager" and its services.
+   * It uses a ServiceLoader to load instances of ProtocolImplFactory and adds them to a list.
+   * Then, it calls the logServices method to log the services of the ProtocolImplFactory instances.
+   *
+   * Finally, it logs the services of the TransformationManager and the TransformerManager.
+   */
   private void logServiceManagers() {
     for (Entry<String, AgentOrder> agentEntry : agentMap.entrySet()) {
       if (agentEntry.getValue().getAgent() instanceof ServiceManager) {
@@ -286,6 +332,23 @@ public class MessageDaemon {
     return new ArrayList<>();
   }
 
+  /**
+   * Starts the MessageDaemon.
+   *
+   * This method sets the 'isStarted' flag to true and performs the necessary initialization steps to start the daemon.
+   * It calls the 'loadConstants' method to load the configuration properties, 'createAgentStartStopList' method to create
+   * the list of agents to start and stop, and registers the daemon with Consul if it is already started.
+   *
+   * The method then sorts the agentMap based on the start order and iterates over the sorted list to start each agent.
+   * For each agent, it logs a message indicating that the agent is starting, calls the 'start' method of the agent,
+   * and logs a message indicating that the agent has started along with the time taken for the start operation.
+   *
+   * After starting all the agents, the method calls the 'logServiceManagers' method to log the loaded service managers.
+   *
+   * @param strings an array of strings (not used in the method)
+   * @return null
+   * @throws IOException if an I/O error occurs during the initialization steps
+   */
   public Integer start(String[] strings) throws IOException {
     isStarted.set(true);
     loadConstants();
@@ -324,6 +387,12 @@ public class MessageDaemon {
     return null;
   }
 
+  /**
+   * Stops the MessageDaemon by setting the 'isStarted' flag to false and stopping all agents in the 'agentMap'.
+   *
+   * @param i The integer value to be returned.
+   * @return The integer value passed as parameter.
+   */
   public int stop(int i) {
     isStarted.set(false);
     ConsulManagerFactory.getInstance().stop();
@@ -347,6 +416,17 @@ public class MessageDaemon {
     return uniqueId;
   }
 
+  /**
+   * Generates a unique identifier for the MessageDaemon instance.
+   *
+   * The unique identifier is generated based on the following rules:
+   * 1. If the environment variable "SERVER_ID" is set, the value of the variable is returned as the unique identifier.
+   * 2. If the boolean property "USE_UUID" is set to true (default), a UUID is generated and returned as the unique identifier.
+   * 3. If the above conditions are not met, the hostname of the local machine is returned as the unique identifier.
+   *
+   * @return The unique identifier for the MessageDaemon instance.
+   * @throws UnknownHostException If the hostname of the local machine cannot be determined.
+   */
   private String generateUniqueId() {
     String env = SystemProperties.getInstance().getEnvProperty("SERVER_ID");
     if (env != null) {

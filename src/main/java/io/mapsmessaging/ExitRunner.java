@@ -24,10 +24,23 @@ import java.io.File;
 import java.nio.file.*;
 import java.io.IOException;
 
+/**
+ * This class extends the Thread class and is used to monitor a specified file for deletion events.
+ * When the file is deleted, the WrapperManager.stop(1) method is called to stop the application.
+ * The class has a constructor that takes a File object representing the path of the file to monitor.
+ * The run() method is overridden to implement the logic for monitoring the file using a WatchService.
+ * The run() method continuously checks for deletion events on the file and stops the application if the file is deleted.
+ */
 public class ExitRunner extends Thread {
   private final Path pidFilePath;
   private final WatchService watchService;
 
+  /**
+   * Constructor for the ExitRunner class.
+   *
+   * @param pidFile The file to monitor for deletion events.
+   * @throws IOException If an I/O error occurs.
+   */
   ExitRunner(File pidFile) throws IOException {
     this.pidFilePath = pidFile.toPath().toAbsolutePath();
     this.watchService = FileSystems.getDefault().newWatchService();
@@ -35,6 +48,13 @@ public class ExitRunner extends Thread {
     super.start();
   }
 
+  /**
+   * The method is responsible for continuously monitoring a specified file for deletion events using a WatchService.
+   * If a deletion event occurs and the deleted file matches the specified file, the WrapperManager.stop(1) method is
+   * called to stop the application.
+   * The method also handles InterruptedException and restores the interrupted status of the thread.
+   * The method uses a loop to continuously check for deletion events and resets the WatchKey if it becomes invalid.
+   */
   @Override
   public void run() {
     while (!Thread.interrupted()) {
