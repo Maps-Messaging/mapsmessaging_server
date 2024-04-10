@@ -143,9 +143,12 @@ public class RestApiServerManager implements Agent {
         ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
         if(staticConfig.getBooleanProperty("enabled", false)){
           String path = staticConfig.getProperty("directory", "./html");
+          if (!path.endsWith("/")) {
+            path = path + "/";
+          }
           StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
           staticHttpHandler.setFileCacheEnabled(true);
-          httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
+          httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/*");
 
           if (map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
             String swaggerPath = path;
@@ -156,6 +159,7 @@ public class RestApiServerManager implements Agent {
             swaggerHttpHandler.setFileCacheEnabled(true);
             httpServer.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/swagger-ui/");
           }
+
         }
       }
     }
@@ -170,6 +174,7 @@ public class RestApiServerManager implements Agent {
               HttpServerFilter filter,
               Connection connection,
               Request request) {
+            System.err.println(request);
           }
 
           @Override
