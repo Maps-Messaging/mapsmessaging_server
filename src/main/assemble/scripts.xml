@@ -58,9 +58,17 @@
       <directory>${project.basedir}/out/</directory>
       <outputDirectory>html</outputDirectory>
       <includes>
-        <include>*</include>
+        <include>**/*</include> <!-- This includes all files and subdirectories -->
       </includes>
     </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/src/main/html</directory>
+      <outputDirectory>html/swagger-ui</outputDirectory>
+      <includes>
+        <include>**/*</include> <!-- This includes all files and subdirectories -->
+      </includes>
+    </fileSet>
+
 
     <fileSet>
       <directory>${project.basedir}/src/main/resources/</directory>
@@ -144,14 +152,6 @@
         <include>README*</include>
         <include>LICENSE*</include>
         <include>CommonsClause.*</include>
-      </includes>
-    </fileSet>
-
-    <fileSet>
-      <directory>${project.basedir}/src/main/html</directory>
-      <outputDirectory>html</outputDirectory>
-      <includes>
-        <include>**/*</include> <!-- This includes all files and subdirectories -->
       </includes>
     </fileSet>
 
