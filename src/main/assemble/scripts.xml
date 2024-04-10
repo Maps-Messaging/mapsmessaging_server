@@ -55,6 +55,14 @@
     </fileSet>
 
     <fileSet>
+      <directory>${project.basedir}/out/</directory>
+      <outputDirectory>html</outputDirectory>
+      <includes>
+        <include>*</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
       <directory>${project.basedir}/src/main/resources/</directory>
       <outputDirectory>conf</outputDirectory>
       <includes>
