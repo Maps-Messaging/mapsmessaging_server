@@ -19,17 +19,39 @@ package io.mapsmessaging.utilities;
 
 import lombok.Getter;
 
+/**
+ * This is the AgentOrder class.
+ * It represents an order for starting and stopping an agent.
+ * The startOrder and stopOrder properties define the order in which the agent should be started and stopped.
+ * The agent property holds the reference to the agent object.
+ */
 public class AgentOrder {
 
+  /**
+   * Represents the start order of agents.
+   */
   @Getter
   private final int startOrder;
 
+  /**
+   * Represents the stop order of agents.
+   */
   @Getter
   private final int stopOrder;
 
+  /**
+   * Reference to the agent order.
+   */
   @Getter
   private final Agent agent;
 
+  /**
+   * Constructor for the AgentOrder class.
+   *
+   * @param start the start order of agents
+   * @param stop the stop order of agents
+   * @param agent the agent object
+   */
   public AgentOrder(int start, int stop, Agent agent) {
     stopOrder = stop;
     startOrder = start;

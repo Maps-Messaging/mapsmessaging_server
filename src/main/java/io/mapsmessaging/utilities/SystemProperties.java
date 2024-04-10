@@ -23,8 +23,17 @@ import lombok.Getter;
 
 import static io.mapsmessaging.logging.ServerLogMessages.CONFIG_PROPERTY_ACCESS;
 
+/**
+ * This class represents a utility class for accessing system properties.
+ * It provides methods for retrieving properties, such as strings, booleans, longs, and doubles,
+ * from the system properties or environment variables.
+ * The class also logs the access to the properties using a logger.
+ */
 public class SystemProperties {
 
+  /**
+   * Initializes the 'instance' variable with a new instance of the 'SystemProperties' class.
+   */
   static {
     instance = new SystemProperties();
   }
@@ -34,9 +43,22 @@ public class SystemProperties {
 
   private final Logger logger = LoggerFactory.getLogger(SystemProperties.class);
 
+  /**
+   * Private constructor for the SystemProperties class.
+   * It is used to prevent the instantiation of the SystemProperties class from outside the class itself.
+   */
   private SystemProperties() {
   }
 
+  /**
+   * Retrieves the value of a system property or environment variable based on the provided key.
+   * If the property is not found in the system properties, it checks the environment variables.
+   * If the property is still not found, it returns the provided default value.
+   *
+   * @param key The key of the property to retrieve.
+   * @param defaultValue The default value to return if the property is not found.
+   * @return The value of the property if found, otherwise the default value.
+   */
   public String locateProperty(String key, String defaultValue) {
     String response = getProperty(key);
     if (response == null) {
@@ -48,10 +70,23 @@ public class SystemProperties {
     return response;
   }
 
+  /**
+   * Retrieves the value of a system property based on the provided key.
+   *
+   * @param key The key of the property to retrieve.
+   * @return The value of the property if found, otherwise null.
+   */
   public String getProperty(String key) {
     return getProperty(key, null);
   }
 
+  /**
+   * Retrieves the value of a system property based on the provided key.
+   *
+   * @param key The key of the property to retrieve.
+   * @param defaultValue The default value to return if the property is not found.
+   * @return The value of the property if found, otherwise the default value.
+   */
   public String getProperty(String key, String defaultValue) {
     String value = System.getProperty(key);
     if (value == null || value.isEmpty()) {
@@ -61,6 +96,13 @@ public class SystemProperties {
     return value;
   }
 
+  /**
+   * Retrieves the value of a boolean system property based on the provided key.
+   *
+   * @param key The key of the property to retrieve.
+   * @param defaultValue The default value to return if the property is not found or is empty.
+   * @return The boolean value of the property if found, otherwise the default value.
+   */
   public boolean getBooleanProperty(String key, boolean defaultValue) {
     String value = System.getProperty(key);
     boolean result = defaultValue;
@@ -71,6 +113,13 @@ public class SystemProperties {
     return result;
   }
 
+  /**
+   * Retrieves the value of a long system property based on the provided key.
+   *
+   * @param key The key of the property to retrieve.
+   * @param defaultValue The default value to return if the property is not found or is not a valid long.
+   * @return The long value of the property if found and is a valid long, otherwise the default value.
+   */
   public long getLongProperty(String key, long defaultValue) {
     String value = System.getProperty(key);
     long result = defaultValue;
@@ -85,6 +134,13 @@ public class SystemProperties {
     return result;
   }
 
+  /**
+   * Retrieves the value of a double system property based on the provided key.
+   *
+   * @param key The key of the property to retrieve.
+   * @param defaultValue The default value to return if the property is not found or is not a valid double.
+   * @return The double value of the property if found and is a valid double, otherwise the default value.
+   */
   public double getDoubleProperty(String key, double defaultValue) {
     String value = System.getProperty(key);
     double result = defaultValue;
@@ -99,6 +155,12 @@ public class SystemProperties {
     return result;
   }
 
+  /**
+   * Retrieves the value of an environment variable based on the provided key.
+   *
+   * @param key The key of the environment variable to retrieve.
+   * @return The value of the environment variable if found, otherwise null.
+   */
   public String getEnvProperty(String key) {
     String value = System.getenv(key);
     if (value != null && !value.isEmpty()) {
