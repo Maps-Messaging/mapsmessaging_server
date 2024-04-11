@@ -861,7 +861,7 @@
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-embedded</artifactId>
-      <version>3.0.0</version>
+      <version>4.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
