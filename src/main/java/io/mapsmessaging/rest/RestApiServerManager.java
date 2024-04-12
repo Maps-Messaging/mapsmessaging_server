@@ -222,14 +222,25 @@ public class RestApiServerManager implements Agent {
           if (!path.endsWith(File.separator)) {
             path = path + File.separator;
           }
-          StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
-          staticHttpHandler.setFileCacheEnabled(false);
-          server.getServerConfiguration().addHttpHandler(staticHttpHandler, "/admin/*");
+          mapDirectory(path, server );
+        }
+      }
+    }
+  }
 
-          if (map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
-            StaticHttpHandler swaggerHttpHandler = new StaticHttpHandler(path + "swagger-ui");
-            swaggerHttpHandler.setFileCacheEnabled(true);
-            server.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/swagger-ui/*");
+
+  private void mapDirectory(String path, HttpServer server) {
+    File files = new File(path);
+    if(files.exists() && files.isDirectory()) {
+      File[] fileList = files.listFiles();
+      if (fileList != null) {
+        for (File file : fileList) {
+          if (file.isDirectory()) {
+            String location = path+file.getName();
+            String uriMapping = "/"+file.getName()+"/";
+            StaticHttpHandler staticHttpHandler = new StaticHttpHandler(location+File.separator);
+            staticHttpHandler.setFileCacheEnabled(true);
+            server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping+"*" );
           }
         }
       }
