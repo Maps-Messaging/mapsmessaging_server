@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.mapsmessaging.rest.api.impl;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -59,11 +58,11 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
         @Tag(name = "Server Health", description = "Simple server health endpoint"),
         @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
         @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
-        @Tag(name = "Server Status", description = "Server status and simple queries"),
+        @Tag(name = "Server Management", description = "Server status and management"),
     },
     externalDocs = @ExternalDocumentation(description = "Maps Messaging", url = "https://www.mapsmessaging.io/")
 )
-@Tag(name = "Server Status")
+@Tag(name = "Server Health")
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
 
@@ -81,14 +80,6 @@ public class MapsRestServerApi extends BaseRestApi {
   // @ApiOperation(value = "Returns the servers unique name")
   public StringResponse getName() {
     return new StringResponse(request, MessageDaemon.getInstance().getId());
-  }
-
-  @GET
-  @Path("/stats")
-  @Produces({MediaType.APPLICATION_JSON})
-//  @ApiOperation(value = "Retrieve the server statistics")
-  public ServerStatisticsResponse getStats() {
-    return new ServerStatisticsResponse(request);
   }
 
   @GET

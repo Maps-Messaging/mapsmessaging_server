@@ -23,6 +23,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
+import io.mapsmessaging.rest.data.StatusMessage;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;

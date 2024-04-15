@@ -163,7 +163,7 @@ public class RestApiServerManager implements Agent {
     if (enableSchemaManagement) {
       endpoints.add("io.mapsmessaging.rest.api.impl.schema");
     }
-
+    endpoints.add("io.mapsmessaging.rest.api.impl.server");
     try {
       final ResourceConfig config = new ResourceConfig();
       config.packages(false, endpoints.toArray(new String[0]));

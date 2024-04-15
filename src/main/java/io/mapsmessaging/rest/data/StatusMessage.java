@@ -15,12 +15,11 @@
  *
  */
 
-package io.mapsmessaging.engine.system.impl.server;
+package io.mapsmessaging.rest.data;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.rest.data.ServerStatistics;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

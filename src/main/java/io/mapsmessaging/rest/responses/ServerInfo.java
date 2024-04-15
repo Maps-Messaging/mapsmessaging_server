@@ -15,20 +15,24 @@
  *
  */
 
-package io.mapsmessaging.app.top.panes.server;
+package io.mapsmessaging.rest.responses;
 
-import com.googlecode.lanterna.graphics.TextGraphics;
-import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
-import io.mapsmessaging.rest.data.StatusMessage;
+import io.mapsmessaging.BuildInfo;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 
-public class TotalTopicsPanel extends ServerStatusUpdate {
+@Getter
+public class ServerInfo extends BaseResponse {
 
-  public TotalTopicsPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Topics : ", labelText, valueText, new DecimalSizeFormatter(7));
-  }
+  private final String name;
+  private final String version;
+  private final String buildDate;
 
-  @Override
-  public void update(StatusMessage statusMessage) {
-    panel.update(statusMessage.getDestinations());
+
+  public ServerInfo(HttpServletRequest request, String name) {
+    super(request);
+    version = BuildInfo.getBuildVersion();
+    buildDate = BuildInfo.getBuildDate();
+    this.name = name;
   }
 }
