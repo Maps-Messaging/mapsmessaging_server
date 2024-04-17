@@ -35,4 +35,4 @@ RestApi:
 
   static:
     enabled: true
-    directory: "{{MAPS_HOME}}/html"
+    directory: "{{MAPS_HOME}}/www"
