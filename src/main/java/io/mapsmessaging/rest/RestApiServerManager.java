@@ -159,6 +159,7 @@ public class RestApiServerManager implements Agent {
     }
     if (enableInterfaceManagement) {
       endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
+      endpoints.add("io.mapsmessaging.rest.api.impl.integration");
     }
     if (enableSchemaManagement) {
       endpoints.add("io.mapsmessaging.rest.api.impl.schema");

@@ -20,6 +20,7 @@ package io.mapsmessaging.rest.data;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.utilities.SystemUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -80,6 +81,6 @@ public class StatusMessage {
       threadState.put(state.name(), threadState.getOrDefault(state.name(), 0) + 1);
     }
     //----------------------------------------------------
-
+    cpuTime = SystemUtils.getInstance().getCpuTime();
   }
 }

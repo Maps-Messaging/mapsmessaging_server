@@ -18,7 +18,6 @@
 package io.mapsmessaging.engine.system.impl.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.management.OperatingSystemMXBean;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
@@ -26,14 +25,11 @@ import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.rest.data.StatusMessage;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 
 public class ServerStatusTopic extends SystemTopic {
 
-  private final OperatingSystemMXBean osMXBean;
   public ServerStatusTopic() throws IOException {
     super("$SYS/server/status");
-    osMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
   }
 
   @Override
@@ -50,7 +46,6 @@ public class ServerStatusTopic extends SystemTopic {
   @Override
   protected Message generateMessage() {
     StatusMessage statusMessage = new StatusMessage(MessageDaemon.getInstance());
-    statusMessage.setCpuTime(getCpuTime());
     ObjectMapper mapper = new ObjectMapper();
     try {
       String jsonString = mapper.writeValueAsString(statusMessage);
@@ -70,8 +65,5 @@ public class ServerStatusTopic extends SystemTopic {
     return new String[]{};
   }
 
-  private long getCpuTime() {
-    long processCpuTime = osMXBean.getProcessCpuTime();
-    return processCpuTime / 1_000_000;
-  }
+
 }

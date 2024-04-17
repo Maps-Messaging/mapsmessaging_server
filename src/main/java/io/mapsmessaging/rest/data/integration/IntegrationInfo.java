@@ -15,9 +15,9 @@
  *
  */
 
-package io.mapsmessaging.rest.data.interfaces;
+package io.mapsmessaging.rest.data.integration;
 
-import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
@@ -27,39 +27,27 @@ import java.util.Map;
 
 @ToString
 @Data
-public class InterfaceInfo implements Serializable {
+public class IntegrationInfo implements Serializable {
 
   @Schema(description = "Unique name of the interface")
   private final String name;
-  @Schema(description = "Port that the interface is bound to")
-  private final int port;
-  @Schema(description = "Host that the interface is bound to")
-  private final String host;
   @Schema(description = "Current state of the interface")
   private final String state;
+  @Schema(description = "Remote broker url")
+  private final String remoteUrl;
+  @Schema(description = "Number of mappings")
+  private final int mappings;
+
   @Schema(description = "Configuration for the interface")
   private final Map<String, Object> config;
 
-  public InterfaceInfo(EndPointManager endPointManager){
-    name = (endPointManager.getEndPointServer().getConfig().getProperties().getProperty("name"));
-    port = (endPointManager.getEndPointServer().getUrl().getPort());
-    host =  (endPointManager.getEndPointServer().getUrl().getProtocol())+"://"+(endPointManager.getEndPointServer().getUrl().getHost());
-    config = (endPointManager.getEndPointServer().getConfig().getProperties().getMap());
-    switch (endPointManager.getState()) {
-      case START:
-        state = ("Started");
-        break;
-      case STOPPED:
-        state = ("Stopped");
-        break;
-      case PAUSED:
-        state = ("Paused");
-        break;
-
-      default:
-        state = ("Unknown");
-    }
-
+  public IntegrationInfo(EndPointConnection endPointConnection){
+    name = endPointConnection.getConfigName();
+    state = endPointConnection.getState().getName();
+    config = endPointConnection.getConfig().getProperties().getMap();
+    remoteUrl = endPointConnection.getProperties().getProperty("url", "");
+    mappings = endPointConnection.getDestinationMappings().size();
   }
 
 }
+
