@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ package io.mapsmessaging.rest.api.impl.schema;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.schema.SchemaPostData;
-import io.mapsmessaging.rest.responses.BaseResponse;
-import io.mapsmessaging.rest.responses.SchemaMapResponse;
-import io.mapsmessaging.rest.responses.SchemaResponse;
-import io.mapsmessaging.rest.responses.StringListResponse;
+import io.mapsmessaging.rest.responses.*;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.swagger.v3.oas.annotations.Operation;
@@ -117,19 +114,19 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get all schemas", description = "Returns all schemas")
-  public SchemaResponse getAllSchemas() throws IOException {
-    return new SchemaResponse(request, convert(SchemaManager.getInstance().getAll()));
+  public SchemaConfigResponse getAllSchemas() {
+    return new SchemaConfigResponse(request, SchemaManager.getInstance().getAll());
   }
 
   @GET
   @Path("/server/schema/map")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get schemas and the configuration", description = "Returns all schemas and mapping information")
-  public SchemaMapResponse getSchemaMapping() throws IOException {
+  public SchemaMapResponse getSchemaMapping()  {
     Map<String, List<SchemaConfig>> map = SchemaManager.getInstance().getMappedSchemas();
     Map<String, List<String>> responseMap = new LinkedHashMap<>();
     for (Entry<String, List<SchemaConfig>> entry : map.entrySet()) {
-      responseMap.put(entry.getKey(), (convert(entry.getValue())));
+      responseMap.put(entry.getKey(), (convertToId(entry.getValue())));
     }
     return new SchemaMapResponse(request, responseMap);
   }
@@ -154,6 +151,14 @@ public class SchemaQueryApi extends BaseRestApi {
     List<String> data = new ArrayList<>();
     for (SchemaConfig config : configs) {
       data.add(config.pack());
+    }
+    return data;
+  }
+
+  private List<String> convertToId(List<SchemaConfig> configs) {
+    List<String> data = new ArrayList<>();
+    for (SchemaConfig config : configs) {
+      data.add(config.getUniqueId());
     }
     return data;
   }
