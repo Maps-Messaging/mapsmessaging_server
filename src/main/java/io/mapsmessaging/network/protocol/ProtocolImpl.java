@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     connected = false;
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
+    endPoint.setBoundProtocol(this);
   }
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
@@ -99,6 +100,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     connected = false;
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
+    endPoint.setBoundProtocol(this);
   }
 
 
