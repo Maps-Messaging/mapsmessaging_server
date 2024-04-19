@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -685,6 +685,7 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="Rest API log messages">
   REST_API_ACCESS(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Address {} requested {}, returning Status:{} with length {} bytes"),
   REST_API_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Rest Server unable to start due to exception"),
+  REST_API_SUCCESSFUL_REQUEST(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Rest request type {} for {} with status {} returned {} bytes"),
   //</editor-fold>
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");

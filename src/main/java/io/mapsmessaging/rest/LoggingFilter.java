@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -27,22 +29,21 @@ import jakarta.ws.rs.ext.Provider;
 
 import java.io.IOException;
 
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_SUCCESSFUL_REQUEST;
+
 @Provider
 @Priority(Priorities.USER - 1)
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
+  private final Logger logger = LoggerFactory.getLogger(LoggingFilter.class);
   @Override
-  public void filter(ContainerRequestContext requestContext) throws IOException {
-    String method = requestContext.getMethod();
-    String path = requestContext.getUriInfo().getRequestUri().toString();
-    System.out.println("Request received: " + method + " " + path);
-    // Implement additional logging logic here if needed
-  }
+  public void filter(ContainerRequestContext requestContext) throws IOException {}
 
   @Override
   public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
     int status = responseContext.getStatus();
-    System.out.println("Response sent with status: " + requestContext.getUriInfo().getRequestUri()+" : "+ status);
-    // Implement additional logging logic here if needed
+    String method = requestContext.getMethod();
+    String path = requestContext.getUriInfo().getPath();
+    logger.log(REST_API_SUCCESSFUL_REQUEST, method, path, status, responseContext.getLength());
   }
 }
