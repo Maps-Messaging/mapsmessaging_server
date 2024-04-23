@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class GroupManagementApi extends BaseRestApi {
   @GET
   @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
-  public GroupListResponse getGroups() {
+  public GroupListResponse getAllGroups() {
     AuthManager authManager = AuthManager.getInstance();
     List<GroupDetails> groups = authManager.getGroups();
     List<Group> results = new ArrayList<>();
@@ -60,7 +60,7 @@ public class GroupManagementApi extends BaseRestApi {
   @GET
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
-  public Group getGroups(@PathParam("groupUuid") String groupUuid) {
+  public Group getGroupsById(@PathParam("groupUuid") String groupUuid) {
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     if (groupDetails != null) {
@@ -97,7 +97,7 @@ public class GroupManagementApi extends BaseRestApi {
   @DELETE
   @Path("/auth/groups/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse removeUserToGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
+  public BaseResponse removeUserFromGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getUserIdMap().getAuthId().toString().equals(userUuid)).findFirst().orElse(null);
@@ -110,7 +110,7 @@ public class GroupManagementApi extends BaseRestApi {
   @DELETE
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse deleteUser(@PathParam("groupUuid") String groupUuid) throws IOException {
+  public BaseResponse deleteGroup(@PathParam("groupUuid") String groupUuid) throws IOException {
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     if (groupDetails != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class DestinationStatusApi extends BaseDestinationApi {
   @Path("/server/destination/status/{destination}")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public DestinationStatusResponse getDestination(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
+  public DestinationStatusResponse getDestinationStats(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
     DestinationStatus destination = lookupDestination(destinationName);
     return new DestinationStatusResponse(request, destination);
   }
@@ -53,7 +53,7 @@ public class DestinationStatusApi extends BaseDestinationApi {
   @Path("/server/destination/status")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the destination configuration")
-  public DestinationStatusResponse getAllDestinations() throws ExecutionException, InterruptedException, TimeoutException {
+  public DestinationStatusResponse getAllStatsForDestinations() throws ExecutionException, InterruptedException, TimeoutException {
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
     List<DestinationStatus> results = new ArrayList<>();
     for (String name : destinations) {
