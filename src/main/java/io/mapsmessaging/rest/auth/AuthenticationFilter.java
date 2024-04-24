@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -66,25 +66,27 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     Subject subject;
     HttpSession session = httpRequest.getSession(true);
+    boolean reAuth = true;
     if (!session.isNew()) {
       subject = (Subject) session.getAttribute("subject");
-      if (subject == null ||
-          session.getAttribute(USERNAME) == null ||
-          !session.getAttribute(USERNAME).equals(username)
+      if (subject != null ||
+          session.getAttribute(USERNAME) == null &&
+              session.getAttribute(USERNAME).equals(username)
       ) {
-        throw unauthorized;
+        reAuth = false;
       }
-    } else {
+    }
+    if (reAuth) {
       if (AuthManager.getInstance().isAuthenticationEnabled() && !AuthManager.getInstance().validate(username, password)) {
         throw unauthorized;
       }
       subject = AuthManager.getInstance().getUserSubject(username);
       session.setAttribute(USERNAME, username);
       session.setAttribute("subject", subject);
-    }
 
-    if (subject == null) {
-      throw unauthorized;
+      if (subject == null) {
+        throw unauthorized;
+      }
     }
 
     boolean isWrite = false;

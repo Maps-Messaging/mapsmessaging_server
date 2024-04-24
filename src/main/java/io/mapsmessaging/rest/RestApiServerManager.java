@@ -22,7 +22,9 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
+import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -172,6 +174,7 @@ public class RestApiServerManager implements Agent {
       boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
       if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
         config.register(new AuthenticationFilter());
+        AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());
       }
       config.register(DebugMapper.class );
       config.register(LoggingFilter.class);

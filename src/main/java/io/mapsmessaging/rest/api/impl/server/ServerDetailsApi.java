@@ -34,7 +34,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 public class ServerDetailsApi extends BaseInterfaceApi {
 
   @GET
-  @Path("/server/info")
+  @Path("/server/details/info")
   @Produces({MediaType.APPLICATION_JSON})
   // @ApiOperation(value = "Returns the servers unique name")
   public StatusMessage getBuildInfo() {
@@ -43,7 +43,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   }
 
   @GET
-  @Path("/server/stats")
+  @Path("/server/details/stats")
   @Produces({MediaType.APPLICATION_JSON})
 //  @ApiOperation(value = "Retrieve the server statistics")
   public ServerStatisticsResponse getStats() {

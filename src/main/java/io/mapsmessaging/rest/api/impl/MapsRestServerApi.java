@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -93,5 +94,33 @@ public class MapsRestServerApi extends BaseRestApi {
     return new UpdateCheckResponse(schema, 0, 0);
   }
 
+  @GET
+  @Path("/login")
+  @Produces({MediaType.APPLICATION_JSON})
+  // @ApiOperation(value = "Check for changes to the configuration update counts")
+  public String login() {
+    HttpSession session = request.getSession(false);
+    if(session != null){
+      hasAccess();
+      System.err.println(session.toString());
+      return session.getId();
+    }
+
+    return "No Authentication";
+  }
+
+  @GET
+  @Path("/logout")
+  @Produces({MediaType.APPLICATION_JSON})
+  // @ApiOperation(value = "Check for changes to the configuration update counts")
+  public String logout() {
+    HttpSession session = request.getSession(false);
+    if(session != null){
+      System.err.println(session.toString());
+      session.invalidate();
+      return "logged out";
+    }
+    return "No Authentication";
+  }
 
 }

@@ -165,6 +165,14 @@ public class AuthenticationStorage implements Closeable {
     return identityAccessManager.getAllUsers().stream().filter(userIdMap -> userIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
   }
 
+  public GroupIdMap findGroup(String groupName) {
+    return identityAccessManager.getGroup(groupName);
+  }
+
+  public GroupIdMap findGroup(UUID uuid) {
+    return identityAccessManager.getAllGroups().stream().filter(groupIdMap -> groupIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
+  }
+
   public List<UserDetails> getUsers() {
     List<UserIdMap> userIdMaps = identityAccessManager.getAllUsers();
     List<UserDetails> users = new ArrayList<>();
@@ -226,4 +234,5 @@ public class AuthenticationStorage implements Closeable {
   public void removeUserFromGroup(String username, String groupName) throws IOException {
     identityAccessManager.removeUserFromGroup(username, groupName);
   }
+
 }

@@ -182,6 +182,14 @@ public class AuthManager implements Agent {
     return authenticationStorage.findUser(uuid);
   }
 
+  public GroupIdMap getGroupIdentity(String groupName){
+    return authenticationStorage.findGroup(groupName);
+  }
+
+  public GroupIdMap getGroupIdentity(UUID uuid){
+    return authenticationStorage.findGroup(uuid);
+  }
+
   public Subject getUserSubject(String username) {
     Subject subject = subjectMap.get(username);
     if (subject == null) {

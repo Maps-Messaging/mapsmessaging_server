@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/messaging")
 public class MessagingApi extends BaseRestApi {
 
-  @Path("/publish")
+  @Path("/messaging/publish")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Publish a message", description = "Publishes a message to a specified topic")
@@ -51,7 +51,7 @@ public class MessagingApi extends BaseRestApi {
     return Response.ok().entity("Message published successfully").build();
   }
 
-  @Path("/subscribe")
+  @Path("/messaging/subscribe")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Subscribe to a topic", description = "Subscribes to a specified topic")
@@ -64,7 +64,7 @@ public class MessagingApi extends BaseRestApi {
     return Response.ok().entity("Subscribed to topic successfully").build();
   }
 
-  @Path("/consume/{subscriptionName}")
+  @Path("/messaging/consume/{subscriptionName}")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get messages", description = "Retrieves messages for a specified subscription")
   @ApiResponse(responseCode = "200",
@@ -77,7 +77,7 @@ public class MessagingApi extends BaseRestApi {
     return Response.ok().entity("Messages retrieved successfully").build();
   }
 
-  @Path("/consume")
+  @Path("/messaging/consume")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get all messages", description = "Retrieves messages for a specified subscription")
   @ApiResponse(responseCode = "200",
@@ -91,7 +91,7 @@ public class MessagingApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/subscriptionDepth/{subscriptionName}")
+  @Path("/messaging/subscriptionDepth/{subscriptionName}")
   @Operation(summary = "Get message depth", description = "Get the depth of the queue for a specified subscription")
   @ApiResponse(responseCode = "200",
       description = "Message depth retrieved successfully",
@@ -104,7 +104,7 @@ public class MessagingApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/subscriptionDepth")
+  @Path("/messaging/subscriptionDepth")
   @Operation(summary = "Get all message depth", description = "Get the depth of the queue for all subscriptions")
   @ApiResponse(responseCode = "200",
       description = "Message depths retrieved successfully",
