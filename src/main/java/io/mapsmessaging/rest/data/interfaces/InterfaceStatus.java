@@ -50,7 +50,6 @@ public class InterfaceStatus {
   private Map<String, LinkedMovingAverageRecord> statistics;
 
   public InterfaceStatus() {
-
   }
 
   public InterfaceStatus(EndPointServer server){

@@ -42,6 +42,11 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
   @Path("/server/integration/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
   public IntegrationStatus getIntegrationStatus(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("integrations")) {
+      response.setStatus(403);
+      return null;
+    }
+
     List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
     for (EndPointConnection endPointConnection : endPointManagers) {
       if (endpointName.equals(endPointConnection.getConfigName())) {
@@ -55,6 +60,11 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
   @Path("/server/integration/status")
   @Produces({MediaType.APPLICATION_JSON})
   public List<IntegrationStatus> getAllIntegrationStatus() {
+    if (!hasAccess("integrations")) {
+      response.setStatus(403);
+      return null;
+    }
+
     List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
     List<IntegrationStatus> results = new ArrayList<>();
     for (EndPointConnection endPointConnection : endPointManagers) {

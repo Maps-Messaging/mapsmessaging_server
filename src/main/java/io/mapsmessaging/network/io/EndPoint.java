@@ -62,6 +62,8 @@ public abstract class EndPoint implements Closeable {
   private final boolean isClient;
   @Getter
   private final long id;
+  @Getter
+  private final long connected = System.currentTimeMillis();
   private boolean isClosed;
 
   protected List<String> jmxParentPath;

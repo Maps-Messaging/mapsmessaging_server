@@ -45,15 +45,14 @@ public class RestAccessControl {
 
     List<String> adminOnly = new ArrayList<>();
     adminOnly.add(adminId.getAuthId()+" = Create|Read|Update|Delete");
-    addToMap("/auth", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminOnly ));
-    addToMap("/server/connections", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminOnly ));
-    addToMap("/server/destination", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminAndEveryone ));
-    addToMap("/server/integration", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly ));
-    addToMap("/server/interface", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly ));
-    addToMap("/messaging", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminAndEveryone ));
-    addToMap("/server/schema", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminOnly ));
-    addToMap("/server/details", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminOnly ));
-
+    addToMap("auth", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
+    addToMap("connections", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
+    addToMap("destinations", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminAndEveryone));
+    addToMap("integrations", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
+    addToMap("interfaces", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
+    addToMap("messaging", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminAndEveryone));
+    addToMap("schemas", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
+    addToMap("details", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("root", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminAndEveryone ));
   }
 

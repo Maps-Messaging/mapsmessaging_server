@@ -42,6 +42,11 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
   public EndPointDetailResponse getAllConnections() {
+    if (!hasAccess("connections")) {
+      response.setStatus(403);
+      return null;
+    }
+
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     List<EndPointDetails> endPointDetails = new ArrayList<>();
     for (EndPointManager endPointManager : endPointManagers) {

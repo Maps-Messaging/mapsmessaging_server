@@ -45,6 +45,10 @@ public class MessagingApi extends BaseRestApi {
       content = @Content(schema = @Schema(implementation = String.class)))
   @POST
   public Response publishMessage(@Valid PublishRequest publishRequest) {
+    if (!hasAccess("messaging")) {
+      response.setStatus(403);
+      return null;
+    }
 
     // Implement the logic to publish a message
     // messagingService.publish(publishRequest.getTopic(), publishRequest.getMessage());
@@ -59,6 +63,10 @@ public class MessagingApi extends BaseRestApi {
       content = @Content(schema = @Schema(implementation = String.class)))
   @POST
   public Response subscribeToTopic(@Valid SubscriptionRequest subscriptionRequest) {
+    if (!hasAccess("messaging")) {
+      response.setStatus(403);
+      return null;
+    }
     // Implement the logic to subscribe to a topic
     // messagingService.subscribe(subscriptionRequest.getTopic());
     return Response.ok().entity("Subscribed to topic successfully").build();
@@ -72,6 +80,10 @@ public class MessagingApi extends BaseRestApi {
       content = @Content(schema = @Schema(implementation = String.class)))
   @POST
   public Response consumeMessages(@PathParam("subscriptionName") String subscriptionName) {
+    if (!hasAccess("messaging")) {
+      response.setStatus(403);
+      return null;
+    }
     // Implement the logic to retrieve messages
     // List<Message> messages = messagingService.getMessages(topic);
     return Response.ok().entity("Messages retrieved successfully").build();
@@ -85,6 +97,10 @@ public class MessagingApi extends BaseRestApi {
       content = @Content(schema = @Schema(implementation = String.class)))
   @POST
   public Response consumeAllMessages() {
+    if (!hasAccess("messaging")) {
+      response.setStatus(403);
+      return null;
+    }
     // Implement the logic to retrieve messages
     // List<Message> messages = messagingService.getMessages(topic);
     return Response.ok().entity("Messages retrieved successfully").build();
@@ -98,6 +114,10 @@ public class MessagingApi extends BaseRestApi {
       content = @Content(schema = @Schema(implementation = String.class)))
   @Produces(MediaType.APPLICATION_JSON)
   public Response getSubscriptionDepth(@PathParam("subscriptionName") String subscriptionName) {
+    if (!hasAccess("messaging")) {
+      response.setStatus(403);
+      return null;
+    }
     // Implement the logic to get the depth of the subscription queue
     // int depth = messagingService.getSubscriptionDepth(subscriptionName);
     return Response.ok().entity("Queue depth for subscription '" + subscriptionName + "' is: [depth]").build();
@@ -112,6 +132,10 @@ public class MessagingApi extends BaseRestApi {
 
   @Produces(MediaType.APPLICATION_JSON)
   public Response getAllSubscriptionDepth() {
+    if (!hasAccess("messaging")) {
+      response.setStatus(403);
+      return null;
+    }
     // Implement the logic to get the depth of the subscription queue
     // int depth = messagingService.getSubscriptionDepth(subscriptionName);
     return Response.ok().entity("Queue depth for subscription ' is: [depth]").build();

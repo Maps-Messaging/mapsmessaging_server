@@ -33,6 +33,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import javax.servlet.http.HttpServletResponse;
+
 import static io.mapsmessaging.BuildInfo.buildVersion;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -101,12 +103,13 @@ public class MapsRestServerApi extends BaseRestApi {
   public String login() {
     HttpSession session = request.getSession(false);
     if(session != null){
-      hasAccess();
-      System.err.println(session.toString());
-      return session.getId();
+      if (!hasAccess("root")) {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        return "{\"Status\": \"No Access\"}";
+      }
+      return "{\"Status\": \"OK\"}";
     }
-
-    return "No Authentication";
+    return "{\"Status\": \"No Authentication Required\"}";
   }
 
   @GET
@@ -116,11 +119,9 @@ public class MapsRestServerApi extends BaseRestApi {
   public String logout() {
     HttpSession session = request.getSession(false);
     if(session != null){
-      System.err.println(session.toString());
       session.invalidate();
-      return "logged out";
     }
-    return "No Authentication";
+    return "{\"Status\": \"OK\"}";
   }
 
 }

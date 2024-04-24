@@ -66,7 +66,8 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   protected final Map<String, Transformer> destinationTransformerMap;
   protected final ProtocolJMX mbean;
 
-
+  @Setter
+  @Getter
   protected long keepAlive;
   private boolean completed;
 
@@ -159,10 +160,6 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   @Override
   public long getTimeOut() {
     return keepAlive;
-  }
-
-  public void setKeepAlive(long keepAliveMilliseconds) {
-    keepAlive = keepAliveMilliseconds;
   }
 
   public void setConnected(boolean connected) {

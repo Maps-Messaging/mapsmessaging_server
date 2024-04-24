@@ -38,6 +38,10 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   // @ApiOperation(value = "Returns the servers unique name")
   public StatusMessage getBuildInfo() {
+    if (!hasAccess("servers")) {
+      response.setStatus(403);
+      return null;
+    }
     MessageDaemon messageDaemon = MessageDaemon.getInstance();
     return new StatusMessage(messageDaemon);
   }
@@ -47,6 +51,10 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
 //  @ApiOperation(value = "Retrieve the server statistics")
   public ServerStatisticsResponse getStats() {
+    if (!hasAccess("servers")) {
+      response.setStatus(403);
+      return null;
+    }
     return new ServerStatisticsResponse(request);
   }
 

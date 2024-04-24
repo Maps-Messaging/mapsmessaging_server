@@ -44,28 +44,24 @@ public class BaseRestApi {
     return (Subject) getSession().getAttribute("subject");
   }
 
-  protected boolean hasAccess(){
+  protected boolean hasAccess(String resource) {
     String method = request.getMethod();
-    String uri = request.getRequestURI();
     Subject subject = (Subject) getSession().getAttribute("subject");
+    boolean access = true;
 
     if(AuthManager.getInstance().isAuthorisationEnabled()) {
       UserIdMap userIdMap = AuthManager.getInstance().getUserIdentity((String) getSession().getAttribute("username"));
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
-      if(userIdMap != null) {
-        boolean hasAccess = accessControl.hasAccess(uri, subject, computeAccess(method));
-        System.err.println(hasAccess);
-      }
-      else{
-        return false;
-      }
+      access = (userIdMap != null) && accessControl.hasAccess(resource, subject, computeAccess(method));
     }
-    return true;
+
+    return access;
   }
 
   private long computeAccess(String method){
     switch(method){
       case "GET":
+      case "HEAD":
         return RestAclMapping.READ_VALUE;
       case "POST":
         return RestAclMapping.CREATE_VALUE;

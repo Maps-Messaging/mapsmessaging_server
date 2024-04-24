@@ -42,6 +42,11 @@ public class IntegrationManagementApi  extends BaseRestApi {
   @Path("/server/integration")
   @Produces({MediaType.APPLICATION_JSON})
   public IntegrationDetailResponse getAllIntegrations() {
+    if (!hasAccess("integrations")) {
+      response.setStatus(403);
+      return null;
+    }
+
     List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
     List<IntegrationInfo> protocols = new ArrayList<>();
     ConfigurationProperties global = null;

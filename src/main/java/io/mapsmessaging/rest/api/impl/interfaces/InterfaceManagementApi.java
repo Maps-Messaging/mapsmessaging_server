@@ -46,6 +46,10 @@ public class InterfaceManagementApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Retrieve a list of all configured interfaces")
   public InterfaceDetailResponse getAllInterfaces() {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     List<InterfaceInfo> protocols = new ArrayList<>();
     ConfigurationProperties global = null;
@@ -64,6 +68,10 @@ public class InterfaceManagementApi extends BaseRestApi {
   @Path("/server/interfaces/stopAll")
   //@ApiOperation(value = "Stops all all configured interfaces")
   public Response stopAllInterfaces() {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     MessageDaemon.getInstance().getNetworkManager().stopAll();
     return Response.ok().build();
   }
@@ -72,6 +80,10 @@ public class InterfaceManagementApi extends BaseRestApi {
   @Path("/server/interfaces/startAll")
   //@ApiOperation(value = "Starts all all configured interfaces")
   public Response startAllInterfaces() {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     MessageDaemon.getInstance().getNetworkManager().startAll();
     return Response.ok().build();
   }
@@ -80,6 +92,10 @@ public class InterfaceManagementApi extends BaseRestApi {
   @Path("/server/interfaces/pauseAll")
   //@ApiOperation(value = "Pauses all all configured interfaces")
   public Response pauseAllInterfaces() {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     MessageDaemon.getInstance().getNetworkManager().pauseAll();
     return Response.ok().build();
   }
@@ -89,6 +105,10 @@ public class InterfaceManagementApi extends BaseRestApi {
   @Path("/server/interfaces/resumeAll")
   //@ApiOperation(value = "Resumes all all configured interfaces")
   public Response resumeAllInterfaces() {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     MessageDaemon.getInstance().getNetworkManager().resumeAll();
     return Response.ok().build();
   }

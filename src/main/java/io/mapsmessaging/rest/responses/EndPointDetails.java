@@ -30,6 +30,7 @@ public class EndPointDetails {
   private String user;
   private String protocolName;
   private String protocolVersion;
+  private long connectedTimeMs;
   private long lastRead;
   private long lastWrite;
   private long totalBytesRead;
@@ -48,6 +49,7 @@ public class EndPointDetails {
     id = endPoint.getId();
     adapter = adapterName;
     name = endPoint.getName();
+    connectedTimeMs = System.currentTimeMillis() - endPoint.getConnected();
     protocolName = endPoint.getBoundProtocol().getName();
     protocolVersion = endPoint.getBoundProtocol().getVersion();
     if(endPoint.getEndPointPrincipal() != null) {
