@@ -22,15 +22,22 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
+import lombok.Getter;
 
 import javax.jmdns.ServiceEvent;
+import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
+import java.util.*;
 
 public class ServerConnectionManager implements ServiceListener, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(ServerConnectionManager.class);
 
+  @Getter
+  private final Map<String, List<ServiceInfo>> serviceInfoMap;
+
   public ServerConnectionManager(){
+    serviceInfoMap = new LinkedHashMap<>();
   }
 
   @Override
@@ -41,16 +48,18 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   public void serviceRemoved(ServiceEvent serviceEvent) {
     if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
       for(String host:serviceEvent.getInfo().getHostAddresses()){
+        serviceInfoMap.remove(serviceEvent.getName());
         logger.log(ServerLogMessages.DISCOVERY_REMOVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
       }
     }
-
   }
 
   @Override
   public void serviceResolved(ServiceEvent serviceEvent) {
     if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
       for(String host:serviceEvent.getInfo().getHostAddresses()){
+        List<ServiceInfo> serviceInfos = serviceInfoMap.computeIfAbsent(serviceEvent.getName(), k -> new ArrayList<>());
+        serviceInfos.add(serviceEvent.getInfo());
         logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
       }
     }
@@ -74,6 +83,5 @@ public class ServerConnectionManager implements ServiceListener, Agent {
 
   @Override
   public void stop() {
-
   }
 }

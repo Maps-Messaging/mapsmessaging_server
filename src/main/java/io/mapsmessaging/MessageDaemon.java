@@ -310,6 +310,11 @@ public class MessageDaemon {
     return (DiscoveryManager) agentMap.get("Discovery Manager").getAgent();
   }
 
+
+  public ServerConnectionManager getServerConnectionManager() {
+    return (ServerConnectionManager) agentMap.get("Server Connection Manager").getAgent();
+  }
+
   public NetworkManager getNetworkManager() {
     return (NetworkManager) agentMap.get("Network Manager").getAgent();
   }

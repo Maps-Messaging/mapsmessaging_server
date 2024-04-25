@@ -53,6 +53,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
 
   private final Logger logger;
   private final String serverName;
+  @Getter
   private final List<AdapterManager> boundedNetworks;
   private final ConfigurationProperties properties;
   private final boolean stampMeta;

@@ -65,7 +65,10 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
         @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
         @Tag(name = "Server Management", description = "Server status and management"),
         @Tag(name = "Server Integration Management", description = "Manages interconnections with other brokers"),
-        @Tag(name = "Connection Management", description = "Manages client connections")
+        @Tag(name = "Connection Management", description = "Manages client connections"),
+        @Tag(name = "Discovery Management", description = "Manages servers discovery agent")
+
+
     },
     externalDocs = @ExternalDocumentation(description = "Maps Messaging", url = "https://www.mapsmessaging.io/")
 )

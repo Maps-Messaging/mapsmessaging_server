@@ -41,6 +41,7 @@ public class AdapterManager {
   private final String domainName;
   private final String serverName;
   private final JmDNS mDNSAgent;
+  @Getter
   private final Map<EndPointServer, List<ServiceInfo>> endPointList;
   private final boolean stampMeta;
 

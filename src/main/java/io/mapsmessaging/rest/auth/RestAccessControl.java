@@ -48,6 +48,7 @@ public class RestAccessControl {
     addToMap("auth", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("connections", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("destinations", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminAndEveryone));
+    addToMap("discovery", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("integrations", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("interfaces", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("messaging", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminAndEveryone));
