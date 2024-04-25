@@ -80,8 +80,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     if (!session.isNew()) {
       subject = (Subject) session.getAttribute("subject");
       if (subject != null ||
-          session.getAttribute(USERNAME) == null &&
-              session.getAttribute(USERNAME).equals(username)
+          session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(username)
       ) {
         reAuth = false;
       }

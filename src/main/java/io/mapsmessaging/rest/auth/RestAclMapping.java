@@ -50,6 +50,23 @@ public class RestAclMapping implements AccessControlMapping {
     }
   }
 
+  public static String getAllAccessControls(long val) {
+    StringBuilder sb = new StringBuilder();
+    if((val & CREATE_VALUE) != 0){
+      sb.append(CREATE).append(",");
+    }
+    if((val & READ_VALUE) != 0){
+      sb.append(READ).append(",");
+    }
+    if((val & UPDATE_VALUE) != 0){
+      sb.append(UPDATE).append(",");
+    }
+    if((val & DELETE_VALUE) != 0){
+      sb.append(DELETE).append(",");
+    }
+    return sb.toString();
+  }
+
   @Override
   public String getAccessName(long value) {
     if (value == READ_VALUE) {

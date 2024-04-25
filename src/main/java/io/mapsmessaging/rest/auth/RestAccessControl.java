@@ -56,6 +56,15 @@ public class RestAccessControl {
     addToMap("root", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminAndEveryone ));
   }
 
+  public Map<String, String> getAccess(Subject subject){
+    Map<String, String> accessMap = new LinkedHashMap<>();
+    for(Map.Entry<String,AccessControlList> entry: aclMapping.entrySet()){
+      long access = entry.getValue().getSubjectAccess(subject);
+      accessMap.put(entry.getKey(), RestAclMapping.getAllAccessControls(access));
+    }
+    return accessMap;
+  }
+
   public boolean hasAccess(String resource, Subject subject, long access){
     String key = aclMapping.keySet().stream()
         .filter(s -> s.contains(resource))

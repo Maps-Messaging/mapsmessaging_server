@@ -19,6 +19,7 @@ package io.mapsmessaging.rest.api.impl;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -33,6 +34,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletResponse;
 
 import static io.mapsmessaging.BuildInfo.buildVersion;
@@ -100,16 +102,18 @@ public class MapsRestServerApi extends BaseRestApi {
   @Path("/login")
   @Produces({MediaType.APPLICATION_JSON})
   // @ApiOperation(value = "Check for changes to the configuration update counts")
-  public String login() {
+  public LoginResponse login() {
     HttpSession session = request.getSession(false);
     if(session != null){
       if (!hasAccess("root")) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        return "{\"Status\": \"No Access\"}";
+        return new LoginResponse("No Access");
       }
-      return "{\"Status\": \"OK\"}";
+      Subject subject = (Subject) getSession().getAttribute("subject");
+      String username = (String) getSession().getAttribute("username");
+      return new LoginResponse("Success", subject, username);
     }
-    return "{\"Status\": \"No Authentication Required\"}";
+    return new LoginResponse("No Authentication Required");
   }
 
   @GET
