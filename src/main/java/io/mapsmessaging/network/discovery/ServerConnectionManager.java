@@ -28,6 +28,7 @@ import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class ServerConnectionManager implements ServiceListener, Agent {
 
@@ -59,10 +60,21 @@ public class ServerConnectionManager implements ServiceListener, Agent {
     if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
       for(String host:serviceEvent.getInfo().getHostAddresses()){
         List<ServiceInfo> serviceInfos = serviceInfoMap.computeIfAbsent(serviceEvent.getName(), k -> new ArrayList<>());
+        serviceInfos.removeIf(serviceInfo -> matches(serviceInfo, serviceEvent.getInfo()));
         serviceInfos.add(serviceEvent.getInfo());
         logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
       }
     }
+  }
+
+  private boolean matches(ServiceInfo lhs, ServiceInfo rhs) {
+    return (
+        lhs.getName().equals(rhs.getName()) &&
+            lhs.getDomain().equals(rhs.getDomain()) &&
+            lhs.getPort() == rhs.getPort() &&
+            lhs.getApplication().equals(rhs.getApplication()) &&
+            Arrays.equals(lhs.getHostAddresses(), rhs.getHostAddresses())
+    );
   }
 
   @Override
