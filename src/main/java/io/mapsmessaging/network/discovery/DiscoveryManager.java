@@ -95,26 +95,33 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
 
   public void start() {
     if (enabled) {
-      String hostnames = properties.getProperty("hostnames");
       try {
-        if (hostnames != null) {
-          String[] hostnameList = hostnames.split(",");
-          for (String hostname : hostnameList) {
-            List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getIpAddressByName(hostname.trim());
-            for (InetAddress address : addresses) {
-              boundedNetworks.add(bindInterface(address, stampMeta));
-            }
-          }
-        } else {
-          List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getCurrentIpAddresses();
-          for (InetAddress address : addresses) {
-            boundedNetworks.add(bindInterface(address, stampMeta));
-          }
-        }
+        bindAddresses(getAddresses(properties.getProperty("hostnames")));
       } catch (IOException e) {
         logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
       }
       NetworkInterfaceMonitor.getInstance().addListener(this);
+    }
+  }
+
+  private List<InetAddress> getAddresses(String hostnames) {
+    List<InetAddress> addressList = new ArrayList<>();
+    if (hostnames != null) {
+      String[] hostnameList = hostnames.split(",");
+      for (String hostname : hostnameList) {
+        List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getIpAddressByName(hostname.trim());
+        addressList.addAll(addresses);
+      }
+    } else {
+      List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getCurrentIpAddresses();
+      addressList.addAll(addresses);
+    }
+    return addressList;
+  }
+
+  private void bindAddresses( List<InetAddress> addresses) throws IOException {
+    for (InetAddress address : addresses) {
+      boundedNetworks.add(bindInterface(address, stampMeta));
     }
   }
 
@@ -133,7 +140,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
       Map<String, String> map = new LinkedHashMap<>();
       map.put("server name", MessageDaemon.getInstance().getId());
       map.put("schema support", "true");
-      map.put("schema name", "$schema");
+      map.put("schema prefix", "$schema");
       map.put("version", BuildInfo.getBuildVersion());
       map.put("date", BuildInfo.getBuildDate());
       map.put("restApi", "true");
