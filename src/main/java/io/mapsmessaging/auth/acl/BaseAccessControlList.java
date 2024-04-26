@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -76,6 +76,14 @@ public abstract class BaseAccessControlList implements AccessControlList {
       Set<GroupIdPrincipal> groups = subject.getPrincipals(GroupIdPrincipal.class);
       return groupHas(groups, System.currentTimeMillis(), requestedAccess);
     }
+  }
+
+  public boolean add(UUID uuid, long requestedAccess){
+    return aclEntries.add(new AclEntry(uuid, requestedAccess));
+  }
+
+  public boolean remove(UUID uuid, long requestedAccess){
+    return aclEntries.removeIf(aclEntry -> aclEntry.matches(uuid) && aclEntry.getPermissions() == requestedAccess);
   }
 
   private long parseUserUUID(UUID authId, long time) {
