@@ -55,18 +55,27 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   }
 
   @Override
-  public void serviceResolved(ServiceEvent serviceEvent) {
-    if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
-      for(String host:serviceEvent.getInfo().getHostAddresses()){
-        String name = serviceEvent.getName();
-        int duplicateIndex = name.indexOf("(");
-        if(duplicateIndex > 0){
-          name = name.substring(0, duplicateIndex-1).trim();
+  public synchronized void serviceResolved(ServiceEvent serviceEvent) {
+    if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId()) && serviceEvent.getInfo().hasData()){
+
+      int count =0;
+      Enumeration<String> names = serviceEvent.getInfo().getPropertyNames();
+      while (names.hasMoreElements()) {
+        names.nextElement();
+        count++;
+      }
+      if(count > 0) {
+        for (String host : serviceEvent.getInfo().getHostAddresses()) {
+          String name = serviceEvent.getName();
+          int duplicateIndex = name.indexOf("(");
+          if (duplicateIndex > 0) {
+            name = name.substring(0, duplicateIndex - 1).trim();
+          }
+          List<ServiceInfo> serviceInfos = serviceInfoMap.computeIfAbsent(name, k -> new ArrayList<>());
+          serviceInfos.removeIf(serviceInfo -> matches(serviceInfo, serviceEvent.getInfo()));
+          serviceInfos.add(serviceEvent.getInfo());
+          logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, name, host + ":" + serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
         }
-        List<ServiceInfo> serviceInfos = serviceInfoMap.computeIfAbsent(name, k -> new ArrayList<>());
-        serviceInfos.removeIf(serviceInfo -> matches(serviceInfo, serviceEvent.getInfo()));
-        serviceInfos.add(serviceEvent.getInfo());
-        logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, name, host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
       }
     }
   }
