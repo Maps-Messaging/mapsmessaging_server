@@ -52,6 +52,7 @@ set "MAPS_CONF=%MAPS_HOME%\conf"
 :: Note::: The conf directory must be at the start else the configuration is loaded from the jars
 set "CLASSPATH=%MAPS_CONF%;%MAPS_LIB%\message_daemon-%VERSION%.jar;%MAPS_LIB%\*"
 
+:loop
 :: Now start the daemon
 java -classpath %CLASSPATH% %JAVA_OPTS% ^
     -DUSE_UUID=false ^
@@ -62,4 +63,14 @@ java -classpath %CLASSPATH% %JAVA_OPTS% ^
     -DMAPS_HOME="%MAPS_HOME%" ^
     io.mapsmessaging.MessageDaemon
 
-endlocal
+
+:: Check the exit code from Java application
+if %ERRORLEVEL% EQU 8 (
+    echo Restarting the server...
+    goto loop
+) else (
+    echo Exiting with code %ERRORLEVEL%
+    endlocal
+    exit /b %ERRORLEVEL%
+)
+
