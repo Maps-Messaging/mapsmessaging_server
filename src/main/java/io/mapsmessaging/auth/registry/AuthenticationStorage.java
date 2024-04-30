@@ -62,6 +62,7 @@ public class AuthenticationStorage implements Closeable {
     firstBoot = !(new File(securityDirectory + File.separator + ".auth.db").exists());
     db = DBMaker.fileDB(securityDirectory + File.separator + ".auth.db")
         .checksumStoreEnable()
+        .cleanerHackEnable()
         .fileChannelEnable()
         .fileMmapEnableIfSupported()
         .fileMmapPreclearDisable()
@@ -137,7 +138,6 @@ public class AuthenticationStorage implements Closeable {
 
   @Override
   public void close() throws IOException {
-    db.close();
   }
 
   public SessionPrivileges getQuota(UUID userId) {

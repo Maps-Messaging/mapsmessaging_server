@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright [ 2020 - 2023 ] [Matthew Buckton]
+  ~ Copyright [ 2020 - 2024 ] [Matthew Buckton]
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@
   <appender name="AsyncLogFile" class="ch.qos.logback.classic.AsyncAppender">
     <appender-ref ref="LogFile"/>
   </appender>
-  <root level="info">
+  <root level="warn">
     <appender-ref ref="AsyncLogFile"/>
   </root>
 </configuration>

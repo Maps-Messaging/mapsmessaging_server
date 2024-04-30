@@ -18,6 +18,7 @@
 package io.mapsmessaging.rest.api.impl.server;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.ServerRunner;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.data.StatusMessage;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
@@ -58,4 +59,34 @@ public class ServerDetailsApi extends BaseInterfaceApi {
     return new ServerStatisticsResponse(request);
   }
 
+  @GET
+  @Path("/server/restart")
+  @Produces({MediaType.APPLICATION_JSON})
+//  @ApiOperation(value = "Retrieve the server statistics")
+  public String restartServer() {
+    if (!hasAccess("serverControl")) {
+      response.setStatus(403);
+      return "{\"status\":\"Not Authorised\"}";
+    }
+    shutdown(8);
+    return "{\"status\":\"Restarting\"}";
+
+  }
+
+  @GET
+  @Path("/server/shutdown")
+  @Produces({MediaType.APPLICATION_JSON})
+//  @ApiOperation(value = "Retrieve the server statistics")
+  public String shutdownServer() {
+    if (!hasAccess("serverControl")) {
+      response.setStatus(403);
+      return "{\"status\":\"Not Authorised\"}";
+    }
+    shutdown(0);
+    return "{\"status\":\"Shutting down\"}";
+  }
+
+  private void shutdown(int exitCode){
+    ServerRunner.getExitRunner().deletePidFile(exitCode);
+  }
 }

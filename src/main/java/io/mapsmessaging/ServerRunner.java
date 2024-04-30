@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package io.mapsmessaging;
 
 import io.mapsmessaging.utilities.SystemProperties;
+import lombok.Getter;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -36,6 +37,7 @@ import java.util.concurrent.locks.LockSupport;
 public class ServerRunner implements WrapperListener {
 
   private static String PID_FILE = "pid";
+  @Getter
   private static ExitRunner exitRunner;
   private static ServerRunner serverRunner;
 

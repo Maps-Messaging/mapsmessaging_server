@@ -133,12 +133,16 @@ public class DestinationManagerPipeline {
   }
 
 
-  public CompletableFuture<Void> stop() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    Callable<Void> task = () -> {
-      stopInternal();
-      future.complete(null);
-      return null;
+  public CompletableFuture<Boolean> stop() {
+    CompletableFuture<Boolean> future = new CompletableFuture<>();
+    Callable<Boolean> task = () -> {
+      try {
+        stopInternal();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      future.complete(true);
+      return true;
     };
     taskScheduler.submit(task);
     return future;

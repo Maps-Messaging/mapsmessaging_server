@@ -52,7 +52,9 @@ public class BaseRestApi {
     if(AuthManager.getInstance().isAuthorisationEnabled()) {
       UserIdMap userIdMap = AuthManager.getInstance().getUserIdentity((String) getSession().getAttribute("username"));
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
-      access = (userIdMap != null) && accessControl.hasAccess(resource, subject, computeAccess(method));
+      if(accessControl != null){
+        access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
+      }
     }
 
     return access;

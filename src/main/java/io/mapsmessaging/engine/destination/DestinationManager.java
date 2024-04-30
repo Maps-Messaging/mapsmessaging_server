@@ -187,7 +187,7 @@ public class DestinationManager implements DestinationFactory, Agent {
 
   public void stop() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STOPPING);
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    List<CompletableFuture<Boolean>> futures = new ArrayList<>();
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       futures.add(pipeline.stop());
     }

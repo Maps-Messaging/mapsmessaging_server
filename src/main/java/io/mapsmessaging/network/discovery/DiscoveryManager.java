@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
@@ -69,6 +70,15 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
     enabled = properties.getBooleanProperty("enabled", true);
     stampMeta = properties.getBooleanProperty("addTxtRecords", false);
     domainName = properties.getProperty("domainName", ".local");
+
+    java.util.logging.Logger logger = java.util.logging.Logger.getLogger("javax.jmdns");
+    logger.setLevel(Level.OFF); // Set to OFF to disable logging
+
+    // If JmDNS uses specific child loggers, they must also be adjusted
+    logger.setUseParentHandlers(false); // Stop log messages from propagating to the parent handlers
+    for (java.util.logging.Handler handler : logger.getHandlers()) {
+      handler.setLevel(Level.OFF); // Optionally disable each handler
+    }
   }
 
   public void registerListener(String type, ServiceListener listener){

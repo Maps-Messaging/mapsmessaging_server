@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ package io.mapsmessaging;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
-
-import java.nio.file.*;
 import java.io.IOException;
+import java.nio.file.*;
 
 /**
  * This class extends the Thread class and is used to monitor a specified file for deletion events.
@@ -35,6 +34,8 @@ public class ExitRunner extends Thread {
   private final Path pidFilePath;
   private final WatchService watchService;
 
+  private int exitCode = 0;
+
   /**
    * Constructor for the ExitRunner class.
    *
@@ -46,6 +47,15 @@ public class ExitRunner extends Thread {
     this.watchService = FileSystems.getDefault().newWatchService();
     pidFilePath.getParent().register(watchService, StandardWatchEventKinds.ENTRY_DELETE);
     super.start();
+  }
+
+  public void deletePidFile(int exitCode)  {
+    if(!pidFilePath.toFile().delete()){
+      System.err.println("Failed to delete PID file");
+    }
+    else{
+      this.exitCode = exitCode;
+    }
   }
 
   /**
@@ -73,7 +83,7 @@ public class ExitRunner extends Thread {
         Path fileName = ev.context();
 
         if (kind == StandardWatchEventKinds.ENTRY_DELETE && fileName.equals(pidFilePath.getFileName())) {
-          WrapperManager.stop(1);
+          WrapperManager.stop(exitCode);
           return;
         }
       }

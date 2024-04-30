@@ -52,6 +52,7 @@ public class RestAccessControl {
     addToMap("integrations", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("interfaces", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("messaging", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminAndEveryone));
+    addToMap("servers", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("schemas", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("details", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("root", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(),  adminAndEveryone ));
@@ -67,6 +68,9 @@ public class RestAccessControl {
   }
 
   public boolean hasAccess(String resource, Subject subject, long access){
+    if(!aclMapping.containsKey(resource)){
+      System.err.println("No record for "+resource);
+    }
     String key = aclMapping.keySet().stream()
         .filter(s -> s.contains(resource))
         .findFirst()
