@@ -17,6 +17,9 @@
 
 package io.mapsmessaging.rest.data.interfaces;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.mapsmessaging.network.EndPointManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -38,13 +41,23 @@ public class InterfaceInfo implements Serializable {
   @Schema(description = "Current state of the interface")
   private final String state;
   @Schema(description = "Configuration for the interface")
-  private final Map<String, Object> config;
+  private final String config;
 
   public InterfaceInfo(EndPointManager endPointManager){
     name = (endPointManager.getEndPointServer().getConfig().getProperties().getProperty("name"));
     port = (endPointManager.getEndPointServer().getUrl().getPort());
     host =  (endPointManager.getEndPointServer().getUrl().getProtocol())+"://"+(endPointManager.getEndPointServer().getUrl().getHost());
-    config = (endPointManager.getEndPointServer().getConfig().getProperties().getMap());
+    String t = "";
+    YAMLFactory factory = new YAMLFactory()
+        .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES);
+
+    ObjectMapper yamlMapper = new ObjectMapper(factory);
+    try {
+      t = yamlMapper.writeValueAsString(endPointManager.getEndPointServer().getConfig().getProperties().getMap());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    config = t;
     switch (endPointManager.getState()) {
       case START:
         state = ("Started");
@@ -59,7 +72,5 @@ public class InterfaceInfo implements Serializable {
       default:
         state = ("Unknown");
     }
-
   }
-
 }
