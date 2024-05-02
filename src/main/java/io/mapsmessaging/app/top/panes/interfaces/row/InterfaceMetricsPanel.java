@@ -19,9 +19,9 @@ package io.mapsmessaging.app.top.panes.interfaces.row;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.ByteSizeFormatter;
+import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
-import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
 import io.mapsmessaging.app.top.panes.interfaces.InterfacesStatusUpdate;
 import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
 
@@ -43,7 +43,7 @@ public class InterfaceMetricsPanel extends InterfacesStatusUpdate {
     StringBuilder value = new StringBuilder();
     value.append(connectionFormatter.format(statusMessage.getConnections())).append(" ");
     value.append(connectionFormatter.format(statusMessage.getErrors())).append(" ");
-    value.append(unitFormatter.format(statusMessage.getMessagesReceived())).append(" ");
+    value.append(unitFormatter.format(statusMessage.getTotalMessagesReceived())).append(" ");
     value.append(unitFormatter.format(statusMessage.getMessagesSent())).append(" ");
     value.append(bytesFormatter.format(statusMessage.getBytesReceived())).append("  ");
     value.append(bytesFormatter.format(statusMessage.getBytesSent())).append(" ");

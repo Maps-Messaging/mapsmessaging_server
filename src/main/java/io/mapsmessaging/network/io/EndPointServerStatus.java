@@ -100,6 +100,23 @@ public abstract class EndPointServerStatus {
     averageBytesRead.add(count);
   }
 
+  public long getBytesSentPerSecond(){
+    return averageBytesSent.getPerSecond();
+  }
+
+
+  public long getBytesReadPerSecond(){
+    return averageBytesRead.getPerSecond();
+  }
+
+  public long getMessagesSentPerSecond(){
+    return averagePacketsSent.getPerSecond();
+  }
+
+  public long getMessagesReadPerSecond(){
+    return averagePacketsRead.getPerSecond();
+  }
+
   public LinkedMovingAverageRecord getAverageBytesSent() {
     return averageBytesSent.getRecord();
   }

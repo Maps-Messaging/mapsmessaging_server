@@ -32,6 +32,15 @@ import java.util.Map;
 public class InterfaceStatus {
   @Schema(description = "Name of the interface")
   private String interfaceName;
+  @Schema(description = "Total number of bytes sent")
+  private long totalBytesSent;
+  @Schema(description = "Total number of bytes received")
+  private long totalBytesReceived;
+  @Schema(description = "Total number of messages sent")
+  private long totalMessagesSent;
+  @Schema(description = "Total number of messages received")
+  private long totalMessagesReceived;
+
   @Schema(description = "Number of bytes sent")
   private long bytesSent;
   @Schema(description = "Number of bytes received")
@@ -40,6 +49,7 @@ public class InterfaceStatus {
   private long messagesSent;
   @Schema(description = "Number of messages received")
   private long messagesReceived;
+
   @Schema(description = "Number current connections")
   private long connections;
 
@@ -54,10 +64,17 @@ public class InterfaceStatus {
 
   public InterfaceStatus(EndPointServer server){
     interfaceName = server.getConfigName();
-    bytesSent = server.getTotalBytesSent();
-    bytesReceived = server.getTotalBytesRead();
-    messagesSent = server.getTotalPacketsSent();
-    messagesReceived = server.getTotalPacketsRead();
+    totalBytesSent = server.getTotalBytesSent();
+    totalBytesReceived = server.getTotalBytesRead();
+    totalMessagesSent = server.getTotalPacketsSent();
+    totalMessagesReceived = server.getTotalPacketsRead();
+
+    bytesSent = server.getBytesSentPerSecond();
+    bytesReceived = server.getBytesReadPerSecond();
+    messagesReceived = server.getMessagesReadPerSecond();
+    messagesSent = server.getMessagesSentPerSecond();
+
+
     connections = server.size();
     statistics = new LinkedHashMap<>();
     errors = server.getTotalErrors();
@@ -69,10 +86,16 @@ public class InterfaceStatus {
 
   public InterfaceStatus(EndPointConnection endPointConnection) {
     interfaceName = endPointConnection.getConfigName();
-    bytesSent = endPointConnection.getTotalBytesSent();
-    bytesReceived = endPointConnection.getTotalBytesRead();
-    messagesSent = endPointConnection.getTotalPacketsSent();
-    messagesReceived = endPointConnection.getTotalPacketsRead();
+    totalBytesSent = endPointConnection.getTotalBytesSent();
+    totalBytesReceived = endPointConnection.getTotalBytesRead();
+    totalMessagesSent = endPointConnection.getTotalPacketsSent();
+    totalMessagesReceived = endPointConnection.getTotalPacketsRead();
+
+    bytesSent = endPointConnection.getBytesSentPerSecond();
+    bytesReceived = endPointConnection.getBytesReadPerSecond();
+    messagesReceived = endPointConnection.getMessagesReadPerSecond();
+    messagesSent = endPointConnection.getMessagesSentPerSecond();
+
     connections = 1;
     statistics = new LinkedHashMap<>();
     errors = endPointConnection.getTotalErrors();
