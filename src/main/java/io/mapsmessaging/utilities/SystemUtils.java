@@ -18,6 +18,7 @@
 package io.mapsmessaging.utilities;
 
 import com.sun.management.OperatingSystemMXBean;
+import lombok.Getter;
 
 import java.lang.management.ManagementFactory;
 
@@ -36,12 +37,36 @@ public class SystemUtils {
 
   private final OperatingSystemMXBean osMXBean;
 
+  @Getter
+  private long lastCpuTime;
+
+  @Getter
+  private float cpuPercentage;
+
+  private long lastRead;
+
   private SystemUtils() {
     osMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+    lastRead = System.currentTimeMillis();
+    lastCpuTime = osMXBean.getProcessCpuTime()/1_000_000;
   }
 
   public long getCpuTime() {
-    long processCpuTime = osMXBean.getProcessCpuTime();
-    return processCpuTime / 1_000_000;
+    long now = System.currentTimeMillis();
+    long timeAvailable = now - lastRead;
+    long totalTime = timeAvailable * Runtime.getRuntime().availableProcessors();
+
+    long current = osMXBean.getProcessCpuTime()/ 1_000_000;
+    long usedTime = current - lastCpuTime;
+
+    int percent  =(int)( (usedTime * 1000)/totalTime);
+    if(percent < 0){
+      percent = 0;
+    }
+    cpuPercentage = percent/10f;
+    lastRead = now;
+    lastCpuTime = current;
+
+    return current;
   }
 }

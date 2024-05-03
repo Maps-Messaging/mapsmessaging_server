@@ -46,6 +46,7 @@ public class StatusMessage {
   private long connections;
   private long destinations;
   private long cpuTime;
+  private float cpuPercent;
   private long storageSize;
   private Map<String, Integer> threadState = new LinkedHashMap<>();
 
@@ -82,5 +83,6 @@ public class StatusMessage {
     }
     //----------------------------------------------------
     cpuTime = SystemUtils.getInstance().getCpuTime();
+    cpuPercent = SystemUtils.getInstance().getCpuPercentage();
   }
 }
