@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -53,10 +53,9 @@ public class DestinationJMX implements HealthMonitor {
     typePath.add("destinationType=" + destinationImpl.getResourceType().getName());
     parseName(destinationImpl.getFullyQualifiedNamespace());
     movingAveragesJMXList = new ArrayList<>();
-    mbean = JMXManager.getInstance().register(this, typePath);
-    if (JMXManager.isEnableJMX() &&
-        JMXManager.isEnableJMXStatistics() &&
-        !destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS")) {
+    boolean isSys = destinationImpl.getFullyQualifiedNamespace().startsWith("$SYS");
+    mbean = isSys? null : JMXManager.getInstance().register(this, typePath);
+    if (JMXManager.isEnableJMX() && JMXManager.isEnableJMXStatistics() && mbean != null) {
       DestinationStats stats = destinationImpl.getStats();
       for (LinkedMovingAverages linkedMovingAverages : stats.getAverageList()) {
         movingAveragesJMXList.add(new LinkedMovingAveragesJMX(typePath, linkedMovingAverages));
@@ -74,11 +73,11 @@ public class DestinationJMX implements HealthMonitor {
     }
     List<String> pubList = new ArrayList<>(typePath);
     pubList.add("name=ResourceScheduler");
-    publishTaskQueueJMX = new TaskQueueJMX(resource, pubList);
+    publishTaskQueueJMX = isSys?null : new TaskQueueJMX(resource, pubList);
 
     List<String> subList = new ArrayList<>(typePath);
     subList.add("name=SubscriptionScheduler");
-    subscriptionTaskQueueJMX = new TaskQueueJMX(subscription, subList);
+    subscriptionTaskQueueJMX = isSys?null :  new TaskQueueJMX(subscription, subList);
   }
 
   private void parseName(String name) {

@@ -235,6 +235,7 @@ public class DestinationManager implements DestinationFactory, Agent {
           logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTED_TOPIC, destinationImpl.getFullyQualifiedNamespace());
         }
       } catch (IOException error) {
+        System.err.println(directory.getAbsolutePath());
         logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEPTION_ON_START, error);
       }
     }

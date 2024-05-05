@@ -46,6 +46,7 @@ public class ExitRunner extends Thread {
     this.pidFilePath = pidFile.toPath().toAbsolutePath();
     this.watchService = FileSystems.getDefault().newWatchService();
     pidFilePath.getParent().register(watchService, StandardWatchEventKinds.ENTRY_DELETE);
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> deletePidFile(2)));
     super.start();
   }
 
