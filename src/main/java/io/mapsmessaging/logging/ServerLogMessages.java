@@ -420,7 +420,7 @@ public enum ServerLogMessages implements LogMessage {
   JMX_MANAGER_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Registering MBean with [name={}]"),
   JMX_MANAGER_UNREGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Unregistering MBean with [name={}]"),
   JMX_MANAGER_REGISTER_FAIL(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Unable to register MBean [name={}] "),
-  JMX_MANAGER_UNREGISTER_FAIL(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Unable to unregister MBean [name={}]"),
+  JMX_MANAGER_UNREGISTER_FAIL(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Unable to unregister MBean [name={}]"),
   // </editor-fold>
 
   // <editor-fold desc="Configuration log messages">
