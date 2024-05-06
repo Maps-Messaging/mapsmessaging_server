@@ -687,6 +687,8 @@ public enum ServerLogMessages implements LogMessage {
   REST_API_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Rest Server unable to start due to exception"),
   REST_API_SUCCESSFUL_REQUEST(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Rest request type {} for {} with status {} returned {} bytes"),
   //</editor-fold>
+
+  SYSTEM_TOPIC_MESSAGE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to send update to {}, exception raised"),
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

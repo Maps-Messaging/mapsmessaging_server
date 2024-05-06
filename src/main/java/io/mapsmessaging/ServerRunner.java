@@ -23,6 +23,7 @@ import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.concurrent.locks.LockSupport;
@@ -80,6 +81,15 @@ public class ServerRunner implements WrapperListener {
       }
     } catch (IOException e) {
       // can ignore this exception
+    }
+    try (FileWriter writer = new FileWriter(pidFile)) {
+      // Get the process ID of the current Java process
+      long pid = ProcessHandle.current().pid();
+      // Write the PID to the file
+      writer.write(Long.toString(pid));
+      // Flush and close the writer
+      writer.flush();
+    } catch (IOException e) {
     }
     serverRunner  = new ServerRunner(args);
     exitRunner = new ExitRunner(pidFile);

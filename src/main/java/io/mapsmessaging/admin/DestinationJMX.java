@@ -43,7 +43,7 @@ public class DestinationJMX implements HealthMonitor {
   private final ObjectInstance mbean;
   @Getter
   private final List<String> typePath;
-  private List<LinkedMovingAveragesJMX> movingAveragesJMXList;
+  private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
   private final TaskQueueJMX publishTaskQueueJMX;
   private final TaskQueueJMX subscriptionTaskQueueJMX;
 
@@ -101,8 +101,8 @@ public class DestinationJMX implements HealthMonitor {
     for (LinkedMovingAveragesJMX movingAveragesJMX : movingAveragesJMXList) {
       movingAveragesJMX.close();
     }
-    subscriptionTaskQueueJMX.close();
-    publishTaskQueueJMX.close();
+    if(subscriptionTaskQueueJMX != null)  subscriptionTaskQueueJMX.close();
+    if(publishTaskQueueJMX != null) publishTaskQueueJMX.close();
   }
 
   @JMXBeanAttribute(name = "delayed", description = "Returns the number of messages stored but not yet visible to subscribers")

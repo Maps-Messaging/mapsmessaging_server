@@ -43,17 +43,18 @@ public class SystemUtils {
   @Getter
   private float cpuPercentage;
 
-  private long lastRead;
+  private long lastProcessed;
 
   private SystemUtils() {
     osMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-    lastRead = System.currentTimeMillis();
+    lastProcessed = System.currentTimeMillis();
     lastCpuTime = osMXBean.getProcessCpuTime()/1_000_000;
   }
 
   public long getCpuTime() {
     long now = System.currentTimeMillis();
-    long timeAvailable = now - lastRead;
+    long timeAvailable = now - lastProcessed;
+    if(timeAvailable <=0 ) timeAvailable = 1;
     long totalTime = timeAvailable * Runtime.getRuntime().availableProcessors();
 
     long current = osMXBean.getProcessCpuTime()/ 1_000_000;
@@ -64,7 +65,7 @@ public class SystemUtils {
       percent = 0;
     }
     cpuPercentage = percent/10f;
-    lastRead = now;
+    lastProcessed = now;
     lastCpuTime = current;
 
     return current;
