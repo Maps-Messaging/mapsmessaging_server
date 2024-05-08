@@ -17,16 +17,18 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.utilities.PidFileManager;
 import io.mapsmessaging.utilities.SystemProperties;
 import lombok.Getter;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.concurrent.locks.LockSupport;
+
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE;
 
 /**
  * This is the ServerRunner class which implements the WrapperListener interface.
@@ -60,39 +62,39 @@ public class ServerRunner implements WrapperListener {
    * @param args The command line arguments passed to the application.
    * @throws IOException If an I/O error occurs while deleting or creating the PID file.
    */
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws IOException, InterruptedException {
     String directoryPath = SystemProperties.getInstance().locateProperty("MAPS_HOME", "");
     if (!directoryPath.isEmpty()) {
       PID_FILE = directoryPath + File.separator + PID_FILE;
       PID_FILE = PID_FILE.replace("//", "/");
     }
-    File pidFile = new File(PID_FILE);
+    PidFileManager pidFileManager = new PidFileManager( new File(PID_FILE));
 
-    if (pidFile.exists()) {
-      try {
-        java.nio.file.Files.delete(Paths.get(PID_FILE));
-      } catch (IOException e) {
-        LockSupport.parkNanos(10000000);
+    if (pidFileManager.exists()) {
+      long pid = pidFileManager.readPidFromFile();
+      pidFileManager.deletePidFile();
+      int count = 0;
+      Logger logger = LoggerFactory.getLogger(ServerRunner.class);
+
+      while(pidFileManager.isProcessRunning(pid) && count < 30){
+        logger.log(MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE, "Waiting for previous instance to exit");
+        count++;
+        Thread.sleep(1000);
+      }
+      if(count == 30){
+        logger.log(MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE, "Previous process not stopping, unable to start");
+        return;
       }
     }
-    try {
-      if (pidFile.createNewFile()) {
-        pidFile.deleteOnExit();
-      }
-    } catch (IOException e) {
-      // can ignore this exception
-    }
-    try (FileWriter writer = new FileWriter(pidFile)) {
-      // Get the process ID of the current Java process
-      long pid = ProcessHandle.current().pid();
-      // Write the PID to the file
-      writer.write(Long.toString(pid));
-      // Flush and close the writer
-      writer.flush();
-    } catch (IOException e) {
-    }
+    pidFileManager.writeNewFile();
+
+
     serverRunner  = new ServerRunner(args);
-    exitRunner = new ExitRunner(pidFile);
+    exitRunner = new ExitRunner(pidFileManager);
+  }
+
+  protected static boolean isProcessRunning(long pid) {
+    return ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
   }
 
   /**
@@ -118,7 +120,6 @@ public class ServerRunner implements WrapperListener {
       throw new RuntimeException(e);
     }
   }
-
   /**
    * This method stops the MessageDaemon instance.
    *

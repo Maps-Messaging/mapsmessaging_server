@@ -17,9 +17,9 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.utilities.PidFileManager;
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 
@@ -31,27 +31,29 @@ import java.nio.file.*;
  * The run() method continuously checks for deletion events on the file and stops the application if the file is deleted.
  */
 public class ExitRunner extends Thread {
-  private final Path pidFilePath;
+  private final PidFileManager pidFileManager;
   private final WatchService watchService;
+  private final Path pidFilePath;
 
   private int exitCode = 0;
 
   /**
    * Constructor for the ExitRunner class.
    *
-   * @param pidFile The file to monitor for deletion events.
+   * @param pidFileManager The file to monitor for deletion events.
    * @throws IOException If an I/O error occurs.
    */
-  ExitRunner(File pidFile) throws IOException {
-    this.pidFilePath = pidFile.toPath().toAbsolutePath();
+  ExitRunner(PidFileManager pidFileManager) throws IOException {
+    this.pidFileManager = pidFileManager;
     this.watchService = FileSystems.getDefault().newWatchService();
+    pidFilePath = pidFileManager.getPidFile().toPath().toAbsolutePath();
     pidFilePath.getParent().register(watchService, StandardWatchEventKinds.ENTRY_DELETE);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> deletePidFile(2)));
     super.start();
   }
 
   public void deletePidFile(int exitCode)  {
-    if(!pidFilePath.toFile().delete()){
+    if(!pidFileManager.deletePidFile()){
       System.err.println("Failed to delete PID file");
     }
     else{
@@ -70,6 +72,10 @@ public class ExitRunner extends Thread {
   public void run() {
     while (!Thread.interrupted()) {
       WatchKey key;
+      if(!pidFileManager.exists()){
+        WrapperManager.stop(exitCode);
+        return;
+      }
       try {
         key = watchService.take(); // Blocks here until an event occurs
       } catch (InterruptedException x) {
@@ -83,7 +89,8 @@ public class ExitRunner extends Thread {
         WatchEvent<Path> ev = (WatchEvent<Path>) event;
         Path fileName = ev.context();
 
-        if (kind == StandardWatchEventKinds.ENTRY_DELETE && fileName.equals(pidFilePath.getFileName())) {
+        fileName = fileName.toAbsolutePath();
+        if (kind == StandardWatchEventKinds.ENTRY_DELETE && fileName.equals(pidFilePath)) {
           WrapperManager.stop(exitCode);
           return;
         }

@@ -450,7 +450,7 @@ public class MessageDaemon {
     }
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws IOException, InterruptedException {
     ServerRunner.main(args);
   }
 }

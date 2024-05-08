@@ -41,6 +41,8 @@ public enum ServerLogMessages implements LogMessage {
   // <editor-fold desc="Main Message Daemon messages">
   MESSAGE_DAEMON_STARTUP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Starting Messaging Daemon Version:{} Build Date:{}"),
   MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Messaging Daemon Unique Id has been assigned to {}"),
+  MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "{}"),
+
 
   MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The supplied home directory, {}, does not exist"),
   MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The home directory has been defined as {}"),
