@@ -62,7 +62,7 @@ public class UserManagementApi extends BaseRestApi {
   public BaseResponse addUser(NewUser newUser) {
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
-    if (authManager.addUser(newUser.getUsername(), newUser.getPassword(), sessionPrivileges, new String[0])) {
+    if (authManager.addUser(newUser.getUsername(), newUser.getPassword().toCharArray(), sessionPrivileges, new String[0])) {
       return new BaseResponse(request);
     }
     return new BaseResponse(request);//, 500, "Failed to create user");

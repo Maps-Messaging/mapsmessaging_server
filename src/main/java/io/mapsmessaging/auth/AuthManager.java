@@ -114,7 +114,7 @@ public class AuthManager implements Agent {
     }
   }
 
-  public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
+  public boolean addUser(String username, char[] password, SessionPrivileges quotas, String[] groups) {
     if (authenticationStorage != null) {
       return authenticationStorage.addUser(username, password, quotas, groups);
     }
@@ -150,27 +150,27 @@ public class AuthManager implements Agent {
     authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
   }
 
-  private void createInitialUsers(String path) {
+  private void createInitialUsers(String path) throws IOException {
     String password = PasswordGenerator.generateRandomPassword(12);
-    if (!addUser(ADMIN_USER, password, SessionPrivileges.create(ADMIN_USER), new String[]{ADMIN_GROUP, EVERYONE})) {
+    if (!addUser(ADMIN_USER, password.toCharArray(), SessionPrivileges.create(ADMIN_USER), new String[]{ADMIN_GROUP, EVERYONE})) {
       logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, ADMIN_USER);
     }
 
     String userpassword = PasswordGenerator.generateRandomPassword(12);
-    if (addUser(USER, userpassword, SessionPrivileges.create(USER), new String[]{EVERYONE})) {
+    if (addUser(USER, userpassword.toCharArray(), SessionPrivileges.create(USER), new String[]{EVERYONE})) {
       logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, USER);
     }
 
     saveInitialUserDetails(path, new String[][]{{ADMIN_USER, password}, {USER, userpassword}});
-    if (!authenticationStorage.validateUser(ADMIN_USER, password)) {
+    if (!authenticationStorage.validateUser(ADMIN_USER, password.toCharArray())) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
-    if (!authenticationStorage.validateUser(USER, userpassword)) {
+    if (!authenticationStorage.validateUser(USER, userpassword.toCharArray())) {
       logger.log(SECURITY_MANAGER_FAILED_TO_INITIALISE_USER, USER);
     }
   }
 
-  public boolean validate(String username, String password) {
+  public boolean validate(String username, char[] password) throws IOException {
     return authenticationStorage.validateUser(username, password);
   }
 

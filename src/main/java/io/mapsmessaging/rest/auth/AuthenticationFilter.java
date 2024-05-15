@@ -72,7 +72,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     String userColonPass = Base64.base64Decode(auth);
     String[] split = userColonPass.split(":");
     String username = split[0];
-    String password = split[1];
+    char[] password = split[1].toCharArray();
 
     Subject subject;
     HttpSession session = httpRequest.getSession(true);

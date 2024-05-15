@@ -25,11 +25,11 @@ import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
 import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.security.SubjectHelper;
+import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.IdentityAccessManager;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.identity.GroupEntry;
-import io.mapsmessaging.security.identity.IdentityEntry;
 import lombok.Getter;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -38,7 +38,6 @@ import javax.security.auth.Subject;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.*;
 
@@ -73,9 +72,9 @@ public class AuthenticationStorage implements Closeable {
     Map<UUID, GroupIdMap> groupMapSet = db.hashMap("groupIdMap", new UUIDSerializer(), new GroupIdSerializer()).createOrOpen();
     Map<UUID, SessionPrivileges> sessionPrivilegesMap = db.hashMap(UserPermisionManager.class.getName(), new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
 
-    Map<String, Object> map = new LinkedHashMap<>();
+    Map<String, Object> map = new LinkedHashMap<>(config.getMap());
     map.put("configDirectory", securityDirectory);
-    map.put("passwordHander", config.getProperty("passwordHander"));
+    map.put("passwordHandler", config.getProperty("passwordHandler"));
 
     if (config.containsKey("certificateStore")) {
       Map<String, ?> cert = ((ConfigurationProperties) config.get("certificateStore")).getMap();
@@ -87,7 +86,7 @@ public class AuthenticationStorage implements Closeable {
     userPermisionManager = new UserPermisionManager(sessionPrivilegesMap);
   }
 
-  public boolean addUser(String username, String password, SessionPrivileges quotas, String[] groups) {
+  public boolean addUser(String username, char[] password, SessionPrivileges quotas, String[] groups) {
     try {
       UserIdMap userIdMap = identityAccessManager.createUser(username, password);
       UUID uuid = userIdMap.getAuthId();
@@ -121,19 +120,8 @@ public class AuthenticationStorage implements Closeable {
   }
 
 
-  public boolean validateUser(String username, String password) {
-    IdentityEntry identityEntry = identityAccessManager.getUserIdentity(username);
-    if (identityEntry != null) {
-      try {
-        byte[] passwordTest = identityEntry.getPasswordHasher().getPassword();
-        boolean res = Arrays.equals(password.getBytes(StandardCharsets.UTF_8), passwordTest);
-        Arrays.fill(passwordTest, (byte) 0x0);
-        return res;
-      } catch (IOException | GeneralSecurityException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    return false;
+  public boolean validateUser(String username, char[] password) throws IOException {
+    return identityAccessManager.validateUser(username, password);
   }
 
   @Override
@@ -177,9 +165,9 @@ public class AuthenticationStorage implements Closeable {
     List<UserIdMap> userIdMaps = identityAccessManager.getAllUsers();
     List<UserDetails> users = new ArrayList<>();
     for (UserIdMap userIdMap : userIdMaps) {
-      IdentityEntry entry = identityAccessManager.getUserIdentity(userIdMap.getUsername());
+      Identity entry = identityAccessManager.getUserDetails(userIdMap.getUsername());
       List<UUID> groupIds = new ArrayList<>();
-      List<GroupEntry> groupEntries = entry.getGroups();
+      List<GroupEntry> groupEntries = entry.getGroupList();
       for (GroupEntry groupEntry : groupEntries) {
         GroupIdMap groupIdMap = identityAccessManager.getGroup(groupEntry.getName());
         if (groupIdMap != null) {

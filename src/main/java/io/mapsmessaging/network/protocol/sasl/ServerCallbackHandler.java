@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.mapsmessaging.network.protocol.sasl;
 
 
 import io.mapsmessaging.security.identity.IdentityLookup;
+import io.mapsmessaging.security.passwords.PasswordBuffer;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -32,7 +33,7 @@ import java.security.GeneralSecurityException;
 public class ServerCallbackHandler implements CallbackHandler {
 
   private String username;
-  private char[] hashedPassword;
+  private PasswordBuffer hashedPassword;
   private final String serverName;
 
   private final IdentityLookup identityLookup;
@@ -59,7 +60,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         nc.setName(nc.getDefaultName());
       } else if (cb instanceof PasswordCallback) {
         PasswordCallback pc = (PasswordCallback) cb;
-        pc.setPassword(hashedPassword);
+        pc.setPassword(hashedPassword.getHash());
       } else if (cb instanceof RealmCallback) {
         RealmCallback rc = (RealmCallback) cb;
         rc.setText(serverName);
