@@ -36,7 +36,7 @@ public class RestAccessControl {
 
   public RestAccessControl() {
     aclMapping = new LinkedHashMap<>();
-    Group adminId = AuthManager.getInstance().getGroupIdentity("admin");
+    Group adminId = AuthManager.getInstance().getGroupIdentity("administrator");
     Group everyoneId = AuthManager.getInstance().getGroupIdentity("everyone");
 
     List<String> adminAndEveryone = new ArrayList<>();

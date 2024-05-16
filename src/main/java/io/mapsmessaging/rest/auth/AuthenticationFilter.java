@@ -18,7 +18,6 @@
 package io.mapsmessaging.rest.auth;
 
 import com.sun.jersey.core.util.Base64;
-import com.sun.jersey.core.util.Priority;
 import io.mapsmessaging.auth.AuthManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -34,7 +33,6 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 
 @Provider
-@Priority(1)
 public class AuthenticationFilter implements ContainerRequestFilter {
 
   private static final String USERNAME = "username";
@@ -42,7 +40,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   private static final Response unauthorizedResponse = Response
       .status(Response.Status.UNAUTHORIZED)
       .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"realm\"")
-      .entity("Page requires login.").build();
+      .entity("<html><body>Page requires login.</body></html>").build();
 
 
   // Exception thrown if user is unauthorized.
@@ -57,6 +55,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
   @Override
   public void filter(ContainerRequestContext containerRequest) throws IOException {
+    if(!AuthManager.getInstance().isAuthenticationEnabled())return;
 
     if (containerRequest.getUriInfo().getRequestUri().getPath().contains("openapi.json")) {
       return;
@@ -65,7 +64,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     String auth = containerRequest.getHeaderString("authorization");
     if (auth == null) {
       containerRequest.abortWith(unauthorizedResponse);
-      return;
+      throw unauthorized;
     }
 
     auth = auth.replaceFirst("[Bb]asic ", "");
@@ -74,29 +73,21 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     String username = split[0];
     char[] password = split[1].toCharArray();
 
-    Subject subject;
-    HttpSession session = httpRequest.getSession(true);
-    boolean reAuth = true;
-    if (!session.isNew()) {
-      subject = (Subject) session.getAttribute("subject");
-      if (subject != null ||
-          session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(username)
-      ) {
-        reAuth = false;
+    HttpSession session = httpRequest.getSession(false);
+    if (session != null) {
+      Subject subject = (Subject) session.getAttribute("subject");
+      if (subject != null && session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(username)){
+        return; // all ok
       }
     }
-    if (reAuth) {
-      if (AuthManager.getInstance().isAuthenticationEnabled() && !AuthManager.getInstance().validate(username, password)) {
-        containerRequest.abortWith(unauthorizedResponse);
-      } else {
-        subject = AuthManager.getInstance().getUserSubject(username);
-        session.setAttribute(USERNAME, username);
-        session.setAttribute("subject", subject);
-        if (subject == null) {
-          containerRequest.abortWith(unauthorizedResponse);
-        }
-      }
+    if (AuthManager.getInstance().validate(username, password)) {
+      session = httpRequest.getSession(true);
+      Subject subject = AuthManager.getInstance().getUserSubject(username);
+      session.setAttribute(USERNAME, username);
+      session.setAttribute("subject", subject);
+      return;
     }
+    containerRequest.abortWith(unauthorizedResponse);
   }
 
 }

@@ -50,8 +50,11 @@ public class UserManagementApi extends BaseRestApi {
     for (UserDetails user : users) {
       String username = user.getIdentityEntry().getUsername();
       UUID userId = user.getIdentityEntry().getId();
-
-      results.add(new User(username, userId, user.getGroups()));
+      List<String> groupNames = new ArrayList<>();
+      for(UUID groupId: user.getGroups()) {
+        groupNames.add(authManager.getGroupIdentity(groupId).getName());
+      }
+      results.add(new User(username, userId, groupNames));
     }
     return new UserListResponse(request, results);
   }
