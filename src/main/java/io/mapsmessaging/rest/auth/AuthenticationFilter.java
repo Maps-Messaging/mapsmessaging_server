@@ -64,6 +64,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     // Get the authentication passed in HTTP headers parameters
     String auth = containerRequest.getHeaderString("authorization");
     if (auth == null) {
+      HttpSession session = httpRequest.getSession(false);
+      if(session != null) {
+        session.invalidate();
+      }
       containerRequest.abortWith(unauthorizedResponse);
       throw unauthorized;
     }
