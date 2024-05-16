@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,21 +18,26 @@
 package io.mapsmessaging.rest.auth;
 
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.security.SubjectHelper;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.Getter;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
+import java.util.UUID;
 
 public class UserSecurityContext implements SecurityContext {
 
   private final AuthenticatedUserPrincipal userPrincipal;
   @Getter
   private final Subject subject;
+  @Getter
+  private final UUID uuid;
 
   public UserSecurityContext(String username) {
     userPrincipal = new AuthenticatedUserPrincipal(username);
     subject = AuthManager.getInstance().getUserSubject(username);
+    uuid = SubjectHelper.getUniqueId(subject);
   }
 
   @Override

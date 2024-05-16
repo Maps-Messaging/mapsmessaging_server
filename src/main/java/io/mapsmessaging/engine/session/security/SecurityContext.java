@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ package io.mapsmessaging.engine.session.security;
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import io.mapsmessaging.security.identity.principals.GroupIdPrincipal;
-import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import lombok.Getter;
 
 import javax.security.auth.Subject;
@@ -59,10 +57,9 @@ public abstract class SecurityContext {
     if (accessIds == null) {
       accessIds = new ArrayList<>();
       accessIds.add(SubjectHelper.getUniqueId(subject));
-      for (GroupIdPrincipal groupIdPrincipal : subject.getPrincipals(GroupIdPrincipal.class)) {
-        for (GroupIdMap g : groupIdPrincipal.getGroupIds()) {
-          accessIds.add(g.getAuthId());
-        }
+      List<GroupIdMap> groupIds = SubjectHelper.getGroupId(subject);
+      for (GroupIdMap g : groupIds) {
+        accessIds.add(g.getAuthId());
       }
     }
   }

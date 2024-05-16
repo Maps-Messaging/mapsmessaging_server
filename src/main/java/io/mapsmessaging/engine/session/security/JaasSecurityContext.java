@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
+import io.mapsmessaging.security.SubjectHelper;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -48,10 +48,8 @@ public class JaasSecurityContext extends SecurityContext {
     try {
       loginContext.login();
       subject = loginContext.getSubject();
-      UUID userId = subject.getPrincipals(UniqueIdentifierPrincipal.class).stream()
-          .findFirst()
-          .map(UniqueIdentifierPrincipal::getAuthId)
-          .orElse(null);
+      subject = AuthManager.getInstance().update(subject);
+      UUID userId = SubjectHelper.getUniqueId(subject);
       if (userId != null) {
         SessionPrivileges session = AuthManager.getInstance().getQuota(userId);
         if (session != null) {
@@ -59,7 +57,6 @@ public class JaasSecurityContext extends SecurityContext {
         }
       }
       isLoggedIn = true;
-      subject = AuthManager.getInstance().update(subject);
       subject.getPrincipals().add(new AccessIdPrincipal(getAccessIds()));
       buildAccessIds();
       logger.log(AuditEvent.SUCCESSFUL_LOGIN, subject);

@@ -19,6 +19,7 @@ package io.mapsmessaging.rest.auth;
 
 import com.sun.jersey.core.util.Base64;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.security.SubjectHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.WebApplicationException;
@@ -85,6 +86,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       Subject subject = AuthManager.getInstance().getUserSubject(username);
       session.setAttribute(USERNAME, username);
       session.setAttribute("subject", subject);
+      session.setAttribute("uuid",  SubjectHelper.getUniqueId(subject));
       return;
     }
     containerRequest.abortWith(unauthorizedResponse);
