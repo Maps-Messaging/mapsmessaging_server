@@ -26,8 +26,9 @@ import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.security.access.Group;
+import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import io.mapsmessaging.security.access.mapping.UserIdMap;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
@@ -174,19 +175,19 @@ public class AuthManager implements Agent {
     return authenticationStorage.validateUser(username, password);
   }
 
-  public UserIdMap getUserIdentity(String username) {
+  public Identity getUserIdentity(String username) {
     return authenticationStorage.findUser(username);
   }
 
-  public UserIdMap getUserIdentity(UUID uuid) {
+  public Identity getUserIdentity(UUID uuid) {
     return authenticationStorage.findUser(uuid);
   }
 
-  public GroupIdMap getGroupIdentity(String groupName){
+  public Group getGroupIdentity(String groupName){
     return authenticationStorage.findGroup(groupName);
   }
 
-  public GroupIdMap getGroupIdentity(UUID uuid){
+  public Group getGroupIdentity(UUID uuid){
     return authenticationStorage.findGroup(uuid);
   }
 
@@ -195,9 +196,9 @@ public class AuthManager implements Agent {
     if (subject == null) {
       subject = new Subject();
       Set<Principal> principalList = subject.getPrincipals();
-      UserIdMap map = authenticationStorage.findUser(username);
+      Identity map = authenticationStorage.findUser(username);
       if (map != null) {
-        principalList.add(new UniqueIdentifierPrincipal(map.getAuthId()));
+        principalList.add(new UniqueIdentifierPrincipal(map.getId()));
         principalList.add(new UserPrincipal(username));
         authenticationStorage.update(subject);
       }

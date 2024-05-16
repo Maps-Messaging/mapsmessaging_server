@@ -25,7 +25,7 @@ import io.mapsmessaging.rest.data.auth.NewUser;
 import io.mapsmessaging.rest.data.auth.User;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
-import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.access.Identity;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -48,8 +48,8 @@ public class UserManagementApi extends BaseRestApi {
     List<UserDetails> users = authManager.getUsers();
     List<User> results = new ArrayList<>();
     for (UserDetails user : users) {
-      String username = user.getUserIdMap().getUsername();
-      UUID userId = user.getUserIdMap().getAuthId();
+      String username = user.getIdentityEntry().getUsername();
+      UUID userId = user.getIdentityEntry().getId();
 
       results.add(new User(username, userId, user.getGroups()));
     }
@@ -73,7 +73,7 @@ public class UserManagementApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   public BaseResponse deleteUser(@PathParam("userUuid") String userUuid) {
     AuthManager authManager = AuthManager.getInstance();
-    UserIdMap userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
+    Identity userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
     if (userIdMap != null) {
       authManager.delUser(userIdMap.getUsername());
       return new BaseResponse(request);

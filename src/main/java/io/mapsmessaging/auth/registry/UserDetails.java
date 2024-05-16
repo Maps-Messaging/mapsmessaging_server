@@ -18,7 +18,6 @@
 package io.mapsmessaging.auth.registry;
 
 import io.mapsmessaging.security.access.Identity;
-import io.mapsmessaging.security.access.mapping.UserIdMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.ToString;
@@ -30,9 +29,6 @@ import java.util.UUID;
 @ToString
 @AllArgsConstructor
 public class UserDetails {
-
-  private final UserIdMap userIdMap;
   private final Identity identityEntry;
   private final List<UUID> groups;
-
 }

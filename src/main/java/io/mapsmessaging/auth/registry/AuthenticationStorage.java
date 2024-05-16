@@ -25,11 +25,9 @@ import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
 import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.security.SubjectHelper;
-import io.mapsmessaging.security.access.Identity;
-import io.mapsmessaging.security.access.IdentityAccessManager;
+import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
-import io.mapsmessaging.security.identity.GroupEntry;
 import lombok.Getter;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -88,13 +86,15 @@ public class AuthenticationStorage implements Closeable {
 
   public boolean addUser(String username, char[] password, SessionPrivileges quotas, String[] groups) {
     try {
-      UserIdMap userIdMap = identityAccessManager.createUser(username, password);
+      UserManagement userManagement = identityAccessManager.getUserManagement();
+      GroupManagement groupManagement = identityAccessManager.getGroupManagement();
+      UserIdMap userIdMap = userManagement.createUser(username, password);
       UUID uuid = userIdMap.getAuthId();
       for (String group : groups) {
-        if (identityAccessManager.getGroup(group) == null) {
-          identityAccessManager.createGroup(group);
+        if (groupManagement.getGroup(group) == null) {
+          groupManagement.createGroup(group);
         }
-        identityAccessManager.addUserToGroup(username, group);
+        groupManagement.addUserToGroup(username, group);
       }
       quotas.setUniqueId(uuid);
       userPermisionManager.add(quotas);
@@ -107,10 +107,11 @@ public class AuthenticationStorage implements Closeable {
 
   public boolean delUser(String username) {
     try {
-      UserIdMap userIdMap = identityAccessManager.getUser(username);
+      UserManagement userManagement = identityAccessManager.getUserManagement();
+      Identity userIdMap = userManagement.getUser(username);
       if (userIdMap != null) {
-        identityAccessManager.deleteUser(username);
-        userPermisionManager.delete(userIdMap.getAuthId());
+        userManagement.deleteUser(username);
+        userPermisionManager.delete(userIdMap.getId());
       }
       return true;
     } catch (IOException e) {
@@ -145,37 +146,32 @@ public class AuthenticationStorage implements Closeable {
     return subject1;
   }
 
-  public UserIdMap findUser(String username) {
-    return identityAccessManager.getUser(username);
+  public Identity findUser(String username) {
+    return identityAccessManager.getUserManagement().getUser(username);
   }
 
-  public UserIdMap findUser(UUID uuid) {
-    return identityAccessManager.getAllUsers().stream().filter(userIdMap -> userIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
+  public Identity findUser(UUID uuid) {
+    return identityAccessManager.getUserManagement().getAllUsers().stream().filter(userIdMap -> userIdMap.getId().equals(uuid)).findFirst().orElse(null);
   }
 
-  public GroupIdMap findGroup(String groupName) {
-    return identityAccessManager.getGroup(groupName);
+  public Group findGroup(String groupName) {
+    return identityAccessManager.getGroupManagement().getGroup(groupName);
   }
 
-  public GroupIdMap findGroup(UUID uuid) {
-    return identityAccessManager.getAllGroups().stream().filter(groupIdMap -> groupIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
+  public Group findGroup(UUID uuid) {
+    return identityAccessManager.getGroupManagement().getAllGroups().stream().filter(groupIdMap -> groupIdMap.getId().equals(uuid)).findFirst().orElse(null);
   }
 
   public List<UserDetails> getUsers() {
-    List<UserIdMap> userIdMaps = identityAccessManager.getAllUsers();
+    List<Identity> userIdMaps = identityAccessManager.getUserManagement().getAllUsers();
     List<UserDetails> users = new ArrayList<>();
-    for (UserIdMap userIdMap : userIdMaps) {
-      Identity entry = identityAccessManager.getUserDetails(userIdMap.getUsername());
+    for (Identity entry : userIdMaps) {
       List<UUID> groupIds = new ArrayList<>();
-      List<GroupEntry> groupEntries = entry.getGroupList();
-      for (GroupEntry groupEntry : groupEntries) {
-        GroupIdMap groupIdMap = identityAccessManager.getGroup(groupEntry.getName());
-        if (groupIdMap != null) {
-          groupIds.add(groupIdMap.getAuthId());
-        }
+      List<Group> groupEntries = entry.getGroupList();
+      for (Group group : groupEntries) {
+        groupIds.add(group.getId());
       }
       UserDetails details = new UserDetails(
-          userIdMap,
           entry,
           groupIds
       );
@@ -185,21 +181,20 @@ public class AuthenticationStorage implements Closeable {
   }
 
   public List<GroupDetails> getGroups() {
-    List<GroupIdMap> groupIdMaps = identityAccessManager.getAllGroups();
+    List<Group> groupIdMaps = identityAccessManager.getGroupManagement().getAllGroups();
     List<GroupDetails> groups = new ArrayList<>();
-    for (GroupIdMap groupIdMap : groupIdMaps) {
-      GroupEntry entry = identityAccessManager.getGroupDetails(groupIdMap.getGroupName());
+    for (Group entry : groupIdMaps) {
       List<UUID> userIds = new ArrayList<>();
-      Set<String> userList = entry.getUsers();
+      Set<String> userList = entry.getUserSet();
       for (String user : userList) {
-        UserIdMap userIdMap = identityAccessManager.getUser(user);
+        Identity userIdMap = identityAccessManager.getUserManagement().getUser(user);
         if (userIdMap != null) {
-          userIds.add(userIdMap.getAuthId());
+          userIds.add(userIdMap.getId());
         }
       }
       GroupDetails details = new GroupDetails(
-          groupIdMap.getGroupName(),
-          groupIdMap.getAuthId(),
+          entry.getName(),
+          entry.getId(),
           userIds
       );
       groups.add(details);
@@ -208,19 +203,19 @@ public class AuthenticationStorage implements Closeable {
   }
 
   public void delGroup(String groupName) throws IOException {
-    identityAccessManager.deleteGroup(groupName);
+    identityAccessManager.getGroupManagement().deleteGroup(groupName);
   }
 
   public GroupIdMap addGroup(String groupName) throws IOException {
-    return identityAccessManager.createGroup(groupName);
+    return identityAccessManager.getGroupManagement().createGroup(groupName);
   }
 
   public void addUserToGroup(String user, String group) throws IOException {
-    identityAccessManager.addUserToGroup(user, group);
+    identityAccessManager.getGroupManagement().addUserToGroup(user, group);
   }
 
   public void removeUserFromGroup(String username, String groupName) throws IOException {
-    identityAccessManager.removeUserFromGroup(username, groupName);
+    identityAccessManager.getGroupManagement().removeUserFromGroup(username, groupName);
   }
 
 }

@@ -87,9 +87,9 @@ public class GroupManagementApi extends BaseRestApi {
   public BaseResponse addUserToGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
-    UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getUserIdMap().getAuthId().toString().equals(userUuid)).findFirst().orElse(null);
+    UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid)).findFirst().orElse(null);
     if (groupDetails != null && userDetails != null) {
-      authManager.addUserToGroup(userDetails.getUserIdMap().getUsername(), groupDetails.getName());
+      authManager.addUserToGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
     }
     return new BaseResponse(request);
   }
@@ -100,9 +100,9 @@ public class GroupManagementApi extends BaseRestApi {
   public BaseResponse removeUserFromGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
-    UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getUserIdMap().getAuthId().toString().equals(userUuid)).findFirst().orElse(null);
+    UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid)).findFirst().orElse(null);
     if (groupDetails != null && userDetails != null) {
-      authManager.removeUserFromGroup(userDetails.getUserIdMap().getUsername(), groupDetails.getName());
+      authManager.removeUserFromGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
     }
     return new BaseResponse(request);
   }

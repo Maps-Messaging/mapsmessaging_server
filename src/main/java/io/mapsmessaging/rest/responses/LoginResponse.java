@@ -20,7 +20,7 @@ package io.mapsmessaging.rest.responses;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
-import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.access.Identity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -42,17 +42,17 @@ public class LoginResponse {
 
   public LoginResponse(String status){
     this.status = status;
-    accessMap = new HashMap<String, String>();
+    accessMap = new HashMap<>();
   }
 
   public LoginResponse(String status, Subject subject, String username){
     this.status = status;
     if(username != null && AuthManager.getInstance().isAuthorisationEnabled()) {
-      UserIdMap userIdMap = AuthManager.getInstance().getUserIdentity(username);
+      Identity userIdMap = AuthManager.getInstance().getUserIdentity(username);
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
 
       this.username = username;
-      uniqueId = userIdMap.getAuthId();
+      uniqueId = userIdMap.getId();
       accessMap = accessControl.getAccess(subject);
     }
   }

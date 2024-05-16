@@ -18,11 +18,9 @@
 package io.mapsmessaging.rest.auth;
 
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.auth.registry.GroupDetails;
-import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.security.access.AccessControlFactory;
 import io.mapsmessaging.security.access.AccessControlList;
-import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.security.access.Group;
 
 import javax.security.auth.Subject;
 import java.util.ArrayList;
@@ -38,25 +36,15 @@ public class RestAccessControl {
 
   public RestAccessControl() {
     aclMapping = new LinkedHashMap<>();
-    AuthManager authManager = AuthManager.getInstance();
-    List<UserDetails> users = authManager.getUsers();
-    for (UserDetails user : users) {
-      System.err.println(user.toString());
-    }
-
-    List<GroupDetails> groups = authManager.getGroups();
-    for (GroupDetails group : groups) {
-      System.err.println(group.getName());
-    }
-    GroupIdMap adminId = AuthManager.getInstance().getGroupIdentity("admin");
-    GroupIdMap everyoneId = AuthManager.getInstance().getGroupIdentity("everyone");
+    Group adminId = AuthManager.getInstance().getGroupIdentity("admin");
+    Group everyoneId = AuthManager.getInstance().getGroupIdentity("everyone");
 
     List<String> adminAndEveryone = new ArrayList<>();
-    adminAndEveryone.add(adminId.getAuthId()+" = Create|Read|Update|Delete");
-    adminAndEveryone.add(everyoneId.getAuthId()+" = Read");
+    adminAndEveryone.add(adminId.getId()+" = Create|Read|Update|Delete");
+    adminAndEveryone.add(everyoneId.getId()+" = Read");
 
     List<String> adminOnly = new ArrayList<>();
-    adminOnly.add(adminId.getAuthId()+" = Create|Read|Update|Delete");
+    adminOnly.add(adminId.getId()+" = Create|Read|Update|Delete");
     addToMap("auth", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("connections", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminOnly));
     addToMap("destinations", AccessControlFactory.getInstance().get(ACL_TYPE, new RestAclMapping(), adminAndEveryone));

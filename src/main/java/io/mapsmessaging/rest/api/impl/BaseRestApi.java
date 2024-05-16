@@ -21,7 +21,7 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.auth.RestAclMapping;
-import io.mapsmessaging.security.access.mapping.UserIdMap;
+import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -50,7 +50,7 @@ public class BaseRestApi {
     boolean access = true;
 
     if(AuthManager.getInstance().isAuthorisationEnabled()) {
-      UserIdMap userIdMap = AuthManager.getInstance().getUserIdentity((String) getSession().getAttribute("username"));
+      Identity userIdMap = AuthManager.getInstance().getUserIdentity((String) getSession().getAttribute("username"));
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
       if(accessControl != null){
         access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
