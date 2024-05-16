@@ -23,36 +23,86 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ * Represents a class called PersistentObject.
+ * It provides methods for reading and writing various data types to an input stream or output stream.
+ * The class is used for handling persistence of objects.
+ * These methods handle reading and writing integers, longs, strings, and byte arrays.
+ * The class is not nullable, as it does not have any nullable annotations.
+ * It throws IOException in case of any I/O errors.
+ * The class is not thread-safe.
+ * The code snippet includes a copyright notice and is licensed under the Apache License, Version 2.0.
+ */
 public class PersistentObject {
 
+  /**
+   * Writes an integer value to the specified output stream.
+   *
+   * @param outputStream the output stream to write the integer value to
+   * @param val the integer value to be written
+   * @throws IOException if an I/O error occurs while writing to the output stream
+   */
   protected void writeInt(OutputStream outputStream, int val) throws IOException {
     writeBinary(outputStream, val, 4);
   }
 
+  /**
+   * Reads an integer value from the specified input stream.
+   *
+   * @param inputStream the input stream to read the integer value from
+   * @return the integer value read from the input stream
+   * @throws IOException if an I/O error occurs while reading from the input stream
+   */
   protected int readInt(InputStream inputStream) throws IOException {
     return (int)readBinary(inputStream, 4);
   }
 
+  /**
+   * Writes a long value to the specified output stream.
+   *
+   * @param outputStream the output stream to write the long value to
+   * @param val the long value to be written
+   * @throws IOException if an I/O error occurs while writing to the output stream
+   */
   protected void writeLong(OutputStream outputStream, long val) throws IOException {
     writeBinary(outputStream, val, 8);
   }
 
-
+  /**
+   * Reads a long value from the specified input stream.
+   *
+   * @param inputStream the input stream to read the long value from
+   * @return the long value read from the input stream
+   * @throws IOException if an I/O error occurs while reading from the input stream
+   */
   protected long readLong(InputStream inputStream) throws IOException {
     return readBinary(inputStream, 8);
   }
 
-
-  protected void writeString(OutputStream outpuStream, String text) throws IOException {
+  /**
+   * Writes a string value to the specified output stream.
+   *
+   * @param outputStream the output stream to write the string value to
+   * @param text the string value to be written
+   * @throws IOException if an I/O error occurs while writing to the output stream
+   */
+  protected void writeString(OutputStream outputStream, String text) throws IOException {
     if(text == null){
-      writeInt(outpuStream, -1);
+      writeInt(outputStream, -1);
     }
     else{
-      writeInt(outpuStream, text.length());
-      outpuStream.write(text.getBytes());
+      writeInt(outputStream, text.length());
+      outputStream.write(text.getBytes());
     }
   }
 
+  /**
+   * Reads a string value from the specified input stream.
+   *
+   * @param inputStream the input stream to read the string value from
+   * @return the string value read from the input stream
+   * @throws IOException if an I/O error occurs while reading from the input stream
+   */
   protected String readString(InputStream inputStream) throws IOException {
     int len = readInt(inputStream);
     if(len >=0){
@@ -61,6 +111,13 @@ public class PersistentObject {
     return "";
   }
 
+  /**
+   * Writes a byte array to the specified output stream.
+   *
+   * @param outputStream the output stream to write the byte array to
+   * @param buffer the byte array to be written
+   * @throws IOException if an I/O error occurs while writing to the output stream
+   */
   protected void writeByteArray(OutputStream outputStream, byte[] buffer) throws IOException {
     if(buffer == null){
       writeInt(outputStream, -1);
@@ -71,6 +128,13 @@ public class PersistentObject {
     }
   }
 
+  /**
+   * Reads a byte array value from the specified input stream.
+   *
+   * @param inputStream the input stream to read the byte array value from
+   * @return the byte array value read from the input stream, or null if the length is negative
+   * @throws IOException if an I/O error occurs while reading from the input stream
+   */
   protected @Nullable byte[] readByteArray(InputStream inputStream) throws IOException {
     int len = readInt(inputStream);
     if(len >=0){
@@ -79,6 +143,14 @@ public class PersistentObject {
     return null;
   }
 
+  /**
+   * Reads a byte array from the specified input stream.
+   *
+   * @param inputStream the input stream to read the byte array from
+   * @param len the length of the byte array to be read
+   * @return the byte array read from the input stream
+   * @throws IOException if an I/O error occurs while reading from the input stream
+   */
   private byte[] readFullBuffer(InputStream inputStream, int len) throws IOException {
     byte[] tmp = new byte[len];
     int read = 0;
@@ -90,12 +162,28 @@ public class PersistentObject {
     return tmp;
   }
 
+  /**
+   * Writes a binary value to the specified output stream.
+   *
+   * @param outputStream the output stream to write the binary value to
+   * @param val the binary value to be written
+   * @param size the size of the binary value in bytes
+   * @throws IOException if an I/O error occurs while writing to the output stream
+   */
   private void writeBinary(OutputStream outputStream, long val, int size) throws IOException {
     for (int x = 0; x < size; x++) {
       outputStream.write((byte) ((val >> (8 * (size - (x + 1)))) & 0xff));
     }
   }
 
+  /**
+   * Reads a binary value from the specified input stream.
+   *
+   * @param inputStream the input stream to read the binary value from
+   * @param size the size of the binary value in bytes
+   * @return the binary value read from the input stream
+   * @throws IOException if an I/O error occurs while reading from the input stream
+   */
   private long readBinary(InputStream inputStream, int size) throws IOException {
     long tmp = 0;
     for (int x = 0; x < size; x++) {

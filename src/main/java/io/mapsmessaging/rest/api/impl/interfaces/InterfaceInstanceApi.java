@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,13 +20,17 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.rest.data.interfaces.InterfaceInfo;
+import io.mapsmessaging.rest.responses.EndPointDetailResponse;
+import io.mapsmessaging.rest.responses.EndPointDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
@@ -40,6 +44,11 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the endpoint current status and configuration")
   public InterfaceInfo getInterface(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
+
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
@@ -49,10 +58,37 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     return null;
   }
 
+  @GET
+  @Path("/server/interface/{endpoint}/connections")
+  @Produces({MediaType.APPLICATION_JSON})
+  //@ApiOperation(value = "Get the endpoint current status and configuration")
+  public EndPointDetailResponse getInterfaceConnections(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
+
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointDetails> endPointDetails = new ArrayList<>();
+    for (EndPointManager endPointManager : endPointManagers) {
+      if (isMatch(endpointName, endPointManager)) {
+        for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
+          endPointDetails.add(new EndPointDetails(endPointManager.getName(), endPoint));
+        }
+      }
+    }
+
+    return new EndPointDetailResponse(request, endPointDetails);
+  }
+
   @PUT
   @Path("/server/interface/{endpoint}/stop")
   //@ApiOperation(value = "Stops the specified endpoint and closes existing connections")
   public Response stopInterface(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
@@ -67,6 +103,10 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}/start")
   //@ApiOperation(value = "Starts the specified endpoint")
   public Response startInterface(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
@@ -82,6 +122,10 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}/resume")
   //@ApiOperation(value = "Resumes the specified endpoint if the endpoint had been paused")
   public Response resumeInterface(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
@@ -96,6 +140,10 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}/pause")
   //@ApiOperation(value = "Pauses the specified endpoint, existing connections are maintained but no new connections can be made")
   public Response pauseInterface(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {

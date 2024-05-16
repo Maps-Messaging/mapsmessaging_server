@@ -35,6 +35,12 @@ import java.util.UUID;
 
 import static io.mapsmessaging.logging.ServerLogMessages.INSTANCE_STATE_ERROR;
 
+/**
+ * This is the InstanceConfig class.
+ * It represents the configuration for an instance of a server.
+ * The class has properties for serverName, uuid, and creationDate.
+ * It also has methods for loading and saving the state of the instance configuration.
+ */
 public class InstanceConfig {
 
 
@@ -60,11 +66,25 @@ public class InstanceConfig {
     path ="";
   }
 
+  /**
+   * Constructor for the InstanceConfig class.
+   * Initializes the path and sets the serverName to null.
+   *
+   * @param path The path for the instance configuration.
+   */
   public InstanceConfig(String path){
     this.path= path;
     serverName = null;
   }
 
+  /**
+   * Loads the state of the instance configuration.
+   *
+   * This method reads the instance configuration file and populates the serverName, creationDate, and uuid properties
+   * of the InstanceConfig object. If the uuid property is null, a new UUID is generated using the UuidGenerator class
+   * and the state is saved using the saveState method.
+   *
+   */
   public void loadState() {
     LoaderOptions options = new LoaderOptions();
     options.setTagInspector(tag -> true);
@@ -89,6 +109,13 @@ public class InstanceConfig {
     }
   }
 
+  /**
+   * Saves the current state of the InstanceConfig object to a YAML file.
+   *
+   * This method uses the SnakeYAML library to serialize the object to YAML format and write it to a file.
+   * The file path is determined by the 'path' field of the InstanceConfig object, appended with the constant INSTANCE_CONFIG_YAML.
+   *
+   */
   public void saveState(){
     Yaml yaml = new Yaml();
     try {

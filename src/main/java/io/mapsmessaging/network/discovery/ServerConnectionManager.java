@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,15 +22,22 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
+import lombok.Getter;
 
 import javax.jmdns.ServiceEvent;
+import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
+import java.util.*;
 
 public class ServerConnectionManager implements ServiceListener, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(ServerConnectionManager.class);
 
+  @Getter
+  private final Map<String, List<ServiceInfo>> serviceInfoMap;
+
   public ServerConnectionManager(){
+    serviceInfoMap = new LinkedHashMap<>();
   }
 
   @Override
@@ -41,19 +48,46 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   public void serviceRemoved(ServiceEvent serviceEvent) {
     if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
       for(String host:serviceEvent.getInfo().getHostAddresses()){
+        serviceInfoMap.remove(serviceEvent.getName());
         logger.log(ServerLogMessages.DISCOVERY_REMOVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
       }
     }
-
   }
 
   @Override
-  public void serviceResolved(ServiceEvent serviceEvent) {
-    if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
-      for(String host:serviceEvent.getInfo().getHostAddresses()){
-        logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
+  public synchronized void serviceResolved(ServiceEvent serviceEvent) {
+    if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId()) && serviceEvent.getInfo().hasData()){
+
+      int count =0;
+      Enumeration<String> names = serviceEvent.getInfo().getPropertyNames();
+      while (names.hasMoreElements()) {
+        names.nextElement();
+        count++;
+      }
+      if(count > 0) {
+        for (String host : serviceEvent.getInfo().getHostAddresses()) {
+          String name = serviceEvent.getName();
+          int duplicateIndex = name.indexOf("(");
+          if (duplicateIndex > 0) {
+            name = name.substring(0, duplicateIndex - 1).trim();
+          }
+          List<ServiceInfo> serviceInfos = serviceInfoMap.computeIfAbsent(name, k -> new ArrayList<>());
+          serviceInfos.removeIf(serviceInfo -> matches(serviceInfo, serviceEvent.getInfo()));
+          serviceInfos.add(serviceEvent.getInfo());
+          logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, name, host + ":" + serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
+        }
       }
     }
+  }
+
+  private boolean matches(ServiceInfo lhs, ServiceInfo rhs) {
+    return (
+        lhs.getName().equals(rhs.getName()) &&
+            lhs.getDomain().equals(rhs.getDomain()) &&
+            lhs.getPort() == rhs.getPort() &&
+            lhs.getApplication().equals(rhs.getApplication()) &&
+            Arrays.equals(lhs.getHostAddresses(), rhs.getHostAddresses())
+    );
   }
 
   @Override
@@ -74,6 +108,5 @@ public class ServerConnectionManager implements ServiceListener, Agent {
 
   @Override
   public void stop() {
-
   }
 }

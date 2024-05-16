@@ -62,6 +62,7 @@ public class AuthenticationStorage implements Closeable {
     firstBoot = !(new File(securityDirectory + File.separator + ".auth.db").exists());
     db = DBMaker.fileDB(securityDirectory + File.separator + ".auth.db")
         .checksumStoreEnable()
+        .cleanerHackEnable()
         .fileChannelEnable()
         .fileMmapEnableIfSupported()
         .fileMmapPreclearDisable()
@@ -137,7 +138,6 @@ public class AuthenticationStorage implements Closeable {
 
   @Override
   public void close() throws IOException {
-    db.close();
   }
 
   public SessionPrivileges getQuota(UUID userId) {
@@ -163,6 +163,14 @@ public class AuthenticationStorage implements Closeable {
 
   public UserIdMap findUser(UUID uuid) {
     return identityAccessManager.getAllUsers().stream().filter(userIdMap -> userIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
+  }
+
+  public GroupIdMap findGroup(String groupName) {
+    return identityAccessManager.getGroup(groupName);
+  }
+
+  public GroupIdMap findGroup(UUID uuid) {
+    return identityAccessManager.getAllGroups().stream().filter(groupIdMap -> groupIdMap.getAuthId().equals(uuid)).findFirst().orElse(null);
   }
 
   public List<UserDetails> getUsers() {
@@ -226,4 +234,5 @@ public class AuthenticationStorage implements Closeable {
   public void removeUserFromGroup(String username, String groupName) throws IOException {
     identityAccessManager.removeUserFromGroup(username, groupName);
   }
+
 }

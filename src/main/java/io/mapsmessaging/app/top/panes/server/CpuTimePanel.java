@@ -18,8 +18,8 @@
 package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
-import io.mapsmessaging.engine.system.impl.server.StatusMessage;
 import io.mapsmessaging.app.top.formatters.UptimeFormatter;
+import io.mapsmessaging.rest.data.StatusMessage;
 
 public class CpuTimePanel extends ServerStatusUpdate {
 

@@ -17,13 +17,33 @@
 
 package io.mapsmessaging.utilities;
 
+/**
+ * This is the Agent interface.
+ * It defines the methods and properties that an agent should have.
+ */
 public interface Agent {
 
+  /**
+   * Returns the name of the agent.
+   *
+   * @return the name of the agent
+   */
   String getName();
 
+  /**
+   * Returns the description of the agent.
+   *
+   * @return the description of the agent
+   */
   String getDescription();
 
+  /**
+   * Starts the agent.
+   */
   void start();
 
+  /**
+   * Stops the agent.
+   */
   void stop();
 }

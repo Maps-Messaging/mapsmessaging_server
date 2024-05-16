@@ -22,13 +22,15 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
+import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import jakarta.servlet.Servlet;
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.http.server.*;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
@@ -40,12 +42,12 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.uri.UriComponent;
 
 import javax.jmdns.ServiceInfo;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.mapsmessaging.logging.ServerLogMessages.REST_API_ACCESS;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
 
 public class RestApiServerManager implements Agent {
@@ -136,56 +138,6 @@ public class RestApiServerManager implements Agent {
     }
   }
 
-  private void loadStatic(){
-    if(map.containsKey("static")){
-      Object obj = map.get("static");
-      if(obj instanceof ConfigurationProperties){
-        ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
-        if(staticConfig.getBooleanProperty("enabled", false)){
-          String path = staticConfig.getProperty("directory", "./html");
-          StaticHttpHandler staticHttpHandler = new StaticHttpHandler(path);
-          staticHttpHandler.setFileCacheEnabled(true);
-          httpServer.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
-
-          if (map.getBooleanProperty("enableSwaggerUI", false) && map.getBooleanProperty("enableSwagger", false)) {
-            String swaggerPath = path;
-            if (!swaggerPath.endsWith("/")) {
-              swaggerPath = swaggerPath + "/";
-            }
-            StaticHttpHandler swaggerHttpHandler = new StaticHttpHandler(swaggerPath + "swagger-ui");
-            swaggerHttpHandler.setFileCacheEnabled(true);
-            httpServer.getServerConfiguration().addHttpHandler(swaggerHttpHandler, "/swagger-ui/");
-          }
-        }
-      }
-    }
-  }
-
-  private void addLogging() {
-    httpServer.getServerConfiguration().getMonitoringConfig().getWebServerConfig()
-        .addProbes(new HttpServerProbe.Adapter() {
-
-          @Override
-          public void onRequestReceiveEvent(
-              HttpServerFilter filter,
-              Connection connection,
-              Request request) {
-          }
-
-          @Override
-          public void onRequestCompleteEvent(
-              HttpServerFilter filter,
-              Connection connection,
-              Response response) {
-
-            String uri = response.getRequest().getRequestURI();
-            String client = response.getRequest().getRemoteAddr();
-            long len = response.getContentLengthLong();
-            logger.log(REST_API_ACCESS, client, uri, response.getStatus(), len);
-          }
-        });
-  }
-
   public void startServer() {
     boolean enableSwagger = map.getBooleanProperty("enableSwagger", true);
     boolean enableUserManagement = map.getBooleanProperty("enableUserManagement", true);
@@ -209,19 +161,24 @@ public class RestApiServerManager implements Agent {
     }
     if (enableInterfaceManagement) {
       endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
+      endpoints.add("io.mapsmessaging.rest.api.impl.integration");
+      endpoints.add("io.mapsmessaging.rest.api.impl.connections");
+      endpoints.add("io.mapsmessaging.rest.api.impl.discovery");
     }
     if (enableSchemaManagement) {
       endpoints.add("io.mapsmessaging.rest.api.impl.schema");
     }
-
+    endpoints.add("io.mapsmessaging.rest.api.impl.server");
     try {
       final ResourceConfig config = new ResourceConfig();
       config.packages(false, endpoints.toArray(new String[0]));
       boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
       if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
         config.register(new AuthenticationFilter());
+        AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());
       }
-      config.register(DebugMapper.class);
+      config.register(DebugMapper.class );
+      config.register(LoggingFilter.class);
       ServletContainer sc = new ServletContainer(config);
       SSLContextConfigurator sslConfig = setupSSL();
       String protocol = "http";
@@ -229,9 +186,9 @@ public class RestApiServerManager implements Agent {
         protocol = "https";
       }
       String baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
+
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
-      loadStatic();
-      addLogging();
+
       httpServer.start();
     } catch (IOException e) {
       logger.log(REST_API_FAILURE, e);
@@ -257,6 +214,43 @@ public class RestApiServerManager implements Agent {
       server = GrizzlyHttpServerFactory.createHttpServer(uri);
     }
     context.deploy(server);
+    loadStatic(server);
     return server;
   }
+
+  private void loadStatic(HttpServer server){
+    if(map.containsKey("static")){
+      Object obj = map.get("static");
+      if(obj instanceof ConfigurationProperties){
+        ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
+        if(staticConfig.getBooleanProperty("enabled", false)){
+          String path = staticConfig.getProperty("directory", "./www");
+          if (!path.endsWith(File.separator)) {
+            path = path + File.separator;
+          }
+          mapDirectory(path, server );
+        }
+      }
+    }
+  }
+
+
+  private void mapDirectory(String path, HttpServer server) {
+    File files = new File(path);
+    if(files.exists() && files.isDirectory()) {
+      File[] fileList = files.listFiles();
+      if (fileList != null) {
+        for (File file : fileList) {
+          if (file.isDirectory()) {
+            String location = path+file.getName();
+            String uriMapping = "/"+file.getName()+"/";
+            StaticHttpHandler staticHttpHandler = new StaticHttpHandler(location+File.separator);
+            staticHttpHandler.setFileCacheEnabled(true);
+            server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping+"*" );
+          }
+        }
+      }
+    }
+  }
+
 }

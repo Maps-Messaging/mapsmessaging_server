@@ -18,6 +18,8 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -32,6 +34,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SYSTEM_TOPIC_MESSAGE_ERROR;
 
 public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
@@ -48,6 +52,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   private final DestinationManager destinationManager;
 
   private Future<?> scheduledFuture;
+  private final Logger logger = LoggerFactory.getLogger(SystemTopicManager.class);
 
   public SystemTopicManager(DestinationManager destinationManager){
     systemTopics = ServiceLoader.load(SystemTopic.class);
@@ -61,8 +66,8 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
       if (systemTopic.hasUpdates()) {
         try {
           systemTopic.sendUpdate();
-        } catch (IOException e) {
-          // We can ignore this, since it would be temp on the connection
+        } catch (Throwable e) {
+          logger.log(SYSTEM_TOPIC_MESSAGE_ERROR, systemTopic.getClass().getSimpleName(), e);
         }
       }
     }

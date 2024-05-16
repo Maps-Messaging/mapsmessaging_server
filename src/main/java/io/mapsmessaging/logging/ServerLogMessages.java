@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ public enum ServerLogMessages implements LogMessage {
   // <editor-fold desc="Main Message Daemon messages">
   MESSAGE_DAEMON_STARTUP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Starting Messaging Daemon Version:{} Build Date:{}"),
   MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Messaging Daemon Unique Id has been assigned to {}"),
+  MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "{}"),
+
 
   MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The supplied home directory, {}, does not exist"),
   MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The home directory has been defined as {}"),
@@ -420,7 +422,7 @@ public enum ServerLogMessages implements LogMessage {
   JMX_MANAGER_REGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Registering MBean with [name={}]"),
   JMX_MANAGER_UNREGISTER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Unregistering MBean with [name={}]"),
   JMX_MANAGER_REGISTER_FAIL(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Unable to register MBean [name={}] "),
-  JMX_MANAGER_UNREGISTER_FAIL(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Unable to unregister MBean [name={}]"),
+  JMX_MANAGER_UNREGISTER_FAIL(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Unable to unregister MBean [name={}]"),
   // </editor-fold>
 
   // <editor-fold desc="Configuration log messages">
@@ -685,7 +687,10 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="Rest API log messages">
   REST_API_ACCESS(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Address {} requested {}, returning Status:{} with length {} bytes"),
   REST_API_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Rest Server unable to start due to exception"),
+  REST_API_SUCCESSFUL_REQUEST(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Rest request type {} for {} with status {} returned {} bytes"),
   //</editor-fold>
+
+  SYSTEM_TOPIC_MESSAGE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to send update to {}, exception raised"),
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

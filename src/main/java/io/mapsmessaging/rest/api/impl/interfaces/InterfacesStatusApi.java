@@ -41,6 +41,10 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
   public InterfaceStatus getInterfaceStatus(@PathParam("endpoint") String endpointName) {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
@@ -54,6 +58,10 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @Path("/server/interface/status")
   @Produces({MediaType.APPLICATION_JSON})
   public List<InterfaceStatus> getAllInterfaceStatus() {
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return null;
+    }
     List<InterfaceStatus> results = new ArrayList<>();
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {

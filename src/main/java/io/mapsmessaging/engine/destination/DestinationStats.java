@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -75,6 +75,26 @@ public class DestinationStats extends Statistics {
     map.put(totalExpiredMessagesAverages.getName(), totalExpiredMessagesAverages.getRecord());
     map.put(totalDeliveredMessagesAverages.getName(), totalDeliveredMessagesAverages.getRecord());
     return map;
+  }
+
+  public static long getPublishedPerSecond(){
+    return totalPublishedMessagesAverages.getPerSecond();
+  }
+
+  public static long getSubscribedPerSecond(){
+    return totalSubscribedMessagesAverages.getPerSecond();
+  }
+
+  public static long getNoInterestPerSecond(){
+    return totalNoInterestMessagesAverages.getPerSecond();
+  }
+
+  public static long getDeliveredPerSecond(){
+    return totalDeliveredMessagesAverages.getPerSecond();
+  }
+
+  public static long getRetrievedPerSecond(){
+    return totalRetrievedMessagesAverages.getPerSecond();
   }
 
   public static long getTotalPublishedMessages() {

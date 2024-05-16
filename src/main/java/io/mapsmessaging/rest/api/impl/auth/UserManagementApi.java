@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class UserManagementApi extends BaseRestApi {
   @GET
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
-  public UserListResponse getUsers() {
+  public UserListResponse getAllUsers() {
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
     List<User> results = new ArrayList<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.mapsmessaging.network.io;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.NetworkConfig;
+import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
@@ -61,11 +62,17 @@ public abstract class EndPoint implements Closeable {
   private final boolean isClient;
   @Getter
   private final long id;
+  @Getter
+  private final long connected = System.currentTimeMillis();
   private boolean isClosed;
 
   protected List<String> jmxParentPath;
   @Setter
   private CloseHandler closeHandler;
+
+  @Getter
+  @Setter
+  private ProtocolImpl boundProtocol;
 
   protected EndPoint(long id, EndPointServerStatus server) {
     this.server = server;

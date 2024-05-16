@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
 import io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic;
-import io.mapsmessaging.engine.system.impl.server.StatusMessage;
+import io.mapsmessaging.rest.data.StatusMessage;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;

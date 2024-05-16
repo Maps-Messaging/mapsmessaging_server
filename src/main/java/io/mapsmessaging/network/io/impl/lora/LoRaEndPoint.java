@@ -100,6 +100,7 @@ public class LoRaEndPoint extends EndPoint {
     byte[] buffer = new byte[len];
     packet.get(buffer);
     loRaDevice.write(buffer, len, (byte) (nodeId & 0xff), ipAddress[3]);
+    updateWriteBytes(len);
     return len;
   }
 
@@ -114,6 +115,7 @@ public class LoRaEndPoint extends EndPoint {
         SocketAddress socketAddress = getSocketAddress(datagram.getFrom());
         packet.setFromAddress(socketAddress);
         read = buffer.length;
+        updateReadBytes(read);
       }
     }
     return read;

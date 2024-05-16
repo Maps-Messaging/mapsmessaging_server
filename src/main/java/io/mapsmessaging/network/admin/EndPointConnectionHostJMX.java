@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class EndPointConnectionHostJMX implements HealthMonitor {
   public EndPointConnectionHostJMX(List<String> parent, String host) {
     connections = new ArrayList<>();
     typePath = new ArrayList<>(parent);
-    typePath.add("networkType=OutboundConnections");
+    typePath.add("connectionType=OutboundConnections");
     typePath.add("remoteHost=" + host);
     mbean = JMXManager.getInstance().register(this, typePath);
   }

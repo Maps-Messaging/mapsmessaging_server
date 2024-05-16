@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,6 +41,13 @@ public class ServerStatistics implements Serializable {
   private final long totalRetrievedMessages;
   private final long totalExpiredMessages;
   private final long totalDeliveredMessages;
+
+  private final long publishedPerSecond;
+  private final long subscribedPerSecond;
+  private final long noInterestPerSecond;
+  private final long deliveredPerSecond;
+  private final long retrievedPerSecond;
+
   private final Map<String, LinkedMovingAverageRecord> stats;
 
 
@@ -53,6 +60,11 @@ public class ServerStatistics implements Serializable {
     totalWriteBytes = EndPoint.totalWriteBytes.sum();
     totalDisconnections = EndPoint.totalDisconnections.sum();
 
+    publishedPerSecond = DestinationStats.getPublishedPerSecond();
+    subscribedPerSecond = DestinationStats.getSubscribedPerSecond();
+    noInterestPerSecond = DestinationStats.getNoInterestPerSecond();
+    deliveredPerSecond = DestinationStats.getDeliveredPerSecond();
+    retrievedPerSecond = DestinationStats.getRetrievedPerSecond();
 
     totalNoInterestMessages = DestinationStats.getTotalNoInterestMessages();
     totalSubscribedMessages = DestinationStats.getTotalSubscribedMessages();

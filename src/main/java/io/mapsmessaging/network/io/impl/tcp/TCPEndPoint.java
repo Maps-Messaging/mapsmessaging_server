@@ -184,7 +184,9 @@ public class TCPEndPoint extends EndPoint {
       this.server.incrementError();
       throw new IOException("Socket closed");
     }
-    updateReadBytes(count);
+    if(count > 0) {
+      updateReadBytes(count);
+    }
     return count;
   }
 

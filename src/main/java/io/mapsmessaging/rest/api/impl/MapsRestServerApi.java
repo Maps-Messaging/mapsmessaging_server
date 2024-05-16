@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.mapsmessaging.rest.api.impl;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
+import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -28,10 +28,14 @@ import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletResponse;
 
 import static io.mapsmessaging.BuildInfo.buildVersion;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
@@ -59,11 +63,16 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
         @Tag(name = "Server Health", description = "Simple server health endpoint"),
         @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
         @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
-        @Tag(name = "Server Status", description = "Server status and simple queries"),
+        @Tag(name = "Server Management", description = "Server status and management"),
+        @Tag(name = "Server Integration Management", description = "Manages interconnections with other brokers"),
+        @Tag(name = "Connection Management", description = "Manages client connections"),
+        @Tag(name = "Discovery Management", description = "Manages servers discovery agent")
+
+
     },
     externalDocs = @ExternalDocumentation(description = "Maps Messaging", url = "https://www.mapsmessaging.io/")
 )
-@Tag(name = "Server Status")
+@Tag(name = "Server Health")
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
 
@@ -84,14 +93,6 @@ public class MapsRestServerApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/stats")
-  @Produces({MediaType.APPLICATION_JSON})
-//  @ApiOperation(value = "Retrieve the server statistics")
-  public ServerStatisticsResponse getStats() {
-    return new ServerStatisticsResponse(request);
-  }
-
-  @GET
   @Path("/updates")
   @Produces({MediaType.APPLICATION_JSON})
   // @ApiOperation(value = "Check for changes to the configuration update counts")
@@ -100,5 +101,34 @@ public class MapsRestServerApi extends BaseRestApi {
     return new UpdateCheckResponse(schema, 0, 0);
   }
 
+  @GET
+  @Path("/login")
+  @Produces({MediaType.APPLICATION_JSON})
+  // @ApiOperation(value = "Check for changes to the configuration update counts")
+  public LoginResponse login() {
+    HttpSession session = request.getSession(false);
+    if(session != null){
+      if (!hasAccess("root")) {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        return new LoginResponse("No Access");
+      }
+      Subject subject = (Subject) getSession().getAttribute("subject");
+      String username = (String) getSession().getAttribute("username");
+      return new LoginResponse("Success", subject, username);
+    }
+    return new LoginResponse("No Authentication Required");
+  }
+
+  @GET
+  @Path("/logout")
+  @Produces({MediaType.APPLICATION_JSON})
+  // @ApiOperation(value = "Check for changes to the configuration update counts")
+  public String logout() {
+    HttpSession session = request.getSession(false);
+    if(session != null){
+      session.invalidate();
+    }
+    return "{\"Status\": \"OK\"}";
+  }
 
 }

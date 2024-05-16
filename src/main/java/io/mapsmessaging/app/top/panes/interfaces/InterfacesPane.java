@@ -1,3 +1,20 @@
+/*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.mapsmessaging.app.top.panes.interfaces;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
@@ -48,8 +65,8 @@ public class InterfacesPane extends PaneUpdate {
 
   private void sort(List<InterfaceStatus> list) {
     list.sort((o1, o2) -> {
-      long val1 = o1.getBytesReceived() + o1.getBytesSent() + o1.getMessagesSent() + o1.getMessagesReceived() + o1.getConnections();
-      long val2 = o2.getBytesReceived() + o2.getBytesSent() + o2.getMessagesSent() + o2.getMessagesReceived() + o2.getConnections();
+      long val1 = o1.getBytesReceived() + o1.getBytesSent() + o1.getMessagesSent() + o1.getTotalMessagesReceived() + o1.getConnections();
+      long val2 = o2.getBytesReceived() + o2.getBytesSent() + o2.getMessagesSent() + o2.getTotalMessagesReceived() + o2.getConnections();
       return Long.compare(val2, val1);
     });
   }

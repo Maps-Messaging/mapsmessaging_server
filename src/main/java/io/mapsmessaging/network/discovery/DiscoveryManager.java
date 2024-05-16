@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
@@ -53,6 +54,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
 
   private final Logger logger;
   private final String serverName;
+  @Getter
   private final List<AdapterManager> boundedNetworks;
   private final ConfigurationProperties properties;
   private final boolean stampMeta;
@@ -68,6 +70,15 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
     enabled = properties.getBooleanProperty("enabled", true);
     stampMeta = properties.getBooleanProperty("addTxtRecords", false);
     domainName = properties.getProperty("domainName", ".local");
+
+    java.util.logging.Logger logger = java.util.logging.Logger.getLogger("javax.jmdns");
+    logger.setLevel(Level.OFF); // Set to OFF to disable logging
+
+    // If JmDNS uses specific child loggers, they must also be adjusted
+    logger.setUseParentHandlers(false); // Stop log messages from propagating to the parent handlers
+    for (java.util.logging.Handler handler : logger.getHandlers()) {
+      handler.setLevel(Level.OFF); // Optionally disable each handler
+    }
   }
 
   public void registerListener(String type, ServiceListener listener){
@@ -94,26 +105,33 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
 
   public void start() {
     if (enabled) {
-      String hostnames = properties.getProperty("hostnames");
       try {
-        if (hostnames != null) {
-          String[] hostnameList = hostnames.split(",");
-          for (String hostname : hostnameList) {
-            List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getIpAddressByName(hostname.trim());
-            for (InetAddress address : addresses) {
-              boundedNetworks.add(bindInterface(address, stampMeta));
-            }
-          }
-        } else {
-          List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getCurrentIpAddresses();
-          for (InetAddress address : addresses) {
-            boundedNetworks.add(bindInterface(address, stampMeta));
-          }
-        }
+        bindAddresses(getAddresses(properties.getProperty("hostnames")));
       } catch (IOException e) {
         logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
       }
       NetworkInterfaceMonitor.getInstance().addListener(this);
+    }
+  }
+
+  private List<InetAddress> getAddresses(String hostnames) {
+    List<InetAddress> addressList = new ArrayList<>();
+    if (hostnames != null) {
+      String[] hostnameList = hostnames.split(",");
+      for (String hostname : hostnameList) {
+        List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getIpAddressByName(hostname.trim());
+        addressList.addAll(addresses);
+      }
+    } else {
+      List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getCurrentIpAddresses();
+      addressList.addAll(addresses);
+    }
+    return addressList;
+  }
+
+  private void bindAddresses( List<InetAddress> addresses) throws IOException {
+    for (InetAddress address : addresses) {
+      boundedNetworks.add(bindInterface(address, stampMeta));
     }
   }
 
@@ -132,7 +150,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
       Map<String, String> map = new LinkedHashMap<>();
       map.put("server name", MessageDaemon.getInstance().getId());
       map.put("schema support", "true");
-      map.put("schema name", "$schema");
+      map.put("schema prefix", "$schema");
       map.put("version", BuildInfo.getBuildVersion());
       map.put("date", BuildInfo.getBuildDate());
       map.put("restApi", "true");

@@ -75,7 +75,7 @@ public class DestinationStatusTopic extends SystemTopic {
   public static final class DestinationStatusMessage{
     private List<DestinationStatus> destinationStatusList;
 
-        public DestinationStatusMessage(List<String> destinations){
+    public DestinationStatusMessage(List<String> destinations){
       destinationStatusList = new ArrayList<>();
       for(String destinationName:destinations){
         try {

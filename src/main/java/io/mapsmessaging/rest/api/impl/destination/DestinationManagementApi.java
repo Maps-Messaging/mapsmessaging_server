@@ -46,6 +46,10 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
   public DestinationResponse getDestination(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException, IOException {
+    if (!hasAccess("destinations")) {
+      response.setStatus(403);
+      return null;
+    }
     Destination destination = lookupDestination(destinationName);
     return new DestinationResponse(request, destination);
   }
@@ -55,6 +59,10 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the destination configuration")
   public DestinationResponse getAllDestinations() throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    if (!hasAccess("destinations")) {
+      response.setStatus(403);
+      return null;
+    }
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
     List<Destination> results  = new ArrayList<>();
     for(String name:destinations){

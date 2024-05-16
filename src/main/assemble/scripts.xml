@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright [ 2020 - 2023 ] [Matthew Buckton]
+  ~ Copyright [ 2020 - 2024 ] [Matthew Buckton]
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -53,6 +53,22 @@
         <include>*.war</include>
       </includes>
     </fileSet>
+
+    <fileSet>
+      <directory>${project.basedir}/out/</directory>
+      <outputDirectory>www/admin</outputDirectory>
+      <includes>
+        <include>**/*</include> <!-- This includes all files and subdirectories -->
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/src/main/html</directory>
+      <outputDirectory>www/swagger-ui</outputDirectory>
+      <includes>
+        <include>**/*</include> <!-- This includes all files and subdirectories -->
+      </includes>
+    </fileSet>
+
 
     <fileSet>
       <directory>${project.basedir}/src/main/resources/</directory>
@@ -136,14 +152,6 @@
         <include>README*</include>
         <include>LICENSE*</include>
         <include>CommonsClause.*</include>
-      </includes>
-    </fileSet>
-
-    <fileSet>
-      <directory>${project.basedir}/src/main/html</directory>
-      <outputDirectory>html</outputDirectory>
-      <includes>
-        <include>**/*</include> <!-- This includes all files and subdirectories -->
       </includes>
     </fileSet>
 

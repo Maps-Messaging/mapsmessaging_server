@@ -1,5 +1,5 @@
 #
-# Copyright [ 2020 - 2023 ] [Matthew Buckton]
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -61,13 +61,24 @@ export MAPS_CONF=$MAPS_HOME/conf
 export CLASSPATH="$MAPS_CONF":$MAPS_LIB/message_daemon-$VERSION.jar:"$MAPS_LIB/*"
 export LD_LIBRARY_PATH=$MAPS_LIB:$LD_LIBRARY_PATH
 #
-# Now start the the daemon
+# Loop to restart server on specific exit code
 #
-java -classpath $CLASSPATH $JAVA_OPTS \
-    -DUSE_UUID=false \
-    -DConsulUrl="${CONSUL_URL}" \
-    -DConsulPath="${CONSUL_PATH}" \
-    -DConsulToken="${CONSUL_TOKEN}" \
-    -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
-    -DMAPS_HOME="${MAPS_HOME}" \
-    io.mapsmessaging.MessageDaemon
+while true; do
+    java -classpath $CLASSPATH $JAVA_OPTS \
+        -DUSE_UUID=false \
+        -DConsulUrl="${CONSUL_URL}" \
+        -DConsulPath="${CONSUL_PATH}" \
+        -DConsulToken="${CONSUL_TOKEN}" \
+        -Djava.security.auth.login.config="${MAPS_CONF}/jaasAuth.config" \
+        -DMAPS_HOME="${MAPS_HOME}" \
+        io.mapsmessaging.MessageDaemon
+
+    EXIT_CODE=$?
+
+    if [ $EXIT_CODE -eq 8 ]; then
+        echo "Restarting server..."
+    else
+        echo "Exiting with code $EXIT_CODE"
+        exit $EXIT_CODE
+    fi
+done

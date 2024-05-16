@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import lombok.Getter;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -71,6 +73,10 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
     activeEndPoints.put(endPoint.getId(), endPoint);
     acceptHandler.accept(endPoint);
+  }
+
+  public List<EndPoint> getActiveEndPoints() {
+    return new ArrayList<>(activeEndPoints.values());
   }
 
   public String getConfigName() {

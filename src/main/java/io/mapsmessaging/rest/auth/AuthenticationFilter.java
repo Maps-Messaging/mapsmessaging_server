@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,12 +39,18 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
   private static final String USERNAME = "username";
 
+  private static final Response unauthorizedResponse = Response
+      .status(Response.Status.UNAUTHORIZED)
+      .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"realm\"")
+      .entity("Page requires login.").build();
+
+
   // Exception thrown if user is unauthorized.
   private static final WebApplicationException unauthorized =
       new WebApplicationException(
           Response.status(Response.Status.UNAUTHORIZED)
               .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"realm\"")
-              .entity("Page requires login.").build());
+              .entity("<html><body>Page requires login.</body></html>").build());
 
   @Context
   private HttpServletRequest httpRequest;
@@ -52,11 +58,15 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   @Override
   public void filter(ContainerRequestContext containerRequest) throws IOException {
 
+    if (containerRequest.getUriInfo().getRequestUri().getPath().contains("openapi.json")) {
+      return;
+    }
     // Get the authentication passed in HTTP headers parameters
     String auth = containerRequest.getHeaderString("authorization");
-    if (auth == null)
-      throw unauthorized;
-
+    if (auth == null) {
+      containerRequest.abortWith(unauthorizedResponse);
+      return;
+    }
 
     auth = auth.replaceFirst("[Bb]asic ", "");
     String userColonPass = Base64.base64Decode(auth);
@@ -66,53 +76,27 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     Subject subject;
     HttpSession session = httpRequest.getSession(true);
+    boolean reAuth = true;
     if (!session.isNew()) {
       subject = (Subject) session.getAttribute("subject");
-      if (subject == null ||
-          session.getAttribute(USERNAME) == null ||
-          !session.getAttribute(USERNAME).equals(username)
+      if (subject != null ||
+          session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(username)
       ) {
-        throw unauthorized;
+        reAuth = false;
       }
-    } else {
+    }
+    if (reAuth) {
       if (AuthManager.getInstance().isAuthenticationEnabled() && !AuthManager.getInstance().validate(username, password)) {
-        throw unauthorized;
+        containerRequest.abortWith(unauthorizedResponse);
+      } else {
+        subject = AuthManager.getInstance().getUserSubject(username);
+        session.setAttribute(USERNAME, username);
+        session.setAttribute("subject", subject);
+        if (subject == null) {
+          containerRequest.abortWith(unauthorizedResponse);
+        }
       }
-      subject = AuthManager.getInstance().getUserSubject(username);
-      session.setAttribute(USERNAME, username);
-      session.setAttribute("subject", subject);
     }
-
-    if (subject == null) {
-      throw unauthorized;
-    }
-
-    boolean isWrite = false;
-    switch (containerRequest.getMethod()) {
-      case "GET":
-      case "HEAD":
-      case "OPTIONS":
-        break;
-
-      case "PUT":
-      case "POST":
-      case "DELETE":
-        isWrite = true;
-        break;
-
-      default:
-        throw unauthorized;
-    }
-
-    /*
-    if(!isWrite && AuthManager.getInstance().isAuthorisationEnabled() && !AuthManager.getInstance().isAuthorised(subject, RestAccessControl.READ_ONLY)){
-      throw unauthorized;
-    }
-    if(isWrite && AuthManager.getInstance().isAuthorisationEnabled() && !AuthManager.getInstance().isAuthorised(subject, RestAccessControl.WRITE)){
-      throw unauthorized;
-    }
-
-     */
   }
 
 }

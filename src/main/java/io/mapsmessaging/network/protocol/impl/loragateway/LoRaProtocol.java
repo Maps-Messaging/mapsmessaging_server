@@ -34,6 +34,7 @@ import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -63,15 +64,20 @@ public class LoRaProtocol extends ProtocolImpl {
   private final int transmissionRate;
   private final AtomicInteger transmitCount;
   private final DataHandlerFactory dataHandler;
+
   @Getter
   private final byte[] configBuffer;
   private volatile boolean closed;
   @Getter
+  @Setter
   private boolean sentConfig = false;
   @Getter
+  @Setter
   private boolean started = false;
   @Getter
+  @Setter
   private boolean sentVersion = false;
+
   private Future<?> rateResetFuture;
   private final LinkedHashMap<Integer, LoRaClientStats> clientStats;
 
@@ -238,18 +244,6 @@ public class LoRaProtocol extends ProtocolImpl {
   @Override
   public void sendKeepAlive() {
     // This should not be called since this protocol is NOT registered with the messaging engine
-  }
-
-  public void setSentConfig(boolean sentConfig) {
-    this.sentConfig = sentConfig;
-  }
-
-  public void setStarted(boolean started) {
-    this.started = started;
-  }
-
-  public void setSentVersion(boolean sentVersion) {
-    this.sentVersion = sentVersion;
   }
 
   public void handleIncomingPacket(Packet packet, int clientId, int rssi) throws IOException {
