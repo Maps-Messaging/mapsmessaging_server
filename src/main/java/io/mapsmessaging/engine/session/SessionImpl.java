@@ -407,6 +407,9 @@ public class SessionImpl {
     subscriptionManager.hibernateSubscription(subscriptionId);
   }
 
+  public void addClosureTask(ClosureTask closureTask) {
+    closureTaskManager.add(closureTask);
+  }
 
 
   /**
