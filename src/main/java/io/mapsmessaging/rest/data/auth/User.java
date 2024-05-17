@@ -17,9 +17,12 @@
 
 package io.mapsmessaging.rest.data.auth;
 
+import io.mapsmessaging.auth.registry.UserDetails;
 import lombok.Data;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -27,4 +30,12 @@ public class User {
   private final String username;
   private final UUID uniqueId;
   private final List<String> groupList;
+  private final Map<String, String> attributes;
+
+  public User(UserDetails details, List<String> groupNames){
+    uniqueId = details.getIdentityEntry().getId();
+    username = details.getIdentityEntry().getUsername();
+    groupList = groupNames;
+    attributes = new LinkedHashMap<>(details.getIdentityEntry().getAttributes());
+  }
 }

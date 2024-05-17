@@ -27,6 +27,7 @@ import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
 import io.mapsmessaging.security.access.Identity;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
@@ -48,15 +49,24 @@ public class UserManagementApi extends BaseRestApi {
     List<UserDetails> users = authManager.getUsers();
     List<User> results = new ArrayList<>();
     for (UserDetails user : users) {
-      String username = user.getIdentityEntry().getUsername();
-      UUID userId = user.getIdentityEntry().getId();
-      List<String> groupNames = new ArrayList<>();
-      for(UUID groupId: user.getGroups()) {
-        groupNames.add(authManager.getGroupIdentity(groupId).getName());
-      }
-      results.add(new User(username, userId, groupNames));
+      results.add(buildUser(user, authManager));
     }
     return new UserListResponse(request, results);
+  }
+
+  @GET
+  @Path("/auth/user/{username}")
+  @Produces({MediaType.APPLICATION_JSON})
+  public User getUser(@PathParam("username") String username) {
+    AuthManager authManager = AuthManager.getInstance();
+    List<UserDetails> users = authManager.getUsers();
+    for (UserDetails user : users) {
+      if(user.getIdentityEntry().getUsername().equals(username)) {
+        return buildUser(user, authManager);
+      }
+    }
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    return null;
   }
 
   @POST
@@ -83,5 +93,14 @@ public class UserManagementApi extends BaseRestApi {
     }
     response.setStatus(500);
     return new BaseResponse(request);
+  }
+
+  private User buildUser(UserDetails user, AuthManager authManager){
+    List<String> groupNames = new ArrayList<>();
+    for (UUID groupId : user.getGroups()) {
+      groupNames.add(authManager.getGroupIdentity(groupId).getName());
+    }
+    return new User(user, groupNames);
+
   }
 }
