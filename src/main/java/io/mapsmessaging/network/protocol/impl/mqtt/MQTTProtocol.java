@@ -43,6 +43,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
@@ -81,6 +82,11 @@ public class MQTTProtocol extends ProtocolImpl {
     packetFactory = new PacketFactory(this);
     closed = false;
     packetIdManager = new PacketIdManager();
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
   }
 
   public MQTTProtocol(EndPoint endPoint, Packet packet) throws IOException {

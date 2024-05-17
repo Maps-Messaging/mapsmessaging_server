@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -116,6 +117,11 @@ public class CoapProtocol extends ProtocolImpl {
     session = SessionManager.getInstance().create(context, this);
     session.start();
     logger.log(COAP_CREATED, socketAddress, mtu, maxBlockSize);
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
   }
 
   @Override

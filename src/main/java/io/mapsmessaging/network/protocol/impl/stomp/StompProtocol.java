@@ -41,6 +41,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 
 import static java.nio.channels.SelectionKey.OP_READ;
@@ -86,6 +87,11 @@ public class StompProtocol extends ProtocolImpl {
       logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }
     selectorTask.close();
+  }
+
+  @Override
+  public Subject getSubject() {
+    return stateEngine.getSession().getSecurityContext().getSubject();
   }
 
   @Override

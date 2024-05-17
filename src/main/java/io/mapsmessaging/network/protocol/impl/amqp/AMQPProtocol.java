@@ -32,6 +32,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.LinkedHashMap;
@@ -71,6 +72,15 @@ public class AMQPProtocol extends ProtocolImpl {
     protonEngine = new ProtonEngine(this);
     protonEngine.processPacket(packet);
     registerRead();
+  }
+
+  @Override
+  public Subject getSubject() {
+    if(!activeSessions.isEmpty()){
+      SessionManager sessionManager = activeSessions.values().iterator().next();
+      return sessionManager.getSession().getSecurityContext().getSubject();
+    }
+    return null;
   }
 
   @Override

@@ -50,6 +50,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
@@ -141,6 +142,11 @@ public class MQTT5Protocol extends ProtocolImpl {
     }
     processPacket(packet);
     selectorTask.getReadTask().pushOutstandingData(packet);
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
   }
 
   @Override

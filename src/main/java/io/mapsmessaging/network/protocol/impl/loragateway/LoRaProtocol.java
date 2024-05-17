@@ -37,6 +37,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -119,6 +120,12 @@ public class LoRaProtocol extends ProtocolImpl {
     rateResetFuture.cancel(false);
     super.close();
   }
+
+  @Override
+  public Subject getSubject() {
+    return null;
+  }
+
 
   public void sendCommand(byte command) throws IOException {
     sendCommand(command, (byte) 0, null);

@@ -38,6 +38,7 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -104,6 +105,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     endPoint.setBoundProtocol(this);
   }
 
+  public abstract Subject getSubject();
 
   public void completedConnection() {
     if (!completed) {

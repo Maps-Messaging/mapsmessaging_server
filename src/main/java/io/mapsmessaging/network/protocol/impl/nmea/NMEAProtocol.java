@@ -40,6 +40,7 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -105,6 +106,12 @@ public class NMEAProtocol extends ProtocolImpl {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // This protocol is read only
   }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
+  }
+
 
   @Override
   public void sendKeepAlive() {

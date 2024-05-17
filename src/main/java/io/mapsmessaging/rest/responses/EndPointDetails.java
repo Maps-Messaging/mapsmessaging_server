@@ -18,6 +18,7 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.security.SubjectHelper;
 import lombok.Getter;
 
 @Getter
@@ -52,8 +53,8 @@ public class EndPointDetails {
     connectedTimeMs = System.currentTimeMillis() - endPoint.getConnected();
     protocolName = endPoint.getBoundProtocol().getName();
     protocolVersion = endPoint.getBoundProtocol().getVersion();
-    if(endPoint.getEndPointPrincipal() != null) {
-      user = endPoint.getEndPointPrincipal().getName();
+    if(endPoint.getEndPointSubject() != null) {
+      user = SubjectHelper.getUsername(endPoint.getEndPointSubject());
     }
     else{
       user = "anonymous";

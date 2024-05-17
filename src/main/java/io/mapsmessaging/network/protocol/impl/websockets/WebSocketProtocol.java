@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketEndPo
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 
 public class WebSocketProtocol extends ProtocolImpl {
@@ -41,6 +42,11 @@ public class WebSocketProtocol extends ProtocolImpl {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     // This is an in-line protocol and does not actively receive events to send from the messaging engine
+  }
+
+  @Override
+  public Subject getSubject() {
+    return null;
   }
 
   @Override

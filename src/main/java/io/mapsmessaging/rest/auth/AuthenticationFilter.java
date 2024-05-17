@@ -69,7 +69,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         session.invalidate();
       }
       containerRequest.abortWith(unauthorizedResponse);
-      throw unauthorized;
+      return;
     }
 
     auth = auth.replaceFirst("[Bb]asic ", "");

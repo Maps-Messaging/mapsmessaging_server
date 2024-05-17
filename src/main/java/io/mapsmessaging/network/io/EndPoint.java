@@ -26,6 +26,7 @@ import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.security.auth.Subject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -157,6 +158,13 @@ public abstract class EndPoint implements Closeable {
 
   public long getLastWrite() {
     return lastWrite.get();
+  }
+
+  public Subject getEndPointSubject() {
+    if(boundProtocol != null){
+      return boundProtocol.getSubject();
+    }
+    return null;
   }
 
   public Principal getEndPointPrincipal() {

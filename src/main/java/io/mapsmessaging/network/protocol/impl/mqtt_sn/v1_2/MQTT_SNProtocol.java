@@ -40,6 +40,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.ScheduledFuture;
@@ -108,6 +109,11 @@ public class MQTT_SNProtocol extends ProtocolImpl {
       closed = true;
       finish();
     }
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
   }
 
   protected void finish() throws IOException {
