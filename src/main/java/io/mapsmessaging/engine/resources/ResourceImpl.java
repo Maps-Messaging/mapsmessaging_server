@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ public class ResourceImpl implements Resource {
     String type = "Memory";
     Map<String, String> storeProperties = new LinkedHashMap<>();
     if (pathManager != null) {
+      storeProperties.put("debug", ""+pathManager.isDebug());
       storeProperties.put("Sync", "" + pathManager.isEnableSync());
       storeProperties.put("ItemCount", "" + pathManager.getItemCount());
       storeProperties.put("MaxPartitionSize", "" + pathManager.getPartitionSize());

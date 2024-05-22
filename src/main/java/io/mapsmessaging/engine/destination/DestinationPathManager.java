@@ -20,61 +20,39 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Getter;
 
+@Getter
 public class DestinationPathManager {
 
   private static final String OPTIONAL_PATH = "{folder}";
 
-  @Getter
   private final long partitionSize;
-  @Getter
   private final long idleTime;
-
-  @Getter
   private final int itemCount;
-  @Getter
   private final int expiredEventPoll;
-
-  @Getter
   private final boolean enableSync;
-  @Getter
   private final boolean remap;
-  @Getter
   private final boolean writeThrough;
-  @Getter
   private final boolean enableCache;
-
-  @Getter
   private final String name;
-  @Getter
   private final String directory;
-  @Getter
   private final String namespaceMapping;
-  @Getter
   private final String type;
-  @Getter
   private final String cacheType;
-  @Getter
   private final String archiveName;
-  @Getter
   private final long archiveIdleTime;
-  @Getter
   private final String digestAlgorithm;
-
-  @Getter
   private final String s3RegionName;
-  @Getter
   private final String s3AccessKeyId;
-  @Getter
   private final String s3SecretAccessKey;
-  @Getter
   private final String s3BucketName;
-  @Getter
   private final boolean s3Compression;
+  private final boolean debug;
 
 
   public DestinationPathManager(ConfigurationProperties properties) {
     name = properties.getProperty("name");
     type = properties.getProperty("type", "File");
+    debug = properties.getBooleanProperty("debug", false);
 
     String propertyNamespace = properties.getProperty("namespace");
     String tmp = properties.getProperty("directory");
