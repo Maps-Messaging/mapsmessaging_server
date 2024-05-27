@@ -67,12 +67,20 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Delete all schemas", description = "Deletes all the schema configurations")
-  public BaseResponse deleteAllSchemas() {
+  public BaseResponse deleteAllSchemas(@QueryParam("filter") String filter) throws ParseException {
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
     }
-    SchemaManager.getInstance().removeAllSchemas();
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+    List<SchemaConfig> result = SchemaManager.getInstance()
+        .getAll()
+        .stream()
+        .filter(protocol -> parser == null || parser.evaluate(protocol))
+        .collect(Collectors.toList());
+    for(SchemaConfig schema : result) {
+      SchemaManager.getInstance().removeSchema(schema.getUniqueId());
+    }
     return new BaseResponse(request);
   }
 
