@@ -21,15 +21,16 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.data.integration.IntegrationStatus;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -59,17 +60,16 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
   @GET
   @Path("/server/integration/status")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<IntegrationStatus> getAllIntegrationStatus() {
+  public List<IntegrationStatus> getAllIntegrationStatus(@QueryParam("filter") String filter) throws ParseException {
     if (!hasAccess("integrations")) {
       response.setStatus(403);
-      return null;
+      return new ArrayList<>();
     }
-
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
-    List<IntegrationStatus> results = new ArrayList<>();
-    for (EndPointConnection endPointConnection : endPointManagers) {
-      results.add(new IntegrationStatus(endPointConnection));
-    }
-    return results;
+    return endPointManagers.stream()
+        .map(IntegrationStatus::new)
+        .filter(status -> parser == null || parser.evaluate(status))
+        .collect(Collectors.toList());
   }
 }

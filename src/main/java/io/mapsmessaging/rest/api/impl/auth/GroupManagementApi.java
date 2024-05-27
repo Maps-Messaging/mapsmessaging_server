@@ -25,6 +25,9 @@ import io.mapsmessaging.rest.data.auth.Group;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.GroupListResponse;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -33,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -44,16 +48,14 @@ public class GroupManagementApi extends BaseRestApi {
   @GET
   @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
-  public GroupListResponse getAllGroups() {
+  public GroupListResponse getAllGroups(@QueryParam("filter") String filter) throws ParseException {
     AuthManager authManager = AuthManager.getInstance();
     List<GroupDetails> groups = authManager.getGroups();
-    List<Group> results = new ArrayList<>();
-    for (GroupDetails group : groups) {
-      String groupName = group.getName();
-      UUID groupId = group.getGroupId();
-
-      results.add(new Group(groupName, groupId, group.getUsers()));
-    }
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+    List<Group> results = groups.stream()
+        .map(groupDetails -> new Group(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers()))
+        .filter(group -> parser == null || parser.evaluate(group))
+        .collect(Collectors.toList());
     return new GroupListResponse(request, results);
   }
 

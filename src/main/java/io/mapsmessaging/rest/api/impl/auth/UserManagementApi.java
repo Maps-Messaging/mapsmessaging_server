@@ -26,6 +26,9 @@ import io.mapsmessaging.rest.data.auth.User;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
 import io.mapsmessaging.security.access.Identity;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -34,6 +37,7 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -44,13 +48,14 @@ public class UserManagementApi extends BaseRestApi {
   @GET
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
-  public UserListResponse getAllUsers() {
+  public UserListResponse getAllUsers(@QueryParam("filter") String filter) throws ParseException {
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
-    List<User> results = new ArrayList<>();
-    for (UserDetails user : users) {
-      results.add(buildUser(user, authManager));
-    }
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+    List<User> results = users.stream()
+        .map(userDetails -> buildUser(userDetails, authManager))
+        .filter(user -> parser == null || parser.evaluate(user))
+        .collect(Collectors.toList());
     return new UserListResponse(request, results);
   }
 

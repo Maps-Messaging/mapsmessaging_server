@@ -21,11 +21,11 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.data.destination.DestinationStatus;
 import io.mapsmessaging.rest.responses.DestinationStatusResponse;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.ArrayList;
@@ -58,15 +58,19 @@ public class DestinationStatusApi extends BaseDestinationApi {
   @Path("/server/destination/status")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the destination configuration")
-  public DestinationStatusResponse getAllStatsForDestinations() throws ExecutionException, InterruptedException, TimeoutException {
+  public DestinationStatusResponse getAllStatsForDestinations(@QueryParam("filter") String filter) throws ExecutionException, InterruptedException, TimeoutException, ParseException {
     if (!hasAccess("destinations")) {
       response.setStatus(403);
       return null;
     }
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
     List<DestinationStatus> results = new ArrayList<>();
     for (String name : destinations) {
-      results.add(lookupDestination(name));
+      DestinationStatus destinationStatus = lookupDestination(name);
+      if(parser == null || parser.evaluate(destinationStatus)) {
+        results.add(destinationStatus);
+      }
     }
     return new DestinationStatusResponse(request, results);
   }

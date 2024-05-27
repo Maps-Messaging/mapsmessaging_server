@@ -20,15 +20,15 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -57,16 +57,17 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @GET
   @Path("/server/interface/status")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<InterfaceStatus> getAllInterfaceStatus() {
+  public List<InterfaceStatus> getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
     if (!hasAccess("interfaces")) {
       response.setStatus(403);
       return null;
     }
-    List<InterfaceStatus> results = new ArrayList<>();
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    for (EndPointManager endPointManager : endPointManagers) {
-      results.add(new InterfaceStatus(endPointManager.getEndPointServer()));
-    }
-    return results;
+
+    return endPointManagers.stream()
+        .map(endPointManager -> new InterfaceStatus(endPointManager.getEndPointServer()))
+        .filter(status -> parser == null || parser.evaluate(status))
+        .collect(Collectors.toList());
   }
 }

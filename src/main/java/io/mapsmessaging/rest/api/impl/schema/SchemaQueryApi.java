@@ -23,6 +23,9 @@ import io.mapsmessaging.rest.data.schema.SchemaPostData;
 import io.mapsmessaging.rest.responses.*;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
@@ -34,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -139,12 +143,18 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get all schemas", description = "Returns all schemas")
-  public SchemaConfigResponse getAllSchemas() {
+  public SchemaConfigResponse getAllSchemas(@QueryParam("filter") String filter) throws ParseException {
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
     }
-    return new SchemaConfigResponse(request, SchemaManager.getInstance().getAll());
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+    List<SchemaConfig> result = SchemaManager.getInstance()
+        .getAll()
+        .stream()
+        .filter(protocol -> parser == null || parser.evaluate(protocol))
+        .collect(Collectors.toList());
+    return new SchemaConfigResponse(request, result);
   }
 
   @GET

@@ -24,16 +24,16 @@ import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.interfaces.InterfaceInfo;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -45,21 +45,22 @@ public class InterfaceManagementApi extends BaseRestApi {
   @Path("/server/interfaces")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Retrieve a list of all configured interfaces")
-  public InterfaceDetailResponse getAllInterfaces() {
+  public InterfaceDetailResponse getAllInterfaces(@QueryParam("filter") String filter) throws ParseException {
     if (!hasAccess("interfaces")) {
       response.setStatus(403);
       return null;
     }
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    List<InterfaceInfo> protocols = new ArrayList<>();
-    ConfigurationProperties global = null;
-    for (EndPointManager endPointManager : endPointManagers) {
-      InterfaceInfo protocol = new InterfaceInfo(endPointManager);
-      protocols.add(protocol);
-      if(global == null){
-        global = endPointManager.getEndPointServer().getConfig().getProperties().getGlobal();
-      }
-    }
+    ConfigurationProperties global = endPointManagers.stream()
+          .findFirst()
+          .map(endPointManager -> endPointManager.getEndPointServer().getConfig().getProperties().getGlobal())
+          .orElse(null);
+
+    List<InterfaceInfo> protocols = endPointManagers.stream()
+        .map(InterfaceInfo::new)
+        .filter(protocol -> parser == null || parser.evaluate(protocol))
+        .collect(Collectors.toList());
     return new InterfaceDetailResponse(request, protocols, global);
   }
 

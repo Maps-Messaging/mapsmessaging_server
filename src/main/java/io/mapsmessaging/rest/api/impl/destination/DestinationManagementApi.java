@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.data.destination.Destination;
 import io.mapsmessaging.rest.responses.DestinationResponse;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.io.IOException;
@@ -58,15 +58,19 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Path("/server/destination")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the destination configuration")
-  public DestinationResponse getAllDestinations() throws IOException, ExecutionException, InterruptedException, TimeoutException {
+  public DestinationResponse getAllDestinations(@QueryParam("filter") String filter) throws IOException, ExecutionException, InterruptedException, TimeoutException, ParseException {
     if (!hasAccess("destinations")) {
       response.setStatus(403);
       return null;
     }
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
     List<Destination> results  = new ArrayList<>();
     for(String name:destinations){
-      results.add(lookupDestination(name));
+      Destination destination = lookupDestination(name);
+      if(parser == null || parser.evaluate(destination)) {
+        results.add(destination);
+      }
     }
     return new DestinationResponse(request, results);
   }

@@ -21,16 +21,21 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.discovery.DiscoveredServers;
 import io.mapsmessaging.rest.data.discovery.ServiceData;
+import io.mapsmessaging.selector.ParseException;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 import javax.jmdns.ServiceInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -42,45 +47,48 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @Path("/server/discovery/start")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public void startDiscovery() {
+  public boolean startDiscovery() {
     if (!hasAccess("discovery")) {
       response.setStatus(403);
-      return;
+      return false;
     }
     MessageDaemon.getInstance().getDiscoveryManager().start();
+    return true;
   }
 
   @GET
   @Path("/server/discovery/stop")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public void stopDiscovery() {
+  public boolean stopDiscovery() {
     if (!hasAccess("discovery")) {
       response.setStatus(403);
-      return;
+      return false;
     }
     MessageDaemon.getInstance().getDiscoveryManager().stop();
+    return true;
   }
 
   @GET
   @Path("/server/discovery")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public List<DiscoveredServers> getAllDiscoveredServers() {
+  public List<DiscoveredServers> getAllDiscoveredServers(@QueryParam("filter") String filter) throws ParseException {
     if (!hasAccess("discovery")) {
       response.setStatus(403);
       return new ArrayList<>();
     }
-
-    List<DiscoveredServers> discoveredServers = new ArrayList<>();
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     Map<String, List<ServiceInfo>> discovered = MessageDaemon.getInstance().getServerConnectionManager().getServiceInfoMap();
-    for (Map.Entry<String, List<ServiceInfo>> entry : discovered.entrySet()) {
-      List<ServiceData> discoveredServiceData = new ArrayList<>();
-      for (ServiceInfo serviceInfo : entry.getValue()) {
-        discoveredServiceData.add(new ServiceData(serviceInfo));
-      }
-      discoveredServers.add(new DiscoveredServers(entry.getKey(), discoveredServiceData));
-    }
-    return discoveredServers;
+
+    return discovered.entrySet().stream()
+        .map(entry -> {
+          List<ServiceData> discoveredServiceData = entry.getValue().stream()
+              .map(ServiceData::new)
+              .collect(Collectors.toList());
+          return new DiscoveredServers(entry.getKey(), discoveredServiceData);
+        })
+        .filter(discoveredServer -> parser == null || parser.evaluate(discoveredServer))
+        .collect(Collectors.toList());
   }
 }
