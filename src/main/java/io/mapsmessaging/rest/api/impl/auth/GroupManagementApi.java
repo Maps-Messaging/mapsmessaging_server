@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.auth;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.UserDetails;
@@ -31,14 +33,11 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Authentication and Authorisation Management")
 @Path(URI_PATH)
@@ -49,6 +48,7 @@ public class GroupManagementApi extends BaseRestApi {
   @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
   public GroupListResponse getAllGroups(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     List<GroupDetails> groups = authManager.getGroups();
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
@@ -63,6 +63,7 @@ public class GroupManagementApi extends BaseRestApi {
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   public Group getGroupsById(@PathParam("groupUuid") String groupUuid) {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     if (groupDetails != null) {
@@ -78,6 +79,7 @@ public class GroupManagementApi extends BaseRestApi {
   @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
   public Group addGroup(String groupName) throws IOException {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     GroupIdMap groupIdMap = authManager.addGroup(groupName);
     return new Group(groupName, groupIdMap.getAuthId(), new ArrayList<>());
@@ -87,6 +89,7 @@ public class GroupManagementApi extends BaseRestApi {
   @Path("/auth/groups/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   public BaseResponse addUserToGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid)).findFirst().orElse(null);
@@ -100,6 +103,7 @@ public class GroupManagementApi extends BaseRestApi {
   @Path("/auth/groups/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   public BaseResponse removeUserFromGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid)).findFirst().orElse(null);
@@ -113,6 +117,7 @@ public class GroupManagementApi extends BaseRestApi {
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   public BaseResponse deleteGroup(@PathParam("groupUuid") String groupUuid) throws IOException {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     if (groupDetails != null) {

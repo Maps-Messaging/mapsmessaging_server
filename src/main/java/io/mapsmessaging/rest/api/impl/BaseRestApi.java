@@ -25,8 +25,8 @@ import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
-
 import javax.security.auth.Subject;
 
 public class BaseRestApi {
@@ -42,6 +42,15 @@ public class BaseRestApi {
 
   protected Subject getSubject() {
     return (Subject) getSession().getAttribute("subject");
+  }
+
+  protected void checkAuthentication() {
+    if (AuthManager.getInstance().isAuthorisationEnabled()) {
+      HttpSession session = getSession();
+      if(session == null || session.getAttribute("uuid") == null){
+        throw new WebApplicationException(401);
+      }
+    }
   }
 
   protected boolean hasAccess(String resource) {

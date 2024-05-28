@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.integration;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
@@ -27,12 +29,9 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Integration Management")
 @Path(URI_PATH)
@@ -43,6 +42,7 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
   @Path("/server/integration/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
   public IntegrationStatus getIntegrationStatus(@PathParam("endpoint") String endpointName) {
+    checkAuthentication();
     if (!hasAccess("integrations")) {
       response.setStatus(403);
       return null;
@@ -61,6 +61,7 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
   @Path("/server/integration/status")
   @Produces({MediaType.APPLICATION_JSON})
   public List<IntegrationStatus> getAllIntegrationStatus(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     if (!hasAccess("integrations")) {
       response.setStatus(403);
       return new ArrayList<>();

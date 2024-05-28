@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.integration;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -32,11 +34,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Integration Management")
 @Path(URI_PATH)
@@ -46,6 +45,7 @@ public class IntegrationManagementApi  extends BaseRestApi {
   @Path("/server/integration")
   @Produces({MediaType.APPLICATION_JSON})
   public IntegrationDetailResponse getAllIntegrations(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     if (!hasAccess("integrations")) {
       response.setStatus(403);
       return null;

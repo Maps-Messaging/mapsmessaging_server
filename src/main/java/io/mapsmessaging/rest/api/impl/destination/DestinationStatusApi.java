@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.destination;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.data.destination.DestinationStatus;
@@ -27,14 +29,10 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 
 @Tag(name = "Destination Management")
 @Path(URI_PATH)
@@ -45,6 +43,7 @@ public class DestinationStatusApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
   public DestinationStatusResponse getDestinationStats(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
+    checkAuthentication();
     if (!hasAccess("destinations")) {
       response.setStatus(403);
       return null;
@@ -59,6 +58,7 @@ public class DestinationStatusApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the destination configuration")
   public DestinationStatusResponse getAllStatsForDestinations(@QueryParam("filter") String filter) throws ExecutionException, InterruptedException, TimeoutException, ParseException {
+    checkAuthentication();
     if (!hasAccess("destinations")) {
       response.setStatus(403);
       return null;

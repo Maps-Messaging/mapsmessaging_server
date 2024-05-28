@@ -29,9 +29,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
+import javax.security.auth.Subject;
 
 @Provider
 public class AuthenticationFilter implements ContainerRequestFilter {
@@ -68,7 +67,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       if(session != null) {
         session.invalidate();
       }
-      containerRequest.abortWith(unauthorizedResponse);
       return;
     }
 
@@ -93,7 +91,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       session.setAttribute("uuid",  SubjectHelper.getUniqueId(subject));
       return;
     }
-    containerRequest.abortWith(unauthorizedResponse);
+    if(session != null) session.invalidate();
   }
 
 }

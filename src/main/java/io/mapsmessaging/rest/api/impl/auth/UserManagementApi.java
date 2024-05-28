@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.auth;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
@@ -33,13 +35,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Authentication and Authorisation Management")
 @Path(URI_PATH)
@@ -49,6 +48,7 @@ public class UserManagementApi extends BaseRestApi {
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
   public UserListResponse getAllUsers(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
@@ -63,6 +63,7 @@ public class UserManagementApi extends BaseRestApi {
   @Path("/auth/user/{username}")
   @Produces({MediaType.APPLICATION_JSON})
   public User getUser(@PathParam("username") String username) {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
     for (UserDetails user : users) {
@@ -78,6 +79,7 @@ public class UserManagementApi extends BaseRestApi {
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
   public BaseResponse addUser(NewUser newUser) {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
     if (authManager.addUser(newUser.getUsername(), newUser.getPassword().toCharArray(), sessionPrivileges, new String[0])) {
@@ -90,6 +92,7 @@ public class UserManagementApi extends BaseRestApi {
   @Path("/auth/users/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   public BaseResponse deleteUser(@PathParam("userUuid") String userUuid) {
+    checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     Identity userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
     if (userIdMap != null) {

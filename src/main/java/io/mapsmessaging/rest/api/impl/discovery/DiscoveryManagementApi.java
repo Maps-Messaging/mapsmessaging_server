@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.discovery;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.discovery.DiscoveredServers;
@@ -30,14 +32,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-
-import javax.jmdns.ServiceInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+import javax.jmdns.ServiceInfo;
 
 @Tag(name = "Discovery Management")
 @Path(URI_PATH)
@@ -48,6 +47,7 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
   public boolean startDiscovery() {
+    checkAuthentication();
     if (!hasAccess("discovery")) {
       response.setStatus(403);
       return false;
@@ -61,6 +61,7 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
   public boolean stopDiscovery() {
+    checkAuthentication();
     if (!hasAccess("discovery")) {
       response.setStatus(403);
       return false;
@@ -74,6 +75,7 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
   public List<DiscoveredServers> getAllDiscoveredServers(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     if (!hasAccess("discovery")) {
       response.setStatus(403);
       return new ArrayList<>();

@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.server;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.ServerRunner;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
@@ -28,8 +30,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 @Tag(name = "Server Management")
 @Path(URI_PATH)
 public class ServerDetailsApi extends BaseInterfaceApi {
@@ -39,6 +39,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   // @ApiOperation(value = "Returns the servers unique name")
   public StatusMessage getBuildInfo() {
+    checkAuthentication();
     if (!hasAccess("servers")) {
       response.setStatus(403);
       return null;
@@ -52,6 +53,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
 //  @ApiOperation(value = "Retrieve the server statistics")
   public ServerStatisticsResponse getStats() {
+    checkAuthentication();
     if (!hasAccess("servers")) {
       response.setStatus(403);
       return null;
@@ -64,6 +66,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
 //  @ApiOperation(value = "Retrieve the server statistics")
   public String restartServer() {
+    checkAuthentication();
     if (!hasAccess("serverControl")) {
       response.setStatus(403);
       return "{\"status\":\"Not Authorised\"}";
@@ -78,6 +81,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
 //  @ApiOperation(value = "Retrieve the server statistics")
   public String shutdownServer() {
+    checkAuthentication();
     if (!hasAccess("serverControl")) {
       response.setStatus(403);
       return "{\"status\":\"Not Authorised\"}";

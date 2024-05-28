@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.schema;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.schema.SchemaPostData;
@@ -30,7 +32,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -38,8 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Schema Management")
 @Path(URI_PATH)
@@ -50,6 +49,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Delete specific schema", description = "Delete the schema configuration by unique id")
   public BaseResponse deleteSchemaById(@PathParam("schemaId") String schemaId) {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -68,6 +68,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Delete all schemas", description = "Deletes all the schema configurations")
   public BaseResponse deleteAllSchemas(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -90,6 +91,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(summary = "Add new schema", description = "Adds a new schema to the registry")
   public BaseResponse addSchema(SchemaPostData jsonString) throws IOException {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -104,6 +106,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get schema", description = "Returns a specific schema")
   public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) throws IOException {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -120,6 +123,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get schema by context", description = "Returns all schemas that match the context")
   public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -136,6 +140,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get schema by type", description = "Returns all schemas that match the type")
   public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -152,6 +157,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get all schemas", description = "Returns all schemas")
   public SchemaConfigResponse getAllSchemas(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -170,6 +176,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get schemas and the configuration", description = "Returns all schemas and mapping information")
   public SchemaMapResponse getSchemaMapping()  {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -187,6 +194,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(summary = "Get all known formats supported", description = "Returns list of supported formats")
   public StringListResponse getKnownFormats() {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;
@@ -199,6 +207,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.TEXT_PLAIN})
   @Operation(summary = "Get the link-format config", description = "Returns link-format list")
   public String getLinkFormat() {
+    checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);
       return null;

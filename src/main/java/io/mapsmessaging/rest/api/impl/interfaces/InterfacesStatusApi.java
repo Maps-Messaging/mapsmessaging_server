@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.interfaces;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
@@ -26,11 +28,8 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Interface Management")
 @Path(URI_PATH)
@@ -41,6 +40,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
   public InterfaceStatus getInterfaceStatus(@PathParam("endpoint") String endpointName) {
+    checkAuthentication();
     if (!hasAccess("interfaces")) {
       response.setStatus(403);
       return null;
@@ -58,6 +58,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @Path("/server/interface/status")
   @Produces({MediaType.APPLICATION_JSON})
   public List<InterfaceStatus> getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
+    checkAuthentication();
     if (!hasAccess("interfaces")) {
       response.setStatus(403);
       return null;
