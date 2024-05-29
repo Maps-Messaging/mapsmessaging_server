@@ -17,9 +17,12 @@
 
 package io.mapsmessaging;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.config.MessageDaemonConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.configuration.EnvironmentPathLookup;
@@ -55,16 +58,13 @@ import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
-import lombok.Getter;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import lombok.Getter;
 
 /**
  * This is the MessageDaemon class, which represents a message daemon in the system.
@@ -109,6 +109,9 @@ public class MessageDaemon {
   private boolean enableSystemTopics;
   private boolean enableAdvancedSystemTopics;
   private boolean enableDeviceIntegration;
+
+  @Getter
+  private MessageDaemonConfig messageDaemonConfig;
 
   @Getter
   private DeviceManager deviceManager;
@@ -163,37 +166,33 @@ public class MessageDaemon {
    * Finally, it retrieves the configuration properties for the DeviceManager and sets the enablement of device integration.
    */
   private void loadConstants() {
-    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
-    if (properties.containsKey("latitude") && properties.containsKey("longitude")) {
-      double lat = properties.getDoubleProperty("latitude", Double.NaN);
-      double lon = properties.getDoubleProperty("longitude", Double.NaN);
-      if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
-        LocationManager.getInstance().setPosition(lat, lon);
-      }
+    messageDaemonConfig = new MessageDaemonConfig(ConfigurationManager.getInstance().getProperties("MessageDaemon"));
+    if(messageDaemonConfig.getLongitude() != 0 && messageDaemonConfig.getLatitude() != 0) {
+      LocationManager.getInstance().setPosition(messageDaemonConfig.getLatitude() , messageDaemonConfig.getLongitude());
     }
-    tagMetaData = properties.getBooleanProperty("tagMetaData", false);
-    int transactionExpiry = properties.getIntProperty("TransactionExpiry", 3600000);
-    int transactionScan = properties.getIntProperty("TransactionScan", 1000);
+    tagMetaData = messageDaemonConfig.isTagMetaData();
+    long transactionExpiry = messageDaemonConfig.getTransactionExpiry();
+    long transactionScan = messageDaemonConfig.getTransactionScan();
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
-    enableSystemTopics = properties.getBooleanProperty("EnableSystemTopics", false);
-    enableAdvancedSystemTopics = properties.getBooleanProperty("EnableSystemStatusTopics", false);
-    if (properties.getBooleanProperty("EnableJMX", true)) {
+    enableSystemTopics = messageDaemonConfig.isEnableSystemTopics();
+    enableAdvancedSystemTopics = messageDaemonConfig.isEnableSystemStatusTopics();
+    if (messageDaemonConfig.isEnableJMX()) {
       JMXManager.setEnableJMX(true);
       mBean = new MessageDaemonJMX(this);
       new SimpleTaskSchedulerJMX(mBean.getTypePath());
-      JMXManager.setEnableJMXStatistics(properties.getBooleanProperty("EnableJMXStatistics", true));
+      JMXManager.setEnableJMXStatistics(messageDaemonConfig.isEnableJMXStatistics());
     } else {
       mBean = null;
       JMXManager.setEnableJMX(false);
       JMXManager.setEnableJMXStatistics(false);
     }
-    enableResourceStatistics = properties.getBooleanProperty("EnableResourceStatistics", false);
+    enableResourceStatistics = messageDaemonConfig.isEnableResourceStatistics();
 
     SystemTopicManager.setEnableStatistics(enableSystemTopics);
     SystemTopicManager.setEnableAdvancedStats(enableAdvancedSystemTopics);
-    Constants.getInstance().setMessageCompression(properties.getProperty("CompressionName", "None"));
-    Constants.getInstance().setMinimumMessageSize(properties.getIntProperty("CompressMessageMinSize", 1024));
+    Constants.getInstance().setMessageCompression(messageDaemonConfig.getCompressionName());
+    Constants.getInstance().setMinimumMessageSize(messageDaemonConfig.getCompressMessageMinSize());
 
     ConfigurationProperties deviceManager = ConfigurationManager.getInstance().getProperties("DeviceManager");
     enableDeviceIntegration = deviceManager.getBooleanProperty("enabled", false);
@@ -238,7 +237,7 @@ public class MessageDaemon {
     addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
-    addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA)));
+    addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA), messageDaemonConfig.getSessionPipeLines()));
     addToMap(700, 150, new NetworkManager());
     addToMap(900, 200, new NetworkConnectionManager());
     addToMap(1200, 400, new RestApiServerManager());

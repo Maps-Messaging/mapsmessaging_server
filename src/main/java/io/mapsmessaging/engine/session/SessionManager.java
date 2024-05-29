@@ -18,7 +18,6 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.admin.SessionManagerJMX;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
@@ -28,9 +27,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-
-import javax.security.auth.login.LoginException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
+import javax.security.auth.login.LoginException;
 
 public class SessionManager implements Agent {
 
@@ -54,9 +51,7 @@ public class SessionManager implements Agent {
   private final LongAdder expiredSessions;
 
 
-  public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath) {
-    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("MessageDaemon");
-    int pipeLineSize = properties.getIntProperty("SessionPipeLines", 10);
+  public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath, int pipeLineSize) {
     disconnectedSessions = new LongAdder();
     connectedSessions = new LongAdder();
     expiredSessions = new LongAdder();

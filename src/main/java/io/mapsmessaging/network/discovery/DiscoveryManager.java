@@ -17,9 +17,11 @@
 
 package io.mapsmessaging.network.discovery;
 
+import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
+
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.DiscoveryManagerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -34,20 +36,17 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   private static final String ALL_HOSTS = "::";
@@ -56,7 +55,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   private final String serverName;
   @Getter
   private final List<AdapterManager> boundedNetworks;
-  private final ConfigurationProperties properties;
+  private final DiscoveryManagerConfig properties;
   private final boolean stampMeta;
   private final String domainName;
   @Getter
@@ -66,17 +65,17 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
     this.serverName = serverName;
     logger = LoggerFactory.getLogger(DiscoveryManager.class);
     boundedNetworks = new ArrayList<>();
-    properties = ConfigurationManager.getInstance().getProperties("DiscoveryManager");
-    enabled = properties.getBooleanProperty("enabled", true);
-    stampMeta = properties.getBooleanProperty("addTxtRecords", false);
-    domainName = properties.getProperty("domainName", ".local");
+    properties = new DiscoveryManagerConfig(ConfigurationManager.getInstance().getProperties("DiscoveryManager"));
+    enabled = properties.isEnabled();
+    stampMeta = properties.isAddTxtRecords();
+    domainName = properties.getDomainName();
 
-    java.util.logging.Logger logger = java.util.logging.Logger.getLogger("javax.jmdns");
-    logger.setLevel(Level.OFF); // Set to OFF to disable logging
+    java.util.logging.Logger utilLogger = java.util.logging.Logger.getLogger("javax.jmdns");
+    utilLogger.setLevel(Level.OFF); // Set to OFF to disable logging
 
     // If JmDNS uses specific child loggers, they must also be adjusted
-    logger.setUseParentHandlers(false); // Stop log messages from propagating to the parent handlers
-    for (java.util.logging.Handler handler : logger.getHandlers()) {
+    utilLogger.setUseParentHandlers(false); // Stop log messages from propagating to the parent handlers
+    for (java.util.logging.Handler handler : utilLogger.getHandlers()) {
       handler.setLevel(Level.OFF); // Optionally disable each handler
     }
   }
@@ -106,7 +105,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   public void start() {
     if (enabled) {
       try {
-        bindAddresses(getAddresses(properties.getProperty("hostnames")));
+        bindAddresses(getAddresses(properties.getHostnames()));
       } catch (IOException e) {
         logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
       }
@@ -250,7 +249,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   }
 
   private boolean addInterface(InetAddress inetAddress) {
-    String hostnames = properties.getProperty("hostnames");
+    String hostnames = properties.getHostnames();
     if (hostnames != null) {
       String[] hostnameList = hostnames.split(",");
       for (String hostname : hostnameList) {
@@ -266,35 +265,43 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   @Override
   public void accept(NetworkStateChange networkStateChange) {
     if (networkStateChange.getEvent() == NetworkEvent.IP_CHANGED || networkStateChange.getEvent() == NetworkEvent.ADDED) {
-      for (InetAddress address : networkStateChange.getNetworkInterface().getIpAddresses()) {
-        if (addInterface(address)) {
-          try {
-            boolean found = boundedNetworks.stream().anyMatch(manager -> manager.getAdapter().equals(address.getHostAddress()));
-            if (!found) boundedNetworks.add(bindInterface(address, stampMeta));
-          } catch (IOException e) {
-            logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
-          }
-        }
-      }
+      handleAdded(networkStateChange);
     } else if (networkStateChange.getEvent() == NetworkEvent.DOWN || networkStateChange.getEvent() == NetworkEvent.REMOVED) {
-      for (InetAddress address : networkStateChange.getNetworkInterface().getIpAddresses()) {
-        String name = address.getHostAddress();
-        List<AdapterManager> toRemove = boundedNetworks.stream().filter(manager -> manager.getAdapter().equals(name)).collect(Collectors.toList());
-        for (AdapterManager manager : toRemove) {
-          boundedNetworks.remove(manager);
-          try {
-            manager.close();
-          } catch (IOException e) {
-            // Log It
-          }
+      handleRemoved(networkStateChange);
+    }
+  }
+
+  private void handleAdded(NetworkStateChange networkStateChange){
+    for (InetAddress address : networkStateChange.getNetworkInterface().getIpAddresses()) {
+      if (addInterface(address)) {
+        try {
+          boolean found = boundedNetworks.stream().anyMatch(manager -> manager.getAdapter().equals(address.getHostAddress()));
+          if (!found) boundedNetworks.add(bindInterface(address, stampMeta));
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
         }
       }
     }
   }
 
-  @NotNull
+  private void handleRemoved(NetworkStateChange networkStateChange){
+    for (InetAddress address : networkStateChange.getNetworkInterface().getIpAddresses()) {
+      String name = address.getHostAddress();
+      List<AdapterManager> toRemove = boundedNetworks.stream().filter(manager -> manager.getAdapter().equals(name)).collect(Collectors.toList());
+      for (AdapterManager manager : toRemove) {
+        boundedNetworks.remove(manager);
+        try {
+          manager.close();
+        } catch (IOException e) {
+          // Log It
+        }
+      }
+    }
+  }
+
   @Override
-  public Consumer<NetworkStateChange> andThen(@NotNull Consumer<? super NetworkStateChange> after) {
+  public @NotNull Consumer<NetworkStateChange> andThen(Consumer<? super NetworkStateChange> after) {
+    Objects.requireNonNull(after);
     return Consumer.super.andThen(after);
   }
 }
