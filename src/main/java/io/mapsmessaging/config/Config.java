@@ -30,13 +30,40 @@ import io.swagger.v3.oas.annotations.media.Schema;
 )
 @JsonSubTypes({
     @JsonSubTypes.Type(value = MessageDaemonConfig.class, name = "messageDaemon"),
+    @JsonSubTypes.Type(value = DiscoveryManagerConfig.class, name = "discoveryManager")
 })
 @Schema(description = "Abstract base class for all server configurations",
     discriminatorProperty = "type",
     discriminatorMapping = {
         @DiscriminatorMapping(value = "messageDaemon", schema = MessageDaemonConfig.class),
+        @DiscriminatorMapping(value = "discoveryManager", schema = DiscoveryManagerConfig.class),
     })
 
 public abstract class Config {
   public abstract ConfigurationProperties toConfigurationProperties();
+
+  protected long parseBufferSize(String size) {
+    size = size.trim().toUpperCase();
+    if (size.endsWith("K")) {
+      return Long.parseLong(size.substring(0, size.length() - 1)) * 1024;
+    } else if (size.endsWith("M")) {
+      return Long.parseLong(size.substring(0, size.length() - 1)) * 1024 * 1024;
+    } else if (size.endsWith("G")) {
+      return Long.parseLong(size.substring(0, size.length() - 1)) * 1024 * 1024 * 1024;
+    } else {
+      return Long.parseLong(size);
+    }
+  }
+
+  protected String formatBufferSize(long size) {
+    if (size >= 1024 * 1024 * 1024) {
+      return (size / (1024 * 1024 * 1024)) + "G";
+    } else if (size >= 1024 * 1024) {
+      return (size / (1024 * 1024)) + "M";
+    } else if (size >= 1024) {
+      return (size / 1024) + "K";
+    } else {
+      return Long.toString(size);
+    }
+  }
 }
