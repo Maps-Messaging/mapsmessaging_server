@@ -18,6 +18,7 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -47,8 +48,13 @@ public class MessageDaemonConfig extends Config {
   private double latitude;
   private double longitude;
 
+
+  public static MessageDaemonConfig getInstance(){
+    return new MessageDaemonConfig(ConfigurationManager.getInstance().getProperties("MessageDaemon"));
+  }
+
   // Constructor to load properties from ConfigurationProperties
-  public MessageDaemonConfig(ConfigurationProperties config) {
+  private MessageDaemonConfig(ConfigurationProperties config) {
     this.delayedPublishInterval = config.getIntProperty("DelayedPublishInterval", 1000);
     this.sessionPipeLines = config.getIntProperty("SessionPipeLines", 48);
     this.transactionExpiry = config.getIntProperty("TransactionExpiry", 3600000);

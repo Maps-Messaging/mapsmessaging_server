@@ -40,7 +40,6 @@ public class ProtocolConfig extends Config {
       this.name = newConfig.getName();
       hasChanged = true;
     }
-
     return hasChanged;
   }
 

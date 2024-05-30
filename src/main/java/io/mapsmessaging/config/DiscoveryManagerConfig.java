@@ -18,6 +18,7 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,8 +37,12 @@ public class DiscoveryManagerConfig extends Config {
   private boolean addTxtRecords;
   private String domainName;
 
+  public static DiscoveryManagerConfig getInstance(){
+    return new DiscoveryManagerConfig(ConfigurationManager.getInstance().getProperties("DiscoveryManager"));
+  }
+
   // Constructor to load properties from ConfigurationProperties
-  public DiscoveryManagerConfig(ConfigurationProperties config) {
+  private DiscoveryManagerConfig(ConfigurationProperties config) {
     this.enabled = config.getBooleanProperty("DiscoveryManager.enabled", true);
     this.hostnames = config.getProperty("DiscoveryManager.hostnames", "::");
     this.addTxtRecords = config.getBooleanProperty("DiscoveryManager.addTxtRecords", true);

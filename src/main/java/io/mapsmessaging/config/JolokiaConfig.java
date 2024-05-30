@@ -19,6 +19,7 @@ package io.mapsmessaging.config;
 
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -35,7 +36,11 @@ public class JolokiaConfig extends Config{
   private boolean enable;
   private ConfigurationProperties jolokiaMapping;
 
-  public JolokiaConfig(ConfigurationProperties properties) {
+  public static JolokiaConfig getInstance(){
+    return new JolokiaConfig(ConfigurationManager.getInstance().getProperties("jolokia"));
+  }
+
+  private JolokiaConfig(ConfigurationProperties properties) {
     this.enable = properties.getBooleanProperty("enable", true);
     this.jolokiaMapping = (ConfigurationProperties) properties.get("config");
   }

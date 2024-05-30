@@ -24,7 +24,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -41,7 +40,7 @@ public class JolokaManager implements Agent {
   private Startup startup;
 
   public JolokaManager() {
-    config = new JolokiaConfig(ConfigurationManager.getInstance().getProperties("jolokia"));
+    config = JolokiaConfig.getInstance();
     enabled = config.isEnable();
   }
 

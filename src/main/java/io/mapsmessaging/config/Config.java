@@ -45,6 +45,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
     })
 
 public abstract class Config {
+
   public abstract ConfigurationProperties toConfigurationProperties();
 
   protected long parseBufferSize(String size) {

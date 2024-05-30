@@ -42,7 +42,7 @@ public class HawtioManager implements Agent {
 
 
   public HawtioManager() {
-    config = new HawtioConfig(ConfigurationManager.getInstance().getProperties("hawtio"));
+    config = HawtioConfig.getInstance();
     System.setProperty("hawtio.authenticationEnabled", "" + config.isAuthenticationEnabled());
 
     String checkFile = config.getWarFileLocation();

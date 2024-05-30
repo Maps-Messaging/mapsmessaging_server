@@ -166,7 +166,7 @@ public class MessageDaemon {
    * Finally, it retrieves the configuration properties for the DeviceManager and sets the enablement of device integration.
    */
   private void loadConstants() {
-    messageDaemonConfig = new MessageDaemonConfig(ConfigurationManager.getInstance().getProperties("MessageDaemon"));
+    messageDaemonConfig = MessageDaemonConfig.getInstance();
     if(messageDaemonConfig.getLongitude() != 0 && messageDaemonConfig.getLatitude() != 0) {
       LocationManager.getInstance().setPosition(messageDaemonConfig.getLatitude() , messageDaemonConfig.getLongitude());
     }
@@ -194,8 +194,8 @@ public class MessageDaemon {
     Constants.getInstance().setMessageCompression(messageDaemonConfig.getCompressionName());
     Constants.getInstance().setMinimumMessageSize(messageDaemonConfig.getCompressMessageMinSize());
 
-    ConfigurationProperties deviceManager = ConfigurationManager.getInstance().getProperties("DeviceManager");
-    enableDeviceIntegration = deviceManager.getBooleanProperty("enabled", false);
+    ConfigurationProperties deviceConfig = ConfigurationManager.getInstance().getProperties("DeviceManager");
+    enableDeviceIntegration = deviceConfig.getBooleanProperty("enabled", false);
 
   }
 

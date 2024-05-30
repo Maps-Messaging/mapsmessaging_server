@@ -34,7 +34,6 @@ import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -65,7 +64,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
     this.serverName = serverName;
     logger = LoggerFactory.getLogger(DiscoveryManager.class);
     boundedNetworks = new ArrayList<>();
-    properties = new DiscoveryManagerConfig(ConfigurationManager.getInstance().getProperties("DiscoveryManager"));
+    properties = DiscoveryManagerConfig.getInstance();
     enabled = properties.isEnabled();
     stampMeta = properties.isAddTxtRecords();
     domainName = properties.getDomainName();

@@ -18,6 +18,7 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -39,7 +40,11 @@ public class HawtioConfig extends Config {
 
   private ConfigurationProperties hawtioMapping;
 
-  public HawtioConfig(ConfigurationProperties config) {
+  public static HawtioConfig getInstance(){
+    return new HawtioConfig(ConfigurationManager.getInstance().getProperties("hawtio"));
+  }
+
+  private HawtioConfig(ConfigurationProperties config) {
     this.enable = config.getBooleanProperty("enable", true);
     this.warFileLocation = config.getProperty("warFileLocation", "");
     this.discoverable = config.getBooleanProperty("discoverable", false);
