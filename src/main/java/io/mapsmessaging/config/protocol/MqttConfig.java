@@ -1,12 +1,34 @@
-package io.mapsmessaging.config;
+/*
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package io.mapsmessaging.config.protocol;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-public class MqttConfig extends Config {
+@ToString
+public class MqttConfig extends ProtocolConfig {
+
   private long maximumSessionExpiry;
   private long maximumBufferSize;
   private int serverReceiveMaximum;
@@ -16,6 +38,7 @@ public class MqttConfig extends Config {
   private boolean strictClientId;
 
   public MqttConfig(ConfigurationProperties config) {
+    super(config);
     this.maximumSessionExpiry = config.getLongProperty("maximumSessionExpiry", 86400);
     this.maximumBufferSize = parseBufferSize(config.getProperty("maximumBufferSize", "10M"));
     this.serverReceiveMaximum = config.getIntProperty("serverReceiveMaximum", 10);
@@ -26,7 +49,7 @@ public class MqttConfig extends Config {
   }
 
   public boolean update(MqttConfig newConfig) {
-    boolean hasChanged = false;
+    boolean hasChanged = super.update(newConfig);
 
     if (this.maximumSessionExpiry != newConfig.getMaximumSessionExpiry()) {
       this.maximumSessionExpiry = newConfig.getMaximumSessionExpiry();
@@ -61,7 +84,7 @@ public class MqttConfig extends Config {
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = new ConfigurationProperties();
+    ConfigurationProperties config = super.toConfigurationProperties();
     config.put("maximumSessionExpiry", this.maximumSessionExpiry);
     config.put("maximumBufferSize", formatBufferSize(this.maximumBufferSize));
     config.put("serverReceiveMaximum", this.serverReceiveMaximum);

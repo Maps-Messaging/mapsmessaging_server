@@ -30,13 +30,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 )
 @JsonSubTypes({
     @JsonSubTypes.Type(value = MessageDaemonConfig.class, name = "messageDaemon"),
-    @JsonSubTypes.Type(value = DiscoveryManagerConfig.class, name = "discoveryManager")
+    @JsonSubTypes.Type(value = DiscoveryManagerConfig.class, name = "discoveryManager"),
+    @JsonSubTypes.Type(value = HawtioConfig.class, name = "hawtioManager"),
+    @JsonSubTypes.Type(value = JolokiaConfig.class, name = "jolokiaConfig"),
+
 })
 @Schema(description = "Abstract base class for all server configurations",
     discriminatorProperty = "type",
     discriminatorMapping = {
         @DiscriminatorMapping(value = "messageDaemon", schema = MessageDaemonConfig.class),
         @DiscriminatorMapping(value = "discoveryManager", schema = DiscoveryManagerConfig.class),
+        @DiscriminatorMapping(value = "hawtioManager", schema = HawtioConfig.class),
+        @DiscriminatorMapping(value = "jolokiaConfig", schema = JolokiaConfig.class),
     })
 
 public abstract class Config {

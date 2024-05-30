@@ -17,8 +17,11 @@
 
 package io.mapsmessaging.rest.hawtio;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 import io.hawt.embedded.Main;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.config.HawtioConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.logging.Logger;
@@ -26,27 +29,24 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-
 import java.io.File;
 import java.util.Map;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class HawtioManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(HawtioManager.class);
 
-  private final ConfigurationProperties properties;
+  private final HawtioConfig config;
   private final String warFile;
   private final boolean enabled;
 
 
   public HawtioManager() {
-    properties = ConfigurationManager.getInstance().getProperties("hawtio");
-    System.setProperty("hawtio.authenticationEnabled", "" + properties.getBooleanProperty("authenticationEnabled", false));
+    config = new HawtioConfig(ConfigurationManager.getInstance().getProperties("hawtio"));
+    System.setProperty("hawtio.authenticationEnabled", "" + config.isAuthenticationEnabled());
 
-    String checkFile = properties.getProperty("warFileLocation", "");
-    enabled = properties.getBooleanProperty("enable", true) && isJolokiaEnabled();
+    String checkFile = config.getWarFileLocation();
+    enabled = config.isEnable() && isJolokiaEnabled();
 
     checkFile = EnvironmentConfig.getInstance().translatePath(checkFile);
     if (enabled) {
@@ -96,7 +96,7 @@ public class HawtioManager implements Agent {
 
   public void start() {
     if (enabled) {
-      Thread runner = new Thread(new Startup());
+      Thread runner = new Thread(new Startup(config));
       runner.setDaemon(true);
       runner.start();
     }
@@ -110,11 +110,15 @@ public class HawtioManager implements Agent {
 
   private class Startup implements Runnable {
 
+    private final HawtioConfig config;
+    public Startup(HawtioConfig config){
+      this.config = config;
+    }
     private void register() {
-      if (properties.getBooleanProperty("discoverable", false)) {
+      if (config.isDiscoverable()) {
         String service = "_http._tcp.local";
         try {
-          MessageDaemon.getInstance().getDiscoveryManager().register(properties.getProperty("hostname", "0.0.0.0"), service, "hawtio", 8080, "/hawtio/");
+          MessageDaemon.getInstance().getDiscoveryManager().register(config.getHost(), service, "hawtio", 8080, "/hawtio/");
         } catch (Exception e) {
           logger.log(ServerLogMessages.HAWTIO_REGISTRATION_FAILED, e);
         }
@@ -122,15 +126,14 @@ public class HawtioManager implements Agent {
     }
 
     public void run() {
-      if (properties.getBooleanProperty("enable", false)) {
+      if (config.isEnable()) {
         logger.log(HAWTIO_STARTUP);
-        ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
         if (!warFile.isEmpty()) {
           try {
-            for (Map.Entry<String, Object> entry : config.entrySet()) {
+            for (Map.Entry<String, Object> entry : config.getHawtioMapping().entrySet()) {
               System.setProperty(entry.getKey(), entry.getValue().toString());
             }
-            int port = config.getIntProperty("hawtio.port", 8181);
+            int port = config.getPort();
             Main main = new Main();
             main.setPort(port);
             main.setWar(warFile);

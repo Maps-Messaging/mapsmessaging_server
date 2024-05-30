@@ -18,31 +18,31 @@
 package io.mapsmessaging.rest.hawtio;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.config.JolokiaConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import org.jolokia.jvmagent.JolokiaServer;
-import org.jolokia.jvmagent.JolokiaServerConfig;
-import org.jolokia.util.LogHandler;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import org.jolokia.jvmagent.JolokiaServer;
+import org.jolokia.jvmagent.JolokiaServerConfig;
+import org.jolokia.util.LogHandler;
 
 public class JolokaManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(JolokaManager.class);
 
-  private final ConfigurationProperties properties;
+  private final JolokiaConfig config;
   private final boolean enabled;
   private Startup startup;
 
   public JolokaManager() {
-    properties = ConfigurationManager.getInstance().getProperties("jolokia");
-    enabled = properties.getBooleanProperty("enable", true);
+    config = new JolokiaConfig(ConfigurationManager.getInstance().getProperties("jolokia"));
+    enabled = config.isEnable();
   }
 
   @Override
@@ -57,7 +57,7 @@ public class JolokaManager implements Agent {
 
   public void start() {
     if (enabled) {
-      startup = new Startup();
+      startup = new Startup(config);
       Thread runner = new Thread(startup);
       runner.setDaemon(true);
       runner.start();
@@ -73,6 +73,11 @@ public class JolokaManager implements Agent {
   private class Startup implements Runnable {
 
     private JolokiaServer jolokiaServer;
+    private final JolokiaConfig config;
+
+    public Startup(JolokiaConfig config){
+      this.config = config;
+    }
 
     public void stop() {
       if (jolokiaServer != null) {
@@ -86,8 +91,8 @@ public class JolokaManager implements Agent {
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
-      for (Entry<String, Object> entry : config.entrySet()) {
+      ConfigurationProperties properties = config.getJolokiaMapping();
+      for (Entry<String, Object> entry : properties.entrySet()) {
         map.put(entry.getKey(), entry.getValue().toString());
       }
       map.put("agentId", MessageDaemon.getInstance().getId());

@@ -17,6 +17,9 @@
 
 package io.mapsmessaging.network.io.impl;
 
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -24,23 +27,22 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
-
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
+import lombok.Getter;
 
 public class SelectorTask implements Selectable {
+
+  @Getter
+  private final ReadTask readTask;
 
   private final Logger logger;
   private final EndPoint endPoint;
   private final WriteTask writeTask;
-  private final ReadTask readTask;
 
   private int selectionOps;
   private FutureTask<SelectionKey> future;
@@ -55,8 +57,8 @@ public class SelectorTask implements Selectable {
     logger = LoggerFactory.getLogger(SelectorTask.class);
     int readBufferSize = properties.getIntProperty("serverReadBufferSize", DefaultConstants.TCP_READ_BUFFER_SIZE);
     int writeBufferSize = properties.getIntProperty("serverWriteBufferSize", DefaultConstants.TCP_WRITE_BUFFER_SIZE);
-    long packetThreshold = properties.getLongProperty("packetReuseTimeout", 1000L);
     if (isUDP) {
+      long packetThreshold = properties.getLongProperty("packetReuseTimeout", 1000L);
       readTask = new UDPReadTask(selectorCallback, readBufferSize, packetThreshold, logger);
       writeTask = new UDPWriteTask(selectorCallback, writeBufferSize, this, logger);
     } else {
@@ -171,9 +173,5 @@ public class SelectorTask implements Selectable {
         writeTask.selected(selectable, selector, OP_WRITE);
       }
     }
-  }
-
-  public ReadTask getReadTask() {
-    return readTask;
   }
 }

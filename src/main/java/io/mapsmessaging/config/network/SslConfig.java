@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.config;
+package io.mapsmessaging.config.network;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;

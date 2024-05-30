@@ -18,7 +18,9 @@
 package io.mapsmessaging.network;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import lombok.Getter;
 
+@Getter
 public class NetworkConfig {
 
   protected static final String PROPERTY_URL = "url";
@@ -49,19 +51,4 @@ public class NetworkConfig {
     this.properties = properties;
   }
 
-  public ConfigurationProperties getProperties() {
-    return properties;
-  }
-
-  public String getUrl() {
-    return url;
-  }
-
-  public String getAuthConfig() {
-    return authConfig;
-  }
-
-  public String getProtocols() {
-    return protocols;
-  }
 }

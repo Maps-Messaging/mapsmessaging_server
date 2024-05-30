@@ -15,15 +15,20 @@
  *
  */
 
-package io.mapsmessaging.config;
+package io.mapsmessaging.config.network;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-public class TcpConfig {
+@ToString
+public class TcpConfig extends EndPointConfig {
+
   private int receiveBufferSize;
   private int sendBufferSize;
   private int timeout;
@@ -31,11 +36,12 @@ public class TcpConfig {
   private int soLingerDelaySec;
   private int readDelayOnFragmentation;
   private boolean enableReadDelayOnFragmentation;
-  private String serverReadBufferSize;
-  private String serverWriteBufferSize;
+  private long serverReadBufferSize;
+  private long serverWriteBufferSize;
   private int selectorThreadCount;
 
   public TcpConfig(ConfigurationProperties config) {
+    super(config);
     this.receiveBufferSize = config.getIntProperty("receiveBufferSize", 128000);
     this.sendBufferSize = config.getIntProperty("sendBufferSize", 128000);
     this.timeout = config.getIntProperty("timeout", 60000);
@@ -43,13 +49,13 @@ public class TcpConfig {
     this.soLingerDelaySec = config.getIntProperty("soLingerDelaySec", 10);
     this.readDelayOnFragmentation = config.getIntProperty("readDelayOnFragmentation", 100);
     this.enableReadDelayOnFragmentation = config.getBooleanProperty("enableReadDelayOnFragmentation", true);
-    this.serverReadBufferSize = config.getProperty("serverReadBufferSize", "10K");
-    this.serverWriteBufferSize = config.getProperty("serverWriteBufferSize", "10K");
+    this.serverReadBufferSize = parseBufferSize(config.getProperty("serverReadBufferSize", "10K"));
+    this.serverWriteBufferSize = parseBufferSize(config.getProperty("serverWriteBufferSize", "10K"));
     this.selectorThreadCount = config.getIntProperty("selectorThreadCount", 2);
   }
 
   public boolean update(TcpConfig newConfig) {
-    boolean hasChanged = false;
+    boolean hasChanged = super.update(newConfig);
 
     if (this.receiveBufferSize != newConfig.getReceiveBufferSize()) {
       this.receiveBufferSize = newConfig.getReceiveBufferSize();
@@ -79,11 +85,11 @@ public class TcpConfig {
       this.enableReadDelayOnFragmentation = newConfig.isEnableReadDelayOnFragmentation();
       hasChanged = true;
     }
-    if (!this.serverReadBufferSize.equals(newConfig.getServerReadBufferSize())) {
+    if (this.serverReadBufferSize != newConfig.getServerReadBufferSize()) {
       this.serverReadBufferSize = newConfig.getServerReadBufferSize();
       hasChanged = true;
     }
-    if (!this.serverWriteBufferSize.equals(newConfig.getServerWriteBufferSize())) {
+    if (this.serverWriteBufferSize != newConfig.getServerWriteBufferSize()) {
       this.serverWriteBufferSize = newConfig.getServerWriteBufferSize();
       hasChanged = true;
     }
@@ -91,12 +97,11 @@ public class TcpConfig {
       this.selectorThreadCount = newConfig.getSelectorThreadCount();
       hasChanged = true;
     }
-
     return hasChanged;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = new ConfigurationProperties();
+    ConfigurationProperties config = super.toConfigurationProperties();
     config.put("receiveBufferSize", this.receiveBufferSize);
     config.put("sendBufferSize", this.sendBufferSize);
     config.put("timeout", this.timeout);
@@ -104,8 +109,8 @@ public class TcpConfig {
     config.put("soLingerDelaySec", this.soLingerDelaySec);
     config.put("readDelayOnFragmentation", this.readDelayOnFragmentation);
     config.put("enableReadDelayOnFragmentation", this.enableReadDelayOnFragmentation);
-    config.put("serverReadBufferSize", this.serverReadBufferSize);
-    config.put("serverWriteBufferSize", this.serverWriteBufferSize);
+    config.put("serverReadBufferSize", formatBufferSize(this.serverReadBufferSize));
+    config.put("serverWriteBufferSize", formatBufferSize(this.serverWriteBufferSize));
     config.put("selectorThreadCount", this.selectorThreadCount);
     return config;
   }
