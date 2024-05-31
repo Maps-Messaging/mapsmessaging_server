@@ -176,7 +176,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   }
 
   public void register(EndPointServer endPointServer) {
-    if (!endPointServer.getConfig().getProperties().getBooleanProperty("discoverable", false)) {
+    if (!endPointServer.getConfig().getEndPointConfig().isDiscoverable()) {
       return;
     }
     EndPointURL url = endPointServer.getUrl();

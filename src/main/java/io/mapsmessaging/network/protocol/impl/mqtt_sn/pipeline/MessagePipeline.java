@@ -17,9 +17,13 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
@@ -27,9 +31,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Register;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -37,10 +38,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class MessagePipeline {
 
@@ -66,11 +65,12 @@ public class MessagePipeline {
     paused = new AtomicBoolean(false);
     empty = new AtomicInteger(0);
     logger = LoggerFactory.getLogger(MessagePipeline.class);
-    ConfigurationProperties props = protocol.getEndPoint().getConfig().getProperties();
-    maxInFlightEvents = props.getIntProperty("maxInFlightEvents", 1);
-    dropQoS0 = props.getBooleanProperty("dropQoS0Events", false);
+    MqttSnConfig config = (MqttSnConfig) protocol.getEndPoint().getConfig().getProtocolConfig("mqttsn");
 
-    long t = TimeUnit.SECONDS.toMillis(props.getIntProperty("eventQueueTimeout", 0));
+    maxInFlightEvents = config.getMaxInFlightEvents();
+    dropQoS0 = config.isDropQoS0();
+
+    long t = TimeUnit.SECONDS.toMillis(config.getEventQueueTimeout());
     eventTimeout = t == 0 ? (Long.MAX_VALUE >> 2) : t;
     logger.log(MQTT_SN_PIPELINE_CREATED, protocol.getName(), dropQoS0, maxInFlightEvents, eventTimeout);
   }

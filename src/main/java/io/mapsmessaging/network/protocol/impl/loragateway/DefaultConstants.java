@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.mapsmessaging.network.protocol.impl.loragateway;
 
 public class DefaultConstants {
 
-  public static final int LORA_MAXIMUM_TX_RATE = 10;
   public static final int RATE_RESET_INTERVAL = 1000;
 
   private DefaultConstants() {

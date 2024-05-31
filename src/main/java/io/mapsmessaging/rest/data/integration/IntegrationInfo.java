@@ -17,13 +17,12 @@
 
 package io.mapsmessaging.rest.data.integration;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
 import lombok.Data;
 import lombok.ToString;
-
-import java.io.Serializable;
-import java.util.Map;
 
 @ToString
 @Data
@@ -39,12 +38,12 @@ public class IntegrationInfo implements Serializable {
   private final int mappings;
 
   @Schema(description = "Configuration for the interface")
-  private final Map<String, Object> config;
+  private final EndPointServerConfig config;
 
   public IntegrationInfo(EndPointConnection endPointConnection){
     name = endPointConnection.getConfigName();
     state = endPointConnection.getState().getName();
-    config = endPointConnection.getConfig().getProperties().getMap();
+    config = endPointConnection.getConfig();
     remoteUrl = endPointConnection.getProperties().getProperty("url", "");
     mappings = endPointConnection.getDestinationMappings().size();
   }

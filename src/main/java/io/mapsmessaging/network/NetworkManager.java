@@ -17,7 +17,8 @@
 
 package io.mapsmessaging.network;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.NetworkManagerConfig;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -25,10 +26,8 @@ import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
-
 import java.io.IOException;
 import java.util.*;
 
@@ -38,26 +37,17 @@ public class NetworkManager implements ServiceManager, Agent {
   private final ServiceLoader<EndPointServerFactory> endPointServers;
   private final LinkedHashMap<String, EndPointManager> endPointManagers;
   private final NetworkManagerJMX bean;
-  private final List<ConfigurationProperties> adapters;
+  private final NetworkManagerConfig config;
 
   public NetworkManager() {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
-
-    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
-    Object obj = properties.get("data");
-    adapters = new ArrayList<>();
-    if (obj instanceof List) {
-      adapters.addAll((List<ConfigurationProperties>) obj);
-    } else if (obj instanceof ConfigurationProperties) {
-      adapters.add((ConfigurationProperties) obj);
-    }
+    config = NetworkManagerConfig.getInstance();
     logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
     endPointServers = ServiceLoader.load(EndPointServerFactory.class);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
-    if (properties.getBooleanProperty("preferIPv6Addresses", true)) {
-      System.setProperty("java.net.preferIPv6Addresses", "true");
-    }
+
+    System.setProperty("java.net.preferIPv6Addresses", ""+config.isPreferIpV6Addresses());
     bean = new NetworkManagerJMX(this);
   }
 
@@ -80,10 +70,9 @@ public class NetworkManager implements ServiceManager, Agent {
   }
 
   public void initialise() {
-    for (ConfigurationProperties configurationProperties : adapters) {
-      NetworkConfig networkConfig = new NetworkConfig(configurationProperties);
-      EndPointURL endPointURL = EndPointURLFactory.getInstance().create(networkConfig.getUrl());
-      initialiseInstance(endPointURL, networkConfig);
+    for (EndPointServerConfig endPointServerConfig : config.getEndPointServerConfigList()) {
+      EndPointURL endPointURL = EndPointURLFactory.getInstance().create(endPointServerConfig.getUrl());
+      initialiseInstance(endPointURL, endPointServerConfig);
     }
     startAll();
   }
@@ -91,12 +80,12 @@ public class NetworkManager implements ServiceManager, Agent {
   // We are constructing end points which open a resource, we need this resource to remain open
   // we add it to a list that manages the close
   @SuppressWarnings("java:S2095")
-  private void initialiseInstance(EndPointURL endPointURL, NetworkConfig networkConfig) {
+  private void initialiseInstance(EndPointURL endPointURL, EndPointServerConfig endPointServerConfig) {
     for (EndPointServerFactory endPointServerFactory : endPointServers) {
       if (endPointServerFactory.getName().equals(endPointURL.getProtocol())) {
         if (endPointServerFactory.active()) {
           try {
-            EndPointManager endPointManager = new EndPointManager(endPointURL, endPointServerFactory, networkConfig, bean);
+            EndPointManager endPointManager = new EndPointManager(endPointURL, endPointServerFactory, endPointServerConfig, bean);
             endPointManagers.put(endPointURL.toString(), endPointManager);
           } catch (IOException | RuntimeException iox) {
             logger.log(ServerLogMessages.NETWORK_MANAGER_START_FAILURE, iox, endPointURL.toString());

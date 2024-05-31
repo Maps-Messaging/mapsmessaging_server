@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
+import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,12 +66,12 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
     int datagramSize = NetworkInfoHelper.getMTU(info);
     if (datagramSize > 0) {
-      endPoint.getConfig().getProperties().put("serverReadBufferSize", "" + datagramSize * 2);
-      endPoint.getConfig().getProperties().put("serverWriteBufferSize", "" + datagramSize * 2);
+      endPoint.getConfig().setServerReadBufferSize(datagramSize * 2L);
+      endPoint.getConfig().setServerWriteBufferSize(datagramSize * 2L);
     }
 
     byte gatewayId;
-    String gatewayConfig = endPoint.getConfig().getProperties().getProperty("gatewayId", "1");
+    String gatewayConfig = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn")).getGatewayId();
     try {
       gatewayId = (byte) Integer.parseInt(gatewayConfig);
     } catch (Exception ex) {

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -29,10 +30,9 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolAcceptRunner;
-import lombok.Getter;
-
 import java.io.Closeable;
 import java.io.IOException;
+import lombok.Getter;
 
 public class EndPointManager implements Closeable, AcceptHandler {
 
@@ -45,19 +45,19 @@ public class EndPointManager implements Closeable, AcceptHandler {
   @Getter
   private EndPointServer endPointServer;
 
-  public EndPointManager(EndPointURL url, EndPointServerFactory factory, NetworkConfig nc, NetworkManagerJMX managerBean) throws IOException {
+  public EndPointManager(EndPointURL url, EndPointServerFactory factory, EndPointServerConfig endPointServerConfig, NetworkManagerJMX managerBean) throws IOException {
     logger = LoggerFactory.getLogger(NetworkManager.class.getName());
     ThreadContext.put("endpoint", url.toString());
     endPointURL = url;
-    protocols = nc.getProtocols();
+    protocols = endPointServerConfig.getProtocols();
     endPointServer = null;
     state = STATE.STOPPED;
-    int selectorCount = nc.getProperties().getIntProperty("selectorThreadCount", 5);
+    int selectorCount = endPointServerConfig.getSelectorThreadCount();
     EndPointManagerJMX bean = null;
     if (managerBean != null) {
-      bean = new EndPointManagerJMX(managerBean.getTypePath(), this, nc);
+      bean = new EndPointManagerJMX(managerBean.getTypePath(), this, endPointServerConfig);
     }
-    endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, nc, bean);
+    endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, endPointServerConfig, bean);
     ThreadContext.clearAll();
   }
 

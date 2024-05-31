@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.semtech;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.config.protocol.SemtechConfig;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -33,17 +34,17 @@ import io.mapsmessaging.network.protocol.impl.semtech.handlers.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.util.concurrent.ExecutionException;
+import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import javax.security.auth.Subject;
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
-import java.util.concurrent.ExecutionException;
-
 public class SemTechProtocol extends ProtocolImpl {
 
+  @Getter
   private final Logger logger;
   private final SelectorTask selectorTask;
   private final PacketFactory packetFactory;
@@ -61,21 +62,22 @@ public class SemTechProtocol extends ProtocolImpl {
   protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint, String sessionId) throws IOException {
     super(endPoint);
     logger = LoggerFactory.getLogger("SemTech Protocol on " + endPoint.getName());
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
+    selectorTask = new SelectorTask(this, endPoint.getConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     packetFactory = new PacketFactory();
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
 
-    int maxQueued = endPoint.getConfig().getProperties().getIntProperty("MaxQueueSize", 10);
+    SemtechConfig semtechConfig = (SemtechConfig) endPoint.getConfig().getProtocolConfig("semtech");
+    int maxQueued = semtechConfig.getMaxQueued();
     SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), new ProtocolClientConnection(this));
     sessionContext.setPersistentSession(false);
     sessionContext.setResetState(true);
     sessionContext.setReceiveMaximum(maxQueued);
     try {
       session = SessionManager.getInstance().createAsync(sessionContext, this).get();
-      String inboundTopicName = endPoint.getConfig().getProperties().getProperty("inbound", "/semtech/inbound");
-      String outboundTopicName = endPoint.getConfig().getProperties().getProperty("outbound", "/semtech/outbound");
-      String statusTopicName = endPoint.getConfig().getProperties().getProperty("status", inboundTopicName);
+      String inboundTopicName = semtechConfig.getInboundTopicName();
+      String outboundTopicName = semtechConfig.getOutboundTopicName();
+      String statusTopicName = semtechConfig.getStatusTopicName();
       gatewayManager = new GatewayManager(session, inboundTopicName, statusTopicName, outboundTopicName, maxQueued);
     } catch (InterruptedException | ExecutionException e) {
       if (Thread.currentThread().isInterrupted()) {
@@ -128,10 +130,6 @@ public class SemTechProtocol extends ProtocolImpl {
     selectorTask.push(semTechPacket);
     logger.log(ServerLogMessages.SEMTECH_SENDING_PACKET, semTechPacket);
     sentMessage();
-  }
-
-  public Logger getLogger() {
-    return logger;
   }
 
   @Override

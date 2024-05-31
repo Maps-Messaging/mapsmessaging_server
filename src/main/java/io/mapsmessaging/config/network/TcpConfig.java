@@ -35,10 +35,8 @@ public class TcpConfig extends EndPointConfig {
   private int backlog;
   private int soLingerDelaySec;
   private int readDelayOnFragmentation;
+  private int fragmentationLimit;
   private boolean enableReadDelayOnFragmentation;
-  private long serverReadBufferSize;
-  private long serverWriteBufferSize;
-  private int selectorThreadCount;
 
   public TcpConfig(ConfigurationProperties config) {
     super(config);
@@ -48,10 +46,9 @@ public class TcpConfig extends EndPointConfig {
     this.backlog = config.getIntProperty("backlog", 100);
     this.soLingerDelaySec = config.getIntProperty("soLingerDelaySec", 10);
     this.readDelayOnFragmentation = config.getIntProperty("readDelayOnFragmentation", 100);
-    this.enableReadDelayOnFragmentation = config.getBooleanProperty("enableReadDelayOnFragmentation", true);
-    this.serverReadBufferSize = parseBufferSize(config.getProperty("serverReadBufferSize", "10K"));
-    this.serverWriteBufferSize = parseBufferSize(config.getProperty("serverWriteBufferSize", "10K"));
-    this.selectorThreadCount = config.getIntProperty("selectorThreadCount", 2);
+    this.fragmentationLimit = config.getIntProperty("fragmentationLimit", 5);
+    this.enableReadDelayOnFragmentation =
+        config.getBooleanProperty("enableReadDelayOnFragmentation", true);
   }
 
   public boolean update(TcpConfig newConfig) {
@@ -77,6 +74,11 @@ public class TcpConfig extends EndPointConfig {
       this.soLingerDelaySec = newConfig.getSoLingerDelaySec();
       hasChanged = true;
     }
+
+    if (this.fragmentationLimit != newConfig.getFragmentationLimit()) {
+      this.fragmentationLimit = newConfig.getFragmentationLimit();
+      hasChanged = true;
+    }
     if (this.readDelayOnFragmentation != newConfig.getReadDelayOnFragmentation()) {
       this.readDelayOnFragmentation = newConfig.getReadDelayOnFragmentation();
       hasChanged = true;
@@ -85,18 +87,7 @@ public class TcpConfig extends EndPointConfig {
       this.enableReadDelayOnFragmentation = newConfig.isEnableReadDelayOnFragmentation();
       hasChanged = true;
     }
-    if (this.serverReadBufferSize != newConfig.getServerReadBufferSize()) {
-      this.serverReadBufferSize = newConfig.getServerReadBufferSize();
-      hasChanged = true;
-    }
-    if (this.serverWriteBufferSize != newConfig.getServerWriteBufferSize()) {
-      this.serverWriteBufferSize = newConfig.getServerWriteBufferSize();
-      hasChanged = true;
-    }
-    if (this.selectorThreadCount != newConfig.getSelectorThreadCount()) {
-      this.selectorThreadCount = newConfig.getSelectorThreadCount();
-      hasChanged = true;
-    }
+
     return hasChanged;
   }
 
@@ -109,9 +100,7 @@ public class TcpConfig extends EndPointConfig {
     config.put("soLingerDelaySec", this.soLingerDelaySec);
     config.put("readDelayOnFragmentation", this.readDelayOnFragmentation);
     config.put("enableReadDelayOnFragmentation", this.enableReadDelayOnFragmentation);
-    config.put("serverReadBufferSize", formatBufferSize(this.serverReadBufferSize));
-    config.put("serverWriteBufferSize", formatBufferSize(this.serverWriteBufferSize));
-    config.put("selectorThreadCount", this.selectorThreadCount);
+    config.put("fragmentationLimit", this.fragmentationLimit);
     return config;
   }
 }

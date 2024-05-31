@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,18 +17,17 @@
 
 package io.mapsmessaging.network.admin;
 
-import io.mapsmessaging.network.NetworkConfig;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.utilities.admin.JMXManager;
-
-import javax.management.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.management.*;
 
 public class NetworkConfigJMX implements DynamicMBean {
 
   protected final ObjectInstance mbean;
   protected final List<String> typePath;
-  private final NetworkConfig networkConfig;
+  private final EndPointServerConfig networkConfig;
   private final MBeanInfo mBeanInfo;
 
   public NetworkConfigJMX() {
@@ -39,7 +38,7 @@ public class NetworkConfigJMX implements DynamicMBean {
   }
 
   //<editor-fold desc="Life cycle functions">
-  public NetworkConfigJMX(List<String> parent, NetworkConfig networkConfig) {
+  public NetworkConfigJMX(List<String> parent, EndPointServerConfig networkConfig) {
     this.networkConfig = networkConfig;
     typePath = new ArrayList<>(parent);
     typePath.add("config=Config");
@@ -49,7 +48,7 @@ public class NetworkConfigJMX implements DynamicMBean {
     } catch (NoSuchMethodException noSuchMethodException) {
       // We know it will never be thrown so we can ignore this
     }
-    List<String> keyList = new ArrayList<>(networkConfig.getProperties().keySet());
+    List<String> keyList = new ArrayList<>(networkConfig.toConfigurationProperties().keySet());
 
     MBeanAttributeInfo[] attributeInfos = new MBeanAttributeInfo[keyList.size()];
     for (int x = 0; x < keyList.size(); x++) {
@@ -77,7 +76,7 @@ public class NetworkConfigJMX implements DynamicMBean {
     if (attribute.toLowerCase().contains("pass")) {
       return "**********";
     } else {
-      return networkConfig.getProperties().get(attribute);
+      return networkConfig.toConfigurationProperties().get(attribute);
     }
   }
 

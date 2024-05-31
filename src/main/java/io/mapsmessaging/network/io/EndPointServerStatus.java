@@ -17,16 +17,15 @@
 
 package io.mapsmessaging.network.io;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
-import lombok.Getter;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.Getter;
 
 public abstract class EndPointServerStatus {
 
@@ -56,7 +55,7 @@ public abstract class EndPointServerStatus {
     totalErrors = new LongAdder();
   }
 
-  public abstract NetworkConfig getConfig();
+  public abstract EndPointServerConfig getConfig();
 
   public abstract void handleNewEndPoint(EndPoint endPoint) throws IOException;
 

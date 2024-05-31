@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,18 +17,17 @@
 
 package io.mapsmessaging.network.io.impl.tcp;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
@@ -53,15 +52,15 @@ public class TCPEndPointServer extends EndPointServer {
   private SelectionKey selectionKey;
   private SelectableChannel selectable;
 
-  public TCPEndPointServer(InetSocketAddress bindAddr, SelectorLoadManager sel, AcceptHandler accept, NetworkConfig config, EndPointURL url, EndPointManagerJMX managerMBean) {
+  public TCPEndPointServer(InetSocketAddress bindAddr, SelectorLoadManager sel, AcceptHandler accept, EndPointServerConfig config, EndPointURL url, EndPointManagerJMX managerMBean) {
     super(accept, url, config);
     this.managerMBean = managerMBean;
     selectorLoadManager = sel;
     selector = selectorLoadManager.allocate(); // Used for accept
-    authenticationConfig = config.getAuthConfig();
+    authenticationConfig = config.getAuthenticationRealm();
     bindAddress = bindAddr;
-    backLog = config.getProperties().getIntProperty("backlog", 100);
-    selectorTaskWait = config.getProperties().getIntProperty("taskWait", 10);
+    backLog = config.getBacklog();
+    selectorTaskWait = config.getSelectorTaskWait();
   }
 
   // We need to open a socket, its a socket library so we can ignore this issue

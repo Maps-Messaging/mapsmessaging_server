@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,22 +17,26 @@
 
 package io.mapsmessaging.network.io.impl.noop;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-
 import java.io.IOException;
 
 public class NoOpEndPointServerFactory implements EndPointServerFactory {
 
   @Override
-  public EndPointServer instance(EndPointURL url, SelectorLoadManager selector, AcceptHandler acceptHandler, NetworkConfig config, EndPointManagerJMX managerMBean)
+  public EndPointServer instance(
+      EndPointURL url,
+      SelectorLoadManager selector,
+      AcceptHandler acceptHandler,
+      EndPointServerConfig endPointServerConfig,
+      EndPointManagerJMX managerMBean)
       throws IOException {
-    return new NoOpEndPointServer(acceptHandler, url, config);
+    return new NoOpEndPointServer(acceptHandler, url, endPointServerConfig);
   }
 
   @Override

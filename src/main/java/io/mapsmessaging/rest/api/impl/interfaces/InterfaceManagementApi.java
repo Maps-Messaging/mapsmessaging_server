@@ -21,7 +21,6 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.interfaces.InterfaceInfo;
@@ -52,16 +51,12 @@ public class InterfaceManagementApi extends BaseRestApi {
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    ConfigurationProperties global = endPointManagers.stream()
-          .findFirst()
-          .map(endPointManager -> endPointManager.getEndPointServer().getConfig().getProperties().getGlobal())
-          .orElse(null);
 
     List<InterfaceInfo> protocols = endPointManagers.stream()
         .map(InterfaceInfo::new)
         .filter(protocol -> parser == null || parser.evaluate(protocol))
         .collect(Collectors.toList());
-    return new InterfaceDetailResponse(request, protocols, global);
+    return new InterfaceDetailResponse(request, protocols, null);
   }
 
 

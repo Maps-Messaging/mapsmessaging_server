@@ -15,26 +15,30 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.network;
 
-import io.mapsmessaging.config.network.EndPointConfig;
-import io.mapsmessaging.config.network.UdpConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-public class SerialConfig extends EndPointConfig {
+@EqualsAndHashCode(callSuper = true)
+@Data
+@NoArgsConstructor
+@ToString
+public class TlsConfig extends TcpConfig {
 
-  public SerialConfig(ConfigurationProperties config) {
+  private SslConfig sslConfig;
+
+  public TlsConfig(ConfigurationProperties config) {
     super(config);
-  }
-
-  public boolean update(UdpConfig newConfig) {
-    boolean hasChanged = super.update(newConfig);
-
-    return hasChanged;
+    sslConfig = new SslConfig(config);
   }
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = super.toConfigurationProperties();
+    config.putAll(sslConfig.toConfigurationProperties().getMap());
     return config;
   }
 }

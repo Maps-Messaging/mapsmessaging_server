@@ -18,17 +18,16 @@
 package io.mapsmessaging.network.io;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
-import lombok.Getter;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
 
 public abstract class EndPointServer extends EndPointServerStatus implements Closeable, Selectable {
 
@@ -37,9 +36,9 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
   protected final Map<Long, EndPoint> activeEndPoints;
 
   @Getter
-  private final NetworkConfig config;
+  private final EndPointServerConfig config;
 
-  protected EndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
+  protected EndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfig config) {
     super(url);
     this.config = config;
     acceptHandler = accept;
@@ -80,7 +79,11 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
   }
 
   public String getConfigName() {
-    return config.getProperties().getProperty("name", getName());
+    String tmp = config.getName();
+    if(tmp == null || !tmp.isEmpty()) {
+      tmp = getName();
+    }
+    return tmp;
   }
 
   public String getName() {

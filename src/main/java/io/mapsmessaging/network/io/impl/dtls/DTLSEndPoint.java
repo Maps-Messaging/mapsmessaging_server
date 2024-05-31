@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,14 +24,13 @@ import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.dtls.state.StateChangeListener;
 import io.mapsmessaging.network.io.impl.dtls.state.StateEngine;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.FutureTask;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeoutable {
 
@@ -105,7 +104,7 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeo
 
   @Override
   public String getAuthenticationConfig() {
-    return server.getConfig().getAuthConfig();
+    return server.getConfig().getAuthenticationRealm();
   }
 
   @Override

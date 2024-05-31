@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,18 +20,17 @@ package io.mapsmessaging.network.admin;
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import com.udojava.jmx.wrapper.JMXBeanOperation;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.EndPointManager;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
-import lombok.Getter;
-
-import javax.management.ObjectInstance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.management.ObjectInstance;
+import lombok.Getter;
 
 @JMXBean(description = "End Point Manager JMX Bean")
 public class EndPointManagerJMX implements HealthMonitor {
@@ -42,7 +41,7 @@ public class EndPointManagerJMX implements HealthMonitor {
   private final ObjectInstance mbean;
 
   //<editor-fold desc="Life cycle functions">
-  public EndPointManagerJMX(List<String> parent, EndPointManager endPoint, NetworkConfig nc) {
+  public EndPointManagerJMX(List<String> parent, EndPointManager endPoint, EndPointServerConfig nc) {
     endPointManager = endPoint;
     typePath = new ArrayList<>(parent);
     typePath.add("endPointManagerName=" + endPoint.getName());

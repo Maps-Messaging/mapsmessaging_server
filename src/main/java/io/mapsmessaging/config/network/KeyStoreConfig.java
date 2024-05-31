@@ -20,9 +20,11 @@ package io.mapsmessaging.config.network;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @NoArgsConstructor
+@ToString
 public class KeyStoreConfig {
   private String alias;
   private String type;

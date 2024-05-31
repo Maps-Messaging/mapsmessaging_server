@@ -17,10 +17,9 @@
 
 package io.mapsmessaging.network.io.security;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.network.HmacConfig;
 import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
 import io.mapsmessaging.network.io.security.impl.signature.PrependerSignatureManager;
-
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -43,17 +42,17 @@ public class PacketIntegrityFactory {
     return implementations.get(algoritm).initialise(stamper, key);
   }
 
-  public PacketIntegrity createPacketIntegrity(ConfigurationProperties properties) {
-    String hmacAlgorithm = properties.getProperty("HmacAlgorithm");
+  public PacketIntegrity createPacketIntegrity(HmacConfig node) {
+    String hmacAlgorithm = node.getHmacAlgorithm();
     if (hmacAlgorithm != null) {
-      String managerName = properties.getProperty("HmacManager", "Appender");
+      String managerName = node.getHmacManager();
       SignatureManager manager;
       if (managerName.equalsIgnoreCase("appender")) {
         manager = new AppenderSignatureManager();
       } else {
         manager = new PrependerSignatureManager();
       }
-      String keyStr = properties.getProperty("HmacSharedKey");
+      String keyStr = node.getHmacSharedKey();
       byte[] key = SharedKeyHelper.convertKey(keyStr);
       try {
         return PacketIntegrityFactory.getInstance().getPacketIntegrity(hmacAlgorithm, manager, key);

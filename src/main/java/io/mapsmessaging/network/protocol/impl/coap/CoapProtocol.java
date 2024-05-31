@@ -17,10 +17,14 @@
 
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.config.protocol.CoapConfig;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
@@ -38,12 +42,6 @@ import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionState;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import lombok.Getter;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.List;
@@ -51,9 +49,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
+import lombok.Getter;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class CoapProtocol extends ProtocolImpl {
 
@@ -104,8 +104,9 @@ public class CoapProtocol extends ProtocolImpl {
     this.socketAddress = socketAddress;
     this.coapInterfaceManager = coapInterfaceManager;
     mtu = coapInterfaceManager.getMtu();
-    maxBlockSize = (int) endPoint.getConfig().getProperties().getLongProperty("maxBlockSize", 128);
-    int idle = (int) (endPoint.getConfig().getProperties().getLongProperty("idleTimePeriod", 120));
+    CoapConfig coapConfig = (CoapConfig) endPoint.getConfig().getProtocolConfig("coap");
+    maxBlockSize = coapConfig.getMaxBlockSize();
+    int idle = coapConfig.getIdleTime();
     keepAlive = idle * 1000L;
     blockReceiveMonitor = new BlockReceiveMonitor();
 

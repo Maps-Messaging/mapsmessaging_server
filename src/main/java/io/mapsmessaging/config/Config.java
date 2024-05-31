@@ -23,27 +23,24 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
-    include = JsonTypeInfo.As.PROPERTY,
-    property = "type"
-)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = MessageDaemonConfig.class, name = "messageDaemon"),
-    @JsonSubTypes.Type(value = DiscoveryManagerConfig.class, name = "discoveryManager"),
-    @JsonSubTypes.Type(value = HawtioConfig.class, name = "hawtioManager"),
-    @JsonSubTypes.Type(value = JolokiaConfig.class, name = "jolokiaConfig"),
-
+  @JsonSubTypes.Type(value = MessageDaemonConfig.class, name = "messageDaemon"),
+  @JsonSubTypes.Type(value = DiscoveryManagerConfig.class, name = "discoveryManager"),
+  @JsonSubTypes.Type(value = HawtioConfig.class, name = "hawtioManager"),
+  @JsonSubTypes.Type(value = JolokiaConfig.class, name = "jolokiaConfig"),
+  @JsonSubTypes.Type(value = NetworkManagerConfig.class, name = "networkManagerConfig"),
 })
-@Schema(description = "Abstract base class for all server configurations",
+@Schema(
+    description = "Abstract base class for all server configurations",
     discriminatorProperty = "type",
     discriminatorMapping = {
-        @DiscriminatorMapping(value = "messageDaemon", schema = MessageDaemonConfig.class),
-        @DiscriminatorMapping(value = "discoveryManager", schema = DiscoveryManagerConfig.class),
-        @DiscriminatorMapping(value = "hawtioManager", schema = HawtioConfig.class),
-        @DiscriminatorMapping(value = "jolokiaConfig", schema = JolokiaConfig.class),
+      @DiscriminatorMapping(value = "messageDaemon", schema = MessageDaemonConfig.class),
+      @DiscriminatorMapping(value = "discoveryManager", schema = DiscoveryManagerConfig.class),
+      @DiscriminatorMapping(value = "hawtioManager", schema = HawtioConfig.class),
+      @DiscriminatorMapping(value = "jolokiaConfig", schema = JolokiaConfig.class),
+      @DiscriminatorMapping(value = "networkManagerConfig", schema = NetworkManagerConfig.class),
     })
-
 public abstract class Config {
 
   public abstract ConfigurationProperties toConfigurationProperties();

@@ -17,7 +17,8 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.network.DtlsConfig;
+import io.mapsmessaging.config.network.UdpConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPoint;
@@ -32,18 +33,17 @@ import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.security.ssl.SslHelper;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class DTLSSessionManager implements Closeable, SelectorCallback {
 
@@ -57,7 +57,6 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
   private final AcceptHandler acceptHandler;
   private final UDPInterfaceInformation inetAddress;
   private final EndPointManagerJMX managerMBean;
-  private final ConfigurationProperties dtls;
 
   public DTLSSessionManager(UDPEndPoint udpEndPoint,
       NetworkInterface inetAddress,
@@ -65,8 +64,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
       ProtocolImplFactory protocolImplFactory,
       SSLContext sslContext,
       AcceptHandler acceptHandler,
-      EndPointManagerJMX managerMBean,
-     ConfigurationProperties dtls)
+      EndPointManagerJMX managerMBean)
       throws IOException {
     this.udpEndPoint = udpEndPoint;
     this.sslContext = sslContext;
@@ -75,9 +73,8 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     this.protocolImplFactory = protocolImplFactory;
     this.inetAddress = new UDPInterfaceInformation(inetAddress);
     this.managerMBean = managerMBean;
-    this.dtls = dtls;
-    selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getProperties(), udpEndPoint.isUDP());
-    long timeout = udpEndPoint.getConfig().getProperties().getLongProperty("idleSessionTimeout", 600);
+    selectorTask = new SelectorTask(this, udpEndPoint.getConfig(), udpEndPoint.isUDP());
+    long timeout = ((UdpConfig)udpEndPoint.getConfig().getEndPointConfig()).getIdleSessionTimeout();
     sessionMapping = new UDPSessionManager<>(timeout);
     udpEndPoint.register(SelectionKey.OP_READ, selectorTask);
   }
@@ -88,7 +85,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     DTLSEndPoint endPoint;
     if (state == null) {
       StateEngine stateEngine;
-      SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, dtls);
+      SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, ((DtlsConfig)udpEndPoint.getConfig().getEndPointConfig()).getSslConfig().toConfigurationProperties());
       SSLParameters paras = sslEngine.getSSLParameters();
       //int mtu = inetAddress.getMTU()-40;
       int mtu = 8192;

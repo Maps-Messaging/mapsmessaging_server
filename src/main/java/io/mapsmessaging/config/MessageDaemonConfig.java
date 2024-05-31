@@ -48,11 +48,6 @@ public class MessageDaemonConfig extends Config {
   private double latitude;
   private double longitude;
 
-
-  public static MessageDaemonConfig getInstance(){
-    return new MessageDaemonConfig(ConfigurationManager.getInstance().getProperties("MessageDaemon"));
-  }
-
   // Constructor to load properties from ConfigurationProperties
   private MessageDaemonConfig(ConfigurationProperties config) {
     this.delayedPublishInterval = config.getIntProperty("DelayedPublishInterval", 1000);
@@ -70,6 +65,11 @@ public class MessageDaemonConfig extends Config {
     this.tagMetaData = config.getBooleanProperty("tagMetaData", false);
     this.latitude = config.getDoubleProperty("latitude", 0.0);
     this.longitude = config.getDoubleProperty("longitude", 0.0);
+  }
+
+  public static MessageDaemonConfig getInstance() {
+    return new MessageDaemonConfig(
+        ConfigurationManager.getInstance().getProperties("MessageDaemon"));
   }
 
   // Method to update properties from another MessageDaemonConfig object

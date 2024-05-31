@@ -17,12 +17,14 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
+import static java.nio.channels.SelectionKey.OP_READ;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.protocol.StompConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -36,15 +38,12 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import java.io.IOException;
+import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import javax.security.auth.Subject;
-import java.io.IOException;
-
-import static java.nio.channels.SelectionKey.OP_READ;
 
 public class StompProtocol extends ProtocolImpl {
 
@@ -57,15 +56,17 @@ public class StompProtocol extends ProtocolImpl {
   @Getter
   private String version;
 
+  @Getter
+  private int maxReceiveSize;
+
   public StompProtocol(EndPoint endPoint) {
     super(endPoint);
     logger = LoggerFactory.getLogger("STOMP Protocol on " + endPoint.getName());
     logger.log(ServerLogMessages.STOMP_STARTING, endPoint.toString());
-    ConfigurationProperties properties = endPoint.getConfig().getProperties();
-    int maxBufferSize = DefaultConstants.MAXIMUM_BUFFER_SIZE;
-    maxBufferSize = properties.getIntProperty("maximumBufferSize", maxBufferSize);
+    int maxBufferSize = ((StompConfig)endPoint.getConfig().getProtocolConfig("stomp")).getMaxBufferSize();
+    maxReceiveSize = ((StompConfig)endPoint.getConfig().getProtocolConfig("stomp")).getMaxReceive();
     version = "1.2";
-    selectorTask = new SelectorTask(this, properties);
+    selectorTask = new SelectorTask(this, endPoint.getConfig());
     factory = new FrameFactory(maxBufferSize, endPoint.isClient());
     activeFrame = null;
     stateEngine = new StateEngine(this);

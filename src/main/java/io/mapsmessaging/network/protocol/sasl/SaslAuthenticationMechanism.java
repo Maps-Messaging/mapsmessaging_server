@@ -17,17 +17,17 @@
 
 package io.mapsmessaging.network.protocol.sasl;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.auth.SaslConfig;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.AuthenticationMechanism;
 import io.mapsmessaging.security.identity.IdentityLookup;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
-import lombok.Getter;
-
+import java.io.IOException;
+import java.util.Map;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import java.io.IOException;
-import java.util.Map;
+import lombok.Getter;
 
 public class SaslAuthenticationMechanism implements AuthenticationMechanism {
 
@@ -38,17 +38,17 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
   @Getter
   private final String mechanism;
 
-  public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, ConfigurationProperties properties) throws IOException {
-    ConfigurationProperties config = (ConfigurationProperties) properties.get("sasl");
+  public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, EndPointServerConfig properties) throws IOException {
+    SaslConfig saslConfig = properties.getSaslConfig();
     IdentityLookup identityLookup;
     ServerCallbackHandler serverCallbackHandler;
-    if (config.getProperty(IDENTITY_PROVIDER).equalsIgnoreCase("system")) {
+    if (saslConfig.getIdentityProvider().equalsIgnoreCase("system")) {
       identityLookup = IdentityLookupFactory.getInstance().getSiteWide("system");
     } else {
-      identityLookup = IdentityLookupFactory.getInstance().get(config.getProperty(IDENTITY_PROVIDER), config.getMap());
+      identityLookup = IdentityLookupFactory.getInstance().get(saslConfig.getIdentityProvider(), saslConfig.getSaslEntries().getMap());
     }
     if(identityLookup == null){
-      throw new SaslException("Unable to locate identity look up mechanism for " + config.getProperty(IDENTITY_PROVIDER));
+      throw new SaslException("Unable to locate identity look up mechanism for " + saslConfig.getSaslEntries());
     }
     serverCallbackHandler = new ServerCallbackHandler(serverName, identityLookup);
     saslServer = Sasl.createSaslServer(mechanism, protocol, serverName, props, serverCallbackHandler);

@@ -52,7 +52,8 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       ThreadContext.put("endpoint", url);
       ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
       ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
-      ConfigurationProperties properties = endpoint.getConfig().getProperties();
+      endpoint.getConfig().getProtocolConfig()
+      ConfigurationProperties properties = endpoint.getConfig().
       if (properties.containsKey("remote")) {
         properties = (ConfigurationProperties) properties.get("remote");
       }

@@ -35,19 +35,18 @@ import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
+import lombok.NonNull;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class NMEAProtocol extends ProtocolImpl {
 
@@ -74,7 +73,7 @@ public class NMEAProtocol extends ProtocolImpl {
     sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    selectorTask = new SelectorTask(this, endPoint.getConfig());
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));

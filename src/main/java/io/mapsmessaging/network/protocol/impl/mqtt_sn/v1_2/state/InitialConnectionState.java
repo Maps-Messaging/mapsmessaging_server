@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -50,8 +49,10 @@ public class InitialConnectionState implements State {
       scb.setResetState(connect.clean());
       scb.setKeepAlive(connect.getDuration());
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getDuration()));
-      scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
-      scb.setSessionExpiry(endPoint.getConfig().getProperties().getIntProperty("maximumSessionExpiry", DefaultConstants.SESSION_TIME_OUT));
+      MqttSnConfig config = (MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn");
+
+      scb.setReceiveMaximum(config.getReceiveMaximum());
+      scb.setSessionExpiry(config.getMaximumSessionExpiry());
       if (connect.will()) {
         stateEngine.setSessionContextBuilder(scb);
         WillTopicRequest topicRequest = new WillTopicRequest();

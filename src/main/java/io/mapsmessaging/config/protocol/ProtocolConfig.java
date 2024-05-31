@@ -20,18 +20,25 @@ package io.mapsmessaging.config.protocol;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @ToString
 public class ProtocolConfig extends Config {
 
   private String name;
+  private ConnectionAuthConfig remoteAuthConfig;
 
   public ProtocolConfig(ConfigurationProperties config) {
     this.name = config.getProperty("name");
+    if (config.getProperty("remoteAuthConfig") != null) {
+      remoteAuthConfig =
+          new ConnectionAuthConfig((ConfigurationProperties) config.get("remoteAuthConfig"));
+    }
   }
 
   public boolean update(ProtocolConfig newConfig) {
@@ -40,13 +47,18 @@ public class ProtocolConfig extends Config {
       this.name = newConfig.getName();
       hasChanged = true;
     }
+    if (remoteAuthConfig != null && newConfig.getRemoteAuthConfig() != null) {
+      hasChanged = remoteAuthConfig.update(newConfig.remoteAuthConfig);
+    }
     return hasChanged;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("name", this.name);
+    if (remoteAuthConfig != null) {
+      config.put("remoteAuthConfig", remoteAuthConfig.toConfigurationProperties());
+    }
     return config;
   }
 }
-

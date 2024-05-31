@@ -30,14 +30,46 @@ import lombok.ToString;
 @ToString
 public class EndPointConfig extends Config {
 
+  private int selectorThreadCount;
+  private boolean isDiscoverable;
+  private long serverReadBufferSize;
+  private long serverWriteBufferSize;
+
   public EndPointConfig(ConfigurationProperties config) {
+    this.selectorThreadCount = config.getIntProperty("selectorThreadCount", 2);
+    this.isDiscoverable = config.getBooleanProperty("isDiscoverable", false);
+    this.serverReadBufferSize = parseBufferSize(config.getProperty("serverReadBufferSize", "10K"));
+    this.serverWriteBufferSize =
+        parseBufferSize(config.getProperty("serverWriteBufferSize", "10K"));
   }
 
   public boolean update(EndPointConfig newConfig) {
-    return false;
+    boolean hasChanged = false;
+    if (this.selectorThreadCount != newConfig.getSelectorThreadCount()) {
+      this.selectorThreadCount = newConfig.getSelectorThreadCount();
+      hasChanged = true;
+    }
+    if (this.isDiscoverable != newConfig.isDiscoverable()) {
+      this.isDiscoverable = newConfig.isDiscoverable();
+      hasChanged = true;
+    }
+    if (this.serverReadBufferSize != newConfig.getServerReadBufferSize()) {
+      this.serverReadBufferSize = newConfig.getServerReadBufferSize();
+      hasChanged = true;
+    }
+    if (this.serverWriteBufferSize != newConfig.getServerWriteBufferSize()) {
+      this.serverWriteBufferSize = newConfig.getServerWriteBufferSize();
+      hasChanged = true;
+    }
+    return hasChanged;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    return new ConfigurationProperties();
+    ConfigurationProperties config = new ConfigurationProperties();
+    config.put("selectorThreadCount", this.selectorThreadCount);
+    config.put("discoverable", this.isDiscoverable);
+    config.put("serverReadBufferSize", formatBufferSize(this.serverReadBufferSize));
+    config.put("serverWriteBufferSize", formatBufferSize(this.serverWriteBufferSize));
+    return config;
   }
 }

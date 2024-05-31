@@ -20,9 +20,11 @@ package io.mapsmessaging.config.network;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @NoArgsConstructor
+@ToString
 public class SslConfig {
   private boolean clientCertificateRequired;
   private boolean clientCertificateWanted;
@@ -33,13 +35,25 @@ public class SslConfig {
   private KeyStoreConfig trustStore;
 
   public SslConfig(ConfigurationProperties config) {
+    ConfigurationProperties securityProps = locateConfig(config);
     this.clientCertificateRequired = config.getBooleanProperty("clientCertificateRequired", false);
     this.clientCertificateWanted = config.getBooleanProperty("clientCertificateWanted", false);
     this.crlUrl = config.getProperty("crlUrl", null);
     this.crlInterval = config.getLongProperty("crlInterval", 0);
 
-    this.keyStore = new KeyStoreConfig((ConfigurationProperties) config.get("keyStore"));
-    this.trustStore = new KeyStoreConfig((ConfigurationProperties) config.get("trustStore"));
+    this.keyStore = new KeyStoreConfig((ConfigurationProperties) securityProps.get("keyStore"));
+    this.trustStore = new KeyStoreConfig((ConfigurationProperties) securityProps.get("trustStore"));
+  }
+
+  private ConfigurationProperties locateConfig(ConfigurationProperties config) {
+    if (config.containsKey("clientCertificateRequired")) {
+      return config;
+    }
+    ConfigurationProperties security = (ConfigurationProperties) config.get("security");
+    if (security != null) {
+      security = (ConfigurationProperties) security.get("tls");
+    }
+    return security;
   }
 
   public boolean update(SslConfig newConfig) {

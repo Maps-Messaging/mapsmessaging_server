@@ -30,7 +30,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -120,7 +119,7 @@ public class ConnectListener extends BaseConnectionListener {
     if (connect.getProtocolLevel() == 3) {
       strict = true; // For MQTT 3.1 it must be strict to adhere to the standard
     } else {
-      strict = protocol.getEndPoint().getConfig().getProperties().getBooleanProperty("strictClientId", false);
+      strict =((MQTTProtocol)protocol).getMqttConfig().isStrictClientId();
     }
     return strict;
   }

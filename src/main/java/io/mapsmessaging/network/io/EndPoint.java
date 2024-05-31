@@ -17,16 +17,12 @@
 
 package io.mapsmessaging.network.io;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
-import lombok.Getter;
-import lombok.Setter;
-
-import javax.security.auth.Subject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -37,6 +33,9 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.Setter;
 
 public abstract class EndPoint implements Closeable {
 
@@ -132,7 +131,7 @@ public abstract class EndPoint implements Closeable {
 
   }
 
-  public NetworkConfig getConfig() {
+  public EndPointServerConfig getConfig() {
     return server.getConfig();
   }
 

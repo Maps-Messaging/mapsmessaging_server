@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.hmac;
 
+import io.mapsmessaging.config.network.UdpConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
@@ -26,7 +27,6 @@ import io.mapsmessaging.network.io.impl.udp.session.UDPSessionManager;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.network.io.security.NodeSecurity;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   ) throws IOException {
     super(inetSocketAddress, selector, id, server, authConfig, managerMBean);
     this.securityMap = securityMap;
-    long cacheExpiryTime = getConfig().getProperties().getLongProperty("HMACHostLookupCacheExpiry", 600);
+    long cacheExpiryTime = ((UdpConfig)getConfig().getEndPointConfig()).getHmacHostLookupCacheExpiry();
     cacheMap = new UDPSessionManager<>(cacheExpiryTime);
   }
 

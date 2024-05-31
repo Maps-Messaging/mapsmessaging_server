@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -25,7 +24,8 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.auth.SaslConfig;
+import io.mapsmessaging.config.protocol.MqttV5Config;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -45,17 +45,16 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("DuplicatedBlocks")
@@ -100,7 +99,8 @@ public class MQTT5Protocol extends ProtocolImpl {
   @Getter
   @Setter
   private boolean sendProblemInformation;
-
+  @Getter
+  private final MqttV5Config mqttConfig;
 
   public MQTT5Protocol(EndPoint endPoint, Packet packet) throws IOException {
     super(endPoint);
@@ -114,28 +114,26 @@ public class MQTT5Protocol extends ProtocolImpl {
     logger.log(ServerLogMessages.MQTT5_INITIALISATION);
     clientTopicAliasMapping = new TopicAliasMapping("Client");
     serverTopicAliasMapping = new TopicAliasMapping("Server");
-    ConfigurationProperties props = endPoint.getConfig().getProperties();
-    maxBufferSize = props.getLongProperty("maximumBufferSize", 0);
-    serverReceiveMaximum = props.getIntProperty("serverReceiveMaximum", DefaultConstants.SERVER_RECEIVE_MAXIMUM);
-    clientReceiveMaximum = props.getIntProperty("clientReceiveMaximum", DefaultConstants.CLIENT_RECEIVE_MAXIMUM);
-    int clientMaximumTopicAlias = props.getIntProperty("clientMaximumTopicAlias", DefaultConstants.CLIENT_TOPIC_ALIAS_MAX);
+    mqttConfig = (MqttV5Config) endPoint.getConfig().getProtocolConfig("mqtt");
+    maxBufferSize = mqttConfig.getMaximumBufferSize();
+    serverReceiveMaximum = mqttConfig.getServerReceiveMaximum();
+    clientReceiveMaximum = mqttConfig.getClientReceiveMaximum();
+    int clientMaximumTopicAlias = mqttConfig.getClientMaximumTopicAlias();
     clientTopicAliasMapping.setMaximum(clientMaximumTopicAlias);
-    int serverMaximumTopicAlias = props.getIntProperty("serverMaximumTopicAlias", DefaultConstants.SERVER_TOPIC_ALIAS_MAX);
+    int serverMaximumTopicAlias = mqttConfig.getServerMaximumTopicAlias();
     serverTopicAliasMapping.setMaximum(serverMaximumTopicAlias);
-    keepAlive = props.getIntProperty("maxServerKeepAlive", DefaultConstants.KEEPALIVE_MAXIMUM) * 1000L; // Convert to milliseconds
-    minimumKeepAlive = props.getIntProperty("minServerKeepAlive", DefaultConstants.KEEPALIVE_MINIMUM) * 1000; // Convert to milliseconds
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
+    minimumKeepAlive = mqttConfig.getMinServerKeepAlive() * 1000; // Convert to milliseconds
+    selectorTask = new SelectorTask(this, endPoint.getConfig());
     packetListenerFactory = new PacketListenerFactory5();
     packetFactory = new PacketFactory5(this);
     closed = false;
     packetIdManager = new PacketIdManager();
     BitSetFactory bitsetFactory = new BitSetFactoryImpl(DefaultConstants.BITSET_BLOCK_SIZE);
     clientOutstanding = new NaturalOrderedLongList(0, bitsetFactory);
-
-    if(props.containsKey("sasl")){
-      ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
-      String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
-      authenticationContext = new AuthenticationContext(saslProps.getProperty("mechanism"), serverName, getName(), endPoint.getConfig().getProperties());
+    SaslConfig saslConfig = endPoint.getConfig().getSaslConfig();
+    if( saslConfig!= null){
+      authenticationContext = new AuthenticationContext(saslConfig.getMechanism(), saslConfig.getRealmName(), getName(), endPoint.getConfig());
     }
     else{
       authenticationContext = null;

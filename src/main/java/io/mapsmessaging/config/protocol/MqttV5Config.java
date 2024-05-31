@@ -40,11 +40,11 @@ public class MqttV5Config extends MqttConfig {
 
   public boolean update(MqttV5Config newConfig) {
     boolean hasChanged = super.update(newConfig);
-    if(minServerKeepAlive != newConfig.minServerKeepAlive) {
+    if (minServerKeepAlive != newConfig.minServerKeepAlive) {
       minServerKeepAlive = newConfig.minServerKeepAlive;
       hasChanged = true;
     }
-    if(maxServerKeepAlive != newConfig.maxServerKeepAlive) {
+    if (maxServerKeepAlive != newConfig.maxServerKeepAlive) {
       maxServerKeepAlive = newConfig.maxServerKeepAlive;
       hasChanged = true;
     }

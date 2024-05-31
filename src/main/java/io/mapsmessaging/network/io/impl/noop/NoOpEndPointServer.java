@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 
 package io.mapsmessaging.network.io.impl.noop;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
-
 import java.io.IOException;
 
 /**
@@ -34,7 +33,7 @@ import java.io.IOException;
  */
 public class NoOpEndPointServer extends EndPointServer {
 
-  public NoOpEndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config) {
+  public NoOpEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfig config) {
     super(accept, url, config);
   }
 

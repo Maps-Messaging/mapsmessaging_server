@@ -17,7 +17,11 @@
 
 package io.mapsmessaging.network.protocol.impl.loragateway;
 
+import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.DATA;
+import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
+
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.config.protocol.LoRaConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -32,12 +36,6 @@ import io.mapsmessaging.network.protocol.impl.loragateway.handler.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -50,9 +48,11 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.DATA;
-import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 public class LoRaProtocol extends ProtocolImpl {
 
@@ -95,11 +95,11 @@ public class LoRaProtocol extends ProtocolImpl {
     clientStats = new LinkedHashMap<>();
     loraProtocolEndPoint = (LoRaProtocolEndPoint) getEndPoint();
     loraProtocolEndPoint.setProtocol(this);
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), true);
+    selectorTask = new SelectorTask(this, endPoint.getConfig(), true);
     protocolInterfaceManager = new MQTTSNInterfaceManager((byte) 1, selectorTask, getEndPoint());
     loraProtocolEndPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-
-    transmissionRate = endPoint.getConfig().getProperties().getIntProperty("LoRaMaxTransmissionRate", DefaultConstants.LORA_MAXIMUM_TX_RATE);
+    LoRaConfig loRaConfig = (LoRaConfig) endPoint.getConfig().getProtocolConfig("lora");
+    transmissionRate = loRaConfig.getRetransmit();
     transmitCount = new AtomicInteger(transmissionRate);
 
     configBuffer = new byte[18];

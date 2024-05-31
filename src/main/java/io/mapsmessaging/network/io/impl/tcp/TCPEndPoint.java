@@ -17,7 +17,9 @@
 
 package io.mapsmessaging.network.io.impl.tcp;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
+import io.mapsmessaging.config.network.TcpConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -25,7 +27,6 @@ import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -36,8 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class TCPEndPoint extends EndPoint {
 
@@ -63,7 +62,7 @@ public class TCPEndPoint extends EndPoint {
       } else {
         name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
       }
-      configure(endPointServerStatus.getConfig().getProperties());
+      configure((TcpConfig) endPointServerStatus.getConfig().getEndPointConfig());
     } catch (IOException e) {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
@@ -87,7 +86,7 @@ public class TCPEndPoint extends EndPoint {
       selector = select;
       authenticationConfig = authConfig;
       name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
-      configure(server.getConfig().getProperties());
+      configure((TcpConfig) server.getConfig().getEndPointConfig());
     } catch (IOException e) {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
@@ -199,7 +198,7 @@ public class TCPEndPoint extends EndPoint {
     return LoggerFactory.getLogger(TCPEndPoint.class.getName() + "_" + getId());
   }
 
-  private void configure(ConfigurationProperties config) throws IOException {
+  private void configure(TcpConfig config) throws IOException {
     /*
     These are NOT configurable and required for normal operation
      */
@@ -211,9 +210,9 @@ public class TCPEndPoint extends EndPoint {
     /*
     Configurable settings for Sockets
      */
-    int receiveSize = config.getIntProperty("receiveBufferSize", 128000);
-    int sendSize = config.getIntProperty("sendBufferSize", 128000);
-    int socketTimeOut = config.getIntProperty("timeout", 120000);
+    int receiveSize = config.getReceiveBufferSize();
+    int sendSize = config.getSendBufferSize();
+    int socketTimeOut = config.getTimeout();
 
     logger.log(TCP_CONFIGURED_PARAMETER, "receiveBufferSize", receiveSize);
     logger.log(TCP_CONFIGURED_PARAMETER, "sendBufferSize", sendSize);
@@ -228,7 +227,7 @@ public class TCPEndPoint extends EndPoint {
 
   @Override
   public void completedConnection() {
-    int linger = getConfig().getProperties().getIntProperty("soLingerDelaySec", 10);
+    int linger = ((TcpConfig)getConfig().getEndPointConfig()).getSoLingerDelaySec();
     try {
       socket.setSoLinger(true, linger);
     } catch (SocketException e) {

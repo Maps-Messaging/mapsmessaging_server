@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.network.io.impl.serial;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
@@ -29,8 +29,13 @@ public class SerialEndPointServerFactory implements EndPointServerFactory {
 
 
   @Override
-  public EndPointServer instance(EndPointURL url, SelectorLoadManager selector, AcceptHandler acceptHandler, NetworkConfig config, EndPointManagerJMX managerMBean) {
-    return new SerialEndPointServer(acceptHandler, url, config, managerMBean);
+  public EndPointServer instance(
+      EndPointURL url,
+      SelectorLoadManager selector,
+      AcceptHandler acceptHandler,
+      EndPointServerConfig endPointServerConfig,
+      EndPointManagerJMX managerMBean) {
+    return new SerialEndPointServer(acceptHandler, url, endPointServerConfig, managerMBean);
   }
 
   @Override

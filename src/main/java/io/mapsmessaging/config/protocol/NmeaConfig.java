@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,13 +15,24 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.stomp;
+package io.mapsmessaging.config.protocol;
 
-public class DefaultConstants {
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-  public static final int MAXIMUM_BUFFER_SIZE = 65535;
-  public static final int RECEIVE_MAXIMUM = 1000;
+@EqualsAndHashCode(callSuper = true)
+@Data
+@NoArgsConstructor
+@ToString
+public class NmeaConfig extends ProtocolConfig {
+  public NmeaConfig(ConfigurationProperties config) {
+    super(config);
+  }
 
-  private DefaultConstants() {
+  public ConfigurationProperties toConfigurationProperties() {
+    return super.toConfigurationProperties();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPointServerFactory;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -37,7 +36,7 @@ public class DTLSEndPointServerFactory extends UDPEndPointServerFactory {
       EndPointURL url,
       SelectorLoadManager selector,
       AcceptHandler acceptHandler,
-      NetworkConfig config,
+      EndPointServerConfig config,
       EndPointManagerJMX managerMBean)
       throws IOException {
 

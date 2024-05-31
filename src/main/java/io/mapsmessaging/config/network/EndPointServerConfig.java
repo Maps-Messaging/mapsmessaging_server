@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.config.network;
 
-import io.mapsmessaging.config.protocol.MqttV5Config;
-import io.mapsmessaging.config.protocol.ProtocolConfig;
+import io.mapsmessaging.config.auth.SaslConfig;
+import io.mapsmessaging.config.protocol.*;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,27 +36,81 @@ public class EndPointServerConfig extends EndPointConfig {
   private String name;
   private String url;
   private EndPointConfig endPointConfig;
+  private SaslConfig saslConfig;
   private List<ProtocolConfig> protocolConfigs;
+  private String protocols;
+  private String authenticationRealm;
+  private int backlog;
+  private int selectorTaskWait;
 
   public EndPointServerConfig(ConfigurationProperties config) {
     super(config);
     this.name = config.getProperty("name");
-    endPointConfig = new EndPointConfig(config);
-
-    String protocols = config.getProperty("protocol");
+    this.url = config.getProperty("url");
+    this.backlog = config.getIntProperty("backlog", 100);
+    this.selectorTaskWait = config.getIntProperty("taskWait", 10);
+    this.authenticationRealm = config.getProperty("auth", "");
+    endPointConfig = url != null ? createEndPointConfig(url, config) : null;
     protocolConfigs = new ArrayList<>();
-    String[] protocolArray = protocols.split(",");
-    for (String protocol : protocolArray) {
-      if (protocol.equalsIgnoreCase("mqtt")) {
-        protocolConfigs.add(new MqttV5Config(config));
-      } else if (protocol.equalsIgnoreCase("amqp")) {
-      } else if (protocol.equalsIgnoreCase("stomp")) {
-      } else if (protocol.equalsIgnoreCase("semtech")) {
-      } else if (protocol.equalsIgnoreCase("mqtt-sn")) {
-      } else if (protocol.equalsIgnoreCase("coap")) {
-      } else if (protocol.equalsIgnoreCase("nmea")) {
+
+    ConfigurationProperties saslConfiguration = (ConfigurationProperties) config.get("sasl");
+    if (saslConfiguration != null) {
+      saslConfig = new SaslConfig(saslConfiguration);
+    }
+
+    protocols = config.getProperty("protocol");
+    if (protocols != null && !protocols.isEmpty()) {
+      String[] protocolArray = protocols.split(",");
+      for (String protocol : protocolArray) {
+        ProtocolConfig protocolConfig = createProtocolConfig(protocol, config);
+        if (protocolConfig != null) {
+          protocolConfigs.add(protocolConfig);
+        }
       }
     }
+  }
+
+  public ProtocolConfig getProtocolConfig(String protocol) {
+    return protocolConfigs.stream()
+        .filter(protocolConfig -> protocolConfig.getName().equalsIgnoreCase(protocol))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private EndPointConfig createEndPointConfig(String url, ConfigurationProperties properties) {
+    if (url.toLowerCase().startsWith("tcp")) {
+      return new TcpConfig(properties);
+    } else if (url.toLowerCase().startsWith("ssl")) {
+      return new TlsConfig(properties);
+    } else if (url.toLowerCase().startsWith("ws")) {
+      return new TcpConfig(properties);
+    } else if (url.toLowerCase().startsWith("wss")) {
+      return new TlsConfig(properties);
+    } else if (url.toLowerCase().startsWith("udp")) {
+      return new UdpConfig(properties);
+    } else if (url.toLowerCase().startsWith("dtls")) {
+      return new DtlsConfig(properties);
+    }
+    return null;
+  }
+
+  public ProtocolConfig createProtocolConfig(String protocol, ConfigurationProperties config) {
+    if (protocol.equalsIgnoreCase("mqtt")) {
+      return new MqttV5Config(config);
+    } else if (protocol.equalsIgnoreCase("amqp")) {
+      return new AmqpConfig(config);
+    } else if (protocol.equalsIgnoreCase("stomp")) {
+      return new StompConfig(config);
+    } else if (protocol.equalsIgnoreCase("semtech")) {
+      return new SemtechConfig(config);
+    } else if (protocol.equalsIgnoreCase("mqtt-sn")) {
+      return new MqttSnConfig(config);
+    } else if (protocol.equalsIgnoreCase("coap")) {
+      return new CoapConfig(config);
+    } else if (protocol.equalsIgnoreCase("nmea")) {
+      return new NmeaConfig(config);
+    }
+    return null;
   }
 
   public boolean update(EndPointServerConfig newConfig) {
@@ -65,20 +119,35 @@ public class EndPointServerConfig extends EndPointConfig {
       this.name = newConfig.getName();
       hasChanged = true;
     }
-
+    if (!this.authenticationRealm.equals(newConfig.getAuthenticationRealm())) {
+      this.authenticationRealm = newConfig.getAuthenticationRealm();
+      hasChanged = true;
+    }
+    if (this.backlog != newConfig.getBacklog()) {
+      this.backlog = newConfig.getBacklog();
+      hasChanged = true;
+    }
+    if (this.selectorTaskWait != newConfig.getSelectorTaskWait()) {
+      this.selectorTaskWait = newConfig.getSelectorTaskWait();
+      hasChanged = true;
+    }
     return hasChanged;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties protocols = new ConfigurationProperties();
-    for(ProtocolConfig protocolConfig : protocolConfigs) {
-      protocols.put(protocolConfig.getName(), protocolConfig.toConfigurationProperties());
+    ConfigurationProperties protocolMap = new ConfigurationProperties();
+    for (ProtocolConfig protocolConfig : protocolConfigs) {
+      protocolMap.put(protocolConfig.getName(), protocolConfig.toConfigurationProperties());
     }
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("name", this.name);
     config.put("url", this.url);
     config.put("endPoint", this.endPointConfig);
     config.put("protocols", protocols);
+    config.put("backlog", this.backlog);
+    config.put("selectorTaskWait", this.selectorTaskWait);
+    config.put("auth", this.authenticationRealm);
+    config.put("data", protocolMap);
     return config;
   }
 }

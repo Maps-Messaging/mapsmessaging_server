@@ -17,32 +17,31 @@
 
 package io.mapsmessaging.network.io.connection;
 
+import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
+
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerStatus;
-import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.connection.state.*;
+import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
+import lombok.Getter;
+import lombok.Setter;
 
 public class EndPointConnection extends EndPointServerStatus {
   private final AtomicBoolean running;
@@ -108,8 +107,8 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   @Override
-  public NetworkConfig getConfig() {
-    return new NetworkConfig(properties);
+  public EndPointServerConfig getConfig() {
+    return new EndPointServerConfig(properties);
   }
 
   public String getConfigName() {

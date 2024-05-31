@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,14 +23,13 @@ import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import lombok.Getter;
-
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import javax.security.auth.login.LoginException;
+import lombok.Getter;
 
 public class CoapInterfaceManager implements SelectorCallback {
 
@@ -44,7 +43,7 @@ public class CoapInterfaceManager implements SelectorCallback {
     this.endPoint = endPoint;
     this.mtu = mtu;
     currentSessions = new LinkedHashMap<>();
-    SelectorTask selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties(), endPoint.isUDP());
+    SelectorTask selectorTask = new SelectorTask(this, endPoint.getConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
   }

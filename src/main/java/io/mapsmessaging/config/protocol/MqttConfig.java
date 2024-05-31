@@ -83,6 +83,7 @@ public class MqttConfig extends ProtocolConfig {
     return hasChanged;
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = super.toConfigurationProperties();
     config.put("maximumSessionExpiry", this.maximumSessionExpiry);
@@ -94,5 +95,4 @@ public class MqttConfig extends ProtocolConfig {
     config.put("strictClientId", this.strictClientId);
     return config;
   }
-
 }

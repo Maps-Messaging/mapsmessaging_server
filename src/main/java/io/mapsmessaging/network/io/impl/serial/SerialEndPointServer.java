@@ -18,11 +18,11 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.SerialEndPointURL;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
@@ -30,7 +30,6 @@ import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +40,7 @@ public class SerialEndPointServer extends EndPointServer {
   private final SerialEndPointURL serialEndPointURL;
   private SerialEndPoint serialEndPoint;
 
-  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, NetworkConfig config, EndPointManagerJMX managerMBean) {
+  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfig config, EndPointManagerJMX managerMBean) {
     super(acceptHandler, url, config);
     serialEndPointURL = (SerialEndPointURL) url;
     protocolFactory = new ProtocolFactory(config.getProtocols());

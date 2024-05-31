@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,12 +22,14 @@ import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.detection.Detection;
 import io.mapsmessaging.utilities.service.Service;
-
 import java.io.IOException;
+import lombok.Getter;
 
 public abstract class ProtocolImplFactory implements Service {
 
+  @Getter
   private final String name;
+  @Getter
   private final String description;
   private final Detection detection;
 
@@ -35,14 +37,6 @@ public abstract class ProtocolImplFactory implements Service {
     this.name = name;
     this.description = description;
     this.detection = detection;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getDescription() {
-    return description;
   }
 
   public abstract ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException;

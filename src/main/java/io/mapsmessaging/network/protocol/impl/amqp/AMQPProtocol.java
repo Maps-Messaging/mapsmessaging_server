@@ -27,16 +27,15 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 public class AMQPProtocol extends ProtocolImpl {
 
@@ -61,7 +60,7 @@ public class AMQPProtocol extends ProtocolImpl {
     super(endPoint);
     version = "1.0";
     logger = LoggerFactory.getLogger("AMQP Protocol on " + endPoint.getName());
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    selectorTask = new SelectorTask(this, endPoint.getConfig());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());

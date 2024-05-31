@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
@@ -61,12 +60,12 @@ public abstract class BaseConnectionListener extends PacketListener {
     scb.setPersistentSession(true)
         .setResetState(isClean)
         .setKeepAlive(keepAlive)
-        .setSessionExpiry(endPoint.getConfig().getProperties().getIntProperty("maximumSessionExpiry", DefaultConstants.SESSION_TIME_OUT));
+        .setSessionExpiry( ((MQTTProtocol)protocol).getMqttConfig().getMaximumSessionExpiry());
 
     if (pass != null && pass.length > 0) {
       scb.setPassword(pass);
     }
-    if (username != null && username.length() > 0) {
+    if (username != null && !username.isEmpty()) {
       scb.setUsername(username);
     }
     scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);

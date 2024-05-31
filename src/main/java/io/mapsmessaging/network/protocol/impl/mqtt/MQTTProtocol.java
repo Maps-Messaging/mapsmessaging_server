@@ -24,6 +24,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.config.protocol.MqttConfig;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -38,16 +39,15 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
-import lombok.Getter;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
 public class MQTTProtocol extends ProtocolImpl {
@@ -60,6 +60,8 @@ public class MQTTProtocol extends ProtocolImpl {
   private final PacketIdManager packetIdManager;
   private final long maxBufferSize;
 
+  @Getter
+  private final MqttConfig mqttConfig;
   @Getter
   private final Map<String, String> topicNameMapping;
 
@@ -76,8 +78,9 @@ public class MQTTProtocol extends ProtocolImpl {
     ThreadContext.put("version", getVersion());
     topicNameMapping = new ConcurrentHashMap<>();
     logger.log(ServerLogMessages.MQTT_START);
-    maxBufferSize = endPoint.getConfig().getProperties().getLongProperty("maximumBufferSize", DefaultConstants.MAXIMUM_BUFFER_SIZE);
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getProperties());
+    mqttConfig = (MqttConfig) endPoint.getConfig().getProtocolConfig("MQTT");
+    maxBufferSize =  mqttConfig.getMaximumBufferSize();
+    selectorTask = new SelectorTask(this, endPoint.getConfig());
     packetListenerFactory = new PacketListenerFactory();
     packetFactory = new PacketFactory(this);
     closed = false;

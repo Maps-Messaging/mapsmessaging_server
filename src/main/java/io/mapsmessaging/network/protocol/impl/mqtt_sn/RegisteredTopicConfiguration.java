@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
-
+import io.mapsmessaging.config.protocol.MqttSnConfig;
+import io.mapsmessaging.config.protocol.PredefinedTopics;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.*;
@@ -29,25 +29,17 @@ public class RegisteredTopicConfiguration {
   private final HashMap<String, List<TopicConfiguration>> topicConfigByName;
 
 
-  public RegisteredTopicConfiguration(ConfigurationProperties properties) {
-    String registeredTopics = properties.getProperty("registered", "");
+  public RegisteredTopicConfiguration(MqttSnConfig properties) {
     topicConfigById = new LinkedHashMap<>();
     topicConfigByName = new LinkedHashMap<>();
-    parse(registeredTopics);
-    Object predefined = properties.get("preDefinedTopics");
-    if (predefined instanceof List) {
-      List<ConfigurationProperties> predefinedList = (List<ConfigurationProperties>) predefined;
-      for (ConfigurationProperties props : predefinedList) {
-        int id = props.getIntProperty("id", 0);
-        String topic = props.getProperty("topic", "");
-        String address = props.getProperty("address", "*");
-        List<TopicConfiguration> list = topicConfigById.computeIfAbsent(id, k -> new ArrayList<>());
-        list.add(new TopicConfiguration(address, id, topic));
+    parse(properties.getRegisteredTopics());
+    for(PredefinedTopics predefined: properties.getPredefinedTopicsList()){
 
-        List<TopicConfiguration> list1 = topicConfigByName.computeIfAbsent(topic, k -> new ArrayList<>());
-        list1.add(new TopicConfiguration(address, id, topic));
+      List<TopicConfiguration> list = topicConfigById.computeIfAbsent(predefined.getId(), k -> new ArrayList<>());
+      list.add(new TopicConfiguration(predefined.getAddress(), predefined.getId(), predefined.getTopic()));
 
-      }
+      List<TopicConfiguration> list1 = topicConfigByName.computeIfAbsent(predefined.getTopic(), k -> new ArrayList<>());
+      list1.add(new TopicConfiguration(predefined.getAddress(), predefined.getId(), predefined.getTopic()));
     }
   }
 

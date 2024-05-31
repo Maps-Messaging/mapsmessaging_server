@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 
 package io.mapsmessaging.network.io.impl.lora;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
@@ -31,7 +31,6 @@ import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -42,7 +41,7 @@ public class LoRaEndPointServer extends EndPointServer {
   private final ProtocolFactory protocolFactory;
   private final int gatewayId;
 
-  public LoRaEndPointServer(AcceptHandler accept, EndPointURL url, NetworkConfig config, EndPointManagerJMX managerMBean) {
+  public LoRaEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfig config, EndPointManagerJMX managerMBean) {
     super(accept, url, config);
     protocolFactory = new ProtocolFactory(config.getProtocols());
     gatewayId = url.getPort();

@@ -17,15 +17,14 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
-import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.auth.SaslConfig;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
-import lombok.Getter;
-import org.apache.qpid.proton.engine.Sasl;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
+import org.apache.qpid.proton.engine.Sasl;
 
 public class SaslManager {
 
@@ -35,7 +34,7 @@ public class SaslManager {
   private String username;
 
   public SaslManager(ProtonEngine protonEngine) throws IOException {
-    saslAuthenticationMechanism = buildMechansim(protonEngine.getProtocol().getEndPoint().getConfig().getProperties());
+    saslAuthenticationMechanism = buildMechansim(protonEngine.getProtocol().getEndPoint().getConfig());
     sasl = protonEngine.getTransport().sasl();
     String mechanism = saslAuthenticationMechanism != null ? saslAuthenticationMechanism.getMechanism() : "ANONYMOUS";
     sasl.setMechanisms(mechanism);
@@ -64,14 +63,14 @@ public class SaslManager {
     }
   }
 
-  private SaslAuthenticationMechanism buildMechansim(ConfigurationProperties config) throws IOException {
+  private SaslAuthenticationMechanism buildMechansim(EndPointServerConfig config) throws IOException {
     SaslAuthenticationMechanism authenticationContext = null;
-    if (config.containsKey("sasl")) {
-      ConfigurationProperties saslProps = (ConfigurationProperties) config.get("sasl");
+    SaslConfig saslConfig = config.getSaslConfig();
+    if (saslConfig != null) {
       Map<String, String> props = new HashMap<>();
       props.put(javax.security.sasl.Sasl.QOP, "auth");
-      String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
-      String mechanism = saslProps.getProperty("mechanism");
+      String serverName = saslConfig.getRealmName();
+      String mechanism = saslConfig.getMechanism();
       authenticationContext = new SaslAuthenticationMechanism(mechanism, serverName, "AMQP", props, config);
     }
     return authenticationContext;

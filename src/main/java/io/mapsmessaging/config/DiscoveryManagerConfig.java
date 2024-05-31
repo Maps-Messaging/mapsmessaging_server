@@ -37,16 +37,17 @@ public class DiscoveryManagerConfig extends Config {
   private boolean addTxtRecords;
   private String domainName;
 
-  public static DiscoveryManagerConfig getInstance(){
-    return new DiscoveryManagerConfig(ConfigurationManager.getInstance().getProperties("DiscoveryManager"));
-  }
-
   // Constructor to load properties from ConfigurationProperties
   private DiscoveryManagerConfig(ConfigurationProperties config) {
     this.enabled = config.getBooleanProperty("DiscoveryManager.enabled", true);
     this.hostnames = config.getProperty("DiscoveryManager.hostnames", "::");
     this.addTxtRecords = config.getBooleanProperty("DiscoveryManager.addTxtRecords", true);
     this.domainName = config.getProperty("DiscoveryManager.domainName", ".local");
+  }
+
+  public static DiscoveryManagerConfig getInstance() {
+    return new DiscoveryManagerConfig(
+        ConfigurationManager.getInstance().getProperties("DiscoveryManager"));
   }
 
   // Method to update properties from another DiscoveryManagerConfig object

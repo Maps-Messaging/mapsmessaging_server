@@ -17,9 +17,10 @@
 
 package io.mapsmessaging.network.io.impl.hmac;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.config.network.HmacConfig;
+import io.mapsmessaging.config.network.UdpConfig;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPoint;
@@ -28,12 +29,10 @@ import io.mapsmessaging.network.io.security.NodeSecurity;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
 import io.mapsmessaging.network.io.security.PacketIntegrityFactory;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class HmacUDPEndPointServer extends UDPEndPointServer {
@@ -42,20 +41,16 @@ public class HmacUDPEndPointServer extends UDPEndPointServer {
 
   public HmacUDPEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url,
       SelectorLoadManager selectorLoadManager, EndPointManagerJMX managerMBean,
-      NetworkConfig config) throws SocketException {
+                               EndPointServerConfig config) throws SocketException {
     super(inetSocketAddress, protocolFactory, url, selectorLoadManager, managerMBean, config);
     securityMap = new LinkedHashMap<>();
-    ConfigurationProperties props = getConfig().getProperties();
-    Object t = props.get("nodeConfiguration");
-    loadNodeConfig((List<ConfigurationProperties>) t);
+    loadNodeConfig((UdpConfig) config.getEndPointConfig());
   }
 
-  private void loadNodeConfig(List<ConfigurationProperties> nodes) {
-    for (ConfigurationProperties node : nodes) {
-      String host = node.getProperty("host");
-      int port = node.getIntProperty("port", 0);
+  private void loadNodeConfig(UdpConfig udpConfig) {
+    for (HmacConfig node : udpConfig.getHmacConfigList()) {
       PacketIntegrity packetIntegrity = PacketIntegrityFactory.getInstance().createPacketIntegrity(node);
-      securityMap.put(host + ":" + port, new NodeSecurity(host, port, packetIntegrity));
+      securityMap.put(node.getHost() + ":" + node.getPort(), new NodeSecurity(node.getHost(), node.getPort(), packetIntegrity));
     }
   }
 

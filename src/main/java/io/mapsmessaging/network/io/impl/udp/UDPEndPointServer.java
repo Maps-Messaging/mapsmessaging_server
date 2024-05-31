@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 
 package io.mapsmessaging.network.io.impl.udp;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
@@ -29,7 +29,6 @@ import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
@@ -49,14 +48,14 @@ public class UDPEndPointServer extends EndPointServer {
   private final int port;
 
   public UDPEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url, SelectorLoadManager selectorLoadManager,
-      EndPointManagerJMX managerMBean, NetworkConfig config)
+      EndPointManagerJMX managerMBean, EndPointServerConfig config)
       throws SocketException {
     super(null, url, config);
     this.managerMBean = managerMBean;
     this.selectorLoadManager = selectorLoadManager;
     this.protocolFactory = protocolFactory;
     bondedEndPoints = new ArrayList<>();
-    authenticationConfig = config.getAuthConfig();
+    authenticationConfig = config.getAuthenticationRealm();
     port = url.getPort();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);
   }

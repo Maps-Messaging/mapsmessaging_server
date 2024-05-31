@@ -40,10 +40,6 @@ public class HawtioConfig extends Config {
 
   private ConfigurationProperties hawtioMapping;
 
-  public static HawtioConfig getInstance(){
-    return new HawtioConfig(ConfigurationManager.getInstance().getProperties("hawtio"));
-  }
-
   private HawtioConfig(ConfigurationProperties config) {
     this.enable = config.getBooleanProperty("enable", true);
     this.warFileLocation = config.getProperty("warFileLocation", "");
@@ -52,7 +48,12 @@ public class HawtioConfig extends Config {
     hawtioMapping = (ConfigurationProperties) config.get("config");
     this.host = hawtioMapping.getProperty("hawtio.host", "0.0.0.0");
     this.port = hawtioMapping.getIntProperty("hawtio.port", 8181);
-    this.authenticationEnabled = hawtioMapping.getBooleanProperty("hawtio.authenticationEnabled", false);
+    this.authenticationEnabled =
+        hawtioMapping.getBooleanProperty("hawtio.authenticationEnabled", false);
+  }
+
+  public static HawtioConfig getInstance() {
+    return new HawtioConfig(ConfigurationManager.getInstance().getProperties("hawtio"));
   }
 
   public boolean update(HawtioConfig newConfig) {
@@ -91,7 +92,6 @@ public class HawtioConfig extends Config {
     config.put("hawtio.enable", this.enable);
     config.put("hawtio.warFileLocation", this.warFileLocation);
     config.put("hawtio.discoverable", this.discoverable);
-
 
     hawtioMapping.put("hawtio.host", this.host);
     hawtioMapping.put("hawtio.port", this.port);

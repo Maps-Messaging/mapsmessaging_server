@@ -17,17 +17,16 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationMethod;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
-import lombok.Getter;
-import lombok.Setter;
-
-import javax.security.sasl.Sasl;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.security.sasl.Sasl;
+import lombok.Getter;
+import lombok.Setter;
 
 public class AuthenticationContext {
 
@@ -44,7 +43,7 @@ public class AuthenticationContext {
   @Setter
   private MQTTPacket5 connectMsg;
 
-  public AuthenticationContext(String authMethod, String serverName, String protocol, ConfigurationProperties properties) throws IOException {
+  public AuthenticationContext(String authMethod, String serverName, String protocol, EndPointServerConfig properties) throws IOException {
     this.authMethod = authMethod;
     // Here we load the config into the props, where required
     Map<String, String> props = new HashMap<>();

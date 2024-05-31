@@ -21,7 +21,6 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
-import io.mapsmessaging.network.protocol.impl.stomp.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
@@ -30,7 +29,6 @@ import io.mapsmessaging.network.protocol.impl.stomp.state.ConnectedState;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -90,7 +88,7 @@ public class ConnectListener extends BaseConnectListener {
     scb.setKeepAlive(hb.getPreferred());
     int inFlight = connect.getReceiveMaximum();
     if (inFlight <= 0) {
-      inFlight = DefaultConstants.RECEIVE_MAXIMUM;
+      inFlight =  (engine.getProtocol().getMaxReceiveSize());
     }
     scb.setReceiveMaximum(inFlight);
     scb.setSessionExpiry(0); // There is no idle Stomp sessions, so once disconnected the state is thrown away

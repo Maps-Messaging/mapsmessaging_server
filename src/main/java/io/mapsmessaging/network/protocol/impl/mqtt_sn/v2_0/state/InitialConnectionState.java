@@ -17,10 +17,9 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
@@ -37,14 +36,13 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslException;
 
 /**
  * Protocol dictates that we need to a) Receive a Connect packet b) Respond with a Will Topic Request c) Receive a Will Topic Response d) Respond with a Will Message Request e)
@@ -61,11 +59,11 @@ public class InitialConnectionState implements State {
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws IOException {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
-      ConfigurationProperties props = endPoint.getConfig().getProperties();
+      SaslConfig saslConfig = endPoint.getConfig().getSaslConfig();
 
       Connect connect = (Connect) mqtt;
 
-      boolean serverRequiresAuth = props.containsKey("sasl");
+      boolean serverRequiresAuth = saslConfig != null;
       boolean requiresAuth = connect.isAuthentication();
       if(serverRequiresAuth && ( !requiresAuth && saslAuthenticationMechanism == null)){
         sendErrorResponse(protocol, ReasonCodes.BAD_AUTH);
@@ -95,13 +93,12 @@ public class InitialConnectionState implements State {
         return topicRequest;
       } else {
         if(requiresAuth){
-          if(props.containsKey("sasl")){
-            ConfigurationProperties saslProps = (ConfigurationProperties) props.get("sasl");
+          if(saslConfig != null){
             Map<String, String> authProps = new HashMap<>();
             authProps.put(Sasl.QOP, "auth");
             try {
-              String serverName = saslProps.getProperty("realmName", MessageDaemon.getInstance().getId());
-              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslProps.getProperty("mechanism"), serverName, "mqtt-sn", authProps, props);
+              String serverName = saslConfig.getRealmName();
+              saslAuthenticationMechanism = new SaslAuthenticationMechanism(saslConfig.getMechanism(), serverName, "mqtt-sn", authProps, endPoint.getConfig());
               stateEngine.setState(new AuthenticationState(connect, saslAuthenticationMechanism));
               ((MQTT_SNProtocolV2)protocol).setSaslAuthenticationMechanism(saslAuthenticationMechanism);
               return new Auth(ReasonCodes.CONTINUE_AUTHENTICATION, saslAuthenticationMechanism.getName(), new byte[0]);
