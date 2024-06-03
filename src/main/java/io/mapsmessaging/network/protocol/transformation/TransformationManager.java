@@ -26,12 +26,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransformationManager implements ServiceManager {
 
-  private static final TransformationManager instance = new TransformationManager();
+  private static class Holder {
+    static final TransformationManager INSTANCE = new TransformationManager();
+  }
 
   public static TransformationManager getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
 
   private final ServiceLoader<ProtocolMessageTransformation> transformations;
@@ -48,7 +51,6 @@ public class TransformationManager implements ServiceManager {
     }
     return null;
   }
-
 
   @Override
   public Iterator<Service> getServices() {
