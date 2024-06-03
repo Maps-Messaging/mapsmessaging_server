@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,10 +38,6 @@ import io.mapsmessaging.engine.tasks.SubscriptionResponse;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -53,6 +49,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class simply manages the subscription to destination mapping. It also manages the wildcard subscriptions, the overlap between wildcard subscriptions and simple
@@ -63,6 +63,7 @@ public class SubscriptionController implements DestinationManagerListener {
   private static final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
 
   private final DestinationFactory destinationManager;
+  @Getter
   private final String sessionId;
   private final String uniqueSessionId;
   private final boolean isPersistent;
@@ -190,15 +191,11 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
 
-  public String getSessionId() {
-    return sessionId;
-  }
-
   /**
    * Simply add an incoming subscription, this will create a new subscription or an update
    *
    * @param context new subscription context to add
-   * @return true if a change to subscription occurred
+   * @return SubscribedEventManager  with the new event manager
    * @throws IOException if the add subscription failed, typically this is fatal since it means the server can not allocate resources
    */
   public SubscribedEventManager addSubscription(SubscriptionContext context) throws IOException {

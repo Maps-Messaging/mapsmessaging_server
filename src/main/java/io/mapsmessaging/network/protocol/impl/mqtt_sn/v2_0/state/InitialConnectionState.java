@@ -75,7 +75,7 @@ public class InitialConnectionState implements State {
       scb.setPersistentSession(true);
       scb.setResetState(connect.isCleanStart());
       scb.setKeepAlive(connect.getKeepAlive());
-      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn")).getReceiveMaximum();
+      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getReceiveMaximum();
       scb.setReceiveMaximum(receiveMax);
       scb.setSessionExpiry(connect.getSessionExpiry());
       if(saslAuthenticationMechanism != null){

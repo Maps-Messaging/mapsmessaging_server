@@ -46,8 +46,11 @@ public class NetworkConfig {
     if (prot == null) {
       prot = "all";
     }
-    protocols = prot.toLowerCase();
-
+    prot = prot.toLowerCase();
+    if(url.toLowerCase().startsWith("ws") && !prot.contains("ws")){
+      prot = prot+",ws";
+    }
+    protocols = prot;
     this.properties = properties;
   }
 

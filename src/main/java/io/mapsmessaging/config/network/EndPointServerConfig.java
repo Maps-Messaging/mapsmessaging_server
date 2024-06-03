@@ -90,6 +90,10 @@ public class EndPointServerConfig extends Config {
       return new UdpConfig(properties);
     } else if (url.toLowerCase().startsWith("dtls")) {
       return new DtlsConfig(properties);
+    } else if (url.toLowerCase().startsWith("hmac")) {
+      return new UdpConfig(properties);
+    } else if (url.toLowerCase().startsWith("serial")) {
+      return new SerialConfig(properties);
     }
     return null;
   }

@@ -49,9 +49,11 @@ public abstract class ConnectionTest extends BaseTestConfig {
           @Override
           public EndPointServerConfig getConfig() {
             ConfigurationProperties testConfig = ConfigurationManager.getInstance().getProperties("NetworkManager");
-            ConfigurationProperties configurationProperties = new ConfigurationProperties();
-            configurationProperties.setGlobal(testConfig.getGlobal());
-            return new EndPointServerConfig(configurationProperties);
+            ConfigurationProperties localTest = new ConfigurationProperties();
+            localTest.setGlobal(testConfig.getGlobal());
+            localTest.put("name", "testInterface");
+            localTest.put("url", "ssl://localhost/");
+            return new EndPointServerConfig(localTest);
           }
 
           @Override

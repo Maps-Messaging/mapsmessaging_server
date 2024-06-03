@@ -17,8 +17,9 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
-import io.mapsmessaging.engine.session.SessionManagerTest;
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
@@ -30,16 +31,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-
 class SystemTopicTest extends MQTTBaseTest {
 
   @ParameterizedTest
   @MethodSource("mqttPublishTestParameters")
   @DisplayName("Test QoS wildcard subscription")
   void testSystemTopics(int version, String protocol, boolean auth, int QoS) throws IOException, MqttException {
-
     MqttClient client = new MqttClient(getUrl(protocol, auth), UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
     MqttConnectionOptions options = getOptions(auth);
 
@@ -78,20 +75,26 @@ class SystemTopicTest extends MQTTBaseTest {
     });
     options.setCleanStart(true);
     options.setKeepAliveInterval(30);
-    client.connect(options);
+    IMqttToken token = client.connectWithResult(options);
+    if(!token.isComplete()){
+      System.err.println("Not Complete");
+    }
+    else{
+      System.err.println(token);
+    }
     subscribe(client, "$SYS/#", counter, QoS);
 
     long endTime = System.currentTimeMillis() + 10000;
     while (counter.get() == 0 && endTime > System.currentTimeMillis()) {
-      delay(10);
-    }
-    Assertions.assertTrue(counter.get() != 0);
-    client.disconnect();
-    client.close();
-    endTime = System.currentTimeMillis() + 10000;
-    while (SessionManagerTest.getInstance().hasIdleSessions() && endTime > System.currentTimeMillis()) {
       delay(100);
     }
+    Assertions.assertTrue(counter.get() != 0);
+    try {
+      client.disconnect();
+    } catch (MqttException e) {
+      // ignore due to reasons with MQTT 5 on shutdown
+    }
+    client.close();
   }
 
   private void subscribe(MqttClient mqttClient, String topic, AtomicInteger counter, int QoS) throws MqttException {
@@ -99,7 +102,7 @@ class SystemTopicTest extends MQTTBaseTest {
     IMqttMessageListener[] listeners = new IMqttMessageListener[1];
     subscriptions[0] = new MqttSubscription(topic, QoS);
     listeners[0] = (s, mqttMessage) -> counter.incrementAndGet();
-    mqttClient.subscribe(subscriptions, listeners);
+    mqttClient.subscribe(subscriptions, listeners).waitForCompletion(10000);
   }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,12 +24,11 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.utilities.service.Service;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class SystemTopic extends DestinationImpl implements Service {
 
@@ -57,7 +56,7 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   @Override
   public synchronized void addSubscription(@NonNull @NotNull Subscription subscription) {
     super.addSubscription(subscription);
-    subscription.sendMessage(generateMessage());
+//    subscription.sendMessage(generateMessage());
   }
 
   @Override

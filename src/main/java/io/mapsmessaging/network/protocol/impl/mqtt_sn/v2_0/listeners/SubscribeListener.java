@@ -75,7 +75,7 @@ public class SubscribeListener extends PacketListener {
       }
       ClientAcknowledgement ackManger = subscribe.getQos().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
-      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn")).getReceiveMaximum();
+      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getReceiveMaximum();
       builder.setReceiveMaximum(receiveMax);
       builder.setNoLocalMessages(subscribe.isNoLocal());
       builder.setRetainHandler(subscribe.getRetainHandler());

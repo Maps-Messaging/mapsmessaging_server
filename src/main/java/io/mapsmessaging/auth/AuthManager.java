@@ -17,6 +17,9 @@
 
 package io.mapsmessaging.auth;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_CREATE_USER;
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_INITIALISE_USER;
+
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
@@ -33,19 +36,14 @@ import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import lombok.Getter;
-
-import javax.security.auth.Subject;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
-
-import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_CREATE_USER;
-import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_INITIALISE_USER;
-
+import javax.security.auth.Subject;
+import lombok.Getter;
 
 public class AuthManager implements Agent {
   private static final String ADMIN_USER = "admin";
@@ -158,7 +156,7 @@ public class AuthManager implements Agent {
     }
 
     String userpassword = PasswordGenerator.generateRandomPassword(12);
-    if (addUser(USER, userpassword.toCharArray(), SessionPrivileges.create(USER), new String[]{EVERYONE})) {
+    if (!addUser(USER, userpassword.toCharArray(), SessionPrivileges.create(USER), new String[]{EVERYONE})) {
       logger.log(SECURITY_MANAGER_FAILED_TO_CREATE_USER, USER);
     }
 

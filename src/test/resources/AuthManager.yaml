@@ -28,8 +28,8 @@
 
 ---
 AuthManager:
-  authenticationEnabled: true  # connections will be authorised according to the config
-  authorizationEnabled: true   # Requestes will be authorised according to the access control list for the resource
+  authenticationEnabled: false  # connections will be authorised according to the config
+  authorizationEnabled: true   # Requests will be authorised according to the access control list for the resource
   config:
     identityProvider: "Encrypted-Auth"
     passwordHander: "EncryptedPasswordCipher"

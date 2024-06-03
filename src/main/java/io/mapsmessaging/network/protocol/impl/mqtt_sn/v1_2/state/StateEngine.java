@@ -63,7 +63,7 @@ public class StateEngine {
     subscribeResponseMap = new LinkedHashMap<>();
     pipeline = new MessagePipeline(protocol, this);
     currentState = null;
-    int maxRegisteredSize = ((MqttSnConfig)protocol.getEndPoint().getConfig().getProtocolConfig("mqttsn")).getMaxRegisteredSize();
+    int maxRegisteredSize = ((MqttSnConfig)protocol.getEndPoint().getConfig().getProtocolConfig("mqtt-sn")).getMaxRegisteredSize();
     topicAliasManager = new TopicAliasManager(registeredTopicConfiguration, maxRegisteredSize);
   }
 
