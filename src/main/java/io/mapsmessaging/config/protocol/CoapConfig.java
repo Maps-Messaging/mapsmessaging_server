@@ -30,11 +30,16 @@ import lombok.ToString;
 public class CoapConfig extends ProtocolConfig {
   private int maxBlockSize;
   private int idleTime;
+
   public CoapConfig(ConfigurationProperties config) {
     super(config);
     maxBlockSize = config.getIntProperty("maxBlockSize", 128);
     idleTime = config.getIntProperty("idleTimePeriod", 120);
+  }
 
+  @Override
+  public String getType() {
+    return "coap";
   }
 
   public ConfigurationProperties toConfigurationProperties() {

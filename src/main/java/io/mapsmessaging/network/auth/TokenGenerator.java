@@ -17,14 +17,13 @@
 
 package io.mapsmessaging.network.auth;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
-
 import java.io.IOException;
+import java.util.Map;
 
 public interface TokenGenerator extends Service {
 
-  TokenGenerator getInstance(ConfigurationProperties properties);
+  TokenGenerator getInstance(Map<String, Object> properties);
 
   String generate() throws IOException;
 

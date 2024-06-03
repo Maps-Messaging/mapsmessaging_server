@@ -32,6 +32,11 @@ public class WebSocketConfig extends ProtocolConfig {
     super(config);
   }
 
+  @Override
+  public String getType() {
+    return "ws";
+  }
+
   public ConfigurationProperties toConfigurationProperties() {
     return super.toConfigurationProperties();
   }

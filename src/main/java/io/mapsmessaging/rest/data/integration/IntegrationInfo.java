@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.rest.data.integration;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -28,24 +28,11 @@ import lombok.ToString;
 @Data
 public class IntegrationInfo implements Serializable {
 
-  @Schema(description = "Unique name of the interface")
-  private final String name;
-  @Schema(description = "Current state of the interface")
-  private final String state;
-  @Schema(description = "Remote broker url")
-  private final String remoteUrl;
-  @Schema(description = "Number of mappings")
-  private final int mappings;
-
-  @Schema(description = "Configuration for the interface")
-  private final EndPointServerConfig config;
+  @Schema(description = "Configuration of the connection")
+  private final EndPointConnectionServerConfig config;
 
   public IntegrationInfo(EndPointConnection endPointConnection){
-    name = endPointConnection.getConfigName();
-    state = endPointConnection.getState().getName();
-    config = endPointConnection.getConfig();
-    remoteUrl = endPointConnection.getProperties().getProperty("url", "");
-    mappings = endPointConnection.getDestinationMappings().size();
+    config = endPointConnection.getProperties();
   }
 
 }

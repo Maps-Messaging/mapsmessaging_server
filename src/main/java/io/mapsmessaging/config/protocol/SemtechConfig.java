@@ -41,6 +41,11 @@ public class SemtechConfig extends ProtocolConfig {
     statusTopicName = config.getProperty("status", inboundTopicName);
   }
 
+  @Override
+  public String getType() {
+    return "semtech";
+  }
+
   public ConfigurationProperties toConfigurationProperties() {
     return super.toConfigurationProperties();
   }

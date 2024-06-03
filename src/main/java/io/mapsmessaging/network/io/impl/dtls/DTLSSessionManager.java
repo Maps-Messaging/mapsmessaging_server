@@ -73,7 +73,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     this.protocolImplFactory = protocolImplFactory;
     this.inetAddress = new UDPInterfaceInformation(inetAddress);
     this.managerMBean = managerMBean;
-    selectorTask = new SelectorTask(this, udpEndPoint.getConfig(), udpEndPoint.isUDP());
+    selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getEndPointConfig(), udpEndPoint.isUDP());
     long timeout = ((UdpConfig)udpEndPoint.getConfig().getEndPointConfig()).getIdleSessionTimeout();
     sessionMapping = new UDPSessionManager<>(timeout);
     udpEndPoint.register(SelectionKey.OP_READ, selectorTask);

@@ -72,7 +72,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    MqttSnConfig mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqttsn");
+    MqttSnConfig mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -89,7 +89,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
-    MqttSnConfig mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqttsn");
+    MqttSnConfig mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -100,7 +100,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();
 
-    selectorTask = new SelectorTask(this, endPoint.getConfig(), endPoint.isUDP());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     if (startAdvertiseTask(info)) {
       AdvertiserTask tmp = null;

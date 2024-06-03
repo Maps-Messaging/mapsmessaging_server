@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
+import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
@@ -30,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
   @JsonSubTypes.Type(value = HawtioConfig.class, name = "hawtioManager"),
   @JsonSubTypes.Type(value = JolokiaConfig.class, name = "jolokiaConfig"),
   @JsonSubTypes.Type(value = NetworkManagerConfig.class, name = "networkManagerConfig"),
+    @JsonSubTypes.Type(value = NetworkConnectionManagerConfig.class, name = "networkConnectionManagerConfig"),
 })
 @Schema(
     description = "Abstract base class for all server configurations",
@@ -40,6 +43,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
       @DiscriminatorMapping(value = "hawtioManager", schema = HawtioConfig.class),
       @DiscriminatorMapping(value = "jolokiaConfig", schema = JolokiaConfig.class),
       @DiscriminatorMapping(value = "networkManagerConfig", schema = NetworkManagerConfig.class),
+        @DiscriminatorMapping(value = "networkConnectionManagerConfig", schema = NetworkConnectionManagerConfig.class),
     })
 public abstract class Config {
 
@@ -68,5 +72,21 @@ public abstract class Config {
     } else {
       return Long.toString(size);
     }
+  }
+
+  protected boolean updateMap(Map<String, Object> currentMap, Map<String, Object> newMap) {
+    boolean hasChanged = false;
+
+    for (Map.Entry<String, Object> entry : newMap.entrySet()) {
+      String key = entry.getKey();
+      Object newValue = entry.getValue();
+
+      if (!Objects.equals(currentMap.get(key), newValue)) {
+        currentMap.put(key, newValue);
+        hasChanged = true;
+      }
+    }
+
+    return hasChanged;
   }
 }

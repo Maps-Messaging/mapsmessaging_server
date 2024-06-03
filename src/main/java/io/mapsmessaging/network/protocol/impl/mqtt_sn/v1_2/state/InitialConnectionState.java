@@ -49,7 +49,7 @@ public class InitialConnectionState implements State {
       scb.setResetState(connect.clean());
       scb.setKeepAlive(connect.getDuration());
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getDuration()));
-      MqttSnConfig config = (MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn");
+      MqttSnConfig config = (MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn");
 
       scb.setReceiveMaximum(config.getReceiveMaximum());
       scb.setSessionExpiry(config.getMaximumSessionExpiry());

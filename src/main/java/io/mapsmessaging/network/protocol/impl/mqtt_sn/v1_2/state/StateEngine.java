@@ -21,6 +21,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -30,36 +31,40 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfigurati
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline.MessagePipeline;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
 public class StateEngine {
 
   private final Logger logger;
-
   private final Map<String, MQTT_SNPacket> subscribeResponseMap;
+  private final MessagePipeline pipeline;
+  private State currentState;
+
   @Getter
   private final TopicAliasManager topicAliasManager;
+
   @Getter
   @Setter
   private int maxBufferSize = 0;
-  private State currentState;
+
+  @Getter
+  @Setter
   private SessionContextBuilder sessionContextBuilder;
-  private final MessagePipeline pipeline;
 
   public StateEngine(MQTT_SNProtocol protocol, RegisteredTopicConfiguration registeredTopicConfiguration) {
     logger = LoggerFactory.getLogger(StateEngine.class);
     subscribeResponseMap = new LinkedHashMap<>();
     pipeline = new MessagePipeline(protocol, this);
     currentState = null;
-    topicAliasManager = new TopicAliasManager(registeredTopicConfiguration);
+    int maxRegisteredSize = ((MqttSnConfig)protocol.getEndPoint().getConfig().getProtocolConfig("mqttsn")).getMaxRegisteredSize();
+    topicAliasManager = new TopicAliasManager(registeredTopicConfiguration, maxRegisteredSize);
   }
 
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session session, EndPoint endPoint, MQTT_SNProtocol protocol)
@@ -81,14 +86,6 @@ public class StateEngine {
 
   public void removeSubscribeResponse(String topic) {
     subscribeResponseMap.remove(topic);
-  }
-
-  public SessionContextBuilder getSessionContextBuilder() {
-    return sessionContextBuilder;
-  }
-
-  public void setSessionContextBuilder(SessionContextBuilder sessionContextBuilder) {
-    this.sessionContextBuilder = sessionContextBuilder;
   }
 
   public void setState(State state) {

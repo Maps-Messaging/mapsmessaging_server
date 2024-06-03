@@ -66,7 +66,7 @@ public class StompProtocol extends ProtocolImpl {
     int maxBufferSize = ((StompConfig)endPoint.getConfig().getProtocolConfig("stomp")).getMaxBufferSize();
     maxReceiveSize = ((StompConfig)endPoint.getConfig().getProtocolConfig("stomp")).getMaxReceive();
     version = "1.2";
-    selectorTask = new SelectorTask(this, endPoint.getConfig());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     factory = new FrameFactory(maxBufferSize, endPoint.isClient());
     activeFrame = null;
     stateEngine = new StateEngine(this);

@@ -17,7 +17,9 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
+
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.EndPointURL;
@@ -30,11 +32,8 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-
 import java.io.IOException;
 import java.util.List;
-
-import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
 public class Disconnected extends State implements EndPointConnectedCallback {
 
@@ -46,24 +45,20 @@ public class Disconnected extends State implements EndPointConnectedCallback {
 
   @Override
   public void connected(EndPoint endpoint) {
-    String protocol = endPointConnection.getProperties().getProperty("protocol");
+    String protocol = endPointConnection.getProperties().getProtocols();
     String url = endPointConnection.getUrl().toString();
     try {
       ThreadContext.put("endpoint", url);
       ProtocolFactory protocolFactory = new ProtocolFactory(protocol);
       ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
-      endpoint.getConfig().getProtocolConfig()
-      ConfigurationProperties properties = endpoint.getConfig().
-      if (properties.containsKey("remote")) {
-        properties = (ConfigurationProperties) properties.get("remote");
-      }
+      EndPointConnectionServerConfig properties = (EndPointConnectionServerConfig) endpoint.getConfig();
 
-      String sessionId = properties.getProperty("sessionId");
-      String username = properties.getProperty("username");
-      String password = properties.getProperty("password");
-      if (properties.containsKey("tokenGenerator")) {
-        String tokenGeneratorName = properties.getProperty("tokenGenerator");
-        TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties);
+      String sessionId = properties.getAuthConfig().getSessionId();
+      String username = properties.getAuthConfig().getUsername();
+      String password = properties.getAuthConfig().getPassword();
+      String tokenGeneratorName = properties.getAuthConfig().getTokenGenerator();
+      if (tokenGeneratorName != null && !tokenGeneratorName.isEmpty()) {
+        TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties.getAuthConfig().getTokenConfig());
         password = tokenGenerator.generate();
       }
 

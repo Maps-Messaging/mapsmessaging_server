@@ -63,13 +63,13 @@ public class MqttSnConfig extends ProtocolConfig {
     enablePortChanges = config.getBooleanProperty("enablePortChanges", true);
     enableAddressChanges = config.getBooleanProperty("enableAddressChanges", false);
     advertiseGateway = config.getBooleanProperty("advertiseGateway", false);
-    registeredTopics = config.getProperty("registered", null);
+    registeredTopics = config.getProperty("registered", "");
     advertiseInterval = config.getIntProperty("advertiseInterval", 30);
     maxRegisteredSize = config.getIntProperty("maxRegisteredSize", ((1 << 15) - 1));
     maxInFlightEvents = config.getIntProperty("maxInFlightEvents", 1);
     dropQoS0 = config.getBooleanProperty("dropQoS0Events", false);
     eventQueueTimeout = config.getIntProperty("eventQueueTimeout", 0);
-    predefinedTopicsList = new ArrayList<PredefinedTopics>();
+    predefinedTopicsList = new ArrayList<>();
     Object predefined = config.get("preDefinedTopics");
     if (predefined instanceof List) {
       List<ConfigurationProperties> predefinedList = (List<ConfigurationProperties>) predefined;
@@ -77,6 +77,11 @@ public class MqttSnConfig extends ProtocolConfig {
         predefinedTopicsList.add(new PredefinedTopics(props));
       }
     }
+  }
+
+  @Override
+  public String getType() {
+    return "mqtt-sn";
   }
 
   public ConfigurationProperties toConfigurationProperties() {

@@ -80,7 +80,7 @@ public class MQTTProtocol extends ProtocolImpl {
     logger.log(ServerLogMessages.MQTT_START);
     mqttConfig = (MqttConfig) endPoint.getConfig().getProtocolConfig("MQTT");
     maxBufferSize =  mqttConfig.getMaximumBufferSize();
-    selectorTask = new SelectorTask(this, endPoint.getConfig());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory();
     packetFactory = new PacketFactory(this);
     closed = false;

@@ -66,12 +66,12 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
     int datagramSize = NetworkInfoHelper.getMTU(info);
     if (datagramSize > 0) {
-      endPoint.getConfig().setServerReadBufferSize(datagramSize * 2L);
-      endPoint.getConfig().setServerWriteBufferSize(datagramSize * 2L);
+      endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(datagramSize * 2L);
+      endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
     }
 
     byte gatewayId;
-    String gatewayConfig = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn")).getGatewayId();
+    String gatewayConfig = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getGatewayId();
     try {
       gatewayId = (byte) Integer.parseInt(gatewayConfig);
     } catch (Exception ex) {

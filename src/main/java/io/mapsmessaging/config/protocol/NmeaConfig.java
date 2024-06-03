@@ -28,6 +28,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 public class NmeaConfig extends ProtocolConfig {
+
   public NmeaConfig(ConfigurationProperties config) {
     super(config);
   }
@@ -35,4 +36,10 @@ public class NmeaConfig extends ProtocolConfig {
   public ConfigurationProperties toConfigurationProperties() {
     return super.toConfigurationProperties();
   }
+
+  @Override
+  public String getType() {
+    return "nmea";
+  }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,12 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.config.auth.AuthConfig;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,9 +33,11 @@ public class ConnAckListener extends BaseConnectionListener {
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
 
-    String sess = protocol.getEndPoint().getConfig().getProperties().getProperty("sessionId");
-    String user = protocol.getEndPoint().getConfig().getProperties().getProperty("username");
-    String pass = protocol.getEndPoint().getConfig().getProperties().getProperty("password");
+    AuthConfig config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
+
+    String sess = config.getSessionId();
+    String user = config.getUsername();
+    String pass = config.getPassword();
 
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sess, false, 30000, user, pass.toCharArray());
     protocol.setKeepAlive(30000);

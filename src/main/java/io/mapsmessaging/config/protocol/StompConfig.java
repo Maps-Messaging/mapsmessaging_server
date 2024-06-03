@@ -38,6 +38,11 @@ public class StompConfig extends ProtocolConfig {
     maxReceive = config.getIntProperty("maximumReceive", 1000);
   }
 
+  @Override
+  public String getType() {
+    return "stomp";
+  }
+
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = super.toConfigurationProperties();
     config.put("maximumBufferSize", maxBufferSize);

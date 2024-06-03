@@ -124,7 +124,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     serverTopicAliasMapping.setMaximum(serverMaximumTopicAlias);
     keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
     minimumKeepAlive = mqttConfig.getMinServerKeepAlive() * 1000; // Convert to milliseconds
-    selectorTask = new SelectorTask(this, endPoint.getConfig());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory5();
     packetFactory = new PacketFactory5(this);
     closed = false;

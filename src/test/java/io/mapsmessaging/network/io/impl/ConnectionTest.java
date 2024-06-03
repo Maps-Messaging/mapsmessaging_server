@@ -17,22 +17,21 @@
 
 package io.mapsmessaging.network.io.impl;
 
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.NetworkConfig;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public abstract class ConnectionTest extends BaseTestConfig {
 
@@ -48,11 +47,11 @@ public abstract class ConnectionTest extends BaseTestConfig {
     EndPoint endPoint = factory.connect(url, selectorLoadManager, endpoint -> connected.set(true),
         new EndPointServerStatus(url) {
           @Override
-          public NetworkConfig getConfig() {
+          public EndPointServerConfig getConfig() {
             ConfigurationProperties testConfig = ConfigurationManager.getInstance().getProperties("NetworkManager");
             ConfigurationProperties configurationProperties = new ConfigurationProperties();
             configurationProperties.setGlobal(testConfig.getGlobal());
-            return new NetworkConfig(configurationProperties);
+            return new EndPointServerConfig(configurationProperties);
           }
 
           @Override

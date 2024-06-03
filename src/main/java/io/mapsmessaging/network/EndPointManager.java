@@ -52,7 +52,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
     protocols = endPointServerConfig.getProtocols();
     endPointServer = null;
     state = STATE.STOPPED;
-    int selectorCount = endPointServerConfig.getSelectorThreadCount();
+    int selectorCount = endPointServerConfig.getEndPointConfig().getSelectorThreadCount();
     EndPointManagerJMX bean = null;
     if (managerBean != null) {
       bean = new EndPointManagerJMX(managerBean.getTypePath(), this, endPointServerConfig);

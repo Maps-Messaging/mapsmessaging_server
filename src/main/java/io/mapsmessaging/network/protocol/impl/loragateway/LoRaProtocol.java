@@ -95,7 +95,7 @@ public class LoRaProtocol extends ProtocolImpl {
     clientStats = new LinkedHashMap<>();
     loraProtocolEndPoint = (LoRaProtocolEndPoint) getEndPoint();
     loraProtocolEndPoint.setProtocol(this);
-    selectorTask = new SelectorTask(this, endPoint.getConfig(), true);
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), true);
     protocolInterfaceManager = new MQTTSNInterfaceManager((byte) 1, selectorTask, getEndPoint());
     loraProtocolEndPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     LoRaConfig loRaConfig = (LoRaConfig) endPoint.getConfig().getProtocolConfig("lora");

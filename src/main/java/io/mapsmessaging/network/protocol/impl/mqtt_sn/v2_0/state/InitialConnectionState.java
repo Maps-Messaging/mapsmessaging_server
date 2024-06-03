@@ -20,9 +20,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.config.auth.SaslConfig;
+import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
@@ -75,7 +75,8 @@ public class InitialConnectionState implements State {
       scb.setPersistentSession(true);
       scb.setResetState(connect.isCleanStart());
       scb.setKeepAlive(connect.getKeepAlive());
-      scb.setReceiveMaximum(DefaultConstants.RECEIVE_MAXIMUM);
+      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn")).getReceiveMaximum();
+      scb.setReceiveMaximum(receiveMax);
       scb.setSessionExpiry(connect.getSessionExpiry());
       if(saslAuthenticationMechanism != null){
         String username  = saslAuthenticationMechanism.getUsername();

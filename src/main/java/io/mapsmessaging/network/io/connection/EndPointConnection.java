@@ -19,8 +19,8 @@ package io.mapsmessaging.network.io.connection;
 
 import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
 
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.config.network.EndPointServerConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -51,14 +51,13 @@ public class EndPointConnection extends EndPointServerStatus {
   @Getter
   private final Logger logger;
   @Getter
-  private final ConfigurationProperties properties;
+  private final EndPointConnectionServerConfig properties;
   private final EndPointConnectionHostJMX manager;
   @Getter
   private final EndPointConnectionFactory endPointConnectionFactory;
   @Getter
   private final SelectorLoadManager selectorLoadManager;
-  @Getter
-  private final List<ConfigurationProperties> destinationMappings;
+
   @Getter
   private State state;
 
@@ -70,18 +69,17 @@ public class EndPointConnection extends EndPointServerStatus {
   private ProtocolImpl connection;
 
   public EndPointConnection(
-      EndPointURL url, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings,
+      EndPointURL url, EndPointConnectionServerConfig properties,
       EndPointConnectionFactory connectionFactory, SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager) {
     super(url);
     this.properties = properties;
     this.manager = manager;
-    this.destinationMappings = destinationMappings;
     this.selectorLoadManager = selectorLoadManager;
     this.endPointConnectionFactory = connectionFactory;
 
     running = new AtomicBoolean(false);
     paused = new AtomicBoolean(false);
-    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProperty("protocol"));
+    logger = LoggerFactory.getLogger("EndPointConnectionStateManager_" + url.toString() + "_" + properties.getProtocols());
     if (manager != null) {
       manager.addConnection(this);
     }
@@ -108,11 +106,11 @@ public class EndPointConnection extends EndPointServerStatus {
 
   @Override
   public EndPointServerConfig getConfig() {
-    return new EndPointServerConfig(properties);
+    return properties;
   }
 
   public String getConfigName() {
-    return properties.getProperty("name", "");
+    return properties.getName();
   }
   @Override
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
@@ -175,7 +173,7 @@ public class EndPointConnection extends EndPointServerStatus {
       futureTask.cancel(false);
     }
     if (state != null) {
-      logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProperty("protocol"), state.getName(), newState.getName());
+      logger.log(ServerLogMessages.END_POINT_CONNECTION_STATE_CHANGED, url, properties.getProtocols(), state.getName(), newState.getName());
     }
     setState(newState);
     futureTask = SimpleTaskScheduler.getInstance().schedule(newState, time, TimeUnit.MILLISECONDS);

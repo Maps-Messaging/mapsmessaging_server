@@ -29,10 +29,17 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 public class LoRaConfig extends ProtocolConfig {
+
   private int retransmit;
+
   public LoRaConfig(ConfigurationProperties config) {
     super(config);
     retransmit = config.getIntProperty("LoRaMaxTransmissionRate", 10);
+  }
+
+  @Override
+  public String getType() {
+    return "lora";
   }
 
   public ConfigurationProperties toConfigurationProperties() {

@@ -33,6 +33,11 @@ public class AmqpConfig extends ProtocolConfig {
     super(config);
   }
 
+  @Override
+  public String getType() {
+    return "amqp";
+  }
+
   public ConfigurationProperties toConfigurationProperties() {
     return super.toConfigurationProperties();
   }

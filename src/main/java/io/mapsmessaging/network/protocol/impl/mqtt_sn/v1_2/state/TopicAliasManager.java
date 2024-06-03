@@ -17,25 +17,25 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state;
 
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
 
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
-
 public class TopicAliasManager {
 
   private final HashMap<String, Short> topicAlias;
   private final RegisteredTopicConfiguration registeredTopicConfiguration;
   private final AtomicInteger aliasGenerator;
+  private final int maxSize;
 
-  public TopicAliasManager(RegisteredTopicConfiguration registeredTopicConfiguration) {
+  public TopicAliasManager(RegisteredTopicConfiguration registeredTopicConfiguration, int maxSize) {
+    this.maxSize = maxSize;
     topicAlias = new LinkedHashMap<>();
     aliasGenerator = new AtomicInteger(1);
     this.registeredTopicConfiguration = registeredTopicConfiguration;
@@ -48,7 +48,7 @@ public class TopicAliasManager {
 
   public short getTopicAlias(String name) {
     Short alias = topicAlias.get(name);
-    if (alias == null && topicAlias.size() < DefaultConstants.MAX_REGISTERED_SIZE) {
+    if (alias == null && topicAlias.size() < maxSize) {
       alias = (short) aliasGenerator.incrementAndGet();
       topicAlias.put(name, alias);
     }

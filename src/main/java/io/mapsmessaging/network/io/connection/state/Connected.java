@@ -18,13 +18,14 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.config.protocol.LinkConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class Connected extends State {
 
@@ -35,17 +36,17 @@ public class Connected extends State {
   @Override
   public void execute() {
     boolean failed = false;
-    List<ConfigurationProperties> properties = endPointConnection.getDestinationMappings();
-    for (ConfigurationProperties property : properties) {
-      String direction = property.getProperty("direction");
-      String local = property.getProperty("local_namespace");
-      String remote = property.getProperty("remote_namespace");
-      String selector = property.getProperty("selector");
+    List<LinkConfig> linkConfigs = endPointConnection.getProperties().getLinkConfigs();
+    for (LinkConfig property : linkConfigs) {
+      String direction = property.getDirection();
+      String local = property.getLocalNamespace();
+      String remote = property.getRemoteNamespace();
+      String selector = property.getSelector();
 
       Transformer transformer = null;
-      Object obj = property.get("transformer");
-      if(obj instanceof ConfigurationProperties) {
-        transformer = TransformerManager.getInstance().get((ConfigurationProperties)obj);
+      Map<String, Object> obj = property.getTransformer();
+      if(obj != null && !obj.isEmpty()) {
+        transformer = TransformerManager.getInstance().get(new ConfigurationProperties(obj));
       }
 
       try {

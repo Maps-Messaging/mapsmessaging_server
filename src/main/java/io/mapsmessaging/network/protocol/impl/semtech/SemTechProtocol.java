@@ -62,7 +62,7 @@ public class SemTechProtocol extends ProtocolImpl {
   protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint, String sessionId) throws IOException {
     super(endPoint);
     logger = LoggerFactory.getLogger("SemTech Protocol on " + endPoint.getName());
-    selectorTask = new SelectorTask(this, endPoint.getConfig(), endPoint.isUDP());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     packetFactory = new PacketFactory();
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");

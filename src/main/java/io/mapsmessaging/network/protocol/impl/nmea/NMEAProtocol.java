@@ -73,7 +73,7 @@ public class NMEAProtocol extends ProtocolImpl {
     sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
     session = SessionManager.getInstance().create(sessionContextBuilder.build(), this);
-    selectorTask = new SelectorTask(this, endPoint.getConfig());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
     setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));

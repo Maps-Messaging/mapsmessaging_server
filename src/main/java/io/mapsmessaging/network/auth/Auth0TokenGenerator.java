@@ -23,10 +23,9 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Getter;
-
 import java.io.IOException;
+import java.util.Map;
+import lombok.Getter;
 
 public class Auth0TokenGenerator implements TokenGenerator {
 
@@ -45,7 +44,7 @@ public class Auth0TokenGenerator implements TokenGenerator {
   }
 
   @Override
-  public TokenGenerator getInstance(ConfigurationProperties properties) {
+  public TokenGenerator getInstance(Map<String, Object> properties) {
     return new Auth0TokenGenerator(properties);
   }
 
@@ -64,8 +63,8 @@ public class Auth0TokenGenerator implements TokenGenerator {
     }
   }
 
-  private Auth0TokenGenerator(ConfigurationProperties properties) {
-    domain = properties.getProperty("domain").trim();
+  private Auth0TokenGenerator(Map<String, Object>  properties) {
+    domain = ((String)properties.get("domain")).trim();
     body = new Auth0TokenBody(properties);
   }
 
@@ -80,11 +79,11 @@ public class Auth0TokenGenerator implements TokenGenerator {
     @Getter
     private final String grantType;
 
-    public Auth0TokenBody(ConfigurationProperties properties) {
-      clientId = properties.getProperty("client_id").trim();
-      clientSecret = properties.getProperty("client_secret").trim();
-      audience = "https://" + properties.getProperty("domain").trim() + "/api/v2/";
-      grantType = properties.getProperty("grant_type").trim();
+    public Auth0TokenBody(Map<String, Object>  properties) {
+      clientId = ((String)properties.get("client_id")).trim();
+      clientSecret = ((String)properties.get("client_secret")).trim();
+      audience = "https://" + ((String)properties.get("domain")).trim() + "/api/v2/";
+      grantType = ((String)properties.get("grant_type")).trim();
     }
   }
 

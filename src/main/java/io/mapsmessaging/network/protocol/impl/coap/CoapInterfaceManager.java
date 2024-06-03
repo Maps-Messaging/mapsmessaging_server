@@ -43,7 +43,7 @@ public class CoapInterfaceManager implements SelectorCallback {
     this.endPoint = endPoint;
     this.mtu = mtu;
     currentSessions = new LinkedHashMap<>();
-    SelectorTask selectorTask = new SelectorTask(this, endPoint.getConfig(), endPoint.isUDP());
+    SelectorTask selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
   }

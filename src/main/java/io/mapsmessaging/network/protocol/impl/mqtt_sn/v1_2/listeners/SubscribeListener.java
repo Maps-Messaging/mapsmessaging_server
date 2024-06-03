@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,9 +17,13 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
@@ -28,12 +32,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.SubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Subscribe;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
-
 import java.io.IOException;
-
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants.RECEIVE_MAXIMUM;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
 
 public class SubscribeListener extends PacketListener {
 
@@ -65,9 +64,10 @@ public class SubscribeListener extends PacketListener {
       if (topicId == 0) {
         topicId = stateEngine.getTopicAliasManager().getTopicAlias(topicName);
       }
+      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getReceiveMaximum();
       ClientAcknowledgement ackManger = subscribe.getQoS().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
-      builder.setReceiveMaximum(RECEIVE_MAXIMUM);
+      builder.setReceiveMaximum(receiveMax);
       builder.setQos(subscribe.getQoS());
 
       try {

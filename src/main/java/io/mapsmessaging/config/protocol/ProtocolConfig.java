@@ -28,7 +28,7 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class ProtocolConfig extends Config {
+public abstract class ProtocolConfig extends Config {
 
   private String name;
   private ConnectionAuthConfig remoteAuthConfig;
@@ -40,6 +40,8 @@ public class ProtocolConfig extends Config {
           new ConnectionAuthConfig((ConfigurationProperties) config.get("remoteAuthConfig"));
     }
   }
+
+  public abstract String getType();
 
   public boolean update(ProtocolConfig newConfig) {
     boolean hasChanged = false;

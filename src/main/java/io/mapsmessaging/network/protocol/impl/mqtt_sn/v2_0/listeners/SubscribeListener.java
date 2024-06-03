@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.*;
+
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
@@ -29,11 +32,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.SubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Subscribe;
-
 import java.io.IOException;
-
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.DefaultConstants.RECEIVE_MAXIMUM;
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.*;
 
 public class SubscribeListener extends PacketListener {
 
@@ -76,7 +75,8 @@ public class SubscribeListener extends PacketListener {
       }
       ClientAcknowledgement ackManger = subscribe.getQos().getClientAcknowledgement();
       SubscriptionContextBuilder builder = new SubscriptionContextBuilder(topicName, ackManger);
-      builder.setReceiveMaximum(RECEIVE_MAXIMUM);
+      int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqttsn")).getReceiveMaximum();
+      builder.setReceiveMaximum(receiveMax);
       builder.setNoLocalMessages(subscribe.isNoLocal());
       builder.setRetainHandler(subscribe.getRetainHandler());
       builder.setQos(subscribe.getQos());

@@ -60,7 +60,7 @@ public class AMQPProtocol extends ProtocolImpl {
     super(endPoint);
     version = "1.0";
     logger = LoggerFactory.getLogger("AMQP Protocol on " + endPoint.getName());
-    selectorTask = new SelectorTask(this, endPoint.getConfig());
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());

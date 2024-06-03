@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.config.network;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.protocol.*;
 import io.mapsmessaging.configuration.ConfigurationProperties;
@@ -31,7 +32,7 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class EndPointServerConfig extends EndPointConfig {
+public class EndPointServerConfig extends Config {
 
   private String name;
   private String url;
@@ -44,7 +45,6 @@ public class EndPointServerConfig extends EndPointConfig {
   private int selectorTaskWait;
 
   public EndPointServerConfig(ConfigurationProperties config) {
-    super(config);
     this.name = config.getProperty("name");
     this.url = config.getProperty("url");
     this.backlog = config.getIntProperty("backlog", 100);
@@ -72,7 +72,7 @@ public class EndPointServerConfig extends EndPointConfig {
 
   public ProtocolConfig getProtocolConfig(String protocol) {
     return protocolConfigs.stream()
-        .filter(protocolConfig -> protocolConfig.getName().equalsIgnoreCase(protocol))
+        .filter(protocolConfig -> protocolConfig.getType().equalsIgnoreCase(protocol))
         .findFirst()
         .orElse(null);
   }

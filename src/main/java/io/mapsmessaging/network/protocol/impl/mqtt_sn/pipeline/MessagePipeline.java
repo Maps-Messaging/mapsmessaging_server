@@ -65,7 +65,7 @@ public class MessagePipeline {
     paused = new AtomicBoolean(false);
     empty = new AtomicInteger(0);
     logger = LoggerFactory.getLogger(MessagePipeline.class);
-    MqttSnConfig config = (MqttSnConfig) protocol.getEndPoint().getConfig().getProtocolConfig("mqttsn");
+    MqttSnConfig config = (MqttSnConfig) protocol.getEndPoint().getConfig().getProtocolConfig("mqtt-sn");
 
     maxInFlightEvents = config.getMaxInFlightEvents();
     dropQoS0 = config.isDropQoS0();

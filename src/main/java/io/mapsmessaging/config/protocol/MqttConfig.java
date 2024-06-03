@@ -82,6 +82,10 @@ public class MqttConfig extends ProtocolConfig {
 
     return hasChanged;
   }
+  @Override
+  public String getType() {
+    return "mqtt";
+  }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {

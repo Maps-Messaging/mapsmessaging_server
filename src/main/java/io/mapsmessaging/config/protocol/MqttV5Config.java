@@ -51,6 +51,11 @@ public class MqttV5Config extends MqttConfig {
     return hasChanged;
   }
 
+  @Override
+  public String getType() {
+    return "mqtt";
+  }
+
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = super.toConfigurationProperties();
     config.put("minServerKeepAlive", minServerKeepAlive);

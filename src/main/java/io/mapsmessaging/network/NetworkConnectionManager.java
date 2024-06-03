@@ -18,7 +18,8 @@
 package io.mapsmessaging.network;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.NetworkConnectionManagerConfig;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -27,13 +28,11 @@ import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
-import lombok.Getter;
-
 import java.io.IOException;
 import java.util.*;
+import lombok.Getter;
 
 public class NetworkConnectionManager implements ServiceManager, Agent {
 
@@ -46,48 +45,35 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
   private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
-  private final List<ConfigurationProperties> connectionConfiguration;
+  private final NetworkConnectionManagerConfig config;
 
   public NetworkConnectionManager() throws IOException {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
-    ConfigurationProperties networkConnectionProperties = ConfigurationManager.getInstance().getProperties("NetworkConnectionManager");
-    connectionConfiguration = new ArrayList<>();
-    Object rootObj = networkConnectionProperties.get("data");
-    if (rootObj instanceof List) {
-      connectionConfiguration.addAll((List<ConfigurationProperties>) rootObj);
-    } else if (rootObj instanceof ConfigurationProperties) {
-      connectionConfiguration.add((ConfigurationProperties) rootObj);
-    }
+    config = NetworkConnectionManagerConfig.getInstance();
     endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
-    selectorLoadManager = new SelectorLoadManager(10,networkConnectionProperties.getProperty("name", "Network Connection") );
+    selectorLoadManager = new SelectorLoadManager(10, "Network Interconnection" );
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
   }
 
   public void initialise() {
-    for (ConfigurationProperties properties : connectionConfiguration) {
-      String urlString = properties.getProperty("url");
-      if (urlString == null) {
-        urlString = "noop://localhost/";
-        properties.put("protocol", "loop");
-      }
+    for (EndPointConnectionServerConfig properties : config.getEndPointServerConfigList()) {
+      if (!properties.getLinkConfigs().isEmpty()) {
+        String urlString = properties.getUrl();
+        if (urlString == null) {
+          urlString = "noop://localhost/";
+          properties.setUrl("noop://localhost/");
+          properties.setProtocols("loop");
+        }
 
-      EndPointURL endPointURL = new EndPointURL(urlString);
-      List<ConfigurationProperties> destinationMappings = new ArrayList<>();
-      Object linkReference = properties.get("links");
-      if (linkReference instanceof ConfigurationProperties) {
-        destinationMappings.add((ConfigurationProperties) linkReference);
-      } else if (linkReference instanceof List) {
-        destinationMappings.addAll((List<ConfigurationProperties>) linkReference);
-      }
-      if (!destinationMappings.isEmpty()) {
-        processEndPoint(endPointURL, properties,destinationMappings );
+        EndPointURL endPointURL = new EndPointURL(urlString);
+        processEndPoint(endPointURL, properties);
       }
     }
   }
 
-  private void processEndPoint(EndPointURL endPointURL, ConfigurationProperties properties, List<ConfigurationProperties> destinationMappings){
+  private void processEndPoint(EndPointURL endPointURL, EndPointConnectionServerConfig properties){
     for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
       if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
         EndPointConnectionHostJMX hostJMXBean = null;
@@ -95,7 +81,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         if (!jmxList.isEmpty()) {
           hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
         }
-        endPointConnectionList.add(new EndPointConnection(endPointURL, properties, destinationMappings, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
+        endPointConnectionList.add(new EndPointConnection(endPointURL, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
       }
     }
   }
