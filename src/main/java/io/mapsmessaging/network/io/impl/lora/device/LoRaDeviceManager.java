@@ -17,13 +17,12 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.LoRaDeviceManagerConfig;
+import io.mapsmessaging.config.network.LoRaDeviceConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,25 +50,11 @@ public class LoRaDeviceManager {
     synchronized (physicalDevices) {
       try {
         System.loadLibrary("LoRaDevice");
-        ConfigurationProperties configMap = ConfigurationManager.getInstance().getProperties("LoRaDevice");
-        for (Object obj : configMap.values()) {
-          if (obj instanceof ConfigurationProperties) {
-            ConfigurationProperties properties = (ConfigurationProperties) obj;
-            LoRaDeviceConfigBuilder configBuilder = new LoRaDeviceConfigBuilder();
-            configBuilder.setName(properties.getProperty("name"))
-                .setRadio(properties.getProperty("radio"))
-                .setCs(properties.getIntProperty("cs", -1))
-                .setIrq(properties.getIntProperty("irq", -1))
-                .setRst(properties.getIntProperty("rst", -1))
-                .setPower(properties.getIntProperty("power", 14))
-                .setCadTimeout(properties.getIntProperty("CADTimeout", 0))
-                .setFrequency(properties.getFloatProperty("frequency", 0.0f));
-            if (configBuilder.isValid()) {
-              LoRaDevice device = new LoRaDevice(configBuilder.build());
-              physicalDevices.add(device);
-              active.set(true);
-            }
-          }
+        LoRaDeviceManagerConfig deviceConfig = LoRaDeviceManagerConfig.getInstance();
+        for(LoRaDeviceConfig config:deviceConfig.getDeviceConfigList()){
+          LoRaDevice device = new LoRaDevice(config);
+          physicalDevices.add(device);
+          active.set(true);
         }
       } catch (UnsatisfiedLinkError e) {
         logger.log(ServerLogMessages.LORA_DEVICE_LIBRARY_NOT_LOADED, e.getMessage());

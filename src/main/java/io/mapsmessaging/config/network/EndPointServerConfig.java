@@ -20,6 +20,7 @@ package io.mapsmessaging.config.network;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.protocol.*;
+import io.mapsmessaging.config.protocol.LoRaConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,21 +79,15 @@ public class EndPointServerConfig extends Config {
   }
 
   private EndPointConfig createEndPointConfig(String url, ConfigurationProperties properties) {
-    if (url.toLowerCase().startsWith("tcp")) {
+    if (url.toLowerCase().startsWith("tcp") || url.toLowerCase().startsWith("ws")) {
       return new TcpConfig(properties);
-    } else if (url.toLowerCase().startsWith("ssl")) {
+    } else if (url.toLowerCase().startsWith("ssl") || url.toLowerCase().startsWith("wss")) {
       return new TlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("ws")) {
-      return new TcpConfig(properties);
-    } else if (url.toLowerCase().startsWith("wss")) {
-      return new TlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("udp")) {
+    } else if (url.toLowerCase().startsWith("udp") || url.toLowerCase().startsWith("hmac")) {
       return new UdpConfig(properties);
     } else if (url.toLowerCase().startsWith("dtls")) {
       return new DtlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("hmac")) {
-      return new UdpConfig(properties);
-    } else if (url.toLowerCase().startsWith("serial")) {
+    } else if (url.toLowerCase().startsWith("serial") || url.toLowerCase().startsWith("lora")) {
       return new SerialConfig(properties);
     }
     return null;
@@ -113,6 +108,8 @@ public class EndPointServerConfig extends Config {
       return new CoapConfig(config);
     } else if (protocol.equalsIgnoreCase("nmea")) {
       return new NmeaConfig(config);
+    } else if (protocol.equalsIgnoreCase("lora")) {
+      return new LoRaConfig(config);
     }
     return null;
   }
