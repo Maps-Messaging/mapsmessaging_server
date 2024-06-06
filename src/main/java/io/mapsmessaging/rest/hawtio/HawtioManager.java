@@ -22,13 +22,12 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 import io.hawt.embedded.Main;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.HawtioConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.JolokiaConfig;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.File;
 import java.util.Map;
 
@@ -80,8 +79,7 @@ public class HawtioManager implements Agent {
   }
 
   private boolean isJolokiaEnabled() {
-    ConfigurationProperties jolokia = ConfigurationManager.getInstance().getProperties("jolokia");
-    return jolokia.getBooleanProperty("enable", true);
+    return JolokiaConfig.getInstance().isEnable();
   }
 
   @Override

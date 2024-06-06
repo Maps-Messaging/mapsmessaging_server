@@ -18,12 +18,12 @@
 package io.mapsmessaging.hardware.trigger;
 
 import com.pi4j.io.gpio.digital.DigitalState;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.device.triggers.InterruptTriggerConfig;
+import io.mapsmessaging.config.device.triggers.TriggerConfig;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.gpio.InterruptFactory;
 import io.mapsmessaging.devices.gpio.InterruptListener;
 import io.mapsmessaging.devices.gpio.InterruptPin;
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,12 +41,14 @@ public class InterruptTrigger extends Trigger implements InterruptListener {
   }
 
   @Override
-  public Trigger build(ConfigurationProperties properties) throws IOException {
+  public Trigger build(TriggerConfig properties) throws IOException {
+    InterruptTriggerConfig triggerConfig = (InterruptTriggerConfig)properties;
     InterruptFactory interruptFactory = DeviceBusManager.getInstance().getInterruptFactory();
     Map<String, String> factoryMap = new LinkedHashMap<>();
-    for(Map.Entry<String, Object> entry:properties.entrySet()){
-      factoryMap.put(entry.getKey(), entry.getValue().toString());
-    }
+    factoryMap.put("id", triggerConfig.getId());
+    factoryMap.put("address", ""+triggerConfig.getAddress());
+    factoryMap.put("name", triggerConfig.getName());
+    factoryMap.put("pull", triggerConfig.getPullDirection());
     return new InterruptTrigger(interruptFactory.allocateInterruptPin(factoryMap));
   }
 

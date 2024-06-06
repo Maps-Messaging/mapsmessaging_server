@@ -20,7 +20,7 @@ package io.mapsmessaging.hardware.device.handler;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.device.DeviceBusConfig;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.hardware.device.DeviceClientConnection;
@@ -29,29 +29,28 @@ import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.SneakyThrows;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.*;
+import lombok.SneakyThrows;
 
 public abstract class BusHandler implements Runnable {
   private final Map<String, DeviceSessionManagement> activeSessions;
   private final Map<String, DeviceHandler> foundDevices;
-  protected final ConfigurationProperties properties;
+  protected final DeviceBusConfig properties;
   private final int scanPeriod;
   private Future<?> scheduledFuture;
   private final Trigger trigger;
   private final String topicNameTemplate;
 
 
-  protected BusHandler(ConfigurationProperties properties, Trigger trigger){
+  protected BusHandler(DeviceBusConfig properties, Trigger trigger){
     foundDevices = new ConcurrentHashMap<>();
     activeSessions = new ConcurrentHashMap<>();
     this.properties = properties;
     this.trigger = trigger;
-    scanPeriod = properties.getIntProperty("scanTime", 120000);
-    topicNameTemplate = properties.getProperty("topicNameTemplate", "/device/[bus_name]/[bus_number]/[device_addr]/[device_name]");
+    scanPeriod = properties.getScanTime();
+    topicNameTemplate = properties.getTopicNameTemplate();
   }
 
   public synchronized void start() {
@@ -87,11 +86,11 @@ public abstract class BusHandler implements Runnable {
   }
 
   protected String getSelector(int address){
-    return properties.getProperty("selector", "");
+    return properties.getSelector();
   }
 
   private DeviceSessionManagement createSession(DeviceHandler deviceHandler) {
-    String filterName  = properties.getProperty("filter", "ON_CHANGE");
+    String filterName  = properties.getFilter();
     DataFilter filter = DataFilter.valueOf(filterName);
     if(filter == null){
       filter = DataFilter.ON_CHANGE;

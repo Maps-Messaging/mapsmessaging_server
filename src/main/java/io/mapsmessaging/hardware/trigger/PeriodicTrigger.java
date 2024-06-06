@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.hardware.trigger;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
-
+import io.mapsmessaging.config.device.triggers.PeriodicTriggerConfig;
+import io.mapsmessaging.config.device.triggers.TriggerConfig;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,8 +41,8 @@ public class PeriodicTrigger extends Trigger {
   }
 
   @Override
-  public Trigger build(ConfigurationProperties properties) throws IOException {
-    return new PeriodicTrigger(properties.getLongProperty("interval", 60000));
+  public Trigger build(TriggerConfig properties) throws IOException {
+    return new PeriodicTrigger(((PeriodicTriggerConfig)properties).getInterval());
   }
 
 

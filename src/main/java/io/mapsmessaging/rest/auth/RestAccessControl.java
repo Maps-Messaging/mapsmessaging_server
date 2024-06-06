@@ -21,12 +21,11 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.access.AccessControlFactory;
 import io.mapsmessaging.security.access.AccessControlList;
 import io.mapsmessaging.security.access.Group;
-
-import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.security.auth.Subject;
 
 public class RestAccessControl {
 
@@ -36,7 +35,7 @@ public class RestAccessControl {
 
   public RestAccessControl() {
     aclMapping = new LinkedHashMap<>();
-    Group adminId = AuthManager.getInstance().getGroupIdentity("administrator");
+    Group adminId = AuthManager.getInstance().getGroupIdentity("admin");
     Group everyoneId = AuthManager.getInstance().getGroupIdentity("everyone");
 
     List<String> adminAndEveryone = new ArrayList<>();

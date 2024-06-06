@@ -17,21 +17,20 @@
 
 package io.mapsmessaging.hardware.device.handler.onewire;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.device.OneWireBusConfig;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.onewire.OneWireBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
-
 import java.util.Map;
 
 public class OneWireBusHandler extends BusHandler {
 
   private final OneWireBusManager oneWireBusManager;
 
-  public OneWireBusHandler(OneWireBusManager oneWireBusManager, ConfigurationProperties properties, Trigger trigger) {
-    super(properties, trigger);
+  public OneWireBusHandler(OneWireBusManager oneWireBusManager, OneWireBusConfig oneWireBusConfig, Trigger trigger) {
+    super(oneWireBusConfig, trigger);
     this.oneWireBusManager = oneWireBusManager;
   }
 

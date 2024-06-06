@@ -26,7 +26,7 @@ import io.mapsmessaging.auth.registry.AuthenticationStorage;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.auth.registry.UserDetails;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.AuthManagerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.Group;
@@ -35,7 +35,6 @@ import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -58,7 +57,7 @@ public class AuthManager implements Agent {
   private final Logger logger;
 
   @Getter
-  private final ConfigurationProperties properties;
+  private AuthManagerConfig config;
   private AuthenticationStorage authenticationStorage;
   private final Map<String, Subject> subjectMap = new WeakHashMap<>();
 
@@ -80,11 +79,10 @@ public class AuthManager implements Agent {
   @Override
   public void start() {
     if (authenticationEnabled) {
-      ConfigurationProperties config = (ConfigurationProperties) properties.get("config");
       try {
-        authenticationStorage = new AuthenticationStorage(config);
+        authenticationStorage = new AuthenticationStorage(config.getAuthConfig());
         if (authenticationStorage.isFirstBoot()) {
-          createInitialUsers(config.getProperty("configDirectory"));
+          createInitialUsers(config.getAuthConfig().getProperty("configDirectory"));
         }
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {
@@ -144,9 +142,9 @@ public class AuthManager implements Agent {
 
   private AuthManager() {
     logger = LoggerFactory.getLogger(AuthManager.class);
-    properties = ConfigurationManager.getInstance().getProperties("AuthManager");
-    authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", false);
-    authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
+    config = AuthManagerConfig.getInstance();
+    authenticationEnabled = config.isAuthenticationEnabled();
+    authorisationEnabled  = config.isAuthorisationEnabled();
   }
 
   private void createInitialUsers(String path) throws IOException {

@@ -17,11 +17,11 @@
 
 package io.mapsmessaging.hardware.trigger;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.device.triggers.CronTriggerConfig;
+import io.mapsmessaging.config.device.triggers.TriggerConfig;
+import java.io.IOException;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
-
-import java.io.IOException;
 
 public class CronTrigger extends Trigger {
 
@@ -51,8 +51,8 @@ public class CronTrigger extends Trigger {
   }
 
   @Override
-  public Trigger build(ConfigurationProperties properties) throws IOException {
-    return new CronTrigger(properties.getProperty("cron"));
+  public Trigger build(TriggerConfig properties) throws IOException {
+    return new CronTrigger(((CronTriggerConfig)properties).getCron());
   }
 
   @Override

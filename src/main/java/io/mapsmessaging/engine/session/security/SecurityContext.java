@@ -20,12 +20,11 @@ package io.mapsmessaging.engine.session.security;
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import lombok.Getter;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
+import javax.security.auth.Subject;
+import lombok.Getter;
 
 @Getter
 public abstract class SecurityContext {
@@ -58,8 +57,10 @@ public abstract class SecurityContext {
       accessIds = new ArrayList<>();
       accessIds.add(SubjectHelper.getUniqueId(subject));
       List<GroupIdMap> groupIds = SubjectHelper.getGroupId(subject);
-      for (GroupIdMap g : groupIds) {
-        accessIds.add(g.getAuthId());
+      if (groupIds != null) {
+        for (GroupIdMap g : groupIds) {
+          accessIds.add(g.getAuthId());
+        }
       }
     }
   }

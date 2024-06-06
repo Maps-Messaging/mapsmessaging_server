@@ -27,11 +27,6 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.session.SessionManagerTest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Timeout;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,7 +37,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Timeout;
 
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
@@ -163,7 +161,7 @@ public class BaseTestConfig extends BaseTest {
   public String getPassword(String user) throws IOException {
     if (usernamePasswordMap == null) {
       if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
-        ConfigurationProperties properties = (ConfigurationProperties) AuthManager.getInstance().getProperties().get("config");
+        ConfigurationProperties properties = AuthManager.getInstance().getConfig().getAuthConfig();
         String path = properties.getProperty("configDirectory");
         usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
             .map(line -> line.split("="))

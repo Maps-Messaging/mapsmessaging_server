@@ -31,13 +31,13 @@ import lombok.ToString;
 public class EndPointConfig extends Config {
 
   private int selectorThreadCount;
-  private boolean isDiscoverable;
+  private boolean discoverable;
   private long serverReadBufferSize;
   private long serverWriteBufferSize;
 
   public EndPointConfig(ConfigurationProperties config) {
     this.selectorThreadCount = config.getIntProperty("selectorThreadCount", 2);
-    this.isDiscoverable = config.getBooleanProperty("isDiscoverable", false);
+    this.discoverable = config.getBooleanProperty("isDiscoverable", false);
     this.serverReadBufferSize = parseBufferSize(config.getProperty("serverReadBufferSize", "10K"));
     this.serverWriteBufferSize =
         parseBufferSize(config.getProperty("serverWriteBufferSize", "10K"));
@@ -49,8 +49,8 @@ public class EndPointConfig extends Config {
       this.selectorThreadCount = newConfig.getSelectorThreadCount();
       hasChanged = true;
     }
-    if (this.isDiscoverable != newConfig.isDiscoverable()) {
-      this.isDiscoverable = newConfig.isDiscoverable();
+    if (this.discoverable != newConfig.isDiscoverable()) {
+      this.discoverable = newConfig.isDiscoverable();
       hasChanged = true;
     }
     if (this.serverReadBufferSize != newConfig.getServerReadBufferSize()) {
@@ -67,7 +67,7 @@ public class EndPointConfig extends Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("selectorThreadCount", this.selectorThreadCount);
-    config.put("discoverable", this.isDiscoverable);
+    config.put("discoverable", this.discoverable);
     config.put("serverReadBufferSize", formatBufferSize(this.serverReadBufferSize));
     config.put("serverWriteBufferSize", formatBufferSize(this.serverWriteBufferSize));
     return config;

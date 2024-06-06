@@ -22,8 +22,10 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.config.DeviceManagerConfig;
 import io.mapsmessaging.config.MessageDaemonConfig;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.NetworkManagerConfig;
+import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.configuration.EnvironmentPathLookup;
 import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
@@ -107,7 +109,6 @@ public class MessageDaemon {
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
   private boolean enableSystemTopics;
-  private boolean enableAdvancedSystemTopics;
   private boolean enableDeviceIntegration;
 
   @Getter
@@ -176,7 +177,7 @@ public class MessageDaemon {
     TransactionManager.setTimeOutInterval(transactionScan);
     TransactionManager.setExpiryTime(transactionExpiry);
     enableSystemTopics = messageDaemonConfig.isEnableSystemTopics();
-    enableAdvancedSystemTopics = messageDaemonConfig.isEnableSystemStatusTopics();
+    boolean enableAdvancedSystemTopics = messageDaemonConfig.isEnableSystemStatusTopics();
     if (messageDaemonConfig.isEnableJMX()) {
       JMXManager.setEnableJMX(true);
       mBean = new MessageDaemonJMX(this);
@@ -194,9 +195,8 @@ public class MessageDaemon {
     Constants.getInstance().setMessageCompression(messageDaemonConfig.getCompressionName());
     Constants.getInstance().setMinimumMessageSize(messageDaemonConfig.getCompressMessageMinSize());
 
-    ConfigurationProperties deviceConfig = ConfigurationManager.getInstance().getProperties("DeviceManager");
-    enableDeviceIntegration = deviceConfig.getBooleanProperty("enabled", false);
 
+    enableDeviceIntegration = DeviceManagerConfig.getInstance().isEnabled();
   }
 
   /**
@@ -360,22 +360,19 @@ public class MessageDaemon {
 
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
-      ConfigurationProperties map = ConfigurationManager.getInstance().getProperties("NetworkManager");
-      List<ConfigurationProperties> list = (List<ConfigurationProperties>) map.get("data");
+      NetworkManagerConfig networkManagerConfig = NetworkManagerConfig.getInstance();
       Map<String, String> meta = new LinkedHashMap<>();
-
-      for (ConfigurationProperties properties : list) {
-        String protocol = properties.getProperty("protocol");
-        String url = properties.getProperty("url");
-        while (protocol.contains(",")) {
-          protocol = protocol.replace(",", "-");
+      for(EndPointServerConfig serverConfig: networkManagerConfig.getEndPointServerConfigList()){
+        String protocols = serverConfig.getProtocols();
+        String url = serverConfig.getUrl();
+        while (protocols.contains(",")) {
+          protocols = protocols.replace(",", "-");
         }
-        while (protocol.contains(" ")) {
-          protocol = protocol.replace(" ", "-");
+        while (protocols.contains(" ")) {
+          protocols = protocols.replace(" ", "-");
         }
-        meta.put(protocol, url);
+        meta.put(protocols, url);
       }
-
       //look for override
       ConsulManagerFactory.getInstance().getManager().register(meta);
     }

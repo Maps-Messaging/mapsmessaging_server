@@ -36,11 +36,16 @@ import lombok.ToString;
 public class NetworkManagerConfig extends Config {
 
   private boolean preferIpV6Addresses;
+  private boolean scanNetworkChanges;
+  private int scanInterval;
   private EndPointServerConfig global;
   private List<EndPointServerConfig> endPointServerConfigList;
 
   private NetworkManagerConfig(ConfigurationProperties config) {
     preferIpV6Addresses = config.getBooleanProperty("preferIPv6Addresses", true);
+    this.scanNetworkChanges = config.getBooleanProperty("scanNetworkChanges", true);
+    this.scanInterval = config.getIntProperty("scanInterval", 60000);
+
     ConfigurationProperties globalConfig = config.getGlobal();
     if (globalConfig != null) {
       this.global = new EndPointServerConfig(globalConfig);
@@ -72,6 +77,9 @@ public class NetworkManagerConfig extends Config {
       data.add(endPointServerConfig.toConfigurationProperties());
     }
     config.put("data", data);
+    config.put("preferIPv6Addresses", preferIpV6Addresses);
+    config.put("scanInterval", scanInterval);
+    config.put("scanNetworkChanges", scanNetworkChanges);
     return config;
   }
 }

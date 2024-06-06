@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,12 +20,11 @@ package io.mapsmessaging;
 import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import java.util.Date;
+import java.util.concurrent.locks.LockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
-
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 public class BaseTest {
 
@@ -35,11 +34,7 @@ public class BaseTest {
   private long start;
 
   public void delay(long time_ms){
-    try {
-      TimeUnit.MILLISECONDS.sleep(time_ms);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+    LockSupport.parkNanos(time_ms * 1_000_000L);
   }
 
 

@@ -45,6 +45,7 @@ public class EndPointServerConfig extends Config {
   private int backlog;
   private int selectorTaskWait;
 
+
   public EndPointServerConfig(ConfigurationProperties config) {
     this.name = config.getProperty("name");
     this.url = config.getProperty("url");
@@ -53,6 +54,7 @@ public class EndPointServerConfig extends Config {
     this.authenticationRealm = config.getProperty("auth", "");
     endPointConfig = url != null ? createEndPointConfig(url, config) : null;
     protocolConfigs = new ArrayList<>();
+
 
     ConfigurationProperties saslConfiguration = (ConfigurationProperties) config.get("sasl");
     if (saslConfiguration != null) {

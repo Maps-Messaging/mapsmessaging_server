@@ -52,7 +52,7 @@ public abstract class ConnectionTest extends BaseTestConfig {
             ConfigurationProperties localTest = new ConfigurationProperties();
             localTest.setGlobal(testConfig.getGlobal());
             localTest.put("name", "testInterface");
-            localTest.put("url", "ssl://localhost/");
+            localTest.put("url", "ssl://localhost:1892/");
             return new EndPointServerConfig(localTest);
           }
 

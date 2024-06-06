@@ -17,21 +17,19 @@
 
 package io.mapsmessaging.network.monitor;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
+import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.Getter;
-
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import lombok.Getter;
 
 public class NetworkInterfaceMonitor implements Agent {
 
@@ -51,9 +49,9 @@ public class NetworkInterfaceMonitor implements Agent {
   private Map<String, NetworkInterfaceState> lastInterfaces;
 
   private NetworkInterfaceMonitor() {
-    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("NetworkManager");
-    enabled = properties.getBooleanProperty("scanNetworkChanges", true);
-    interval = properties.getIntProperty("scanInterval", 60000);
+    NetworkManagerConfig networkManagerConfig = NetworkManagerConfig.getInstance();
+    enabled = networkManagerConfig.isScanNetworkChanges();
+    interval = networkManagerConfig.getScanInterval();
   }
 
   @Override

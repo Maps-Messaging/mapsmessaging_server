@@ -17,4 +17,59 @@
 
 package io.mapsmessaging.config;
 
-public class AuthManagerConfig {}
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@EqualsAndHashCode(callSuper = true)
+@Data
+@NoArgsConstructor
+@ToString
+@Schema(description = "Auth Manager Configuration")
+public class AuthManagerConfig  extends Config {
+
+  private boolean authenticationEnabled;
+  private boolean authorisationEnabled;
+  private ConfigurationProperties authConfig;
+
+  private AuthManagerConfig(ConfigurationProperties properties) {
+    authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", false);
+    authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
+    authConfig = (ConfigurationProperties)properties.get("config");
+  }
+
+  public static AuthManagerConfig getInstance() {
+    return new AuthManagerConfig(ConfigurationManager.getInstance().getProperties("AuthManager"));
+  }
+
+  public boolean update(AuthManagerConfig newConfig) {
+    boolean hasChanged = false;
+
+    if (this.authenticationEnabled != newConfig.isAuthenticationEnabled()) {
+      this.authenticationEnabled = newConfig.isAuthenticationEnabled();
+      hasChanged = true;
+    }
+
+    if (this.authorisationEnabled != newConfig.isAuthorisationEnabled()) {
+      this.authorisationEnabled = newConfig.isAuthorisationEnabled();
+      hasChanged = true;
+    }
+    if(updateMap(authConfig.getMap(), newConfig.authConfig.getMap())){
+      hasChanged = true;
+    }
+
+    return hasChanged;
+  }
+
+  public ConfigurationProperties toConfigurationProperties() {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("authenticationEnabled", authorisationEnabled);
+    properties.put("authorisationEnabled", authorisationEnabled);
+    properties.put("config", authConfig);
+    return properties;
+  }
+}
