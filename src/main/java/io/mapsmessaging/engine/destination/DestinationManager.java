@@ -18,7 +18,8 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.DestinationManagerConfig;
+import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
@@ -29,17 +30,15 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import lombok.NonNull;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.NotNull;
 
 public class DestinationManager implements DestinationFactory, Agent {
 
@@ -47,40 +46,23 @@ public class DestinationManager implements DestinationFactory, Agent {
   private static final String TEMPORARY_QUEUE = "/dynamic/temporary/queue";
   private static final String TEMPORARY_TOPIC = "/dynamic/temporary/topic";
 
-  private final Map<String, DestinationPathManager> properties;
+  private final Map<String, DestinationConfig> properties;
   private final DestinationUpdateManager destinationManagerListeners;
   private final Logger logger;
-  private final DestinationPathManager rootPath;
+  private final DestinationConfig rootPath;
   private final DestinationManagerPipeline[] creatorPipelines;
 
   public DestinationManager() {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
-    ConfigurationProperties list = ConfigurationManager.getInstance().getProperties("DestinationManager");
-    DestinationPathManager rootPathLookup = null;
-    Object rootConf = list.get("data");
-
-    if (rootConf instanceof ConfigurationProperties) {
-      ConfigurationProperties rootCfg = (ConfigurationProperties) rootConf;
-      DestinationPathManager destinationPathManager = new DestinationPathManager(rootCfg);
-      properties.put(destinationPathManager.getNamespaceMapping(), destinationPathManager);
-      if (destinationPathManager.getNamespaceMapping().equals("/")) {
-        rootPathLookup = destinationPathManager;
-      }
-    } else if (rootConf instanceof List) {
-      for (Object configuration : (List<?>) rootConf) {
-        if (configuration instanceof ConfigurationProperties) {
-          DestinationPathManager destinationPathManager = new DestinationPathManager((ConfigurationProperties) configuration);
-          properties.put(destinationPathManager.getNamespaceMapping(), destinationPathManager);
-          if (destinationPathManager.getNamespaceMapping().equals("/")) {
-            rootPathLookup = destinationPathManager;
-          }
-        } else {
-          break;
-        }
+    DestinationManagerConfig config = DestinationManagerConfig.getInstance();
+    DestinationConfig rootPathLookup = null;
+    for(DestinationConfig destinationConfig:config.getData()){
+      properties.put(destinationConfig.getNamespaceMapping(), destinationConfig);
+      if (destinationConfig.getNamespaceMapping().equals("/")) {
+        rootPathLookup = destinationConfig;
       }
     }
-
     destinationManagerListeners = new DestinationUpdateManager();
     rootPath = rootPathLookup;
     creatorPipelines = new DestinationManagerPipeline[Runtime.getRuntime().availableProcessors() * 2];
@@ -159,8 +141,8 @@ public class DestinationManager implements DestinationFactory, Agent {
 
   public void initialise() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
-    for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
-      DestinationPathManager mapManager = entry.getValue();
+    for (Map.Entry<String, DestinationConfig> entry : properties.entrySet()) {
+      DestinationConfig mapManager = entry.getValue();
       DestinationLocator destinationLocator = new DestinationLocator(mapManager, mapManager.getTrailingPath());
       destinationLocator.parse();
       processFileList(destinationLocator.getValid(), mapManager);
@@ -215,14 +197,14 @@ public class DestinationManager implements DestinationFactory, Agent {
     return destinationManagerListeners.get();
   }
 
-  private void processFileList(List<File> directories, DestinationPathManager pathManager) {
+  private void processFileList(List<File> directories, DestinationConfig pathManager) {
     if (directories != null) {
       ResourceLoaderManagement resourceLoaderManagement = new ResourceLoaderManagement(directories, pathManager);
       resourceLoaderManagement.start();
     }
   }
 
-  private void parseDirectoryPath(File directory, DestinationPathManager pathManager) {
+  private void parseDirectoryPath(File directory, DestinationConfig pathManager) {
     if (directory.isDirectory()) {
       try {
         DestinationImpl destinationImpl = scanDirectory(directory, pathManager);
@@ -240,7 +222,7 @@ public class DestinationManager implements DestinationFactory, Agent {
     }
   }
 
-  private DestinationImpl scanDirectory(File directory, DestinationPathManager pathManager) throws IOException {
+  private DestinationImpl scanDirectory(File directory, DestinationConfig pathManager) throws IOException {
     MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
     ResourceProperties scannedProperties = ResourceFactory.getInstance().scanForProperties(directory);
     Resource resource = null;
@@ -291,10 +273,10 @@ public class DestinationManager implements DestinationFactory, Agent {
   public class ResourceLoaderManagement {
 
     private final Queue<File> fileList;
-    private final DestinationPathManager pathManager;
+    private final DestinationConfig pathManager;
     private final int initialSize;
 
-    public ResourceLoaderManagement(List<File> list, DestinationPathManager pathManager) {
+    public ResourceLoaderManagement(List<File> list, DestinationConfig pathManager) {
       this.fileList = new ConcurrentLinkedQueue<>(list);
       this.pathManager = pathManager;
       initialSize = list.size();
@@ -346,10 +328,10 @@ public class DestinationManager implements DestinationFactory, Agent {
   public class ResourceLoader extends Thread {
 
     private final Queue<File> fileList;
-    private final DestinationPathManager pathManager;
+    private final DestinationConfig pathManager;
     private final AtomicBoolean complete;
 
-    public ResourceLoader(Queue<File> fileList, DestinationPathManager pathManager) {
+    public ResourceLoader(Queue<File> fileList, DestinationConfig pathManager) {
       this.fileList = fileList;
       this.pathManager = pathManager;
       complete = new AtomicBoolean(false);

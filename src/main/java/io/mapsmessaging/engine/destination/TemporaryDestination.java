@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,21 +19,21 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
 import io.mapsmessaging.engine.resources.Resource;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.util.UUID;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class TemporaryDestination extends DestinationImpl {
 
   private boolean ownerDisconnected;
 
 
-  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull DestinationPathManager path, @NonNull @NotNull UUID uuid,
-      @NonNull @NotNull DestinationType destinationType) throws IOException {
+  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfig path, @NonNull @NotNull UUID uuid,
+                              @NonNull @NotNull DestinationType destinationType) throws IOException {
     super(name, path, uuid, destinationType);
     ownerDisconnected = false;
   }

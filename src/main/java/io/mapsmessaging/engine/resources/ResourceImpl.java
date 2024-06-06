@@ -19,18 +19,16 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
+import io.mapsmessaging.config.destination.ArchiveConfig;
+import io.mapsmessaging.config.destination.CacheConfig;
+import io.mapsmessaging.config.destination.DestinationConfig;
+import io.mapsmessaging.config.destination.S3ArchiveConfig;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationPathManager;
 import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Statistics;
 import io.mapsmessaging.storage.Storage;
 import io.mapsmessaging.storage.StorageBuilder;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
-import lombok.Getter;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +36,10 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ResourceImpl implements Resource {
 
@@ -62,8 +64,8 @@ public class ResourceImpl implements Resource {
   }
 
   @SneakyThrows
-  public ResourceImpl(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationPathManager pathManager, @NotNull String fileName,
-      @Nullable ResourceProperties resourceProperties) throws IOException {
+  public ResourceImpl(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationConfig destinationConfig, @NotNull String fileName,
+                      @Nullable ResourceProperties resourceProperties) throws IOException {
     keyGen = new AtomicLong(0);
     loaded = false;
     isClosed = false;
@@ -75,30 +77,35 @@ public class ResourceImpl implements Resource {
     long idleTime = 0;
     String type = "Memory";
     Map<String, String> storeProperties = new LinkedHashMap<>();
-    if (pathManager != null) {
-      storeProperties.put("debug", ""+pathManager.isDebug());
-      storeProperties.put("Sync", "" + pathManager.isEnableSync());
-      storeProperties.put("ItemCount", "" + pathManager.getItemCount());
-      storeProperties.put("MaxPartitionSize", "" + pathManager.getPartitionSize());
-      storeProperties.put("ExpiredEventPoll", "" + pathManager.getExpiredEventPoll());
-      idleTime = pathManager.getIdleTime();
-      type = pathManager.getType();
+    if (destinationConfig != null) {
+      storeProperties.put("debug", ""+destinationConfig.isDebug());
+      storeProperties.put("Sync", "" + destinationConfig.isSync());
+      storeProperties.put("ItemCount", "" + destinationConfig.getItemCount());
+      storeProperties.put("MaxPartitionSize", "" + destinationConfig.getMaxPartitionSize());
+      storeProperties.put("ExpiredEventPoll", "" + destinationConfig.getExpiredEventPoll());
+      idleTime = destinationConfig.getAutoPauseTimeout();
+      type = destinationConfig.getType();
       if (type.equalsIgnoreCase("file")) {
         type = "Partition";
       }
-      if (pathManager.isEnableCache()) {
-        builder.setCache(pathManager.getCacheType());
-        builder.enableCacheWriteThrough(pathManager.isWriteThrough());
+      if (destinationConfig.getCache() != null) {
+        CacheConfig cacheConfig = destinationConfig.getCache();
+        builder.setCache(cacheConfig.getType());
+        builder.enableCacheWriteThrough(cacheConfig.isWriteThrough());
       }
-      if(pathManager.getArchiveName() != null){
-        properties.put("archiveName", pathManager.getArchiveName() );
-        properties.put("archiveIdleTime", ""+pathManager.getArchiveIdleTime());
-        properties.put("digestName", pathManager.getDigestAlgorithm());
-        properties.put("S3AccessKeyId", pathManager.getS3AccessKeyId());
-        properties.put("S3SecretAccessKey", pathManager.getS3SecretAccessKey());
-        properties.put("S3RegionName", pathManager.getS3RegionName());
-        properties.put("S3BucketName", pathManager.getS3BucketName());
-        properties.put("S3CompressEnabled", ""+pathManager.isS3Compression());
+      if(destinationConfig.getArchive() != null){
+        ArchiveConfig archiveConfig = destinationConfig.getArchive();
+        properties.put("archiveName", archiveConfig.getName() );
+        properties.put("archiveIdleTime", ""+archiveConfig.getIdleTime());
+        properties.put("digestName", archiveConfig.getDigestAlgorithm());
+        S3ArchiveConfig s3ArchiveConfig = archiveConfig.getS3();
+        if(s3ArchiveConfig != null){
+          properties.put("S3AccessKeyId", s3ArchiveConfig.getAccessKeyId());
+          properties.put("S3SecretAccessKey", s3ArchiveConfig.getSecretAccessKey());
+          properties.put("S3RegionName", s3ArchiveConfig.getRegionName());
+          properties.put("S3BucketName", s3ArchiveConfig.getBucketName());
+          properties.put("S3CompressEnabled", ""+s3ArchiveConfig.isCompression());
+        }
       }
     }
     builder.setProperties(properties)
@@ -114,7 +121,7 @@ public class ResourceImpl implements Resource {
     persistent = !(type.equalsIgnoreCase("Memory"));
     store = new AsyncStorage<>(s);
     if (idleTime > 0) {
-      store.enableAutoPause(TimeUnit.SECONDS.toMillis(pathManager.getIdleTime()));  // Convert to milliseconds
+      store.enableAutoPause(TimeUnit.SECONDS.toMillis(destinationConfig.getAutoPauseTimeout()));  // Convert to milliseconds
     }
   }
 

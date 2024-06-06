@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
  */
 package io.mapsmessaging.engine.destination;
 
+import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.engine.resources.ResourceFactory;
-import lombok.Getter;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 
 /**
  * This class is responsible for walking the directory passed in looking for existing destination files.
@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class DestinationLocator {
 
-  private final DestinationPathManager pathManager;
+  private final DestinationConfig pathManager;
   private final String subDirectory;
 
   @Getter
@@ -39,7 +39,7 @@ public class DestinationLocator {
   @Getter
   private final List<File> valid;
 
-  public DestinationLocator(DestinationPathManager pathManager, String subdirectory) {
+  public DestinationLocator(DestinationConfig pathManager, String subdirectory) {
     this.pathManager = pathManager;
     this.subDirectory = subdirectory;
     valid = new ArrayList<>();

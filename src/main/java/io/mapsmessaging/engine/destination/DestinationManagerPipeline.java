@@ -17,10 +17,13 @@
 
 package io.mapsmessaging.engine.destination;
 
+import static io.mapsmessaging.engine.destination.DestinationImpl.TASK_QUEUE_PRIORITY_SIZE;
+
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.CreditHandler;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.builders.CommonSubscriptionBuilder;
@@ -33,9 +36,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,20 +45,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
-
-import static io.mapsmessaging.engine.destination.DestinationImpl.TASK_QUEUE_PRIORITY_SIZE;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class DestinationManagerPipeline {
 
   private final Map<String, DestinationImpl> destinationList;
   private final Logger logger = LoggerFactory.getLogger(DestinationManagerPipeline.class);
-  private final DestinationPathManager rootPath;
-  private final Map<String, DestinationPathManager> properties;
+  private final DestinationConfig rootPath;
+  private final Map<String, DestinationConfig> properties;
   private final DestinationUpdateManager destinationManagerListeners;
   private final ExecutorService taskScheduler;
 
 
-  DestinationManagerPipeline(DestinationPathManager rootPath, Map<String, DestinationPathManager> properties, DestinationUpdateManager destinationManagerListeners) {
+  DestinationManagerPipeline(DestinationConfig rootPath, Map<String, DestinationConfig> properties, DestinationUpdateManager destinationManagerListeners) {
     this.rootPath = rootPath;
     this.properties = properties;
     this.destinationManagerListeners = destinationManagerListeners;
@@ -162,9 +162,9 @@ public class DestinationManagerPipeline {
     DestinationImpl destinationImpl = destinationList.get(name);
     if (destinationImpl == null) {
       UUID destinationUUID = UuidGenerator.getInstance().generate();
-      DestinationPathManager pathManager = rootPath;
+      DestinationConfig pathManager = rootPath;
       String namespace = "";
-      for (Map.Entry<String, DestinationPathManager> entry : properties.entrySet()) {
+      for (Map.Entry<String, DestinationConfig> entry : properties.entrySet()) {
         if (name.startsWith(entry.getKey()) &&
             namespace.length() < entry.getKey().length()) {
           pathManager = entry.getValue();
