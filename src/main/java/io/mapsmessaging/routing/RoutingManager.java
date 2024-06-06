@@ -17,36 +17,30 @@
 
 package io.mapsmessaging.routing;
 
+import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_SHUTDOWN;
+import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_STARTUP;
+
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.RoutingManagerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
 import javax.jmdns.impl.JmDNSImpl;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_SHUTDOWN;
-import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_STARTUP;
 
 public class RoutingManager implements Agent, ServiceListener {
 
   private final Logger logger = LoggerFactory.getLogger(RoutingManager.class);
 
-  private final ConfigurationProperties properties;
-  private final boolean enabled;
-  private final boolean autoConfig;
+  private final RoutingManagerConfig config;
   private final Map<String, RemoteServerManager> remoteServers;
 
   public RoutingManager() {
-    properties = ConfigurationManager.getInstance().getProperties("routing");
-    enabled = properties.getBooleanProperty("enabled", false);
-    autoConfig = properties.getBooleanProperty("autoDiscovery", false);
+    config = RoutingManagerConfig.getInstance();
     remoteServers = new LinkedHashMap<>();
   }
 
@@ -61,9 +55,9 @@ public class RoutingManager implements Agent, ServiceListener {
   }
 
   public void start() {
-    if (enabled) {
+    if (config.isEnabled()) {
       logger.log(ROUTING_STARTUP);
-      if(autoConfig){
+      if (config.isAutoDiscovery()) {
         DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
         if(discoveryManager.isEnabled()) {
           // Register listener for map server notification
@@ -75,7 +69,7 @@ public class RoutingManager implements Agent, ServiceListener {
 
   public void stop() {
     logger.log(ROUTING_SHUTDOWN);
-    if(autoConfig) {
+    if(config.isAutoDiscovery()) {
       DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
       if(discoveryManager.isEnabled()) {
         discoveryManager.removeListener("_maps._tcp.local.", this);

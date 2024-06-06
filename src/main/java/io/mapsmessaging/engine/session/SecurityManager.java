@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.engine.session;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
+
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
@@ -30,27 +32,24 @@ import io.mapsmessaging.security.MapsSecurityProvider;
 import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-
+import java.security.Principal;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.security.Principal;
-
-import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
 
 public class SecurityManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(SecurityManager.class);
-  private final ConfigurationProperties properties;
+  private final ConfigurationProperties authMap;
 
   public SecurityManager() {
     logger.log(ServerLogMessages.SECURITY_MANAGER_STARTUP);
     ConfigurationProperties props = ConfigurationManager.getInstance().getProperties("SecurityManager");
     logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
-    properties = props;
+    authMap = props;
     MapsSecurityProvider.register();
   }
 
@@ -87,9 +86,9 @@ public class SecurityManager implements Agent {
   public String getAuthenticationName(ClientConnection clientConnection) {
     String authConfig = clientConnection.getAuthenticationConfig();
     if (authConfig != null && !authConfig.isEmpty()) {
-      return properties.getProperty(authConfig);
+      return authMap.getProperty(authConfig);
     } else {
-      return properties.getProperty("default");
+      return authMap.getProperty("default");
     }
   }
 

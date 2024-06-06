@@ -17,9 +17,13 @@
 
 package io.mapsmessaging.rest;
 
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.RestApiManagerConfig;
+import io.mapsmessaging.config.network.TlsConfig;
+import io.mapsmessaging.config.rest.StaticConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
@@ -27,8 +31,13 @@ import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import jakarta.servlet.Servlet;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import javax.jmdns.ServiceInfo;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.grizzly.servlet.ServletRegistration;
@@ -41,18 +50,9 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.uri.UriComponent;
 
-import javax.jmdns.ServiceInfo;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-
-import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
-
 public class RestApiServerManager implements Agent {
 
-  private final ConfigurationProperties map;
+  private RestApiManagerConfig config;
   private final Logger logger = LoggerFactory.getLogger(RestApiServerManager.class);
 
   private boolean isSecure;
@@ -60,7 +60,7 @@ public class RestApiServerManager implements Agent {
   private HttpServer httpServer;
 
   public RestApiServerManager() {
-    map = ConfigurationManager.getInstance().getProperties("RestApi");
+    config = RestApiManagerConfig.getInstance();
     isSecure = false;
   }
 
@@ -75,7 +75,7 @@ public class RestApiServerManager implements Agent {
   }
 
   public void start() {
-    if (map.getBooleanProperty("enabled", false)) {
+    if (config.isEnabled()) {
       Thread t= new Thread(() -> {
         setupSSL();
         startServer();
@@ -88,11 +88,11 @@ public class RestApiServerManager implements Agent {
 
 
   public int getPort() {
-    return map.getIntProperty("port", 4567);
+    return config.getPort();
   }
 
   public String getHost() {
-    return map.getProperty("hostnames", "0.0.0.0");
+    return config.getHostnames();
   }
 
   public boolean isSecure() {
@@ -100,31 +100,15 @@ public class RestApiServerManager implements Agent {
   }
 
   private SSLContextConfigurator setupSSL() {
-    ConfigurationProperties securityProps = (ConfigurationProperties) map.get("security");
-    if (securityProps != null && securityProps.containsKey("tls")) {
-      ConfigurationProperties tls = (ConfigurationProperties) securityProps.get("tls");
-      ConfigurationProperties keyStoreProps = (ConfigurationProperties) tls.get("keyStore");
-      ConfigurationProperties trustStoreProps = (ConfigurationProperties) tls.get("trustStore");
-
-      String keyStore = keyStoreProps.getProperty("file", null);
-      String keyStorePass = keyStoreProps.getProperty("passphrase", null);
-
-      String trustStore = trustStoreProps.getProperty("file", null);
-      String trustStorePass = trustStoreProps.getProperty("passphrase", null);
-
-      if (keyStore != null &&
-          keyStorePass != null &&
-          trustStore != null &&
-          trustStorePass != null
-      ) {
-        isSecure = true;
-        SSLContextConfigurator sslCon = new SSLContextConfigurator();
-        sslCon.setKeyStoreFile(keyStore);
-        sslCon.setKeyStorePass(keyStorePass);
-        sslCon.setTrustStoreFile(trustStore);
-        sslCon.setTrustStorePass(trustStorePass);
-        return sslCon;
-      }
+    TlsConfig sslConfig = config.getTlsConfig();
+    if (sslConfig != null) {
+      isSecure = true;
+      SSLContextConfigurator sslCon = new SSLContextConfigurator();
+      sslCon.setKeyStoreFile(sslConfig.getSslConfig().getKeyStore().getPath());
+      sslCon.setKeyStorePass(sslConfig.getSslConfig().getKeyStore().getPassphrase());
+      sslCon.setTrustStoreFile(sslConfig.getSslConfig().getTrustStore().getPath());
+      sslCon.setTrustStorePass(sslConfig.getSslConfig().getTrustStore().getPassphrase());
+      return sslCon;
     }
     return null;
   }
@@ -139,47 +123,41 @@ public class RestApiServerManager implements Agent {
   }
 
   public void startServer() {
-    boolean enableSwagger = map.getBooleanProperty("enableSwagger", true);
-    boolean enableUserManagement = map.getBooleanProperty("enableUserManagement", true);
-    boolean enableSchemaManagement = map.getBooleanProperty("enableSchemaManagement", true);
-    boolean enableInterfaceManagement = map.getBooleanProperty("enableInterfaceManagement", true);
-    boolean enableDestinationManagement = map.getBooleanProperty("enableDestinationManagement", true);
     List<String> endpoints = new ArrayList<>();
     endpoints.add("io.mapsmessaging.rest.api.impl");
     endpoints.add("io.mapsmessaging.rest.api.impl.messaging");
     endpoints.add("io.mapsmessaging.rest.translation");
 
-    if (enableSwagger) {
+    if (config.isEnableSwagger()) {
       endpoints.add("io.swagger.v3.jaxrs2.integration.resources");
       endpoints.add("io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource");
     }
-    if (enableUserManagement) {
+    if (config.isEnableUserManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.auth");
     }
-    if (enableDestinationManagement) {
+    if (config.isEnableDestinationManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.destination");
     }
-    if (enableInterfaceManagement) {
+    if (config.isEnableInterfaceManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.interfaces");
       endpoints.add("io.mapsmessaging.rest.api.impl.integration");
       endpoints.add("io.mapsmessaging.rest.api.impl.connections");
       endpoints.add("io.mapsmessaging.rest.api.impl.discovery");
     }
-    if (enableSchemaManagement) {
+    if (config.isEnableSchemaManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.schema");
     }
     endpoints.add("io.mapsmessaging.rest.api.impl.server");
     try {
-      final ResourceConfig config = new ResourceConfig();
-      config.packages(false, endpoints.toArray(new String[0]));
-      boolean enableAuth = map.getBooleanProperty("enableAuthentication", false);
-      if (enableAuth && AuthManager.getInstance().isAuthenticationEnabled()) {
-        config.register(new AuthenticationFilter());
+      final ResourceConfig resourceConfig = new ResourceConfig();
+      resourceConfig.packages(false, endpoints.toArray(new String[0]));
+      if (config.isEnableAuthentication() && AuthManager.getInstance().isAuthenticationEnabled()) {
+        resourceConfig.register(new AuthenticationFilter());
         AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());
       }
-      config.register(DebugMapper.class );
-      config.register(LoggingFilter.class);
-      ServletContainer sc = new ServletContainer(config);
+      resourceConfig.register(DebugMapper.class );
+      resourceConfig.register(LoggingFilter.class);
+      ServletContainer sc = new ServletContainer(resourceConfig);
       SSLContextConfigurator sslConfig = setupSSL();
       String protocol = "http";
       if(isSecure){
@@ -219,17 +197,14 @@ public class RestApiServerManager implements Agent {
   }
 
   private void loadStatic(HttpServer server){
-    if(map.containsKey("static")){
-      Object obj = map.get("static");
-      if(obj instanceof ConfigurationProperties){
-        ConfigurationProperties staticConfig = (ConfigurationProperties) obj;
-        if(staticConfig.getBooleanProperty("enabled", false)){
-          String path = staticConfig.getProperty("directory", "./www");
-          if (!path.endsWith(File.separator)) {
-            path = path + File.separator;
-          }
-          mapDirectory(path, server );
+    if (config.getStaticConfig() != null){
+      StaticConfig staticConfig = config.getStaticConfig();
+      if(staticConfig.isEnabled()){
+        String path = staticConfig.getDirectory();
+        if (!path.endsWith(File.separator)) {
+          path = path + File.separator;
         }
+        mapDirectory(path, server );
       }
     }
   }

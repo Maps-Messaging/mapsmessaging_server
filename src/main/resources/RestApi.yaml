@@ -27,11 +27,40 @@ RestApi:
   enableInterfaceManagement: true
   enableDestinationManagement: true
 
+#    tls:
+#      clientCertificateRequired: false
+#      clientCertificateWanted: false
+        #-----------------------------------
+        # CRL Specific
+        # crlUrl: <URL TO CRL>
+        # crlInterval: <time in seconds to reload CRL>
+      #-----------------------------------
 
-  #ssl_keyStoreFile: my-keystore.jks
-  #ssl_keyStorePassphrase: password
-  #ssl_trustStoreFile: my-keystore.jks
-  #ssl_trustStorePassphrase: password
+#      keyStore:
+        #alias: server  # Optional
+#        type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+        # providerName: SunJSSE  # Typically not required for standard keystores
+#        managerFactory: SunX509
+        # Standard Key Store parameters
+#        path: my-keystore.jks
+#        passphrase: password
+
+        #-----------------------------------
+        # PKCS11 specific settings
+        # provider: SunPKCS11
+        # config: pkcs11-config.cfg
+        #-----------------------------------
+
+    #  trustStore:
+#        type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
+        # providerName: SunJSSE  # Typically not required for standard truststores
+        # Standard Key Store parameters
+ #       path: my-truststore.jks
+  #      passphrase: password
+   #     managerFactory: SunX509
+        # PKCS11 specific settings
+        # provider: SunPKCS11
+        # config: pkcs11-config.cfg
 
   static:
     enabled: true
