@@ -28,11 +28,11 @@
 
 ---
 AuthManager:
-  authenticationEnabled: false  # connections will be authorised according to the config
+  authenticationEnabled: true  # connections will be authorised according to the config
   authorizationEnabled: true   # Requests will be authorised according to the access control list for the resource
   config:
     identityProvider: "Encrypted-Auth"
-    passwordHander: "EncryptedPasswordCipher"
+    passwordHandler: "EncryptedPasswordCipher"
     configDirectory: "{{MAPS_DATA}}/.security"
     certificateStore:
       type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
