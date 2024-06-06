@@ -17,20 +17,19 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.TenantManagementConfig;
+import io.mapsmessaging.config.tenant.TenantConfig;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The `TenantManagement` class which is responsible for managing tenants in a MAPS instance.
@@ -55,7 +54,6 @@ import java.util.Map;
  */
 public class TenantManagement {
 
-  private static final String CONFIG_KEY_NAME = "scope";
   private static final String USER_TOKEN = "{user}";
   private static final String PROTOCOL_TOKEN = "{protocol}";
   private static final TenantManagement instance = new TenantManagement();
@@ -77,7 +75,7 @@ public class TenantManagement {
 
   private final Logger logger = LoggerFactory.getLogger(TenantManagement.class);
   private final List<NamespaceMapper> mappers;
-  private final Map<String, List<ConfigurationProperties>> configuration;
+  private final Map<String, List<TenantConfig>> configuration;
 
   /**
    * Initializes the TenantManagement class by loading the configuration properties and creating the list of namespace mappers.
@@ -86,16 +84,13 @@ public class TenantManagement {
    * The list of namespace mappers is created and populated with instances of the UsernameMapper and ProtocolMapper classes.
    */
   private TenantManagement() {
-    ConfigurationProperties rawConfig = ConfigurationManager.getInstance().getProperties("TenantManagement");
+    TenantManagementConfig config = TenantManagementConfig.getInstance();
     configuration = new LinkedHashMap<>();
-    List<ConfigurationProperties> config = (List<ConfigurationProperties>) rawConfig.get("data");
-    if (config != null) {
-      for (ConfigurationProperties configurationProperties : config) {
-        if (configurationProperties.containsKey(CONFIG_KEY_NAME)) {
-          String type = configurationProperties.getProperty(CONFIG_KEY_NAME);
-          List<ConfigurationProperties> existing = configuration.computeIfAbsent(type, k -> new ArrayList<>());
-          existing.add(configurationProperties);
-        }
+    for(TenantConfig tenantConfig:config.getTenantConfigList()){
+      if(tenantConfig.getScope() != null){
+        String type = tenantConfig.getScope();
+        List<TenantConfig> existing = configuration.computeIfAbsent(type, k -> new ArrayList<>());
+        existing.add(tenantConfig);
       }
     }
     mappers = new ArrayList<>();
@@ -153,11 +148,11 @@ public class TenantManagement {
    */
   private @NonNull @NotNull String configurationLookup(String username) {
     String conf;
-    ConfigurationProperties userConfig = locateUserConfig(username);
+    TenantConfig userConfig = locateUserConfig(username);
     if (userConfig == null) {
       conf = "";
     } else {
-      conf = userConfig.getProperty("namespaceRoot", "");
+      conf = userConfig.getNamespaceRoot();
       logger.log(ServerLogMessages.NAMESPACE_MAPPING_FOUND, username, conf);
     }
     return conf;
@@ -174,12 +169,12 @@ public class TenantManagement {
    * @param username The username for which to retrieve the configuration.
    * @return The configuration for the given username, or null if no configuration is found.
    */
-  private ConfigurationProperties locateUserConfig(String username) {
-    ConfigurationProperties defConfig = null;
-    List<ConfigurationProperties> configurationList = configuration.get("user");
+  private TenantConfig locateUserConfig(String username) {
+    TenantConfig defConfig = null;
+    List<TenantConfig> configurationList = configuration.get("user");
     if (configurationList != null) {
-      for (ConfigurationProperties config : configurationList) {
-        String name = config.getProperty("name", "");
+      for (TenantConfig config : configurationList) {
+        String name = config.getName();
         if (name.equals(username)) {
           return config;
         } else if (name.equals("default")) {

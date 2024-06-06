@@ -17,11 +17,10 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Getter;
-
+import io.mapsmessaging.config.tenant.TenantConfig;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 
 /**
  * Represents a session tenant configuration.
@@ -50,15 +49,15 @@ public class SessionTenantConfig {
    * @param tenantPath            the path of the tenant
    * @param globalConfiguration   the list of global configuration properties
    */
-  public SessionTenantConfig(String tenantPath, List<ConfigurationProperties> globalConfiguration) {
+  public SessionTenantConfig(String tenantPath, List<TenantConfig> globalConfiguration) {
     if (tenantPath.equals("/")) {
       tenantPath = "";
     }
     this.tenantPath = tenantPath;
     globalList = new ArrayList<>();
     if (globalConfiguration != null) {
-      for (ConfigurationProperties config : globalConfiguration) {
-        String namespace = config.getProperty("namespaceRoot");
+      for (TenantConfig config : globalConfiguration) {
+        String namespace = config.getNamespaceRoot();
         if (namespace != null && namespace.length() > 1) {
           globalList.add(namespace);
         }
