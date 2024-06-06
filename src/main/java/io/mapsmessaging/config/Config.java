@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
@@ -55,7 +56,7 @@ import java.util.Objects;
         @DiscriminatorMapping(value = "restApiConfig", schema = RestApiManagerConfig.class),
         @DiscriminatorMapping(value = "routingConfig", schema = RoutingManagerConfig.class)
     })
-public abstract class Config {
+public abstract class Config implements Serializable {
 
   public abstract ConfigurationProperties toConfigurationProperties();
 
