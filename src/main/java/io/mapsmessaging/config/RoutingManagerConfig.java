@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Schema(description = "Routing Configuration")
-public class RoutingManagerConfig extends Config{
+public class RoutingManagerConfig extends ManagementConfig{
 
   private boolean enabled;
   private boolean autoDiscovery;
@@ -49,6 +49,11 @@ public class RoutingManagerConfig extends Config{
         predefinedServers.add(new PredefinedServerConfig(serverProps));
       }
     }
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   public ConfigurationProperties toConfigurationProperties() {

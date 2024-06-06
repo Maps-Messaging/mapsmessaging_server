@@ -30,7 +30,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Jolokia Configuration")
-public class JolokiaConfig extends Config {
+public class JolokiaConfig extends ManagementConfig {
 
   private boolean enable;
   private ConfigurationProperties jolokiaMapping;
@@ -44,7 +44,8 @@ public class JolokiaConfig extends Config {
     return new JolokiaConfig(ConfigurationManager.getInstance().getProperties("jolokia"));
   }
 
-  public boolean update(JolokiaConfig newConfig) {
+  public boolean update(ManagementConfig config) {
+    JolokiaConfig newConfig = (JolokiaConfig) config;
     boolean hasChanged = false;
 
     if (this.enable != newConfig.isEnable()) {

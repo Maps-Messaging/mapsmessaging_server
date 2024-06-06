@@ -32,7 +32,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode(callSuper=true)
 @Schema(description = "Rest API Configuration")
-public class RestApiManagerConfig extends Config {
+public class RestApiManagerConfig extends ManagementConfig {
 
   private boolean enabled;
   private boolean enableAuthentication;
@@ -70,6 +70,11 @@ public class RestApiManagerConfig extends Config {
     if (properties.containsKey("static")) {
       staticConfig = new StaticConfig((ConfigurationProperties) properties.get("static"));
     }
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   public ConfigurationProperties toConfigurationProperties() {

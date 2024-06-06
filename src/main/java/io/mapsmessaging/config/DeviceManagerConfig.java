@@ -39,7 +39,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Device Manager Configuration")
-public class DeviceManagerConfig extends Config {
+public class DeviceManagerConfig extends ManagementConfig {
   private boolean enabled;
   private List<TriggerConfig> triggers;
   private List<I2CBusConfig> i2cBuses;
@@ -56,6 +56,11 @@ public class DeviceManagerConfig extends Config {
 
   public static DeviceManagerConfig getInstance() {
     return new DeviceManagerConfig(ConfigurationManager.getInstance().getProperties("DeviceManager"));
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   @Override

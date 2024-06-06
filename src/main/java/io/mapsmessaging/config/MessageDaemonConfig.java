@@ -30,7 +30,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Message Daemon Configuration")
-public class MessageDaemonConfig extends Config {
+public class MessageDaemonConfig extends ManagementConfig {
 
   private int delayedPublishInterval;
   private int sessionPipeLines;
@@ -73,7 +73,8 @@ public class MessageDaemonConfig extends Config {
   }
 
   // Method to update properties from another MessageDaemonConfig object
-  public boolean update(MessageDaemonConfig newConfig) {
+  public boolean update(ManagementConfig config) {
+    MessageDaemonConfig newConfig = (MessageDaemonConfig) config;
     boolean hasChanged = false;
 
     if (this.delayedPublishInterval != newConfig.getDelayedPublishInterval()) {

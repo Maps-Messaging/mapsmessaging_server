@@ -33,7 +33,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Network Manager Configuration")
-public class NetworkManagerConfig extends Config {
+public class NetworkManagerConfig extends ManagementConfig {
 
   private boolean preferIpV6Addresses;
   private boolean scanNetworkChanges;
@@ -64,6 +64,11 @@ public class NetworkManagerConfig extends Config {
   public static NetworkManagerConfig getInstance() {
     return new NetworkManagerConfig(
         ConfigurationManager.getInstance().getProperties("NetworkManager"));
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   @Override

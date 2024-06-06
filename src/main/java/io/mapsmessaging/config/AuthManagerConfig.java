@@ -30,7 +30,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Auth Manager Configuration")
-public class AuthManagerConfig  extends Config {
+public class AuthManagerConfig  extends ManagementConfig {
 
   private boolean authenticationEnabled;
   private boolean authorisationEnabled;
@@ -46,7 +46,8 @@ public class AuthManagerConfig  extends Config {
     return new AuthManagerConfig(ConfigurationManager.getInstance().getProperties("AuthManager"));
   }
 
-  public boolean update(AuthManagerConfig newConfig) {
+  public boolean update(ManagementConfig config) {
+    AuthManagerConfig newConfig = (AuthManagerConfig)config;
     boolean hasChanged = false;
 
     if (this.authenticationEnabled != newConfig.isAuthenticationEnabled()) {

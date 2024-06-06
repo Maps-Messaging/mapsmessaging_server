@@ -33,7 +33,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "LoRa Device Management Configuration")
-public class LoRaDeviceManagerConfig extends Config {
+public class LoRaDeviceManagerConfig extends ManagementConfig {
 
   private List<LoRaDeviceConfig> deviceConfigList;
 
@@ -51,6 +51,11 @@ public class LoRaDeviceManagerConfig extends Config {
     } else if (configEntry instanceof ConfigurationProperties) {
       deviceConfigList.add(new LoRaDeviceConfig((ConfigurationProperties) configEntry));
     }
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   @Override

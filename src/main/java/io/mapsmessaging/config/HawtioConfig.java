@@ -30,7 +30,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Hawtio Manager Configuration")
-public class HawtioConfig extends Config {
+public class HawtioConfig extends ManagementConfig {
   private boolean enable;
   private String warFileLocation;
   private boolean discoverable;
@@ -56,9 +56,9 @@ public class HawtioConfig extends Config {
     return new HawtioConfig(ConfigurationManager.getInstance().getProperties("hawtio"));
   }
 
-  public boolean update(HawtioConfig newConfig) {
+  public boolean update(ManagementConfig config) {
     boolean hasChanged = false;
-
+    HawtioConfig newConfig = (HawtioConfig) config;
     if (this.enable != newConfig.isEnable()) {
       this.enable = newConfig.isEnable();
       hasChanged = true;

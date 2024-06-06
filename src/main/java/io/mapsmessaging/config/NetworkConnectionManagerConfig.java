@@ -34,7 +34,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Network Connection Manager Configuration")
-public class NetworkConnectionManagerConfig extends Config {
+public class NetworkConnectionManagerConfig extends ManagementConfig {
 
   private EndPointServerConfig global;
   private List<EndPointConnectionServerConfig> endPointServerConfigList;
@@ -57,6 +57,11 @@ public class NetworkConnectionManagerConfig extends Config {
 
   public static NetworkConnectionManagerConfig getInstance() {
     return new NetworkConnectionManagerConfig (ConfigurationManager.getInstance().getProperties("NetworkConnectionManager"));
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   @Override

@@ -30,7 +30,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Discovery Manager Configuration")
-public class DiscoveryManagerConfig extends Config {
+public class DiscoveryManagerConfig extends ManagementConfig {
 
   private boolean enabled;
   private String hostnames;
@@ -72,6 +72,11 @@ public class DiscoveryManagerConfig extends Config {
     }
 
     return hasChanged;
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   // Method to push current values into a ConfigurationProperties object

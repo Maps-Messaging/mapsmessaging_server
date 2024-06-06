@@ -34,7 +34,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Destination Manager Configuration")
-public class DestinationManagerConfig extends Config {
+public class DestinationManagerConfig extends ManagementConfig {
 
   private List<DestinationConfig> data;
 
@@ -63,5 +63,12 @@ public class DestinationManagerConfig extends Config {
     }
     properties.put("data", dataProperties);
     return properties;
+  }
+
+  public boolean update(ManagementConfig config) {
+    DestinationManagerConfig newConfig = (DestinationManagerConfig) config;
+    boolean changed = false;
+
+    return changed;
   }
 }

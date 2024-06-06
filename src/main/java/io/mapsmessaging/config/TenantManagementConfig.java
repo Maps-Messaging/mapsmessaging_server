@@ -34,7 +34,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Tenant Management Configuration")
-public class TenantManagementConfig extends Config {
+public class TenantManagementConfig extends ManagementConfig {
 
   private List<TenantConfig> tenantConfigList;
 
@@ -52,6 +52,11 @@ public class TenantManagementConfig extends Config {
     } else if (configEntry instanceof ConfigurationProperties) {
       tenantConfigList.add(new TenantConfig((ConfigurationProperties) configEntry));
     }
+  }
+
+  @Override
+  public boolean update(ManagementConfig config) {
+    return false;
   }
 
   @Override
