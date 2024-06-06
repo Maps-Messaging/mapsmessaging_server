@@ -27,23 +27,33 @@ import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = MessageDaemonConfig.class, name = "messageDaemon"),
-  @JsonSubTypes.Type(value = DiscoveryManagerConfig.class, name = "discoveryManager"),
-  @JsonSubTypes.Type(value = HawtioConfig.class, name = "hawtioManager"),
-  @JsonSubTypes.Type(value = JolokiaConfig.class, name = "jolokiaConfig"),
-  @JsonSubTypes.Type(value = NetworkManagerConfig.class, name = "networkManagerConfig"),
+    @JsonSubTypes.Type(value = MessageDaemonConfig.class, name = "messageDaemon"),
+    @JsonSubTypes.Type(value = DiscoveryManagerConfig.class, name = "discoveryManager"),
+    @JsonSubTypes.Type(value = HawtioConfig.class, name = "hawtioManager"),
+    @JsonSubTypes.Type(value = JolokiaConfig.class, name = "jolokiaConfig"),
+    @JsonSubTypes.Type(value = NetworkManagerConfig.class, name = "networkManagerConfig"),
     @JsonSubTypes.Type(value = NetworkConnectionManagerConfig.class, name = "networkConnectionManagerConfig"),
+    @JsonSubTypes.Type(value = DestinationManagerConfig.class, name = "destinationManagerConfig"),
+    @JsonSubTypes.Type(value = DeviceManagerConfig.class, name = "deviceManagerConfig"),
+    @JsonSubTypes.Type(value = LoRaDeviceManagerConfig.class, name = "loRaDeviceManagerConfig"),
+    @JsonSubTypes.Type(value = RestApiManagerConfig.class, name = "restApiConfig"),
+    @JsonSubTypes.Type(value = RoutingManagerConfig.class, name = "routingConfig")
 })
 @Schema(
     description = "Abstract base class for all server configurations",
     discriminatorProperty = "type",
     discriminatorMapping = {
-      @DiscriminatorMapping(value = "messageDaemon", schema = MessageDaemonConfig.class),
-      @DiscriminatorMapping(value = "discoveryManager", schema = DiscoveryManagerConfig.class),
-      @DiscriminatorMapping(value = "hawtioManager", schema = HawtioConfig.class),
-      @DiscriminatorMapping(value = "jolokiaConfig", schema = JolokiaConfig.class),
-      @DiscriminatorMapping(value = "networkManagerConfig", schema = NetworkManagerConfig.class),
+        @DiscriminatorMapping(value = "messageDaemon", schema = MessageDaemonConfig.class),
+        @DiscriminatorMapping(value = "discoveryManager", schema = DiscoveryManagerConfig.class),
+        @DiscriminatorMapping(value = "hawtioManager", schema = HawtioConfig.class),
+        @DiscriminatorMapping(value = "jolokiaConfig", schema = JolokiaConfig.class),
+        @DiscriminatorMapping(value = "networkManagerConfig", schema = NetworkManagerConfig.class),
         @DiscriminatorMapping(value = "networkConnectionManagerConfig", schema = NetworkConnectionManagerConfig.class),
+        @DiscriminatorMapping(value = "destinationManagerConfig", schema = DestinationManagerConfig.class),
+        @DiscriminatorMapping(value = "deviceManagerConfig", schema = DeviceManagerConfig.class),
+        @DiscriminatorMapping(value = "loRaDeviceManagerConfig", schema = LoRaDeviceManagerConfig.class),
+        @DiscriminatorMapping(value = "restApiConfig", schema = RestApiManagerConfig.class),
+        @DiscriminatorMapping(value = "routingConfig", schema = RoutingManagerConfig.class)
     })
 public abstract class Config {
 

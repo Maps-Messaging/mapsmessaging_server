@@ -29,13 +29,17 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Schema(description = "Routing Configuration")
-public class RoutingManagerConfig {
+public class RoutingManagerConfig extends Config{
 
   private boolean enabled;
   private boolean autoDiscovery;
   private List<PredefinedServerConfig> predefinedServers;
 
-  public RoutingManagerConfig(ConfigurationProperties properties) {
+  public static RoutingManagerConfig getInstance(){
+    return new RoutingManagerConfig( ConfigurationManager.getInstance().getProperties("routing"));
+  }
+
+  private RoutingManagerConfig(ConfigurationProperties properties) {
     enabled = properties.getBooleanProperty("enabled", false);
     autoDiscovery = properties.getBooleanProperty("autoDiscovery", true);
     predefinedServers = new ArrayList<>();
@@ -46,12 +50,6 @@ public class RoutingManagerConfig {
       }
     }
   }
-
-
-  public static RoutingManagerConfig getInstance(){
-    return new RoutingManagerConfig( ConfigurationManager.getInstance().getProperties("routing"));
-  }
-
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
