@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#
+# Copyright [ 2020 - 2024 ] [Matthew Buckton]
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+
+set -e
+
+case "$1" in
+  configure)
+    # Create necessary directories
+    mkdir -p /etc/message-daemon
+
+    # Set permissions
+    chown -R root:root /opt/message_daemon
+    chmod -R 755 /opt/message_daemon/bin
+
+    # Setup configuration files
+    if [ ! -f /etc/message-daemon/message-daemon.conf ]; then
+      cp /opt/message_daemon/conf/message-daemon.conf /etc/message-daemon/
+    fi
+
+    # Install the message-daemon command
+    ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
+
+    # Start service (if applicable)
+    if [ -x /opt/message_daemon/bin/message_daemon ]; then
+      /opt/message_daemon/bin/message_daemon start
+    fi
+  ;;
+esac
+
+#DEBHELPER#
+
+exit 0

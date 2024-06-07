@@ -17,11 +17,11 @@
 #
 #
 
-PID_FILE="/opt/message_daemon/message_daemon.pid"
+PID_FILE="/opt/message_daemon/pid"
 
 start() {
     echo "Starting message-daemon..."
-    /opt/message_daemon/start.sh
+    /opt/message_daemon/bin/start.sh
 }
 
 stop() {
