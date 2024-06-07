@@ -22,7 +22,7 @@ set -e
 # Variables
 URL="https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/3.3.7-SNAPSHOT/message_daemon-3.3.7-SNAPSHOT-install.tar.gz"
 TAR_FILE="message_daemon-3.3.7-SNAPSHOT-install.tar.gz"
-TARGET_DIR="deb_package"
+TARGET_DIR="src/main/deb_package"
 INSTALL_DIR="${TARGET_DIR}/opt/message_daemon"
 BIN_DIR="src/main/scripts"
 
