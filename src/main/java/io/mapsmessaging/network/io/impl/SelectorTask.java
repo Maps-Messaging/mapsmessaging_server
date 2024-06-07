@@ -60,7 +60,10 @@ public class SelectorTask implements Selectable {
     int readBufferSize = (int)properties.getServerReadBufferSize();
     int writeBufferSize = (int) properties.getServerWriteBufferSize();
     if (isUDP) {
-      long packetThreshold = ((UdpConfig)properties).getPacketReuseTimeout();
+      long packetThreshold = 1000;
+      if(properties instanceof UdpConfig){
+        packetThreshold = ((UdpConfig)properties).getPacketReuseTimeout();
+      }
       readTask = new UDPReadTask(selectorCallback, readBufferSize, packetThreshold, logger);
       writeTask = new UDPWriteTask(selectorCallback, writeBufferSize, this, logger);
     } else {

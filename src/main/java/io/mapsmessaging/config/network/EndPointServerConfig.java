@@ -85,11 +85,11 @@ public class EndPointServerConfig extends Config {
       return new TcpConfig(properties);
     } else if (url.toLowerCase().startsWith("ssl") || url.toLowerCase().startsWith("wss")) {
       return new TlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("udp") || url.toLowerCase().startsWith("hmac")) {
+    } else if (url.toLowerCase().startsWith("udp") || url.toLowerCase().startsWith("hmac") || url.toLowerCase().startsWith("lora")) {
       return new UdpConfig(properties);
     } else if (url.toLowerCase().startsWith("dtls")) {
       return new DtlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("serial") || url.toLowerCase().startsWith("lora")) {
+    } else if (url.toLowerCase().startsWith("serial")) {
       return new SerialConfig(properties);
     }
     return null;

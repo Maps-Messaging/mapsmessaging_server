@@ -48,8 +48,8 @@ public class AuthConfig  extends Config {
       tokenGenerator = remoteAuth.getProperty("tokenGenerator");
       sessionId = remoteAuth.getProperty("sessionId");
       if(tokenGenerator != null && !tokenGenerator.isEmpty()){
-        ConfigurationProperties tokenConfig = (ConfigurationProperties) remoteAuth.get("tokenConfig");
-        tokenConfig.putAll(tokenConfig.getMap());
+        ConfigurationProperties token = (ConfigurationProperties) remoteAuth.get("tokenConfig");
+        tokenConfig.putAll(token.getMap());
       }
     }
   }
