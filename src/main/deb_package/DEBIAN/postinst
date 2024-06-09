@@ -19,6 +19,8 @@
 
 set -e
 
+cd /opt/message-daemon
+
 case "$1" in
   configure)
     # Create necessary directories
@@ -27,11 +29,6 @@ case "$1" in
     # Set permissions
     chown -R root:root /opt/message_daemon
     chmod -R 755 /opt/message_daemon/bin
-
-    # Setup configuration files
-    if [ ! -f /etc/message-daemon/message-daemon.conf ]; then
-      cp /opt/message_daemon/conf/message-daemon.conf /etc/message-daemon/
-    fi
 
     # Install the message-daemon command
     ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon

@@ -21,7 +21,7 @@ PID_FILE="/opt/message_daemon/pid"
 
 start() {
     echo "Starting message-daemon..."
-    /opt/message_daemon/bin/start.sh
+    nohup /opt/message_daemon/bin/start.sh > /var/log/message-daemon/message-daemon.log 2>&1 &
 }
 
 stop() {
