@@ -50,21 +50,7 @@ NetworkConnectionManager:
         ssl_trustStore: JKS
 
     data:
-        - # ---------------------------------------------------------------------------------------------------------
-            #  Interface definitions for local loragateway
-            # ---------------------------------------------------------------------------------------------------------
-            name: loragateway-Pull
-            url: tcp://10.140.62.205:1883/
-            protocol: mqtt
-            remote:
-                username: user1
-                password: password
-                sessionId: localhostTestSession
-            links:
-              -
-                direction: pull
-                remote_namespace: /#
-                local_namespace: /loragateway01/
+        -
 #        name: Generic name for the connection
 #        url: tcp|ssl|ws|wss://<hostname>:<port>/ This is optional, if left out it is assumed a local connection
 #        protocol: mqtt(4|5)|stomp|amqp           Only required it URL is supplied
