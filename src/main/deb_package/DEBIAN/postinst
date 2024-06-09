@@ -19,8 +19,6 @@
 
 set -e
 
-cd /opt/message-daemon
-
 case "$1" in
   configure)
     # Create necessary directories
@@ -34,7 +32,9 @@ case "$1" in
     ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
 
     # Start service (if applicable)
+
     if [ -x /opt/message_daemon/bin/message_daemon ]; then
+      cd /opt/message-daemon
       /opt/message_daemon/bin/message_daemon start
     fi
   ;;
