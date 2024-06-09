@@ -34,7 +34,7 @@ case "$1" in
     # Start service (if applicable)
 
     if [ -x /opt/message_daemon/bin/message_daemon ]; then
-      cd /opt/message-daemon
+      cd /opt/message_daemon
       /opt/message_daemon/bin/message_daemon start
     fi
   ;;
