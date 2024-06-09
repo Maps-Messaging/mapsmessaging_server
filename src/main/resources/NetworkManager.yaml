@@ -92,6 +92,7 @@ NetworkManager:
         backlog: 100
         soLingerDelaySec: 10
         readDelayOnFragmentation: 100
+        fragmentationLimit : 5
         enableReadDelayOnFragmentation: true
 
       # ---------------------------------------------------------------------------------------------------------
@@ -185,7 +186,7 @@ NetworkManager:
         protocol: stomp
         auth: usernamePassword
 
-      - name: "Stomp Interface"
+      - name: "SSL Stomp Interface"
         url: ssl://:::61614/
         protocol: stomp
         auth: usernamePassword
@@ -202,7 +203,7 @@ NetworkManager:
           identityProvider: system
 
       - url: dtls://:::8883/
-        name: "MQTT-SN Interface"
+        name: "MQTT-SN Interface SCRAM"
         protocol: mqtt-sn
         eventsPerTopicDuringSleep: 5
         maxTopicsInSleep: 10
@@ -219,7 +220,7 @@ NetworkManager:
         idleTimePeriod: 120
 
       - url: dtls://:::5684/
-        name: "CoAP Interface"
+        name: "CoAP Interface DTLS"
         protocol: coap
         maxBlockSize: 512
         idleTimePeriod: 120

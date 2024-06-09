@@ -11,7 +11,7 @@ NetworkManager:
       timeout: 60000
       backlog: 100
 
-      readDelayOnFragmentation: 100
+      readDelayOnFragmentation: 10
       enableReadDelayOnFragmentation: true
 
       # ---------------------------------------------------------------------------------------------------------

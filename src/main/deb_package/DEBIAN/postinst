@@ -28,6 +28,13 @@ case "$1" in
     chown -R root:root /opt/message_daemon
     chmod -R 755 /opt/message_daemon/bin
 
+    if [ ! -d /var/log/message-daemon ]; then
+        mkdir -p /var/log/message-daemon
+    fi
+    if [ ! -f /var/log/message-daemon/message-daemon.log ]; then
+        touch /var/log/message-daemon/message-daemon.log
+    fi
+
     # Install the message-daemon command
     ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
 
