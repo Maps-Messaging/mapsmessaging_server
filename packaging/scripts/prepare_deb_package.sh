@@ -17,19 +17,22 @@
 #
 #
 
-set -e
+POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
 
 # Variables
-TAR_FILE="message_daemon-3.3.7-SNAPSHOT-install.tar.gz"
-TARGET_DIR="src/main/deb_package"
+export VERSION_NAME=$POM_VERSION
+export PROJECT_NAME=message_daemon
+
+TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
+TARGET_DIR="packaging/deb_package"
 INSTALL_DIR="${TARGET_DIR}/opt/message_daemon"
 BIN_DIR="src/main/scripts"
+ETC_DIR="${TARGET_DIR}/etc/message_daemon"
 
-# Create target directory
+# Create target directories
 mkdir -p ${INSTALL_DIR}/bin
-
-# Download the tar.gz file
-wget -O ${TAR_FILE} ${URL}
+mkdir -p ${ETC_DIR}
+mkdir -p ${TARGET_DIR}/lib/systemd/system
 
 # Extract the tar.gz file into the install directory
 tar -xzf ${TAR_FILE} --strip-components=1 -C ${INSTALL_DIR}
@@ -41,8 +44,13 @@ chmod +x ${INSTALL_DIR}/start.sh
 cp ${BIN_DIR}/message_daemon ${INSTALL_DIR}/bin/message_daemon
 chmod +x ${INSTALL_DIR}/bin/message_daemon
 
+# Copy the etc files
+cp packaging/deb_package/etc/message_daemon.env ${ETC_DIR}/message_daemon.env
+cp packaging/deb_package/etc/message_daemon.service ${TARGET_DIR}/lib/systemd/system/message_daemon.service
+
 # Ensure postinst script is executable
 chmod +x ${TARGET_DIR}/DEBIAN/postinst
+chmod +x ${TARGET_DIR}/DEBIAN/prerm
 
 echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
 dpkg-deb --build ${TARGET_DIR}

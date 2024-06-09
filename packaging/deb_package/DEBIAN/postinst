@@ -22,7 +22,7 @@ set -e
 case "$1" in
   configure)
     # Create necessary directories
-    mkdir -p /etc/message-daemon
+    mkdir -p /etc/message_daemon
 
     # Set permissions
     chown -R root:root /opt/message_daemon
@@ -38,12 +38,9 @@ case "$1" in
     # Install the message-daemon command
     ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
 
-    # Start service (if applicable)
-
-    if [ -x /opt/message_daemon/bin/message_daemon ]; then
-      cd /opt/message_daemon
-      /opt/message_daemon/bin/message_daemon start
-    fi
+    # Enable and start the service
+    systemctl enable message_daemon.service
+    systemctl start message_daemon.service
   ;;
 esac
 
