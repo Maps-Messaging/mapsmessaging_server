@@ -48,7 +48,7 @@ chmod +x ${INSTALL_DIR}/bin/message_daemon
 cp packaging/deb_package/etc/message_daemon.env ${ETC_DIR}/message_daemon.env
 cp packaging/deb_package/etc/message_daemon.service ${TARGET_DIR}/lib/systemd/system/message_daemon.service
 
-# Ensure postinst script is executable
+# Ensure postinst and prerm scripts are executable
 chmod +x ${TARGET_DIR}/DEBIAN/postinst
 chmod +x ${TARGET_DIR}/DEBIAN/prerm
 

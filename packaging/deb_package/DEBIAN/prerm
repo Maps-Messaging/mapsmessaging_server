@@ -27,6 +27,9 @@ case "$1" in
 
     # Remove the symlink
     rm -f /usr/local/bin/message-daemon
+
+    # Remove the environment file
+    rm -f /etc/message_daemon/message_daemon.env
   ;;
 esac
 

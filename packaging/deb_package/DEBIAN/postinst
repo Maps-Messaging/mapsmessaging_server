@@ -35,6 +35,9 @@ case "$1" in
         touch /var/log/message-daemon/message-daemon.log
     fi
 
+   # Copy the environment file
+    cp /opt/message_daemon/etc/message_daemon.env /etc/message_daemon/message_daemon.env
+
     # Install the message-daemon command
     ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
 
