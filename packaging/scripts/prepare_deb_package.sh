@@ -46,7 +46,8 @@ chmod +x ${INSTALL_DIR}/bin/message_daemon
 
 # Copy the etc files
 cp packaging/deb_package/etc/message_daemon.env ${ETC_DIR}/message_daemon.env
-cp packaging/deb_package/etc/message_daemon.service ${TARGET_DIR}/lib/systemd/system/message_daemon.service
+cp packaging/deb_package/etc/message_daemon.service ${ETC_DIR}/message_daemon.service
+
 
 # Ensure postinst and prerm scripts are executable
 chmod +x ${TARGET_DIR}/DEBIAN/postinst

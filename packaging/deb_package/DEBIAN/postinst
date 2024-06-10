@@ -37,6 +37,7 @@ case "$1" in
 
    # Copy the environment file
     cp /opt/message_daemon/etc/message_daemon.env /etc/message_daemon/message_daemon.env
+    cp /opt/message_daemon/etc/message_daemon.service   /usr/lib/systemd/system/message_daemon.service
 
     # Install the message-daemon command
     ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
