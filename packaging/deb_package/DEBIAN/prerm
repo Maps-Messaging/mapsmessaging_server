@@ -27,9 +27,12 @@ case "$1" in
 
     # Remove the symlink
     rm -f /usr/local/bin/message-daemon
+    rm -f /usr/local/bin/mapsTop
 
     # Remove the environment file
     rm -f /etc/message_daemon/message_daemon.env
+    rm -f /usr/lib/systemd/system/message_daemon.service
+
   ;;
 esac
 
