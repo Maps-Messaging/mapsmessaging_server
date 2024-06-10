@@ -27,26 +27,19 @@ TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
 TARGET_DIR="packaging/deb_package"
 INSTALL_DIR="${TARGET_DIR}/opt/message_daemon"
 BIN_DIR="src/main/scripts"
-ETC_DIR="${TARGET_DIR}/message_daemon/etc"
+ETC_DIR="${INSTALL_DIR}/etc"
 
-# Create target directories
-mkdir -p ${INSTALL_DIR}/bin
-mkdir -p ${ETC_DIR}
-mkdir -p ${TARGET_DIR}/lib/systemd/system
 
 # Extract the tar.gz file into the install directory
 tar -xzf ${TAR_FILE} --strip-components=1 -C ${INSTALL_DIR}
+mkdir -p ${ETC_DIR}
 
-# Copy the provided start.sh and message-daemon scripts into the install directory
-cp ${BIN_DIR}/start.sh ${INSTALL_DIR}/start.sh
 chmod +x ${INSTALL_DIR}/start.sh
-
-cp ${BIN_DIR}/message_daemon ${INSTALL_DIR}/bin/message_daemon
 chmod +x ${INSTALL_DIR}/bin/message_daemon
 
 # Copy the etc files
-cp packaging/deb_package/etc/message_daemon.env ${ETC_DIR}/message_daemon.env
-cp packaging/deb_package/etc/message_daemon.service ${ETC_DIR}/message_daemon.service
+cp packaging/etc/message_daemon.env ${ETC_DIR}/message_daemon.env
+cp packaging/etc/message_daemon.service ${ETC_DIR}/message_daemon.service
 
 
 # Ensure postinst and prerm scripts are executable
