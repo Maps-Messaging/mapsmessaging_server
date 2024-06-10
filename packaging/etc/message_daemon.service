@@ -5,6 +5,8 @@ After=network.target
 [Service]
 EnvironmentFile=/etc/message_daemon/message_daemon.env
 ExecStart=/opt/message_daemon/bin/start.sh
+ExecStopPost=/bin/rm -f /opt/message_daemon/pid
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
