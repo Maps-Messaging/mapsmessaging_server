@@ -41,6 +41,7 @@ case "$1" in
 
     # Install the message-daemon command
     ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
+    ln -sf /opt/message_daemon/bin/mapsTop.sh /usr/local/bin/mapsTop
 
     # Enable and start the service
     systemctl enable message_daemon.service

@@ -36,7 +36,7 @@ mkdir -p ${ETC_DIR}
 # Extract the tar.gz file into the install directory
 tar -xzf ${TAR_FILE} --strip-components=1 -C ${INSTALL_DIR}
 
-chmod +x ${INSTALL_DIR}/start.sh
+chmod +x ${INSTALL_DIR}/bin/start.sh
 chmod +x ${INSTALL_DIR}/bin/message_daemon
 
 # Copy the etc files
