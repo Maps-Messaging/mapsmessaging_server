@@ -3,8 +3,8 @@ Description=Message Daemon Service
 After=network.target
 
 [Service]
-EnvironmentFile=/etc/message_daemon.env
-ExecStart=/opt/message_daemon/start.sh
+EnvironmentFile=/etc/message_daemon/message_daemon.env
+ExecStart=/opt/message_daemon/bin/start.sh
 
 [Install]
 WantedBy=multi-user.target
