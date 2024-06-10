@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright [ 2020 - 2024 ] [Matthew Buckton]
 #
