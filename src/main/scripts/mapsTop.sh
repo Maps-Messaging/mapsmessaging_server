@@ -20,6 +20,10 @@
 #
 export VERSION=%%MAPS_VERSION%%
 
+if [ -f /opt/message_daemon/etc/message_daemon.env ]; then
+    . /opt/message_daemon/etc/message_daemon.env
+fi
+
 current_dir=$(pwd)
 if [[ "$current_dir" == */bin ]]; then
     parent_dir=$(dirname "$current_dir")
