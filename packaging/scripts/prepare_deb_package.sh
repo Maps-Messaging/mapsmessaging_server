@@ -27,7 +27,7 @@ TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
 TARGET_DIR="packaging/deb_package"
 INSTALL_DIR="${TARGET_DIR}/opt/message_daemon"
 BIN_DIR="src/main/scripts"
-ETC_DIR="${TARGET_DIR}/etc/message_daemon"
+ETC_DIR="${TARGET_DIR}/message_daemon/etc"
 
 # Create target directories
 mkdir -p ${INSTALL_DIR}/bin
