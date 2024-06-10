@@ -5,7 +5,7 @@ Summary:        A multi adapter and protocol server
 
 License:        Apache License 2.0
 URL:            http://www.mapsmessaging.io
-Source0:        %{name}-%{version}.tar.gz
+Source0:        %{name}-%{version}-install.tar.gz
 
 BuildArch:      noarch
 Requires:       java-17-openjdk
@@ -26,14 +26,19 @@ mkdir -p $RPM_BUILD_ROOT/usr/local/bin
 mkdir -p $RPM_BUILD_ROOT/var/log/message-daemon
 mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system
 
-# Copy files
-cp -r bin $RPM_BUILD_ROOT/opt/message_daemon/
-cp start.sh $RPM_BUILD_ROOT/opt/message_daemon/
-cp etc/message_daemon.env $RPM_BUILD_ROOT/etc/message_daemon/
-cp systemd/message_daemon.service $RPM_BUILD_ROOT/usr/lib/systemd/system/
+# Extract the tar.gz file into the install directory
+tar -xzf %{SOURCE0} --strip-components=1 -C $RPM_BUILD_ROOT/opt/message_daemon
 
-# Symlink
+chmod +x $RPM_BUILD_ROOT/opt/message_daemon/bin/start.sh
+chmod +x $RPM_BUILD_ROOT/opt/message_daemon/bin/message_daemon
+
+# Copy the etc files
+cp $RPM_BUILD_ROOT/opt/message_daemon/etc/message_daemon.env $RPM_BUILD_ROOT/etc/message_daemon/message_daemon.env
+cp $RPM_BUILD_ROOT/opt/message_daemon/etc/message_daemon.service $RPM_BUILD_ROOT/usr/lib/systemd/system/message_daemon.service
+
+# Create symlinks
 ln -s /opt/message_daemon/bin/message_daemon $RPM_BUILD_ROOT/usr/local/bin/message-daemon
+ln -s /opt/message_daemon/bin/mapsTop.sh $RPM_BUILD_ROOT/usr/local/bin/mapsTop
 
 %post
 # Set permissions
@@ -54,17 +59,23 @@ if [ $1 -eq 0 ]; then
     systemctl stop message_daemon.service
     systemctl disable message_daemon.service
 
-    # Remove the symlink
+    # Remove the symlinks
     rm -f /usr/local/bin/message-daemon
+    rm -f /usr/local/bin/mapsTop
+    rm -f /etc/message_daemon/message_daemon.env
+    rm -f /usr/lib/systemd/system/message_daemon.service
 fi
 
 %files
 /opt/message_daemon
 /etc/message_daemon/message_daemon.env
 /usr/local/bin/message_daemon
+/usr/local/bin/mapsTop
 /usr/lib/systemd/system/message_daemon.service
 %attr(0755, root, root) /opt/message_daemon/bin/*
 %dir /var/log/message-daemon
 %config(noreplace) /etc/message_daemon/message_daemon.env
 
 %changelog
+* Mon Jun 10 2024 Matthew Buckton <matthew.buckton@mapsmessaging.io> 3.3.7-1
+- Initial RPM release.
