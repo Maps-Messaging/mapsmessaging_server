@@ -40,8 +40,8 @@ chmod +x ${INSTALL_DIR}/bin/start.sh
 chmod +x ${INSTALL_DIR}/bin/message_daemon
 
 # Copy the etc files
-cp packaging/etc/message_daemon.env ${ETC_DIR}/message_daemon.env
-cp packaging/etc/message_daemon.service ${ETC_DIR}/message_daemon.service
+#cp packaging/etc/message_daemon.env ${ETC_DIR}/message_daemon.env
+#cp packaging/etc/message_daemon.service ${ETC_DIR}/message_daemon.service
 
 
 # Ensure postinst and prerm scripts are executable
