@@ -47,6 +47,7 @@ chmod +x ${INSTALL_DIR}/bin/message_daemon
 # Ensure postinst and prerm scripts are executable
 chmod +x ${TARGET_DIR}/DEBIAN/postinst
 chmod +x ${TARGET_DIR}/DEBIAN/prerm
+chmod +x ${TARGET_DIR}/DEBIAN/preinst
 
 echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
 dpkg-deb --build ${TARGET_DIR}
