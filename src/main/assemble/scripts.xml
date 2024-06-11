@@ -68,7 +68,13 @@
         <include>**/*</include> <!-- This includes all files and subdirectories -->
       </includes>
     </fileSet>
-
+    <fileSet>
+      <directory>${project.basedir}/packaging/etc</directory>
+      <outputDirectory>etc</outputDirectory>
+      <includes>
+        <include>*</include>
+      </includes>
+    </fileSet>
 
     <fileSet>
       <directory>${project.basedir}/src/main/resources/</directory>
