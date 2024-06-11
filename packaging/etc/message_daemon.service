@@ -9,6 +9,8 @@ ExecStopPost=/bin/rm -f /opt/message_daemon/pid
 Restart=on-failure
 StandardOutput=append:/var/log/message-daemon/message-daemon.log
 StandardError=append:/var/log/message-daemon/message-daemon.log
+User=mapsmessaging
+Group=mapsmessaging
 
 [Install]
 WantedBy=multi-user.target
