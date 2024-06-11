@@ -41,13 +41,21 @@ rm $RPM_BUILD_ROOT/opt/message_daemon/lib/libLoRaDevice.so
 ln -s /opt/message_daemon/bin/message_daemon $RPM_BUILD_ROOT/usr/local/bin/message-daemon
 ln -s /opt/message_daemon/bin/start.sh $RPM_BUILD_ROOT/usr/local/bin/start
 
+%pre
+# Check if group exists, create if it doesn't
+getent group mapsmessaging >/dev/null || groupadd -r mapsmessaging
+
+# Check if user exists, create if it doesn't
+getent passwd mapsmessaging >/dev/null || useradd -r -g mapsmessaging -d /opt/message_daemon -s /sbin/nologin -c "Maps Messaging Daemon User" mapsmessaging
+
 %post
 # Set permissions
-chown -R root:root /opt/message_daemon
+chown -R mapsmessaging:mapsmessaging /opt/message_daemon
 chmod -R 755 /opt/message_daemon/bin
 
 if [ ! -f /var/log/message-daemon/message-daemon.log ]; then
     touch /var/log/message-daemon/message-daemon.log
+    chown mapsmessaging:mapsmessaging /var/log/message-daemon/message-daemon.log
 fi
 
 # Enable and start the service
@@ -67,17 +75,20 @@ if [ $1 -eq 0 ]; then
     rm -f /usr/lib/systemd/system/message_daemon.service
 fi
 
+%postun
+# Reload systemd to pick up changes
+systemctl daemon-reload
+
 %files
 /opt/message_daemon
 /etc/message_daemon/message_daemon.env
 /usr/local/bin/message-daemon
 /usr/local/bin/start
 /usr/lib/systemd/system/message_daemon.service
-%attr(0755, root, root) /opt/message_daemon/bin/*
+%attr(0755, mapsmessaging, mapsmessaging) /opt/message_daemon/bin/*
 %dir /var/log/message-daemon
 %config(noreplace) /etc/message_daemon/message_daemon.env
 
 %changelog
-* Mon Jun 10 2024 Matthew Buckton <matthew.buckton@mapsmessaging.io> 3.3.7-1
+* Tue Jun 11 2024 Matthew Buckton <matthew.buckton@mapsmessaging.io> 3.3.7-1
 - Initial RPM release.
-
