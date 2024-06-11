@@ -17,7 +17,7 @@
 #
 #
 
-POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
+POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 
 # Variables
 export VERSION_NAME=$POM_VERSION
@@ -25,33 +25,26 @@ export PROJECT_NAME=message_daemon
 
 TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
 
-SOURCE_DIR="rpmbuild/SOURCES"
-SPEC_DIR="rpmbuild/SPECS"
+SOURCE_DIR="packaging/rpmbuild/SOURCES"
+SPEC_DIR="packaging/rpmbuild/SPECS"
 
-# Create source directories
-mkdir -p ${PROJECT_NAME}-${VERSION_NAME}/bin
-mkdir -p ${PROJECT_NAME}-${VERSION_NAME}/etc
-mkdir -p ${PROJECT_NAME}-${VERSION_NAME}/systemd
-
-# Copy files to source directories
-cp src/main/scripts/start.sh ${PROJECT_NAME}-${VERSION_NAME}/start.sh
-cp src/main/scripts/message_daemon ${PROJECT_NAME}-${VERSION_NAME}/bin/message_daemon
-cp packaging/etc/message_daemon.env ${PROJECT_NAME}-${VERSION_NAME}/etc/message_daemon.env
-cp packaging/etc/message_daemon.service ${PROJECT_NAME}-${VERSION_NAME}/systemd/message_daemon.service
-
-# Create tarball from source directories
-mkdir -p target
-tar -czf ${TAR_FILE} -C ${PROJECT_NAME}-${VERSION_NAME}/ .
+# Verify the tarball exists
+if [[ ! -f ${TAR_FILE} ]]; then
+  echo "Error: tarball ${TAR_FILE} not found."
+  exit 1
+fi
 
 # Move the tarball to SOURCES
 mkdir -p ${SOURCE_DIR}
-mv ${TAR_FILE} ${SOURCE_DIR}
+cp ${TAR_FILE} ${SOURCE_DIR}
 
-# Copy the SPEC file to SPECS
-mkdir -p ${SPEC_DIR}
-cp message_daemon.spec ${SPEC_DIR}
+# Verify the tarball is in the SOURCES directory
+if [[ ! -f ${SOURCE_DIR}/$(basename ${TAR_FILE}) ]]; then
+  echo "Error: tarball ${TAR_FILE} not found in ${SOURCE_DIR}."
+  exit 1
+fi
 
+export BUILD_ROOT=${PWD}/packaging/rpmbuild
 # Build the RPM package
-rpmbuild -ba ${SPEC_DIR}/message_daemon.spec
+rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/message_daemon.spec
 
-echo "RPM build complete."

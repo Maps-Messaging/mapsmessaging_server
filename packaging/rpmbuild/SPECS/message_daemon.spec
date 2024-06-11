@@ -1,11 +1,11 @@
-Name:           message-daemon
+Name:           message_daemon
 Version:        3.3.7
 Release:        1%{?dist}
 Summary:        A multi adapter and protocol server
 
 License:        Apache License 2.0
 URL:            http://www.mapsmessaging.io
-Source0:        %{name}-%{version}-install.tar.gz
+Source0:        %{name}-3.3.7-SNAPSHOT-install.tar.gz
 
 BuildArch:      noarch
 Requires:       java-17-openjdk
@@ -14,7 +14,7 @@ Requires:       java-17-openjdk
 A multi adapter and protocol server for handling messaging protocols.
 
 %prep
-%setup -q
+%setup -q -n %{name}-3.3.7-SNAPSHOT
 
 %build
 
@@ -35,10 +35,11 @@ chmod +x $RPM_BUILD_ROOT/opt/message_daemon/bin/message_daemon
 # Copy the etc files
 cp $RPM_BUILD_ROOT/opt/message_daemon/etc/message_daemon.env $RPM_BUILD_ROOT/etc/message_daemon/message_daemon.env
 cp $RPM_BUILD_ROOT/opt/message_daemon/etc/message_daemon.service $RPM_BUILD_ROOT/usr/lib/systemd/system/message_daemon.service
+rm $RPM_BUILD_ROOT/opt/message_daemon/lib/libLoRaDevice.so
 
 # Create symlinks
 ln -s /opt/message_daemon/bin/message_daemon $RPM_BUILD_ROOT/usr/local/bin/message-daemon
-ln -s /opt/message_daemon/bin/mapsTop.sh $RPM_BUILD_ROOT/usr/local/bin/mapsTop
+ln -s /opt/message_daemon/bin/start.sh $RPM_BUILD_ROOT/usr/local/bin/start
 
 %post
 # Set permissions
@@ -61,7 +62,7 @@ if [ $1 -eq 0 ]; then
 
     # Remove the symlinks
     rm -f /usr/local/bin/message-daemon
-    rm -f /usr/local/bin/mapsTop
+    rm -f /usr/local/bin/start
     rm -f /etc/message_daemon/message_daemon.env
     rm -f /usr/lib/systemd/system/message_daemon.service
 fi
@@ -69,8 +70,8 @@ fi
 %files
 /opt/message_daemon
 /etc/message_daemon/message_daemon.env
-/usr/local/bin/message_daemon
-/usr/local/bin/mapsTop
+/usr/local/bin/message-daemon
+/usr/local/bin/start
 /usr/lib/systemd/system/message_daemon.service
 %attr(0755, root, root) /opt/message_daemon/bin/*
 %dir /var/log/message-daemon
@@ -79,3 +80,4 @@ fi
 %changelog
 * Mon Jun 10 2024 Matthew Buckton <matthew.buckton@mapsmessaging.io> 3.3.7-1
 - Initial RPM release.
+
