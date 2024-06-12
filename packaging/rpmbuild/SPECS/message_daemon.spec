@@ -25,6 +25,8 @@ mkdir -p $RPM_BUILD_ROOT/etc/message_daemon
 mkdir -p $RPM_BUILD_ROOT/usr/local/bin
 mkdir -p $RPM_BUILD_ROOT/var/log/message-daemon
 mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system
+# Create the maps_data directory
+mkdir -p $RPM_BUILD_ROOT/opt/maps_data
 
 # Extract the tar.gz file into the install directory
 tar -xzf %{SOURCE0} --strip-components=1 -C $RPM_BUILD_ROOT/opt/message_daemon
@@ -57,6 +59,11 @@ if [ ! -f /var/log/message-daemon/message-daemon.log ]; then
     touch /var/log/message-daemon/message-daemon.log
     chown mapsmessaging:mapsmessaging /var/log/message-daemon/message-daemon.log
 fi
+
+
+# Set ownership for maps_data directory
+chown mapsmessaging:mapsmessaging /opt/maps_data
+
 
 # Enable and start the service
 systemctl enable message_daemon.service
