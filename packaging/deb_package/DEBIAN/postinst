@@ -26,6 +26,7 @@ case "$1" in
 
     # Set permissions
     chown -R mapsmessaging:mapsmessaging /opt/message_daemon
+    chown -R mapsmessaging:mapsmessaging /opt/maps_data
     chmod -R 755 /opt/message_daemon/bin
 
     if [ ! -d /var/log/message-daemon ]; then
