@@ -17,6 +17,8 @@
 #
 
 set -e
+# Create necessary directories
+mkdir -p /etc/message_daemon
 
 # Check if group exists, create if it doesn't
 if ! getent group mapsmessaging >/dev/null; then
