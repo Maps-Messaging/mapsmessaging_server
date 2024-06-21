@@ -17,8 +17,6 @@
 #
 
 set -e
-# Create necessary directories
-mkdir -p /etc/message_daemon
 
 # Check if group exists, create if it doesn't
 if ! getent group mapsmessaging >/dev/null; then
@@ -27,7 +25,7 @@ fi
 
 # Check if user exists, create if it doesn't
 if ! getent passwd mapsmessaging >/dev/null; then
-    adduser --system --ingroup mapsmessaging --home /opt/message_daemon --no-create-home --shell /usr/sbin/nologin --disabled-login --gecos "Maps Messaging Daemon User" mapsmessaging
+    adduser --system --ingroup mapsmessaging --home /opt/message_daemon --shell /usr/sbin/nologin --disabled-login --gecos "Maps Messaging Daemon User" mapsmessaging
 fi
 
 exit 0

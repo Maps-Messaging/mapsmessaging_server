@@ -22,6 +22,8 @@ set -e
 case "$1" in
   configure)
 # Create necessary directories
+# Create necessary directories
+    mkdir -p /etc/message_daemon
     mkdir -p /opt/maps_data
 
     # Set permissions
