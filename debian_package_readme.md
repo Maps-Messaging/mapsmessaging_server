@@ -23,19 +23,3 @@ To Install the server then
 sudo apt-get update
 sudo apt-get install message-daemon
 ```
-
-
-
-Complete script
-```shell
-# Create the APT source list file
-echo "deb [arch=all] https://repository.mapsmessaging.io:8081/repository/maps_messaging_daemon/ snapshot main" | sudo tee /etc/apt/sources.list.d/mapsmessaging.list
-
-# Download and add the public key
-wget -O- https://repository.mapsmessaging.io:8081/repository/public_key/keys/public.gpg.key | sudo apt-key add -
-
-# Update package list and install the message daemon
-sudo apt-get update
-sudo apt-get install message-daemon
-
-```
