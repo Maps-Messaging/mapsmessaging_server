@@ -71,12 +71,6 @@ public class RemoteServers {
   }
 
   public void remove(MapsServiceInfo serviceInfo) {
-    Services service = services.get(serviceInfo.getApplication());
-    if(service != null){
-      service.removeService(serviceInfo);
-      if(service.getAddresses().isEmpty()){
-        services.remove(serviceInfo.getApplication());
-      }
-    }
+    services.remove(serviceInfo.getApplication());
   }
 }

@@ -45,7 +45,14 @@ public class MapsServiceInfo {
   }
 
   public String getServerName(){
-    return getProperty("server name");
+    String val = getProperty("server name");
+    if(val.isEmpty()){
+      val = serviceInfo.getName();
+      if(val.contains("(")){
+        val = val.substring(0, val.indexOf("(")).trim();
+      }
+    }
+    return val;
   }
 
   public String getPropertyString(String serverName) {

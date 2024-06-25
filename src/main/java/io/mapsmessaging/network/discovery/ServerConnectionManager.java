@@ -46,12 +46,13 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   @Override
   public void serviceRemoved(ServiceEvent serviceEvent) {
     if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
-      if(serviceEvent.getInfo().getPropertyString("server name") == null){
+      if(serviceEvent.getInfo().getName() == null){
         return;
       }
+
       MapsServiceInfo mapsServiceInfo = new MapsServiceInfo(serviceEvent.getInfo());
       RemoteServers server = serviceInfoMap.get(mapsServiceInfo.getServerName());
-      if(server == null){
+      if(server != null){
         logger.log(ServerLogMessages.DISCOVERY_REMOVED_REMOTE_SERVER, serviceEvent.getName(), server.getServerName()+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
         server.remove(mapsServiceInfo);
         if(server.getServices().isEmpty()){
