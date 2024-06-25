@@ -20,9 +20,9 @@ package io.mapsmessaging.rest.api.impl.discovery;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.network.discovery.services.RemoteServers;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.discovery.DiscoveredServers;
-import io.mapsmessaging.rest.data.discovery.ServiceData;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.jmdns.ServiceInfo;
 
 @Tag(name = "Discovery Management")
 @Path(URI_PATH)
@@ -80,17 +79,12 @@ public class DiscoveryManagementApi extends BaseRestApi {
       response.setStatus(403);
       return new ArrayList<>();
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
-    Map<String, List<ServiceInfo>> discovered = MessageDaemon.getInstance().getServerConnectionManager().getServiceInfoMap();
-
-    return discovered.entrySet().stream()
-        .map(entry -> {
-          List<ServiceData> discoveredServiceData = entry.getValue().stream()
-              .map(ServiceData::new)
-              .collect(Collectors.toList());
-          return new DiscoveredServers(entry.getKey(), discoveredServiceData);
-        })
-        .filter(discoveredServer -> parser == null || parser.evaluate(discoveredServer))
-        .collect(Collectors.toList());
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : SelectorParser.compile("true");
+    Map<String, RemoteServers> discovered = MessageDaemon.getInstance().getServerConnectionManager().getServiceInfoMap();
+    List<DiscoveredServers> result = new ArrayList<>();
+    for(Map.Entry<String, RemoteServers> entry : discovered.entrySet()) {
+      result.add(new DiscoveredServers(entry.getValue()));
+    }
+    return result.stream().filter(parser::evaluate).collect(Collectors.toList());
   }
 }

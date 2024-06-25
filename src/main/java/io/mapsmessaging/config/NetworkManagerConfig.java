@@ -27,6 +27,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -61,9 +63,9 @@ public class NetworkManagerConfig extends ManagementConfig {
     }
   }
 
-  public static NetworkManagerConfig getInstance() {
-    return new NetworkManagerConfig(
-        ConfigurationManager.getInstance().getProperties("NetworkManager"));
+  @Contract(" -> new")
+  public static @NotNull NetworkManagerConfig getInstance() {
+    return new NetworkManagerConfig(ConfigurationManager.getInstance().getProperties("NetworkManager"));
   }
 
   @Override

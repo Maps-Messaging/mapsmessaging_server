@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,16 +24,15 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
-import lombok.Getter;
-
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
+import lombok.Getter;
 
 public class AdapterManager {
 
@@ -84,6 +83,14 @@ public class AdapterManager {
             break;
           case "stomp":
             map.put("version 1.2", "true");
+            break;
+
+          case "coap":
+            map.put("RFC7252, RFC7641, RFC7959", "true");
+            break;
+          case "mqtt-sn":
+            map.put("version 1.0", "true");
+            map.put("version 2.0", "true");
             break;
 
           default:

@@ -17,23 +17,19 @@
 
 package io.mapsmessaging.rest.api.impl.hardware;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.discovery.DiscoveredServers;
-import io.mapsmessaging.rest.data.discovery.ServiceData;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
-import javax.jmdns.ServiceInfo;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Hardware Management")
 @Path(URI_PATH)

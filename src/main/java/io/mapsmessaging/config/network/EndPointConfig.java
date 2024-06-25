@@ -37,7 +37,7 @@ public class EndPointConfig extends Config {
 
   public EndPointConfig(ConfigurationProperties config) {
     this.selectorThreadCount = config.getIntProperty("selectorThreadCount", 2);
-    this.discoverable = config.getBooleanProperty("isDiscoverable", false);
+    this.discoverable = config.getBooleanProperty("discoverable", false);
     this.serverReadBufferSize = parseBufferSize(config.getProperty("serverReadBufferSize", "10K"));
     this.serverWriteBufferSize =
         parseBufferSize(config.getProperty("serverWriteBufferSize", "10K"));

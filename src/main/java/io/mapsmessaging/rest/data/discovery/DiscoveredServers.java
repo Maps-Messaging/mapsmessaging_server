@@ -17,18 +17,16 @@
 
 package io.mapsmessaging.rest.data.discovery;
 
+import io.mapsmessaging.network.discovery.services.RemoteServers;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class DiscoveredServers {
-  private String server;
-  private List<ServiceData> serviceInfo;
+  private RemoteServers serviceInfo;
 }

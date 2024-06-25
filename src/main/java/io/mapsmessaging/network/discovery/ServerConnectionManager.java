@@ -21,20 +21,19 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.discovery.services.RemoteServers;
 import io.mapsmessaging.utilities.Agent;
-import lombok.Getter;
-
-import javax.jmdns.ServiceEvent;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
 import java.util.*;
+import javax.jmdns.ServiceEvent;
+import javax.jmdns.ServiceListener;
+import lombok.Getter;
 
 public class ServerConnectionManager implements ServiceListener, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(ServerConnectionManager.class);
 
   @Getter
-  private final Map<String, List<ServiceInfo>> serviceInfoMap;
+  private final Map<String, RemoteServers> serviceInfoMap;
 
   public ServerConnectionManager(){
     serviceInfoMap = new LinkedHashMap<>();
@@ -47,9 +46,17 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   @Override
   public void serviceRemoved(ServiceEvent serviceEvent) {
     if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId())){ // Ignore local
-      for(String host:serviceEvent.getInfo().getHostAddresses()){
-        serviceInfoMap.remove(serviceEvent.getName());
-        logger.log(ServerLogMessages.DISCOVERY_REMOVED_REMOTE_SERVER, serviceEvent.getName(), host+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
+      if(serviceEvent.getInfo().getPropertyString("server name") == null){
+        return;
+      }
+      MapsServiceInfo mapsServiceInfo = new MapsServiceInfo(serviceEvent.getInfo());
+      RemoteServers server = serviceInfoMap.get(mapsServiceInfo.getServerName());
+      if(server == null){
+        logger.log(ServerLogMessages.DISCOVERY_REMOVED_REMOTE_SERVER, serviceEvent.getName(), server.getServerName()+":"+serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
+        server.remove(mapsServiceInfo);
+        if(server.getServices().isEmpty()){
+          serviceInfoMap.remove(mapsServiceInfo.getServerName());
+        }
       }
     }
   }
@@ -57,37 +64,21 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   @Override
   public synchronized void serviceResolved(ServiceEvent serviceEvent) {
     if(!serviceEvent.getName().startsWith(MessageDaemon.getInstance().getId()) && serviceEvent.getInfo().hasData()){
-
-      int count =0;
-      Enumeration<String> names = serviceEvent.getInfo().getPropertyNames();
-      while (names.hasMoreElements()) {
-        names.nextElement();
-        count++;
+      if(serviceEvent.getInfo().getPropertyString("server name") == null){
+        return;
       }
-      if(count > 0) {
-        for (String host : serviceEvent.getInfo().getHostAddresses()) {
-          String name = serviceEvent.getName();
-          int duplicateIndex = name.indexOf("(");
-          if (duplicateIndex > 0) {
-            name = name.substring(0, duplicateIndex - 1).trim();
-          }
-          List<ServiceInfo> serviceInfos = serviceInfoMap.computeIfAbsent(name, k -> new ArrayList<>());
-          serviceInfos.removeIf(serviceInfo -> matches(serviceInfo, serviceEvent.getInfo()));
-          serviceInfos.add(serviceEvent.getInfo());
-          logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, name, host + ":" + serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
-        }
+      MapsServiceInfo mapsServiceInfo = new MapsServiceInfo(serviceEvent.getInfo());
+      String name = mapsServiceInfo.getServerName();
+      RemoteServers remoteServer = serviceInfoMap.get(name);
+      if(remoteServer == null){
+        remoteServer = new RemoteServers(mapsServiceInfo);
+        serviceInfoMap.put(name, remoteServer);
       }
+      else{
+        remoteServer.update(mapsServiceInfo);
+      }
+      logger.log(ServerLogMessages.DISCOVERY_RESOLVED_REMOTE_SERVER, name, mapsServiceInfo.getName() + ":" + serviceEvent.getInfo().getPort(), serviceEvent.getInfo().getApplication());
     }
-  }
-
-  private boolean matches(ServiceInfo lhs, ServiceInfo rhs) {
-    return (
-        lhs.getName().equals(rhs.getName()) &&
-            lhs.getDomain().equals(rhs.getDomain()) &&
-            lhs.getPort() == rhs.getPort() &&
-            lhs.getApplication().equals(rhs.getApplication()) &&
-            Arrays.equals(lhs.getHostAddresses(), rhs.getHostAddresses())
-    );
   }
 
   @Override
@@ -104,9 +95,15 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   public void start() {
     MessageDaemon.getInstance().getDiscoveryManager().registerListener("_maps._tcp.local.", this);
     MessageDaemon.getInstance().getDiscoveryManager().registerListener("_mqtt._tcp.local.", this);
+    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_amqp._tcp.local.", this);
+    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_stomp._tcp.local.", this);
+    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_coap._udp.local.", this);
+    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_mqtt-sn._udp.local.", this);
   }
 
   @Override
   public void stop() {
   }
+
+
 }
