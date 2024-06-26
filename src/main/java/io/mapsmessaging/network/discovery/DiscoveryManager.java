@@ -36,7 +36,7 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -104,27 +104,13 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   public void start() {
     if (enabled) {
       try {
-        bindAddresses(getAddresses(properties.getHostnames()));
+        NetworkAddressHelper networkAddressHelper = new NetworkAddressHelper();
+        bindAddresses(networkAddressHelper.getAddresses(properties.getHostnames()));
       } catch (IOException e) {
         logger.log(ServerLogMessages.DISCOVERY_FAILED_TO_START, e);
       }
       NetworkInterfaceMonitor.getInstance().addListener(this);
     }
-  }
-
-  private List<InetAddress> getAddresses(String hostnames) {
-    List<InetAddress> addressList = new ArrayList<>();
-    if (hostnames != null) {
-      String[] hostnameList = hostnames.split(",");
-      for (String hostname : hostnameList) {
-        List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getIpAddressByName(hostname.trim());
-        addressList.addAll(addresses);
-      }
-    } else {
-      List<InetAddress> addresses = NetworkInterfaceMonitor.getInstance().getCurrentIpAddresses();
-      addressList.addAll(addresses);
-    }
-    return addressList;
   }
 
   private void bindAddresses( List<InetAddress> addresses) throws IOException {
