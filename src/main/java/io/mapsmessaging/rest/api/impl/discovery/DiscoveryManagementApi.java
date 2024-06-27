@@ -78,10 +78,6 @@ public class DiscoveryManagementApi extends BaseRestApi {
       return new ArrayList<>();
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : SelectorParser.compile("true");
-    List<RemoteServers> discovered = MessageDaemon.getInstance().getServerConnectionManager().getServers();
-    for(RemoteServers remoteServers:discovered){
-      System.err.println(remoteServers);
-    }
-    return discovered.stream().filter(parser::evaluate).collect(Collectors.toList());
+    return MessageDaemon.getInstance().getServerConnectionManager().getServers().stream().filter(parser::evaluate).collect(Collectors.toList());
   }
 }
