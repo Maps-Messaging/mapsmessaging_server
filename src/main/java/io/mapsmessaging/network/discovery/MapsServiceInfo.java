@@ -46,6 +46,11 @@ public class MapsServiceInfo {
     return getProperty("schema name");
   }
 
+
+  public String getBuildDate() {
+    return getProperty("date");
+  }
+
   public String getServerName(){
     String val = getProperty("server name");
     if(val.isEmpty()){
@@ -118,6 +123,8 @@ public class MapsServiceInfo {
     props.remove("schema support");
     props.remove("server name");
     props.remove("version");
+    props.remove("date");
     return props;
   }
+
 }

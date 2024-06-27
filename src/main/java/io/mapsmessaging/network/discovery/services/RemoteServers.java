@@ -30,6 +30,7 @@ public class RemoteServers implements Serializable {
   private final boolean schemaSupport;
   private final String schemaPrefix;
   private final String version;
+  private final String buildDate;
   private final Map<String, Services> services;
 
   public RemoteServers(MapsServiceInfo serviceInfo) {
@@ -37,6 +38,7 @@ public class RemoteServers implements Serializable {
     this.schemaPrefix = serviceInfo.getSchemaPrefix();
     this.schemaSupport = serviceInfo.supportsSchema();
     this.systemTopics = serviceInfo.getSystemTopicPrefix();
+    this.buildDate = serviceInfo.getBuildDate();
     this.version = serviceInfo.getVersion();
     services = new LinkedHashMap<>();
     Services service = new Services(serviceInfo);
