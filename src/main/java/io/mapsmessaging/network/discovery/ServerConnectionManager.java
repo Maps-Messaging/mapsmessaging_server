@@ -49,7 +49,7 @@ public class ServerConnectionManager implements ServiceListener, Agent {
       if(serviceEvent.getInfo().getName() == null){
         return;
       }
-
+      
       MapsServiceInfo mapsServiceInfo = new MapsServiceInfo(serviceEvent.getInfo());
       RemoteServers server = serviceInfoMap.get(mapsServiceInfo.getServerName());
       if(server != null){

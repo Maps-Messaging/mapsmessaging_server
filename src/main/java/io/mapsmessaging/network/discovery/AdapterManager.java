@@ -95,10 +95,16 @@ public class AdapterManager {
 
           default:
         }
+        if(MessageDaemon.getInstance().isEnableSystemTopics()){
+          map.put("system topics", "$SYS");
+        }
+        map.put("queue support", "true");
+        map.put("shared subscription", "true");
         map.put("schema support", "true");
         map.put("schema name", "$schema");
-        map.put("version", BuildInfo.getBuildVersion());
         map.put("server name", MessageDaemon.getInstance().getId());
+        map.put("server uuid", MessageDaemon.getInstance().getUuid().toString());
+        map.put("version", BuildInfo.getBuildVersion());
         map.put("date", BuildInfo.getBuildDate());
       }
       String service = "_" + lowerProtocol + "._" + transport + domainName;

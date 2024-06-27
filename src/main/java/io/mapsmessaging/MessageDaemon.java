@@ -95,20 +95,19 @@ public class MessageDaemon {
   }
 
   private final String uniqueId;
-
   @Getter
   private final UUID uuid;
-
   @Getter
   private final long startTime = System.currentTimeMillis();
-
   @Getter
   private boolean tagMetaData;
+  @Getter
+  private boolean enableSystemTopics;
+
   private final Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
   private final Map<String, AgentOrder> agentMap;
   private MessageDaemonJMX mBean;
   private final AtomicBoolean isStarted;
-  private boolean enableSystemTopics;
   private boolean enableDeviceIntegration;
 
   @Getter
