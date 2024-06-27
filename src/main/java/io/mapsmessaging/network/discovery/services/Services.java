@@ -18,22 +18,17 @@
 package io.mapsmessaging.network.discovery.services;
 
 import io.mapsmessaging.network.discovery.MapsServiceInfo;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import lombok.Getter;
 
+@Getter
 public class Services {
 
-  @Getter
   private final String protocol;
-  @Getter
   private final int port;
-  @Getter
   private final String transport;
-
   private final List<String> addresses;
+  private final Map<String, String> properties;
 
   public Services(MapsServiceInfo serviceInfo) {
     protocol = serviceInfo.getApplication();
@@ -41,6 +36,7 @@ public class Services {
     transport = serviceInfo.getProtocol();
     addresses = new ArrayList<>();
     addresses.addAll(Arrays.asList(serviceInfo.getHostAddresses()));
+    properties = serviceInfo.getProperties();
   }
 
   public void mergeServices(MapsServiceInfo serviceInfo){
@@ -51,19 +47,14 @@ public class Services {
     }
   }
 
-  public List<String> getAddresses(){
-    return Collections.unmodifiableList(addresses);
-  }
-
   public String toString(){
     String header = protocol + ":" + port;
 
-    return header + "\t\t[" + String.join(",", addresses)+"]";
+    header += "\t\t[" + String.join(",", addresses)+"]";
+    for(Map.Entry<String, String> entry : properties.entrySet()){
+      header += "\n\t\t\t[" + entry.getKey() + "=" + entry.getValue() + "]";
+    }
+    return header;
   }
 
-  public void removeService(MapsServiceInfo serviceInfo) {
-    for(String address : serviceInfo.getHostAddresses()){
-      addresses.remove(address);
-    }
-  }
 }

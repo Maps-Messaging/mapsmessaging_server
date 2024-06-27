@@ -18,6 +18,8 @@
 package io.mapsmessaging.network.discovery;
 
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.jmdns.ServiceInfo;
 import lombok.Getter;
 import lombok.ToString;
@@ -53,6 +55,10 @@ public class MapsServiceInfo {
       }
     }
     return val;
+  }
+
+  public String getSystemTopicPrefix(){
+    return getProperty("system topics");
   }
 
   public String getPropertyString(String serverName) {
@@ -99,4 +105,19 @@ public class MapsServiceInfo {
     return val;
   }
 
+  public Map<String, String> getProperties() {
+    Map<String, String> props = new LinkedHashMap<>();
+    Enumeration<String> enumeration = getPropertyNames();
+    while(enumeration.hasMoreElements()){
+      String key = enumeration.nextElement();
+      props.put(key, getProperty(key));
+    }
+    props.remove("protocol");
+    props.remove("system topics");
+    props.remove("schema name");
+    props.remove("schema support");
+    props.remove("server name");
+    props.remove("version");
+    return props;
+  }
 }

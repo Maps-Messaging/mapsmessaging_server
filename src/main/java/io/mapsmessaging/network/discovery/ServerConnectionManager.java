@@ -26,13 +26,10 @@ import io.mapsmessaging.utilities.Agent;
 import java.util.*;
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
-import lombok.Getter;
 
 public class ServerConnectionManager implements ServiceListener, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(ServerConnectionManager.class);
-
-  @Getter
   private final Map<String, RemoteServers> serviceInfoMap;
 
   public ServerConnectionManager(){
@@ -41,6 +38,11 @@ public class ServerConnectionManager implements ServiceListener, Agent {
 
   @Override
   public void serviceAdded(ServiceEvent serviceEvent) {
+    // we don't need to worry about this call back
+  }
+
+  public List<RemoteServers> getServers() {
+    return new ArrayList<>(serviceInfoMap.values());
   }
 
   @Override

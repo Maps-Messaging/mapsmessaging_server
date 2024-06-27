@@ -22,7 +22,6 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.discovery.services.RemoteServers;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.discovery.DiscoveredServers;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -34,7 +33,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Tag(name = "Discovery Management")
@@ -73,18 +71,17 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @Path("/server/discovery")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public List<DiscoveredServers> getAllDiscoveredServers(@QueryParam("filter") String filter) throws ParseException {
+  public List<RemoteServers> getAllDiscoveredServers(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
     if (!hasAccess("discovery")) {
       response.setStatus(403);
       return new ArrayList<>();
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : SelectorParser.compile("true");
-    Map<String, RemoteServers> discovered = MessageDaemon.getInstance().getServerConnectionManager().getServiceInfoMap();
-    List<DiscoveredServers> result = new ArrayList<>();
-    for(Map.Entry<String, RemoteServers> entry : discovered.entrySet()) {
-      result.add(new DiscoveredServers(entry.getValue()));
+    List<RemoteServers> discovered = MessageDaemon.getInstance().getServerConnectionManager().getServers();
+    for(RemoteServers remoteServers:discovered){
+      System.err.println(remoteServers);
     }
-    return result.stream().filter(parser::evaluate).collect(Collectors.toList());
+    return discovered.stream().filter(parser::evaluate).collect(Collectors.toList());
   }
 }

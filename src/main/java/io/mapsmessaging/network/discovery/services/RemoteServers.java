@@ -18,26 +18,25 @@
 package io.mapsmessaging.network.discovery.services;
 
 import io.mapsmessaging.network.discovery.MapsServiceInfo;
+import java.io.Serializable;
 import java.util.*;
 import lombok.Getter;
 
-public class RemoteServers {
+@Getter
+public class RemoteServers implements Serializable {
 
-  @Getter
   private final String serverName;
-  @Getter
+  private final String systemTopics;
   private final boolean schemaSupport;
-  @Getter
   private final String schemaPrefix;
-  @Getter
   private final String version;
-
   private final Map<String, Services> services;
 
   public RemoteServers(MapsServiceInfo serviceInfo) {
     this.serverName = serviceInfo.getServerName();
     this.schemaPrefix = serviceInfo.getSchemaPrefix();
     this.schemaSupport = serviceInfo.supportsSchema();
+    this.systemTopics = serviceInfo.getSystemTopicPrefix();
     this.version = serviceInfo.getVersion();
     services = new LinkedHashMap<>();
     Services service = new Services(serviceInfo);
@@ -55,22 +54,21 @@ public class RemoteServers {
     }
   }
 
+  public void remove(MapsServiceInfo serviceInfo) {
+    services.remove(serviceInfo.getApplication());
+  }
+
   public List<Services> getServices(){
     return Collections.unmodifiableList(new ArrayList<>(services.values()));
   }
 
-
   public String toString(){
-    String header = serverName +" Schema Prefix:"+schemaPrefix+" Version:"+version;
+    String header = serverName +" Version:"+version +" Schema Prefix:"+schemaPrefix+" Topic Prefix:"+systemTopics;
     for(Services service : services.values()){
       header += "\n\t"+service.toString();
     }
     header+="\n\n";
     return header;
 
-  }
-
-  public void remove(MapsServiceInfo serviceInfo) {
-    services.remove(serviceInfo.getApplication());
   }
 }

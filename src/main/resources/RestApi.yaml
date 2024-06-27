@@ -18,7 +18,7 @@
 RestApi:
   enabled: true
   enableAuthentication: true
-  hostnames: "10.140.62.189"
+  hostnames: "0.0.0.0"
   port: 8080
   enableSwagger: true
   enableSwaggerUI: true
