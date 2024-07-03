@@ -562,7 +562,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <logback.version>1.4.14</logback.version>
-    <pi4j.version>2.4.0</pi4j.version>
+    <pi4j.version>2.6.0</pi4j.version>
     <jersey.version>3.1.6</jersey.version>
     <swagger-ui.version>3.17.0</swagger-ui.version>
 
@@ -949,6 +949,52 @@
       <version>${pi4j.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-plugin-raspberrypi</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.pi4j/pi4j-library-gpiod -->
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-library-gpiod</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-plugin-pigpio</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.pi4j/pi4j-plugin-gpiod -->
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-plugin-gpiod</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
+
+
+    <!-- https://mvnrepository.com/artifact/com.pi4j/pi4j-plugin-linuxfs -->
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-plugin-linuxfs</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.pi4j/pi4j-library-linuxfs -->
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-library-linuxfs</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-library-pigpio</artifactId>
+      <version>${pi4j.version}</version>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.mapdb/mapdb -->
     <dependency>
