@@ -12,7 +12,7 @@ echo "deb [arch=all] https://repository.mapsmessaging.io:8081/repository/maps_me
 Next you need to install the public key from the repo
 
 ```shell
-wget -qO- https://repository.mapsmessaging.io:8081/repository/public_key/keys/public.gpg.key | gpg --dearmor -o /etc/apt/trusted.gpg.d/mapsmessaging.gpg
+wget -qO- https://repository.mapsmessaging.io:8081/repository/public_key/keys/public.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/mapsmessaging.gpg
 ```
 
 This will enable apt to update and install the message daemon.
