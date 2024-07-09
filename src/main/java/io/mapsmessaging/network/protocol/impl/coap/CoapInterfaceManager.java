@@ -45,7 +45,13 @@ public class CoapInterfaceManager implements SelectorCallback {
     currentSessions = new LinkedHashMap<>();
     SelectorTask selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
-    transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
+    transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "coap",
+        "anonymous"
+    );
+
   }
 
   @Override

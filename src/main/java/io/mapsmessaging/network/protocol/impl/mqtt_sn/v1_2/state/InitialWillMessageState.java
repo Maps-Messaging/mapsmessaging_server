@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,17 +22,17 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillMessage;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class InitialWillMessageState implements State {
 
@@ -67,7 +67,14 @@ public class InitialWillMessageState implements State {
         protocol.setSession(session);
         ConnAck response = new ConnAck(ReasonCodes.SUCCESS);
         response.setCallback(session::resumeState);
-        protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+        ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+            endPoint.getProtocol(),
+            endPoint.getName(),
+            "mqtt-sn",
+            session.getSecurityContext().getUsername()
+
+        );
+        protocol.setTransformation(transformation);
         try {
           session.login();
           stateEngine.setState(new ConnectedState(response));

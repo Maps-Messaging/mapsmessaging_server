@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 
 package io.mapsmessaging.network.protocol.transformation;
 
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.lookup.TransformationTreeBuilder;
+import io.mapsmessaging.network.protocol.transformation.lookup.TreeNode;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.util.*;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransformationManager implements ServiceManager {
@@ -38,18 +38,47 @@ public class TransformationManager implements ServiceManager {
   }
 
   private final ServiceLoader<ProtocolMessageTransformation> transformations;
+  private final TreeNode root;
 
   private TransformationManager() {
     transformations = ServiceLoader.load(ProtocolMessageTransformation.class);
+    ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("TransformationManager");
+    Object obj = properties.get("data");
+    if(obj != null) {
+      List<ConfigurationProperties> data = (List<ConfigurationProperties>) obj;
+      root = TransformationTreeBuilder.buildTree(data);
+    }
+    else{
+      root = null;
+    }
   }
 
-  public ProtocolMessageTransformation getTransformation(String protocol, String user) {
-    for (ProtocolMessageTransformation transformation : transformations) {
-      if (transformation.getName().equalsIgnoreCase(user)) {
-        return transformation;
-      }
+  public ProtocolMessageTransformation getTransformation(String transport, String host, String protocol, String username) {
+    String subHost = host.substring(host.indexOf("/")+1);
+    subHost = subHost.substring(0, subHost.indexOf(":"));
+    String[] parts = {transport, subHost, protocol, username};
+    String name =  findTransformation(root, parts, 0);
+    return getTransformation(name);
+  }
+
+  private String findTransformation(TreeNode node, String[] parts, int level) {
+    if (node == null) {
+      return null;
     }
-    return null;
+
+    if (level == parts.length) {
+      return node.getTransformation();
+    }
+
+    TreeNode exactMatch = node.getChild(parts[level]);
+    TreeNode wildcardMatch = node.getChild("*");
+
+    String result = findTransformation(exactMatch, parts, level + 1);
+    if (result == null) {
+      result = findTransformation(wildcardMatch, parts, level + 1);
+    }
+
+    return result;
   }
 
   @Override
@@ -60,4 +89,16 @@ public class TransformationManager implements ServiceManager {
     }
     return service.listIterator();
   }
+
+  public ProtocolMessageTransformation getTransformation(String name) {
+    if(name == null || name.isEmpty()) return null;
+    for (ProtocolMessageTransformation transformation : transformations) {
+      if (transformation.getName().equalsIgnoreCase(name)) {
+        return transformation;
+      }
+    }
+    return null;
+  }
 }
+
+

@@ -23,6 +23,7 @@ import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.protocol.MqttSnConfig;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
@@ -126,7 +127,14 @@ public class InitialConnectionState implements State {
           protocol.setSession(session);
           ConnAck response = new ConnAck(ReasonCodes.SUCCESS, 0, scb.getId(), session.isRestored());
           response.setCallback(session::resumeState);
-          protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+          ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+              endPoint.getProtocol(),
+              endPoint.getName(),
+              "mqtt-sn",
+              session.getSecurityContext().getUsername()
+
+          );
+          protocol.setTransformation(transformation);
           try {
             session.login();
             stateEngine.setState(new ConnectedState(response));

@@ -81,7 +81,13 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     packetFactory = new PacketFactory[2];
     packetFactory[0] = new PacketFactory();
     packetFactory[1] = new PacketFactoryV2();
-    transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
+    transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "mqtt-sn",
+        "<registered>"
+    );
+
     registeredTopicConfiguration = new RegisteredTopicConfiguration(mqttSnConfig);
   }
 
@@ -115,7 +121,12 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       advertiserTask = null;
     }
     registeredTopicConfiguration = new RegisteredTopicConfiguration(mqttSnConfig);
-    transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
+    transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "mqtt-sn",
+        "<registered>"
+    );
   }
 
   private boolean startAdvertiseTask(InterfaceInformation info) throws SocketException {

@@ -47,17 +47,16 @@ public class EndPointConnection extends EndPointServerStatus {
   private final AtomicBoolean running;
   private final AtomicBoolean paused;
   private Future<?> futureTask;
+  private final EndPointConnectionHostJMX manager;
 
   @Getter
   private final Logger logger;
   @Getter
   private final EndPointConnectionServerConfig properties;
-  private final EndPointConnectionHostJMX manager;
   @Getter
   private final EndPointConnectionFactory endPointConnectionFactory;
   @Getter
   private final SelectorLoadManager selectorLoadManager;
-
   @Getter
   private State state;
 

@@ -30,6 +30,7 @@ import io.mapsmessaging.network.io.StreamEndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
@@ -76,7 +77,13 @@ public class NMEAProtocol extends ProtocolImpl {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     sentenceMap = new LinkedHashMap<>();
     endPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-    setTransformation(TransformationManager.getInstance().getTransformation(getName(), null));
+    ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "NMEA",
+        session.getSecurityContext().getUsername()
+    );
+    setTransformation(transformation);
     ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("nmea");
     format = configurationProperties.getProperty("format", "raw");
     boolean setServerLocation = configurationProperties.getBooleanProperty("serverLocation", false);

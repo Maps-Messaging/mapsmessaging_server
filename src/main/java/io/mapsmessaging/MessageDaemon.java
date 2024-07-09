@@ -228,6 +228,7 @@ public class MessageDaemon {
     // Start the Schema manager to it has the defaults and has loaded the required classes
     SecurityManager securityManager = new SecurityManager();
     DestinationManager destinationManager = new DestinationManager();
+    TransformationManager.getInstance();
 
     addToMap(10, 2000, AuthManager.getInstance());
     addToMap(50, 1100, SchemaManager.getInstance());

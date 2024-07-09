@@ -65,7 +65,12 @@ public class SemTechProtocol extends ProtocolImpl {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
     packetFactory = new PacketFactory();
-    transformation = TransformationManager.getInstance().getTransformation(getName(), "<registered>");
+    transformation = TransformationManager.getInstance().getTransformation(
+        endPoint.getProtocol(),
+        endPoint.getName(),
+        "semtech",
+        "anonymous"
+    );
 
     SemtechConfig semtechConfig = (SemtechConfig) endPoint.getConfig().getProtocolConfig("semtech");
     int maxQueued = semtechConfig.getMaxQueued();

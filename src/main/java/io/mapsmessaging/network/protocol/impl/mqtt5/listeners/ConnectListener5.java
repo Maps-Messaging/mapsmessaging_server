@@ -26,6 +26,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
@@ -37,9 +38,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import javax.security.auth.login.LoginException;
 
 public class ConnectListener5 extends PacketListener5 {
 
@@ -96,7 +96,13 @@ public class ConnectListener5 extends PacketListener5 {
     try {
       session = createSession((MQTT5Protocol) protocol, sessionId, connect, scb);
       ((MQTT5Protocol) protocol).setSession(session);
-      protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+          endPoint.getProtocol(),
+          endPoint.getName(),
+          "mqtt",
+          session.getSecurityContext().getUsername()
+      );
+      protocol.setTransformation(transformation);
     } catch (LoginException e) {
       logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, sessionId);
       try {

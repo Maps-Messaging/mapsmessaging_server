@@ -24,6 +24,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -39,7 +40,14 @@ public abstract class BaseConnectionListener extends PacketListener {
       try {
         ((MQTTProtocol) protocol).setSession(session);
         session.login();
-        protocol.setTransformation(TransformationManager.getInstance().getTransformation(protocol.getName(), session.getSecurityContext().getUsername()));
+        ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+            endPoint.getProtocol(),
+            endPoint.getName(),
+            "mqtt",
+            session.getSecurityContext().getUsername()
+        );
+
+        protocol.setTransformation(transformation);
         return session;
       } catch (IOException ioe) {
         logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);

@@ -27,6 +27,7 @@ import io.mapsmessaging.hardware.device.DeviceClientConnection;
 import io.mapsmessaging.hardware.device.DeviceSessionManagement;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
 import io.mapsmessaging.hardware.trigger.Trigger;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
@@ -103,7 +104,13 @@ public abstract class BusHandler implements Runnable {
       try {
         session.login();
         deviceSessionManagement.setSession(session);
-        deviceSessionManagement.setTransformation((TransformationManager.getInstance().getTransformation(deviceHandler.getName(), session.getSecurityContext().getUsername())));
+        ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+            deviceHandler.getBusName(),
+            "localhost",
+            "device",
+                "anonymous"
+            );
+        deviceSessionManagement.setTransformation(transformation);
         return session;
       }
       catch(IOException failedLogin){
