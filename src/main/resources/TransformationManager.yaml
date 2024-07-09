@@ -18,6 +18,7 @@
 # examples:
 #   tcp://*/mqtt/*  - All MQTT TCP connection match
 #   *://*/*/fred    - The user fred will match regardless of protocols
+#   i2c://1/29/*    - will match the I2C device 29 on bus number 1
 #
 # Order of priority is left to right, so in the above if fred connected via TCP and MQTT it would match the first entry
 #

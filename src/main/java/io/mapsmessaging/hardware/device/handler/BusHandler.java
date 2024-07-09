@@ -106,8 +106,8 @@ public abstract class BusHandler implements Runnable {
         deviceSessionManagement.setSession(session);
         ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
             deviceHandler.getBusName(),
-            "localhost",
-            "device",
+            ""+deviceHandler.getBusNumber(),
+            ""+deviceHandler.getDeviceAddress(),
                 "anonymous"
             );
         deviceSessionManagement.setTransformation(transformation);
