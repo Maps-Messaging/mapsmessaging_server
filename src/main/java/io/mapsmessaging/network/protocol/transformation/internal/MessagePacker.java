@@ -35,7 +35,7 @@ public class MessagePacker {
   }
 
   public Map<String, String> getMeta(){
-    Map<String, String> tmp = new LinkedHashMap<>();
+    Map<String, String> tmp = new LinkedHashMap<>(message.getMeta());
     String route = tmp.get("route");
     if(route == null){
       route = "[]";

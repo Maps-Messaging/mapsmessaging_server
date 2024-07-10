@@ -51,10 +51,14 @@ public class MessageLoader {
   private boolean correlationDataByteArray;
   private boolean utf8;
 
-  public void setKey(long key){};
 
   public void load(MessageBuilder messageBuilder){
-    messageBuilder.setMeta(getMeta())
+    Map<String, String> current = messageBuilder.getMeta();
+    if(current != null && getMeta() != null){
+      current.putAll(getMeta());
+    }
+
+    messageBuilder.setMeta(current)
         .setDataMap(getDataMap())
         .setOpaqueData(getOpaqueData())
         .setContentType(getContentType())
