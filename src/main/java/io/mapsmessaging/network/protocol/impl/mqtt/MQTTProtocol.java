@@ -253,7 +253,7 @@ public class MQTTProtocol extends ProtocolImpl {
 
     byte[] payload;
     if (transformation != null) {
-      payload = transformation.outgoing(message);
+      payload = transformation.outgoing(message, messageEvent.getDestinationName());
     } else {
       payload = message.getOpaqueData();
     }

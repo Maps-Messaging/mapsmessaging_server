@@ -301,7 +301,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     if (!subInfo.isRetainAsPublish()) {
       retain = false;
     }
-    Publish5 publish = new Publish5(createPayload(message), qos, packetId, destinationName, retain);
+    Publish5 publish = new Publish5(createPayload(message, destinationName), qos, packetId, destinationName, retain);
     if (alias != null) {
       publish.add(alias);
     }
@@ -317,9 +317,9 @@ public class MQTT5Protocol extends ProtocolImpl {
     return 0;
   }
 
-  private byte[] createPayload(Message message) {
+  private byte[] createPayload(Message message, String destinationName) {
     if (transformation != null) {
-      return transformation.outgoing(message);
+      return transformation.outgoing(message, destinationName);
     } else {
       return message.getOpaqueData();
     }

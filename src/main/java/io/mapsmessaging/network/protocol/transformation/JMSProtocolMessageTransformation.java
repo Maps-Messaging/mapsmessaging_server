@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class JMSProtocolMessageTransformation implements ProtocolMessageTransfor
   }
 
   @Override
-  public @NonNull byte[] outgoing(@NonNull @NotNull Message message) {
+  public @NonNull byte[] outgoing(@NonNull @NotNull Message message, String destinationName) {
 
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(message);
     org.apache.qpid.proton.message.Message protonMsg = translator.encode(message);

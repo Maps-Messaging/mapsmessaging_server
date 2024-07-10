@@ -35,16 +35,15 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.InitialConnectionState;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 // The protocol is MQTT_SN, so it makes sense, ignoring the Camel Case rule in class names
 @java.lang.SuppressWarnings("squid:S00101")
@@ -215,7 +214,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
   public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId) {
     byte[] data = messageEvent.getMessage().getOpaqueData();
     if (transformation != null) {
-      data = transformation.outgoing(messageEvent.getMessage());
+      data = transformation.outgoing(messageEvent.getMessage(), messageEvent.getDestinationName() );
     }
     Publish publish = new Publish(alias, packetId, data);
     publish.setQoS(qos);

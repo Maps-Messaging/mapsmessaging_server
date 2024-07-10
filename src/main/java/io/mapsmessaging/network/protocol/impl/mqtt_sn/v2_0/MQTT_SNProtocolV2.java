@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   public MQTT_SNPacket buildPublish(short alias, int packetId, MessageEvent messageEvent, QualityOfService qos, short topicTypeId) {
     byte[] data = messageEvent.getMessage().getOpaqueData();
     if (transformation != null) {
-      data = transformation.outgoing(messageEvent.getMessage());
+      data = transformation.outgoing(messageEvent.getMessage(), messageEvent.getDestinationName());
     }
     Publish publish = new Publish(alias, packetId, data);
     publish.setQoS(qos);

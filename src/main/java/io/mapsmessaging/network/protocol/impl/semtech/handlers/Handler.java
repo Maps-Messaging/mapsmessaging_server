@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,14 +23,13 @@ import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullResponse;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
+import java.net.SocketAddress;
+import java.security.SecureRandom;
+import java.util.Random;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.net.SocketAddress;
-import java.security.SecureRandom;
-import java.util.Random;
 
 public abstract class Handler {
 
@@ -43,7 +42,7 @@ public abstract class Handler {
     if (messageEvent != null) {
       byte[] raw = messageEvent.getMessage().getOpaqueData();
       if (protocol.getTransformation() != null) {
-        raw = protocol.getTransformation().outgoing(messageEvent.getMessage());
+        raw = protocol.getTransformation().outgoing(messageEvent.getMessage(), messageEvent.getDestinationName());
       }
       try {
         JSONObject jsonObject = new JSONObject(new String(raw));

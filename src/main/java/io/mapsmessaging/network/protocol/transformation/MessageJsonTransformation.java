@@ -62,14 +62,16 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
   }
 
   @Override
-  public byte[] outgoing(Message message) {
-    try {
-      return objectMapper.writeValueAsBytes(new MessagePacker(message));
-    } catch (Exception e) {
-      // Log the exception and handle it as needed
-      e.printStackTrace();
-      return message.getOpaqueData();
+  public byte[] outgoing(Message message, String destinationName) {
+    if (!destinationName.startsWith("$")) {
+      try {
+        return objectMapper.writeValueAsBytes(new MessagePacker(message));
+      } catch (Exception e) {
+        // Log the exception and handle it as needed
+        e.printStackTrace();
+      }
     }
+    return message.getOpaqueData();
   }
 
 }

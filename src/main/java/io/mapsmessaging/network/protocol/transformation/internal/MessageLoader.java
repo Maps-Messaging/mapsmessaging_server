@@ -50,6 +50,7 @@ public class MessageLoader {
   private long identifier;
   private boolean correlationDataByteArray;
   private boolean utf8;
+  private long time;
 
 
   public void load(MessageBuilder messageBuilder){
