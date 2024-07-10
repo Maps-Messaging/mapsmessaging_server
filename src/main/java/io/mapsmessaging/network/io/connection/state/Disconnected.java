@@ -32,6 +32,8 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
 import java.util.List;
 
@@ -64,6 +66,8 @@ public class Disconnected extends State implements EndPointConnectedCallback {
 
       endPointConnection.scheduleState(new Connecting(endPointConnection));
       ProtocolImpl protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
+      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImpl.getName(), username );
+      protocolImpl.setTransformation(transformation);
       endPointConnection.setConnection(protocolImpl);
     } catch (IOException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
