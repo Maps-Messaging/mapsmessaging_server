@@ -119,6 +119,9 @@ public class MessageDaemon {
   @Getter
   private boolean enableResourceStatistics;
 
+  @Getter
+  private final String hostname;
+
   private static final String MAPS_HOME = "MAPS_HOME";
   private static final String MAPS_DATA = "MAPS_DATA";
 
@@ -147,6 +150,7 @@ public class MessageDaemon {
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
     }
     uuid = instanceConfig.getUuid();
+    hostname = InetAddress.getLocalHost().getHostName();
     // </editor-fold>
 
     //<editor-fold desc="Now see if we can start the Consul Manager">
