@@ -55,7 +55,9 @@ public class TransformationManager implements ServiceManager {
 
   public ProtocolMessageTransformation getTransformation(String transport, String host, String protocol, String username) {
     String subHost = host.substring(host.indexOf("/")+1);
-    subHost = subHost.substring(0, subHost.indexOf(":"));
+    if (subHost.contains(":")) {
+      subHost = subHost.substring(0, subHost.indexOf(":"));
+    }
     String[] parts = {transport, subHost, protocol, username};
     String name =  findTransformation(root, parts, 0);
     return getTransformation(name);
