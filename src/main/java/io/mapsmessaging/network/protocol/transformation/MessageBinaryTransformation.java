@@ -49,10 +49,18 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
         }
         int bufferCount = buffer.get();
         ByteBuffer[] buffers = new ByteBuffer[bufferCount];
+        int[] bufferSizes = new int[bufferCount];
         for (int x = 0; x < bufferCount; ++x) {
-          buffers[x] = ByteBuffer.allocate(buffer.getInt());
-          buffers[x].put(buffer);
+          bufferSizes[x] = buffer.getInt();
         }
+        for (int x = 0; x < bufferCount; ++x) {
+          buffer.limit(buffer.position() + bufferSizes[x]); // Set limit to the end of the slice
+          buffers[x] = ByteBuffer.allocate(bufferSizes[x]);
+          buffers[x].put(buffer);
+          buffers[x].flip();
+        }
+
+
         Message message = MessageFactory.getInstance().unpack(buffers);
 
         Map<String, String> current = messageBuilder.getMeta();
