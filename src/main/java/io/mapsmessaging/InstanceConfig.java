@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,9 +18,14 @@
 package io.mapsmessaging;
 
 
+import static io.mapsmessaging.logging.ServerLogMessages.INSTANCE_STATE_ERROR;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import java.io.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.yaml.snakeyaml.DumperOptions;
@@ -28,12 +33,6 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.representer.Representer;
-
-import java.io.*;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import static io.mapsmessaging.logging.ServerLogMessages.INSTANCE_STATE_ERROR;
 
 /**
  * This is the InstanceConfig class.
@@ -105,7 +104,8 @@ public class InstanceConfig {
       }
 
     } catch (IOException e) {
-      // Not a big deal, since it might be the first run
+      // if the first run, then lets allocate a new UUID
+      uuid = UuidGenerator.getInstance().generate();
     }
   }
 

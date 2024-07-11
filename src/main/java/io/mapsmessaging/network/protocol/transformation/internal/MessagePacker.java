@@ -17,12 +17,10 @@
 
 package io.mapsmessaging.network.protocol.transformation.internal;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MessagePacker {
@@ -35,17 +33,7 @@ public class MessagePacker {
   }
 
   public Map<String, String> getMeta(){
-    Map<String, String> meta = message.getMeta();
-    if(meta == null){
-      meta = new LinkedHashMap<>();
-    }
-    Map<String, String> tmp = new LinkedHashMap<>(meta);
-    String route = tmp.get("route");
-    if(route == null){
-      route = "[]";
-    }
-    tmp.put("route", updateRoute(route));
-    return tmp;
+    return MetaRouteHandler.updateRoute(message.getMeta(), getCreation());
   }
 
   public Map<String, TypedData> getDataMap(){
@@ -68,10 +56,10 @@ public class MessagePacker {
   public String getSchemaId(){
     return message.getSchemaId();
   }
+
   public String getResponseTopic(){
     return message.getResponseTopic();
   }
-
 
   public long getIdentifier(){
     return message.getIdentifier();
@@ -112,33 +100,5 @@ public class MessagePacker {
     return message.isCorrelationDataByteArray();
   }
 
-  private String updateRoute(String route){
-    if(route.startsWith("[")){
-      route = route.substring(1, route.length()-1);
-    }
-    if(route.endsWith("]")){
-      route = route.substring(0, route.length()-1);
-    }
-    route = route.trim();
-    int originalLength = route.length();
-    int newLength = route.replace("{", "").length();
-    int count = (originalLength - newLength)+1;
 
-    String server = MessageDaemon.getInstance().getId();
-    String hostname = MessageDaemon.getInstance().getHostname();
-    long age = System.currentTimeMillis() - getCreation();
-
-    String entry =
-        String.format(
-            "{\"server\": \"%s\", \"host\": \"%s\", \"age\": %d, \"hop\": %d}",
-            server, hostname, age, count);
-    if(route.isEmpty()){
-      route = entry;
-    }
-    else{
-      route = route + "," + entry;
-    }
-
-    return "["+route+"]";
-  }
 }

@@ -29,28 +29,34 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 public class MessageLoader {
-  private java.util.Map<String, String> meta;
-  private Map<String, TypedData> dataMap;
-  private byte[] opaqueData;
-  private Object correlationData;
-  private String contentType;
-  private String responseTopic;
-  private long id;
-  private long expiry;
-  private long delayed;
-  private Priority priority;
-  private long creation;
-  private QualityOfService qualityOfService;
-  private ProtocolMessageTransformation transformation;
+
   private boolean retain;
   private boolean storeOffline;
   private boolean payloadUTF8;
-  private String schemaId;
   private boolean lastMessage;
-  private long identifier;
   private boolean correlationDataByteArray;
   private boolean utf8;
+
+  private long id;
+  private long expiry;
+  private long delayed;
+  private long creation;
+  private long identifier;
   private long time;
+  private long key;
+
+  private String contentType;
+  private String responseTopic;
+  private String schemaId;
+
+  private Object correlationData;
+  private byte[] opaqueData;
+  private Priority priority;
+  private QualityOfService qualityOfService;
+  private ProtocolMessageTransformation transformation;
+  private Map<String, String> meta;
+  private Map<String, TypedData> dataMap;
+
 
 
   public void load(MessageBuilder messageBuilder){

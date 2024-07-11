@@ -43,7 +43,7 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
 
   @Override
   public String getDescription() {
-    return "Transforms MessageBuilder to JSON payload and vice versa";
+    return "Transforms a message into an internal JSON payload and vice versa";
   }
 
   @Override
@@ -68,7 +68,6 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
         return objectMapper.writeValueAsBytes(new MessagePacker(message));
       } catch (Exception e) {
         // Log the exception and handle it as needed
-        e.printStackTrace();
       }
     }
     return message.getOpaqueData();
