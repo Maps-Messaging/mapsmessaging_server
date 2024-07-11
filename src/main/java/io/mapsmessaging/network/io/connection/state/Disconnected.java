@@ -59,6 +59,15 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String username = properties.getAuthConfig().getUsername();
       String password = properties.getAuthConfig().getPassword();
       String tokenGeneratorName = properties.getAuthConfig().getTokenGenerator();
+      String transformationName = properties.getLinkTransformation();
+      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
+      if(transformation == null) {
+        transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplFactory.getName(), username );
+      }
+
+      if(transformation != null) {
+        sessionId = sessionId+"?Transformation="+transformation.getName();
+      }
       if (tokenGeneratorName != null && !tokenGeneratorName.isEmpty()) {
         TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties.getAuthConfig().getTokenConfig());
         password = tokenGenerator.generate();
@@ -66,10 +75,6 @@ public class Disconnected extends State implements EndPointConnectedCallback {
 
       endPointConnection.scheduleState(new Connecting(endPointConnection));
       ProtocolImpl protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
-      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(properties.getLinkTransformation());
-      if(transformation == null) {
-        transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImpl.getName(), username );
-      }
 
       protocolImpl.setTransformation(transformation);
       endPointConnection.setConnection(protocolImpl);

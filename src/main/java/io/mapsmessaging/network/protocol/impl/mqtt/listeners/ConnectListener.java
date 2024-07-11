@@ -29,6 +29,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -55,6 +56,12 @@ public class ConnectListener extends BaseConnectionListener {
     boolean strict = checkStrict(connect, protocol);
 
     String sessionId = connect.getSessionId();
+    String transformation = null;
+    if(sessionId.contains("?Transformation=")){
+      transformation = sessionId.split("\\?Transformation=")[1];
+      sessionId = sessionId.split("\\?Transformation=")[0];
+      protocol.setTransformation(TransformationManager.getInstance().getTransformation(transformation));
+    }
     if ((!connect.isCleanSession() && sessionId.isEmpty()) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
     } else {
