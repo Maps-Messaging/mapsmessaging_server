@@ -45,10 +45,17 @@ public class TransformationManager implements ServiceManager {
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("TransformationManager");
     Object obj = properties.get("data");
     if(obj != null) {
-      List<ConfigurationProperties> data = (List<ConfigurationProperties>) obj;
-      root = TransformationTreeBuilder.buildTree(data);
-    }
-    else{
+      if(obj instanceof ConfigurationProperties){
+        root = TransformationTreeBuilder.buildTree(Collections.singletonList((ConfigurationProperties) obj));
+      }
+      else if(obj instanceof List){
+        List<ConfigurationProperties> data = (List<ConfigurationProperties>) obj;
+        root = TransformationTreeBuilder.buildTree(data);
+      }
+      else{
+        root = null;
+      }
+    } else {
       root = null;
     }
   }

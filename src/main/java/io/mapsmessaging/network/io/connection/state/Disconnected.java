@@ -66,7 +66,11 @@ public class Disconnected extends State implements EndPointConnectedCallback {
 
       endPointConnection.scheduleState(new Connecting(endPointConnection));
       ProtocolImpl protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
-      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImpl.getName(), username );
+      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(properties.getLinkTransformation());
+      if(transformation == null) {
+        transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImpl.getName(), username );
+      }
+
       protocolImpl.setTransformation(transformation);
       endPointConnection.setConnection(protocolImpl);
     } catch (IOException ioException) {

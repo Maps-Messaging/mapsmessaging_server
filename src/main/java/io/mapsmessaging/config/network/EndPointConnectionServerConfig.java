@@ -34,11 +34,14 @@ import lombok.ToString;
 public class EndPointConnectionServerConfig extends EndPointServerConfig{
 
   private AuthConfig authConfig;
+  private String linkTransformation;
   private List<LinkConfig> linkConfigs;
 
   public EndPointConnectionServerConfig(ConfigurationProperties props){
     super(props);
     authConfig = new AuthConfig(props);
+    linkTransformation = props.getProperty("transformation", "");
+
     linkConfigs = new ArrayList<>();
     Object obj = props.get("links");
     if (obj instanceof List) {
@@ -50,7 +53,18 @@ public class EndPointConnectionServerConfig extends EndPointServerConfig{
     }
   }
 
+  public ConfigurationProperties toConfigurationProperties() {
+    ConfigurationProperties config = super.toConfigurationProperties();
+    config.put("transformation", linkTransformation);
+    return config;
+  }
+
   public boolean update(EndPointConnectionServerConfig newConfig) {
-    return super.update(newConfig) || this.authConfig.update(newConfig.getAuthConfig());
+    boolean hasChanged = false;
+    if (this.linkTransformation == null || !this.linkTransformation.equals(newConfig.getLinkTransformation())) {
+      this.linkTransformation = newConfig.getLinkTransformation();
+      hasChanged = true;
+    }
+    return super.update(newConfig) || this.authConfig.update(newConfig.getAuthConfig()) || hasChanged;
   }
 }

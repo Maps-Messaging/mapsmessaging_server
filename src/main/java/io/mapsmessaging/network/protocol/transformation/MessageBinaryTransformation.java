@@ -43,9 +43,13 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
       byte[] opaqueData = messageBuilder.getOpaqueData();
       if (opaqueData != null) {
         ByteBuffer buffer = ByteBuffer.wrap(opaqueData);
+        int test = buffer.get() & 0xff;
+        if (test != 0x81) {
+          return; // not known
+        }
         int bufferCount = buffer.get();
         ByteBuffer[] buffers = new ByteBuffer[bufferCount];
-        for(int x = 0; x < bufferCount; ++x) {
+        for (int x = 0; x < bufferCount; ++x) {
           buffers[x] = ByteBuffer.allocate(buffer.getInt());
           buffers[x].put(buffer);
         }
@@ -58,7 +62,8 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
           current = message.getMeta();
         }
 
-        messageBuilder.setMeta( MetaRouteHandler.updateRoute(current, message.getCreation()))
+        messageBuilder
+            .setMeta(MetaRouteHandler.updateRoute(current, message.getCreation()))
             .setDataMap(message.getDataMap())
             .setOpaqueData(message.getOpaqueData())
             .setContentType(message.getContentType())
@@ -68,7 +73,6 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
             .setTransformation(null)
             .setDelayed(message.getDelayed())
             .setSchemaId(message.getSchemaId());
-
       }
     } catch (Exception e) {
       // Log the exception and handle it as needed
@@ -81,7 +85,8 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
     if (!destinationName.startsWith("$")) {
       try {
         ByteBuffer[] data = MessageFactory.getInstance().pack(message);
-        ByteBuffer header = ByteBuffer.allocate(1 + (data.length)*4);
+        ByteBuffer header = ByteBuffer.allocate(2 + (data.length)*4);
+        header.put((byte)0x81);
         header.put((byte) data.length);
         long totalSize = header.remaining();
         for(ByteBuffer b: data){
