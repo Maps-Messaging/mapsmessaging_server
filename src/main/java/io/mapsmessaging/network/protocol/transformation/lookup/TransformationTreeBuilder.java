@@ -38,7 +38,7 @@ public class TransformationTreeBuilder {
     TreeNode currentNode = root;
 
     for (String part : parts) {
-      currentNode = currentNode.getChildren().computeIfAbsent(part, k -> new TreeNode());
+      currentNode = currentNode.getChildren().computeIfAbsent(part.toLowerCase(), k -> new TreeNode());
     }
 
     currentNode.setTransformation(transformationValue);

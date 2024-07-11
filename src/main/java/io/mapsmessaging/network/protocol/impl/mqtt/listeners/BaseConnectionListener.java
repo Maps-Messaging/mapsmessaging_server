@@ -36,30 +36,35 @@ public abstract class BaseConnectionListener extends PacketListener {
 
   protected CompletableFuture<Session> createSession(EndPoint endPoint, ProtocolImpl protocol, SessionContextBuilder scb, String sessionId) {
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(scb.build(), protocol);
-    future.thenApply(session -> {
-      try {
-        ((MQTTProtocol) protocol).setSession(session);
-        session.login();
-        ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
-            endPoint.getProtocol(),
-            endPoint.getName(),
-            "mqtt",
-            session.getSecurityContext().getUsername()
-        );
+    future.thenApply(
+        session -> {
+          try {
+            ((MQTTProtocol) protocol).setSession(session);
+            session.login();
+            if (protocol.getTransformation() == null) {
+              ProtocolMessageTransformation transformation =
+                  TransformationManager.getInstance()
+                      .getTransformation(
+                          endPoint.getProtocol(),
+                          endPoint.getName(),
+                          "mqtt",
+                          session.getSecurityContext().getUsername());
 
-        protocol.setTransformation(transformation);
-        return session;
-      } catch (IOException ioe) {
-        logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
-        future.completeExceptionally(new MalformedException("Unable to construct the required Will Topic"));
-      }
-      try {
-        endPoint.close();
-      } catch (IOException e) {
-        // Ignore
-      }
-      return null;
-    });
+              protocol.setTransformation(transformation);
+            }
+            return session;
+          } catch (IOException ioe) {
+            logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, ioe, sessionId);
+            future.completeExceptionally(
+                new MalformedException("Unable to construct the required Will Topic"));
+          }
+          try {
+            endPoint.close();
+          } catch (IOException e) {
+            // Ignore
+          }
+          return null;
+        });
     return future;
   }
 

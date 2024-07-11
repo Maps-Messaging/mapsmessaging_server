@@ -58,7 +58,7 @@ public class TransformationManager implements ServiceManager {
     if (subHost.contains(":")) {
       subHost = subHost.substring(0, subHost.indexOf(":"));
     }
-    String[] parts = {transport, subHost, protocol, username};
+    String[] parts = {transport.toLowerCase(), subHost.toLowerCase(), protocol.toLowerCase(), username.toLowerCase()};
     String name =  findTransformation(root, parts, 0);
     return getTransformation(name);
   }

@@ -21,14 +21,16 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-
 import java.io.ByteArrayOutputStream;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718028
  */
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings({"squid:S3776", "common-java:DuplicatedBlocks"})
+@Getter
 public class Connect extends MQTTPacket {
 
   private static final String NO_PROTOCOL_FOUND_MSG = "No Protocol string specified. [MQTT-3.1.2-1]";
@@ -41,10 +43,15 @@ public class Connect extends MQTTPacket {
   //
   // Will fields
   //
+  @Setter
   private boolean willFlag;
+  @Setter
   private QualityOfService willQOS;
+  @Setter
   private boolean willRetain;
+  @Setter
   private String willTopic;
+  @Setter
   private byte[] willMsg;
 
   //
@@ -58,8 +65,11 @@ public class Connect extends MQTTPacket {
   //
   // Session fields
   //
+  @Setter
   private boolean cleanSession;
+  @Setter
   private int keepAlive;
+  @Setter
   private String sessionId;
 
   public Connect() {
@@ -144,7 +154,7 @@ public class Connect extends MQTTPacket {
     keepAlive = readShort(packet) * 1000; // convert to ms
     String id = readUTF8(packet);
 
-    if (id.length() == 0 && cleanSession) {
+    if (id.isEmpty() && cleanSession) {
       id = UuidGenerator.getInstance().generate().toString();
     }
     sessionId = id;
@@ -181,26 +191,6 @@ public class Connect extends MQTTPacket {
     }
   }
 
-  public void setWillFlag(boolean willFlag) {
-    this.willFlag = willFlag;
-  }
-
-  public void setWillQOS(QualityOfService willQOS) {
-    this.willQOS = willQOS;
-  }
-
-  public void setWillRetain(boolean willRetain) {
-    this.willRetain = willRetain;
-  }
-
-  public void setWillTopic(String willTopic) {
-    this.willTopic = willTopic;
-  }
-
-  public void setWillMsg(byte[] willMsg) {
-    this.willMsg = willMsg;
-  }
-
   public void setUsername(String username) {
     this.username = username;
     usernameFlag = (username != null);
@@ -209,78 +199,6 @@ public class Connect extends MQTTPacket {
   public void setPassword(char[] password) {
     this.password = password;
     passwordFlag = (password != null);
-  }
-
-  public void setCleanSession(boolean cleanSession) {
-    this.cleanSession = cleanSession;
-  }
-
-  public void setKeepAlive(int keepAlive) {
-    this.keepAlive = keepAlive;
-  }
-
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
-
-  public boolean isPasswordFlag() {
-    return passwordFlag;
-  }
-
-  public boolean isUsernameFlag() {
-    return usernameFlag;
-  }
-
-  public byte getProtocolLevel() {
-    return protocolLevel;
-  }
-
-  public int getKeepAlive() {
-    return keepAlive;
-  }
-
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public String getWillTopic() {
-    return willTopic;
-  }
-
-  public byte[] getWillMsg() {
-    return willMsg;
-  }
-
-  public String getUsername() {
-    return username;
-  }
-
-  public char[] getPassword() {
-    return password;
-  }
-
-  public boolean isCleanSession() {
-    return cleanSession;
-  }
-
-  public boolean isWillFlag() {
-    return willFlag;
-  }
-
-  public QualityOfService getWillQOS() {
-    return willQOS;
-  }
-
-  public boolean isWillRetain() {
-    return willRetain;
-  }
-
-  public char[] isPassword() {
-    return password;
-  }
-
-  public String isUsername() {
-    return username;
   }
 
   public String toString() {
