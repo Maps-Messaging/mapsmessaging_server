@@ -25,6 +25,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import java.util.*;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransformationManager implements ServiceManager {
@@ -60,11 +61,12 @@ public class TransformationManager implements ServiceManager {
     }
   }
 
-  public ProtocolMessageTransformation getTransformation(String transport, String host, String protocol, String username) {
+  public ProtocolMessageTransformation getTransformation(@NotNull String transport, @NotNull String host, @NotNull String protocol, String username) {
     String subHost = host.substring(host.indexOf("/")+1);
     if (subHost.contains(":")) {
       subHost = subHost.substring(0, subHost.indexOf(":"));
     }
+    if(username == null)username="anonymous";
     String[] parts = {transport.toLowerCase(), subHost.toLowerCase(), protocol.toLowerCase(), username.toLowerCase()};
     String name =  findTransformation(root, parts, 0);
     return getTransformation(name);
