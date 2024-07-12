@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,10 +29,6 @@ import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import io.mapsmessaging.storage.impl.streams.StreamObjectWriter;
-import lombok.Getter;
-import lombok.Setter;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,6 +36,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
+import org.jetbrains.annotations.Nullable;
 
 public class Message implements IdentifierResolver, Storable {
 
@@ -209,6 +208,10 @@ public class Message implements IdentifierResolver, Storable {
   }
 
   ByteBuffer[] pack() throws IOException {
+    return pack(null);
+  }
+
+  ByteBuffer[] pack(Map<String, String> updatedMeta) throws IOException {
     ByteBuffer header = ByteBuffer.allocate(34);
     header.putLong(identifier);
     header.putLong(expiry);
@@ -217,9 +220,11 @@ public class Message implements IdentifierResolver, Storable {
     header.put((byte) priority.getValue());
     header.put((byte) qualityOfService.getLevel());
     header.flip();
-
+    if(updatedMeta == null){
+      updatedMeta = meta;
+    }
     byte containsBuffers = 0;
-    boolean hasMeta = meta != null && !meta.isEmpty();
+    boolean hasMeta = updatedMeta != null && !updatedMeta.isEmpty();
     boolean hasMap = dataMap != null && !dataMap.isEmpty();
     boolean hasOpaque = opaqueData != null;
     int bufferCount = 2;
@@ -256,7 +261,7 @@ public class Message implements IdentifierResolver, Storable {
     if (hasMeta) {
       ByteArrayOutputStream metaStream = new ByteArrayOutputStream(1024);
       StreamObjectWriter metaWriter = new StreamObjectWriter(metaStream);
-      saveMeta(metaWriter);
+      saveMeta(updatedMeta, metaWriter);
       packed[idx] = ByteBuffer.wrap(metaStream.toByteArray());
       idx++;
     }
@@ -418,10 +423,10 @@ public class Message implements IdentifierResolver, Storable {
     return result;
   }
 
-  private void saveMeta(ObjectWriter writer) throws IOException {
-    if (meta != null) {
-      writer.write(meta.size());
-      for (Map.Entry<String, String> entry : meta.entrySet()) {
+  private void saveMeta(Map<String, String> updatedMeta, ObjectWriter writer) throws IOException {
+    if (updatedMeta != null) {
+      writer.write(updatedMeta.size());
+      for (Map.Entry<String, String> entry : updatedMeta.entrySet()) {
         writer.write(entry.getKey());
         writer.write(entry.getValue());
       }

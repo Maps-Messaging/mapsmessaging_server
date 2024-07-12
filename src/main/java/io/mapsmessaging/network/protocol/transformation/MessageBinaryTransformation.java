@@ -71,7 +71,7 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
         }
 
         messageBuilder
-            .setMeta(MetaRouteHandler.updateRoute(current, message.getCreation()))
+            .setMeta(current)
             .setDataMap(message.getDataMap())
             .setOpaqueData(message.getOpaqueData())
             .setContentType(message.getContentType())
@@ -92,7 +92,8 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
   public byte[] outgoing(Message message, String destinationName) {
     if (!destinationName.startsWith("$")) {
       try {
-        ByteBuffer[] data = MessageFactory.getInstance().pack(message);
+        ByteBuffer[] data =
+            MessageFactory.getInstance().pack(message, MetaRouteHandler.updateRoute(message.getMeta(), message.getCreation()));
         ByteBuffer header = ByteBuffer.allocate(2 + (data.length)*4);
         header.put((byte)0x81);
         header.put((byte) data.length);
