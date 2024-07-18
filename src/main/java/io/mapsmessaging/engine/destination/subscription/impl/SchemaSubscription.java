@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -36,12 +35,28 @@ public class SchemaSubscription extends Subscription {
 
   protected final DestinationImpl destinationImpl;
   private final SubscribedEventManager eventManager;
+  private String sessionId;
 
   public SchemaSubscription(SessionImpl sessionImpl, DestinationImpl destinationImpl, SubscriptionContext context) {
     super(sessionImpl, context);
+    sessionId = sessionImpl.getName();
     this.destinationImpl = destinationImpl;
     eventManager = new SchemaSubscribedEventManager(this);
     destinationImpl.addSchemaSubscription(this);
+  }
+
+  @Override
+  public void hibernate() {
+    super.hibernate();
+  }
+
+
+  @Override
+  public void wakeUp(SessionImpl sessionImpl) {
+    super.wakeUp(sessionImpl);
+    if (sessionImpl != null) {
+      sessionId = sessionImpl.getName();
+    }
   }
 
   @Override
@@ -127,7 +142,7 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public void delete() throws IOException {
-    // There is nothing to delete here,
+    destinationImpl.removeSchemaSubscription(this);
   }
 
   @Override
@@ -137,7 +152,7 @@ public class SchemaSubscription extends Subscription {
 
   @Override
   public String getSessionId() {
-    return sessionImpl.getName();
+    return sessionId;
   }
 
   @Override

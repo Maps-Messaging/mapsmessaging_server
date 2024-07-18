@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,16 +19,15 @@ package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.features.*;
 import io.mapsmessaging.utilities.PersistentObject;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.BitSet;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @ToString
 public class SubscriptionContext  extends PersistentObject implements Comparable<SubscriptionContext> {
@@ -52,6 +51,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   @Setter
   private ClientAcknowledgement acknowledgementController;
 
+  @Setter
   @Getter
   private String sharedName;
 
@@ -184,16 +184,19 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     this.destinationName = destinationName;
   }
 
+  public String getKey(){
+    String key = getCorrectedPath();
+    key = "$"+destinationMode.getName()+key;
+    return key.replace("//", "/");
+
+  }
+
   public void setAlias(String alias) {
     this.alias = Objects.requireNonNullElseGet(alias, this::getCorrectedPath);
   }
 
   public void setNoLocalMessages(boolean noLocalMessages) {
     flags.set(NO_LOCAL_MESSAGES, noLocalMessages);
-  }
-
-  public void setSharedName(String sharedName) {
-    this.sharedName = sharedName;
   }
 
   public void setAllowOverlap(boolean allowOverlap) {
@@ -205,7 +208,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   }
 
   public boolean isSharedSubscription() {
-    return (sharedName != null && sharedName.length() > 0);
+    return (sharedName != null && !sharedName.isEmpty());
   }
 
   public boolean containsWildcard() {
@@ -237,16 +240,6 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     return flags.get(BROWSER_FLAG);
   }
 
-
-  private void setFlag(int index, boolean flag){
-    flags.set(index, flag);
-  }
-
-  private String getCorrectedPath() {
-    String lookup = rootPath + destinationName;
-    return lookup.replace("//", "/");
-  }
-
   @Override
   public int compareTo(SubscriptionContext lhs) {
     return lhs.qualityOfService.getLevel() - qualityOfService.getLevel();
@@ -275,6 +268,15 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     } else {
       destinationMode = DestinationMode.NORMAL;
     }
+  }
+
+  private void setFlag(int index, boolean flag){
+    flags.set(index, flag);
+  }
+
+  private String getCorrectedPath() {
+    String lookup = rootPath + destinationName;
+    return lookup.replace("//", "/");
   }
 
 }

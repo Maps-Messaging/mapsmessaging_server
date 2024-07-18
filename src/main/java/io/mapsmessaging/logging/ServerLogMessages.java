@@ -660,7 +660,8 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Device Integration, log messages">
   DEVICE_SELECTOR_PARSER_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Selection {}, failed to parse with the following exception {}"),
-  DEVICE_SCHEMA_UPDATE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Schema failed to be updated {}"),
+  DEVICE_SCHEMA_UPDATED(LEVEL.WARN, SERVER_CATEGORY.DEVICE, "Device {} schema configuration updated"),
+  DEVICE_SCHEMA_UPDATE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Schema failed to be updated {} while applying {}"),
   DEVICE_SUBSCRIPTION_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Subscription failed to be applied to {}"),
   DEVICE_PUBLISH_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Event publish failed {}"),
   DEVICE_START(LEVEL.INFO, SERVER_CATEGORY.DEVICE, "Starting device {}"),

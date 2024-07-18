@@ -83,7 +83,6 @@ public class SubscriptionController implements DestinationManagerListener {
   private final Map<DestinationImpl, Subscription> activeSubscriptions;
   private final Map<DestinationImpl, Subscription> schemaSubscriptions;
 
-
   //
   // Session represents the remote client
   //
@@ -130,25 +129,10 @@ public class SubscriptionController implements DestinationManagerListener {
   public void shutdown(){
     logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
-    List<Subscription> closeList = new ArrayList<>(activeSubscriptions.values());
-    subscriptions.clear();
-    activeSubscriptions.clear();
-    for (Subscription subscription : closeList) {
-      try {
-        subscription.close();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
-      }
-    }
 
-    closeList = new ArrayList<>(schemaSubscriptions.values());
-    for (Subscription subscription : closeList) {
-      try {
-        subscription.close();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
-      }
-    }
+    closeSubscriptions(activeSubscriptions, true);
+    closeSubscriptions(schemaSubscriptions, true);
+    subscriptions.clear();
     if (subscriptionControllerJMX != null) {
       subscriptionControllerJMX.close();
     }
@@ -157,25 +141,9 @@ public class SubscriptionController implements DestinationManagerListener {
   public void close() {
     logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
-    List<Subscription> closeList = new ArrayList<>(activeSubscriptions.values());
+    closeSubscriptions(activeSubscriptions, false);
+    closeSubscriptions(schemaSubscriptions, false);
     subscriptions.clear();
-    activeSubscriptions.clear();
-    for (Subscription subscription : closeList) {
-      try {
-        subscription.delete();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
-      }
-    }
-
-    closeList = new ArrayList<>(schemaSubscriptions.values());
-    for (Subscription subscription : closeList) {
-      try {
-        subscription.close();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
-      }
-    }
     contextMap.clear();
     if (subscriptionControllerJMX != null) {
       subscriptionControllerJMX.close();
@@ -202,73 +170,6 @@ public class SubscriptionController implements DestinationManagerListener {
     return addSubscription(context, false);
   }
 
-  @SneakyThrows
-  private SubscribedEventManager addSubscription(SubscriptionContext context, boolean isReload) throws IOException {
-    SubscribedEventManager subscription = null;
-    String filter = context.getFilter();
-    if (filter.equals("test/nosubscribe")) {
-      throw new IOException("Not authorised to access topic");
-    }
-    if (!subscriptions.containsKey(filter)) {
-      if (!context.containsWildcard()) {
-        CompletableFuture<DestinationImpl> future = destinationManager.findOrCreate(filter);
-        if (future == null && filter.toLowerCase().startsWith("$sys")) {
-          future = destinationManager.find("$SYS/notImplemented");
-        }
-        if (future != null) {
-          future.get();
-        }
-      }
-      DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
-      DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
-      subscriptions.put(context.getAlias(), destinationSet);
-      //
-      // Now compare the active subscription destinations with the ones in this new subscriptionSet
-      //
-      if (!destinationSet.isEmpty()) {
-        subscription = processSubscriptions(context, destinationSet, isReload);
-      }
-    } else {
-
-      // We have received a subscription for an already registered subscription!!!
-      delSubscription(filter);
-      context.setReplaced(true);
-      return addSubscription(context);
-    }
-    if (!isReload) {
-      contextMap.put(context.getAlias(), context);
-    }
-    return subscription;
-  }
-
-  private SubscribedEventManager processSubscriptions(SubscriptionContext context, DestinationSet destinationSet, boolean isReload) throws IOException {
-    AtomicLong counter = new AtomicLong(destinationSet.size());
-    SubscribedEventManager subscription = null;
-    ListResponse responses = new ListResponse();
-    Future<Response> future;
-    for (DestinationImpl destinationImpl : destinationSet) {
-      // Lets queue the subscription requests for each destination
-      future = scheduleSubscription(context, destinationImpl, counter);
-      if (!isReload) {
-        responses.addResponse(future);
-      }
-    }
-    if (!isReload) {
-      try {
-        List<Response> response = responses.getResponse();
-        if (!response.isEmpty()) {
-          subscription = ((SubscriptionResponse) response.get(0)).getSubscription();
-        }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        return null;
-      } catch (ExecutionException e) {
-        throw new IOException(e);
-      }
-    }
-    return subscription;
-  }
-
   /**
    * Now scan the destinations that this subscription had and remove any context, if its the last context then we need to delete and close the subscription and all data
    *
@@ -276,8 +177,8 @@ public class SubscriptionController implements DestinationManagerListener {
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
-    if (id.startsWith("$schema")) {
-      String destinationName = id.substring("$schema".length() + 1);
+    if (id.toLowerCase().startsWith("$schema")) {
+      String destinationName = "$Schema"+id.substring("$schema".length() + 1);
       for (Entry<DestinationImpl, Subscription> entry : schemaSubscriptions.entrySet()) {
         if (entry.getKey().getFullyQualifiedNamespace().equals(destinationName)) {
           schemaSubscriptions.remove(entry.getKey());
@@ -285,7 +186,7 @@ public class SubscriptionController implements DestinationManagerListener {
         }
       }
     }
-    DestinationSet destinationSet = subscriptions.remove(id);
+    DestinationSet destinationSet = subscriptions.remove("$Normal"+id);
     if (destinationSet != null) {
       handleUnsubscribeSet(id, destinationSet);
       return true;
@@ -293,20 +194,6 @@ public class SubscriptionController implements DestinationManagerListener {
 
     return false;
   }
-
-
-  private void handleUnsubscribeSet(String id, DestinationSet destinationSet) {
-    contextMap.remove(id);
-    List<DestinationImpl> lostInterest = new ArrayList<>(destinationSet);
-    AtomicLong counter = new AtomicLong(lostInterest.size());
-    for (DestinationImpl destinationImpl : lostInterest) {
-      UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl, destinationSet, counter);
-      if (destinationImpl.submit(task).isCancelled()) {
-        counter.decrementAndGet();
-      }
-    }
-  }
-
 
   /**
    * Called when a new destination is created, we see if any wildcards match the new destination
@@ -365,10 +252,8 @@ public class SubscriptionController implements DestinationManagerListener {
   public void hibernateAll() {
     if (sessionImpl != null) {
       sessionImpl = null;
-      List<Subscription> active = new ArrayList<>(activeSubscriptions.values());
-      for (Subscription subscription : active) {
-        subscription.hibernate();
-      }
+      hibernateList( new ArrayList<>(activeSubscriptions.values()));
+      hibernateList( new ArrayList<>(schemaSubscriptions.values()));
     }
   }
 
@@ -394,7 +279,6 @@ public class SubscriptionController implements DestinationManagerListener {
     return null;
   }
 
-
   public void wakeAll(SessionImpl sessionImpl) {
     wake(sessionImpl);
     if (this.sessionImpl != null) {
@@ -415,23 +299,6 @@ public class SubscriptionController implements DestinationManagerListener {
         subscription.register(retainedId);
       }
     }
-  }
-
-  private Future<Response> scheduleSubscription(SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter) {
-    SubscriptionTask task = null;
-    switch (context.getDestinationMode()) {
-      case SCHEMA:
-        task = new SchemaSubscriptionTask(this, context, destinationImpl, counter);
-        break;
-      case METRICS:
-        task = new MetricsSubscriptionTask(this, context, destinationImpl, counter);
-        break;
-      case NORMAL:
-      default:
-        task = new SubscriptionTask(this, context, destinationImpl, counter);
-        break;
-    }
-    return destinationImpl.submit(task);
   }
 
   public Subscription createSchemaSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
@@ -458,17 +325,6 @@ public class SubscriptionController implements DestinationManagerListener {
     Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId);
     activeSubscriptions.put(destinationImpl, subscription);
     return subscription;
-  }
-
-  /**
-   * Clean up the structure on a deletion of a destination, we keep the wildcard subscriptions since they may be needed in future
-   */
-  private void clearStructure(DestinationImpl destinationImpl, DestinationSet destinationSet) {
-    if (destinationSet.remove(destinationImpl)
-        && destinationSet.isEmpty()
-        && !destinationSet.getContext().containsWildcard()) {
-      subscriptions.remove(destinationSet.getContext().getFilter());
-    }
   }
 
   @SuppressWarnings("java:S1452")
@@ -507,5 +363,135 @@ public class SubscriptionController implements DestinationManagerListener {
       }
     }
   }
+
+  private void closeSubscriptions(Map<DestinationImpl, Subscription> subscriptions, boolean close){
+    List<Subscription> closeList = new  ArrayList<>(subscriptions.values());
+    subscriptions.clear();
+    for (Subscription subscription : closeList) {
+      try {
+        if (close) {
+          subscription.close();
+        }
+        else{
+          subscription.delete();
+        }
+      } catch (IOException e) {
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
+      }
+    }
+  }
+
+  private void handleUnsubscribeSet(String id, DestinationSet destinationSet) {
+    contextMap.remove(id);
+    List<DestinationImpl> lostInterest = new ArrayList<>(destinationSet);
+    AtomicLong counter = new AtomicLong(lostInterest.size());
+    for (DestinationImpl destinationImpl : lostInterest) {
+      UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl, destinationSet, counter);
+      if (destinationImpl.submit(task).isCancelled()) {
+        counter.decrementAndGet();
+      }
+    }
+  }
+
+  private void hibernateList(List<Subscription> list){
+    for (Subscription subscription : list) {
+      subscription.hibernate();
+    }
+  }
+
+  private Future<Response> scheduleSubscription(SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter) {
+    SubscriptionTask task = null;
+    switch (context.getDestinationMode()) {
+      case SCHEMA:
+        task = new SchemaSubscriptionTask(this, context, destinationImpl, counter);
+        break;
+      case METRICS:
+        task = new MetricsSubscriptionTask(this, context, destinationImpl, counter);
+        break;
+      case NORMAL:
+      default:
+        task = new SubscriptionTask(this, context, destinationImpl, counter);
+        break;
+    }
+    return destinationImpl.submit(task);
+  }
+
+  /**
+   * Clean up the structure on a deletion of a destination, we keep the wildcard subscriptions since they may be needed in future
+   */
+  private void clearStructure(DestinationImpl destinationImpl, DestinationSet destinationSet) {
+    if (destinationSet.remove(destinationImpl)
+        && destinationSet.isEmpty()
+        && !destinationSet.getContext().containsWildcard()) {
+      subscriptions.remove(destinationSet.getContext().getKey());
+    }
+  }
+
+  @SneakyThrows
+  private SubscribedEventManager addSubscription(SubscriptionContext context, boolean isReload) throws IOException {
+    SubscribedEventManager subscription = null;
+    String filter = context.getFilter();
+    if (filter.equals("test/nosubscribe")) {
+      throw new IOException("Not authorised to access topic");
+    }
+    if (!subscriptions.containsKey(context.getKey())) {
+      if (!context.containsWildcard()) {
+        CompletableFuture<DestinationImpl> future = destinationManager.findOrCreate(filter);
+        if (future == null && filter.toLowerCase().startsWith("$sys")) {
+          future = destinationManager.find("$SYS/notImplemented");
+        }
+        if (future != null) {
+          future.get();
+        }
+      }
+      DestinationFilter destinationFilter = name -> DestinationSet.matches(context, name);
+      DestinationSet destinationSet = new DestinationSet(context, destinationManager.get(destinationFilter));
+      subscriptions.put(context.getKey(), destinationSet);
+      //
+      // Now compare the active subscription destinations with the ones in this new subscriptionSet
+      //
+      if (!destinationSet.isEmpty()) {
+        subscription = processSubscriptions(context, destinationSet, isReload);
+      }
+    } else {
+      // We have received a subscription for an already registered subscription!!!
+      delSubscription(filter);
+      context.setReplaced(true);
+      return addSubscription(context);
+    }
+    if (!isReload) {
+      contextMap.put(context.getAlias(), context);
+    }
+    return subscription;
+  }
+
+  private SubscribedEventManager processSubscriptions(SubscriptionContext context, DestinationSet destinationSet, boolean isReload) throws IOException {
+    AtomicLong counter = new AtomicLong(destinationSet.size());
+    SubscribedEventManager subscription = null;
+    ListResponse responses = new ListResponse();
+    Future<Response> future;
+    for (DestinationImpl destinationImpl : destinationSet) {
+      // Lets queue the subscription requests for each destination
+      future = scheduleSubscription(context, destinationImpl, counter);
+      if (!isReload) {
+        responses.addResponse(future);
+      }
+    }
+    if (!isReload) {
+      try {
+        List<Response> response = responses.getResponse();
+        if (!response.isEmpty()) {
+          subscription = ((SubscriptionResponse) response.get(0)).getSubscription();
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return null;
+      } catch (ExecutionException e) {
+        throw new IOException(e);
+      }
+    }
+    return subscription;
+  }
+
 
 }

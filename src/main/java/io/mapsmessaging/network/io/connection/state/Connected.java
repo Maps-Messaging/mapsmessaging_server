@@ -42,6 +42,7 @@ public class Connected extends State {
       String local = property.getLocalNamespace();
       String remote = property.getRemoteNamespace();
       String selector = property.getSelector();
+      boolean schema = property.isIncludeSchema();
 
       Transformer transformer = null;
       Map<String, Object> obj = property.getTransformer();
@@ -51,12 +52,12 @@ public class Connected extends State {
 
       try {
         if (direction.equalsIgnoreCase("pull")) {
-          endPointConnection.getConnection().subscribeRemote(remote, local, transformer);
+          subscribeRemote(remote, local, transformer, schema);
         } else if (direction.equalsIgnoreCase("push")) {
           if(remote.endsWith("#")){
             remote = remote.substring(0, remote.length()-1);
           }
-          endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer);
+          subscribeLocal(local, remote, selector, transformer, schema);
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       } catch (IOException ioException) {
@@ -76,9 +77,30 @@ public class Connected extends State {
     }
   }
 
+  private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema) throws IOException {
+    endPointConnection.getConnection().subscribeLocal(local, remote, selector, transformer);
+    if(includeSchema){
+      endPointConnection.getConnection().subscribeLocal(constructSchema(local), constructSchema(remote), selector, transformer);
+    }
+  }
+
+  private void subscribeRemote(String remote, String local, Transformer transformer, boolean includeSchema) throws IOException {
+    endPointConnection.getConnection().subscribeRemote(remote, local, transformer);
+    if(includeSchema){
+      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), transformer);
+    }
+  }
+
   @Override
   public String getName() {
     return "Connected";
+  }
+
+  private String constructSchema(String namespace){
+    if(!namespace.startsWith("/")){
+      namespace = "/"+namespace;
+    }
+    return "$schema"+namespace;
   }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,16 +20,18 @@ package io.mapsmessaging.engine.destination.subscription;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.SessionImpl;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class Subscription implements Runnable, SubscribedEventManager, Subscribable {
 
   protected final List<SubscriptionContext> contextList;
+  @Getter
   protected SessionImpl sessionImpl;
+  @Getter
   protected boolean hibernating;
 
   protected Subscription(SessionImpl sessionImpl, SubscriptionContext context) {
@@ -62,17 +64,9 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     contextList.remove(context);
   }
 
-  public SessionImpl getSessionImpl() {
-    return sessionImpl;
-  }
-
   public void hibernate() {
     sessionImpl = null;
     hibernating = true;
-  }
-
-  public boolean isHibernating() {
-    return hibernating;
   }
 
   public void wakeUp(SessionImpl sessionImpl) {

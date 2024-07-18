@@ -542,6 +542,11 @@ public class DestinationImpl implements BaseDestination {
     schemaSubscriptionManager.put(subscription.getSessionId(), subscription);
   }
 
+  public void removeSchemaSubscription(@NonNull @NotNull Subscription subscription) {
+    stats.subscriptionRemoved();
+    schemaSubscriptionManager.remove(subscription.getSessionId());
+  }
+
   //<editor-fold desc="Message delivery and completion APIs">
 
   /**

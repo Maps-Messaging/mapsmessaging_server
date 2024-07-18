@@ -41,6 +41,8 @@ import java.util.*;
 
 public class DeviceManager implements ServiceManager, Agent {
 
+  private static final String DEFAULT = "default";
+
   private final boolean enabled;
   private final Logger logger = LoggerFactory.getLogger(DeviceManager.class);
   private final List<BusHandler> busHandlers;
@@ -73,6 +75,7 @@ public class DeviceManager implements ServiceManager, Agent {
         manager = null;
       }
     } catch (Throwable th) {
+      th.printStackTrace();
     }
 
     deviceBusManager = manager;
@@ -111,8 +114,8 @@ public class DeviceManager implements ServiceManager, Agent {
         }
       }
     }
-    if(!configuredTriggers.containsKey("default")){
-      configuredTriggers.put("default", new PeriodicTrigger(60000));
+    if(!configuredTriggers.containsKey(DEFAULT)){
+      configuredTriggers.put(DEFAULT, new PeriodicTrigger(60000));
     }
   }
 
@@ -136,7 +139,7 @@ public class DeviceManager implements ServiceManager, Agent {
   private Trigger locateNamedTrigger(String name){
     Trigger trigger = configuredTriggers.get(name);
     if(trigger == null){
-      trigger = configuredTriggers.get("default");
+      trigger = configuredTriggers.get(DEFAULT);
     }
     return trigger;
   }

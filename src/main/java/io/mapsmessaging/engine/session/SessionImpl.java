@@ -35,15 +35,13 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import java.io.IOException;
+import java.util.concurrent.*;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.*;
 
 /**
  * The SessionImpl class is responsible for managing the session state, handling destination control,
@@ -81,6 +79,13 @@ public class SessionImpl {
   private final SecurityContext securityContext;
   @Getter
   private WillTaskImpl willTaskImpl;
+  /**
+   * -- SETTER --
+   *  Sets the message callback for this session.
+   *
+   * @param messageCallback the message callback to be set
+   */
+  @Setter
   @Getter
   private MessageCallback messageCallback;
   @Getter
@@ -105,7 +110,7 @@ public class SessionImpl {
     this.subscriptionManager = subscriptionManager;
     this.destinationManager = destinationManager;
     closureTaskManager = new ClosureTaskManager();
-    namespaceMapping = new NamespaceMap();
+    namespaceMapping = new NamespaceMap(destinationManager);
     isClosed = false;
     if (context.getExpiry() == -1) {
       expiry = 24L * 60L * 60L; // One Day
@@ -130,7 +135,6 @@ public class SessionImpl {
 
   /**
    * Closes the session.
-   *
    * This method performs the following actions:
    * 1. Logs a closing session message using the logger.
    * 2. Sets the 'isClosed' flag to true.
@@ -281,15 +285,6 @@ public class SessionImpl {
   }
 
   /**
-   * Sets the message callback for this session.
-   *
-   * @param messageCallback the message callback to be set
-   */
-  public void setMessageCallback(MessageCallback messageCallback) {
-    this.messageCallback = messageCallback;
-  }
-
-  /**
    * Deletes the specified destination from the session.
    *
    * @param destinationImpl the destination to be deleted
@@ -431,72 +426,6 @@ public class SessionImpl {
   }
 
   //</editor-fold>
-
-  /**
-   * The NamespaceMap class is responsible for mapping original namespaces to mapped namespaces and vice versa.
-   * It provides methods to add, remove, and retrieve mappings between original and mapped namespaces.
-   * The class also supports clearing all mappings.
-   *
-   * The NamespaceMap class uses two LinkedHashMaps to store the mappings:
-   * - originalToMapped: stores the mapping from original namespaces to mapped namespaces
-   * - mappedToOriginal: stores the mapping from mapped namespaces to original namespaces
-   *
-   * The class provides the following methods:
-   * - clear(): Clears all mappings in the NamespaceMap.
-   * - addMapped(original, mapped): Adds a mapping between an original namespace and a mapped namespace.
-   * - getMapped(original): Retrieves the mapped namespace for a given original namespace.
-   * - getOriginal(mapped): Retrieves the original namespace for a given mapped namespace.
-   * - removeByMapped(fullyQualifiedNamespace): Removes the mapping for a given fully qualified namespace.
-   *
-   * Usage example:
-   * ```
-   * NamespaceMap namespaceMap = new NamespaceMap();
-   * namespaceMap.addMapped("originalNamespace", "mappedNamespace");
-   * String mapped = namespaceMap.getMapped("originalNamespace"); // returns "mappedNamespace"
-   * String original = namespaceMap.getOriginal("mappedNamespace"); // returns "originalNamespace"
-   * namespaceMap.removeByMapped("mappedNamespace");
-   * ```
-   */
-  private final class NamespaceMap {
-
-    private final Map<String, String> originalToMapped;
-    private final Map<String, String> mappedToOriginal;
-
-    public NamespaceMap() {
-      originalToMapped = new LinkedHashMap<>();
-      mappedToOriginal = new LinkedHashMap<>();
-    }
-
-    public void clear() {
-      originalToMapped.clear();
-      mappedToOriginal.clear();
-    }
-
-    public void addMapped(String original, String mapped) {
-      originalToMapped.put(original, mapped);
-      mappedToOriginal.put(mapped, original);
-    }
-
-    public String getMapped(String original) {
-      return originalToMapped.get(original);
-    }
-
-    public String getOriginal(String mapped) {
-      String located = mappedToOriginal.get(mapped);
-      if (located == null) {
-        located = destinationManager.calculateOriginalNamespace(mapped);
-        addMapped(located, mapped);
-      }
-      return located;
-    }
-
-    public void removeByMapped(String fullyQualifiedNamespace) {
-      String found = mappedToOriginal.remove(fullyQualifiedNamespace);
-      if (found != null) {
-        originalToMapped.remove(found);
-      }
-    }
-  }
 
   /**
    * Creates a WillTaskImpl object based on the given SessionContext.

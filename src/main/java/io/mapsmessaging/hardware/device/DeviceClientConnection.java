@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@ package io.mapsmessaging.hardware.device;
 
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
+import java.security.Principal;
 import lombok.Getter;
 
-import java.security.Principal;
-
+@Getter
 public class DeviceClientConnection implements ClientConnection {
 
-  @Getter
   private final DeviceHandler deviceHandler;
 
   public DeviceClientConnection(DeviceHandler deviceHandler){
@@ -54,7 +53,7 @@ public class DeviceClientConnection implements ClientConnection {
 
   @Override
   public Principal getPrincipal() {
-    return () -> deviceHandler.getName();
+    return deviceHandler::getName;
   }
 
   @Override

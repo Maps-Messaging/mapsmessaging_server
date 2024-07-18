@@ -35,6 +35,7 @@ public class LinkConfig extends Config {
   private String remoteNamespace;
   private String localNamespace;
   private String selector;
+  private boolean includeSchema;
   private Map<String, Object> transformer;
 
   public LinkConfig(ConfigurationProperties config) {
@@ -42,6 +43,7 @@ public class LinkConfig extends Config {
     remoteNamespace = config.getProperty("remote_namespace");
     localNamespace = config.getProperty("local_namespace");
     selector = config.getProperty("selector");
+    includeSchema = config.getBooleanProperty("include_schema", false);
     Object obj = config.get("transformer");
     if (obj instanceof ConfigurationProperties) {
       transformer = ((ConfigurationProperties) obj).getMap();
@@ -55,6 +57,7 @@ public class LinkConfig extends Config {
     config.put("remote_namespace", remoteNamespace);
     config.put("local_namespace", remoteNamespace);
     config.put("selector", selector);
+    config.put("include_schema", includeSchema);
     config.put("transformer", new ConfigurationProperties(transformer));
     return config;
   }
@@ -78,6 +81,10 @@ public class LinkConfig extends Config {
     }
     if (this.selector == null || !this.selector.equals(newConfig.getSelector())) {
       this.selector = newConfig.getSelector();
+      hasChanged = true;
+    }
+    if (this.includeSchema != newConfig.isIncludeSchema()) {
+      this.includeSchema = newConfig.isIncludeSchema();
       hasChanged = true;
     }
     if(super.updateMap(transformer, newConfig.getTransformer())) {

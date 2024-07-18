@@ -30,14 +30,13 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
-import lombok.SneakyThrows;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import lombok.SneakyThrows;
 
 public class PublishListener extends PacketListener {
 
@@ -83,6 +82,7 @@ public class PublishListener extends PacketListener {
             String tmp = remote.getKey().substring(0, remote.getKey().length()-1);
             if(lookup.startsWith(tmp)){
               lookup = check + lookup;
+              lookup = lookup.replace("#", "");
               lookup = lookup.replaceAll("//", "/");
             }
           }
@@ -120,6 +120,7 @@ public class PublishListener extends PacketListener {
             ((MQTTProtocol) protocol).writeFrame(response);
           }
         } catch (IOException e) {
+          e.printStackTrace();
           logger.log(ServerLogMessages.MQTT_PUBLISH_STORE_FAILED, e);
           try {
             endPoint.close();
@@ -128,6 +129,9 @@ public class PublishListener extends PacketListener {
           }
           future.completeExceptionally(new MalformedException("[MQTT-3.3.5-2]"));
         }
+      }
+      else{
+        System.err.println("no such destination");
       }
       return destination;
     });
