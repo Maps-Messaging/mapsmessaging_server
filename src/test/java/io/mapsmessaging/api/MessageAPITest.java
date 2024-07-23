@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@ import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.test.BaseTestConfig;
+import java.io.IOException;
+import javax.security.auth.login.LoginException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-
-import javax.security.auth.login.LoginException;
-import java.io.IOException;
 
 public class MessageAPITest extends BaseTestConfig {
 
@@ -50,11 +49,16 @@ public class MessageAPITest extends BaseTestConfig {
   }
 
   public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener) throws LoginException, IOException {
+    return createSession(name, keepAlive, expiry, persistent, listener, false);
+  }
+
+  public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener, boolean resetState) throws LoginException, IOException {
     ProtocolImpl fakeProtocol = new FakeProtocolImpl(listener);
     SessionContextBuilder scb = new SessionContextBuilder(name, new ProtocolClientConnection(fakeProtocol));
     scb.setPersistentSession(true)
         .setKeepAlive(keepAlive)
         .setPersistentSession(persistent)
+        .setResetState(resetState)
         .setSessionExpiry(expiry);
     return createSession(scb, fakeProtocol);
   }

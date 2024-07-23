@@ -139,7 +139,7 @@ public class DestinationManagerPipeline {
       try {
         stopInternal();
       } catch (Exception e) {
-        e.printStackTrace();
+        logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEPTION_ON_STOP, e);
       }
       future.complete(true);
       return true;
@@ -211,7 +211,7 @@ public class DestinationManagerPipeline {
     DestinationImpl delete = destinationList.remove(destination.getFullyQualifiedNamespace());
     StoreMessageTask deleteDestinationTask = new ShutdownPhase1Task(delete, destinationManagerListeners, logger);
     Future<Response> response = destination.submit(deleteDestinationTask, TASK_QUEUE_PRIORITY_SIZE - 1);
-    long timeout = System.currentTimeMillis() + 10000; // ToDo: make configurable
+    long timeout = System.currentTimeMillis() + 10000;
     while (!response.isDone() && timeout > System.currentTimeMillis()) {
       LockSupport.parkNanos(10000000);
     }

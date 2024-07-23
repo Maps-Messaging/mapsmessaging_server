@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionBuilder;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.impl.SchemaSubscription;
 import io.mapsmessaging.engine.session.SessionImpl;
-
 import java.io.IOException;
 
 public class SchemaSubscriptionBuilder extends SubscriptionBuilder {
@@ -33,6 +32,6 @@ public class SchemaSubscriptionBuilder extends SubscriptionBuilder {
   }
 
   public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
-    return new SchemaSubscription(session, destination, context);
+    return new SchemaSubscription(session, sessionId, destination, context);
   }
 }

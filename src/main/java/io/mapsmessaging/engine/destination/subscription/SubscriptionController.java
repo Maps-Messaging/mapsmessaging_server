@@ -19,6 +19,7 @@ package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.admin.SubscriptionControllerJMX;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.engine.destination.DestinationFactory;
 import io.mapsmessaging.engine.destination.DestinationFilter;
@@ -26,10 +27,7 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
-import io.mapsmessaging.engine.destination.subscription.tasks.MetricsSubscriptionTask;
-import io.mapsmessaging.engine.destination.subscription.tasks.SchemaSubscriptionTask;
-import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTask;
-import io.mapsmessaging.engine.destination.subscription.tasks.UnsubscribeTask;
+import io.mapsmessaging.engine.destination.subscription.tasks.*;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.tasks.ListResponse;
@@ -39,10 +37,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,7 +124,6 @@ public class SubscriptionController implements DestinationManagerListener {
   public void shutdown(){
     logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
-
     closeSubscriptions(activeSubscriptions, true);
     closeSubscriptions(schemaSubscriptions, true);
     subscriptions.clear();
@@ -177,22 +171,31 @@ public class SubscriptionController implements DestinationManagerListener {
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
+    boolean found;
     if (id.toLowerCase().startsWith("$schema")) {
-      String destinationName = "$Schema"+id.substring("$schema".length() + 1);
-      for (Entry<DestinationImpl, Subscription> entry : schemaSubscriptions.entrySet()) {
-        if (entry.getKey().getFullyQualifiedNamespace().equals(destinationName)) {
-          schemaSubscriptions.remove(entry.getKey());
-          return true;
-        }
-      }
+      found = delSchemaSubscription(id);
+    } else {
+      found = delNormalSubscription(id);
     }
-    DestinationSet destinationSet = subscriptions.remove("$Normal"+id);
+    return found;
+  }
+
+  private boolean delNormalSubscription(String id) {
+    boolean found = false;
+    if (!id.startsWith("$")) {
+      id = "$Normal" + id;
+    }
+    DestinationSet destinationSet = subscriptions.remove(id);
     if (destinationSet != null) {
       handleUnsubscribeSet(id, destinationSet);
-      return true;
+      found = true;
     }
+    return found;
+  }
 
-    return false;
+  private boolean delSchemaSubscription(String id) {
+    String destinationName = "$Schema"+id.substring("$schema".length() );
+    return delNormalSubscription(destinationName);
   }
 
   /**
@@ -200,11 +203,20 @@ public class SubscriptionController implements DestinationManagerListener {
    */
   @Override
   public void created(DestinationImpl destinationImpl) {
-    List<SubscriptionContext> interested = new ArrayList<>();
-    List<DestinationSet> subscribeList = new ArrayList<>(subscriptions.values());
+    scanForInterest(Collections.unmodifiableCollection(subscriptions.values()), destinationImpl);
+  }
+
+  private void scanForInterest(Collection<DestinationSet> subscribeList, DestinationImpl destinationImpl){
+    List<SubscriptionContext> normalList = new ArrayList<>();
+    List<SubscriptionContext> schemaList = new ArrayList<>();
     for (DestinationSet subscription : subscribeList) {
-      if (subscription.add(destinationImpl)) {
-        interested.add(subscription.getContext());
+      if(subscription.getContext().getDestinationMode().equals(DestinationMode.NORMAL) &&
+         subscription.add(destinationImpl)) {
+        normalList.add(subscription.getContext());
+      }
+      if(subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA) &&
+         subscription.add(destinationImpl)) {
+        schemaList.add(subscription.getContext());
       }
     }
 
@@ -212,11 +224,19 @@ public class SubscriptionController implements DestinationManagerListener {
     // OK we have interest and maybe more than one, lucky that the SubscriptionContext is sorted
     // by QoS
     //
-    if (!interested.isEmpty()) {
+    if (!normalList.isEmpty()) {
       try {
-        createSubscription(interested.get(0), destinationImpl);
+        createSubscription(normalList.get(0), destinationImpl);
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
+      }
+    }
+    if (!schemaList.isEmpty()) {
+      try {
+        SchemaSubscriptionTask subscriptionTask = new SchemaSubscriptionTask(this, schemaList.get(0), destinationImpl, new AtomicLong(0));
+        destinationImpl.submit(subscriptionTask);
+      } catch (Exception e) {
+        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
       }
     }
   }
@@ -226,7 +246,12 @@ public class SubscriptionController implements DestinationManagerListener {
    */
   @Override
   public void deleted(DestinationImpl destinationImpl) {
-    if (activeSubscriptions.containsKey(destinationImpl)) {
+    removeDestination(destinationImpl, activeSubscriptions);
+    removeDestination(destinationImpl, schemaSubscriptions);
+  }
+
+  private void removeDestination(DestinationImpl destinationImpl, Map<DestinationImpl, Subscription> subscriptionMap) {
+    if (subscriptionMap.containsKey(destinationImpl)) {
       //
       // Create a list of destination sets that have this destination in its mapping
       //
@@ -245,7 +270,7 @@ public class SubscriptionController implements DestinationManagerListener {
           clearStructure(destinationImpl, destinationSet);
         }
       }
-      activeSubscriptions.remove(destinationImpl);
+      subscriptionMap.remove(destinationImpl);
     }
   }
 
@@ -340,19 +365,23 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   public Map<String, SubscriptionContext> getSubscriptions() {
-    return new LinkedHashMap<>(contextMap);
+    return Collections.unmodifiableMap(contextMap);
   }
 
   public Subscription get(DestinationImpl destination) {
     return activeSubscriptions.get(destination);
   }
 
+  public Subscription remove(DestinationImpl destination) {
+    return activeSubscriptions.remove(destination);
+  }
+
   public Subscription getSchema(DestinationImpl destination) {
     return schemaSubscriptions.get(destination);
   }
 
-  public Subscription remove(DestinationImpl destination) {
-    return activeSubscriptions.remove(destination);
+  public Subscription removeSchema(DestinationImpl destination) {
+    return schemaSubscriptions.remove(destination);
   }
 
   public void hibernateSubscription(String subscriptionId) {
@@ -386,7 +415,13 @@ public class SubscriptionController implements DestinationManagerListener {
     List<DestinationImpl> lostInterest = new ArrayList<>(destinationSet);
     AtomicLong counter = new AtomicLong(lostInterest.size());
     for (DestinationImpl destinationImpl : lostInterest) {
-      UnsubscribeTask task = new UnsubscribeTask(this, destinationImpl, destinationSet, counter);
+      UnsubscribeTask task;
+      if(id.startsWith("$Schema")){
+        task = new SchemaUnsubscribeTask(this, destinationImpl, destinationSet, counter);
+      }
+      else{
+        task = new UnsubscribeTask(this, destinationImpl, destinationSet, counter);
+      }
       if (destinationImpl.submit(task).isCancelled()) {
         counter.decrementAndGet();
       }
@@ -455,12 +490,12 @@ public class SubscriptionController implements DestinationManagerListener {
       }
     } else {
       // We have received a subscription for an already registered subscription!!!
-      delSubscription(filter);
+      delSubscription(context.getKey());
       context.setReplaced(true);
       return addSubscription(context);
     }
     if (!isReload) {
-      contextMap.put(context.getAlias(), context);
+      contextMap.put(context.getKey(), context);
     }
     return subscription;
   }

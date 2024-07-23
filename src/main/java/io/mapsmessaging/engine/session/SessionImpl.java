@@ -271,6 +271,9 @@ public class SessionImpl {
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         }
+        catch(Throwable th){
+          future.completeExceptionally(th);
+        }
         return created;
       };
       future.completeAsync(() -> {

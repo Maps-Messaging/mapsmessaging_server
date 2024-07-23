@@ -58,7 +58,6 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private Session session;
   private Destination destination;
   private Destination config;
-  private Destination raw;
 
   private SubscribedEventManager subscribedEventManager;
   private SubscribedEventManager displayEventManager;
@@ -88,16 +87,15 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     logger.log(DEVICE_START, device.getName() );
 
     destination = session.findDestination(device.getTopicName(topicNameTemplate+"/data"), DestinationType.TOPIC).get();
-    if(device.enableRaw()) {
-      raw = session.findDestination(device.getTopicName(topicNameTemplate+ "/raw"), DestinationType.TOPIC).get();
-    }
     SchemaConfig schemaConfig = device.getSchema();
     try {
       if(schemaConfig != null) {
         SchemaManager manager = SchemaManager.getInstance();
         boolean found = manager.getAll().stream().anyMatch(configured -> (configured.getSource() != null && configured.getSource().equalsIgnoreCase(schemaConfig.getSource())));
         if(!found) {
-          schemaConfig.setUniqueId(UuidGenerator.getInstance().generate());
+          if (schemaConfig.getUniqueId() == null || schemaConfig.getUniqueId().isEmpty()) {
+            schemaConfig.setUniqueId(UuidGenerator.getInstance().generate());
+          }
           MessageBuilder messageBuilder = new MessageBuilder();
           messageBuilder.setOpaqueData(schemaConfig.pack().getBytes());
           destination.updateSchema(schemaConfig, messageBuilder.build());

@@ -75,7 +75,8 @@ public class DeviceManager implements ServiceManager, Agent {
         manager = null;
       }
     } catch (Throwable th) {
-      th.printStackTrace();
+      manager = null;
+      logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_FAILED, th);
     }
 
     deviceBusManager = manager;

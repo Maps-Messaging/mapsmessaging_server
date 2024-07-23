@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class Session {
       String tmp = destinationName;
       DestinationType tmpMeta = type;
       if (tmp.startsWith(SCHEMA_NAME)) {
-        tmp = tmp.substring(SCHEMA_NAME.length());
+        tmp = tmp.substring(SCHEMA_NAME.length()-1);
         tmpMeta = DestinationType.SCHEMA;
       } else if (tmp.startsWith(METRICS_NAME)) {
         tmp = tmp.substring(METRICS_NAME.length());
@@ -260,6 +260,7 @@ public class Session {
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
       if (subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA)) {
         normalisedName = SCHEMA_NAME + normalisedName;
+        normalisedName = normalisedName.replace("//", "/");
       }
       MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);
       listener.sendMessage(event);

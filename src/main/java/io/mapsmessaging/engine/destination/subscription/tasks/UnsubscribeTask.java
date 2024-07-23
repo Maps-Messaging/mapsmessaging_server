@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,14 +24,13 @@ import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.engine.tasks.BooleanResponse;
 import io.mapsmessaging.engine.tasks.EngineTask;
 import io.mapsmessaging.engine.tasks.Response;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class UnsubscribeTask extends EngineTask {
 
   private final DestinationImpl destination;
-  private final SubscriptionController controller;
+  protected final SubscriptionController controller;
   private final DestinationSet destinationSet;
   private final AtomicLong counter;
 
@@ -43,15 +42,23 @@ public class UnsubscribeTask extends EngineTask {
     this.counter = counter;
   }
 
+  protected Subscription lookupSubscription(DestinationImpl destination) {
+    return  controller.get(destination);
+  }
+
+  protected Subscription removeDestination(DestinationImpl destination) {
+    return  controller.remove(destination);
+  }
+
   @Override
   public Response taskCall() throws IOException {
     Subscription subscription;
     try {
-      subscription = controller.get(destination);
+      subscription =lookupSubscription(destination);
       if (subscription != null) {
         subscription.removeContext(destinationSet.getContext());
         if (subscription.getContexts().isEmpty()) {
-          controller.remove(destination);
+          removeDestination(destination);
           subscription.delete();
         }
       }

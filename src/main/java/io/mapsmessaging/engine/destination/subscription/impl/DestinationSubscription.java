@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,12 +33,11 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
-import lombok.Getter;
-
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
+import lombok.Getter;
 
 /**
  * Note: This is a complex class that maintains the state of events for a specific subscription to a specific destination.
@@ -47,13 +46,16 @@ public class DestinationSubscription extends Subscription {
 
   @Getter
   private final AcknowledgementController acknowledgementController;
+  @Getter
   private final MessageDeliveryCompletionTask completionTask;
 
   protected final Logger logger;
   private final SubscriptionJMX mbean;
   private final String sessionId;
 
+  @Getter
   protected final DestinationImpl destinationImpl;
+  @Getter
   protected final MessageStateManager messageStateManager;
 
   protected DestinationSubscription activeSubscription;
@@ -62,8 +64,11 @@ public class DestinationSubscription extends Subscription {
 
   protected long messagesIgnored;
   protected long messagesRegistered;
+  @Getter
   protected long messagesSent;
+  @Getter
   protected long messagesAcked;
+  @Getter
   protected long messagesRolledBack;
   protected long messagesExpired;
 
@@ -160,10 +165,6 @@ public class DestinationSubscription extends Subscription {
     return 1;
   }
 
-  public MessageDeliveryCompletionTask getCompletionTask() {
-    return completionTask;
-  }
-
   @Override
   public String getSessionId() {
     return sessionId;
@@ -172,18 +173,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public String getName() {
     return destinationImpl.getFullyQualifiedNamespace();
-  }
-
-  public long getMessagesSent() {
-    return messagesSent;
-  }
-
-  public long getMessagesAcked() {
-    return messagesAcked;
-  }
-
-  public long getMessagesRolledBack() {
-    return messagesRolledBack;
   }
 
   public int getInFlight() {
@@ -203,10 +192,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public Queue<Long> getAll() {
     return messageStateManager.getAll();
-  }
-
-  public DestinationImpl getDestinationImpl() {
-    return destinationImpl;
   }
 
   public boolean hasAtRestMessages() {
@@ -253,10 +238,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public void rollbackReceived(long messageId) {
     handleTransaction(false, messageId);
-  }
-
-  public MessageStateManager getMessageStateManager() {
-    return messageStateManager;
   }
 
   @Override
@@ -421,7 +402,11 @@ public class DestinationSubscription extends Subscription {
   }
 
   protected boolean isReady() {
-    return (!isPaused && !hibernating && messageStateManager.hasAtRestMessages() && !getContexts().isEmpty() && acknowledgementController.canSend());
+    return (!isPaused &&
+        !hibernating &&
+        messageStateManager.hasAtRestMessages() &&
+        !isContextEmpty() &&
+        acknowledgementController.canSend());
   }
 
   // </editor-fold>

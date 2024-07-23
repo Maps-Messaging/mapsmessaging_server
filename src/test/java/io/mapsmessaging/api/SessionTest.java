@@ -1,18 +1,17 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -98,8 +97,9 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
   @Test
   @DisplayName("Simple session expiry tests")
   public void sessionExpiryTest(TestInfo testInfo) throws Exception {
-    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this);
-
+    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this, true);
+    close(session);
+    session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this);
     Assertions.assertTrue(hasSessions());
 
     SubscriptionContextBuilder subContectBuilder = new SubscriptionContextBuilder("topic1", ClientAcknowledgement.AUTO);
@@ -108,13 +108,14 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
 
     close(session);
     Assertions.assertFalse(hasSessions());
-    Assertions.assertTrue(SessionManagerTest.getInstance().hasIdleSessions());
+    int size = SessionManagerTest.getInstance().getIdleSessions().size();
+    Assertions.assertTrue(size>0);
     SubscriptionController subscriptionController = SessionManagerTest.getInstance().getIdleSubscriptions(testInfo.getTestMethod().get().getName());
     Assertions.assertNotNull(subscriptionController);
     Assertions.assertEquals(subscriptionController.getSubscriptions().size(), 1);
-    Assertions.assertNotNull(subscriptionController.getSubscriptions().get("topic1"));
+    Assertions.assertNotNull(subscriptionController.getSubscriptions().get("$Normaltopic1"));
     TimeUnit.SECONDS.sleep(3);
-    Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
+    Assertions.assertTrue(SessionManagerTest.getInstance().getIdleSessions().size() < size);
   }
 
   @Test

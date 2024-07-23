@@ -37,9 +37,9 @@ public class SchemaSubscription extends Subscription {
   private final SubscribedEventManager eventManager;
   private String sessionId;
 
-  public SchemaSubscription(SessionImpl sessionImpl, DestinationImpl destinationImpl, SubscriptionContext context) {
+  public SchemaSubscription(SessionImpl sessionImpl, String sessionId, DestinationImpl destinationImpl, SubscriptionContext context) {
     super(sessionImpl, context);
-    sessionId = sessionImpl.getName();
+    this.sessionId = sessionId;
     this.destinationImpl = destinationImpl;
     eventManager = new SchemaSubscribedEventManager(this);
     destinationImpl.addSchemaSubscription(this);

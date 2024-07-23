@@ -60,6 +60,10 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     return new ArrayList<>(contextList);
   }
 
+  public boolean isContextEmpty(){
+    return contextList.isEmpty();
+  }
+
   public void removeContext(SubscriptionContext context) {
     contextList.remove(context);
   }
