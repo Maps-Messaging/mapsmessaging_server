@@ -17,6 +17,7 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.config.protocol.LinkConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
@@ -100,7 +101,7 @@ public class Connected extends State {
     if(!namespace.startsWith("/")){
       namespace = "/"+namespace;
     }
-    return "$schema"+namespace;
+    return DestinationMode.SCHEMA.getNamespace() + namespace;
   }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 
 package io.mapsmessaging.api;
 
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
+import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
 
 public class Schema extends Destination {
 
@@ -52,6 +52,6 @@ public class Schema extends Destination {
 
   @Override
   public String getFullyQualifiedNamespace() {
-    return "$schema/" + super.getFullyQualifiedNamespace();
+    return DestinationMode.SCHEMA.getNamespace() + super.getFullyQualifiedNamespace();
   }
 }

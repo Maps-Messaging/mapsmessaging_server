@@ -18,6 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -81,8 +82,8 @@ public class PublishListener extends PacketListener {
             String check = remote.getValue();
             String tmp = remote.getKey().substring(0, remote.getKey().length()-1);
             if(lookup.startsWith(tmp)){
-              if(lookup.toLowerCase().startsWith("$schema")){
-                lookup = lookup.substring("$schema".length());
+              if (lookup.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
+                lookup = lookup.substring(DestinationMode.SCHEMA.getNamespace().length());
               }
               lookup = check + lookup;
               lookup = lookup.replace("#", "");
@@ -104,7 +105,7 @@ public class PublishListener extends PacketListener {
     MQTTPacket response = getResponse(publish);
     String lookup =parseForLookup(protocol, publish);
 
-    if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
+    if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
       processValidDestinations(publish, session, lookup, protocol, response, endPoint);
     } else {
       return response;

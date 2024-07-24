@@ -41,9 +41,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class Session {
 
-  private static final String SCHEMA_NAME = "$schema/";
-  private static final String METRICS_NAME = "$metrics/";
-
   private final SessionImpl sessionImpl;
   private final MessageListener listener;
   private final Map<String, Destination> destinations;
@@ -97,12 +94,9 @@ public class Session {
     if (result == null) {
       String tmp = destinationName;
       DestinationType tmpMeta = type;
-      if (tmp.startsWith(SCHEMA_NAME)) {
-        tmp = tmp.substring(SCHEMA_NAME.length()-1);
+      if (tmp.startsWith(DestinationMode.SCHEMA.getNamespace())) {
+        tmp = tmp.substring(DestinationMode.SCHEMA.getNamespace().length());
         tmpMeta = DestinationType.SCHEMA;
-      } else if (tmp.startsWith(METRICS_NAME)) {
-        tmp = tmp.substring(METRICS_NAME.length());
-        tmpMeta = DestinationType.METRICS;
       }
       String name = tmp;
       DestinationType meta = tmpMeta;
@@ -259,7 +253,7 @@ public class Session {
       }
       String normalisedName = sessionImpl.absoluteToNormalised(destination);
       if (subscription.getContext().getDestinationMode().equals(DestinationMode.SCHEMA)) {
-        normalisedName = SCHEMA_NAME + normalisedName;
+        normalisedName = subscription.getContext().getDestinationMode().getNamespace() + normalisedName;
         normalisedName = normalisedName.replace("//", "/");
       }
       MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);

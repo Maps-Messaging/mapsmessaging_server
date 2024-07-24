@@ -18,6 +18,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -34,14 +35,13 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.TopicAliasMapping;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.SneakyThrows;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 
 public class PublishListener5 extends PacketListener5 {
 
@@ -128,7 +128,7 @@ public class PublishListener5 extends PacketListener5 {
       outstanding.add(id);
     }
 
-    if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith("$schema")) {
+    if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
       TopicAliasMapping topicAliasMapping = ((MQTT5Protocol) protocol).getClientTopicAliasMapping();
       String destinationName = publish.getDestinationName();
       if (destinationName == null || destinationName.isEmpty()) {

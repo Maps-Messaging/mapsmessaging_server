@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.Transaction;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -29,7 +30,6 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -52,7 +52,9 @@ public class PublishListener extends PacketListener {
       qos = QualityOfService.AT_MOST_ONCE;
     }
     String topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
-    if (topicName != null && (!topicName.startsWith("$") || topicName.toLowerCase().startsWith("$schema"))) {
+    if (topicName != null
+        && (!topicName.startsWith("$")
+            || topicName.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace()))) {
       processValidMessage(session, qos, publish, protocol, topicName);
     }
     return null;

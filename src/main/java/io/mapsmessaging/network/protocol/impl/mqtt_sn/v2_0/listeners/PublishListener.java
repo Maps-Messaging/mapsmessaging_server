@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.LONG_TOPIC_NAME;
+
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.Transaction;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
@@ -34,13 +37,10 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.CompletableFuture;
-
-import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.LONG_TOPIC_NAME;
 
 public class PublishListener extends PacketListener {
 
@@ -64,7 +64,7 @@ public class PublishListener extends PacketListener {
       topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), publish.getTopicId(), publish.getTopicIdType());
     }
 
-    if (topicName != null && (!topicName.startsWith("$") || topicName.toLowerCase().startsWith("$schema"))) {
+    if (topicName != null && (!topicName.startsWith("$") || topicName.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace()))) {
       processValidMessage(session, qos, publish, protocol, topicName);
     }
     return null;

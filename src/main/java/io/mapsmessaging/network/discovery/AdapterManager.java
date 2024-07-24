@@ -19,6 +19,7 @@ package io.mapsmessaging.network.discovery;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -101,7 +102,7 @@ public class AdapterManager {
         map.put("queue support", "true");
         map.put("shared subscription", "true");
         map.put("schema support", "true");
-        map.put("schema name", "$schema");
+        map.put("schema name", DestinationMode.SCHEMA.getNamespace());
         map.put("server name", MessageDaemon.getInstance().getId());
         map.put("server uuid", MessageDaemon.getInstance().getUuid().toString());
         map.put("version", BuildInfo.getBuildVersion());

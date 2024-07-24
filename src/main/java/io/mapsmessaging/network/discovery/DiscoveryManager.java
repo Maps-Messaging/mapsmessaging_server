@@ -21,6 +21,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REG
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.config.DiscoveryManagerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -134,7 +135,7 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
       Map<String, String> map = new LinkedHashMap<>();
       map.put("server name", MessageDaemon.getInstance().getId());
       map.put("schema support", "true");
-      map.put("schema prefix", "$schema");
+      map.put("schema prefix", DestinationMode.SCHEMA.getNamespace());
       map.put("version", BuildInfo.getBuildVersion());
       map.put("date", BuildInfo.getBuildDate());
       map.put("restApi", "true");
