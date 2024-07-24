@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 
 package io.mapsmessaging.api.features;
 
+import io.mapsmessaging.engine.destination.subscription.modes.NormalSubscriptionModeManager;
+import io.mapsmessaging.engine.destination.subscription.modes.SchemaSubscriptionModeManager;
+import io.mapsmessaging.engine.destination.subscription.modes.SubscriptionModeManager;
 import lombok.Getter;
 
 public enum DestinationMode {
-  NORMAL(0, "Normal", "", "Normal Event publish/subscription", true),
-  SCHEMA(1, "Schema", "$schema/", "Access to the destinations schema data", true),
-  METRICS(2, "Metrics", "$metrics/", "Access to the destinations metrics", false);
+  NORMAL(0, "Normal", "$normal", "Normal Event publish/subscription", true),
+  SCHEMA(1, "Schema", "$schema", "Access to the destinations schema data", true);
 
 
   @Getter
@@ -44,6 +46,16 @@ public enum DestinationMode {
     this.publishable = publishable;
   }
 
+  public SubscriptionModeManager getSubscriptionModeManager(){
+    if(id == 0){
+      return new NormalSubscriptionModeManager();
+    }
+    else if(id == 1){
+      return new SchemaSubscriptionModeManager();
+    }
+    return new NormalSubscriptionModeManager();
+  }
+
   public static DestinationMode getInstance(int id) {
     switch (id) {
       case 0:
@@ -51,9 +63,6 @@ public enum DestinationMode {
 
       case 1:
         return SCHEMA;
-
-      case 2:
-        return METRICS;
 
       default:
         throw new IllegalArgumentException("Invalid handestination  mode value supplied:" + id);

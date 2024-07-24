@@ -30,15 +30,13 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
-
-import javax.security.auth.login.LoginException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-
+import javax.security.auth.login.LoginException;
 
 //
 // This class locks the specific hashed pipeline for Session creation and deletion
@@ -172,8 +170,8 @@ public class SessionManagerPipeLine {
     subscriptionController = sessionImpl.getSubscriptionController();
     if (expiry > 0) {
       subscriptionController.hibernateAll();
-      Future<?> schedule = SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
-      subscriptionController.setTimeout(schedule);
+      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
+      subscriptionController.setTimeout(sched);
       disconnectedSessions.increment();
     } else {
       closeSubscriptionController(subscriptionController);

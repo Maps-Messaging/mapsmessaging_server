@@ -19,6 +19,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt5;
 
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.test.WaitForState;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
@@ -29,10 +32,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class SimpleOverlapTest extends MQTTBaseTest {
 
@@ -109,6 +108,7 @@ class SimpleOverlapTest extends MQTTBaseTest {
 
       @Override
       public void messageArrived(String s, MqttMessage mqttMessage) {
+        System.err.println("Arrived for "+s);
         counter.incrementAndGet();
       }
 
@@ -208,6 +208,7 @@ class SimpleOverlapTest extends MQTTBaseTest {
     // Lets see if there are any more updates coming
     WaitForState.waitFor(50, TimeUnit.MILLISECONDS, () -> counter.get() != expected);
     boolean response = counter.get() == expected;
+    System.err.println("Counter::"+counter.get());
     counter.set(0);
     return response;
   }

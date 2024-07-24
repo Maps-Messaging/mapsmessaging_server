@@ -21,10 +21,12 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.ProtocolMessageListener;
 import io.mapsmessaging.engine.session.SessionManagerTest;
 import io.mapsmessaging.test.WaitForState;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +85,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
 
   @Test
   @DisplayName("Simple session close on duplication tests")
-  public void sessionCloseOnDuplicateTest(TestInfo testInfo) throws Exception {
+  void sessionCloseOnDuplicateTest(TestInfo testInfo) throws Exception {
     Session session1 = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);
     Assertions.assertTrue(hasSessions());
     Assertions.assertFalse(session1.isClosed());
@@ -96,7 +98,7 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
 
   @Test
   @DisplayName("Simple session expiry tests")
-  public void sessionExpiryTest(TestInfo testInfo) throws Exception {
+  void sessionExpiryTest(TestInfo testInfo) throws Exception {
     Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this, true);
     close(session);
     session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, true, this);
@@ -112,15 +114,17 @@ public class SessionTest extends MessageAPITest implements ProtocolMessageListen
     Assertions.assertTrue(size>0);
     SubscriptionController subscriptionController = SessionManagerTest.getInstance().getIdleSubscriptions(testInfo.getTestMethod().get().getName());
     Assertions.assertNotNull(subscriptionController);
-    Assertions.assertEquals(subscriptionController.getSubscriptions().size(), 1);
-    Assertions.assertNotNull(subscriptionController.getSubscriptions().get("$Normaltopic1"));
+    Map<String, SubscriptionContext> map = subscriptionController.getSubscriptions();
+    Assertions.assertEquals(map.size(), 1);
+    SubscriptionContext context = map.get("$normaltopic1");
+    Assertions.assertNotNull(context);
     TimeUnit.SECONDS.sleep(3);
     Assertions.assertTrue(SessionManagerTest.getInstance().getIdleSessions().size() < size);
   }
 
   @Test
   @DisplayName("Simple session keep alive state")
-  public void sessionKeepAlive(TestInfo testInfo) throws Exception {
+  void sessionKeepAlive(TestInfo testInfo) throws Exception {
     receivedKeepAlive.set(0);
     Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 12, true, this);
     Assertions.assertTrue(hasSessions());

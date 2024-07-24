@@ -186,7 +186,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
   public String getKey(){
     String key = getCorrectedPath();
-    key = "$"+destinationMode.getName()+key;
+    key = destinationMode.getNamespace()+key;
     return key.replace("//", "/");
 
   }
@@ -261,10 +261,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   private void parseName() {
     if (destinationName.startsWith(DestinationMode.SCHEMA.getNamespace())) {
       destinationMode = DestinationMode.SCHEMA;
-      destinationName = destinationName.substring(DestinationMode.SCHEMA.getNamespace().length()-1);
-    } else if (destinationName.startsWith(DestinationMode.METRICS.getNamespace())) {
-      destinationMode = DestinationMode.METRICS;
-      destinationName = destinationName.substring(DestinationMode.METRICS.getNamespace().length());
+      destinationName = destinationName.substring(DestinationMode.SCHEMA.getNamespace().length());
     } else {
       destinationMode = DestinationMode.NORMAL;
     }
