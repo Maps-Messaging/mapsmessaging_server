@@ -1013,7 +1013,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.1.5</version>
+      <version>6.1.11</version>
       <scope>test</scope>
     </dependency>
 
