@@ -29,16 +29,10 @@ import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -47,6 +41,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class ProtocolImpl implements SelectorCallback, MessageListener, Timeoutable {
 
@@ -65,6 +65,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   protected final LinkedMovingAverages sentMessageAverages;
   protected final LinkedMovingAverages receivedMessageAverages;
   protected final Map<String, Transformer> destinationTransformerMap;
+  protected final Map<String, ParserExecutor> parserLookup;
   protected final ProtocolJMX mbean;
 
   @Setter
@@ -86,6 +87,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     connected = false;
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
+    parserLookup = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -102,6 +104,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     connected = false;
     completed = false;
     destinationTransformerMap = new ConcurrentHashMap<>();
+    parserLookup = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
   }
 
@@ -122,10 +125,13 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     endPoint.close();
   }
 
+  public ParserExecutor getParser(String resource){
+    return parserLookup.get(resource);
+  }
   public void connect(String sessionId, String username, String password) throws IOException {
   }
 
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) throws IOException {
   }
 
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable String selector, @Nullable Transformer transformer)
