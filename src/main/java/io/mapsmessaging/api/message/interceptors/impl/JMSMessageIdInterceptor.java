@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,20 +15,16 @@
  *
  */
 
-package io.mapsmessaging.api.message.interceptors;
+package io.mapsmessaging.api.message.interceptors.impl;
 
-import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.interceptors.Interceptor;
 
-public class JMSPriorityInterceptor implements Interceptor {
+public class JMSMessageIdInterceptor implements Interceptor {
 
   @Override
   public Object get(Message message) {
-    Priority priority = message.getPriority();
-    if (priority == null) {
-      return 0;
-    }
-    return priority.getValue();
+    return message.getKey();
   }
 }
 

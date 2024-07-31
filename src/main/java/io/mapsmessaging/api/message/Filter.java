@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,12 +23,15 @@ import io.mapsmessaging.schemas.formatters.MessageFormatter;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class Filter {
 
-  private static final Filter instance = new Filter();
+  private static class Holder {
+    static final Filter INSTANCE = new Filter();
+  }
 
   public static Filter getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
 
   public boolean filterMessage(ParserExecutor selector, Message message, DestinationImpl destination) {

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,25 +19,32 @@ package io.mapsmessaging.api.message.interceptors;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-
+import io.mapsmessaging.api.message.interceptors.impl.*;
 import java.util.LinkedHashMap;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class FieldInterceptor {
-
-  private static final FieldInterceptor instance = new FieldInterceptor();
-
-  public static FieldInterceptor getInstance() {
-    return instance;
+  private static class Holder {
+    static final FieldInterceptor INSTANCE = new FieldInterceptor();
   }
 
+  public static FieldInterceptor getInstance() {
+    return Holder.INSTANCE;
+  }
 
   private final LinkedHashMap<String, Interceptor> mapLookup;
 
   private FieldInterceptor() {
     mapLookup = new LinkedHashMap<>();
+    mapLookup.put("JMSMessageID", new JMSMessageIdInterceptor());
+    mapLookup.put("JMSTimestamp", new JMSTimestampInterceptor());
+    mapLookup.put("JMSCorrelationID", new JMSCorrelationIdInterceptor());
+    mapLookup.put("JMSReplyTo", new JMSReplyToInterceptor());
+    mapLookup.put("JMSDeliveryMode", new JMSDeliveryModeInterceptor());
+    mapLookup.put("JMSType", new JMSTypeInterceptor());
+    mapLookup.put("JMSExpiration", new JMSExpirationInterceptor());
     mapLookup.put("JMSPriority", new JMSPriorityInterceptor());
-    mapLookup.put("JMSTimestamp", new JMSTimestamp());
-    mapLookup.put("JMSDeliveryMode", new JMSDeliveryMode());
+    mapLookup.put("MapsMsgPayload", new OpaqueDataInterceptor());
   }
 
 
