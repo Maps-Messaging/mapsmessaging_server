@@ -24,6 +24,8 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +55,7 @@ public class Connected extends State {
 
       try {
         if (direction.equalsIgnoreCase("pull")) {
-          subscribeRemote(remote, local, transformer, schema);
+          subscribeRemote(remote, local, selector, transformer, schema);
         } else if (direction.equalsIgnoreCase("push")) {
           if(remote.endsWith("#")){
             remote = remote.substring(0, remote.length()-1);
@@ -85,10 +87,19 @@ public class Connected extends State {
     }
   }
 
-  private void subscribeRemote(String remote, String local, Transformer transformer, boolean includeSchema) throws IOException {
-    endPointConnection.getConnection().subscribeRemote(remote, local, transformer);
+  private void subscribeRemote(String remote, String local, String selector, Transformer transformer, boolean includeSchema) throws IOException {
+    ParserExecutor parser = null;
+    if(selector != null && !selector.isEmpty()){
+      try {
+        parser = SelectorParser.compile(selector);
+      } catch (Throwable e) {
+        e.printStackTrace();
+        throw new IOException("Unable to parse selector", e);
+      }
+    }
+    endPointConnection.getConnection().subscribeRemote(remote, local, parser, transformer);
     if(includeSchema){
-      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), transformer);
+      endPointConnection.getConnection().subscribeRemote(constructSchema(remote), constructSchema(local), null, transformer);
     }
   }
 

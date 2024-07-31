@@ -35,6 +35,7 @@ import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
 import io.mapsmessaging.network.protocol.impl.nmea.types.PositionType;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -104,7 +105,7 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
     registeredSentences.put(resource, new SentenceMapping(mappedResource, transformer));
   }
 

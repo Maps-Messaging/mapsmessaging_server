@@ -28,16 +28,16 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginException;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LocalLoopProtocol extends ProtocolImpl {
 
@@ -112,7 +112,7 @@ public class LocalLoopProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) throws IOException {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) throws IOException {
     subscribeLocal(resource, mappedResource, null, transformer);
   }
 

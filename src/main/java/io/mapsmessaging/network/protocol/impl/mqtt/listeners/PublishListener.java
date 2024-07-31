@@ -31,6 +31,7 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -142,6 +143,10 @@ public class PublishListener extends PacketListener {
   private void processMessage(Publish publish, ProtocolImpl protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
     Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace());
     Message message = createMessage(publish.getPayload(), publish.getPriority(), publish.isRetain(), publish.getQos(), protocol.getTransformation(), transformer);
+    ParserExecutor parserExecutor = protocol.getParser(publish.getDestinationName());
+    if(parserExecutor != null && !parserExecutor.evaluate(message)){
+      return;
+    }
     if (response != null) {
       Transaction transaction = null;
       try {

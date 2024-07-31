@@ -433,7 +433,7 @@ public class MessageDaemon {
    * @throws UnknownHostException If the hostname of the local machine cannot be determined.
    */
   private String generateUniqueId() {
-    String env = SystemProperties.getInstance().getEnvProperty("SERVER_ID");
+    String env = SystemProperties.getInstance().getProperty("SERVER_ID", SystemProperties.getInstance().getEnvProperty("SERVER_ID"));
     if (env != null) {
       return env;
     }

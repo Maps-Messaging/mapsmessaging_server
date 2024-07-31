@@ -38,6 +38,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
 import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import javax.security.auth.Subject;
 import lombok.Getter;
@@ -106,7 +107,7 @@ public class StompProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
     stateEngine.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);

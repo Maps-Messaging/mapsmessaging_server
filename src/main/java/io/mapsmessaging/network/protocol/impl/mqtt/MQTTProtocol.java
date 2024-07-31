@@ -39,6 +39,7 @@ import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
@@ -122,10 +123,13 @@ public class MQTTProtocol extends ProtocolImpl {
   }
 
   @Override
-  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable Transformer transformer) {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) {
     topicNameMapping.put(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(mappedResource, transformer);
+    }
+    if(parser != null){
+      parserLookup.put(resource, parser);
     }
     Subscribe subscribe = new Subscribe();
     subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
