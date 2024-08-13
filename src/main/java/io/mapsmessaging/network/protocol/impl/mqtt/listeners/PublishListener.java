@@ -42,7 +42,7 @@ import lombok.SneakyThrows;
 
 public class PublishListener extends PacketListener {
 
-  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation, Transformer transformer) {
+  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation, Transformer transformer, String schemaId) {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "4");
@@ -55,6 +55,7 @@ public class PublishListener extends PacketListener {
         .setOpaqueData(msg)
         .setMeta(meta)
         .setQoS(qos)
+        .setSchemaId(schemaId)
         .storeOffline(qos.isStoreOffLine())
         .setTransformation(transformation)
         .setDestinationTransformer(transformer)
@@ -142,7 +143,15 @@ public class PublishListener extends PacketListener {
 
   private void processMessage(Publish publish, ProtocolImpl protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
     Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace());
-    Message message = createMessage(publish.getPayload(), publish.getPriority(), publish.isRetain(), publish.getQos(), protocol.getTransformation(), transformer);
+    Message message = createMessage(
+        publish.getPayload(),
+        publish.getPriority(),
+        publish.isRetain(),
+        publish.getQos(),
+        protocol.getTransformation(),
+        transformer,
+        destination.getSchema().getUniqueId()
+    );
     ParserExecutor parserExecutor = protocol.getParser(publish.getDestinationName());
     if(parserExecutor != null && !parserExecutor.evaluate(message)){
       return;

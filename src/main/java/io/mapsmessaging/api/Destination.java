@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
 
 /**
  * Generic destination class
@@ -59,6 +59,11 @@ public class Destination implements BaseDestination {
   public Message getRetained() throws IOException {
     return destinationImpl.getMessage(destinationImpl.getRetainedIdentifier());
   }
+
+  public Schema getSchema(){
+    return destinationImpl.getSchema();
+  }
+
 
   public void updateSchema(SchemaConfig schemaConfig, Message message) throws IOException {
     destinationImpl.updateSchema(schemaConfig, message);

@@ -22,7 +22,12 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.Constants;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.location.LocationManager;
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.schemas.formatters.ParsedObject;
 import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.storage.Storable;
 import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
@@ -92,6 +97,8 @@ public class Message implements IdentifierResolver, Storable {
   private long identifier;
   // </editor-fold>
 
+
+  private transient ParsedObject parsedObject;
 
   public Message(MessageBuilder builder) {
     flags = new BitSet(8);
@@ -327,10 +334,26 @@ public class Message implements IdentifierResolver, Storable {
         return data.getData();
       }
     }
+    Object val = null;
     if (meta != null) {
-      return meta.get(key);
+      val = meta.get(key);
     }
-    return null;
+    if(parsedObject == null && val == null && schemaId != null){
+      SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
+      if(config != null){
+        try {
+          MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+          parsedObject = formatter.parse(getOpaqueData());
+        } catch (IOException e) {
+          parsedObject = null;
+        }
+      }
+    }
+    if (parsedObject != null) {
+      val = parsedObject.get(key);
+    }
+
+    return val;
   }
 
   public boolean isRetain() {
