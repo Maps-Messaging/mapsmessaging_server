@@ -249,6 +249,134 @@
       </repositories>
     </profile>
     <profile>
+      <id>snapshot-ml</id>
+      <properties>
+        <branchName>development</branchName>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/main/java-ml</source>
+                  </sources>
+                </configuration>
+              </execution>
+
+              <execution>
+                <id>add-test-source</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <!-- Add the test ML-specific sources -->
+                    <source>src/test/java-ml</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <dependencies>
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>authentication_library</artifactId>
+          <version>1.0.6-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>simple_logging</artifactId>
+          <version>2.0.13-SNAPSHOT</version>
+        </dependency>
+
+        <!-- JMS Selector logic module -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>jms_selector_parser_ml</artifactId>
+          <version>1.1.16-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Naturally order long collection -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>naturally_ordered_long_collections</artifactId>
+          <version>1.1.10-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Non Blocking Task Queue module -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>non_block_task_scheduler</artifactId>
+          <version>2.1.10-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>configuration_library</artifactId>
+          <version>1.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>dynamic_storage</artifactId>
+          <version>2.4.13-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>schemas</artifactId>
+          <version>2.1.5-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>device_library</artifactId>
+          <version>1.0.9-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+          <groupId>org.graalvm.buildtools</groupId>
+          <artifactId>graalvm-reachability-metadata</artifactId>
+          <version>0.9.28</version>
+          <classifier>repository</classifier>
+          <type>zip</type>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mlflow/mlflow-client -->
+        <dependency>
+          <groupId>org.mlflow</groupId>
+          <artifactId>mlflow-client</artifactId>
+          <version>2.15.1</version>
+        </dependency>
+
+
+
+      </dependencies>
+      <repositories>
+        <repository>
+          <id>maps_snapshots</id>
+          <name>maps_snapshot_repository</name>
+          <url>https://repository.mapsmessaging.io:8081/repository/maps_snapshots/</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+
+    <profile>
       <id>release</id>
       <properties>
         <branchName>main</branchName>
@@ -309,6 +437,115 @@
           <artifactId>device_library</artifactId>
           <version>1.0.8</version>
         </dependency>
+      </dependencies>
+
+    </profile>
+    <profile>
+      <id>release-ml</id>
+      <properties>
+        <branchName>main</branchName>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <id>add-source</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/main/java-ml</source>
+                  </sources>
+                </configuration>
+              </execution>
+
+              <execution>
+                <id>add-test-source</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <!-- Add the test ML-specific sources -->
+                    <source>src/test/java-ml</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+
+      <dependencies>
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>authentication_library</artifactId>
+          <version>1.0.5</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>simple_logging</artifactId>
+          <version>2.0.12</version>
+        </dependency>
+
+        <!-- JMS Selector logic module -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>jms_selector_parser_ml</artifactId>
+          <version>1.1.16-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>configuration_library</artifactId>
+          <version>1.0.1-SNAPSHOT</version>
+        </dependency>
+        <!-- Naturally order long collection -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>naturally_ordered_long_collections</artifactId>
+          <version>1.1.9</version>
+        </dependency>
+
+        <!-- Non Blocking Task Queue module -->
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>non_block_task_scheduler</artifactId>
+          <version>2.1.9</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>dynamic_storage</artifactId>
+          <version>2.4.12</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>schemas</artifactId>
+          <version>2.1.4</version>
+        </dependency>
+
+        <dependency>
+          <groupId>io.mapsmessaging</groupId>
+          <artifactId>device_library</artifactId>
+          <version>1.0.8</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.mlflow/mlflow-client -->
+        <dependency>
+          <groupId>org.mlflow</groupId>
+          <artifactId>mlflow-client</artifactId>
+          <version>2.15.1</version>
+        </dependency>
+
       </dependencies>
 
     </profile>
