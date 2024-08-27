@@ -22,20 +22,22 @@ export GITHUB_REPO=mapsmessaging_server
 export VERSION_NAME=$POM_VERSION
 export PROJECT_NAME=message_daemon
 
-export PATH=/root/go/bin:$PATH
-
-echo "Exporting token and enterprise api to enable github-release tool"
+# Set the GitHub token for authentication (this is automatically picked up by `gh` if it's set)
 export GITHUB_TOKEN=$1
 
-echo "Deleting release from github before creating new one"
-github-release delete --user ${GITHUB_ORGANIZATION} --repo ${GITHUB_REPO} --tag ${VERSION_NAME} || true
+# Delete the release from GitHub before creating a new one
+echo "Deleting release from GitHub before creating a new one"
+gh release delete ${VERSION_NAME} --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --yes || true
 sleep 5
 
-echo "Creating a new release in github"
-github-release release --user ${GITHUB_ORGANIZATION} --repo ${GITHUB_REPO} --tag ${VERSION_NAME} --name "${VERSION_NAME}"
+# Create a new release in GitHub
+echo "Creating a new release in GitHub"
+gh release create ${VERSION_NAME} --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --title "${VERSION_NAME}" --notes "Automated release ${VERSION_NAME}" --target main --draft
 
 sleep 5
-echo "Uploading the artifacts into github"
-github-release upload --user ${GITHUB_ORGANIZATION} --repo ${GITHUB_REPO} --tag ${VERSION_NAME} --name "${PROJECT_NAME}-${VERSION_NAME}-install.zip" --file target/${PROJECT_NAME}-${VERSION_NAME}-install.zip
-github-release upload --user ${GITHUB_ORGANIZATION} --repo ${GITHUB_REPO} --tag ${VERSION_NAME} --name "${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz" --file target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz
-github-release upload --user ${GITHUB_ORGANIZATION} --repo ${GITHUB_REPO} --tag ${VERSION_NAME} --name "${PROJECT_NAME}-${VERSION_NAME}-jar-with-dependencies.jar" --file target/${PROJECT_NAME}-${VERSION_NAME}-jar-with-dependencies.jar
+
+# Upload the artifacts to GitHub
+echo "Uploading the artifacts to GitHub"
+gh release upload ${VERSION_NAME} target/${PROJECT_NAME}-${VERSION_NAME}-install.zip --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --clobber
+gh release upload ${VERSION_NAME} target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --clobber
+gh release upload ${VERSION_NAME} target/${PROJECT_NAME}-${VERSION_NAME}-jar-with-dependencies.jar --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --clobber
