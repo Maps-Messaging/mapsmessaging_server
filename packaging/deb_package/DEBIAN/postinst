@@ -23,34 +23,34 @@ case "$1" in
   configure)
 # Create necessary directories
 # Create necessary directories
-    mkdir -p /etc/message_daemon
+    mkdir -p /etc/maps
     mkdir -p /opt/maps_data
 
     # Set permissions
-    chown -R mapsmessaging:mapsmessaging /opt/message_daemon
+    chown -R mapsmessaging:mapsmessaging /opt/maps
     chown -R mapsmessaging:mapsmessaging /opt/maps_data
-    chmod -R 755 /opt/message_daemon/bin
+    chmod -R 755 /opt/maps/bin
 
-    if [ ! -d /var/log/message-daemon ]; then
-        mkdir -p /var/log/message-daemon
-        chown mapsmessaging:mapsmessaging /var/log/message-daemon
+    if [ ! -d /var/log/maps ]; then
+        mkdir -p /var/log/maps
+        chown mapsmessaging:mapsmessaging /var/log/maps
     fi
-    if [ ! -f /var/log/message-daemon/message-daemon.log ]; then
-        touch /var/log/message-daemon/message-daemon.log
-        chown mapsmessaging:mapsmessaging /var/log/message-daemon/message-daemon.log
+    if [ ! -f /var/log/maps/maps.log ]; then
+        touch /var/log/maps/maps.log
+        chown mapsmessaging:mapsmessaging /var/log/maps/maps.log
     fi
 
    # Copy the environment file
-    ln -sf /opt/message_daemon/etc/message_daemon.env /etc/message_daemon/message_daemon.env
-    ln -sf /opt/message_daemon/etc/message_daemon.service   /usr/lib/systemd/system/message_daemon.service
+    ln -sf /opt/maps/etc/maps.env /etc/maps/maps.env
+    ln -sf /opt/maps/etc/maps.service   /usr/lib/systemd/system/v.service
 
     # Install the message-daemon command
-    ln -sf /opt/message_daemon/bin/message_daemon /usr/local/bin/message-daemon
-    ln -sf /opt/message_daemon/bin/mapsTop.sh /usr/local/bin/mapsTop
+    ln -sf /opt/maps/bin/message_daemon /usr/local/bin/maps
+    ln -sf /opt/maps/bin/mapsTop.sh /usr/local/bin/mapsTop
 
     # Enable and start the service
-    systemctl enable message_daemon.service
-    systemctl start message_daemon.service
+    systemctl enable maps.service
+    systemctl start maps.service
   ;;
 esac
 

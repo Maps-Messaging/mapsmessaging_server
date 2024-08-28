@@ -25,7 +25,7 @@ export PROJECT_NAME=message_daemon
 
 TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
 TARGET_DIR="packaging/deb_package"
-INSTALL_DIR="${TARGET_DIR}/opt/message_daemon"
+INSTALL_DIR="${TARGET_DIR}/opt/maps"
 ETC_DIR="${INSTALL_DIR}/etc"
 
 mkdir -p ${INSTALL_DIR}

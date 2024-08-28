@@ -22,16 +22,16 @@ set -e
 case "$1" in
   remove|purge)
     # Stop and disable the service
-    systemctl stop message_daemon.service
-    systemctl disable message_daemon.service
+    systemctl stop maps.service
+    systemctl disable maps.service
 
     # Remove the symlink
-    rm -f /usr/local/bin/message-daemon
+    rm -f /usr/local/bin/maps
     rm -f /usr/local/bin/mapsTop
 
     # Remove the environment file
-    rm -f /etc/message_daemon/message_daemon.env
-    rm -f /usr/lib/systemd/system/message_daemon.service
+    rm -f /etc/maps/maps.env
+    rm -f /usr/lib/systemd/system/maps.service
 
   ;;
 esac
