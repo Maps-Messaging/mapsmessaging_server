@@ -22,6 +22,12 @@ POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{
 # Variables
 export VERSION_NAME=$POM_VERSION
 export PROJECT_NAME=message_daemon
+export GITHUB_ORGANIZATION=Maps-Messaging
+export GITHUB_REPO=mapsmessaging_server
+
+
+gh release download ${VERSION_NAME} --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --pattern "${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz" --dir ./target
+
 
 TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
 TARGET_DIR="packaging/deb_package"
