@@ -25,7 +25,7 @@ export PROJECT_NAME=message_daemon
 export GITHUB_ORGANIZATION=Maps-Messaging
 export GITHUB_REPO=mapsmessaging_server
 
-
+export GITHUB_TOKEN=$1
 gh release download ${VERSION_NAME} --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --pattern "${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz" --dir ./target
 
 
