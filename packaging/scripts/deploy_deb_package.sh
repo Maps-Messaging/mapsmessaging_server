@@ -22,7 +22,12 @@ POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{
 
 NEXUS_URL="https://repo.mapsmessaging.io"
 REPO_NAME="maps_messaging_daemon"
-PACKAGE_NAME="maps"
+
+if [[ $POM_VERSION == ml-* ]]; then
+  PACKAGE_NAME="maps-ml"
+else
+  PACKAGE_NAME="maps"
+fi
 PACKAGE_VERSION=$POM_VERSION
 PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
 USER=$1
