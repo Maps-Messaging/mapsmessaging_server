@@ -69,7 +69,7 @@ upload_new_package() {
 echo "Starting package replacement process..."
 
 # Delete the old package if it exists
-delete_old_package
+# delete_old_package
 
 # Upload the new package
 upload_new_package
