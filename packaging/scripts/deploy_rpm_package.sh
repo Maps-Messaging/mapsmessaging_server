@@ -20,11 +20,10 @@
 # Variables
 POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
 
-NEXUS_URL="https://repository.mapsmessaging.io:8081"
+NEXUS_URL="https://repo.mapsmessaging.io"
 REPO_NAME="maps_messaging_rpm_repo"
-PACKAGE_VERSION=POM_VERSION
+PACKAGE_VERSION=$POM_VERSION
 PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.el7.noarch.rpm"
-UPLOAD_URL="${NEXUS_URL}/repository/${REPO_NAME}/${PACKAGE_FILE}"
 USER=$1
 PASSWORD=$2
 if [[ $POM_VERSION == ml-* ]]; then
