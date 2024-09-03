@@ -1,0 +1,16 @@
+[Unit]
+Description=Message Daemon Service
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/maps/maps.env
+ExecStart=/opt/maps/bin/start.sh
+ExecStopPost=/bin/rm -f /opt/maps/pid
+Restart=on-failure
+StandardOutput=append:/var/log/maps/maps.log
+StandardError=append:/var/log/maps/maps.log
+User=mapsmessaging
+Group=mapsmessaging
+
+[Install]
+WantedBy=multi-user.target

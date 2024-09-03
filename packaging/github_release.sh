@@ -21,7 +21,7 @@ export GITHUB_ORGANIZATION=Maps-Messaging
 export GITHUB_REPO=mapsmessaging_server
 export VERSION_NAME=$POM_VERSION
 export PROJECT_NAME=message_daemon
-
+echo $VERSION_NAME
 # Set the GitHub token for authentication (this is automatically picked up by `gh` if it's set)
 export GITHUB_TOKEN=$1
 

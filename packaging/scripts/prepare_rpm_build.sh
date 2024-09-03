@@ -21,7 +21,7 @@ POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print 
 
 # Variables
 export VERSION_NAME=$POM_VERSION
-export PROJECT_NAME=message_daemon
+export PROJECT_NAME=maps
 
 TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
 
@@ -46,5 +46,5 @@ fi
 
 export BUILD_ROOT=${PWD}/packaging/rpmbuild
 # Build the RPM package
-rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/message_daemon.spec
+rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/maps.spec
 
