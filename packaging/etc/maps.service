@@ -1,5 +1,5 @@
 [Unit]
-Description=Message Daemon Service
+Description=Maps Message Service
 After=network.target
 
 [Service]

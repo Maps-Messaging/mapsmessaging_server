@@ -17,20 +17,53 @@
 #
 #
 
+export USER=$1
+export PASSWORD=$2
+
 # Variables
 POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
 
-NEXUS_URL="https://repo.mapsmessaging.io"
-REPO_NAME="maps_messaging_rpm_repo"
-PACKAGE_VERSION=$POM_VERSION
-PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.el7.noarch.rpm"
-USER=$1
-PASSWORD=$2
+export NEXUS_URL="https://repo.mapsmessaging.io"
+export REPO_NAME="maps_messaging_daemon"
+
+export PACKAGE_VERSION=$POM_VERSION
+export PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
+
+
+export VERSION_NAME=$POM_VERSION
+export PROJECT_NAME=maps
+export GITHUB_ORGANIZATION=Maps-Messaging
+export GITHUB_REPO=mapsmessaging_server
+export TAR_FILE="target/message_daemon-${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
+export TARGET_DIR="packaging/deb_package"
+export INSTALL_DIR="${TARGET_DIR}/opt/maps"
+export ETC_DIR="${INSTALL_DIR}/etc"
 if [[ $POM_VERSION == ml-* ]]; then
-  PACKAGE_NAME="maps-ml"
+  export PACKAGE_NAME="maps-ml"
 else
-  PACKAGE_NAME="maps"
+  export PACKAGE_NAME="maps"
 fi
+
+mkdir -p ${INSTALL_DIR}
+mkdir -p ${ETC_DIR}
+
+
+# Extract the tar.gz file into the install directory
+tar -xzf ${TAR_FILE} --strip-components=1 -C ${INSTALL_DIR}
+
+chmod +x ${INSTALL_DIR}/bin/start.sh
+chmod +x ${INSTALL_DIR}/bin/maps
+
+
+# Ensure postinst and prerm scripts are executable
+chmod +x ${TARGET_DIR}/DEBIAN/postinst
+chmod +x ${TARGET_DIR}/DEBIAN/prerm
+chmod +x ${TARGET_DIR}/DEBIAN/preinst
+
+echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
+dpkg-deb --build ${TARGET_DIR}
+
+
 # Function to delete the old package
 delete_old_package() {
   # URL to the package in the repository
@@ -51,21 +84,23 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
-  cd packaging/rpmbuild/RPMS/noarch
+  cd packaging
   http \
-	--auth $USER:$PASSWORD \
-  	--multipart \
-  	--ignore-stdin \
-    POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
-    rpm.asset@${PACKAGE_FILE}
-  echo "Uploaded new package: ${PACKAGE_FILE}"
+  --auth $USER:$PASSWORD \
+  --multipart \
+  --ignore-stdin \
+  POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
+  deb.asset@deb_package.deb
+
+  echo "Uploaded new package: ./deb_package.deb"
 }
+
 
 # Main script
 echo "Starting package replacement process..."
 
 # Delete the old package if it exists
-delete_old_package
+# delete_old_package
 
 # Upload the new package
 upload_new_package

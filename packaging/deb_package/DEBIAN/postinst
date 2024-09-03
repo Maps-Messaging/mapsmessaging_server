@@ -45,7 +45,7 @@ case "$1" in
     ln -sf /opt/maps/etc/maps.service   /usr/lib/systemd/system/v.service
 
     # Install the message-daemon command
-    ln -sf /opt/maps/bin/message_daemon /usr/local/bin/maps
+    ln -sf /opt/maps/bin/maps /usr/local/bin/maps
     ln -sf /opt/maps/bin/mapsTop.sh /usr/local/bin/mapsTop
 
     # Enable and start the service

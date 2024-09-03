@@ -1,11 +1,11 @@
-Name:           maps
+Name:           maps-ml
 Version:        3.3.7
 Release:        1%{?dist}
 Summary:        A multi adapter and protocol server with machine learning
 
 License:        Apache License 2.0
 URL:            http://www.mapsmessaging.io
-Source0:        message_daemon-3.3.7-SNAPSHOT-install.tar.gz
+Source0:        message_daemon-ml-3.3.7-SNAPSHOT-install.tar.gz
 
 BuildArch:      noarch
 Requires:       java-17-openjdk
@@ -14,7 +14,7 @@ Requires:       java-17-openjdk
 A multi adapter and protocol server for handling messaging protocols.
 
 %prep
-%setup -q -n  maps-3.3.7-SNAPSHOT
+%setup -q -n  maps-ml-3.3.7-SNAPSHOT
 
 %build
 

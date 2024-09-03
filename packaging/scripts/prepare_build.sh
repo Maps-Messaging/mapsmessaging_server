@@ -33,4 +33,10 @@ sed -i "s/00.00.00-SNAPSHOT/${POM_VERSION}/g" $BUILD_INFO_FILE
 # Step c: Replace %%MAPS_VERSION%% with $POM_VERSION in ./src/**
 find ./src/ -type f -exec sed -i "s/%%MAPS_VERSION%%/${POM_VERSION}/g" {} +
 
+
+if [[ $POM_VERSION == ml-* ]]; then
+   sed -i 's/<version>3.3.7-SNAPSHOT<\\/version>/<version>ml-3.3.7-SNAPSHOT<\\/version>/' pom.xml
+   sed -i 's/Package: maps/Package: maps-ml/' packaging/deb_package/DEBIAN/control
+fi
+
 echo "Replacements done."

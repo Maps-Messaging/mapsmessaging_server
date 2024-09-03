@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #
 # Copyright [ 2020 - 2024 ] [Matthew Buckton]
 #
@@ -16,22 +17,59 @@
 #
 #
 
+POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
+echo "Defining environment variables"
+
+export USER=$1
+export PASSWORD=$2
+
 # Variables
-POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
+export VERSION_NAME=$POM_VERSION
+export PROJECT_NAME=maps
 
+export NEXUS_URL="https://repo.mapsmessaging.io"
+export REPO_NAME="maps_messaging_rpm_repo"
+export PACKAGE_VERSION=$POM_VERSION
+export PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.el7.noarch.rpm"
+export TAR_FILE="target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz"
+export SOURCE_DIR="packaging/rpmbuild/SOURCES"
+export SPEC_DIR="packaging/rpmbuild/SPECS"
+export BUILD_ROOT=${PWD}/packaging/rpmbuild
 
-NEXUS_URL="https://repo.mapsmessaging.io"
-REPO_NAME="maps_messaging_daemon"
 
 if [[ $POM_VERSION == ml-* ]]; then
-  PACKAGE_NAME="maps-ml"
+  export PACKAGE_NAME="maps-ml"
 else
-  PACKAGE_NAME="maps"
+  export PACKAGE_NAME="maps"
 fi
-PACKAGE_VERSION=$POM_VERSION
-PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
-USER=$1
-PASSWORD=$2
+
+echo "Validating files"
+
+# Verify the tarball exists
+if [[ ! -f ${TAR_FILE} ]]; then
+  echo "Error: tarball ${TAR_FILE} not found."
+  exit 1
+fi
+
+# Move the tarball to SOURCES
+mkdir -p ${SOURCE_DIR}
+cp ${TAR_FILE} ${SOURCE_DIR}
+
+# Verify the tarball is in the SOURCES directory
+if [[ ! -f ${SOURCE_DIR}/$(basename ${TAR_FILE}) ]]; then
+  echo "Error: tarball ${TAR_FILE} not found in ${SOURCE_DIR}."
+  exit 1
+fi
+
+
+# Build the RPM package
+echo "Building the rpm files"
+if [[ $POM_VERSION == ml-* ]]; then
+  rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/maps-ml.spec
+else
+  rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/maps.spec
+fi
+
 
 # Function to delete the old package
 delete_old_package() {
@@ -53,23 +91,21 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
-  cd packaging
+  cd packaging/rpmbuild/RPMS/noarch
   http \
-  --auth $USER:$PASSWORD \
-  --multipart \
-  --ignore-stdin \
-  POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
-  deb.asset@deb_package.deb
-
-  echo "Uploaded new package: ./deb_package.deb"
+	--auth $USER:$PASSWORD \
+  	--multipart \
+  	--ignore-stdin \
+    POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
+    rpm.asset@${PACKAGE_FILE}
+  echo "Uploaded new package: ${PACKAGE_FILE}"
 }
-
 
 # Main script
 echo "Starting package replacement process..."
 
 # Delete the old package if it exists
-# delete_old_package
+delete_old_package
 
 # Upload the new package
 upload_new_package
