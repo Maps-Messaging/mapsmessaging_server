@@ -1,5 +1,5 @@
 Name:           maps-ml
-Version:        3.3.7-SNAPSHOT
+Version:        3.3.7
 Release:        1%{?dist}
 Summary:        A multi adapter and protocol server with machine learning
 

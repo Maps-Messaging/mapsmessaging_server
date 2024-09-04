@@ -102,6 +102,7 @@ upload_new_package() {
     POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
     rpm.asset@${PACKAGE_FILE}
   echo "Uploaded new package: ${PACKAGE_FILE}"
+  cd ../../../..
 }
 
 # Main script

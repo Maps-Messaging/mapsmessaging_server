@@ -94,6 +94,7 @@ upload_new_package() {
   deb.asset@deb_package.deb
 
   echo "Uploaded new package: ./deb_package.deb"
+  cd ..
 }
 
 

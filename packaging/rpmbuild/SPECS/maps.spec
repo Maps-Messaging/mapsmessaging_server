@@ -14,7 +14,7 @@ Requires:       java-17-openjdk
 A multi adapter and protocol server for handling messaging protocols.
 
 %prep
-%setup -q -n  maps-3.3.7-SNAPSHOT
+%setup -q -n  maps-3.3.7
 
 %build
 
