@@ -94,7 +94,10 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
+  pwd
+  ls -lsa
   cd packaging/rpmbuild/RPMS/noarch
+  ls -lsa
   http \
 	--auth $USER:$PASSWORD \
   	--multipart \
