@@ -97,13 +97,13 @@ upload_new_package() {
   pwd
   ls -lsa
   cd packaging/rpmbuild/RPMS/noarch
+
   ls -lsa
-  http \
-	--auth $USER:$PASSWORD \
-  	--multipart \
-  	--ignore-stdin \
-    POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
-    rpm.asset@${PACKAGE_FILE}
+  curl -v  \
+   -u $USER:$PASSWORD  \
+   -F "yum.asset=@${PACKAGE_FILE}" \
+   -F "yum.asset.filename=${PACKAGE_FILE}" \
+       "${NEXUS_URL}/service/rest/v1/components?repository=maps_messaging_rpm_repo"
   echo "Uploaded new package: ${PACKAGE_FILE}"
   cd ../../../..
 }
