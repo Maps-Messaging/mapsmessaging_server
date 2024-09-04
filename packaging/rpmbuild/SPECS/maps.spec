@@ -5,7 +5,7 @@ Summary:        A multi adapter and protocol server with machine learning
 
 License:        Apache License 2.0
 URL:            http://www.mapsmessaging.io
-Source0:        message_daemon-3.3.7-SNAPSHOT-install.tar.gz
+Source0:        maps-3.3.7-SNAPSHOT-install.tar.gz
 
 BuildArch:      noarch
 Requires:       java-17-openjdk

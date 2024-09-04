@@ -17,20 +17,20 @@
 #
 #
 
-PID_FILE="/opt/message_daemon/pid"
+PID_FILE="/opt/maps/pid"
 
 start() {
-    echo "Starting message-daemon..."
-    nohup /opt/message_daemon/bin/start.sh > /var/log/message-daemon/message-daemon.log 2>&1 &
+    echo "Starting maps..."
+    nohup /opt/maps/bin/start.sh > /var/log/maps/maps.log 2>&1 &
 }
 
 stop() {
-    echo "Stopping message-daemon..."
+    echo "Stopping maps..."
     if [ -f "$PID_FILE" ]; then
         PID=$(cat $PID_FILE)
         if [ -n "$PID" ]; then
             kill $PID
-            echo "message-daemon stopped"
+            echo "maps stopped"
         else
             echo "PID file is empty"
         fi
