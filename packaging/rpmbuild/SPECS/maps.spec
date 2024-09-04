@@ -1,5 +1,5 @@
 Name:           maps
-Version:        3.3.7
+Version:        3.3.7-SNAPSHOT
 Release:        1%{?dist}
 Summary:        A multi adapter and protocol server with machine learning
 
