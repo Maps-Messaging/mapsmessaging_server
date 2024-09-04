@@ -22,6 +22,11 @@ export PASSWORD=$2
 
 # Variables
 POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
+if [[ $POM_VERSION == ml-* ]]; then
+  export PACKAGE_NAME="maps-ml"
+else
+  export PACKAGE_NAME="maps"
+fi
 
 export NEXUS_URL="https://repo.mapsmessaging.io"
 export REPO_NAME="maps_messaging_daemon"
@@ -38,11 +43,7 @@ export TAR_FILE="target/message_daemon-${VERSION_NAME}-install.tar.gz"
 export TARGET_DIR="packaging/deb_package"
 export INSTALL_DIR="${TARGET_DIR}/opt/maps"
 export ETC_DIR="${INSTALL_DIR}/etc"
-if [[ $POM_VERSION == ml-* ]]; then
-  export PACKAGE_NAME="maps-ml"
-else
-  export PACKAGE_NAME="maps"
-fi
+
 
 mkdir -p ${INSTALL_DIR}
 mkdir -p ${ETC_DIR}

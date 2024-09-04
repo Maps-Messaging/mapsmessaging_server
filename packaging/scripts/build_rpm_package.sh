@@ -18,6 +18,12 @@
 #
 
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
+if [[ $POM_VERSION == ml-* ]]; then
+  export PACKAGE_NAME="maps-ml"
+else
+  export PACKAGE_NAME="maps"
+fi
+
 echo "Defining environment variables"
 
 export USER=$1
@@ -26,6 +32,8 @@ export PASSWORD=$2
 # Variables
 export VERSION_NAME=$POM_VERSION
 export PROJECT_NAME=maps
+
+
 
 export NEXUS_URL="https://repo.mapsmessaging.io"
 export REPO_NAME="maps_messaging_rpm_repo"
@@ -37,11 +45,6 @@ export SPEC_DIR="packaging/rpmbuild/SPECS"
 export BUILD_ROOT=${PWD}/packaging/rpmbuild
 
 
-if [[ $POM_VERSION == ml-* ]]; then
-  export PACKAGE_NAME="maps-ml"
-else
-  export PACKAGE_NAME="maps"
-fi
 
 echo "Validating files"
 
