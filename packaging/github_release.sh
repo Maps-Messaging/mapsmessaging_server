@@ -14,16 +14,15 @@
 # limitations under the License.
 #
 #
-
+export GITHUB_TOKEN=$1
 POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
 
 export GITHUB_ORGANIZATION=Maps-Messaging
 export GITHUB_REPO=mapsmessaging_server
 export VERSION_NAME=$POM_VERSION
-export PROJECT_NAME=message_daemon
+export PROJECT_NAME=maps
 echo $VERSION_NAME
-# Set the GitHub token for authentication (this is automatically picked up by `gh` if it's set)
-export GITHUB_TOKEN=$1
+
 
 # Delete the release from GitHub before creating a new one
 echo "Deleting release from GitHub before creating a new one"
