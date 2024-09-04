@@ -18,6 +18,7 @@
 #
 
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
+
 if [[ $POM_VERSION == ml-* ]]; then
   export PACKAGE_NAME="maps-ml"
 else
@@ -30,8 +31,7 @@ export USER=$1
 export PASSWORD=$2
 
 # Variables
-export VERSION_NAME=$POM_VERSION
-export PROJECT_NAME=maps
+export VERSION_NAME=3.3.7-SNAPSHOT
 
 
 
