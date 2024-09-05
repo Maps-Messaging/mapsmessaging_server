@@ -22,7 +22,6 @@ set -e
 case "$1" in
   configure)
 # Create necessary directories
-# Create necessary directories
     mkdir -p /etc/maps
     mkdir -p /opt/maps_data
 
@@ -48,9 +47,8 @@ case "$1" in
     ln -sf /opt/maps/bin/maps /usr/local/bin/maps
     ln -sf /opt/maps/bin/mapsTop.sh /usr/local/bin/mapsTop
 
-    # Enable and start the service
+    # Enable the service
     systemctl enable maps.service
-    systemctl start maps.service
   ;;
 esac
 
