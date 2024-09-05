@@ -83,9 +83,9 @@ EXPOSE 2442/udp
 #----------------------------------------------------------------------------------------------
 # Install the maps messaging daemon image
 #----------------------------------------------------------------------------------------------
-RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/message_daemon-%%MAPS_VERSION%%-install.tar.gz && \
-    tar -xf message_daemon-%%MAPS_VERSION%%-install.tar.gz  && \
-    rm  message_daemon-%%MAPS_VERSION%%-install.tar.gz
+RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/maps-%%MAPS_VERSION%%-install.tar.gz && \
+    tar -xf maps-%%MAPS_VERSION%%-install.tar.gz  && \
+    rm  maps-%%MAPS_VERSION%%-install.tar.gz
 
 #----------------------------------------------------------------------------------------------
 # Now configure the scripts
