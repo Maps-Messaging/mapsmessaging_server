@@ -80,23 +80,23 @@ RUN wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/down
 #----------------------------------------------------------------------------------------------
 # Now configure the scripts
 #----------------------------------------------------------------------------------------------
-RUN chmod +x message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh && \
-    dos2unix message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh
+RUN chmod +x maps-%%MAPS_VERSION%%/bin/startDocker.sh && \
+    dos2unix maps-%%MAPS_VERSION%%/bin/startDocker.sh
 
 #Set the docker log configuration
-RUN mv message_daemon-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
+RUN mv maps-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
+    mv maps-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
 
 # Set the network configuration
-RUN mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
-    mv message_daemon-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
+RUN mv maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
+    mv maps-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
 
 #----------------------------------------------------------------------------------------------
 # Set up the static files for the rest api engine
 #----------------------------------------------------------------------------------------------
 RUN mkdir /data && \
-    mv /message_daemon-%%MAPS_VERSION%%/www /data/www
+    mv /maps-%%MAPS_VERSION%%/www /data/www
 
 
 #----------------------------------------------------------------------------------------------
@@ -108,24 +108,24 @@ VOLUME /data
 # Create a new user and group specifically for messaging
 #----------------------------------------------------------------------------------------------
 RUN addgroup -S messaginggroup && \
-    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /message_daemon-%%MAPS_VERSION%%
+    adduser -S messaginguser -G messaginggroup -s /bin/sh -h /maps-%%MAPS_VERSION%%
 
 #----------------------------------------------------------------------------------------------
 # Change ownership of the /data directory and the installation directory
 #----------------------------------------------------------------------------------------------
 RUN chown -R messaginguser:messaginggroup /data && \
-    chown -R messaginguser:messaginggroup /message_daemon-%%MAPS_VERSION%%
+    chown -R messaginguser:messaginggroup /maps-%%MAPS_VERSION%%
 
 #----------------------------------------------------------------------------------------------
 # Optionally set permissions on the installation directory, if necessary
 #----------------------------------------------------------------------------------------------
-RUN chmod -R 755 /message_daemon-%%MAPS_VERSION%%
+RUN chmod -R 755 /maps-%%MAPS_VERSION%%
 
 #----------------------------------------------------------------------------------------------
 # We can now simply start the server
 # Increase the file descriptor count
 #----------------------------------------------------------------------------------------------
-CMD export MAPS_HOME=./message_daemon-%%MAPS_VERSION%%/  && \
+CMD export MAPS_HOME=./maps-%%MAPS_VERSION%%/  && \
     ulimit -n 100000 && \
     export PATH=${JAVA_HOME}/bin:${PATH} && \
-    su -c "message_daemon-%%MAPS_VERSION%%/bin/startDocker.sh" messaginguser
+    su -c "maps-%%MAPS_VERSION%%/bin/startDocker.sh" messaginguser
