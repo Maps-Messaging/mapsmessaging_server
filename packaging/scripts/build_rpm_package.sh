@@ -78,10 +78,10 @@ echo "rpm files built"
 delete_old_package() {
   # URL to the package in the repository
   DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}&version=${PACKAGE_VERSION}"
-
   # Fetch component ID of the old package
   COMPONENT_ID=$(curl -u ${USER}:${PASSWORD} -s "${DELETE_URL}" | jq -r '.items[0].id')
 
+  echo "Checking for existing package at ${DELETE_URL} found ${COMPONENT_ID}"
   # Check if the component ID exists and delete the old package
   if [ -n "${COMPONENT_ID}" ]; then
     DELETE_COMPONENT_URL="${NEXUS_URL}/service/rest/v1/components/${COMPONENT_ID}"
@@ -94,11 +94,7 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
-  pwd
-  ls -lsa
-  cd packaging/rpmbuild/RPMS/noarch
-
-  ls -lsa
+  cd packaging/rpmbuild/RPMS/noarch || exit
   curl -v  \
    -u $USER:$PASSWORD  \
    -F "yum.asset=@${PACKAGE_FILE}" \
