@@ -72,7 +72,7 @@ if [[ $POM_VERSION == ml-* ]]; then
 else
   rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/maps.spec
 fi
-
+echo "rpm files built"
 
 # Function to delete the old package
 delete_old_package() {
