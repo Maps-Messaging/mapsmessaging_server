@@ -3,7 +3,7 @@
 # Get Alpine linux image and add the Zulu JDK 13, as per
 # https://github.com/zulu-openjdk/zulu-openjdk/blob/master/alpine/13.0.1-13.28/Dockerfile
 #----------------------------------------------------------------------------------------------
-FROM arm64v8/alpine:3.19.0
+FROM arm64v8/alpine:3.20.2
 
 #----------------------------------------------------------------------------------------------
 # setup env variables
@@ -12,11 +12,6 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV JAVA_HOME=/usr/lib/jvm/zulu-17
-
-#----------------------------------------------------------------------------------------------
-# Install DNS tools
-#----------------------------------------------------------------------------------------------
-RUN apk add --update --no-cache bind-tools
 
 #----------------------------------------------------------------------------------------------
 # Setup the repos

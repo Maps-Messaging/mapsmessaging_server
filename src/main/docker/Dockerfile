@@ -3,7 +3,7 @@
 # Get Alpine linux image and add the Zulu JDK 13, as per
 # https://github.com/zulu-openjdk/zulu-openjdk/blob/master/alpine/13.0.1-13.28/Dockerfile
 #----------------------------------------------------------------------------------------------
-FROM alpine:3.19.0
+FROM alpine:3.20.2
 
 #----------------------------------------------------------------------------------------------
 # setup env variables
@@ -12,11 +12,6 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV JAVA_HOME=/usr/lib/jvm/zulu-17
-
-#----------------------------------------------------------------------------------------------
-# Install DNS tools
-#----------------------------------------------------------------------------------------------
-RUN apk add --update --no-cache bind-tools
 
 #----------------------------------------------------------------------------------------------
 # Install the JDK from Azul
@@ -84,12 +79,12 @@ RUN chmod +x maps-%%MAPS_VERSION%%/bin/startDocker.sh && \
     dos2unix maps-%%MAPS_VERSION%%/bin/startDocker.sh
 
 #Set the docker log configuration
-RUN mv maps-%%MAPS_VERSION%%/conf/logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml_orig && \
-    mv maps-%%MAPS_VERSION%%/conf/docker_logback.xml message_daemon-%%MAPS_VERSION%%/conf/logback.xml
+RUN mv maps-%%MAPS_VERSION%%/conf/logback.xml maps-%%MAPS_VERSION%%/conf/logback.xml_orig && \
+    mv maps-%%MAPS_VERSION%%/conf/docker_logback.xml maps-%%MAPS_VERSION%%/conf/logback.xml
 
 # Set the network configuration
-RUN mv maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
-    mv maps-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml message_daemon-%%MAPS_VERSION%%/conf/NetworkManager.yaml
+RUN mv maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml_orig && \
+    mv maps-%%MAPS_VERSION%%/conf/NetworkManagerDocker.yaml maps-%%MAPS_VERSION%%/conf/NetworkManager.yaml
 
 
 #----------------------------------------------------------------------------------------------
