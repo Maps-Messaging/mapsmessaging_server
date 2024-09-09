@@ -232,7 +232,7 @@
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
-          <version>0.9.28</version>
+          <version>0.10.2</version>
           <classifier>repository</classifier>
           <type>zip</type>
         </dependency>
@@ -350,7 +350,7 @@
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
-          <version>0.9.28</version>
+          <version>0.10.2</version>
           <classifier>repository</classifier>
           <type>zip</type>
         </dependency>
