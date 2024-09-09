@@ -34,7 +34,7 @@ aws ecr-public get-login-password --region us-east-1 | docker login --username A
 
 # ---------------------------------------------------
 # Build the new x86 Docker image
-cd src/main/docker
+cd src/main/docker || exit
 mv Dockerfile Dockerfile.orig
 sed s/%%MAPS_VERSION%%/$POM_VERSION/g Dockerfile.orig > Dockerfile
 docker build --no-cache -t mapsmessaging/server_daemon_$LOWERCASE_VERSION --label $LOWERCASE_VERSION . --push
