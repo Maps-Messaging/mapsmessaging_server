@@ -34,3 +34,4 @@ For more in-depth information on specific features and technical details of Maps
 - [Source Code](/source.md)
 - [Protocol Support](/protocol_support.md)
 - [Release Versions](/version.md)
+- [Snapshot Status](/build_status.md)
