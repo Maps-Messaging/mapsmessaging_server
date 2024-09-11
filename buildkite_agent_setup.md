@@ -8,7 +8,7 @@ Ubuntu
 ### Tools required in the build
 
 ```shell
-apt-get install vim wget httpie curl jq gh nodejs npm maven openjdk-21-jdk-headless protoc rpm unzip
+apt-get install vim wget httpie curl jq gh nodejs npm maven openjdk-21-jdk-headless protobuf-compiler rpm unzip
 ```
 
 ### AWS Command line
