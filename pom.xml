@@ -1350,7 +1350,7 @@
     <dependency>
       <groupId>org.eclipse.californium</groupId>
       <artifactId>scandium</artifactId>
-      <version>3.11.0</version>
+      <version>3.12.1</version>
       <scope>test</scope>
     </dependency>
 
