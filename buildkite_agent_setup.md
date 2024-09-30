@@ -11,6 +11,11 @@ Ubuntu
 apt-get install vim wget httpie curl jq gh nodejs npm maven openjdk-21-jdk-headless protobuf-compiler rpm unzip
 ```
 
+Install NPM packages
+```bash
+sudo npm install -g sonar-scanner
+```
+
 ### AWS Command line
 
 ```shell
@@ -108,4 +113,20 @@ client_addr = "127.0.0.1"
 advertise_addr = "127.0.0.1"
 bootstrap_expect=1
 retry_join = ["127.0.0.1"]
+```
+
+Finally, the buildkite agent requires sudo at times for the build so need to
+
+```bash
+visudo
+
+buildkite-agent ALL=(ALL) NOPASSWD: ALL
+
+```
+
+## SoftHSM for authentication and authorisation library testing
+
+```bash
+apt-get install softhsm2
+softhsm2-util --init-token --slot 0 --label "testToken"
 ```

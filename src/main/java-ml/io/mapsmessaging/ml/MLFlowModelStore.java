@@ -18,6 +18,7 @@
 package io.mapsmessaging.ml;
 
 import io.mapsmessaging.selector.operators.functions.ml.ModelStore;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -35,7 +36,7 @@ public class MLFlowModelStore implements ModelStore {
   }
 
   @Override
-  public void saveModel(String s, byte[] bytes) throws Exception {
+  public void saveModel(String s, byte[] bytes) throws IOException {
     String runId = createRun(experimentId, s);
     Path tempFile = Files.createTempFile(s, ".model");
     Files.write(tempFile, bytes);
@@ -45,10 +46,10 @@ public class MLFlowModelStore implements ModelStore {
   }
 
   @Override
-  public byte[] loadModel(String s) throws Exception {
+  public byte[] loadModel(String s) throws IOException {
     String runId = getRunIdByModelName(s);
     if (runId == null) {
-      throw new Exception("Model not found");
+      throw new IOException("Model not found");
     }
     Path tempDir = Files.createTempDirectory("mlflow-model");
     mlflowClient.downloadArtifacts(runId, "/"+ tempDir.toString());
@@ -60,8 +61,18 @@ public class MLFlowModelStore implements ModelStore {
   }
 
   @Override
-  public boolean modelExists(String s) throws Exception {
+  public boolean modelExists(String s)  {
     return getRunIdByModelName(s) != null;
+  }
+
+  @Override
+  public boolean deleteModel(String s) throws IOException {
+    String runId = getRunIdByModelName(s);
+    if (runId == null) {
+      throw new IOException("Model not found");
+    }
+    mlflowClient.deleteRun(runId);
+    return true;
   }
 
   private String createRun(String experimentId, String modelName) {

@@ -21,6 +21,7 @@ import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.kv.model.GetValue;
 import com.ecwid.consul.v1.kv.model.PutParams;
 import io.mapsmessaging.selector.operators.functions.ml.ModelStore;
+import java.io.IOException;
 import java.util.Base64;
 
 public class ConsulModelStore implements ModelStore {
@@ -34,25 +35,31 @@ public class ConsulModelStore implements ModelStore {
   }
 
   @Override
-  public void saveModel(String s, byte[] bytes) throws Exception {
+  public void saveModel(String s, byte[] bytes) {
     String key = rootKey + "/" + s;
     String value = Base64.getEncoder().encodeToString(bytes);
     consulClient.setKVValue(key, value, new PutParams());
   }
 
   @Override
-  public byte[] loadModel(String s) throws Exception {
+  public byte[] loadModel(String s) throws IOException {
     String key = rootKey + "/" + s;
     GetValue getValue = consulClient.getKVValue(key).getValue();
     if (getValue == null) {
-      throw new Exception("Model not found");
+      throw new IOException("Model not found");
     }
     return Base64.getDecoder().decode(getValue.getValue());
   }
 
   @Override
-  public boolean modelExists(String s) throws Exception {
+  public boolean modelExists(String s)  {
     String key = rootKey + "/" + s;
     return consulClient.getKVValue(key).getValue() != null;
+  }
+
+  @Override
+  public boolean deleteModel(String s) throws IOException {
+    consulClient.deleteKVValue(rootKey + "/" + s);
+    return true;
   }
 }

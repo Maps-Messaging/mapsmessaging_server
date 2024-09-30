@@ -144,7 +144,7 @@
       <directory>${project.basedir}/target/</directory>
       <outputDirectory>lib</outputDirectory>
       <includes>
-        <include>message_daemon*.jar</include>
+        <include>maps*.jar</include>
       </includes>
       <excludes>
         <exclude>*javadoc.jar</exclude>
