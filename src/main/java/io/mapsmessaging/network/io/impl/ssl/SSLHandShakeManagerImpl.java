@@ -24,7 +24,6 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import lombok.Getter;
 
@@ -40,8 +39,8 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
   SSLHandShakeManagerImpl(SSLEndPoint sslEndPointImpl, EndPointConnectedCallback callback) {
     this.sslEndPointImpl = sslEndPointImpl;
     this.callback = callback;
-    handshakeBufferIn = ByteBuffer.allocate(1024*1024);
-    handshakeBufferOut = ByteBuffer.allocate(1024*1024);//sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
+    handshakeBufferIn = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
+    handshakeBufferOut = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
   }
 
   public boolean handleSSLHandshakeStatus() throws IOException {
@@ -55,7 +54,6 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
         logger.log(ServerLogMessages.SSL_HANDSHAKE_NEED_UNWRAP);
         handshakeBufferIn.clear();
         if (sslEndPointImpl.readBuffer(handshakeBufferIn) == 0 ) {
-          sslEndPointImpl.register(SelectionKey.OP_READ, this);
           return true; // Wait for more data
         }
       } else if (handshakeStatus == HandshakeStatus.NEED_WRAP) {
