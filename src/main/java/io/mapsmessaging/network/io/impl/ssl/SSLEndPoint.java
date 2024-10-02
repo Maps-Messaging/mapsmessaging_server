@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,12 +27,6 @@ import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPoint;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLEngineResult.Status;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -40,6 +34,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.List;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 public class SSLEndPoint extends TCPEndPoint {
 
@@ -142,14 +141,18 @@ public class SSLEndPoint extends TCPEndPoint {
         response = encryptedIn.limit();
       }
       logger.log(ServerLogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
-      while (encryptedIn.hasRemaining() && applicationIn.remaining() != 0) {
-        handleSSLEngineResult(sslEngine.unwrap(encryptedIn, applicationIn));
+      if (encryptedIn.hasRemaining() && applicationIn.remaining() != 0 ) {
+        SSLEngineResult result = sslEngine.unwrap(encryptedIn, applicationIn);
+        handleSSLEngineResult(result);
+        if(result.getStatus() == Status.BUFFER_UNDERFLOW){
+          encryptedIn.compact();
+          return response;
+        }
       }
       if (encryptedIn.position() == encryptedIn.limit()) {
         encryptedIn.clear();
       } else {
         encryptedIn.compact();
-        encryptedIn.flip();
       }
     }
     return response;

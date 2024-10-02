@@ -38,13 +38,13 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
 
   private final Logger logger = LoggerFactory.getLogger(SSLEndPointConnectionFactory.class);
 
-  // We need to open a socket, its a socket library so we can ignore this issue
+  // We need to open a socket, it's a socket library so we can ignore this issue
   @java.lang.SuppressWarnings({"squid:S4818", "squid:S2095"})
   @Override
   public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)
       throws IOException {
     TlsConfig securityProps = (TlsConfig) endPointServerStatus.getConfig().getEndPointConfig();
-    SSLContext context = SslHelper.createContext("tls", securityProps.getSslConfig().toConfigurationProperties(), logger);
+    SSLContext context = SslHelper.createContext(securityProps.getSslConfig().getContext(), securityProps.getSslConfig().toConfigurationProperties(), logger);
     SSLEngine engine = SslHelper.createSSLEngine(context, securityProps.getSslConfig().toConfigurationProperties());
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());

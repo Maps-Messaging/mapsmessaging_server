@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
-import lombok.Getter;
-
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import lombok.Getter;
 
 public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
 
@@ -40,8 +40,8 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
   SSLHandShakeManagerImpl(SSLEndPoint sslEndPointImpl, EndPointConnectedCallback callback) {
     this.sslEndPointImpl = sslEndPointImpl;
     this.callback = callback;
-    handshakeBufferIn = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
-    handshakeBufferOut = ByteBuffer.allocate(sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
+    handshakeBufferIn = ByteBuffer.allocate(1024*1024);
+    handshakeBufferOut = ByteBuffer.allocate(1024*1024);//sslEndPointImpl.sslEngine.getSession().getApplicationBufferSize());
   }
 
   public boolean handleSSLHandshakeStatus() throws IOException {
@@ -54,7 +54,8 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
       } else if (handshakeStatus == HandshakeStatus.NEED_UNWRAP) {
         logger.log(ServerLogMessages.SSL_HANDSHAKE_NEED_UNWRAP);
         handshakeBufferIn.clear();
-        if (sslEndPointImpl.readBuffer(handshakeBufferIn) == 0) {
+        if (sslEndPointImpl.readBuffer(handshakeBufferIn) == 0 ) {
+          sslEndPointImpl.register(SelectionKey.OP_READ, this);
           return true; // Wait for more data
         }
       } else if (handshakeStatus == HandshakeStatus.NEED_WRAP) {

@@ -52,7 +52,11 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     config = NetworkConnectionManagerConfig.getInstance();
     endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
-    selectorLoadManager = new SelectorLoadManager(10, "Network Interconnection" );
+    int poolSize = 1;
+    if(!config.getEndPointServerConfigList().isEmpty()){
+      poolSize = config.getEndPointServerConfigList().get(0).getEndPointConfig().getSelectorThreadCount();
+    }
+    selectorLoadManager = new SelectorLoadManager(poolSize, "Network Interconnection" );
     endPointConnectionList = new ArrayList<>();
     hostMapping = new LinkedHashMap<>();
   }

@@ -31,11 +31,13 @@ public class SslConfig {
   private String crlUrl;
   private long crlInterval;
 
+  private String context;
   private KeyStoreConfig keyStore;
   private KeyStoreConfig trustStore;
 
   public SslConfig(ConfigurationProperties config) {
     ConfigurationProperties securityProps = locateConfig(config);
+    this.context = securityProps.getProperty("context", "tls");
     this.clientCertificateRequired = config.getBooleanProperty("clientCertificateRequired", false);
     this.clientCertificateWanted = config.getBooleanProperty("clientCertificateWanted", false);
     this.crlUrl = config.getProperty("crlUrl", null);
