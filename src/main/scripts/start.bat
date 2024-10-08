@@ -50,7 +50,7 @@ set "MAPS_CONF=%MAPS_HOME%\conf"
 
 :: From there configure all the paths.
 :: Note::: The conf directory must be at the start else the configuration is loaded from the jars
-set "CLASSPATH=%MAPS_CONF%;%MAPS_LIB%\message_daemon-%VERSION%.jar;%MAPS_LIB%\*"
+set "CLASSPATH=%MAPS_CONF%;%MAPS_LIB%\maps-%VERSION%.jar;%MAPS_LIB%\*"
 
 :loop
 :: Now start the daemon
