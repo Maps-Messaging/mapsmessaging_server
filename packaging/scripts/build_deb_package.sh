@@ -19,7 +19,7 @@
 
 export USER=$1
 export PASSWORD=$2
-
+export REPO_NAME=$3
 # Variables
 POM_VERSION=$(cat pom.xml | grep -m 1 "<version>.*</version>$" | awk -F'[><]' '{print $3}')
 if [[ $POM_VERSION == ml-* ]]; then
@@ -29,7 +29,6 @@ else
 fi
 
 export NEXUS_URL="https://repo.mapsmessaging.io"
-export REPO_NAME="maps_messaging_daemon"
 
 export PACKAGE_VERSION=$POM_VERSION
 export PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
