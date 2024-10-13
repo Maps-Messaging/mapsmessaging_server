@@ -41,7 +41,7 @@ case "$1" in
 
    # Copy the environment file
     ln -sf /opt/maps/etc/maps.env /etc/maps/maps.env
-    ln -sf /opt/maps/etc/maps.service   /usr/lib/systemd/system/v.service
+    ln -sf /opt/maps/etc/maps.service   /usr/lib/systemd/system/maps.service
 
     # Install the message-daemon command
     ln -sf /opt/maps/bin/maps /usr/local/bin/maps
