@@ -21,18 +21,27 @@ set -e
 
 case "$1" in
   remove|purge)
-    # Stop and disable the service
-    systemctl stop maps.service
-    systemctl disable maps.service
+    # Check if systemctl exists and is available
+    if command -v systemctl >/dev/null 2>&1; then
+        # Stop and disable the service if it's active
+        if systemctl is-active --quiet maps.service; then
+            systemctl stop maps.service || true
+        fi
+        systemctl disable maps.service || true
+    fi
 
-    # Remove the symlink
+    # Remove the symlinks
     rm -f /usr/local/bin/maps
     rm -f /usr/local/bin/mapsTop
 
-    # Remove the environment file
+    # Remove the environment file and service file
     rm -f /etc/maps/maps.env
     rm -f /usr/lib/systemd/system/maps.service
 
+    # Optional: Remove logs if purging
+    if [ "$1" = "purge" ]; then
+        rm -rf /var/log/maps
+    fi
   ;;
 esac
 
