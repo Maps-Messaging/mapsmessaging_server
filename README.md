@@ -92,7 +92,7 @@ For full license terms, see the [LICENSE](LICENSE) file in the repository.
 | Web Admin Client                         | [![Build status](https://badge.buildkite.com/7cc9381cb4e32048a4978e91f483113a47217238b29461534e.svg)](https://buildkite.com/mapsmessaging/060-maps-web-client)| [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=web-admin-client&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=web-admin-client)|
 
 
-
+[![Mutable.ai Auto Wiki](https://img.shields.io/badge/Auto_Wiki-Mutable.ai-blue)](https://wiki.mutable.ai/Maps-Messaging/mapsmessaging_server)
 
 
 
