@@ -113,7 +113,7 @@ delete_old_package() {
 upload_new_package() {
  # Absolute path for the package file
   FULL_PATH=$(realpath ${PACKAGE_FILE})
-  RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${FULL_PATH} -v)
+  RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin --headers POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${FULL_PATH} -v)
   if [[ $RESPONSE == *"201 Created"* ]]; then
     echo "Package upload successful"
   else
