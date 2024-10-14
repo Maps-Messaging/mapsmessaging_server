@@ -102,18 +102,13 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
-  ls -lsa ${PACKAGE_FILE}
-  pwd
-
  # Absolute path for the package file
   FULL_PATH=$(realpath ${PACKAGE_FILE})
-  echo ${FULL_PATH}
   RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${FULL_PATH} -v)
   if [[ $RESPONSE == *"201 Created"* ]]; then
     echo "Package upload successful"
   else
-    echo "Package upload failed"
-    exit 1
+    echo "Package upload failed: $RESPONSE"
   fi
 }
 
@@ -122,7 +117,7 @@ upload_new_package() {
 echo "Starting package replacement process..."
 
 build_package
-#delete_old_package
+delete_old_package
 upload_new_package
 
 echo "Package replacement process completed."
