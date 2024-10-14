@@ -72,7 +72,7 @@ build_package(){
   dpkg-deb --build ${TARGET_DIR}
 
   # Check if the generated .deb file exists in the parent directory of TARGET_DIR
-  if [ -f "packaging/${DEB_FILE}.deb" ]; then
+  if [ -f "packaging/deb_package.deb" ]; then
     mv "packaging/deb_package.deb" "${PACKAGE_FILE}"
     echo "Debian package built and renamed to ${PACKAGE_FILE}"
   else
