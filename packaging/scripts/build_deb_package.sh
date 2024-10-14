@@ -66,18 +66,20 @@ chmod +x ${TARGET_DIR}/DEBIAN/preinst
 
 echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
 
-# Build the Debian package
-echo "Building Debian package..."
-dpkg-deb --build ${TARGET_DIR}
+build_package(){
+  # Build the Debian package
+  echo "Building Debian package..."
+  dpkg-deb --build ${TARGET_DIR}
 
-# Check if the generated .deb file exists in the parent directory of TARGET_DIR
-if [ -f "packaging/${DEB_FILE}.deb" ]; then
-  mv "packaging/deb_package.deb" "${PACKAGE_FILE}"
-  echo "Debian package built and renamed to ${PACKAGE_FILE}"
-else
-  echo "Error: packaging/deb_package.deb not found, package build failed"
-  exit 1
-fi
+  # Check if the generated .deb file exists in the parent directory of TARGET_DIR
+  if [ -f "packaging/${DEB_FILE}.deb" ]; then
+    mv "packaging/deb_package.deb" "${PACKAGE_FILE}"
+    echo "Debian package built and renamed to ${PACKAGE_FILE}"
+  else
+    echo "Error: packaging/deb_package.deb not found, package build failed"
+    exit 1
+  fi
+}
 
 # Function to delete the old package
 delete_old_package() {
@@ -100,8 +102,13 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
-  # No need to cd into packaging as the file is in the parent directory
-  RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${PACKAGE_FILE} -v)
+  ls -lsa ${PACKAGE_FILE}
+  pwd
+
+ # Absolute path for the package file
+  FULL_PATH=$(realpath ${PACKAGE_FILE})
+  echo ${FULL_PATH}
+  RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${FULL_PATH} -v)
   if [[ $RESPONSE == *"201 Created"* ]]; then
     echo "Package upload successful"
   else
@@ -114,10 +121,8 @@ upload_new_package() {
 # Main script
 echo "Starting package replacement process..."
 
-# Delete the old package if it exists
-delete_old_package
-
-# Upload the new package
+build_package
+#delete_old_package
 upload_new_package
 
 echo "Package replacement process completed."
