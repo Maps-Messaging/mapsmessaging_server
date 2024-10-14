@@ -65,21 +65,31 @@ chmod +x ${TARGET_DIR}/DEBIAN/prerm
 chmod +x ${TARGET_DIR}/DEBIAN/preinst
 
 echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
+
+# Build the Debian package
+echo "Building Debian package..."
 dpkg-deb --build ${TARGET_DIR}
 
-# Rename the generated package to match PACKAGE_FILE
-mv ${TARGET_DIR}.deb ${PACKAGE_FILE}
-echo "Debian package built and renamed to ${PACKAGE_FILE}"
+# Check if the generated .deb file exists in the parent directory of TARGET_DIR
+if [ -f "packaging/${DEB_FILE}.deb" ]; then
+  mv "packaging/deb_package.deb" "${PACKAGE_FILE}"
+  echo "Debian package built and renamed to ${PACKAGE_FILE}"
+else
+  echo "Error: packaging/deb_package.deb not found, package build failed"
+  exit 1
+fi
 
 # Function to delete the old package
 delete_old_package() {
   DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}&version=${PACKAGE_VERSION}"
 
   # Fetch component ID of the old package
-  COMPONENT_ID=$(curl -u ${USER}:${PASSWORD} -s "${DELETE_URL}" | jq -r '.items[0].id')
+  RESPONSE=$(curl -u ${USER}:${PASSWORD} -s "${DELETE_URL}")
+  echo "Response from Nexus: ${RESPONSE}"  # Debugging output
+  COMPONENT_ID=$(echo "$RESPONSE" | jq -r '.items[0].id')
 
   # Check if the component ID exists and delete the old package
-  if [ -n "${COMPONENT_ID}" ]; then
+  if [ -n "${COMPONENT_ID}" ] && [ "${COMPONENT_ID}" != "null" ]; then
     DELETE_COMPONENT_URL="${NEXUS_URL}/service/rest/v1/components/${COMPONENT_ID}"
     curl -u ${USER}:${PASSWORD} -X DELETE "${DELETE_COMPONENT_URL}"
     echo "Deleted old package with component ID: ${COMPONENT_ID}"
@@ -90,17 +100,16 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
-  cd packaging
+  # No need to cd into packaging as the file is in the parent directory
   RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${PACKAGE_FILE} -v)
-
   if [[ $RESPONSE == *"201 Created"* ]]; then
     echo "Package upload successful"
   else
     echo "Package upload failed"
     exit 1
   fi
-  cd ..
 }
+
 
 # Main script
 echo "Starting package replacement process..."
