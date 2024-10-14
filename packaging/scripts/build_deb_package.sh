@@ -37,8 +37,6 @@ fi
 
 
 export NEXUS_URL="https://repo.mapsmessaging.io"
-
-export PACKAGE_VERSION=$POM_VERSION
 export PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
 
 
@@ -90,13 +88,15 @@ build_package(){
 }
 
 # Function to delete the old package
+# Function to delete the old package
 delete_old_package() {
   DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}&version=${PACKAGE_VERSION}"
 
-  # Fetch component ID of the old package
+  # Fetch component ID of the old package based on both the package name and version
   RESPONSE=$(curl -u ${USER}:${PASSWORD} -s "${DELETE_URL}")
   echo "Response from Nexus: ${RESPONSE}"  # Debugging output
-  COMPONENT_ID=$(echo "$RESPONSE" | jq -r '.items[0].id')
+
+  COMPONENT_ID=$(echo "$RESPONSE" | jq -r --arg name "$PACKAGE_NAME" '.items[] | select(.name==$name) | .id')
 
   # Check if the component ID exists and delete the old package
   if [ -n "${COMPONENT_ID}" ] && [ "${COMPONENT_ID}" != "null" ]; then
@@ -107,6 +107,7 @@ delete_old_package() {
     echo "No old package found to delete"
   fi
 }
+
 
 # Function to upload the new package
 upload_new_package() {
