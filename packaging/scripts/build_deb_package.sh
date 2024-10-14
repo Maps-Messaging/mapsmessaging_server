@@ -22,17 +22,25 @@ export PASSWORD=$2
 export REPO_NAME=maps-snapshot
 
 # Extract POM version from pom.xml
+# Extract POM version from pom.xml
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
+
+# Set the package name
 if [[ $POM_VERSION == ml-* ]]; then
   export PACKAGE_NAME="maps-ml-server"
+  # Remove the "ml-" prefix from the version for places where it could cause issues
+  export PACKAGE_VERSION=${POM_VERSION#ml-}
 else
   export PACKAGE_NAME="maps-server"
+  export PACKAGE_VERSION=$POM_VERSION
 fi
+
 
 export NEXUS_URL="https://repo.mapsmessaging.io"
 
 export PACKAGE_VERSION=$POM_VERSION
 export PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
+
 
 export VERSION_NAME=$POM_VERSION
 export PROJECT_NAME=maps
