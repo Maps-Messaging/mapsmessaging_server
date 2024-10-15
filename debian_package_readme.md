@@ -5,14 +5,14 @@ Create a file called  /etc/apt/sources.list.d/mapsmessaging.list and add this in
 
 
 ```shell
-echo "deb [arch=all] https://repository.mapsmessaging.io:8081/repository/maps_messaging_daemon/ snapshot main" | sudo tee /etc/apt/sources.list.d/mapsmessaging.list
+echo "deb [arch=all] https://repo.mapsmessaging.io/repository/maps-snapshot/ snapshot main" | sudo tee /etc/apt/sources.list.d/mapsmessaging.list
 ```
 
 
 Next you need to install the public key from the repo
 
 ```shell
-wget -qO- https://repository.mapsmessaging.io:8081/repository/public_key/keys/public.gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/mapsmessaging.gpg
+sudo curl -fsSL https://repo.mapsmessaging.io/repository/public_key/keys/maps-pgp-key.gpg -o /etc/apt/trusted.gpg.d/maps-pgp-key.gpg
 ```
 
 This will enable apt to update and install the message daemon.
@@ -21,5 +21,13 @@ To Install the server then
 
 ```shell
 sudo apt-get update
-sudo apt-get install message-daemon
+sudo apt-get install maps-server
 ```
+
+or
+
+```shell
+sudo apt-get update
+sudo apt-get install maps-ml-server
+```
+
