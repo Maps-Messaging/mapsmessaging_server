@@ -36,7 +36,7 @@ else
 fi
 
 
-export NEXUS_URL="https://repository.mapsmessaging.io"
+export NEXUS_URL="https://repository.mapsmessaging.io:8081"
 export PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
 
 
