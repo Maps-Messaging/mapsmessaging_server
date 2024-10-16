@@ -35,7 +35,7 @@ export VERSION_NAME=3.3.7-SNAPSHOT
 
 
 
-export NEXUS_URL="https://repo.mapsmessaging.io"
+export NEXUS_URL="https://repository.mapsmessaging.io"
 export REPO_NAME="maps_messaging_rpm_repo"
 export PACKAGE_VERSION=$POM_VERSION
 export PACKAGE_FILE="${PACKAGE_NAME}-3.3.7-1.noarch.rpm"

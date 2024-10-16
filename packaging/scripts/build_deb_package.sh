@@ -19,7 +19,7 @@
 
 export USER=$1
 export PASSWORD=$2
-export REPO_NAME=maps-snapshot
+export REPO_NAME=maps-server-snapshot
 
 # Extract POM version from pom.xml
 # Extract POM version from pom.xml
@@ -36,7 +36,7 @@ else
 fi
 
 
-export NEXUS_URL="https://repo.mapsmessaging.io"
+export NEXUS_URL="https://repository.mapsmessaging.io"
 export PACKAGE_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
 
 
