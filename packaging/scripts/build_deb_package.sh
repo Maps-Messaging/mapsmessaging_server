@@ -19,7 +19,7 @@
 
 export USER=$1
 export PASSWORD=$2
-export REPO_NAME=maps-apt-snapshot
+export REPO_NAME=maps_apt_snapshot
 
 # Extract POM version from pom.xml
 # Extract POM version from pom.xml
