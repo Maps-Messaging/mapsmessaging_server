@@ -36,7 +36,7 @@ export VERSION_NAME=3.3.7-SNAPSHOT
 
 
 export NEXUS_URL="https://repository.mapsmessaging.io:8081"
-export REPO_NAME="maps_messaging_rpm_repo"
+export REPO_NAME="maps_yum_snapshot"
 export PACKAGE_VERSION=$POM_VERSION
 export PACKAGE_FILE="${PACKAGE_NAME}-3.3.7-1.noarch.rpm"
 export TAR_FILE="target/${PACKAGE_NAME}-${VERSION_NAME}-install.tar.gz"
