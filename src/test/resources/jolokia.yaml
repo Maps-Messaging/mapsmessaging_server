@@ -34,7 +34,6 @@ jolokia:
     serializeException: false # Flag to enable exception serialization
     #Discovery
     discoveryEnabled: false # Flag to enable discovery
-    discoveryAgentUrl: http://localhost:8181/hawtio/discovery/agent # The url to use for discovery
     multicastGroup: 239.192.48.48
     multicastPort: 24884
 

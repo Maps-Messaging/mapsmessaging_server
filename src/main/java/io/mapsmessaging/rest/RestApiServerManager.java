@@ -30,6 +30,8 @@ import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.translation.DebugMapper;
+import io.mapsmessaging.rest.translation.GsonMessageBodyReader;
+import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
 import io.mapsmessaging.utilities.Agent;
 import jakarta.servlet.Servlet;
 import java.io.File;
@@ -151,6 +153,10 @@ public class RestApiServerManager implements Agent {
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
       resourceConfig.packages(false, endpoints.toArray(new String[0]));
+      // Register Gson providers
+      resourceConfig.register(GsonMessageBodyReader.class);
+      resourceConfig.register(GsonMessageBodyWriter.class);
+
       if (config.isEnableAuthentication() && AuthManager.getInstance().isAuthenticationEnabled()) {
         resourceConfig.register(new AuthenticationFilter());
         AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());

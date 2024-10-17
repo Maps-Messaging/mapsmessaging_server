@@ -49,7 +49,7 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #   a) Expose all network ports the server may need
 #   b) Install the latest image from deployments
 #   c) Configure the scripts specific for docker
-#   d) Configure Hawtio for JMX / Rest / Web management
+#   d) Configure for JMX / Rest / Web management
 #   e) Define a volume mount for the data directory
 #   f) Register the command to start the server
 # Expose the protocol ports
@@ -57,7 +57,6 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #
 # ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
 # Admin       8080        TCP - Native RestAPI
-# Admin       8181        TCP - Hawtio
 # Admin       8778        TCP - Jolokia
 #
 # SemTech     1700        UDP
@@ -67,7 +66,6 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 #----------------------------------------------------------------------------------------------
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
-EXPOSE 8181/tcp
 EXPOSE 8778/tcp
 
 EXPOSE 1700/udp

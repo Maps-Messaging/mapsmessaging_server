@@ -48,8 +48,7 @@ import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
-import io.mapsmessaging.rest.hawtio.HawtioManager;
-import io.mapsmessaging.rest.hawtio.JolokaManager;
+import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.utilities.Agent;
@@ -220,7 +219,6 @@ public class MessageDaemon {
    * - ServerConnectionManager
    * - RoutingManager
    * - JolokaManager
-   * - HawtioManager
    *
    * The method also adds optional modules to the agentMap based on the values of enableSystemTopics and enableDeviceIntegration flags.
    * If enableSystemTopics is true, a SystemTopicManager is added to the agentMap.
@@ -248,7 +246,6 @@ public class MessageDaemon {
     addToMap(2000, 30, new ServerConnectionManager());
     addToMap(2100, 10, new RoutingManager());
     addToMap(1000, 250, new JolokaManager());
-    addToMap(1100, 300, new HawtioManager());
 
     // Optional modules that if not enabled do not load
     if (enableSystemTopics) {

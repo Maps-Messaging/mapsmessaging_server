@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.rest.hawtio;
+package io.mapsmessaging.rest.jolokia;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.JolokiaConfig;

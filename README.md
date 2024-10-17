@@ -12,7 +12,7 @@ Wire protocol standardization has promised interoperability and flexibility in I
 - **Extensibility:** Easily integrate new or proprietary protocols.
 - **Payload Transformation:** Configurable translations, such as XML to [JSON](https://github.com/Maps-Messaging/mapsmessaging_server/tree/main/src/main/java/io/mapsmessaging/api/transformers).
 - **Namespace Partitioning:** Distinct namespaces for users and groups to enhance security.
-- **Comprehensive Management:** JMX, JMX - RestAPI via [Jolokia](https://jolokia.org/), and web-based management with [hawtio](https://hawt.io/).
+- **Comprehensive Management:** JMX, JMX - RestAPI via [Jolokia](https://jolokia.org/)
 - **RestAPI Management:** Simple interface to manage connections, destinations, and schemas.
 
 ## Advanced Features

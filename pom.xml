@@ -173,6 +173,13 @@
         <branchName>development</branchName>
       </properties>
       <dependencies>
+        <!-- Consul client API -->
+        <dependency>
+          <groupId>com.ecwid.consul</groupId>
+          <artifactId>consul-api</artifactId>
+          <version>1.4.6</version>
+        </dependency>
+
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
@@ -291,6 +298,13 @@
         </plugins>
       </build>
       <dependencies>
+        <!-- Consul client API -->
+        <dependency>
+          <groupId>com.ecwid.consul</groupId>
+          <artifactId>consul-api</artifactId>
+          <version>1.4.6</version>
+        </dependency>
+
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
@@ -383,6 +397,13 @@
       </properties>
 
       <dependencies>
+        <!-- Consul client API -->
+        <dependency>
+          <groupId>com.ecwid.consul</groupId>
+          <artifactId>consul-api</artifactId>
+          <version>1.4.6</version>
+        </dependency>
+
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
@@ -484,6 +505,13 @@
       </build>
 
       <dependencies>
+        <!-- Consul client API -->
+        <dependency>
+          <groupId>com.ecwid.consul</groupId>
+          <artifactId>consul-api</artifactId>
+          <version>1.4.6</version>
+        </dependency>
+
         <dependency>
           <groupId>io.mapsmessaging</groupId>
           <artifactId>authentication_library</artifactId>
@@ -784,6 +812,18 @@
           </replacements>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>8.4.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -913,19 +953,6 @@
       <version>3.6.1</version>
     </dependency>
 
-    <!-- Consul client API -->
-    <dependency>
-      <groupId>com.ecwid.consul</groupId>
-      <artifactId>consul-api</artifactId>
-      <version>1.4.5</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.orbitz.consul</groupId>
-      <artifactId>consul-client</artifactId>
-      <version>1.5.3</version>
-    </dependency>
-
     <!-- Serial Port support -->
     <dependency>
       <groupId>com.fazecast</groupId>
@@ -934,6 +961,12 @@
     </dependency>
 
     <!-- Rest API support -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>4.0.1</version>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api -->
     <dependency>
       <groupId>javax.ws.rs</groupId>
@@ -1088,52 +1121,10 @@
       <version>3.5.12</version>
     </dependency>
 
-    <!-- Hawtio Dependencies -->
-    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-embedded -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-embedded</artifactId>
-      <version>4.2.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
-  </dependency>
-
-    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-war -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-war</artifactId>
-      <version>4.2.0</version>
-      <scope>provided</scope>
-      <type>war</type>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/io.hawt/hawtio-app -->
-    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-app</artifactId>
-      <version>2.17.7</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
-      <version>2.3.2</version> <!-- Replace with the desired version -->
+      <version>2.3.2</version>
     </dependency>
 
 
@@ -1324,7 +1315,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.10.3</version>
+      <version>5.11.2</version>
       <scope>test</scope>
     </dependency>
 

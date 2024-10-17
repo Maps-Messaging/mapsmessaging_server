@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  *
  */
 
-package io.mapsmessaging.rest.hawtio;
+package io.mapsmessaging.rest.jolokia;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class JolokiaLogHandler implements org.jolokia.util.LogHandler {
   private final Logger logger = LoggerFactory.getLogger(JolokiaLogHandler.class);
