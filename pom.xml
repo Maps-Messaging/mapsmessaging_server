@@ -791,7 +791,7 @@
     <repository>
       <id>maps_test_libs</id>
       <name>artifactory-releases</name>
-      <url>https://repo.mapsmessaging.io/repository/maps_test_libs/</url>
+      <url>https://repository.mapsmessaging.io:8081/repository/maps_test_libs/</url>
     </repository>
   </repositories>
 
