@@ -141,7 +141,9 @@ public class SSLEndPoint extends TCPEndPoint {
         response = encryptedIn.limit();
       }
       logger.log(ServerLogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
-      if (encryptedIn.hasRemaining() && applicationIn.remaining() != 0 ) {
+      int pos = 0;
+      while (encryptedIn.hasRemaining() && applicationIn.remaining() != 0 && pos != encryptedIn.position()) {
+        pos = encryptedIn.position();
         SSLEngineResult result = sslEngine.unwrap(encryptedIn, applicationIn);
         handleSSLEngineResult(result);
         if(result.getStatus() == Status.BUFFER_UNDERFLOW){
