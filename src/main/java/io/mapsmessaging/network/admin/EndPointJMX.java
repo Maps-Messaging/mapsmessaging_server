@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,12 +24,11 @@ import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
-import lombok.Getter;
-
-import javax.management.ObjectInstance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.management.ObjectInstance;
+import lombok.Getter;
 
 @JMXBean(description = "End Point JMX Bean")
 public class EndPointJMX implements HealthMonitor {

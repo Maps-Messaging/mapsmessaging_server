@@ -24,15 +24,14 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTy
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.ApplicationMapEncoder;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.HeaderEncoder;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.encoders.PropertiesEncoder;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.*;
 import org.apache.qpid.proton.message.Message;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class BaseMessageTranslator implements MessageTranslator {
 

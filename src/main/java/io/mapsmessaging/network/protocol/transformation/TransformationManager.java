@@ -25,6 +25,7 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
@@ -38,11 +39,15 @@ public class TransformationManager implements ServiceManager {
     return Holder.INSTANCE;
   }
 
-  private final ServiceLoader<ProtocolMessageTransformation> transformations;
+  private final Map<String, ProtocolMessageTransformation> lookupMap;
   private final TreeNode root;
 
   private TransformationManager() {
-    transformations = ServiceLoader.load(ProtocolMessageTransformation.class);
+    ServiceLoader<ProtocolMessageTransformation> transformations = ServiceLoader.load(ProtocolMessageTransformation.class);
+    lookupMap = new ConcurrentHashMap<>();
+    for(ProtocolMessageTransformation transformation : transformations) {
+      lookupMap.put(transformation.getName().toLowerCase(), transformation);
+    }
     ConfigurationProperties properties = ConfigurationManager.getInstance().getProperties("TransformationManager");
     Object obj = properties.get("data");
     if(obj != null) {
@@ -94,21 +99,13 @@ public class TransformationManager implements ServiceManager {
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>();
-    for (ProtocolMessageTransformation transformation : transformations) {
-      service.add(transformation);
-    }
+    List<Service> service = new ArrayList<>(lookupMap.values());
     return service.listIterator();
   }
 
   public ProtocolMessageTransformation getTransformation(String name) {
     if(name == null || name.isEmpty()) return null;
-    for (ProtocolMessageTransformation transformation : transformations) {
-      if (transformation.getName().equalsIgnoreCase(name)) {
-        return transformation;
-      }
-    }
-    return null;
+    return lookupMap.get(name.toLowerCase());
   }
 }
 

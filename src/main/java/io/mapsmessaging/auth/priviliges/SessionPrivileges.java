@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,14 +18,13 @@
 package io.mapsmessaging.auth.priviliges;
 
 import io.mapsmessaging.api.features.QualityOfService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)

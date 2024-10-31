@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import io.mapsmessaging.engine.destination.subscription.transaction.Acknowledgem
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.ThreadContext;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;

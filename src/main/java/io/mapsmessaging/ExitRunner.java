@@ -18,10 +18,9 @@
 package io.mapsmessaging;
 
 import io.mapsmessaging.utilities.PidFileManager;
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import java.io.IOException;
 import java.nio.file.*;
+import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * This class extends the Thread class and is used to monitor a specified file for deletion events.

@@ -21,6 +21,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
   private final EndPointServerConfig config;
 
   protected EndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfig config) {
-    super(url);
+    super(url, StatsFactory.getDefaultType());
     this.config = config;
     acceptHandler = accept;
     activeEndPoints = new ConcurrentHashMap<>();

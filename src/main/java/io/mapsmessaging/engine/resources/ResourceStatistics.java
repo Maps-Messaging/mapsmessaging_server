@@ -18,15 +18,12 @@
 package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.engine.stats.Statistics;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.cache.CacheStatistics;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
+import io.mapsmessaging.utilities.stats.*;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,7 +39,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
   private final List<CacheStats> cacheStats;
   private final List<TierStats> tierStats;
 
-  public ResourceStatistics(Resource resource) {
+  public ResourceStatistics(Resource resource, StatsType type) {
     storeStats = new ArrayList<>();
     cacheStats = new ArrayList<>();
     tierStats = new ArrayList<>();
@@ -52,30 +49,30 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
       io.mapsmessaging.storage.Statistics statistics = resource.getStatistics();
       if (statistics instanceof CacheStatistics) {
-        cacheStats.add(new CacheHitStats(create(ACCUMULATOR.DIFF, "Cache Hits", "Hits/second")));
-        cacheStats.add(new CacheMissStats(create(ACCUMULATOR.DIFF, "Cache Miss", "Hits/second")));
-        cacheStats.add(new CacheSizeStats(create(ACCUMULATOR.DIFF, "Cache Size", "Entries")));
+        cacheStats.add(new CacheHitStats(create(type,ACCUMULATOR.DIFF, "Cache Hits", "Hits/second")));
+        cacheStats.add(new CacheMissStats(create(type,ACCUMULATOR.DIFF, "Cache Miss", "Hits/second")));
+        cacheStats.add(new CacheSizeStats(create(type,ACCUMULATOR.DIFF, "Cache Size", "Entries")));
         statistics = ((CacheStatistics) statistics).getStorageStatistics();
       }
 
       if (statistics instanceof MemoryTierStatistics) {
-        tierStats.add(new TierSizeStats(create(ACCUMULATOR.ADD, "Top Tier Entries", "Entries")));
-        tierStats.add(new TierReadStats(create(ACCUMULATOR.ADD, "Top Tier Read Operations", "Reads/second")));
-        tierStats.add(new TierWriteStats(create(ACCUMULATOR.ADD, "Top Tier Write Operations", "Writes/second")));
-        tierStats.add(new TierDeleteStats(create(ACCUMULATOR.ADD, "Top Tier Delete Operations", "Removals/second")));
-        tierStats.add(new TierMigrationStats(create(ACCUMULATOR.ADD, "Tier Migrations Operations", "Object moves/second")));
+        tierStats.add(new TierSizeStats(create(type, ACCUMULATOR.ADD, "Top Tier Entries", "Entries")));
+        tierStats.add(new TierReadStats(create(type, ACCUMULATOR.ADD, "Top Tier Read Operations", "Reads/second")));
+        tierStats.add(new TierWriteStats(create(type, ACCUMULATOR.ADD, "Top Tier Write Operations", "Writes/second")));
+        tierStats.add(new TierDeleteStats(create(type, ACCUMULATOR.ADD, "Top Tier Delete Operations", "Removals/second")));
+        tierStats.add(new TierMigrationStats(create(type, ACCUMULATOR.ADD, "Tier Migrations Operations", "Object moves/second")));
       }
-      storeStats.add(new ReadStats(create(ACCUMULATOR.ADD, "Disk Read Operations", "Disk Reads/second")));
-      storeStats.add(new WriteStats(create(ACCUMULATOR.ADD, "Disk Write Operations", "Disk Writes/second")));
-      storeStats.add(new IOPSStats(create(ACCUMULATOR.ADD, "Disk IOPS", "Disk IO/second")));
-      storeStats.add(new DeleteStats(create(ACCUMULATOR.ADD, "Removal Operations", "Removals/second")));
-      storeStats.add(new ReadLatencyStats(create(ACCUMULATOR.ADD, "Read Latency", "ms")));
-      storeStats.add(new WriteLatencyStats(create(ACCUMULATOR.ADD, "Write Latency", "ms")));
-      storeStats.add(new BytesReadStats(create(ACCUMULATOR.ADD, "Bytes Read", "Bytes/second")));
-      storeStats.add(new BytesWrittenStats(create(ACCUMULATOR.ADD, "Bytes Written", "Bytes/second")));
-      storeStats.add(new TotalSizeStats(create(ACCUMULATOR.DIFF, "Total Size", "Bytes")));
-      storeStats.add(new TotalEmptySpaceStats(create(ACCUMULATOR.DIFF, "Empty Space", "Bytes")));
-      storeStats.add(new PartitionCountStats(create(ACCUMULATOR.DIFF, "Partition Count", "Partitions")));
+      storeStats.add(new ReadStats(create(type, ACCUMULATOR.ADD, "Disk Read Operations", "Disk Reads/second")));
+      storeStats.add(new WriteStats(create(type, ACCUMULATOR.ADD, "Disk Write Operations", "Disk Writes/second")));
+      storeStats.add(new IOPSStats(create(type, ACCUMULATOR.ADD, "Disk IOPS", "Disk IO/second")));
+      storeStats.add(new DeleteStats(create(type, ACCUMULATOR.ADD, "Removal Operations", "Removals/second")));
+      storeStats.add(new ReadLatencyStats(create(type, ACCUMULATOR.ADD, "Read Latency", "ms")));
+      storeStats.add(new WriteLatencyStats(create(type, ACCUMULATOR.ADD, "Write Latency", "ms")));
+      storeStats.add(new BytesReadStats(create(type, ACCUMULATOR.ADD, "Bytes Read", "Bytes/second")));
+      storeStats.add(new BytesWrittenStats(create(type, ACCUMULATOR.ADD, "Bytes Written", "Bytes/second")));
+      storeStats.add(new TotalSizeStats(create(type, ACCUMULATOR.DIFF, "Total Size", "Bytes")));
+      storeStats.add(new TotalEmptySpaceStats(create(type, ACCUMULATOR.DIFF, "Empty Space", "Bytes")));
+      storeStats.add(new PartitionCountStats(create(type, ACCUMULATOR.DIFF, "Partition Count", "Partitions")));
     }
     else{
       future = null;
@@ -88,16 +85,20 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
       Map<String, LinkedMovingAverageRecord> cache = new LinkedHashMap<>();
       response.put("cache", cache);
       for(CacheStats stats:cacheStats){
-        LinkedMovingAverages movingAverage = stats.movingAverage;
-        cache.put(movingAverage.getName(), movingAverage.getRecord() );
+        Stats movingAverage = stats.movingAverage;
+        if (movingAverage.supportMovingAverage()) {
+          cache.put(movingAverage.getName(), ((LinkedMovingAverages)movingAverage).getRecord());
+        }
       }
     }
     if(!tierStats.isEmpty()){
       Map<String, LinkedMovingAverageRecord> tier = new LinkedHashMap<>();
       response.put("tier", tier);
       for(TierStats stats:tierStats){
-        LinkedMovingAverages movingAverage = stats.movingAverage;
-        tier.put(movingAverage.getName(), movingAverage.getRecord() );
+        Stats movingAverage = stats.movingAverage;
+        if (movingAverage.supportMovingAverage()) {
+          tier.put(movingAverage.getName(), ((LinkedMovingAverages) movingAverage).getRecord());
+        }
       }
 
     }
@@ -105,8 +106,10 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
       Map<String, LinkedMovingAverageRecord> store = new LinkedHashMap<>();
       response.put("store", store);
       for(StorageStats stats:storeStats){
-        LinkedMovingAverages movingAverage = stats.movingAverage;
-        store.put(movingAverage.getName(), movingAverage.getRecord() );
+        Stats movingAverage = stats.movingAverage;
+        if (movingAverage.supportMovingAverage()) {
+          store.put(movingAverage.getName(), ((LinkedMovingAverages) movingAverage).getRecord());
+        }
       }
     }
     return response;
@@ -157,9 +160,9 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private abstract static class TierStats {
 
-    private final LinkedMovingAverages movingAverage;
+    private final Stats movingAverage;
 
-    public TierStats(LinkedMovingAverages movingAverage) {
+    public TierStats(Stats movingAverage) {
       this.movingAverage = movingAverage;
     }
 
@@ -172,7 +175,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class TierReadStats extends TierStats {
 
-    public TierReadStats(LinkedMovingAverages movingAverage) {
+    public TierReadStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -184,7 +187,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class TierWriteStats extends TierStats {
 
-    public TierWriteStats(LinkedMovingAverages movingAverage) {
+    public TierWriteStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -196,7 +199,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class TierDeleteStats extends TierStats {
 
-    public TierDeleteStats(LinkedMovingAverages movingAverage) {
+    public TierDeleteStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -208,7 +211,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class TierMigrationStats extends TierStats {
 
-    public TierMigrationStats(LinkedMovingAverages movingAverage) {
+    public TierMigrationStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -221,7 +224,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class TierSizeStats extends TierStats {
 
-    public TierSizeStats(LinkedMovingAverages movingAverage) {
+    public TierSizeStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -233,9 +236,9 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private abstract static class CacheStats {
 
-    private final LinkedMovingAverages movingAverage;
+    private final Stats movingAverage;
 
-    public CacheStats(LinkedMovingAverages movingAverage) {
+    public CacheStats(Stats movingAverage) {
       this.movingAverage = movingAverage;
     }
 
@@ -249,7 +252,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class CacheMissStats extends CacheStats {
 
-    public CacheMissStats(LinkedMovingAverages movingAverage) {
+    public CacheMissStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -260,7 +263,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class CacheHitStats extends CacheStats {
 
-    public CacheHitStats(LinkedMovingAverages movingAverage) {
+    public CacheHitStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -271,7 +274,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   public static class CacheSizeStats extends CacheStats {
 
-    public CacheSizeStats(LinkedMovingAverages movingAverage) {
+    public CacheSizeStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -282,9 +285,9 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private abstract static class StorageStats {
 
-    private final LinkedMovingAverages movingAverage;
+    private final Stats movingAverage;
 
-    public StorageStats(LinkedMovingAverages movingAverage) {
+    public StorageStats(Stats movingAverage) {
       this.movingAverage = movingAverage;
     }
 
@@ -298,7 +301,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class ReadStats extends StorageStats {
 
-    public ReadStats(LinkedMovingAverages movingAverage) {
+    public ReadStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -309,7 +312,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class WriteStats extends StorageStats {
 
-    public WriteStats(LinkedMovingAverages movingAverage) {
+    public WriteStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -320,7 +323,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class IOPSStats extends StorageStats {
 
-    public IOPSStats(LinkedMovingAverages movingAverage) {
+    public IOPSStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -331,7 +334,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class DeleteStats extends StorageStats {
 
-    public DeleteStats(LinkedMovingAverages movingAverage) {
+    public DeleteStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -342,7 +345,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class TotalSizeStats extends StorageStats {
 
-    public TotalSizeStats(LinkedMovingAverages movingAverage) {
+    public TotalSizeStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -353,7 +356,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class TotalEmptySpaceStats extends StorageStats {
 
-    public TotalEmptySpaceStats(LinkedMovingAverages movingAverage) {
+    public TotalEmptySpaceStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -364,7 +367,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class PartitionCountStats extends StorageStats {
 
-    public PartitionCountStats(LinkedMovingAverages movingAverage) {
+    public PartitionCountStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -375,7 +378,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class BytesWrittenStats extends StorageStats {
 
-    public BytesWrittenStats(LinkedMovingAverages movingAverage) {
+    public BytesWrittenStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -386,7 +389,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class BytesReadStats extends StorageStats {
 
-    public BytesReadStats(LinkedMovingAverages movingAverage) {
+    public BytesReadStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -397,7 +400,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class ReadLatencyStats extends StorageStats {
 
-    public ReadLatencyStats(LinkedMovingAverages movingAverage) {
+    public ReadLatencyStats(Stats movingAverage) {
       super(movingAverage);
     }
 
@@ -408,7 +411,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
   private static final class WriteLatencyStats extends StorageStats {
 
-    public WriteLatencyStats(LinkedMovingAverages movingAverage) {
+    public WriteLatencyStats(Stats movingAverage) {
       super(movingAverage);
     }
 

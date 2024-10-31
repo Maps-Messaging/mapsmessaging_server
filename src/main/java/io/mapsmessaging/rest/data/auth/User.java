@@ -18,12 +18,11 @@
 package io.mapsmessaging.rest.data.auth;
 
 import io.mapsmessaging.auth.registry.UserDetails;
-import lombok.Data;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Data;
 
 @Data
 public class User {

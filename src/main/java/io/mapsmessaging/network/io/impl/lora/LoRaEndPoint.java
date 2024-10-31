@@ -29,6 +29,7 @@ import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -180,7 +181,7 @@ public class LoRaEndPoint extends EndPoint {
       }
       logger.log(ServerLogMessages.LORA_QUEUED_EVENT, incoming.size(), selectable != null);
       int from = datagram.getFrom();
-      LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f));
+      LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f, StatsFactory.getDefaultType()));
       stats.update(datagram);
     }
   }

@@ -17,14 +17,13 @@
 
 package io.mapsmessaging.rest.data;
 
-import io.mapsmessaging.engine.destination.DestinationStats;
+import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
-import lombok.Data;
-
 import java.io.Serializable;
 import java.util.Map;
+import lombok.Data;
 
 @Data
 public class ServerStatistics implements Serializable {
@@ -60,18 +59,18 @@ public class ServerStatistics implements Serializable {
     totalWriteBytes = EndPoint.totalWriteBytes.sum();
     totalDisconnections = EndPoint.totalDisconnections.sum();
 
-    publishedPerSecond = DestinationStats.getPublishedPerSecond();
-    subscribedPerSecond = DestinationStats.getSubscribedPerSecond();
-    noInterestPerSecond = DestinationStats.getNoInterestPerSecond();
-    deliveredPerSecond = DestinationStats.getDeliveredPerSecond();
-    retrievedPerSecond = DestinationStats.getRetrievedPerSecond();
+    publishedPerSecond = DestinationImpl.getGlobalStats().getPublishedPerSecond();
+    subscribedPerSecond = DestinationImpl.getGlobalStats().getSubscribedPerSecond();
+    noInterestPerSecond = DestinationImpl.getGlobalStats().getNoInterestPerSecond();
+    deliveredPerSecond = DestinationImpl.getGlobalStats().getDeliveredPerSecond();
+    retrievedPerSecond = DestinationImpl.getGlobalStats().getRetrievedPerSecond();
 
-    totalNoInterestMessages = DestinationStats.getTotalNoInterestMessages();
-    totalSubscribedMessages = DestinationStats.getTotalSubscribedMessages();
-    totalPublishedMessages = DestinationStats.getTotalPublishedMessages();
-    totalRetrievedMessages = DestinationStats.getTotalRetrievedMessages();
-    totalDeliveredMessages = DestinationStats.getTotalDeliveredMessages();
-    totalExpiredMessages = DestinationStats.getTotalExpiredMessages();
-    stats = DestinationStats.getGlobalStats();
+    totalNoInterestMessages = DestinationImpl.getGlobalStats().getTotalNoInterestMessages();
+    totalSubscribedMessages = DestinationImpl.getGlobalStats().getTotalSubscribedMessages();
+    totalPublishedMessages = DestinationImpl.getGlobalStats().getTotalPublishedMessages();
+    totalRetrievedMessages = DestinationImpl.getGlobalStats().getTotalRetrievedMessages();
+    totalDeliveredMessages = DestinationImpl.getGlobalStats().getTotalDeliveredMessages();
+    totalExpiredMessages = DestinationImpl.getGlobalStats().getTotalExpiredMessages();
+    stats = DestinationImpl.getGlobalStats().getGlobalStats();
   }
 }

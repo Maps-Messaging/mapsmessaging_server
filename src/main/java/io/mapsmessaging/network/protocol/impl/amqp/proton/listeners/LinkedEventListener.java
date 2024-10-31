@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import org.apache.qpid.proton.engine.Event;
-import org.apache.qpid.proton.engine.EventType;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.qpid.proton.engine.Event;
+import org.apache.qpid.proton.engine.EventType;
 
 public class LinkedEventListener implements EventListener {
 

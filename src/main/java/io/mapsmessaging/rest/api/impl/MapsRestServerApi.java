@@ -17,6 +17,9 @@
 
 package io.mapsmessaging.rest.api.impl;
 
+import static io.mapsmessaging.BuildInfo.buildVersion;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.responses.LoginResponse;
@@ -33,12 +36,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletResponse;
-
-import static io.mapsmessaging.BuildInfo.buildVersion;
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @OpenAPIDefinition(
     info = @Info(

@@ -102,7 +102,7 @@ public class MQTT5Protocol extends ProtocolImpl {
   @Getter
   private final MqttV5Config mqttConfig;
 
-  public MQTT5Protocol(EndPoint endPoint, Packet packet) throws IOException {
+  public MQTT5Protocol(EndPoint endPoint) throws IOException {
     super(endPoint);
     logger = LoggerFactory.getLogger("MQTT 5.0 Protocol on " + endPoint.getName());
 
@@ -138,6 +138,11 @@ public class MQTT5Protocol extends ProtocolImpl {
     else{
       authenticationContext = null;
     }
+  }
+
+
+  public MQTT5Protocol(EndPoint endPoint, Packet packet) throws IOException {
+    this(endPoint);
     processPacket(packet);
     selectorTask.getReadTask().pushOutstandingData(packet);
   }
@@ -155,6 +160,20 @@ public class MQTT5Protocol extends ProtocolImpl {
       SessionManager.getInstance().close(session, false);
     }
     super.close();
+  }
+
+  @Override
+  public void connect(@NonNull @NotNull String sessionId, String username, String password) throws IOException {
+    Connect5 connect = new Connect5();
+    if (username != null) {
+      connect.setUsername(username);
+      connect.setPassword(password.trim().toCharArray());
+    }
+
+    connect.setSessionId(sessionId);
+    writeFrame(connect);
+    registerRead();
+    completedConnection();
   }
 
   public void registerRead() throws IOException {
@@ -208,7 +227,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     MQTTPacket5 mqtt = packetFactory.parseFrame(packet);
     if (mqtt != null) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
-      receivedMessageAverages.increment();
+      EndPoint.totalReceived.increment();
       boolean clientHasAuth = false;
       MessageProperty authMethod = null;
       if (mqtt instanceof Connect5) {
@@ -230,7 +249,7 @@ public class MQTT5Protocol extends ProtocolImpl {
 
   private void handleResponse(MQTTPacket5 response) {
     if (response != null) {
-      sentMessageAverages.increment();
+      EndPoint.totalSent.increment();
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.RESPONSE_PACKET, response);
       }

@@ -22,7 +22,6 @@ import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.interfaces.row.InterfacesStatusRowPanel;
 import io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic;
 import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
-
 import java.util.ArrayList;
 import java.util.List;
 

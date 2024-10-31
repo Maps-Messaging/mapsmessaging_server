@@ -26,16 +26,15 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.tasks.InputPacketProce
 import io.mapsmessaging.network.protocol.impl.amqp.proton.tasks.SendMessageTask;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
-import lombok.Getter;
-import org.apache.qpid.proton.engine.Collector;
-import org.apache.qpid.proton.engine.Connection;
-import org.apache.qpid.proton.engine.Transport;
-
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.Getter;
+import org.apache.qpid.proton.engine.Collector;
+import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.Transport;
 
 public class ProtonEngine {
 

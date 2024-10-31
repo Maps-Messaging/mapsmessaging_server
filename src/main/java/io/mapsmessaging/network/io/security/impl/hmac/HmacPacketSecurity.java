@@ -21,11 +21,10 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
 import io.mapsmessaging.network.io.security.SignatureManager;
 import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public abstract class HmacPacketSecurity implements PacketIntegrity {
 

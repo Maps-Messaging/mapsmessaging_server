@@ -93,7 +93,6 @@ public class Connected extends State {
       try {
         parser = SelectorParser.compile(selector);
       } catch (Throwable e) {
-        e.printStackTrace();
         throw new IOException("Unable to parse selector", e);
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,16 +21,15 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.message.TypedData.TYPE;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTypes;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class StreamMessageTranslator extends BaseMessageTranslator {
 

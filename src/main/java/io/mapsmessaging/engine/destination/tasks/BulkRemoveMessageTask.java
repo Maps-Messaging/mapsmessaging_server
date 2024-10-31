@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import io.mapsmessaging.engine.tasks.EngineTask;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
-
 import java.util.Queue;
 
 public class BulkRemoveMessageTask extends EngineTask {
@@ -56,7 +55,7 @@ public class BulkRemoveMessageTask extends EngineTask {
     int val = (count - queue.size());
     if (val != 0) {
       nano = ((System.nanoTime() - nano) / val) / 1000; // micro seconds
-      destination.getStats().getDeleteTimeAverages().add(nano);
+      destination.getStats().messageDeleteTime(nano);
     }
     if (!queue.isEmpty()) {
       return new FutureResponse(destination.submit(new BulkRemoveMessageTask(destination, queue)));

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import java.io.IOException;
 import lombok.Getter;
 import lombok.ToString;
-
-import java.io.IOException;
 
 @ToString
 public class RegisterAck extends MQTT_SNPacket {

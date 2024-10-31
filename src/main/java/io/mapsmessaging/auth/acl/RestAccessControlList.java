@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import io.mapsmessaging.security.access.AccessControlList;
 import io.mapsmessaging.security.access.AccessControlListParser;
 import io.mapsmessaging.security.access.AccessControlMapping;
 import io.mapsmessaging.security.access.AclEntry;
-
 import java.util.List;
 
 public class RestAccessControlList extends BaseAccessControlList {

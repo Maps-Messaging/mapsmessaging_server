@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,10 +21,9 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
 import io.mapsmessaging.network.io.security.SignatureManager;
 import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
+import java.util.zip.Checksum;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.zip.Checksum;
 
 public abstract class ChecksumPacketSecurity implements PacketIntegrity {
 

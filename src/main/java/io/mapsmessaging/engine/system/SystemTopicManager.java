@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.engine.system;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SYSTEM_TOPIC_MESSAGE_ERROR;
+
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -24,18 +26,16 @@ import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static io.mapsmessaging.logging.ServerLogMessages.SYSTEM_TOPIC_MESSAGE_ERROR;
+import lombok.Getter;
+import lombok.Setter;
 
 public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
@@ -47,7 +47,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   @Setter
   private static boolean enableAdvancedStats = true;
 
-  private final ServiceLoader<SystemTopic> systemTopics;
+  private final List<SystemTopic> systemTopics;
   private final List<SystemTopic> completeList;
   private final DestinationManager destinationManager;
 
@@ -55,7 +55,9 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   private final Logger logger = LoggerFactory.getLogger(SystemTopicManager.class);
 
   public SystemTopicManager(DestinationManager destinationManager){
-    systemTopics = ServiceLoader.load(SystemTopic.class);
+    ServiceLoader<SystemTopic> systemTopicLoad = ServiceLoader.load(SystemTopic.class);
+    systemTopics = new CopyOnWriteArrayList<>();
+    systemTopicLoad.forEach(systemTopics::add);
     completeList = new ArrayList<>();
     this.destinationManager = destinationManager;
   }
@@ -85,7 +87,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
   @Override
   public void start() {
-    if (enableStatistics) {
+    if (enableStatistics && false) {
       for (SystemTopic systemTopic : systemTopics) {
         if (!systemTopic.isAdvanced() || enableAdvancedStats) {
           systemTopic.start();
@@ -129,10 +131,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>();
-    for (SystemTopic systemTopic : systemTopics) {
-      service.add(systemTopic);
-    }
+    List<Service> service = new ArrayList<>(systemTopics);
     return service.listIterator();
   }
 }

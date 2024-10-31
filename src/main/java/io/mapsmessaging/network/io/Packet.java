@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,16 +17,19 @@
 
 package io.mapsmessaging.network.io;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * This class wraps the Java ByteBuffer classes and manages the buffer.
  */
 public class Packet {
+
+  @Getter
+  @Setter
+  private static boolean ERASE_BUFFER = false;
 
   /**
    * underlying ByteBuffer to use @See  java.nio.ByteBuffer
@@ -96,10 +99,12 @@ public class Packet {
 
   public Packet clear() {
     buffer.clear();
-    for (int x = 0; x < buffer.capacity(); x++) {
-      buffer.put(x, (byte) 0);
+    if(ERASE_BUFFER){
+      for (int x = 0; x < buffer.capacity(); x++) {
+        buffer.put(x, (byte) 0);
+      }
+      buffer.clear();
     }
-    buffer.clear();
     return this;
   }
 

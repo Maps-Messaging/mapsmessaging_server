@@ -30,17 +30,12 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.LongAdder;
 import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.NonNull;
@@ -49,24 +44,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class ProtocolImpl implements SelectorCallback, MessageListener, Timeoutable {
-
-  private static final String MESSAGES = "Messages";
-
-  private static final LongAdder totalReceived = new LongAdder();
-  private static final LongAdder totalSent = new LongAdder();
-  public static long getTotalReceived() {
-    return totalReceived.sum();
-  }
-  public static long getTotalSent() {
-    return totalSent.sum();
-  }
-
   protected final EndPoint endPoint;
-  protected final LinkedMovingAverages sentMessageAverages;
-  protected final LinkedMovingAverages receivedMessageAverages;
   protected final Map<String, Transformer> destinationTransformerMap;
   protected final Map<String, ParserExecutor> parserLookup;
   protected final ProtocolJMX mbean;
+
+  @Getter
+  private boolean connected;
 
   @Setter
   @Getter
@@ -74,15 +58,11 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   private boolean completed;
 
   @Getter
-  private boolean connected;
-  @Getter
   @Setter
   protected ProtocolMessageTransformation transformation;
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
-    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
-    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
     connected = false;
     completed = false;
@@ -93,8 +73,6 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
 
   protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
     this.endPoint = endPoint;
-    sentMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Sent Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
-    receivedMessageAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Received Packets", 1, 5, 4, TimeUnit.MINUTES, MESSAGES);
     String endPointName = socketAddress.toString();
     endPointName = endPointName.replace(":", "_");
     List<String> jmsList = new ArrayList<>(endPoint.getJMXTypePath());
@@ -128,6 +106,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   public ParserExecutor getParser(String resource){
     return parserLookup.get(resource);
   }
+
   public void connect(String sessionId, String username, String password) throws IOException {
   }
 
@@ -143,22 +122,14 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     return endPoint;
   }
 
-  public LinkedMovingAverages getSentMessages() {
-    return sentMessageAverages;
-  }
-
-  public LinkedMovingAverages getReceivedMessages() {
-    return receivedMessageAverages;
-  }
-
   public void receivedMessage() {
-    receivedMessageAverages.increment();
-    totalReceived.increment();
+    endPoint.getEndPointStatus().incrementReceivedMessages();
+    EndPoint.totalReceived.increment();
   }
 
   public void sentMessage() {
-    sentMessageAverages.increment();
-    totalSent.increment();
+    endPoint.getEndPointStatus().incrementSentMessages();
+    EndPoint.totalSent.increment();
   }
 
   public void sendKeepAlive() {

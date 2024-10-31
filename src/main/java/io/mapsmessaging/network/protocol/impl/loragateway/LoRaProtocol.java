@@ -35,6 +35,7 @@ import io.mapsmessaging.network.protocol.impl.loragateway.handler.DataHandlerFac
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.utilities.admin.JMXManager;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -255,7 +256,7 @@ public class LoRaProtocol extends ProtocolImpl {
 
   public void handleIncomingPacket(Packet packet, int clientId, int rssi) throws IOException {
     if (JMXManager.isEnableJMX()) {
-      LoRaClientStats stats = clientStats.computeIfAbsent(clientId, f -> new LoRaClientStats(endPoint.getJMXTypePath(), f));
+      LoRaClientStats stats = clientStats.computeIfAbsent(clientId, f -> new LoRaClientStats(endPoint.getJMXTypePath(), f, StatsFactory.getDefaultType()));
       stats.update(clientId, rssi);
     }
     protocolInterfaceManager.processPacket(packet);

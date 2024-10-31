@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@
 package io.mapsmessaging.engine.system.impl.messages;
 
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
-
+import io.mapsmessaging.network.io.EndPoint;
 import java.io.IOException;
 
 public class Received extends SystemTopicWithAverage {
@@ -35,6 +34,6 @@ public class Received extends SystemTopicWithAverage {
 
   @Override
   public long getData() {
-    return ProtocolImpl.getTotalReceived();
+    return EndPoint.totalReceived.sum();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.ByteArrayDetection;
-
 import java.io.IOException;
 
 public class MQTT5ProtocolFactory extends ProtocolImplFactory {
@@ -44,7 +43,9 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
-    return null;
+    MQTT5Protocol protocol = new MQTT5Protocol(endPoint);
+    protocol.connect(sessionId, username, password);
+    return protocol;
   }
 
   @Override

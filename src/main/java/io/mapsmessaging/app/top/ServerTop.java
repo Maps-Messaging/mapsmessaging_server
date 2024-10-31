@@ -17,9 +17,8 @@
 
 package io.mapsmessaging.app.top;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
-
 import java.io.IOException;
+import org.eclipse.paho.client.mqttv3.MqttException;
 
 public class ServerTop {
 

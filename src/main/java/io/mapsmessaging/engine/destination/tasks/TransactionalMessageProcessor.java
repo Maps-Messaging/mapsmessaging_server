@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class TransactionalMessageProcessor extends MessageProcessor {
 
   @Override
   protected long processMessage(Message message) {
-    destination.getStats().getTransactedPublishedMessageAverages().increment();
+    destination.getStats().transactionalPublish();
     long delayed = message.getDelayed();
     if (delayed > 0) {
       delayed = System.currentTimeMillis() + delayed;

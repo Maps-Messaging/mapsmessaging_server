@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,34 +15,29 @@
  *
  */
 
-package io.mapsmessaging.engine.stats;
+package io.mapsmessaging.utilities.stats;
 
-import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.utilities.admin.JMXManager;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Statistics {
 
-  private final List<LinkedMovingAverages> averageList;
+  private final List<Stats> averageList;
 
   public Statistics() {
     averageList = new ArrayList<>();
   }
 
-  public List<LinkedMovingAverages> getAverageList() {
+  public List<Stats> getAverageList() {
     return new ArrayList<>(averageList);
   }
 
-  public LinkedMovingAverages create(ACCUMULATOR accumulator, String name, String units) {
-    LinkedMovingAverages linkedMovingAverages = MovingAverageFactory.getInstance().createLinked(accumulator, name, 1, 5, 4, TimeUnit.MINUTES, units);
-    averageList.add(linkedMovingAverages);
-    return linkedMovingAverages;
+  public Stats create(StatsType full, ACCUMULATOR accumulator, String name, String units) {
+    Stats stats = StatsFactory.create(full, name, units, accumulator,1, 5, 4, TimeUnit.MINUTES);
+    averageList.add(stats);
+    return stats;
   }
 
 }

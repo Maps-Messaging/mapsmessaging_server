@@ -30,8 +30,8 @@ import lombok.ToString;
 @ToString
 public class EndPointConfig extends Config {
 
-  private int selectorThreadCount;
   private boolean discoverable;
+  private int selectorThreadCount;
   private long serverReadBufferSize;
   private long serverWriteBufferSize;
 

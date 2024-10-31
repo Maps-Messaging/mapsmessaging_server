@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.EMPTY;
+
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ListOption;
@@ -24,16 +26,13 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.PathOption;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.Queue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.Queue;
-
-import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.EMPTY;
 
 @ToString
 public class BasePacket implements ServerPacket {

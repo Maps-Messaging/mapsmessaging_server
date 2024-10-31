@@ -20,9 +20,7 @@ package io.mapsmessaging.network.io;
 import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -30,7 +28,6 @@ import java.nio.channels.SelectionKey;
 import java.security.Principal;
 import java.util.List;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import javax.security.auth.Subject;
@@ -39,34 +36,31 @@ import lombok.Setter;
 
 public abstract class EndPoint implements Closeable {
 
+
+  public static final LongAdder totalReceived = new LongAdder();
+  public static final LongAdder totalSent = new LongAdder();
   public static final LongAdder currentConnections = new LongAdder();
   public static final LongAdder totalReadBytes = new LongAdder();
   public static final LongAdder totalWriteBytes = new LongAdder();
   public static final LongAdder totalConnections = new LongAdder();
   public static final LongAdder totalDisconnections = new LongAdder();
 
+  private final AtomicLong lastRead = new AtomicLong();
+  private final AtomicLong lastWrite = new AtomicLong();
+  private final boolean isClient;
+  private boolean isClosed;
+  protected List<String> jmxParentPath;
+
   @Getter
   protected final EndPointServerStatus server;
   @Getter
+  private final EndPointStatus endPointStatus;
+  @Getter
   protected final Logger logger;
-
-  private final AtomicLong lastRead = new AtomicLong();
-  private final AtomicLong lastWrite = new AtomicLong();
-
-  private final LinkedMovingAverages readByteAverages;
-  private final LinkedMovingAverages writeByteAverages;
-
-  private final LinkedMovingAverages bufferOverFlow;
-  private final LinkedMovingAverages bufferUnderFlow;
-
-  private final boolean isClient;
   @Getter
   private final long id;
   @Getter
   private final long connected = System.currentTimeMillis();
-  private boolean isClosed;
-
-  protected List<String> jmxParentPath;
   @Setter
   private CloseHandler closeHandler;
 
@@ -78,11 +72,7 @@ public abstract class EndPoint implements Closeable {
     this.server = server;
     isClient = !(server instanceof EndPointServer);
     this.id = id;
-
-    readByteAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Read Bytes", 1, 5, 4, TimeUnit.MINUTES, "Bytes");
-    writeByteAverages = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Write Bytes", 1, 5, 4, TimeUnit.MINUTES, "Bytes");
-    bufferOverFlow = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Buffer Overflow", 1, 5, 4, TimeUnit.MINUTES, "Packets");
-    bufferUnderFlow = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, "Buffer Underflow", 1, 5, 4, TimeUnit.MINUTES, "Packets");
+    endPointStatus = new EndPointStatus(StatsFactory.getDefaultType());
     logger = createLogger();
     totalConnections.increment();
     currentConnections.increment();
@@ -108,7 +98,7 @@ public abstract class EndPoint implements Closeable {
   }
 
   public void updateReadBytes(int read) {
-    readByteAverages.add(read);
+    endPointStatus.updateReadBytes(read);
     totalReadBytes.add(read);
     lastRead.set(System.currentTimeMillis());
     if (server != null) {
@@ -118,7 +108,7 @@ public abstract class EndPoint implements Closeable {
   }
 
   public void updateWriteBytes(int wrote) {
-    writeByteAverages.add(wrote);
+    endPointStatus.updateWriteBytes(wrote);
     totalWriteBytes.add(wrote);
     lastWrite.set(System.currentTimeMillis());
     if (server != null) {
@@ -143,14 +133,6 @@ public abstract class EndPoint implements Closeable {
     return false;
   }
 
-  public LinkedMovingAverages getReadBytes() {
-    return readByteAverages;
-  }
-
-  public LinkedMovingAverages getWriteBytes() {
-    return writeByteAverages;
-  }
-
   public long getLastRead() {
     return lastRead.get();
   }
@@ -172,30 +154,6 @@ public abstract class EndPoint implements Closeable {
 
   public boolean isSSL() {
     return false;
-  }
-
-  public LinkedMovingAverages getOverFlow() {
-    return bufferOverFlow;
-  }
-
-  public LinkedMovingAverages getUnderFlow() {
-    return bufferUnderFlow;
-  }
-
-  public long getOverFlowTotal() {
-    return bufferOverFlow.getTotal();
-  }
-
-  public long getUnderFlowTotal() {
-    return bufferUnderFlow.getTotal();
-  }
-
-  public void incrementOverFlow() {
-    bufferOverFlow.increment();
-  }
-
-  public void incrementUnderFlow() {
-    bufferUnderFlow.increment();
   }
 
   public abstract String getProtocol();

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 
 package io.mapsmessaging.utilities;
 
+import static io.mapsmessaging.logging.ServerLogMessages.CONFIG_PROPERTY_ACCESS;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import lombok.Getter;
-
-import static io.mapsmessaging.logging.ServerLogMessages.CONFIG_PROPERTY_ACCESS;
 
 /**
  * This class represents a utility class for accessing system properties.

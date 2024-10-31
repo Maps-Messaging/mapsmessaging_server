@@ -23,13 +23,12 @@ import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
 import io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic;
 import io.mapsmessaging.rest.data.StatusMessage;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-import org.eclipse.paho.client.mqttv3.*;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 public class MqttConnection implements IMqttMessageListener {
 

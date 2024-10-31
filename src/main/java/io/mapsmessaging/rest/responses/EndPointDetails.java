@@ -18,6 +18,7 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.security.SubjectHelper;
 import lombok.Getter;
 
@@ -63,17 +64,19 @@ public class EndPointDetails {
     lastRead = endPoint.getLastRead();
     lastWrite = endPoint.getLastWrite();
 
-    bytesRead = endPoint.getReadBytes().getCurrent();
-    totalBytesRead = endPoint.getReadBytes().getTotal();
+    EndPointStatus status = endPoint.getEndPointStatus();
+    totalBytesRead = status.getReadBytesTotal();
+    totalBytesWritten = status.getWriteBytesTotal();
 
-    bytesWritten = endPoint.getWriteBytes().getCurrent();
-    totalBytesWritten = endPoint.getWriteBytes().getTotal();
+    if (status.supportsMovingAverages()) {
+      bytesRead = status.getReadByteAverages().getCurrent();
+      bytesWritten = status.getWriteByteAverages().getCurrent();
 
-    overFlow = endPoint.getOverFlow().getCurrent();
-    totalOverflow = endPoint.getOverFlow().getTotal();
+      overFlow = status.getBufferOverFlow().getCurrent();
+      totalOverflow = status.getBufferOverFlow().getTotal();
 
-    underFlow = endPoint.getUnderFlow().getCurrent();
-    totalUnderflow = endPoint.getUnderFlow().getTotal();
-
+      underFlow = status.getBufferUnderFlow().getCurrent();
+      totalUnderflow = status.getBufferUnderFlow().getTotal();
+    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package io.mapsmessaging.rest.api.impl.destination;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;

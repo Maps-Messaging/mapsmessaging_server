@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,16 +20,15 @@ package io.mapsmessaging.network.io.impl.dtls.state;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.dtls.DTLSSessionManager;
-import lombok.Getter;
-import lombok.Setter;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
+import lombok.Getter;
+import lombok.Setter;
 
 public class StateEngine {
 

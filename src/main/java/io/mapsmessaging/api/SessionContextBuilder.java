@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,13 +21,12 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @ToString
 @Getter

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@
 package io.mapsmessaging.auth.registry.mapping;
 
 import io.mapsmessaging.security.access.mapping.UserIdMap;
+import java.io.IOException;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.Serializer;
-
-import java.io.IOException;
-import java.util.UUID;
 
 public class UserIdSerializer implements Serializer<UserIdMap> {
 

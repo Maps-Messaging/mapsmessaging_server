@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.messaging;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.messaging.PublishRequest;
 import io.mapsmessaging.rest.data.messaging.SubscriptionRequest;
@@ -29,8 +31,6 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Messaging Interface")
 @Path(URI_PATH + "/messaging")

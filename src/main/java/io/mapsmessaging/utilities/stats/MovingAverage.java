@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package io.mapsmessaging.utilities.stats;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 
 /**
  * Manages a single moving average, accumulates data over the period and then provides an average that moves with time. https://en.wikipedia.org/wiki/Moving_average
@@ -30,9 +31,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class MovingAverage {
 
+  @Getter
+  private final String name;
   private final List<DataPoint> dataPoints;
   private final long timePeriod;
-  private final String name;
   private final int expectedEntries;
 
   private long current;
@@ -49,13 +51,6 @@ public class MovingAverage {
     dataPoints = new ArrayList<>();
     expectedEntries = time;
     current =0;
-  }
-
-  /**
-   * @return The name of this Moving Average
-   */
-  public String getName() {
-    return name;
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.listeners.PacketListenerFactoryV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Disconnect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingResponse;
-
 import java.io.IOException;
 
 /**

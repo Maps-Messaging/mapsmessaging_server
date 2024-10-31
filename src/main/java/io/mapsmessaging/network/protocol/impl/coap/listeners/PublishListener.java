@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
 
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
+
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.DestinationType;
@@ -30,14 +33,10 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
 
 public abstract class PublishListener extends  Listener {
 

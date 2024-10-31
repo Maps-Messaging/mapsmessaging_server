@@ -18,10 +18,10 @@
 package io.mapsmessaging.app.top.panes.destination.row;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
+import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panes.destination.DestinationStatusUpdate;
-import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
 import io.mapsmessaging.rest.data.destination.DestinationStatus;
 
 public class DestinationMetricsPanel extends DestinationStatusUpdate {

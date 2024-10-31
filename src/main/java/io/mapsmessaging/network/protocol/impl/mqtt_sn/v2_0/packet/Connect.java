@@ -21,11 +21,10 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.io.IOException;
 
 @ToString
 public class Connect extends MQTT_SN_2_Packet {

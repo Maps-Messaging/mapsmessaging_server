@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Auth;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MQTT_SN_2_Packet;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
-
 import java.io.IOException;
 
 public class AuthenticationState implements State {

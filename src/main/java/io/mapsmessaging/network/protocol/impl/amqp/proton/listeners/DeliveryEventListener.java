@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.TransactionManager;
@@ -26,6 +26,8 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslatorFactory;
+import java.io.IOException;
+import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.apache.qpid.proton.amqp.Binary;
@@ -38,9 +40,6 @@ import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.Target;
 import org.apache.qpid.proton.engine.*;
 import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.login.LoginException;
-import java.io.IOException;
 
 public class DeliveryEventListener extends BaseEventListener {
 

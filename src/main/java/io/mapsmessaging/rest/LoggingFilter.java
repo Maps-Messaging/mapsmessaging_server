@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest;
 
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_SUCCESSFUL_REQUEST;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import jakarta.annotation.Priority;
@@ -26,10 +28,7 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
-
 import java.io.IOException;
-
-import static io.mapsmessaging.logging.ServerLogMessages.REST_API_SUCCESSFUL_REQUEST;
 
 @Provider
 @Priority(Priorities.USER - 1)

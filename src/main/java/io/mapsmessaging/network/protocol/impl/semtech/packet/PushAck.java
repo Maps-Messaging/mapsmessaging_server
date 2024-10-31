@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
-import java.net.SocketAddress;
-
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PUSH_ACK;
+
+import java.net.SocketAddress;
 
 /**
  * ### 3.3. PUSH_ACK packet ###

@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.test.BaseTestConfig;
 import io.mapsmessaging.test.WaitForState;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +46,7 @@ public abstract class ConnectionTest extends BaseTestConfig {
     SelectorLoadManager selectorLoadManager = new SelectorLoadManager(1, url.toString());
     AtomicBoolean connected = new AtomicBoolean(false);
     EndPoint endPoint = factory.connect(url, selectorLoadManager, endpoint -> connected.set(true),
-        new EndPointServerStatus(url) {
+        new EndPointServerStatus(url, StatsFactory.getDefaultType()) {
           @Override
           public EndPointServerConfig getConfig() {
             ConfigurationProperties testConfig = ConfigurationManager.getInstance().getProperties("NetworkManager");

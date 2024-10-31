@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import io.mapsmessaging.engine.destination.subscription.state.MessageStateManage
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-
 
 public class SelectorDestinationSubscription extends DestinationSubscription {
 

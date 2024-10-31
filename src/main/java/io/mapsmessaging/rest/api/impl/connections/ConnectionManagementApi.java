@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.connections;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.impl.destination.BaseDestinationApi;
@@ -31,11 +33,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Connection Management")
 @Path(URI_PATH)

@@ -163,10 +163,10 @@ public class ConnectListener5 extends PacketListener5 {
         .setResetState(connect.isCleanSession())
         .setKeepAlive(keepAlive);
 
-    if (connect.isPasswordFlag()) {
+    if (connect.hasPassword()) {
       scb.setPassword(connect.getPassword());
     }
-    if (connect.isUsernameFlag()) {
+    if (connect.hasUsername()) {
       scb.setUsername(connect.getUsername());
     }
 

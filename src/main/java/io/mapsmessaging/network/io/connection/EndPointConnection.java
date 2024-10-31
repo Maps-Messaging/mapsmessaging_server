@@ -33,6 +33,7 @@ import io.mapsmessaging.network.io.connection.state.*;
 import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class EndPointConnection extends EndPointServerStatus {
   public EndPointConnection(
       EndPointURL url, EndPointConnectionServerConfig properties,
       EndPointConnectionFactory connectionFactory, SelectorLoadManager selectorLoadManager, EndPointConnectionHostJMX manager) {
-    super(url);
+    super(url, StatsFactory.getDefaultType());
     this.properties = properties;
     this.manager = manager;
     this.selectorLoadManager = selectorLoadManager;

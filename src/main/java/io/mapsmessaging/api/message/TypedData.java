@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,10 @@ package io.mapsmessaging.api.message;
 
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
-import lombok.ToString;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.ToString;
 
 @ToString(callSuper = true)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@
 package io.mapsmessaging.api.message;
 
 import io.mapsmessaging.api.message.interceptors.FieldInterceptor;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class DataMap extends LinkedHashMap<String, TypedData> {
 

@@ -45,6 +45,7 @@ import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.queue.EventReaperQueue;
+import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityConcurrentTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler;
@@ -58,7 +59,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -71,13 +71,8 @@ import org.jetbrains.annotations.Nullable;
  * single destination needs to do.
  */
 public class DestinationImpl implements BaseDestination {
-
-  private static final LongAdder totalRetained = new LongAdder();
-
-  public static long getTotalRetained() {
-    return totalRetained.sum();
-  }
-
+  @Getter
+  private static DestinationGlobalStats globalStats = new DestinationGlobalStats(StatsFactory.getDefaultType());
 
   //<editor-fold desc="Global static final fields used by all destinations">
   public static final int TASK_QUEUE_PRIORITY_SIZE = 2;
@@ -164,8 +159,8 @@ public class DestinationImpl implements BaseDestination {
     resource.getResourceProperties().setSchema(config.toMap());
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
-    stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
+    stats = new DestinationStats(StatsFactory.getDefaultType());
+    resourceStatistics = new ResourceStatistics(resource, StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
@@ -198,8 +193,8 @@ public class DestinationImpl implements BaseDestination {
     this.resource = resource;
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
-    stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
+    stats = new DestinationStats(StatsFactory.getDefaultType());
+    resourceStatistics = new ResourceStatistics(resource,StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
@@ -241,8 +236,9 @@ public class DestinationImpl implements BaseDestination {
     resource = new ResourceImpl();
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
 
-    stats = new DestinationStats();
-    resourceStatistics = new ResourceStatistics(resource);
+    stats = new DestinationStats(StatsFactory.getDefaultType());
+
+    resourceStatistics = new ResourceStatistics(resource,StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
@@ -528,7 +524,7 @@ public class DestinationImpl implements BaseDestination {
       if (!eventQueue.isEmpty()) {
         eventQueue = subscriptionManager.scanForInterest(eventQueue);
         if (!eventQueue.isEmpty()) {
-          stats.getStoredMessageAverages().subtract(eventQueue.size());
+          stats.storedMessages(eventQueue.size());
           submit(new BulkRemoveMessageTask(this, eventQueue), PUBLISH_PRIORITY);
         }
       }
@@ -561,7 +557,7 @@ public class DestinationImpl implements BaseDestination {
     Message message = resource.get(messageId);
     if (message != null) {
       nano = (System.nanoTime() - nano) / 1000;
-      getStats().getReadTimeAverages().add(nano);
+      getStats().messageReadTime(nano);
       long expiry = message.getExpiry();
       if (expiry > 0 && expiry < System.currentTimeMillis()) {
         submit(new RemoveMessageTask(this, messageId), RETRIEVE_PRIORITY);
@@ -781,12 +777,12 @@ public class DestinationImpl implements BaseDestination {
     long nano = System.nanoTime();
     resource.remove(messageId);
     if (messageId == retainManager.current()) {
-      totalRetained.decrement();
+      stats.retainedMessages(-1);
       retainManager.replace(-1);
     }
 
     nano = (System.nanoTime() - nano) / 1000; // Make it micro seconds
-    getStats().getDeleteTimeAverages().add(nano);
+    getStats().messageDeleteTime(nano);
   }
 
   /**
@@ -801,15 +797,15 @@ public class DestinationImpl implements BaseDestination {
     if (message.isRetain()) {
       if (message.getOpaqueData() == null || message.getOpaqueData().length == 0) {
         retainManager.replace(-1);
-        totalRetained.decrement();
+        stats.retainedMessages(-1);
       } else {
         retainManager.replace(message.getIdentifier());
-        totalRetained.increment();
+        stats.retainedMessages(1);
       }
     }
 
     nano = (System.nanoTime() - nano) / 1000;
-    getStats().getWriteTimeAverages().add(nano);
+    getStats().messageWriteTime(nano);
   }
 
   public DestinationSubscription getSubscription(String subscriptionName) {

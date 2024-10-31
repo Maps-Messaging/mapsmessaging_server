@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.rest.data.destination.DestinationStatus;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.Getter;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 
 public class DestinationStatusResponse extends BaseResponse {
 

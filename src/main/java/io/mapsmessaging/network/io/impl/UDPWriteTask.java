@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 
 package io.mapsmessaging.network.io.impl;
 
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SEND_PACKET_ERROR;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SENT_PACKET;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
-
 import java.io.IOException;
-
-import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SEND_PACKET_ERROR;
-import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SENT_PACKET;
 
 public class UDPWriteTask extends WriteTask {
 

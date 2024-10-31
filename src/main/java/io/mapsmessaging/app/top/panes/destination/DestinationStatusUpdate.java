@@ -19,8 +19,8 @@ package io.mapsmessaging.app.top.panes.destination;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.Formatter;
-import io.mapsmessaging.app.top.panels.StringPanel;
 import io.mapsmessaging.app.top.panels.Panel;
+import io.mapsmessaging.app.top.panels.StringPanel;
 import io.mapsmessaging.rest.data.destination.DestinationStatus;
 
 public abstract class DestinationStatusUpdate {

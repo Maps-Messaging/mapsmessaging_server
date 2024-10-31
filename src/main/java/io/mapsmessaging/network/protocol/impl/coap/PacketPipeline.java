@@ -17,10 +17,12 @@
 
 package io.mapsmessaging.network.protocol.impl.coap;
 
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
+import static io.mapsmessaging.network.protocol.impl.coap.Constants.MAX_RETRANSMIT;
+
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Queue;
@@ -28,9 +30,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_SEND;
-import static io.mapsmessaging.network.protocol.impl.coap.Constants.MAX_RETRANSMIT;
 
 public class PacketPipeline {
 

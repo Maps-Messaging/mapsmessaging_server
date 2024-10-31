@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
-import io.mapsmessaging.network.io.Packet;
-import lombok.Getter;
-import lombok.ToString;
-
-import java.net.SocketAddress;
-import java.nio.charset.StandardCharsets;
-
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.TX_ACK;
 import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
+
+import io.mapsmessaging.network.io.Packet;
+import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
+import lombok.Getter;
+import lombok.ToString;
 
 /**
  * ### 5.5. TX_ACK packet ###

@@ -26,15 +26,14 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
-import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import javax.security.auth.Subject;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class EchoProtocol extends ProtocolImpl implements Selectable {
 
@@ -106,10 +105,10 @@ public class EchoProtocol extends ProtocolImpl implements Selectable {
           packet.clear();
           read = endPoint.readPacket(packet);
           if (read > 0) {
-            getReceivedMessages().increment();
+            EndPoint.totalReceived.increment();
             packet.flip();
             endPoint.sendPacket(packet);
-            getSentMessages().increment();
+            EndPoint.totalSent.increment();
           } else if (first) {
             endPoint.close();
             return;

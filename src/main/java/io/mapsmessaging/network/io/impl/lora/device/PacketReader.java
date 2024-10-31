@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 package io.mapsmessaging.network.io.impl.lora.device;
 
 import io.mapsmessaging.logging.ServerLogMessages;
-
 import java.util.concurrent.locks.LockSupport;
 
 public class PacketReader implements Runnable {

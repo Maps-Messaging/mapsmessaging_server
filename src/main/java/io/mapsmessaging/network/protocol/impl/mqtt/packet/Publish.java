@@ -22,9 +22,8 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPublishPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
-import lombok.Getter;
-
 import java.nio.ByteBuffer;
+import lombok.Getter;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718037
@@ -84,7 +83,7 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
     if (qos.equals(QualityOfService.MQTT_SN_REGISTERED)) {
       throw new MalformedException("QoS must be 0, 1 or 2 only Reference: [MQTT-3.3.1-4]");
     }
-    if (destinationName.length() == 0) {
+    if (destinationName.isEmpty()) {
       throw new MalformedException("Topic name must be present Reference: [MQTT-3.3.2-1]");
     }
     if (!topicAllowed(destinationName) ||

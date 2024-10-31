@@ -17,18 +17,17 @@
 
 package io.mapsmessaging;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.PidFileManager;
 import io.mapsmessaging.utilities.SystemProperties;
+import java.io.File;
+import java.io.IOException;
 import lombok.Getter;
 import org.tanukisoftware.wrapper.WrapperListener;
 import org.tanukisoftware.wrapper.WrapperManager;
-
-import java.io.File;
-import java.io.IOException;
-
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE;
 
 /**
  * This is the ServerRunner class which implements the WrapperListener interface.

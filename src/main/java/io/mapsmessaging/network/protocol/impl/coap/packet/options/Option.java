@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 
+import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.io.IOException;
 
 public abstract class Option {
 

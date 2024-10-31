@@ -19,9 +19,7 @@ package io.mapsmessaging.network.io;
 
 import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory;
+import io.mapsmessaging.utilities.stats.*;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -38,21 +36,25 @@ public abstract class EndPointServerStatus {
   private final LongAdder totalBytesSent;
   private final LongAdder totalBytesRead;
 
-  private final LinkedMovingAverages averageBytesSent = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Sent Bytes", 1, 5, 4, TimeUnit.MINUTES, "Bytes");
-  private final LinkedMovingAverages averageBytesRead = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Read Bytes", 1, 5, 4, TimeUnit.MINUTES, "Bytes");
-  private final LinkedMovingAverages averagePacketsSent = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Sent Packets", 1, 5, 4, TimeUnit.MINUTES, "Packets");
-  private final LinkedMovingAverages averagePacketsRead = MovingAverageFactory.getInstance().createLinked(MovingAverageFactory.ACCUMULATOR.ADD, "Total Read Packets", 1, 5, 4, TimeUnit.MINUTES, "Packets");
+  private final Stats averageBytesSent;
+  private final Stats averageBytesRead;
+  private final Stats averagePacketsSent;
+  private final Stats averagePacketsRead;
 
   @Getter
   protected final EndPointURL url;
 
-  protected EndPointServerStatus(EndPointURL url) {
+  protected EndPointServerStatus(EndPointURL url, StatsType type) {
     this.url = url;
     totalPacketsSent = new LongAdder();
     totalPacketsRead = new LongAdder();
     totalBytesSent = new LongAdder();
     totalBytesRead = new LongAdder();
     totalErrors = new LongAdder();
+    averageBytesSent = StatsFactory.create(type, "Total Sent Bytes",  "Bytes",  MovingAverageFactory.ACCUMULATOR.ADD, 1, 5, 4, TimeUnit.MINUTES);
+    averageBytesRead = StatsFactory.create(type, "Total Read Bytes", "Bytes", MovingAverageFactory.ACCUMULATOR.ADD,1, 5, 4, TimeUnit.MINUTES );
+    averagePacketsSent = StatsFactory.create(type, "Total Sent Packets", "Packets", MovingAverageFactory.ACCUMULATOR.ADD,1, 5, 4, TimeUnit.MINUTES );
+    averagePacketsRead = StatsFactory.create(type, "Total Read Packets","Packets",  MovingAverageFactory.ACCUMULATOR.ADD,1, 5, 4, TimeUnit.MINUTES);
   }
 
   public abstract EndPointServerConfig getConfig();
@@ -99,6 +101,15 @@ public abstract class EndPointServerStatus {
     averageBytesRead.add(count);
   }
 
+
+  public void incrementError() {
+    totalErrors.increment();
+  }
+
+  public long getTotalErrors() {
+    return totalErrors.sum();
+  }
+
   public long getBytesSentPerSecond(){
     return averageBytesSent.getPerSecond();
   }
@@ -117,27 +128,20 @@ public abstract class EndPointServerStatus {
   }
 
   public LinkedMovingAverageRecord getAverageBytesSent() {
-    return averageBytesSent.getRecord();
+    return averageBytesSent.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 
   public LinkedMovingAverageRecord getAverageBytesRead() {
-    return averageBytesRead.getRecord();
+    return averageBytesRead.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 
   public LinkedMovingAverageRecord getAveragePacketsSent() {
-    return averagePacketsSent.getRecord();
+    return averagePacketsSent.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 
   public LinkedMovingAverageRecord getAveragePacketsRead() {
-    return averagePacketsRead.getRecord();
+    return averagePacketsRead.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 
-  public void incrementError() {
-    totalErrors.increment();
-  }
-
-  public long getTotalErrors() {
-    return totalErrors.sum();
-  }
 }
 

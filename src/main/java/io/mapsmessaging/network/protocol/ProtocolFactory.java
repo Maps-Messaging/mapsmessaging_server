@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,25 +20,27 @@ package io.mapsmessaging.network.protocol;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ProtocolFactory implements ServiceManager {
 
-  private final ServiceLoader<ProtocolImplFactory> protocolServiceLoader;
+  private final List<ProtocolImplFactory> protocolServiceList;
   private final String protocols;
 
   public ProtocolFactory(String protocols) {
-    protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
+    ServiceLoader<ProtocolImplFactory> protocolServiceLoad = ServiceLoader.load(ProtocolImplFactory.class);
+    protocolServiceList = new CopyOnWriteArrayList<>();
+    protocolServiceLoad.forEach(protocolServiceList::add);
     this.protocols = protocols;
   }
 
   public ProtocolImplFactory getBoundedProtocol() {
-    for (ProtocolImplFactory protocol : protocolServiceLoader) {
+    for (ProtocolImplFactory protocol : protocolServiceList) {
       if (protocols.equalsIgnoreCase(protocol.getName())) {
         return protocol;
       }
@@ -50,7 +52,7 @@ public class ProtocolFactory implements ServiceManager {
     int potential = 0;
     int failed = 0;
     StringBuilder sb = new StringBuilder();
-    for (ProtocolImplFactory protocol : protocolServiceLoader) {
+    for (ProtocolImplFactory protocol : protocolServiceList) {
       if ((protocols.contains("all") && !protocol.getName().equalsIgnoreCase("echo") && !protocol.getName().equalsIgnoreCase("nmea")) ||
           protocols.contains(protocol.getName().toLowerCase())) {
         sb.append(protocol.getName()).append(",");
@@ -74,10 +76,7 @@ public class ProtocolFactory implements ServiceManager {
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>();
-    for (ProtocolImplFactory parser : protocolServiceLoader) {
-      service.add(parser);
-    }
+    List<Service> service = new ArrayList<>(protocolServiceList);
     return service.listIterator();
   }
 }

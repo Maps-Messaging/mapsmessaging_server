@@ -20,11 +20,10 @@ package io.mapsmessaging.rest.data.integration;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverageRecord;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.ToString;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.Data;
+import lombok.ToString;
 
 @Data
 @ToString

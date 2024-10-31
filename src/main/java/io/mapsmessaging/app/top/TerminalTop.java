@@ -24,15 +24,14 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import io.mapsmessaging.app.top.network.MqttConnection;
 import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.ServerStatusPane;
 import io.mapsmessaging.app.top.panes.destination.DestinationPane;
 import io.mapsmessaging.app.top.panes.interfaces.InterfacesPane;
-import io.mapsmessaging.app.top.network.MqttConnection;
-import org.eclipse.paho.client.mqttv3.MqttException;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.eclipse.paho.client.mqttv3.MqttException;
 
 public class TerminalTop {
 

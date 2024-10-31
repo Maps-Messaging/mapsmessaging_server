@@ -339,7 +339,11 @@ public class SubscriptionController implements DestinationManagerListener {
       //
       if (!destinationSet.isEmpty()) {
         SubscriptionModeManager modeManager = subscriptionModeManager.get(context.getDestinationMode());
-        subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
+        try {
+          subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
       }
     } else {
       // We have received a subscription for an already registered subscription!!!

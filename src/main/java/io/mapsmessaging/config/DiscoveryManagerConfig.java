@@ -39,7 +39,7 @@ public class DiscoveryManagerConfig extends ManagementConfig {
 
   // Constructor to load properties from ConfigurationProperties
   private DiscoveryManagerConfig(ConfigurationProperties config) {
-    this.enabled = config.getBooleanProperty("enabled", true);
+    this.enabled = config.getBooleanProperty("enabled", false);
     this.hostnames = config.getProperty("hostnames", "::");
     this.addTxtRecords = config.getBooleanProperty("addTxtRecords", true);
     this.domainName = config.getProperty("domainName", ".local");

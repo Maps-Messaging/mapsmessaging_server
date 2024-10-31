@@ -18,11 +18,10 @@
 package io.mapsmessaging.app.top.panes.destination;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
+import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.destination.row.DestinationStatusRowPanel;
 import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
-import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.rest.data.destination.DestinationStatus;
-
 import java.util.ArrayList;
 import java.util.List;
 

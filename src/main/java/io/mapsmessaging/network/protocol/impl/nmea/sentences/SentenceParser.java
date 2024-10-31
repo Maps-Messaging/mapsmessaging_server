@@ -21,7 +21,6 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.protocol.impl.nmea.types.EnumTypeFactory;
 import io.mapsmessaging.network.protocol.impl.nmea.types.Type;
 import io.mapsmessaging.network.protocol.impl.nmea.types.TypeFactory;
-
 import java.util.*;
 
 public class SentenceParser {

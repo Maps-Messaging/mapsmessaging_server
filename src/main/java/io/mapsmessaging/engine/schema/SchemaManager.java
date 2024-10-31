@@ -27,10 +27,9 @@ import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
 import io.mapsmessaging.schemas.repository.SchemaRepository;
 import io.mapsmessaging.schemas.repository.impl.SimpleSchemaRepository;
 import io.mapsmessaging.utilities.Agent;
-import lombok.Getter;
-
 import java.util.*;
 import java.util.Map.Entry;
+import lombok.Getter;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class SchemaManager implements SchemaRepository, Agent {

@@ -36,8 +36,7 @@ public abstract class ProtocolConfig extends Config {
   public ProtocolConfig(ConfigurationProperties config) {
     this.name = config.getProperty("name");
     if (config.getProperty("remoteAuthConfig") != null) {
-      remoteAuthConfig =
-          new ConnectionAuthConfig((ConfigurationProperties) config.get("remoteAuthConfig"));
+      remoteAuthConfig = new ConnectionAuthConfig((ConfigurationProperties) config.get("remoteAuthConfig"));
     }
   }
 

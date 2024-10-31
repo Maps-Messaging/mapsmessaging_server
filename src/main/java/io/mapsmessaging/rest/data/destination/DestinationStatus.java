@@ -20,11 +20,10 @@ package io.mapsmessaging.rest.data.destination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationStats;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.io.IOException;
 import java.io.Serializable;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -62,14 +61,14 @@ public class DestinationStatus implements Serializable {
     pendingTransactions = destinationImpl.getPendingTransactions();
 
     DestinationStats stats = destinationImpl.getStats();
-    noInterestMessages = stats.getNoInterestMessageAverages().getTotal();
-    publishedMessages = stats.getPublishedMessageAverages().getTotal();
-    retrievedMessages = stats.getRetrievedMessagesAverages().getTotal();
-    expiredMessages = stats.getExpiredMessagesAverages().getTotal();
-    deliveredMessages = stats.getDeliveredMessagesAverages().getTotal();
-    readTimeAve_ns = stats.getReadTimeAverages().getTotal();
-    writeTimeAve_ns = stats.getWriteTimeAverages().getTotal();
-    deleteTimeAve_ns = stats.getDeleteTimeAverages().getTotal();
+    noInterestMessages = stats.getNoInterest();
+    publishedMessages = stats.getMessagePublished();
+    retrievedMessages = stats.getRetrievedMessage();
+    expiredMessages = stats.getExpiredMessage();
+    deliveredMessages = stats.getDeliveredMessages();
+    readTimeAve_ns = stats.getMessageReadTime();
+    writeTimeAve_ns = stats.getMessageWriteTime();
+    deleteTimeAve_ns = stats.getMessageRemovedTime();
   }
 
   private long getStored(DestinationImpl destination) {

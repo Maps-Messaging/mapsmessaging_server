@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEve
 import io.mapsmessaging.engine.tasks.EngineTask;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.tasks.SubscriptionResponse;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SubscriptionTask extends EngineTask {

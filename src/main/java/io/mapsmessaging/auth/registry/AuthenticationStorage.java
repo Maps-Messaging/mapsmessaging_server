@@ -28,16 +28,15 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
-import lombok.Getter;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-
-import javax.security.auth.Subject;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.*;
+import javax.security.auth.Subject;
+import lombok.Getter;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
 
 public class AuthenticationStorage implements Closeable {
   @Getter

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package io.mapsmessaging.auth.registry.mapping;
 import io.mapsmessaging.security.access.mapping.IdMap;
 import io.mapsmessaging.security.access.mapping.MapParser;
 import io.mapsmessaging.security.access.mapping.store.MapStore;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

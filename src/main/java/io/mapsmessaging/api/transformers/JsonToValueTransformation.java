@@ -21,9 +21,8 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.extensions.JsonParserExtension;
-import org.json.JSONObject;
-
 import java.util.List;
+import org.json.JSONObject;
 
 public class JsonToValueTransformation implements Transformer {
 

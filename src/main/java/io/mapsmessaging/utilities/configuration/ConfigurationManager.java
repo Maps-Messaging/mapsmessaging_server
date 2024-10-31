@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.utilities.configuration;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.PropertyManager;
 import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
@@ -26,14 +28,11 @@ import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {

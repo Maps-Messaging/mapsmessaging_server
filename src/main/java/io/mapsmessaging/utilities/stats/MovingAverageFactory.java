@@ -22,11 +22,11 @@ import io.mapsmessaging.utilities.stats.processors.AverageDataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DifferenceDataProcessor;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 
 /**
  * Creates a MovingAverage instance that manages the data summing based on the ACCUMULATOR allocated to the MovingAverage
@@ -44,6 +44,7 @@ public class MovingAverageFactory {
     return instance;
   }
 
+  @Getter
   public enum ACCUMULATOR {
     ADD("Adder", "Adds all incoming data, useful for tick type stats"),
     DIFF("Difference", "Subtracts the current from the last entry and adds it, useful for dealing with totals"),
@@ -57,13 +58,6 @@ public class MovingAverageFactory {
       this.description = description;
     }
 
-    public String getName() {
-      return name;
-    }
-
-    public String getDescription() {
-      return description;
-    }
   }
 
   protected final List<LinkedMovingAverages> movingAverages;

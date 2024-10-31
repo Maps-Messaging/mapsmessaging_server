@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import lombok.Data;
-
 import java.io.IOException;
+import lombok.Data;
 
 @Data
 public abstract class DeviceHandler {

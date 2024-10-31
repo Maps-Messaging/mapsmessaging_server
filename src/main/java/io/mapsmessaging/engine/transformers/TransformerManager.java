@@ -21,7 +21,6 @@ import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,7 +44,7 @@ public class TransformerManager implements ServiceManager {
     String transformer = props.getProperty("name");
     Transformer t = (Transformer) transformerMap.get(transformer);
     if(t != null){
-      return t.build(props);
+      return  t.build(props);
     }
     return null;
   }

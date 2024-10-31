@@ -25,10 +25,9 @@ import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
-import lombok.Getter;
-
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import lombok.Getter;
 
 /**
  * https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901100

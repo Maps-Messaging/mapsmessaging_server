@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,14 +22,12 @@ import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
-import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import io.mapsmessaging.utilities.stats.MovingAverageFactory;
+import io.mapsmessaging.utilities.stats.*;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
-
-import javax.management.ObjectInstance;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.management.ObjectInstance;
 
 @JMXBean(description = "LoRa Radio Status Bean")
 public class LoRaClientStats {
@@ -40,18 +38,18 @@ public class LoRaClientStats {
   private static final int[] MOVING_AVERAGE = {1, 5, 10, 15};
   private static final TimeUnit TIME_UNIT = TimeUnit.MINUTES;
 
-  private final LinkedMovingAverages rssiStats;
-  private final LinkedMovingAverages missedStats;
-  private final LinkedMovingAverages receivedStats;
+  private final Stats rssiStats;
+  private final Stats missedStats;
+  private final Stats receivedStats;
   private final ObjectInstance mbean;
   private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
   private final int nodeId;
   private long lastPacketId;
 
-  public LoRaClientStats(List<String> parent, int clientId) {
-    rssiStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.ADD, RSSI, MOVING_AVERAGE, TIME_UNIT, RSSI);
-    missedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, PACKETS, MOVING_AVERAGE, TIME_UNIT, PACKETS);
-    receivedStats = MovingAverageFactory.getInstance().createLinked(ACCUMULATOR.AVE, "Missed", MOVING_AVERAGE, TIME_UNIT, PACKETS);
+  public LoRaClientStats(List<String> parent, int clientId, StatsType type) {
+    rssiStats = StatsFactory.create(type, RSSI, RSSI, ACCUMULATOR.ADD, MOVING_AVERAGE, TIME_UNIT);
+    missedStats = StatsFactory.create(type, PACKETS, PACKETS, ACCUMULATOR.AVE, MOVING_AVERAGE, TIME_UNIT);
+    receivedStats =  StatsFactory.create(type, "Missed", PACKETS, ACCUMULATOR.AVE,  MOVING_AVERAGE, TIME_UNIT);
     lastPacketId = -1;
     nodeId = clientId;
     movingAveragesJMXList = new ArrayList<>();
@@ -65,10 +63,11 @@ public class LoRaClientStats {
       List<String> rssiPath = new ArrayList<>(jmxPath);
       List<String> missed = new ArrayList<>(jmxPath);
       List<String> received = new ArrayList<>(jmxPath);
-
-      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(rssiPath, rssiStats));
-      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(missed, missedStats));
-      movingAveragesJMXList.add(new LinkedMovingAveragesJMX(received, receivedStats));
+      if (rssiStats.supportMovingAverage()) {
+        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(rssiPath, (LinkedMovingAverages) rssiStats));
+        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(missed, (LinkedMovingAverages) missedStats));
+        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(received, (LinkedMovingAverages) receivedStats));
+      }
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,11 +20,10 @@ package io.mapsmessaging.engine.destination.delayed;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.util.*;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Base class that manages messages that have been written to a destination but are not yet active and can not be delivered as part of a subscription but are awaiting a trigger,

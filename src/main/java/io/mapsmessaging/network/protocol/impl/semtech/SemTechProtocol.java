@@ -131,7 +131,7 @@ public class SemTechProtocol extends ProtocolImpl {
   }
 
   public void sendPacket(@NotNull @NonNull SemTechPacket semTechPacket) {
-    sentMessageAverages.increment();
+    EndPoint.totalReceived.increment();
     selectorTask.push(semTechPacket);
     logger.log(ServerLogMessages.SEMTECH_SENDING_PACKET, semTechPacket);
     sentMessage();

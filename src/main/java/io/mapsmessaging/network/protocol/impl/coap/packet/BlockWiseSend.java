@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
+
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.SendController;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Block;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
-
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
 public class BlockWiseSend extends BasePacket {
 

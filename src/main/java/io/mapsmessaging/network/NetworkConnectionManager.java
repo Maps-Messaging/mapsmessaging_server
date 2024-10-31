@@ -32,6 +32,7 @@ import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
 
 public class NetworkConnectionManager implements ServiceManager, Agent {
@@ -43,14 +44,16 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   private final List<EndPointConnection> endPointConnectionList;
 
   private final Logger logger = LoggerFactory.getLogger(NetworkConnectionManager.class);
-  private final ServiceLoader<EndPointConnectionFactory> endPointConnections;
+  private final List<EndPointConnectionFactory> endPointConnections;
   private final Map<String, EndPointConnectionHostJMX> hostMapping;
   private final NetworkConnectionManagerConfig config;
 
   public NetworkConnectionManager() throws IOException {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     config = NetworkConnectionManagerConfig.getInstance();
-    endPointConnections = ServiceLoader.load(EndPointConnectionFactory.class);
+    ServiceLoader<EndPointConnectionFactory>  endPointLoad = ServiceLoader.load(EndPointConnectionFactory.class);
+    endPointConnections = new CopyOnWriteArrayList<>();
+    endPointLoad.forEach(endPointConnections::add);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
     int poolSize = 1;
     if(!config.getEndPointServerConfigList().isEmpty()){
@@ -116,10 +119,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>();
-    for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-      service.add(endPointConnectionFactory);
-    }
+    List<Service> service = new ArrayList<>(endPointConnections);
     return service.listIterator();
   }
 }

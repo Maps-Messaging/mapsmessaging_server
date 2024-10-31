@@ -36,7 +36,7 @@ public class JolokiaConfig extends ManagementConfig {
   private ConfigurationProperties jolokiaMapping;
 
   private JolokiaConfig(ConfigurationProperties properties) {
-    this.enable = properties.getBooleanProperty("enable", true);
+    this.enable = properties.getBooleanProperty("enable", false);
     this.jolokiaMapping = (ConfigurationProperties) properties.get("config");
   }
 

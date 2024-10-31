@@ -25,16 +25,15 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.security.auth.login.LoginException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transport.Target;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Receiver;
-
-import javax.security.auth.login.LoginException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class BaseEventListener implements EventListener {
 

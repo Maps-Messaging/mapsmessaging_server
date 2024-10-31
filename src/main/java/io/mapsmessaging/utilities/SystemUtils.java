@@ -18,9 +18,8 @@
 package io.mapsmessaging.utilities;
 
 import com.sun.management.OperatingSystemMXBean;
-import lombok.Getter;
-
 import java.lang.management.ManagementFactory;
+import lombok.Getter;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class SystemUtils {

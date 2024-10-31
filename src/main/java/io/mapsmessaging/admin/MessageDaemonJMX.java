@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,21 +23,20 @@ import com.udojava.jmx.wrapper.JMXBeanOperation;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.engine.destination.DestinationStats;
+import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
-import lombok.Getter;
-
-import javax.management.ObjectInstance;
+import io.mapsmessaging.utilities.stats.Stats;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.management.ObjectInstance;
+import lombok.Getter;
 
 @JMXBean(description = "Message Daemon JMX Bean")
 public class MessageDaemonJMX implements HealthMonitor {
@@ -61,8 +60,11 @@ public class MessageDaemonJMX implements HealthMonitor {
     entryJMX = new MessageDaemonEntryJMX(daemon);
     movingAveragesJMXList = new ArrayList<>();
     if (JMXManager.isEnableJMXStatistics()) {
-      for (LinkedMovingAverages linkedMovingAverages : DestinationStats.getGlobalAverages()) {
-        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
+      for (Stats linkedMovingAverages : DestinationImpl.getGlobalStats().getGlobalAverages()) {
+        if (linkedMovingAverages.supportMovingAverage()) {
+          movingAveragesJMXList.add(
+              new LinkedMovingAveragesJMX(resourceList, (LinkedMovingAverages) linkedMovingAverages));
+        }
       }
     }
   }
@@ -75,44 +77,46 @@ public class MessageDaemonJMX implements HealthMonitor {
   //<editor-fold desc="Destination based statistics">
   @JMXBeanAttribute(name = "noInterest", description = "Returns total number of messages with no subscription interst received")
   public long getTotalNoInterest() {
-    return DestinationStats.getTotalNoInterestMessages();
+    return DestinationImpl.getGlobalStats().getTotalNoInterestMessages();
   }
 
   @JMXBeanAttribute(name = "published", description = "Returns the total number of messages received")
   public long getTotalPublishedMessages() {
-    return DestinationStats.getTotalPublishedMessages();
+    return  DestinationImpl.getGlobalStats().getTotalPublishedMessages();
   }
 
   @JMXBeanAttribute(name = "subscribed", description = "Returns the total number of messages that match a subscription")
   public long getTotalSubscribedMessages() {
-    return DestinationStats.getTotalSubscribedMessages();
+    return  DestinationImpl.getGlobalStats().getTotalSubscribedMessages();
   }
 
   @JMXBeanAttribute(name = "retrieved", description = "Returns the total number of messages retrieved from underlying storage")
   public long getTotalRetrievedMessages() {
-    return DestinationStats.getTotalRetrievedMessages();
+    return  DestinationImpl.getGlobalStats().getTotalRetrievedMessages();
   }
 
   @JMXBeanAttribute(name = "expired", description = "Returns the total number of messages that have expired")
   public long getTotalExpiredMessages() {
-    return DestinationStats.getTotalExpiredMessages();
+    return  DestinationImpl.getGlobalStats().getTotalExpiredMessages();
   }
 
   @JMXBeanAttribute(name = "delivered", description = "Returns the total number of messages that have been delivered to a client and acknowledged")
   public long getTotalDeliveredMessages() {
-    return DestinationStats.getTotalDeliveredMessages();
+    return  DestinationImpl.getGlobalStats().getTotalDeliveredMessages();
   }
 
   //</editor-fold>
 
   @JMXBeanAttribute(name = "packets Received", description = "Returns the total number of protocol specific packets received")
   public long getTotalEventsReceived() {
-    return ProtocolImpl.getTotalReceived();
+    return EndPoint.totalReceived.sum();
   }
 
-  @JMXBeanAttribute(name = "packets Sent", description = "Returns the total number of protocol specific packets sent")
+  @JMXBeanAttribute(
+      name = "packets Sent",
+      description = "Returns the total number of protocol specific packets sent")
   public long getTotalEventsSent() {
-    return ProtocolImpl.getTotalSent();
+    return EndPoint.totalSent.sum();
   }
 
   @JMXBeanAttribute(name = "Bytes received", description = "Returns the total number of bytes received across all End Points")

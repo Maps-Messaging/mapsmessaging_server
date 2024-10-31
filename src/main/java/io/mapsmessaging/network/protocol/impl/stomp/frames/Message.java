@@ -19,7 +19,6 @@ package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPublishPacket;
-
 import java.nio.ByteBuffer;
 
 public class Message extends Event implements ServerPublishPacket {

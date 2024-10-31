@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.mapsmessaging.engine.system.impl.messages;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
-
 import java.io.IOException;
 
 public class RetainedCount extends SystemTopicWithAverage {
@@ -35,6 +34,6 @@ public class RetainedCount extends SystemTopicWithAverage {
 
   @Override
   public long getData() {
-    return DestinationImpl.getTotalRetained();
+    return  DestinationImpl.getGlobalStats().getTotalRetained();
   }
 }

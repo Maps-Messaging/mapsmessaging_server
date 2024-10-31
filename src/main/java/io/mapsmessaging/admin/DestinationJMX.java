@@ -27,14 +27,14 @@ import io.mapsmessaging.engine.resources.ResourceStatistics;
 import io.mapsmessaging.utilities.admin.*;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
+import io.mapsmessaging.utilities.stats.Stats;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
-import lombok.Getter;
-
-import javax.management.ObjectInstance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import javax.management.ObjectInstance;
+import lombok.Getter;
 
 @JMXBean(description = "Destination JMX Bean")
 public class DestinationJMX implements HealthMonitor {
@@ -57,8 +57,10 @@ public class DestinationJMX implements HealthMonitor {
     mbean = isSys? null : JMXManager.getInstance().register(this, typePath);
     if (JMXManager.isEnableJMX() && JMXManager.isEnableJMXStatistics() && mbean != null) {
       DestinationStats stats = destinationImpl.getStats();
-      for (LinkedMovingAverages linkedMovingAverages : stats.getAverageList()) {
-        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(typePath, linkedMovingAverages));
+      for (Stats linkedMovingAverages : stats.getAverageList()) {
+        if (linkedMovingAverages.supportMovingAverage()) {
+          movingAveragesJMXList.add(new LinkedMovingAveragesJMX(typePath, (LinkedMovingAverages) linkedMovingAverages));
+        }
       }
       ResourceStatistics resourceStatistics = destinationImpl.getResourceStatistics();
       List<String> resourceList = new ArrayList<>(typePath);
@@ -67,8 +69,10 @@ public class DestinationJMX implements HealthMonitor {
       } else {
         resourceList.add("resource=memory");
       }
-      for (LinkedMovingAverages linkedMovingAverages : resourceStatistics.getAverageList()) {
-        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, linkedMovingAverages));
+      for (Stats linkedMovingAverages : resourceStatistics.getAverageList()) {
+        if (linkedMovingAverages.supportMovingAverage()) {
+          movingAveragesJMXList.add(new LinkedMovingAveragesJMX(resourceList, (LinkedMovingAverages) linkedMovingAverages));
+        }
       }
     }
     List<String> pubList = new ArrayList<>(typePath);
@@ -122,42 +126,42 @@ public class DestinationJMX implements HealthMonitor {
 
   @JMXBeanAttribute(name = "noInterest", description = "Returns the total number of messages that had no subscriptions and where discarded")
   public long getNoInterest() {
-    return destinationImpl.getStats().getNoInterestMessageAverages().getTotal();
+    return destinationImpl.getStats().getNoInterest();
   }
 
   @JMXBeanAttribute(name = "subscribed", description = "Returns the total number of messages that have been subscribed via this destination")
   public long getSubscribed() {
-    return destinationImpl.getStats().getSubscribedMessageAverages().getTotal();
+    return destinationImpl.getStats().getMessageSubscribed();
   }
 
   @JMXBeanAttribute(name = "published", description = "Returns the total number of messages published to destination")
   public long getPublished() {
-    return destinationImpl.getStats().getPublishedMessageAverages().getTotal();
+    return destinationImpl.getStats().getMessagePublished();
   }
 
   @JMXBeanAttribute(name = "retrieved", description = "Returns the total number of messages retrieved from the resource")
   public long getRetrieved() {
-    return destinationImpl.getStats().getRetrievedMessagesAverages().getTotal();
+    return destinationImpl.getStats().getRetrievedMessage();
   }
 
   @JMXBeanAttribute(name = "delivered", description = "Returns the total number of events that have been delivered to the remote clients")
   public long getDelivered() {
-    return destinationImpl.getStats().getDeliveredMessagesAverages().getTotal();
+    return destinationImpl.getStats().getDeliveredMessages();
   }
 
   @JMXBeanAttribute(name = "expired", description = "Returns total number of messages that have expired on this destination")
   public long getExpired() {
-    return destinationImpl.getStats().getExpiredMessagesAverages().getTotal();
+    return destinationImpl.getStats().getExpiredMessage();
   }
 
   @JMXBeanAttribute(name = "transacted", description = "Returns the total number of messages using transactions added to this destination")
   public long getTransacted() {
-    return destinationImpl.getStats().getTransactedPublishedMessageAverages().getTotal();
+    return destinationImpl.getStats().getTransactionalPublished();
   }
 
   @JMXBeanAttribute(name = "subscribedClients", description = "Returns the total number of subscriptions on this destination")
   public long getSubscribedClients() {
-    return destinationImpl.getStats().getSubscribedClientAverages().getTotal();
+    return destinationImpl.getStats().getMessageSubscribed();
   }
 
   @JMXBeanOperation(name = "delete", description = "Deletes the destination and all resources used by it")

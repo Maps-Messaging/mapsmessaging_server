@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,11 +20,10 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import java.net.SocketAddress;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.net.SocketAddress;
 
 // http://www.mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v1.2.pdf
 @java.lang.SuppressWarnings("squid:S00101")

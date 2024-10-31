@@ -18,12 +18,11 @@
 package io.mapsmessaging.auth.registry;
 
 import io.mapsmessaging.security.access.Identity;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.ToString;
-
-import java.util.List;
-import java.util.UUID;
 
 @Data
 @ToString

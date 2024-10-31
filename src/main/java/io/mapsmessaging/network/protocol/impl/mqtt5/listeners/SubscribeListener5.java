@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.SubAck5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Subscribe5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
-
 import java.io.IOException;
 import java.util.List;
 

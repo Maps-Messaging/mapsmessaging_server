@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,17 +17,16 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.subscriptions;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE;
+
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Observe;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.concurrent.atomic.AtomicLong;
-
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE;
 
 public class Context {
 

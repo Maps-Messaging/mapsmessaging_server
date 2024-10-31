@@ -30,11 +30,12 @@ import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class NetworkManager implements ServiceManager, Agent {
 
   private final Logger logger = LoggerFactory.getLogger(NetworkManager.class);
-  private final ServiceLoader<EndPointServerFactory> endPointServers;
+  private final List<EndPointServerFactory> endPointServers;
   private final LinkedHashMap<String, EndPointManager> endPointManagers;
   private final NetworkManagerJMX bean;
   private final NetworkManagerConfig config;
@@ -44,7 +45,9 @@ public class NetworkManager implements ServiceManager, Agent {
     endPointManagers = new LinkedHashMap<>();
     config = NetworkManagerConfig.getInstance();
     logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
-    endPointServers = ServiceLoader.load(EndPointServerFactory.class);
+    ServiceLoader<EndPointServerFactory> endPointServerLoad = ServiceLoader.load(EndPointServerFactory.class);
+    endPointServers = new CopyOnWriteArrayList<>();
+    endPointServerLoad.forEach(endPointServers::add);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
 
     System.setProperty("java.net.preferIPv6Addresses", ""+config.isPreferIpV6Addresses());
@@ -168,10 +171,7 @@ public class NetworkManager implements ServiceManager, Agent {
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>();
-    for (EndPointServerFactory endPointServer : endPointServers) {
-      service.add(endPointServer);
-    }
+    List<Service> service = new ArrayList<>(endPointServers);
     return service.listIterator();
   }
 }

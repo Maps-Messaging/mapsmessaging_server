@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package io.mapsmessaging.rest.data.destination;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
 import java.io.IOException;
 import java.io.Serializable;
+import lombok.Data;
 
 @Data
 public class Destination implements Serializable {

@@ -18,9 +18,6 @@
 package io.mapsmessaging.utilities.stats;
 
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
-import lombok.Getter;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.Getter;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 /**
  * Creates a list of moving average with different time periods. Data is pushed through all the moving averages resulting in the ability to see longer period trends versus short
@@ -37,7 +36,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @version 1.0
  * @since 1.0
  */
-public class LinkedMovingAverages {
+public class LinkedMovingAverages implements Stats {
 
   protected final List<MovingAverage> movingAverages;
   protected final DataProcessor dataProcessor;
@@ -86,10 +85,6 @@ public class LinkedMovingAverages {
   }
 
   public long getPerSecond(){
-    long measurementTime = (System.currentTimeMillis() - (lastUpdate-timeSpan))/1000;
-    if(measurementTime >= 2) {
-      perSecond.set((currentQuantum.sum() / measurementTime));
-    }
     return perSecond.get();
   }
   /**
@@ -151,14 +146,6 @@ public class LinkedMovingAverages {
     updateValue(value * -1);
   }
 
-  private void updateValue(long value) {
-    long corrected = dataProcessor.add(value, previous);
-    currentQuantum.add(corrected);
-    total.add(corrected);
-    currentStatistics.addValue(corrected);
-    previous = value;
-  }
-
   /**
    * @return The current value
    */
@@ -186,32 +173,55 @@ public class LinkedMovingAverages {
     return -1;
   }
 
+  @Override
+  public boolean supportMovingAverage(){
+    return true;
+  }
   /**
    * Resets all the moving averages and clears all data
    */
   public void reset() {
+    lastUpdate = System.currentTimeMillis();
     previous = 0;
     total.reset();
     currentQuantum.reset();
     dataProcessor.reset();
+    perSecond.set(0);
     for (MovingAverage average : movingAverages) {
       average.reset();
     }
   }
 
-  protected void update() {
+  public void update() {
     long now = System.currentTimeMillis();
     if (lastUpdate < now) {
-      lastUpdate = now + timeSpan;
       long ave = dataProcessor.calculate();
       for (MovingAverage movingAverage : movingAverages) {
         movingAverage.add(ave);
         movingAverage.update();
       }
+      long measurementTime = (now - (lastUpdate-timeSpan))/1000;
+      if(measurementTime >= 2) {
+        perSecond.set((currentQuantum.sum() / measurementTime));
+      }
+
       previousStatistics = currentStatistics;
       currentStatistics = new SummaryStatistics();
+      lastUpdate = now + timeSpan;
       currentQuantum.reset();
     }
   }
 
+  private void updateValue(long value) {
+    long corrected = dataProcessor.add(value, previous);
+    currentQuantum.add(corrected);
+    total.add(corrected);
+    currentStatistics.addValue(corrected);
+    previous = value;
+  }
+
+  @Override
+  public String toString(){
+    return name+" "+getCurrent()+" "+getUnits()+" "+getPerSecond()+" "+getUnits()+"/sec"+" Total: "+getTotal()+" "+getUnits();
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.builders.*;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
-
 import java.io.IOException;
 
 public class SubscriptionFactory {

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.CompletionHandler;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.listener.FrameListener;
-
 import java.io.IOException;
 
 public class ConnectedState implements State {

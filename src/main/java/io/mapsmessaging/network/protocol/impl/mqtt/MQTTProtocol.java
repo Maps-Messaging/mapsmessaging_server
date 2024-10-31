@@ -88,11 +88,6 @@ public class MQTTProtocol extends ProtocolImpl {
     packetIdManager = new PacketIdManager();
   }
 
-  @Override
-  public Subject getSubject() {
-    return session.getSecurityContext().getSubject();
-  }
-
   public MQTTProtocol(EndPoint endPoint, Packet packet) throws IOException {
     this(endPoint);
     processPacket(packet);
@@ -107,6 +102,11 @@ public class MQTTProtocol extends ProtocolImpl {
       SessionManager.getInstance().close(session, false);
       super.close();
     }
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session.getSecurityContext().getSubject();
   }
 
   @Override
@@ -199,11 +199,11 @@ public class MQTTProtocol extends ProtocolImpl {
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
       }
-      receivedMessageAverages.increment();
+      EndPoint.totalReceived.increment();
       PacketListener packetListener = packetListenerFactory.getListener(mqtt.getControlPacketId());
       MQTTPacket response = packetListener.handlePacket(mqtt, session, endPoint, this);
       if (response != null) {
-        sentMessageAverages.increment();
+        EndPoint.totalSent.increment();
         if (logger.isInfoEnabled()) {
           logger.log(ServerLogMessages.RESPONSE_PACKET, response);
         }

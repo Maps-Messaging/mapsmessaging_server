@@ -56,9 +56,8 @@ public class ConnectListener extends BaseConnectionListener {
     boolean strict = checkStrict(connect, protocol);
 
     String sessionId = connect.getSessionId();
-    String transformation = null;
     if(sessionId.contains("?Transformation=")){
-      transformation = sessionId.split("\\?Transformation=")[1];
+      String transformation = sessionId.split("\\?Transformation=")[1];
       sessionId = sessionId.split("\\?Transformation=")[0];
       protocol.setTransformation(TransformationManager.getInstance().getTransformation(transformation));
     }

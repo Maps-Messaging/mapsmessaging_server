@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,9 +18,8 @@
 package io.mapsmessaging.network.io.impl.dtls.state;
 
 import io.mapsmessaging.network.io.Packet;
-
-import javax.net.ssl.SSLEngineResult;
 import java.io.IOException;
+import javax.net.ssl.SSLEngineResult;
 
 public abstract class State {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import io.mapsmessaging.engine.destination.subscription.transaction.AutoAcknowle
 import io.mapsmessaging.engine.destination.subscription.transaction.CreditManager;
 import io.mapsmessaging.engine.destination.subscription.transaction.FixedCreditManager;
 import io.mapsmessaging.engine.session.SessionImpl;
-
 import java.io.IOException;
 
 public abstract class CommonSubscriptionBuilder extends SubscriptionBuilder {

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
+
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
@@ -26,11 +28,8 @@ import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.*;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
-
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
+import org.jetbrains.annotations.Nullable;
 
 public class GetListener extends Listener {
 

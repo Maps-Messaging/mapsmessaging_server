@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
-import lombok.ToString;
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PULL_ACK;
 
 import java.net.SocketAddress;
-
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PULL_ACK;
+import lombok.ToString;
 
 /**
  * ### 5.3. PULL_ACK packet ###

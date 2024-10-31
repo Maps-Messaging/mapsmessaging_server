@@ -60,8 +60,8 @@ public class MessageDaemonConfig extends ManagementConfig {
     this.enableSystemTopics = config.getBooleanProperty("EnableSystemTopics", true);
     this.enableSystemStatusTopics = config.getBooleanProperty("EnableSystemStatusTopics", true);
     this.enableSystemTopicAverages = config.getBooleanProperty("EnableSystemTopicAverages", false);
-    this.enableJMX = config.getBooleanProperty("EnableJMX", true);
-    this.enableJMXStatistics = config.getBooleanProperty("EnableJMXStatistics", true);
+    this.enableJMX = config.getBooleanProperty("EnableJMX", false);
+    this.enableJMXStatistics = config.getBooleanProperty("EnableJMXStatistics", false);
     this.tagMetaData = config.getBooleanProperty("tagMetaData", false);
     this.latitude = config.getDoubleProperty("latitude", 0.0);
     this.longitude = config.getDoubleProperty("longitude", 0.0);

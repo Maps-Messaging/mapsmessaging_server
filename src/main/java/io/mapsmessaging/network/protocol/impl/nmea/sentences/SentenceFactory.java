@@ -18,7 +18,6 @@
 package io.mapsmessaging.network.protocol.impl.nmea.sentences;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;

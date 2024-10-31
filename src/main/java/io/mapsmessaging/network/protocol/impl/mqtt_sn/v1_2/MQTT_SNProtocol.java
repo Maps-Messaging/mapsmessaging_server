@@ -157,7 +157,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     if (logger.isInfoEnabled()) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
     }
-    receivedMessageAverages.increment();
+    EndPoint.totalReceived.increment();
     try {
       MQTT_SNPacket response = stateEngine.handleMQTTEvent(mqtt, session, endPoint, this);
       if (response != null) {
@@ -205,7 +205,7 @@ public class MQTT_SNProtocol extends ProtocolImpl {
 
   public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {
     frame.setFromAddress(addressKey);
-    sentMessageAverages.increment();
+    EndPoint.totalSent.increment();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);
     sentMessage();

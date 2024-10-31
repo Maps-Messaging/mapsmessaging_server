@@ -21,12 +21,11 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.utilities.SystemUtils;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Data
 @AllArgsConstructor

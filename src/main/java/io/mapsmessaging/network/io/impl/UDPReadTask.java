@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,18 +17,17 @@
 
 package io.mapsmessaging.network.io.impl;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.Packet;
-import lombok.Data;
-
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static io.mapsmessaging.logging.ServerLogMessages.*;
+import lombok.Data;
 
 public class UDPReadTask extends ReadTask {
 

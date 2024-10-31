@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -69,22 +69,29 @@ public abstract class MQTTPacket5 extends MQTTPacket {
     return values + 1;
   }
 
-  public void packProperties(Packet packet, long len) {
+  public static void packProperties(Packet packet, MessageProperties props, long len) {
     writeVariableInt(packet, len);
     if (len != 0) {
-      for (MessageProperty property : properties.values()) {
+      for (MessageProperty property : props.values()) {
         packet.put((byte) property.getId());
         property.pack(packet);
       }
     }
   }
-
-  public int propertiesSize() {
+  public static int propertiesSize(MessageProperties props) {
     int size = 0;
-    for (MessageProperty property : properties.values()) {
+    for (MessageProperty property : props.values()) {
       size += 1 + property.getSize(); // +1 for the byte identifier
     }
     return size;
+  }
+
+  public void packProperties(Packet packet, long len) {
+    packProperties(packet, properties, len);
+  }
+
+  public int propertiesSize() {
+    return propertiesSize(properties);
   }
 
   public int lengthSize(int check) {

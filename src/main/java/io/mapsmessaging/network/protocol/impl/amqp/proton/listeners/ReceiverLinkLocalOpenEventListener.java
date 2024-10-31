@@ -23,15 +23,14 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.Target;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
-
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListener {
 

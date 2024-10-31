@@ -18,15 +18,14 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class MQTTSubscriptionImplTest extends MQTTBaseTest implements MqttCallback {
 
@@ -60,7 +59,7 @@ class MQTTSubscriptionImplTest extends MQTTBaseTest implements MqttCallback {
       delay(10);
     }
     Assertions.assertFalse(timeout < System.currentTimeMillis());
-    client.unsubscribe(topicName);
+    client.unsubscribe(new String[] {topicName});
     client.disconnect();
     Assertions.assertEquals(11, eventCounter.get());
     Assertions.assertFalse(client.isConnected());

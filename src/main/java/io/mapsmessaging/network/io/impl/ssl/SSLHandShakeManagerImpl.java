@@ -65,6 +65,7 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
     logger.log(ServerLogMessages.SSL_HANDSHAKE_FINISHED);
     logger.log(ServerLogMessages.SSL_HANDSHAKE_ENCRYPTED, handshakeBufferIn.position(), handshakeBufferIn.limit());
     sslEndPointImpl.handshakeManager = new SSLHandshakeManagerFinished(handshakeBufferIn); // All done, no longer required
+    System.err.println("SSL Handshake Complete");
     if (callback != null) {
       callback.connected(sslEndPointImpl);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
-
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;

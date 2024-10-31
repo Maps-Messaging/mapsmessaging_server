@@ -1,5 +1,5 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,22 +17,11 @@
 
 package io.mapsmessaging.utilities;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a class called PersistentObject.
- * It provides methods for reading and writing various data types to an input stream or output stream.
- * The class is used for handling persistence of objects.
- * These methods handle reading and writing integers, longs, strings, and byte arrays.
- * The class is not nullable, as it does not have any nullable annotations.
- * It throws IOException in case of any I/O errors.
- * The class is not thread-safe.
- * The code snippet includes a copyright notice and is licensed under the Apache License, Version 2.0.
- */
 public class PersistentObject {
 
   /**
