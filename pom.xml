@@ -815,7 +815,7 @@
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>8.4.0</version>
+        <version>11.1.0</version>
         <executions>
           <execution>
             <goals>
@@ -838,7 +838,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <logback.version>1.5.11</logback.version>
+    <logback.version>1.5.12</logback.version>
     <pi4j.version>2.4.0</pi4j.version>
     <jersey.version>3.1.9</jersey.version>
     <swagger-ui.version>3.17.0</swagger-ui.version>
@@ -1091,7 +1091,7 @@
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>26.0.0</version>
+      <version>26.0.1</version>
     </dependency>
 
     <dependency>
@@ -1236,7 +1236,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.1.13</version>
+      <version>6.1.14</version>
       <scope>test</scope>
     </dependency>
 
