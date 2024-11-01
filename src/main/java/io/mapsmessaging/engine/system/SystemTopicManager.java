@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
@@ -47,7 +46,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   @Setter
   private static boolean enableAdvancedStats = true;
 
-  private final List<SystemTopic> systemTopics;
+  private final ServiceLoader<SystemTopic> systemTopics;
   private final List<SystemTopic> completeList;
   private final DestinationManager destinationManager;
 
@@ -55,9 +54,7 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
   private final Logger logger = LoggerFactory.getLogger(SystemTopicManager.class);
 
   public SystemTopicManager(DestinationManager destinationManager){
-    ServiceLoader<SystemTopic> systemTopicLoad = ServiceLoader.load(SystemTopic.class);
-    systemTopics = new CopyOnWriteArrayList<>();
-    systemTopicLoad.forEach(systemTopics::add);
+    systemTopics = ServiceLoader.load(SystemTopic.class);
     completeList = new ArrayList<>();
     this.destinationManager = destinationManager;
   }
@@ -131,7 +128,8 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>(systemTopics);
+    List<Service> service = new ArrayList<>();
+    systemTopics.forEach(service::add);
     return service.listIterator();
   }
 }
