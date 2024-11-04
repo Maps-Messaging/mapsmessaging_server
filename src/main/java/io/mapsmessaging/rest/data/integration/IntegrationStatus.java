@@ -66,7 +66,9 @@ public class IntegrationStatus {
   }
 
   private void addToMap(Map<String, LinkedMovingAverageRecord> stats, LinkedMovingAverageRecord average){
-    stats.put(average.getName(), average);
+    if (average != null) {
+      stats.put(average.getName(), average);
+    }
   }
 
 }
