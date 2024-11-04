@@ -41,6 +41,11 @@ public class IntegrationStatus {
   @Schema(description = "Number connection errors")
   private long errors;
 
+  @Schema(description = "Last Read Time")
+  private long lastReadTime;
+  @Schema(description = "Last Write Time")
+  private long lastWriteTime;
+
   @Schema(description = "Current state of the interface")
   private String state;
 
@@ -57,8 +62,13 @@ public class IntegrationStatus {
     bytesReceived = connection.getTotalBytesRead();
     messagesSent = connection.getTotalPacketsSent();
     messagesReceived = connection.getTotalPacketsRead();
+    connection.getConnection().getEndPoint().getLastRead();
     statistics = new LinkedHashMap<>();
     errors = connection.getTotalErrors();
+    if(connection.getConnection() != null && connection.getConnection().getEndPoint() != null){
+      lastReadTime = connection.getConnection().getEndPoint().getLastRead();
+      lastWriteTime = connection.getConnection().getEndPoint().getLastWrite();
+    }
     addToMap(statistics, connection.getAverageBytesRead());
     addToMap(statistics, connection.getAverageBytesSent());
     addToMap(statistics, connection.getAveragePacketsRead());
