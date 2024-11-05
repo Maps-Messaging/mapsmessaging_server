@@ -17,30 +17,68 @@
 
 package io.mapsmessaging.config.protocol;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.protocol.impl.*;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type"
+)
+
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = AmqpConfig.class, name = "amqp"),
+  @JsonSubTypes.Type(value = CoapConfig.class, name = "coap"),
+  @JsonSubTypes.Type(value = LoRaConfig.class, name = "lora"),
+  @JsonSubTypes.Type(value = MqttConfig.class, name = "mqtt"),
+  @JsonSubTypes.Type(value = MqttSnConfig.class, name = "mqtt-sn"),
+  @JsonSubTypes.Type(value = MqttV5Config.class, name = "mqttV5"),
+  @JsonSubTypes.Type(value = NmeaConfig.class, name = "nmea"),
+  @JsonSubTypes.Type(value = SemtechConfig.class, name = "semtech"),
+  @JsonSubTypes.Type(value = StompConfig.class, name = "stomp"),
+  @JsonSubTypes.Type(value = WebSocketConfig.class, name = "websocket")
+})
+@Schema(
+    description = "Abstract base class for all schema configurations",
+    discriminatorProperty = "type",
+    discriminatorMapping = {
+      @DiscriminatorMapping(value = "amqp", schema = AmqpConfig.class),
+      @DiscriminatorMapping(value = "coap", schema = CoapConfig.class),
+      @DiscriminatorMapping(value = "lora", schema = LoRaConfig.class),
+      @DiscriminatorMapping(value = "mqtt", schema = MqttConfig.class),
+      @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnConfig.class),
+      @DiscriminatorMapping(value = "mqttV5", schema = MqttV5Config.class),
+      @DiscriminatorMapping(value = "nmea", schema = NmeaConfig.class),
+      @DiscriminatorMapping(value = "semtech", schema = SemtechConfig.class),
+      @DiscriminatorMapping(value = "stomp", schema = StompConfig.class),
+      @DiscriminatorMapping(value = "websocket", schema = WebSocketConfig.class)
+    })
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @ToString
 public abstract class ProtocolConfig extends Config {
 
+  private static final String REMOTE_AUTH_CONFIG ="remoteAuthConfig";
   private String name;
   private ConnectionAuthConfig remoteAuthConfig;
+  private String type;
 
   public ProtocolConfig(ConfigurationProperties config) {
     this.name = config.getProperty("name");
-    if (config.getProperty("remoteAuthConfig") != null) {
-      remoteAuthConfig = new ConnectionAuthConfig((ConfigurationProperties) config.get("remoteAuthConfig"));
+    if (config.getProperty(REMOTE_AUTH_CONFIG) != null) {
+      remoteAuthConfig = new ConnectionAuthConfig((ConfigurationProperties) config.get(REMOTE_AUTH_CONFIG));
     }
   }
-
-  public abstract String getType();
 
   public boolean update(ProtocolConfig newConfig) {
     boolean hasChanged = false;
@@ -58,7 +96,7 @@ public abstract class ProtocolConfig extends Config {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("name", this.name);
     if (remoteAuthConfig != null) {
-      config.put("remoteAuthConfig", remoteAuthConfig.toConfigurationProperties());
+      config.put(REMOTE_AUTH_CONFIG, remoteAuthConfig.toConfigurationProperties());
     }
     return config;
   }

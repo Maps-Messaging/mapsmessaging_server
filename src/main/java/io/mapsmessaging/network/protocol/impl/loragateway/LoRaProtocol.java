@@ -21,7 +21,7 @@ import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.DATA;
 import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
 
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.config.protocol.LoRaConfig;
+import io.mapsmessaging.config.protocol.impl.LoRaConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;

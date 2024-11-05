@@ -15,8 +15,10 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
+
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,23 +29,14 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class SemtechConfig extends ProtocolConfig {
-  private int maxQueued;
-  private String inboundTopicName;
-  private String outboundTopicName;
-  private String statusTopicName;
+public class LoRaConfig extends ProtocolConfig {
 
-  public SemtechConfig(ConfigurationProperties config) {
+  private int retransmit;
+
+  public LoRaConfig(ConfigurationProperties config) {
     super(config);
-    maxQueued = config.getIntProperty("MaxQueueSize", 10);
-    inboundTopicName = config.getProperty("inbound", "/semtech/inbound");
-    outboundTopicName = config.getProperty("outbound", "/semtech/outbound");
-    statusTopicName = config.getProperty("status", inboundTopicName);
-  }
-
-  @Override
-  public String getType() {
-    return "semtech";
+    retransmit = config.getIntProperty("LoRaMaxTransmissionRate", 10);
+    setType("lora");
   }
 
   public ConfigurationProperties toConfigurationProperties() {

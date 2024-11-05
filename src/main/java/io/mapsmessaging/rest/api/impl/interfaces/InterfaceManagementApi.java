@@ -17,7 +17,6 @@
 
 package io.mapsmessaging.rest.api.impl.interfaces;
 
-
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
@@ -39,13 +38,15 @@ import java.util.stream.Collectors;
 @Path(URI_PATH)
 public class InterfaceManagementApi extends BaseRestApi {
 
+  private static final String INTERFACES = "Interfaces";
+      
   @GET
   @Path("/server/interfaces")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Retrieve a list of all configured interfaces")
   public InterfaceDetailResponse getAllInterfaces(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
-    if (!hasAccess("interfaces")) {
+    if (!hasAccess(INTERFACES)) {
       response.setStatus(403);
       return null;
     }
@@ -56,7 +57,7 @@ public class InterfaceManagementApi extends BaseRestApi {
         .map(InterfaceInfo::new)
         .filter(protocol -> parser == null || parser.evaluate(protocol))
         .collect(Collectors.toList());
-    return new InterfaceDetailResponse(request, protocols, null);
+    return new InterfaceDetailResponse(request, protocols);
   }
 
 
@@ -65,7 +66,7 @@ public class InterfaceManagementApi extends BaseRestApi {
   //@ApiOperation(value = "Stops all all configured interfaces")
   public Response stopAllInterfaces() {
     checkAuthentication();
-    if (!hasAccess("interfaces")) {
+    if (!hasAccess(INTERFACES)) {
       response.setStatus(403);
       return null;
     }
@@ -78,7 +79,7 @@ public class InterfaceManagementApi extends BaseRestApi {
   //@ApiOperation(value = "Starts all all configured interfaces")
   public Response startAllInterfaces() {
     checkAuthentication();
-    if (!hasAccess("interfaces")) {
+    if (!hasAccess(INTERFACES)) {
       response.setStatus(403);
       return null;
     }
@@ -91,7 +92,7 @@ public class InterfaceManagementApi extends BaseRestApi {
   //@ApiOperation(value = "Pauses all all configured interfaces")
   public Response pauseAllInterfaces() {
     checkAuthentication();
-    if (!hasAccess("interfaces")) {
+    if (!hasAccess(INTERFACES)) {
       response.setStatus(403);
       return null;
     }
@@ -105,7 +106,7 @@ public class InterfaceManagementApi extends BaseRestApi {
   //@ApiOperation(value = "Resumes all all configured interfaces")
   public Response resumeAllInterfaces() {
     checkAuthentication();
-    if (!hasAccess("interfaces")) {
+    if (!hasAccess(INTERFACES)) {
       response.setStatus(403);
       return null;
     }

@@ -15,8 +15,10 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.protocol.PredefinedTopics;
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,11 +79,7 @@ public class MqttSnConfig extends ProtocolConfig {
         predefinedTopicsList.add(new PredefinedTopics(props));
       }
     }
-  }
-
-  @Override
-  public String getType() {
-    return "mqtt-sn";
+    setType("mqtt-sn");
   }
 
   public ConfigurationProperties toConfigurationProperties() {

@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,19 +28,13 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class NmeaConfig extends ProtocolConfig {
-
-  public NmeaConfig(ConfigurationProperties config) {
+public class WebSocketConfig extends ProtocolConfig {
+  public WebSocketConfig(ConfigurationProperties config) {
     super(config);
+    setType("websocket");
   }
 
   public ConfigurationProperties toConfigurationProperties() {
     return super.toConfigurationProperties();
   }
-
-  @Override
-  public String getType() {
-    return "nmea";
-  }
-
 }

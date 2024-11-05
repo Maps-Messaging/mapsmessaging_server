@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,14 +28,19 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class WebSocketConfig extends ProtocolConfig {
-  public WebSocketConfig(ConfigurationProperties config) {
-    super(config);
-  }
+public class SemtechConfig extends ProtocolConfig {
+  private int maxQueued;
+  private String inboundTopicName;
+  private String outboundTopicName;
+  private String statusTopicName;
 
-  @Override
-  public String getType() {
-    return "ws";
+  public SemtechConfig(ConfigurationProperties config) {
+    super(config);
+    maxQueued = config.getIntProperty("MaxQueueSize", 10);
+    inboundTopicName = config.getProperty("inbound", "/semtech/inbound");
+    outboundTopicName = config.getProperty("outbound", "/semtech/outbound");
+    statusTopicName = config.getProperty("status", inboundTopicName);
+    setType("semtech");
   }
 
   public ConfigurationProperties toConfigurationProperties() {

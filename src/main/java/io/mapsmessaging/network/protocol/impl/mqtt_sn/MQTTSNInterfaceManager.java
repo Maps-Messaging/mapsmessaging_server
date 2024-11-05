@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.config.protocol.MqttSnConfig;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;

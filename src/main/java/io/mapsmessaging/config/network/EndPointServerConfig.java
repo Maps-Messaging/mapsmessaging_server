@@ -20,7 +20,8 @@ package io.mapsmessaging.config.network;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.protocol.*;
-import io.mapsmessaging.config.protocol.LoRaConfig;
+import io.mapsmessaging.config.protocol.impl.*;
+import io.mapsmessaging.config.protocol.impl.LoRaConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,6 @@ public class EndPointServerConfig extends Config {
     endPointConfig = url != null ? createEndPointConfig(url, config) : null;
     protocolConfigs = new ArrayList<>();
 
-
     ConfigurationProperties saslConfiguration = (ConfigurationProperties) config.get("sasl");
     if (saslConfiguration != null) {
       saslConfig = new SaslConfig(saslConfiguration);
@@ -64,7 +64,25 @@ public class EndPointServerConfig extends Config {
     protocols = config.getProperty("protocol");
     if (protocols != null && !protocols.isEmpty()) {
       String[] protocolArray = protocols.split(",");
+      List<String> protocolList = new ArrayList<>();
       for (String protocol : protocolArray) {
+        if(protocol.equalsIgnoreCase("all")){
+          if(endPointConfig instanceof UdpConfig){
+            protocolList.add("coap");
+            protocolList.add("mqtt-sn");
+          }
+          else{
+            protocolList.add("amqp");
+            protocolList.add("mqtt");
+            protocolList.add("stomp");
+            protocolList.add("ws");
+          }
+        } else {
+          protocolList.add(protocol);
+        }
+      }
+
+      for (String protocol : protocolList) {
         ProtocolConfig protocolConfig = createProtocolConfig(protocol, config);
         if (protocolConfig != null) {
           protocolConfigs.add(protocolConfig);

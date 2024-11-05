@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,26 +28,18 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class StompConfig extends ProtocolConfig {
+public class CoapConfig extends ProtocolConfig {
+  private int maxBlockSize;
+  private int idleTime;
 
-  private int maxBufferSize;
-  private int maxReceive;
-
-  public StompConfig(ConfigurationProperties config) {
+  public CoapConfig(ConfigurationProperties config) {
     super(config);
-    maxBufferSize = config.getIntProperty("maximumBufferSize", 65535);
-    maxReceive = config.getIntProperty("maximumReceive", 1000);
-  }
-
-  @Override
-  public String getType() {
-    return "stomp";
+    maxBlockSize = config.getIntProperty("maxBlockSize", 128);
+    idleTime = config.getIntProperty("idleTimePeriod", 120);
+    setType("coap");
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("maximumBufferSize", maxBufferSize);
-    config.put("maximumReceive", maxReceive);
-    return config;
+    return super.toConfigurationProperties();
   }
 }

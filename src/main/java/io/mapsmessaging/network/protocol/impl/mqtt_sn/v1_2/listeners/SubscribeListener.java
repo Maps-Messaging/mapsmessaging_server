@@ -23,7 +23,7 @@ import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SN
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.config.protocol.MqttSnConfig;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolImpl;

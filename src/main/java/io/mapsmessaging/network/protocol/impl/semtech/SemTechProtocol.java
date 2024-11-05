@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.semtech;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.config.protocol.SemtechConfig;
+import io.mapsmessaging.config.protocol.impl.SemtechConfig;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;

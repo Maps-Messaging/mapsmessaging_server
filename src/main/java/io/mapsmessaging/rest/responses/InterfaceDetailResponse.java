@@ -17,11 +17,9 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.rest.data.interfaces.InterfaceInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 import lombok.Getter;
 
 public class InterfaceDetailResponse extends BaseResponse {
@@ -30,20 +28,9 @@ public class InterfaceDetailResponse extends BaseResponse {
 //  @ApiModelProperty(value="List of interfaces")
   private final List<InterfaceInfo> data;
 
-  @Getter
-  //@ApiModelProperty(value="Default values for all interfaces used unless overridden by the specific config")
-  private final Map<String, Object> globalConfig;
-
-
-  public InterfaceDetailResponse(HttpServletRequest request, List<InterfaceInfo> list, ConfigurationProperties map) {
+  public InterfaceDetailResponse(HttpServletRequest request, List<InterfaceInfo> list) {
     super(request);
     data = list;
-    if(map != null) {
-      globalConfig = map.getMap();
-    }
-    else{
-      globalConfig = null;
-    }
   }
 
 }

@@ -15,7 +15,7 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
@@ -36,6 +36,7 @@ public class MqttV5Config extends MqttConfig {
     super(config);
     this.minServerKeepAlive = config.getIntProperty("minServerKeepAlive", 0);
     this.maxServerKeepAlive = config.getIntProperty("maxServerKeepAlive", 60);
+    setType("mqtt-v5");
   }
 
   public boolean update(MqttV5Config newConfig) {
@@ -51,10 +52,6 @@ public class MqttV5Config extends MqttConfig {
     return hasChanged;
   }
 
-  @Override
-  public String getType() {
-    return "mqtt";
-  }
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = super.toConfigurationProperties();

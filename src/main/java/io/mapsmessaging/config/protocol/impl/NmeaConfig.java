@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,22 +28,16 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class CoapConfig extends ProtocolConfig {
-  private int maxBlockSize;
-  private int idleTime;
+public class NmeaConfig extends ProtocolConfig {
 
-  public CoapConfig(ConfigurationProperties config) {
+  public NmeaConfig(ConfigurationProperties config) {
     super(config);
-    maxBlockSize = config.getIntProperty("maxBlockSize", 128);
-    idleTime = config.getIntProperty("idleTimePeriod", 120);
-  }
-
-  @Override
-  public String getType() {
-    return "coap";
+    setType("nmea");
   }
 
   public ConfigurationProperties toConfigurationProperties() {
     return super.toConfigurationProperties();
   }
+
+
 }

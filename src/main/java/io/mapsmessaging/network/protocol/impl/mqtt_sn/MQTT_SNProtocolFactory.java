@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import io.mapsmessaging.config.protocol.MqttSnConfig;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;

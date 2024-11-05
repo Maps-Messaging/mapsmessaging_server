@@ -15,9 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
-
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,18 +28,11 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class LoRaConfig extends ProtocolConfig {
+public class AmqpConfig extends ProtocolConfig {
 
-  private int retransmit;
-
-  public LoRaConfig(ConfigurationProperties config) {
+  public AmqpConfig(ConfigurationProperties config) {
     super(config);
-    retransmit = config.getIntProperty("LoRaMaxTransmissionRate", 10);
-  }
-
-  @Override
-  public String getType() {
-    return "lora";
+    setType("amqp");
   }
 
   public ConfigurationProperties toConfigurationProperties() {

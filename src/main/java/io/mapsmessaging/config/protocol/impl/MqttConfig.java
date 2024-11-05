@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.protocol;
+package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -46,6 +47,7 @@ public class MqttConfig extends ProtocolConfig {
     this.clientMaximumTopicAlias = config.getIntProperty("clientMaximumTopicAlias", 32767);
     this.serverMaximumTopicAlias = config.getIntProperty("serverMaximumTopicAlias", 0);
     this.strictClientId = config.getBooleanProperty("strictClientId", false);
+    setType("mqtt");
   }
 
   public boolean update(MqttConfig newConfig) {
@@ -81,10 +83,6 @@ public class MqttConfig extends ProtocolConfig {
     }
 
     return hasChanged;
-  }
-  @Override
-  public String getType() {
-    return "mqtt";
   }
 
   @Override

@@ -25,7 +25,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.config.auth.SaslConfig;
-import io.mapsmessaging.config.protocol.MqttV5Config;
+import io.mapsmessaging.config.protocol.impl.MqttV5Config;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
