@@ -156,10 +156,6 @@ public class EndPointServerConfig extends Config {
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties protocolMap = new ConfigurationProperties();
-    for (ProtocolConfig protocolConfig : protocolConfigs) {
-      protocolMap.put(protocolConfig.getName(), protocolConfig.toConfigurationProperties());
-    }
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("name", this.name);
     config.put("url", this.url);
@@ -168,7 +164,7 @@ public class EndPointServerConfig extends Config {
     config.put("backlog", this.backlog);
     config.put("selectorTaskWait", this.selectorTaskWait);
     config.put("auth", this.authenticationRealm);
-    config.put("data", protocolMap);
+    config.put("data", protocolConfigs);
     return config;
   }
 }

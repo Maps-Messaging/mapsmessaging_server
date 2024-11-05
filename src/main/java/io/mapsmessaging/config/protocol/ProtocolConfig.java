@@ -69,12 +69,10 @@ import lombok.ToString;
 public abstract class ProtocolConfig extends Config {
 
   private static final String REMOTE_AUTH_CONFIG ="remoteAuthConfig";
-  private String name;
   private ConnectionAuthConfig remoteAuthConfig;
   private String type;
 
   public ProtocolConfig(ConfigurationProperties config) {
-    this.name = config.getProperty("name");
     if (config.getProperty(REMOTE_AUTH_CONFIG) != null) {
       remoteAuthConfig = new ConnectionAuthConfig((ConfigurationProperties) config.get(REMOTE_AUTH_CONFIG));
     }
@@ -82,10 +80,6 @@ public abstract class ProtocolConfig extends Config {
 
   public boolean update(ProtocolConfig newConfig) {
     boolean hasChanged = false;
-    if (!this.name.equals(newConfig.getName())) {
-      this.name = newConfig.getName();
-      hasChanged = true;
-    }
     if (remoteAuthConfig != null && newConfig.getRemoteAuthConfig() != null) {
       hasChanged = remoteAuthConfig.update(newConfig.remoteAuthConfig);
     }
@@ -94,7 +88,6 @@ public abstract class ProtocolConfig extends Config {
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    config.put("name", this.name);
     if (remoteAuthConfig != null) {
       config.put(REMOTE_AUTH_CONFIG, remoteAuthConfig.toConfigurationProperties());
     }
