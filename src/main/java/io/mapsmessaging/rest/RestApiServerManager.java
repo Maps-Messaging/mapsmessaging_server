@@ -22,7 +22,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.RestApiManagerConfig;
-import io.mapsmessaging.config.network.TlsConfig;
+import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;

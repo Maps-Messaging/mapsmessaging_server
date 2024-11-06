@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.network;
+package io.mapsmessaging.config.network.impl;
 
+import io.mapsmessaging.config.network.SslConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,20 +28,19 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class SerialConfig extends EndPointConfig {
+public class DtlsConfig extends UdpConfig {
 
-  public SerialConfig(ConfigurationProperties config) {
+  private SslConfig sslConfig;
+
+  public DtlsConfig(ConfigurationProperties config) {
     super(config);
-  }
-
-  public boolean update(UdpConfig newConfig) {
-    boolean hasChanged = super.update(newConfig);
-
-    return hasChanged;
+    setType("dtls");
+    sslConfig = new SslConfig(config);
   }
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = super.toConfigurationProperties();
+    config.putAll(sslConfig.toConfigurationProperties().getMap());
     return config;
   }
 }

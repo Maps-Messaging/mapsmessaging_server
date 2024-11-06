@@ -19,6 +19,7 @@ package io.mapsmessaging.config.network;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.auth.SaslConfig;
+import io.mapsmessaging.config.network.impl.*;
 import io.mapsmessaging.config.protocol.*;
 import io.mapsmessaging.config.protocol.impl.*;
 import io.mapsmessaging.config.protocol.impl.LoRaConfig;

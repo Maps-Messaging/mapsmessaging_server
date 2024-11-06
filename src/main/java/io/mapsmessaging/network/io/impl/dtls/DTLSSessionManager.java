@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
-import io.mapsmessaging.config.network.DtlsConfig;
-import io.mapsmessaging.config.network.UdpConfig;
+import io.mapsmessaging.config.network.impl.DtlsConfig;
+import io.mapsmessaging.config.network.impl.UdpConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPoint;

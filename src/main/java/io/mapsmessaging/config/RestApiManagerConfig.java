@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.config;
 
-import io.mapsmessaging.config.network.TlsConfig;
+import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;

@@ -19,7 +19,7 @@ package io.mapsmessaging.network.io.impl.tcp;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
-import io.mapsmessaging.config.network.TcpConfig;
+import io.mapsmessaging.config.network.impl.TcpConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;

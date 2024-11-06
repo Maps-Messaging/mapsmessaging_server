@@ -21,8 +21,8 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 import io.mapsmessaging.config.network.EndPointConfig;
-import io.mapsmessaging.config.network.TcpConfig;
-import io.mapsmessaging.config.network.UdpConfig;
+import io.mapsmessaging.config.network.impl.TcpConfig;
+import io.mapsmessaging.config.network.impl.UdpConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;

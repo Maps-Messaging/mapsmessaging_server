@@ -17,12 +17,44 @@
 
 package io.mapsmessaging.config.network;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.network.impl.*;
+import io.mapsmessaging.config.protocol.impl.*;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type"
+)
+
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = DtlsConfig.class, name = "dtls"),
+    @JsonSubTypes.Type(value = LoRaDeviceConfig.class, name = "lora"),
+    @JsonSubTypes.Type(value = SerialConfig.class, name = "serial"),
+    @JsonSubTypes.Type(value = TcpConfig.class, name = "tcp"),
+    @JsonSubTypes.Type(value = TlsConfig.class, name = "ssl"),
+    @JsonSubTypes.Type(value = UdpConfig.class, name = "udp"),
+})
+@Schema(
+    description = "Abstract base class for all schema configurations",
+    discriminatorProperty = "type",
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "dtls", schema = DtlsConfig.class),
+        @DiscriminatorMapping(value = "lora", schema = LoRaDeviceConfig.class),
+        @DiscriminatorMapping(value = "serial", schema = SerialConfig.class),
+        @DiscriminatorMapping(value = "tcp", schema = TcpConfig.class),
+        @DiscriminatorMapping(value = "ssl", schema = TlsConfig.class),
+        @DiscriminatorMapping(value = "udp", schema = UdpConfig.class),
+    })
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -30,6 +62,7 @@ import lombok.ToString;
 @ToString
 public class EndPointConfig extends Config {
 
+  private String type;
   private boolean discoverable;
   private int selectorThreadCount;
   private long serverReadBufferSize;

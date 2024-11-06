@@ -17,8 +17,8 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
-import io.mapsmessaging.config.network.DtlsConfig;
 import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.config.network.impl.DtlsConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;

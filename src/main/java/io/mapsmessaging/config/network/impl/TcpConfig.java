@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.network;
+package io.mapsmessaging.config.network.impl;
 
+import io.mapsmessaging.config.network.EndPointConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -47,8 +48,8 @@ public class TcpConfig extends EndPointConfig {
     this.soLingerDelaySec = config.getIntProperty("soLingerDelaySec", 10);
     this.readDelayOnFragmentation = config.getIntProperty("readDelayOnFragmentation", 100);
     this.fragmentationLimit = config.getIntProperty("fragmentationLimit", 5);
-    this.enableReadDelayOnFragmentation =
-        config.getBooleanProperty("enableReadDelayOnFragmentation", true);
+    this.enableReadDelayOnFragmentation = config.getBooleanProperty("enableReadDelayOnFragmentation", true);
+    setType("tcp");
   }
 
   public boolean update(TcpConfig newConfig) {

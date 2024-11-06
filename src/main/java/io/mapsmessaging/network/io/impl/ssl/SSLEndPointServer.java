@@ -18,7 +18,7 @@
 package io.mapsmessaging.network.io.impl.ssl;
 
 import io.mapsmessaging.config.network.EndPointServerConfig;
-import io.mapsmessaging.config.network.TlsConfig;
+import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;

@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.network;
+package io.mapsmessaging.config.network.impl;
 
+import io.mapsmessaging.config.network.EndPointConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -48,6 +49,7 @@ public class LoRaDeviceConfig extends EndPointConfig {
     power = properties.getIntProperty("power", 14);
     cadTimeout = properties.getIntProperty("CADTimeout", 0);
     frequency = properties.getFloatProperty("frequency", 0.0f);
+    setType("lora");
   }
 
   public boolean update(LoRaDeviceConfig newConfig) {

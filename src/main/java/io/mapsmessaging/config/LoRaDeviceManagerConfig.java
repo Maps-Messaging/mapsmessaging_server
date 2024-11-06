@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.config;
 
-import io.mapsmessaging.config.network.LoRaDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaDeviceConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;

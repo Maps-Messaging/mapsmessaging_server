@@ -15,8 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.network;
+package io.mapsmessaging.config.network.impl;
 
+import io.mapsmessaging.config.network.SslConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,6 +35,7 @@ public class TlsConfig extends TcpConfig {
   public TlsConfig(ConfigurationProperties config) {
     super(config);
     sslConfig = new SslConfig(config);
+    setType("tls");
   }
 
   public ConfigurationProperties toConfigurationProperties() {

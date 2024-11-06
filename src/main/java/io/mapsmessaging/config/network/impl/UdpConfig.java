@@ -15,8 +15,10 @@
  *
  */
 
-package io.mapsmessaging.config.network;
+package io.mapsmessaging.config.network.impl;
 
+import io.mapsmessaging.config.network.EndPointConfig;
+import io.mapsmessaging.config.network.HmacConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +49,7 @@ public class UdpConfig extends EndPointConfig {
     } else {
       hmacConfigList = new ArrayList<>();
     }
+    setType("udp");
   }
 
   private List<HmacConfig> loadNodeConfig(List<ConfigurationProperties> nodes) {

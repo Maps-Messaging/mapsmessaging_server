@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.hmac;
 
-import io.mapsmessaging.config.network.UdpConfig;
+import io.mapsmessaging.config.network.impl.UdpConfig;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
