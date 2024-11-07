@@ -47,12 +47,13 @@ public class LoRaDeviceManager {
   //
   private final List<LoRaDevice> physicalDevices = new ArrayList<>();
   private final AtomicBoolean active = new AtomicBoolean(false);
+  private final LoRaDeviceManagerConfig deviceConfig;
 
   private LoRaDeviceManager() {
     synchronized (physicalDevices) {
+      deviceConfig = LoRaDeviceManagerConfig.getInstance();
       try {
         System.loadLibrary("LoRaDevice");
-        LoRaDeviceManagerConfig deviceConfig = LoRaDeviceManagerConfig.getInstance();
         for(LoRaDeviceConfig config:deviceConfig.getDeviceConfigList()){
           LoRaDevice device = new LoRaDevice(config);
           physicalDevices.add(device);
@@ -62,6 +63,10 @@ public class LoRaDeviceManager {
         logger.log(ServerLogMessages.LORA_DEVICE_LIBRARY_NOT_LOADED, e.getMessage());
       }
     }
+  }
+
+  public List<LoRaDevice> getDevices() {
+    return new ArrayList<>(physicalDevices);
   }
 
   public LoRaDevice getDevice(EndPointURL url) {

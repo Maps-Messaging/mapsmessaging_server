@@ -25,11 +25,23 @@ import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
+import lombok.Getter;
 
 public class LoRaDevice {
 
-  final Logger logger;
+  @Getter
+  private final LongAdder packetsSent = new LongAdder();
+  @Getter
+  private final LongAdder packetsReceived = new LongAdder();
+  @Getter
+  private final LongAdder bytesReceived = new LongAdder();
+  @Getter
+  private final LongAdder bytesSent = new LongAdder();
+  @Getter
   private final LoRaDeviceConfig config;
+
+  final Logger logger;
   private int radioHandle;
 
   private final Map<Integer, LoRaEndPoint> registeredEndPoint;
@@ -86,6 +98,7 @@ public class LoRaDevice {
   void handleIncomingPacket(LoRaDatagram datagram) {
     LoRaEndPoint endPoint = registeredEndPoint.get(datagram.getTo());
     if (endPoint != null) {
+      packetsReceived.increment();
       endPoint.queue(datagram);
     } else {
       logger.log(ServerLogMessages.LORA_DEVICE_NO_REGISTERED_ENDPOINT, datagram.getTo());
@@ -94,6 +107,8 @@ public class LoRaDevice {
 
   public synchronized boolean write(byte[] buffer, int length, byte from, byte to) {
     if (radioHandle >= 0) {
+      bytesSent.add(length);
+      packetsSent.increment();
       return write(radioHandle, buffer, length, from, to);
     }
     return false;
@@ -101,7 +116,11 @@ public class LoRaDevice {
 
   public synchronized long read(byte[] buffer, int length) {
     if (radioHandle >= 0) {
-      return read(radioHandle, buffer, length);
+      long read = read(radioHandle, buffer, length);
+      if(read > 0){
+        bytesReceived.add(read);
+      }
+      return read;
     }
     return -1;
   }
