@@ -20,14 +20,16 @@ package io.mapsmessaging.rest.api.impl.hardware;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.discovery.DiscoveredServers;
+import io.mapsmessaging.rest.data.devices.DeviceInfo;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,25 +41,34 @@ public class HardwareManagementApi extends BaseRestApi {
   @Path("/server/hardware/scan")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public void startDiscovery() {
+  public List<String> scanForDevices() throws InterruptedException {
     if (!hasAccess("hardware")) {
       response.setStatus(403);
-      return;
+      return new ArrayList<>();
     }
-    MessageDaemon.getInstance().getDiscoveryManager().start();
+    return MessageDaemon.getInstance().getDeviceManager().scan();
   }
 
   @GET
   @Path("/server/hardware")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public List<DiscoveredServers> getAllDiscoveredServers() {
+  public List<DeviceInfo> getAllDiscoveredDevices() throws IOException {
     if (!hasAccess("hardware")) {
       response.setStatus(403);
       return new ArrayList<>();
     }
+    List<DeviceInfo> devices = new ArrayList<>();
     DeviceManager deviceManager = MessageDaemon.getInstance().getDeviceManager();
-    List<DiscoveredServers> discoveredServers = new ArrayList<>();
-    return discoveredServers;
+    List<DeviceController> activeDevices = deviceManager.getActiveDevices();
+    for(DeviceController device : activeDevices) {
+      DeviceInfo deviceInfo = new DeviceInfo();
+      deviceInfo.setName(device.getName());
+      deviceInfo.setType(device.getType().name());
+      deviceInfo.setDescription(device.getDescription());
+      deviceInfo.setState(new String(device.getDeviceState()));
+      devices.add(deviceInfo);
+    }
+    return devices;
   }
 }

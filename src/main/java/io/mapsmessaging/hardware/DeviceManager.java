@@ -24,6 +24,7 @@ import io.mapsmessaging.config.device.I2CBusConfig;
 import io.mapsmessaging.config.device.OneWireBusConfig;
 import io.mapsmessaging.config.device.triggers.TriggerConfig;
 import io.mapsmessaging.devices.DeviceBusManager;
+import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
@@ -48,6 +49,7 @@ public class DeviceManager implements ServiceManager, Agent {
   private final List<BusHandler> busHandlers;
   private final List<Trigger> triggers;
   private final Map<String, Trigger> configuredTriggers;
+
   private final DeviceBusManager deviceBusManager;
 
   public DeviceManager() {
@@ -80,6 +82,26 @@ public class DeviceManager implements ServiceManager, Agent {
     }
 
     deviceBusManager = manager;
+  }
+
+  public  List<String> scan() throws InterruptedException {
+    List<String> scanResults = new ArrayList<>();
+    for(I2CBusManager i2CBusManager:deviceBusManager.getI2cBusManager()){
+      List<Integer> list = i2CBusManager.findDevicesOnBus(0);
+      for (String line : i2CBusManager.listDetected(list)) {
+        scanResults.add(line);
+      }
+    }
+    return scanResults;
+  }
+
+  public List<DeviceController> getActiveDevices(){
+    List<DeviceController> devices = new ArrayList<>();
+    devices.addAll(deviceBusManager.getI2cBusManager()[0].getActive().values());
+    devices.addAll(deviceBusManager.getI2cBusManager()[1].getActive().values());
+    devices.addAll(deviceBusManager.getOneWireBusManager().getActive().values());
+    devices.addAll(deviceBusManager.getSpiBusManager().getActive().values());
+    return devices;
   }
 
   public boolean isEnabled() {
@@ -212,8 +234,7 @@ public class DeviceManager implements ServiceManager, Agent {
 
   @Override
   public Iterator<Service> getServices() {
-    List<Service> service = new ArrayList<>();
-    service.addAll(triggers);
+    List<Service> service = new ArrayList<>(triggers);
     return service.listIterator();
   }
 }
