@@ -15,9 +15,9 @@
  *
  */
 
-package io.mapsmessaging.config.network.impl;
+package io.mapsmessaging.config.lora;
 
-import io.mapsmessaging.config.network.EndPointConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,7 +28,7 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class LoRaDeviceConfig extends EndPointConfig {
+public class LoRaDeviceConfig extends Config {
 
   private String name;
   private String radio;
@@ -49,11 +49,9 @@ public class LoRaDeviceConfig extends EndPointConfig {
     power = properties.getIntProperty("power", 14);
     cadTimeout = properties.getIntProperty("CADTimeout", 0);
     frequency = properties.getFloatProperty("frequency", 0.0f);
-    setType("lora");
   }
 
   public boolean update(LoRaDeviceConfig newConfig) {
-    super.update(newConfig);
     boolean hasChanged = false;
 
     if (!this.name.equals(newConfig.getName())) {
@@ -90,10 +88,6 @@ public class LoRaDeviceConfig extends EndPointConfig {
     }
 
     // Call the super class update method
-    if (super.update(newConfig)) {
-      hasChanged = true;
-    }
-
     return hasChanged;
   }
 

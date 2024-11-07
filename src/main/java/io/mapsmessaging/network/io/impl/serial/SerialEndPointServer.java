@@ -19,6 +19,7 @@ package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
 import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -39,9 +40,11 @@ public class SerialEndPointServer extends EndPointServer {
   private final ProtocolFactory protocolFactory;
   private final SerialEndPointURL serialEndPointURL;
   private SerialEndPoint serialEndPoint;
+  private final SerialConfig serialConfig;
 
   public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfig config, EndPointManagerJMX managerMBean) {
     super(acceptHandler, url, config);
+    serialConfig = (SerialConfig)config.getEndPointConfig();
     serialEndPointURL = (SerialEndPointURL) url;
     protocolFactory = new ProtocolFactory(config.getProtocols());
     this.managerMBean = managerMBean;
@@ -75,7 +78,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public String getName() {
-    return "serial_" + serialEndPointURL.getPortName();
+    return "serial_" + serialConfig.getPort();
   }
 
   @Override
@@ -92,7 +95,7 @@ public class SerialEndPointServer extends EndPointServer {
   public void handleCloseEndPoint(EndPoint endPoint) {
     super.handleCloseEndPoint(endPoint);
     serialEndPoint = null;
-    SerialEndPortScanner.getInstance().del(serialEndPointURL.getPortName());
+    SerialEndPortScanner.getInstance().del(serialConfig.getPort());
     SimpleTaskScheduler.getInstance().schedule(() -> {
       try {
         start();
@@ -104,7 +107,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public void start() throws IOException {
-    SerialPort port = SerialEndPortScanner.getInstance().add(serialEndPointURL.getPortName(), this);
+    SerialPort port = SerialEndPortScanner.getInstance().add(serialConfig.getPort(), this);
     if (port != null) {
       bind(port);
     }
@@ -117,7 +120,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public void close() {
-    SerialEndPortScanner.getInstance().del(serialEndPointURL.getPortName());
+    SerialEndPortScanner.getInstance().del(serialConfig.getPort());
     if (serialEndPoint != null) {
       try {
         serialEndPoint.close();
@@ -133,10 +136,8 @@ public class SerialEndPointServer extends EndPointServer {
 
   }
 
-  public void bind(SerialPort port) throws IOException {
-    port.setBaudRate(serialEndPointURL.getBaudRate());
-    port.setComPortParameters(serialEndPointURL.getBaudRate(), serialEndPointURL.getData(), serialEndPointURL.getStop(), serialEndPointURL.getParity());
-    serialEndPoint = new SerialEndPoint(generateID(), this, port, managerMBean);
+  public void bind(SerialPort serialPort) throws IOException {
+    serialEndPoint = new SerialEndPoint(generateID(), this, serialPort, managerMBean);
     handleNewEndPoint(serialEndPoint);
   }
 

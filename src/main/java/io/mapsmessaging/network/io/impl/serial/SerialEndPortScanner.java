@@ -26,9 +26,15 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class SerialEndPortScanner implements Runnable {
 
-  private static final SerialEndPortScanner instance = new SerialEndPortScanner();
+  private static class Holder {
+    static final SerialEndPortScanner INSTANCE = new SerialEndPortScanner();
+  }
+  public static SerialEndPortScanner getInstance() {
+    return Holder.INSTANCE;
+  }
 
   private final Logger logger;
   private final Map<String, SerialEndPointServer> serverEndPoints;
@@ -40,10 +46,6 @@ public class SerialEndPortScanner implements Runnable {
     serverEndPoints = new LinkedHashMap<>();
     logger = LoggerFactory.getLogger(SerialEndPortScanner.class);
     run();
-  }
-
-  public static SerialEndPortScanner getInstance() {
-    return instance;
   }
 
   public synchronized SerialPort add(String port, SerialEndPointServer server) {
@@ -66,16 +68,16 @@ public class SerialEndPortScanner implements Runnable {
   // While knownPorts.computeIfAbsent could be used, the following logic being performed
   // on the addition of a port seems rather large and the logic flows better as is
   @java.lang.SuppressWarnings("java:S3824")
-  private void scanPorts(SerialPort[] ports) {
-    for (SerialPort port : ports) {
-      String key = port.getSystemPortName().toLowerCase();
+  private void scanPorts(SerialPort[] devices) {
+    for (SerialPort serialDevice : devices) {
+      String key = serialDevice.getSystemPortName().toLowerCase();
       if (!knownPorts.containsKey(key)) {
-        knownPorts.put(key, port);
+        knownPorts.put(key, serialDevice);
         SerialEndPointServer server = serverEndPoints.get(key);
         if (server != null) {
           logger.log(ServerLogMessages.SERIAL_PORT_SCANNER_BINDING, server.getName(), key);
           try {
-            server.bind(port);
+            server.bind(serialDevice);
           } catch (IOException e) {
             logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
           }

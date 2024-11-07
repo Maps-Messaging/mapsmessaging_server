@@ -20,6 +20,7 @@ package io.mapsmessaging.network.io.impl.serial;
 import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
 
 import com.fazecast.jSerialComm.SerialPort;
+import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.admin.EndPointJMX;
@@ -43,14 +44,23 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 
   public SerialEndPoint(long id, EndPointServer server, SerialPort serialPort, EndPointManagerJMX managerMBean) {
     super(id, server);
+    SerialConfig config = ((SerialConfig) server.getConfig().getEndPointConfig());
     this.serialPort = serialPort;
-    serialPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING, 60000, 60000);
+    configure(config);
     serialPort.openPort();
     outputStream = serialPort.getOutputStream();
     inputStream = serialPort.getInputStream();
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
-    streamHandler = new SimpleStreamHandler(256 * 1025);
+    streamHandler = new SimpleStreamHandler(config.getBufferSize());
+  }
+
+  private void configure(SerialConfig config) {
+    int stop;
+    serialPort.setBaudRate(config.getBaudRate());
+    serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
+    serialPort.setFlowControl(config.getFlowControl());
+    serialPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING, config.getReadTimeOut(), config.getWriteTimeOut());
   }
 
   @Override
@@ -125,6 +135,37 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     streamHandler = handler;
   }
 
+  private int getStopBits(SerialConfig config){
+    switch (config.getStopBits().toLowerCase()) {
+      case "2":
+        return SerialPort.TWO_STOP_BITS;
+      case "1.5":
+        return SerialPort.ONE_POINT_FIVE_STOP_BITS;
+      case "1":
+      default:
+        return SerialPort.ONE_STOP_BIT;
+    }
+  }
+
+  private int getParity(SerialConfig config) {
+    switch (config.getParity().toLowerCase()) {
+      case "o":
+        return SerialPort.ODD_PARITY;
+
+      case "e":
+        return SerialPort.EVEN_PARITY;
+
+      case "m":
+        return SerialPort.MARK_PARITY;
+
+      case "s":
+        return SerialPort.SPACE_PARITY;
+
+      case "n":
+      default:
+        return SerialPort.NO_PARITY;
+    }
+  }
 
   //<editor-fold desc="Serial Reader Thread task">
   public class SerialReader implements Runnable {

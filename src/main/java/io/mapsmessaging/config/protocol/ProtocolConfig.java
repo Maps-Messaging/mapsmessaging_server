@@ -38,7 +38,7 @@ import lombok.ToString;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = AmqpConfig.class, name = "amqp"),
   @JsonSubTypes.Type(value = CoapConfig.class, name = "coap"),
-  @JsonSubTypes.Type(value = LoRaConfig.class, name = "lora"),
+  @JsonSubTypes.Type(value = LoRaProtocolConfig.class, name = "lora"),
   @JsonSubTypes.Type(value = MqttConfig.class, name = "mqtt"),
   @JsonSubTypes.Type(value = MqttSnConfig.class, name = "mqtt-sn"),
   @JsonSubTypes.Type(value = MqttV5Config.class, name = "mqttV5"),
@@ -53,7 +53,7 @@ import lombok.ToString;
     discriminatorMapping = {
       @DiscriminatorMapping(value = "amqp", schema = AmqpConfig.class),
       @DiscriminatorMapping(value = "coap", schema = CoapConfig.class),
-      @DiscriminatorMapping(value = "lora", schema = LoRaConfig.class),
+      @DiscriminatorMapping(value = "lora", schema = LoRaProtocolConfig.class),
       @DiscriminatorMapping(value = "mqtt", schema = MqttConfig.class),
       @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnConfig.class),
       @DiscriminatorMapping(value = "mqttV5", schema = MqttV5Config.class),

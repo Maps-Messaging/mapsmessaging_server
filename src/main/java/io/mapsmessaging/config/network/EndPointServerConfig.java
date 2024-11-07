@@ -22,7 +22,7 @@ import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.network.impl.*;
 import io.mapsmessaging.config.protocol.*;
 import io.mapsmessaging.config.protocol.impl.*;
-import io.mapsmessaging.config.protocol.impl.LoRaConfig;
+import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,7 +130,7 @@ public class EndPointServerConfig extends Config {
     } else if (protocol.equalsIgnoreCase("nmea")) {
       return new NmeaConfig(config);
     } else if (protocol.equalsIgnoreCase("lora")) {
-      return new LoRaConfig(config);
+      return new LoRaProtocolConfig(config);
     }
     return null;
   }

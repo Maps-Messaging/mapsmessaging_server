@@ -18,7 +18,7 @@
 package io.mapsmessaging.network.io.impl.lora.device;
 
 import io.mapsmessaging.config.LoRaDeviceManagerConfig;
-import io.mapsmessaging.config.network.impl.LoRaDeviceConfig;
+import io.mapsmessaging.config.lora.LoRaDeviceConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -27,12 +27,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class LoRaDeviceManager {
 
-  private static final LoRaDeviceManager instance = new LoRaDeviceManager();
-
+  private static class Holder {
+    static final LoRaDeviceManager INSTANCE = new LoRaDeviceManager();
+  }
   public static LoRaDeviceManager getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
 
   private final Logger logger = LoggerFactory.getLogger(LoRaDeviceManager.class);

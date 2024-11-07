@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
-import io.mapsmessaging.config.network.impl.LoRaDeviceConfig;
+import io.mapsmessaging.config.lora.LoRaDeviceConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;

@@ -21,7 +21,7 @@ import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.DATA;
 import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
 
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.config.protocol.impl.LoRaConfig;
+import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -99,7 +99,7 @@ public class LoRaProtocol extends ProtocolImpl {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), true);
     protocolInterfaceManager = new MQTTSNInterfaceManager((byte) 1, selectorTask, getEndPoint());
     loraProtocolEndPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-    LoRaConfig loRaConfig = (LoRaConfig) endPoint.getConfig().getProtocolConfig("lora");
+    LoRaProtocolConfig loRaConfig = (LoRaProtocolConfig) endPoint.getConfig().getProtocolConfig("lora");
     transmissionRate = loRaConfig.getRetransmit();
     transmitCount = new AtomicInteger(transmissionRate);
 

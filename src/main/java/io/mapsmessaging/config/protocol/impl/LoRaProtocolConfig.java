@@ -15,9 +15,10 @@
  *
  */
 
-package io.mapsmessaging.config.network.impl;
+package io.mapsmessaging.config.protocol.impl;
 
-import io.mapsmessaging.config.network.SslConfig;
+
+import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,20 +29,17 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class DtlsConfig extends UdpConfig {
+public class LoRaProtocolConfig extends ProtocolConfig {
 
-  private SslConfig sslConfig;
+  private int retransmit;
 
-  public DtlsConfig(ConfigurationProperties config) {
+  public LoRaProtocolConfig(ConfigurationProperties config) {
     super(config);
-    setType("dtls");
-    sslConfig.setContext("dtls");
-    sslConfig = new SslConfig(config);
+    retransmit = config.getIntProperty("LoRaMaxTransmissionRate", 10);
+    setType("lora");
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.putAll(sslConfig.toConfigurationProperties().getMap());
-    return config;
+    return super.toConfigurationProperties();
   }
 }

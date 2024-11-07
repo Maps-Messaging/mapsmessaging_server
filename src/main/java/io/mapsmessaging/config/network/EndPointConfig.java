@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.impl.*;
-import io.mapsmessaging.config.protocol.impl.*;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,7 +37,7 @@ import lombok.ToString;
 
 @JsonSubTypes({
     @JsonSubTypes.Type(value = DtlsConfig.class, name = "dtls"),
-    @JsonSubTypes.Type(value = LoRaDeviceConfig.class, name = "lora"),
+    @JsonSubTypes.Type(value = LoRaConfig.class, name = "lora"),
     @JsonSubTypes.Type(value = SerialConfig.class, name = "serial"),
     @JsonSubTypes.Type(value = TcpConfig.class, name = "tcp"),
     @JsonSubTypes.Type(value = TlsConfig.class, name = "ssl"),
@@ -49,7 +48,7 @@ import lombok.ToString;
     discriminatorProperty = "type",
     discriminatorMapping = {
         @DiscriminatorMapping(value = "dtls", schema = DtlsConfig.class),
-        @DiscriminatorMapping(value = "lora", schema = LoRaDeviceConfig.class),
+        @DiscriminatorMapping(value = "lora", schema = LoRaConfig.class),
         @DiscriminatorMapping(value = "serial", schema = SerialConfig.class),
         @DiscriminatorMapping(value = "tcp", schema = TcpConfig.class),
         @DiscriminatorMapping(value = "ssl", schema = TlsConfig.class),
