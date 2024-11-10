@@ -31,13 +31,6 @@ public class LoRaDeviceInfo {
   private String name;
   private String radio;
 
-  private int cs;
-  private int irq;
-  private int rst;
-  private int power;
-  private int cadTimeout;
-  private float frequency;
-
   private long bytesSent;
   private long bytesReceived;
   private long packetsSent;
