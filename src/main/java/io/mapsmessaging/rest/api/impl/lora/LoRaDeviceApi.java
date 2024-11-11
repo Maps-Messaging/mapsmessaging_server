@@ -20,12 +20,15 @@ package io.mapsmessaging.rest.api.impl.lora;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
+import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.data.lora.LoRaDeviceInfo;
+import io.mapsmessaging.rest.data.lora.LoRaEndPointConnectionInfo;
+import io.mapsmessaging.rest.data.lora.LoRaEndPointInfo;
 import io.mapsmessaging.rest.data.lora.LoRaListResponse;
-import io.mapsmessaging.rest.responses.BaseResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -57,21 +60,45 @@ public class LoRaDeviceApi extends BaseRestApi {
   public LoRaDeviceInfo getLoRaDevice(@PathParam("deviceName") String deviceName) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    LoRaDeviceConfig deviceConfig = null;
     LoRaDeviceInfo deviceInfo = new LoRaDeviceInfo();
     if (deviceName != null && !deviceName.isEmpty()) {
       List<LoRaDevice> lookup = deviceManager.getDevices().stream()
           .filter(device -> deviceName.equals(device.getName()))
           .collect(Collectors.toList());
       if(!lookup.isEmpty()) {
-        deviceInfo = createInfo(lookup.get(0));
+        return createInfo(lookup.get(0));
       }
     }
-
-    if (deviceConfig == null) {
-      response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    }
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     return deviceInfo;
+  }
+
+
+  @GET
+  @Path("/device/lora/{deviceName}/{nodeId}")
+  @Produces({MediaType.APPLICATION_JSON})
+  public List<LoRaEndPointConnectionInfo> getLoRaEndPointConnections(
+      @PathParam("deviceName") String deviceName,
+      @PathParam("nodeId") int nodeId
+  ) {
+    checkAuthentication();
+    LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
+    if (deviceName != null && !deviceName.isEmpty()) {
+      List<LoRaDevice> lookup = deviceManager.getDevices().stream()
+          .filter(device -> deviceName.equals(device.getName()))
+          .collect(Collectors.toList());
+      if(!lookup.isEmpty()) {
+        LoRaDevice device = lookup.get(0);
+        List<LoRaEndPointConnectionInfo> infoList = new ArrayList<>();
+        LoRaEndPoint loRaEndPoint = device.getEndPoint(nodeId);
+        for(LoRaClientStats clientStats : loRaEndPoint.getStats()) {
+          infoList.add(createConnectionInfo(clientStats));
+        }
+        return infoList;
+      }
+    }
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    return new ArrayList<>();
   }
 
   private LoRaDeviceInfo createInfo(LoRaDevice device) {
@@ -83,6 +110,32 @@ public class LoRaDeviceApi extends BaseRestApi {
     deviceInfo.setBytesSent(device.getBytesSent().sum());
     deviceInfo.setPacketsReceived(device.getPacketsReceived().sum());
     deviceInfo.setPacketsSent(device.getPacketsSent().sum());
+    List<LoRaEndPointInfo> endPointInfoList = new ArrayList<>();
+    for(LoRaEndPoint endPoint: device.getEndPoints()){
+      endPointInfoList.add(createEndPointInfo(endPoint));
+    }
+    deviceInfo.setEndPointInfoList(endPointInfoList);
     return deviceInfo;
+  }
+
+  private LoRaEndPointInfo createEndPointInfo(LoRaEndPoint endPoint) {
+    LoRaEndPointInfo endPointInfo = new LoRaEndPointInfo();
+    endPointInfo.setLastRSSI(endPoint.getRSSI());
+    endPointInfo.setNodeId(endPoint.getNodeId());
+    endPointInfo.setIncomingQueueSize(endPoint.getIncomingQueueSize());
+    endPointInfo.setConnectionSize(endPoint.getConnectionSize());
+    return endPointInfo;
+  }
+
+  private LoRaEndPointConnectionInfo createConnectionInfo(LoRaClientStats clientStats) {
+    LoRaEndPointConnectionInfo connectionInfo = new LoRaEndPointConnectionInfo();
+    connectionInfo.setLastWriteTime(clientStats.getLastWriteTime());
+    connectionInfo.setLastReadTime(clientStats.getLastReadTime());
+    connectionInfo.setLastPacketId(clientStats.getLastPacketId());
+    connectionInfo.setRSSI(clientStats.getRssi());
+    connectionInfo.setMissedPackets(clientStats.getMissed());
+    connectionInfo.setReceivedPackets(clientStats.getReceived());
+    connectionInfo.setRemoteNodeId((int)clientStats.getNodeId());
+    return connectionInfo;
   }
 }

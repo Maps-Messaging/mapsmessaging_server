@@ -17,7 +17,7 @@
 
 package io.mapsmessaging.rest.data.lora;
 
-import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,15 +27,12 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @NoArgsConstructor
-public class LoRaDeviceInfo {
-
-  private String name;
-  private String radio;
-
-  private long bytesSent;
-  private long bytesReceived;
-  private long packetsSent;
-  private long packetsReceived;
-  private List<LoRaEndPointInfo> endPointInfoList;
-
+public class LoRaEndPointConnectionInfo {
+  private long RSSI;
+  private long missedPackets;
+  private long receivedPackets;
+  private int remoteNodeId;
+  private long lastPacketId;
+  private long lastReadTime;
+  private long lastWriteTime;
 }

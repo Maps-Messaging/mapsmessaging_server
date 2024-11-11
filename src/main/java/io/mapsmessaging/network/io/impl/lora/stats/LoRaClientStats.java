@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.management.ObjectInstance;
+import lombok.Getter;
+import lombok.Setter;
 
 @JMXBean(description = "LoRa Radio Status Bean")
 public class LoRaClientStats {
@@ -41,10 +43,20 @@ public class LoRaClientStats {
   private final Stats rssiStats;
   private final Stats missedStats;
   private final Stats receivedStats;
-  private final ObjectInstance mbean;
-  private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
   private final int nodeId;
+
+  @Getter
   private long lastPacketId;
+
+  @Getter
+  private long lastReadTime;
+  @Getter
+  @Setter
+  private long lastWriteTime;
+
+
+  private ObjectInstance mbean;
+  private List<LinkedMovingAveragesJMX> movingAveragesJMXList;
 
   public LoRaClientStats(List<String> parent, int clientId, StatsType type) {
     rssiStats = StatsFactory.create(type, RSSI, RSSI, ACCUMULATOR.ADD, MOVING_AVERAGE, TIME_UNIT);
@@ -52,21 +64,27 @@ public class LoRaClientStats {
     receivedStats =  StatsFactory.create(type, "Missed", PACKETS, ACCUMULATOR.AVE,  MOVING_AVERAGE, TIME_UNIT);
     lastPacketId = -1;
     nodeId = clientId;
-    movingAveragesJMXList = new ArrayList<>();
 
-    List<String> jmxPath = new ArrayList<>(parent);
-    jmxPath.add("name=RadioStatus");
-    jmxPath.add("NodeId=" + clientId);
-    mbean = JMXManager.getInstance().register(this, jmxPath);
+    if (JMXManager.isEnableJMX()){
+      movingAveragesJMXList = new ArrayList<>();
 
-    if (JMXManager.isEnableJMX() && JMXManager.isEnableJMXStatistics()) {
-      List<String> rssiPath = new ArrayList<>(jmxPath);
-      List<String> missed = new ArrayList<>(jmxPath);
-      List<String> received = new ArrayList<>(jmxPath);
-      if (rssiStats.supportMovingAverage()) {
-        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(rssiPath, (LinkedMovingAverages) rssiStats));
-        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(missed, (LinkedMovingAverages) missedStats));
-        movingAveragesJMXList.add(new LinkedMovingAveragesJMX(received, (LinkedMovingAverages) receivedStats));
+      List<String> jmxPath = new ArrayList<>(parent);
+      jmxPath.add("name=RadioStatus");
+      jmxPath.add("NodeId=" + clientId);
+      mbean = JMXManager.getInstance().register(this, jmxPath);
+
+      if (JMXManager.isEnableJMXStatistics()) {
+        List<String> rssiPath = new ArrayList<>(jmxPath);
+        List<String> missed = new ArrayList<>(jmxPath);
+        List<String> received = new ArrayList<>(jmxPath);
+        if (rssiStats.supportMovingAverage()) {
+          movingAveragesJMXList.add(
+              new LinkedMovingAveragesJMX(rssiPath, (LinkedMovingAverages) rssiStats));
+          movingAveragesJMXList.add(
+              new LinkedMovingAveragesJMX(missed, (LinkedMovingAverages) missedStats));
+          movingAveragesJMXList.add(
+              new LinkedMovingAveragesJMX(received, (LinkedMovingAverages) receivedStats));
+        }
       }
     }
   }
@@ -75,7 +93,7 @@ public class LoRaClientStats {
     for (LinkedMovingAveragesJMX jmx : movingAveragesJMXList) {
       jmx.close();
     }
-    JMXManager.getInstance().unregister(mbean);
+    if(mbean != null) JMXManager.getInstance().unregister(mbean);
   }
 
   @JMXBeanAttribute(name = "getNodeId", description = "Returns the nodes ID")
@@ -99,6 +117,7 @@ public class LoRaClientStats {
   }
 
   public void update(LoRaDatagram datagram) {
+    lastReadTime = System.currentTimeMillis();
     receivedStats.increment();
     rssiStats.add(datagram.getRssi());
     int id = datagram.getId();
@@ -112,6 +131,7 @@ public class LoRaClientStats {
   }
 
   public void update(int id, int rssi) {
+    lastReadTime = System.currentTimeMillis();
     receivedStats.increment();
     rssiStats.add(rssi);
     if (lastPacketId != -1 && id != 0) { // Rolled so ignore

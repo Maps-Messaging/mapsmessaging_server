@@ -23,7 +23,9 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
@@ -93,6 +95,14 @@ public class LoRaDevice {
 
   public void log(String message) {
     logger.log(ServerLogMessages.LORA_DEVICE_DRIVER_LOG, config.getName(), config.getRadio(), message);
+  }
+
+  public LoRaEndPoint getEndPoint(int id) {
+    return registeredEndPoint.get(id);
+  }
+
+  public List<LoRaEndPoint> getEndPoints(){
+    return new ArrayList<>(registeredEndPoint.values());
   }
 
   void handleIncomingPacket(LoRaDatagram datagram) {

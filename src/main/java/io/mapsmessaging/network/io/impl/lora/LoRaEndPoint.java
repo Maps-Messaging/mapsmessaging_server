@@ -37,16 +37,15 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.FutureTask;
+import lombok.Getter;
 
 public class LoRaEndPoint extends EndPoint {
 
   private volatile boolean isQueued;
   private final LoRaDevice loRaDevice;
+  @Getter
   private final int nodeId;
   private final Queue<LoRaDatagram> incoming;
   private final EndPointJMX mbean;
@@ -88,8 +87,16 @@ public class LoRaEndPoint extends EndPoint {
   }
 
 
-  public Collection<LoRaClientStats> getStats() {
-    return clientStats.values();
+  public int getIncomingQueueSize(){
+    return incoming.size();
+  }
+
+  public int getConnectionSize(){
+    return clientStats.size();
+  }
+
+  public List<LoRaClientStats> getStats() {
+    return new ArrayList<>(clientStats.values());
   }
 
   @Override
@@ -99,7 +106,10 @@ public class LoRaEndPoint extends EndPoint {
     int len = packet.available();
     byte[] buffer = new byte[len];
     packet.get(buffer);
-    loRaDevice.write(buffer, len, (byte) (nodeId & 0xff), ipAddress[3]);
+    byte to = ipAddress[3];
+    LoRaClientStats stats = getStats(to);
+    stats.setLastWriteTime(System.currentTimeMillis());
+    loRaDevice.write(buffer, len, (byte) (nodeId & 0xff), to);
     updateWriteBytes(len);
     return len;
   }
@@ -181,9 +191,13 @@ public class LoRaEndPoint extends EndPoint {
       }
       logger.log(ServerLogMessages.LORA_QUEUED_EVENT, incoming.size(), selectable != null);
       int from = datagram.getFrom();
-      LoRaClientStats stats = clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f, StatsFactory.getDefaultType()));
+      LoRaClientStats stats = getStats(from);
       stats.update(datagram);
     }
+  }
+
+  private LoRaClientStats getStats(int from) {
+    return clientStats.computeIfAbsent(from, f -> new LoRaClientStats(jmxParentPath, f, StatsFactory.getDefaultType()));
   }
 
   public class LoRaReader implements Runnable {

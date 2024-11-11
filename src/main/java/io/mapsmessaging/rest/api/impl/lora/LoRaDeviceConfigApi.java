@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.rest.api.impl.lora;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 import io.mapsmessaging.config.lora.LoRaDeviceConfig;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
@@ -27,13 +29,10 @@ import io.mapsmessaging.rest.responses.BaseResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+import javax.servlet.http.HttpServletResponse;
 
 @Tag(name = "LoRa Device Management")
 @Path(URI_PATH)
@@ -42,7 +41,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   @GET
   @Path("/device/lora/config")
   @Produces({MediaType.APPLICATION_JSON})
-  public LoRaConfigListRespose getAllLoRaDevices() {
+  public LoRaConfigListRespose getAllLoRaDeviceConfigs() {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     List<LoRaDeviceConfigInfo> deviceInfos = new ArrayList<>();
@@ -55,7 +54,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}/config")
   @Produces({MediaType.APPLICATION_JSON})
-  public LoRaDeviceConfigInfo getLoRaDevice(@PathParam("deviceName") String deviceName) {
+  public LoRaDeviceConfigInfo getLoRaDeviceConfig(@PathParam("deviceName") String deviceName) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     LoRaDeviceConfigInfo deviceConfig = null;
@@ -79,7 +78,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   @Path("/device/lora/config")
   @Consumes({MediaType.APPLICATION_JSON})
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse addLoRaDevice(LoRaDeviceConfigInfo newDevice) {
+  public BaseResponse addLoRaDeviceConfig(LoRaDeviceConfigInfo newDevice) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     return new BaseResponse(request);
@@ -90,7 +89,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   @DELETE
   @Path("/device/lora/{deviceId}/config")
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse deleteLoRaDevice(@PathParam("deviceId") String deviceId) {
+  public BaseResponse deleteLoRaDeviceConfig(@PathParam("deviceId") String deviceId) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
 //    if (deviceManager.deleteDevice(UUID.fromString(deviceId)))
