@@ -79,10 +79,11 @@ public class LoRaDeviceApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   public List<LoRaEndPointConnectionInfo> getLoRaEndPointConnections(
       @PathParam("deviceName") String deviceName,
-      @PathParam("nodeId") int nodeId
+      @PathParam("nodeId") String nodeId
   ) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
+    int parsedInt = Integer.parseInt(nodeId);
     if (deviceName != null && !deviceName.isEmpty()) {
       List<LoRaDevice> lookup = deviceManager.getDevices().stream()
           .filter(device -> deviceName.equals(device.getName()))
@@ -90,7 +91,7 @@ public class LoRaDeviceApi extends BaseRestApi {
       if(!lookup.isEmpty()) {
         LoRaDevice device = lookup.get(0);
         List<LoRaEndPointConnectionInfo> infoList = new ArrayList<>();
-        LoRaEndPoint loRaEndPoint = device.getEndPoint(nodeId);
+        LoRaEndPoint loRaEndPoint = device.getEndPoint(parsedInt);
         for(LoRaClientStats clientStats : loRaEndPoint.getStats()) {
           infoList.add(createConnectionInfo(clientStats));
         }
