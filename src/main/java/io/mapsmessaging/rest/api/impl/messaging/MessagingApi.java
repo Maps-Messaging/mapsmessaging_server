@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +20,9 @@ package io.mapsmessaging.rest.api.impl.messaging;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
+import io.mapsmessaging.dto.rest.messaging.PublishRequestDTO;
+import io.mapsmessaging.dto.rest.messaging.SubscriptionRequestDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.messaging.PublishRequest;
-import io.mapsmessaging.rest.data.messaging.SubscriptionRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,7 +45,7 @@ public class MessagingApi extends BaseRestApi {
       description = "Message published successfully",
       content = @Content(schema = @Schema(implementation = String.class)))
   @POST
-  public Response publishMessage(@Valid PublishRequest publishRequest) {
+  public Response publishMessage(@Valid PublishRequestDTO publishRequest) {
     if (!hasAccess("messaging")) {
       response.setStatus(403);
       return null;
@@ -62,7 +63,7 @@ public class MessagingApi extends BaseRestApi {
   @ApiResponse(responseCode = "200", description = "Subscribed to topic successfully",
       content = @Content(schema = @Schema(implementation = String.class)))
   @POST
-  public Response subscribeToTopic(@Valid SubscriptionRequest subscriptionRequest) {
+  public Response subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) {
     if (!hasAccess("messaging")) {
       response.setStatus(403);
       return null;

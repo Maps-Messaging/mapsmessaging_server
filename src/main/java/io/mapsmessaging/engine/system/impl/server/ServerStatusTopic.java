@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,9 +21,10 @@ package io.mapsmessaging.engine.system.impl.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.helpers.StatusMessageHelper;
+import io.mapsmessaging.dto.rest.StatusMessageDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
-import io.mapsmessaging.rest.data.StatusMessage;
 import java.io.IOException;
 
 public class ServerStatusTopic extends SystemTopic {
@@ -44,7 +46,7 @@ public class ServerStatusTopic extends SystemTopic {
 
   @Override
   protected Message generateMessage() {
-    StatusMessage statusMessage = new StatusMessage(MessageDaemon.getInstance());
+    StatusMessageDTO statusMessage = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
     ObjectMapper mapper = new ObjectMapper();
     try {
       String jsonString = mapper.writeValueAsString(statusMessage);

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +21,9 @@ package io.mapsmessaging.rest.api.impl.destination;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.helpers.DestinationStatusHelper;
+import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.rest.data.destination.DestinationStatus;
 import io.mapsmessaging.rest.responses.DestinationStatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -49,7 +51,7 @@ public class DestinationStatusApi extends BaseDestinationApi {
       return null;
     }
 
-    DestinationStatus destination = lookupDestination(destinationName);
+    DestinationStatusDTO destination = lookupDestination(destinationName);
     return new DestinationStatusResponse(request, destination);
   }
 
@@ -65,21 +67,21 @@ public class DestinationStatusApi extends BaseDestinationApi {
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
-    List<DestinationStatus> results = new ArrayList<>();
+    List<DestinationStatusDTO> results = new ArrayList<>();
     for (String name : destinations) {
-      DestinationStatus destinationStatus = lookupDestination(name);
+      DestinationStatusDTO destinationStatus = lookupDestination(name);
       if(parser == null || parser.evaluate(destinationStatus)) {
         results.add(destinationStatus);
       }
     }
     return new DestinationStatusResponse(request, results);
   }
-  protected DestinationStatus lookupDestination(String name) throws ExecutionException, InterruptedException, TimeoutException {
+  protected DestinationStatusDTO lookupDestination(String name) throws ExecutionException, InterruptedException, TimeoutException {
     DestinationImpl destinationImpl = super.lookup(name);
     if(destinationImpl == null){
       return null;
     }
-    return new DestinationStatus(destinationImpl);
+    return DestinationStatusHelper.createDestinationStatus(destinationImpl);
   }
 
 }

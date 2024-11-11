@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +21,8 @@ package io.mapsmessaging.app.top.panes.destination;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.destination.row.DestinationStatusRowPanel;
+import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
 import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
-import io.mapsmessaging.rest.data.destination.DestinationStatus;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,18 +50,18 @@ public class DestinationPane extends PaneUpdate {
     }
     clear(labelText, startRow - 1, startRow + rowList.size());
     DestinationStatusTopic.DestinationStatusMessage statusMessage = (DestinationStatusTopic.DestinationStatusMessage) obj;
-    List<DestinationStatus> destinationStatusList = statusMessage.getDestinationStatusList();
+    List<DestinationStatusDTO> destinationStatusList = statusMessage.getDestinationStatusList();
     sort(destinationStatusList);
     headerText.putString(0, startRow-1, "     NAME      |PUB |SENT|DISK|DROP|PTX |RTV |EXP |DLY | Read | Write |Delete |");
     int len = Math.min(rowList.size(), destinationStatusList.size());
     for(int x=0;x<len;x++) {
-      DestinationStatus destinationStatus = destinationStatusList.get(x);
+      DestinationStatusDTO destinationStatus = destinationStatusList.get(x);
       DestinationStatusRowPanel statusRow = rowList.get(x);
       statusRow.update(destinationStatus);
     }
   }
 
-  private  void sort( List<DestinationStatus> list){
+  private  void sort( List<DestinationStatusDTO> list){
     list.sort((o1, o2) -> {
       long val1 = o1.getPublishedMessages() + o1.getDeliveredMessages() + o1.getStoredMessages();
       long val2 = o2.getPublishedMessages() + o2.getDeliveredMessages() + o2.getStoredMessages();

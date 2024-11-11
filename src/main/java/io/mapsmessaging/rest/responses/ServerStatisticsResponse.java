@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,17 +18,17 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.ServerStatistics;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.Getter;
+import lombok.Data;
 
+@Data
 public class ServerStatisticsResponse extends BaseResponse {
 
-  @Getter
-  private final ServerStatistics data;
+  private final ServerStatisticsDTO data;
 
-  public ServerStatisticsResponse(HttpServletRequest request) {
+  public ServerStatisticsResponse(HttpServletRequest request, ServerStatisticsDTO data) {
     super(request);
-    data = new ServerStatistics();
+    this.data = data;
   }
 }

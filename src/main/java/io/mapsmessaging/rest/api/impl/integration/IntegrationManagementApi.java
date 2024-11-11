@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +22,10 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.helpers.IntegrationInfoHelper;
+import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.integration.IntegrationInfo;
 import io.mapsmessaging.rest.responses.IntegrationDetailResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -53,10 +55,11 @@ public class IntegrationManagementApi  extends BaseRestApi {
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
     ConfigurationProperties global = null;
-    List<IntegrationInfo> protocols = endPointManagers.stream()
-        .map(IntegrationInfo::new)
-        .filter(info -> parser == null || parser.evaluate(info))
-        .collect(Collectors.toList());
+    List<IntegrationInfoDTO> protocols =
+        endPointManagers.stream()
+            .map(IntegrationInfoHelper::fromEndPointConnection)
+            .filter(info -> parser == null || parser.evaluate(info))
+            .collect(Collectors.toList());
     return new IntegrationDetailResponse(request, protocols, global);
   }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@
 
 package io.mapsmessaging.utilities.stats;
 
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -94,12 +96,12 @@ public class LinkedMovingAverages implements Stats {
     return unitName;
   }
 
-  public LinkedMovingAverageRecord getRecord(){
+  public LinkedMovingAverageRecordDTO getRecord(){
     Map<String, Long> stats = new LinkedHashMap<>();
     for(MovingAverage movingAverage:movingAverages){
       stats.put(movingAverage.getName(), movingAverage.getAverage());
     }
-    return new LinkedMovingAverageRecord(name, unitName, timeSpan, total.sum(), stats);
+    return new LinkedMovingAverageRecordDTO(name, unitName, timeSpan, total.sum(), stats);
   }
   /**
    * @return A list of complete names of all moving averages

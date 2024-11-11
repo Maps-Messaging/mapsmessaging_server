@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +21,9 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
-import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -39,7 +41,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @GET
   @Path("/server/interface/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
-  public InterfaceStatus getInterfaceStatus(@PathParam("endpoint") String endpointName) {
+  public InterfaceStatusDTO getInterfaceStatus(@PathParam("endpoint") String endpointName) {
     checkAuthentication();
     if (!hasAccess("interfaces")) {
       response.setStatus(403);
@@ -48,7 +50,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
-        return new InterfaceStatus(endPointManager.getEndPointServer());
+        return InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer());
       }
     }
     return null;
@@ -57,7 +59,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @GET
   @Path("/server/interface/status")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<InterfaceStatus> getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
+  public List<InterfaceStatusDTO> getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
     if (!hasAccess("interfaces")) {
       response.setStatus(403);
@@ -67,7 +69,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
 
     return endPointManagers.stream()
-        .map(endPointManager -> new InterfaceStatus(endPointManager.getEndPointServer()))
+        .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
         .filter(status -> parser == null || parser.evaluate(status))
         .collect(Collectors.toList());
   }

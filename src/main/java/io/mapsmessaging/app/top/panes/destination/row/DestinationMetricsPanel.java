@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +23,7 @@ import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panes.destination.DestinationStatusUpdate;
-import io.mapsmessaging.rest.data.destination.DestinationStatus;
+import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
 
 public class DestinationMetricsPanel extends DestinationStatusUpdate {
 
@@ -34,7 +35,7 @@ public class DestinationMetricsPanel extends DestinationStatusUpdate {
   }
 
   @Override
-  public void update(DestinationStatus statusMessage) {
+  public void update(DestinationStatusDTO statusMessage) {
     StringBuilder value = new StringBuilder();
     value.append(unitFormatter.format(statusMessage.getPublishedMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getDeliveredMessages())).append(" ");

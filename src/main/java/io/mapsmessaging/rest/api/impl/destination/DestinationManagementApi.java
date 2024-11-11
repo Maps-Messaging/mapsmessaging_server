@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,8 +22,8 @@ package io.mapsmessaging.rest.api.impl.destination;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.rest.data.destination.Destination;
 import io.mapsmessaging.rest.responses.DestinationResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -50,7 +51,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
       response.setStatus(403);
       return null;
     }
-    Destination destination = lookupDestination(destinationName);
+    DestinationDTO destination = lookupDestination(destinationName);
     return new DestinationResponse(request, destination);
   }
 
@@ -66,9 +67,9 @@ public class DestinationManagementApi extends BaseDestinationApi {
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
-    List<Destination> results  = new ArrayList<>();
+    List<DestinationDTO> results  = new ArrayList<>();
     for(String name:destinations){
-      Destination destination = lookupDestination(name);
+      DestinationDTO destination = lookupDestination(name);
       if(parser == null || parser.evaluate(destination)) {
         results.add(destination);
       }
@@ -76,11 +77,18 @@ public class DestinationManagementApi extends BaseDestinationApi {
     return new DestinationResponse(request, results);
   }
 
-  protected Destination lookupDestination(String name) throws IOException, ExecutionException, InterruptedException, TimeoutException {
+  protected DestinationDTO lookupDestination(String name) throws IOException, ExecutionException, InterruptedException, TimeoutException {
     DestinationImpl destinationImpl = super.lookup(name);
     if(destinationImpl == null){
       return null;
     }
-    return new Destination(destinationImpl);
+    return new DestinationDTO(
+        destinationImpl.getFullyQualifiedNamespace(),
+        destinationImpl.getResourceType().getName(),
+        destinationImpl.getStoredMessages(),
+        destinationImpl.getDelayedMessages(),
+        destinationImpl.getPendingTransactions(),
+        destinationImpl.getSchema().getUniqueId()
+    );
   }
 }

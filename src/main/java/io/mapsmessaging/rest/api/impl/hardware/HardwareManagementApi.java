@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +22,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.dto.rest.devices.DeviceInfoDTO;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.devices.DeviceInfo;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -53,16 +54,16 @@ public class HardwareManagementApi extends BaseRestApi {
   @Path("/server/hardware")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public List<DeviceInfo> getAllDiscoveredDevices() throws IOException {
+  public List<DeviceInfoDTO> getAllDiscoveredDevices() throws IOException {
     if (!hasAccess("hardware")) {
       response.setStatus(403);
       return new ArrayList<>();
     }
-    List<DeviceInfo> devices = new ArrayList<>();
+    List<DeviceInfoDTO> devices = new ArrayList<>();
     DeviceManager deviceManager = MessageDaemon.getInstance().getDeviceManager();
     List<DeviceController> activeDevices = deviceManager.getActiveDevices();
     for(DeviceController device : activeDevices) {
-      DeviceInfo deviceInfo = new DeviceInfo();
+      DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
       deviceInfo.setName(device.getName());
       deviceInfo.setType(device.getType().name());
       deviceInfo.setDescription(device.getDescription());

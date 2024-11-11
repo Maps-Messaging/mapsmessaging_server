@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +24,7 @@ import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panes.interfaces.InterfacesStatusUpdate;
-import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 
 public class InterfaceMetricsPanel extends InterfacesStatusUpdate {
 
@@ -39,7 +40,7 @@ public class InterfaceMetricsPanel extends InterfacesStatusUpdate {
   }
 
   @Override
-  public void update(InterfaceStatus statusMessage) {
+  public void update(InterfaceStatusDTO statusMessage) {
     StringBuilder value = new StringBuilder();
     value.append(connectionFormatter.format(statusMessage.getConnections())).append(" ");
     value.append(connectionFormatter.format(statusMessage.getErrors())).append(" ");

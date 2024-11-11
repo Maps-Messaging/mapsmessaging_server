@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,10 +21,11 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.rest.data.interfaces.InterfaceInfo;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
 import io.mapsmessaging.rest.responses.EndPointDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,7 +44,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the endpoint current status and configuration")
-  public InterfaceInfo getInterface(@PathParam("endpoint") String endpointName) {
+  public InterfaceInfoDTO getInterface(@PathParam("endpoint") String endpointName) {
     checkAuthentication();
     if (!hasAccess("interfaces")) {
       response.setStatus(403);
@@ -52,7 +54,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
-        return new InterfaceInfo(endPointManager);
+        return InterfaceInfoHelper.fromEndPointManager(endPointManager);
       }
     }
     return null;

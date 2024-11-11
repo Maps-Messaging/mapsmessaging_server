@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +17,7 @@
  */
 
 package io.mapsmessaging.engine.destination;
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.utilities.stats.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -63,7 +65,7 @@ public class DestinationStats extends Statistics {
   }
 
 
-  public Map<String, LinkedMovingAverageRecord> getStatistics(){
+  public Map<String, LinkedMovingAverageRecordDTO> getStatistics(){
     return getAverageList()
         .stream()
         .filter(Stats::supportMovingAverage)

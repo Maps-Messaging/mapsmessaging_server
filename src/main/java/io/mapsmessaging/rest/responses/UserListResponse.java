@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.auth.User;
+import io.mapsmessaging.dto.rest.auth.UserDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.Getter;
@@ -25,10 +26,10 @@ import lombok.Getter;
 public class UserListResponse extends BaseResponse {
 
   @Getter
-  private final List<User> data;
+  private final List<UserDTO> data;
 
 
-  public UserListResponse(HttpServletRequest request, List<User> data) {
+  public UserListResponse(HttpServletRequest request, List<UserDTO> data) {
     super(request);
     this.data = data;
   }

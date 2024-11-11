@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@ package io.mapsmessaging.app.top.panes.server;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panels.Panel;
-import io.mapsmessaging.rest.data.StatusMessage;
+import io.mapsmessaging.dto.rest.StatusMessageDTO;
 import java.util.Map;
 
 public class ThreadStatusPanel extends ServerStatusUpdate {
@@ -38,7 +39,7 @@ public class ThreadStatusPanel extends ServerStatusUpdate {
   }
 
   @Override
-  public void update(StatusMessage statusMessage) {
+  public void update(StatusMessageDTO statusMessage) {
     panel.update("");
     Map<String, Integer> map = statusMessage.getThreadState();
     values[0].update(map.getOrDefault("RUNNABLE", 0));

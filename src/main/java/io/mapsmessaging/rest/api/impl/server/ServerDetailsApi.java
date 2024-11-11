@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,8 +22,10 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.ServerRunner;
+import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
+import io.mapsmessaging.dto.helpers.StatusMessageHelper;
+import io.mapsmessaging.dto.rest.StatusMessageDTO;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
-import io.mapsmessaging.rest.data.StatusMessage;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
@@ -38,14 +41,13 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @Path("/server/details/info")
   @Produces({MediaType.APPLICATION_JSON})
   // @ApiOperation(value = "Returns the servers unique name")
-  public StatusMessage getBuildInfo() {
+  public StatusMessageDTO getBuildInfo() {
     checkAuthentication();
     if (!hasAccess("servers")) {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon messageDaemon = MessageDaemon.getInstance();
-    return new StatusMessage(messageDaemon);
+    return StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
   }
 
   @GET
@@ -58,7 +60,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
       response.setStatus(403);
       return null;
     }
-    return new ServerStatisticsResponse(request);
+    return new ServerStatisticsResponse(request, ServerStatisticsHelper.create());
   }
 
   @GET

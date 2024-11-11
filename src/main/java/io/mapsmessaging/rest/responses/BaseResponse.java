@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +25,9 @@ import java.io.Serializable;
 public class BaseResponse implements Serializable {
 
 
+  public BaseResponse(){
+
+  }
   public BaseResponse(HttpServletRequest request) {
 
   }

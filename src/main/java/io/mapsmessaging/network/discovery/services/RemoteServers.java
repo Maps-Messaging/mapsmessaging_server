@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,27 +18,18 @@
 
 package io.mapsmessaging.network.discovery.services;
 
+import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
 import io.mapsmessaging.network.discovery.MapsServiceInfo;
 import java.io.Serializable;
 import java.util.*;
-import lombok.Getter;
 
-@Getter
-public class RemoteServers implements Serializable {
-
-  private final String serverName;
-  private final String systemTopics;
-  private final boolean schemaSupport;
-  private final String schemaPrefix;
-  private final String version;
-  private final String buildDate;
-  private final Map<String, Services> services;
+public class RemoteServers extends DiscoveredServersDTO implements Serializable {
 
   public RemoteServers(MapsServiceInfo serviceInfo) {
     this.serverName = serviceInfo.getServerName();
     this.schemaPrefix = serviceInfo.getSchemaPrefix();
     this.schemaSupport = serviceInfo.supportsSchema();
-    this.systemTopics = serviceInfo.getSystemTopicPrefix();
+    this.systemTopicPrefix = serviceInfo.getSystemTopicPrefix();
     this.buildDate = serviceInfo.getBuildDate();
     this.version = serviceInfo.getVersion();
     services = new LinkedHashMap<>();
@@ -60,17 +52,12 @@ public class RemoteServers implements Serializable {
     services.remove(serviceInfo.getApplication());
   }
 
-  public List<Services> getServices(){
-    return Collections.unmodifiableList(new ArrayList<>(services.values()));
-  }
-
   public String toString(){
-    String header = serverName +" Version:"+version +" Schema Prefix:"+schemaPrefix+" Topic Prefix:"+systemTopics;
+    String header = serverName +" Version:"+version +" Schema Prefix:"+schemaPrefix+" Topic Prefix:"+ systemTopicPrefix;
     for(Services service : services.values()){
       header += "\n\t"+service.toString();
     }
     header+="\n\n";
     return header;
-
   }
 }

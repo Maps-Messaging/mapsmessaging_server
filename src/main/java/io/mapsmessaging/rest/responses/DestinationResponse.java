@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.rest.responses;
 
-import io.mapsmessaging.rest.data.destination.Destination;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,16 +27,16 @@ import lombok.Getter;
 public class DestinationResponse extends BaseResponse {
 
   @Getter
-  private final List<Destination> data;
+  private final List<DestinationDTO> data;
 
-  public DestinationResponse(HttpServletRequest request, Destination data) {
+  public DestinationResponse(HttpServletRequest request, DestinationDTO data) {
     super(request);
     this.data = new ArrayList<>();
     this.data.add(data);
   }
 
 
-  public DestinationResponse(HttpServletRequest request, List<Destination> data) {
+  public DestinationResponse(HttpServletRequest request, List<DestinationDTO> data) {
     super(request);
     this.data = data;
   }

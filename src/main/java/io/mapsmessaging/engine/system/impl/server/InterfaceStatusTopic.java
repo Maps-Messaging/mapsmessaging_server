@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,11 +21,12 @@ package io.mapsmessaging.engine.system.impl.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +72,7 @@ public class InterfaceStatusTopic extends SystemTopic {
 
   @Data
   public static class InterfaceStatusMessage{
-    private final List<InterfaceStatus> interfaceStatusList;
+    private final List<InterfaceStatusDTO> interfaceStatusList;
 
     public InterfaceStatusMessage(){
       interfaceStatusList = new ArrayList<>();
@@ -79,10 +81,10 @@ public class InterfaceStatusTopic extends SystemTopic {
     public InterfaceStatusMessage(MessageDaemon messageDaemon) {
       interfaceStatusList = new ArrayList<>();
       for (EndPointManager endPointManager : messageDaemon.getNetworkManager().getAll()) {
-        interfaceStatusList.add(new InterfaceStatus(endPointManager.getEndPointServer()));
+        interfaceStatusList.add(InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()));
       }
       for(EndPointConnection endPointConnection:messageDaemon.getNetworkConnectionManager().getEndPointConnectionList()){
-        interfaceStatusList.add(new InterfaceStatus(endPointConnection));
+        interfaceStatusList.add(InterfaceStatusHelper.fromConnection(endPointConnection));
       }
     }
   }

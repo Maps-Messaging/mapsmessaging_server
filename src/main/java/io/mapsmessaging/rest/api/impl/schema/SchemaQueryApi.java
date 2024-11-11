@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +20,9 @@ package io.mapsmessaging.rest.api.impl.schema;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
+import io.mapsmessaging.dto.rest.schema.SchemaPostDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.schema.SchemaPostData;
 import io.mapsmessaging.rest.responses.*;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
@@ -90,7 +91,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @POST
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(summary = "Add new schema", description = "Adds a new schema to the registry")
-  public BaseResponse addSchema(SchemaPostData jsonString) throws IOException {
+  public BaseResponse addSchema(SchemaPostDTO jsonString) throws IOException {
     checkAuthentication();
     if (!hasAccess("schemas")) {
       response.setStatus(403);

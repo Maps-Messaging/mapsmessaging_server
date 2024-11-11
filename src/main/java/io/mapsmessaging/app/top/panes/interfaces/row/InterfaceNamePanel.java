@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@ package io.mapsmessaging.app.top.panes.interfaces.row;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panes.interfaces.InterfacesStatusUpdate;
-import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 
 public class InterfaceNamePanel extends InterfacesStatusUpdate {
 
@@ -29,7 +30,7 @@ public class InterfaceNamePanel extends InterfacesStatusUpdate {
   }
 
   @Override
-  public void update(InterfaceStatus statusMessage) {
+  public void update(InterfaceStatusDTO statusMessage) {
     String val = statusMessage.getInterfaceName();
     if (val.length() > 29) {
       val = "~" + val.substring(val.length() - 28);

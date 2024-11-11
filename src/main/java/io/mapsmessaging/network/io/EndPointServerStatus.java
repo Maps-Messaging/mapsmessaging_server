@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@
 package io.mapsmessaging.network.io;
 
 import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.utilities.stats.*;
 import java.io.IOException;
@@ -127,19 +129,19 @@ public abstract class EndPointServerStatus {
     return averagePacketsRead.getPerSecond();
   }
 
-  public LinkedMovingAverageRecord getAverageBytesSent() {
+  public LinkedMovingAverageRecordDTO getAverageBytesSent() {
     return averageBytesSent.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 
-  public LinkedMovingAverageRecord getAverageBytesRead() {
+  public LinkedMovingAverageRecordDTO getAverageBytesRead() {
     return averageBytesRead.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 
-  public LinkedMovingAverageRecord getAveragePacketsSent() {
+  public LinkedMovingAverageRecordDTO getAveragePacketsSent() {
     return averagePacketsSent.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 
-  public LinkedMovingAverageRecord getAveragePacketsRead() {
+  public LinkedMovingAverageRecordDTO getAveragePacketsRead() {
     return averagePacketsRead.supportMovingAverage()? ((LinkedMovingAverages)averageBytesSent).getRecord():null;
   }
 

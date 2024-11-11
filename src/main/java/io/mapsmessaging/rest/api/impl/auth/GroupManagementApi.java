@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,8 +23,8 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.UserDetails;
+import io.mapsmessaging.dto.rest.auth.GroupDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.auth.Group;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.GroupListResponse;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
@@ -52,8 +53,8 @@ public class GroupManagementApi extends BaseRestApi {
     AuthManager authManager = AuthManager.getInstance();
     List<GroupDetails> groups = authManager.getGroups();
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
-    List<Group> results = groups.stream()
-        .map(groupDetails -> new Group(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers()))
+    List<GroupDTO> results = groups.stream()
+        .map(groupDetails -> new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers()))
         .filter(group -> parser == null || parser.evaluate(group))
         .collect(Collectors.toList());
     return new GroupListResponse(request, results);
@@ -62,14 +63,14 @@ public class GroupManagementApi extends BaseRestApi {
   @GET
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
-  public Group getGroupsById(@PathParam("groupUuid") String groupUuid) {
+  public GroupDTO getGroupsById(@PathParam("groupUuid") String groupUuid) {
     checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     if (groupDetails != null) {
       String groupName = groupDetails.getName();
       UUID groupId = groupDetails.getGroupId();
-      return new Group(groupName, groupId, groupDetails.getUsers());
+      return new GroupDTO(groupName, groupId, groupDetails.getUsers());
     }
     response.setStatus(500);
     return null;
@@ -78,11 +79,11 @@ public class GroupManagementApi extends BaseRestApi {
   @POST
   @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
-  public Group addGroup(String groupName) throws IOException {
+  public GroupDTO addGroup(String groupName) throws IOException {
     checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     GroupIdMap groupIdMap = authManager.addGroup(groupName);
-    return new Group(groupName, groupIdMap.getAuthId(), new ArrayList<>());
+    return new GroupDTO(groupName, groupIdMap.getAuthId(), new ArrayList<>());
   }
 
   @POST

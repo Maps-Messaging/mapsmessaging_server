@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,9 +23,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
+import io.mapsmessaging.dto.rest.auth.NewUserDTO;
+import io.mapsmessaging.dto.rest.auth.UserDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.auth.NewUser;
-import io.mapsmessaging.rest.data.auth.User;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
 import io.mapsmessaging.security.access.Identity;
@@ -36,6 +37,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -52,7 +54,7 @@ public class UserManagementApi extends BaseRestApi {
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
-    List<User> results = users.stream()
+    List<UserDTO> results = users.stream()
         .map(userDetails -> buildUser(userDetails, authManager))
         .filter(user -> parser == null || parser.evaluate(user))
         .collect(Collectors.toList());
@@ -62,7 +64,7 @@ public class UserManagementApi extends BaseRestApi {
   @GET
   @Path("/auth/user/{username}")
   @Produces({MediaType.APPLICATION_JSON})
-  public User getUser(@PathParam("username") String username) {
+  public UserDTO getUser(@PathParam("username") String username) {
     checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
@@ -78,7 +80,7 @@ public class UserManagementApi extends BaseRestApi {
   @POST
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse addUser(NewUser newUser) {
+  public BaseResponse addUser(NewUserDTO newUser) {
     checkAuthentication();
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
@@ -103,12 +105,16 @@ public class UserManagementApi extends BaseRestApi {
     return new BaseResponse(request);
   }
 
-  private User buildUser(UserDetails user, AuthManager authManager){
+  private UserDTO buildUser(UserDetails user, AuthManager authManager){
     List<String> groupNames = new ArrayList<>();
     for (UUID groupId : user.getGroups()) {
       groupNames.add(authManager.getGroupIdentity(groupId).getName());
     }
-    return new User(user, groupNames);
-
+    return new UserDTO(
+        user.getIdentityEntry().getUsername(),
+        user.getIdentityEntry().getId(),
+        groupNames,
+        new LinkedHashMap<>(user.getIdentityEntry().getAttributes())
+    );
   }
 }

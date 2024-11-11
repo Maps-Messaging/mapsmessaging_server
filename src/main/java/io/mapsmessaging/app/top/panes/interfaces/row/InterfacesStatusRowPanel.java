@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ package io.mapsmessaging.app.top.panes.interfaces.row;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.interfaces.InterfacesStatusUpdate;
-import io.mapsmessaging.rest.data.interfaces.InterfaceStatus;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class InterfacesStatusRowPanel {
     rowItems.add(new InterfaceMetricsPanel(32, row, labelText, valueText));
   }
 
-  public void update(InterfaceStatus statusMessage) {
+  public void update(InterfaceStatusDTO statusMessage) {
     for (InterfacesStatusUpdate update : rowItems) {
       update.update(statusMessage);
     }

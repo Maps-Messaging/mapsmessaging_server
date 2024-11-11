@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,15 +21,15 @@ package io.mapsmessaging.rest.api.impl.lora;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.dto.rest.lora.LoRaDeviceInfoDTO;
+import io.mapsmessaging.dto.rest.lora.LoRaEndPointConnectionInfoDTO;
+import io.mapsmessaging.dto.rest.lora.LoRaEndPointInfoDTO;
 import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.lora.LoRaDeviceInfo;
-import io.mapsmessaging.rest.data.lora.LoRaEndPointConnectionInfo;
-import io.mapsmessaging.rest.data.lora.LoRaEndPointInfo;
-import io.mapsmessaging.rest.data.lora.LoRaListResponse;
+import io.mapsmessaging.rest.responses.LoRaListResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -47,7 +48,7 @@ public class LoRaDeviceApi extends BaseRestApi {
   public LoRaListResponse getAllLoRaDevices() {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    List<LoRaDeviceInfo> deviceInfos = new ArrayList<>();
+    List<LoRaDeviceInfoDTO> deviceInfos = new ArrayList<>();
     for(LoRaDevice device : deviceManager.getDevices()) {
       deviceInfos.add(createInfo(device));
     }
@@ -57,10 +58,10 @@ public class LoRaDeviceApi extends BaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}")
   @Produces({MediaType.APPLICATION_JSON})
-  public LoRaDeviceInfo getLoRaDevice(@PathParam("deviceName") String deviceName) {
+  public LoRaDeviceInfoDTO getLoRaDevice(@PathParam("deviceName") String deviceName) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    LoRaDeviceInfo deviceInfo = new LoRaDeviceInfo();
+    LoRaDeviceInfoDTO deviceInfo = new LoRaDeviceInfoDTO();
     if (deviceName != null && !deviceName.isEmpty()) {
       List<LoRaDevice> lookup = deviceManager.getDevices().stream()
           .filter(device -> deviceName.equals(device.getName()))
@@ -77,7 +78,7 @@ public class LoRaDeviceApi extends BaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}/{nodeId}")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<LoRaEndPointConnectionInfo> getLoRaEndPointConnections(
+  public List<LoRaEndPointConnectionInfoDTO> getLoRaEndPointConnections(
       @PathParam("deviceName") String deviceName,
       @PathParam("nodeId") String nodeId
   ) {
@@ -90,7 +91,7 @@ public class LoRaDeviceApi extends BaseRestApi {
           .collect(Collectors.toList());
       if(!lookup.isEmpty()) {
         LoRaDevice device = lookup.get(0);
-        List<LoRaEndPointConnectionInfo> infoList = new ArrayList<>();
+        List<LoRaEndPointConnectionInfoDTO> infoList = new ArrayList<>();
         LoRaEndPoint loRaEndPoint = device.getEndPoint(parsedInt);
         for(LoRaClientStats clientStats : loRaEndPoint.getStats()) {
           infoList.add(createConnectionInfo(clientStats));
@@ -102,8 +103,8 @@ public class LoRaDeviceApi extends BaseRestApi {
     return new ArrayList<>();
   }
 
-  private LoRaDeviceInfo createInfo(LoRaDevice device) {
-    LoRaDeviceInfo deviceInfo = new LoRaDeviceInfo();
+  private LoRaDeviceInfoDTO createInfo(LoRaDevice device) {
+    LoRaDeviceInfoDTO deviceInfo = new LoRaDeviceInfoDTO();
     LoRaDeviceConfig loRaDeviceConfig = device.getConfig();
     deviceInfo.setName(device.getName());
     deviceInfo.setRadio(loRaDeviceConfig.getRadio());
@@ -111,7 +112,7 @@ public class LoRaDeviceApi extends BaseRestApi {
     deviceInfo.setBytesSent(device.getBytesSent().sum());
     deviceInfo.setPacketsReceived(device.getPacketsReceived().sum());
     deviceInfo.setPacketsSent(device.getPacketsSent().sum());
-    List<LoRaEndPointInfo> endPointInfoList = new ArrayList<>();
+    List<LoRaEndPointInfoDTO> endPointInfoList = new ArrayList<>();
     for(LoRaEndPoint endPoint: device.getEndPoints()){
       endPointInfoList.add(createEndPointInfo(endPoint));
     }
@@ -119,8 +120,8 @@ public class LoRaDeviceApi extends BaseRestApi {
     return deviceInfo;
   }
 
-  private LoRaEndPointInfo createEndPointInfo(LoRaEndPoint endPoint) {
-    LoRaEndPointInfo endPointInfo = new LoRaEndPointInfo();
+  private LoRaEndPointInfoDTO createEndPointInfo(LoRaEndPoint endPoint) {
+    LoRaEndPointInfoDTO endPointInfo = new LoRaEndPointInfoDTO();
     endPointInfo.setLastRSSI(endPoint.getRSSI());
     endPointInfo.setNodeId(endPoint.getNodeId());
     endPointInfo.setIncomingQueueSize(endPoint.getIncomingQueueSize());
@@ -128,8 +129,8 @@ public class LoRaDeviceApi extends BaseRestApi {
     return endPointInfo;
   }
 
-  private LoRaEndPointConnectionInfo createConnectionInfo(LoRaClientStats clientStats) {
-    LoRaEndPointConnectionInfo connectionInfo = new LoRaEndPointConnectionInfo();
+  private LoRaEndPointConnectionInfoDTO createConnectionInfo(LoRaClientStats clientStats) {
+    LoRaEndPointConnectionInfoDTO connectionInfo = new LoRaEndPointConnectionInfoDTO();
     connectionInfo.setLastWriteTime(clientStats.getLastWriteTime());
     connectionInfo.setLastReadTime(clientStats.getLastReadTime());
     connectionInfo.setLastPacketId(clientStats.getLastPacketId());

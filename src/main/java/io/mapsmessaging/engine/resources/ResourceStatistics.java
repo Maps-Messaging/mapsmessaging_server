@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@
 package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.storage.StorageStatistics;
 import io.mapsmessaging.storage.impl.cache.CacheStatistics;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierStatistics;
@@ -79,10 +81,10 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
     }
   }
 
-  public Map<String, Map<String, LinkedMovingAverageRecord>> getStatistics(){
-    Map<String, Map<String, LinkedMovingAverageRecord>> response = new LinkedHashMap<>();
+  public Map<String, Map<String, LinkedMovingAverageRecordDTO>> getStatistics(){
+    Map<String, Map<String, LinkedMovingAverageRecordDTO>> response = new LinkedHashMap<>();
     if(!cacheStats.isEmpty()) {
-      Map<String, LinkedMovingAverageRecord> cache = new LinkedHashMap<>();
+      Map<String, LinkedMovingAverageRecordDTO> cache = new LinkedHashMap<>();
       response.put("cache", cache);
       for(CacheStats stats:cacheStats){
         Stats movingAverage = stats.movingAverage;
@@ -92,7 +94,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
       }
     }
     if(!tierStats.isEmpty()){
-      Map<String, LinkedMovingAverageRecord> tier = new LinkedHashMap<>();
+      Map<String, LinkedMovingAverageRecordDTO> tier = new LinkedHashMap<>();
       response.put("tier", tier);
       for(TierStats stats:tierStats){
         Stats movingAverage = stats.movingAverage;
@@ -103,7 +105,7 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
 
     }
     if(!storeStats.isEmpty()){
-      Map<String, LinkedMovingAverageRecord> store = new LinkedHashMap<>();
+      Map<String, LinkedMovingAverageRecordDTO> store = new LinkedHashMap<>();
       response.put("store", store);
       for(StorageStats stats:storeStats){
         Stats movingAverage = stats.movingAverage;

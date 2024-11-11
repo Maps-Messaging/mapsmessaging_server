@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +20,9 @@ package io.mapsmessaging.app.top.network;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mapsmessaging.dto.rest.StatusMessageDTO;
 import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
 import io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic;
-import io.mapsmessaging.rest.data.StatusMessage;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,7 +140,7 @@ public class MqttConnection implements IMqttMessageListener {
 
   private Object parse(String jsonString) throws JsonProcessingException {
     if(jsonString.contains("buildDate")) {
-      return mapper.readValue(jsonString, StatusMessage.class);
+      return mapper.readValue(jsonString, StatusMessageDTO.class);
     }
     if(jsonString.contains("destinationStatusList")){
       return mapper.readValue(jsonString, DestinationStatusTopic.DestinationStatusMessage.class);

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,10 +21,11 @@ package io.mapsmessaging.engine.system.impl.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.helpers.DestinationStatusHelper;
+import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
-import io.mapsmessaging.rest.data.destination.DestinationStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +74,7 @@ public class DestinationStatusTopic extends SystemTopic {
   @Data
   @NoArgsConstructor
   public static final class DestinationStatusMessage{
-    private List<DestinationStatus> destinationStatusList;
+    private List<DestinationStatusDTO> destinationStatusList;
 
     public DestinationStatusMessage(List<String> destinations){
       destinationStatusList = new ArrayList<>();
@@ -80,7 +82,7 @@ public class DestinationStatusTopic extends SystemTopic {
         try {
           DestinationImpl destination = MessageDaemon.getInstance().getDestinationManager().find(destinationName).get();
           if(!destination.getFullyQualifiedNamespace().startsWith("$SYS")) {
-            destinationStatusList.add(new DestinationStatus(destination));
+            destinationStatusList.add(DestinationStatusHelper.createDestinationStatus(destination));
           }
         } catch (InterruptedException | ExecutionException e) {
           throw new RuntimeException(e);
@@ -89,4 +91,5 @@ public class DestinationStatusTopic extends SystemTopic {
     }
 
   }
+
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,12 +21,12 @@ package io.mapsmessaging.rest.api.impl.lora;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.dto.rest.lora.LoRaDeviceConfigInfoDTO;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.data.lora.LoRaConfigListRespose;
-import io.mapsmessaging.rest.data.lora.LoRaDeviceConfigInfo;
 import io.mapsmessaging.rest.responses.BaseResponse;
+import io.mapsmessaging.rest.responses.LoRaConfigListResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -41,24 +42,24 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   @GET
   @Path("/device/lora/config")
   @Produces({MediaType.APPLICATION_JSON})
-  public LoRaConfigListRespose getAllLoRaDeviceConfigs() {
+  public LoRaConfigListResponse getAllLoRaDeviceConfigs() {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    List<LoRaDeviceConfigInfo> deviceInfos = new ArrayList<>();
+    List<LoRaDeviceConfigInfoDTO> deviceInfos = new ArrayList<>();
     for (LoRaDevice device : deviceManager.getDevices()) {
       deviceInfos.add(createInfo(device));
     }
-    return new LoRaConfigListRespose(request, deviceInfos);
+    return new LoRaConfigListResponse(request, deviceInfos);
   }
 
   @GET
   @Path("/device/lora/{deviceName}/config")
   @Produces({MediaType.APPLICATION_JSON})
-  public LoRaDeviceConfigInfo getLoRaDeviceConfig(@PathParam("deviceName") String deviceName) {
+  public LoRaDeviceConfigInfoDTO getLoRaDeviceConfig(@PathParam("deviceName") String deviceName) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    LoRaDeviceConfigInfo deviceConfig = null;
-    LoRaDeviceConfigInfo deviceInfo = new LoRaDeviceConfigInfo();
+    LoRaDeviceConfigInfoDTO deviceConfig = null;
+    LoRaDeviceConfigInfoDTO deviceInfo = new LoRaDeviceConfigInfoDTO();
     if (deviceName != null && !deviceName.isEmpty()) {
       List<LoRaDevice> lookup = deviceManager.getDevices().stream()
           .filter(device -> deviceName.equals(device.getName()))
@@ -78,7 +79,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   @Path("/device/lora/config")
   @Consumes({MediaType.APPLICATION_JSON})
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse addLoRaDeviceConfig(LoRaDeviceConfigInfo newDevice) {
+  public BaseResponse addLoRaDeviceConfig(LoRaDeviceConfigInfoDTO newDevice) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     return new BaseResponse(request);
@@ -99,8 +100,8 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
 //    return new BaseResponse(request);
   }
 
-  private LoRaDeviceConfigInfo createInfo(LoRaDevice device) {
-    LoRaDeviceConfigInfo deviceInfo = new LoRaDeviceConfigInfo();
+  private LoRaDeviceConfigInfoDTO createInfo(LoRaDevice device) {
+    LoRaDeviceConfigInfoDTO deviceInfo = new LoRaDeviceConfigInfoDTO();
     LoRaDeviceConfig loRaDeviceConfig = device.getConfig();
     deviceInfo.setName(device.getName());
     deviceInfo.setCs(loRaDeviceConfig.getCs());

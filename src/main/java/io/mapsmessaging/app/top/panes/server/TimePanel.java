@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
-import io.mapsmessaging.rest.data.StatusMessage;
+import io.mapsmessaging.dto.rest.StatusMessageDTO;
 import java.time.LocalDateTime;
 
 public class TimePanel extends ServerStatusUpdate {
@@ -29,7 +30,7 @@ public class TimePanel extends ServerStatusUpdate {
   }
 
   @Override
-  public void update(StatusMessage statusMessage) {
+  public void update(StatusMessageDTO statusMessage) {
     LocalDateTime dateTime = LocalDateTime.now();
     panel.update(String.format("%02d:%02d:%02d", dateTime.getHour(), dateTime.getMinute(), dateTime.getSecond()));
   }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +22,7 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.panels.Panel;
 import io.mapsmessaging.app.top.panels.StringPanel;
-import io.mapsmessaging.rest.data.StatusMessage;
+import io.mapsmessaging.dto.rest.StatusMessageDTO;
 
 public abstract class ServerStatusUpdate {
 
@@ -31,6 +32,6 @@ public abstract class ServerStatusUpdate {
     panel = new StringPanel(row, col, label, labelText, valueText, formatter);
   }
 
-  public abstract void update(StatusMessage statusMessage);
+  public abstract void update(StatusMessageDTO statusMessage);
 
 }
