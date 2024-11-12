@@ -21,7 +21,7 @@ package io.mapsmessaging.rest.api.impl.discovery;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.network.discovery.services.RemoteServers;
+import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -72,7 +72,7 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @Path("/server/discovery")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public List<RemoteServers> getAllDiscoveredServers(@QueryParam("filter") String filter) throws ParseException {
+  public List<DiscoveredServersDTO> getAllDiscoveredServers(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
     if (!hasAccess("discovery")) {
       response.setStatus(403);
