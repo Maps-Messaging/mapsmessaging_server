@@ -184,20 +184,3 @@ NetworkManager:
         protocol: stomp
         auth: usernamePassword
 
-      - name: "Test Serial"
-        url: "serial://"
-        port: com7
-        protocol: nmea
-        baudRate: 9600
-        stopBit: 1
-        parity: n
-        readTimeOut: 60000
-        writeTimeOut: 60000
-        flowControl: 0
-
-      - name: "LoRa device configuration"
-        url: lora://loraDevice0:2/
-        protocol: mqtt-sn
-        auth: anon
-        selectorThreadCount: 1
-        registered: "*,2,/sensors/tank2:*,12,/sensors/weather/indoor:*,11,/sensors/weather/outdoor:*,8,/sensors/water/garden:*,9,/sensors/water/house"
