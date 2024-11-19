@@ -1,62 +1,19 @@
 /*
- *    Copyright [ 2020 - 2022 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- *
- */
-package io.mapsmessaging.network.protocol.impl.apache_pulsar;
-
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.security.auth.login.LoginException;
-import lombok.NonNull;
-import org.apache.pulsar.client.api.Consumer;
-import org.apache.pulsar.client.api.MessageListener;
-import org.apache.pulsar.client.api.Producer;
-import org.apache.pulsar.client.api.PulsarClient;
-import org.apache.pulsar.client.api.PulsarClientException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import io.mapsmessaging.logging.LogMessages;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.messaging.api.Destination;
-import io.mapsmessaging.messaging.api.MessageBuilder;
-import io.mapsmessaging.messaging.api.Session;
-import io.mapsmessaging.messaging.api.SessionContextBuilder;
-import io.mapsmessaging.messaging.api.SessionManager;
-import io.mapsmessaging.messaging.api.SubscribedEventManager;
-import io.mapsmessaging.messaging.api.SubscriptionContextBuilder;
-import io.mapsmessaging.messaging.api.features.ClientAcknowledgement;
-import io.mapsmessaging.messaging.api.features.QualityOfService;
-import io.mapsmessaging.messaging.api.message.Message;
-import io.mapsmessaging.messaging.api.message.TypedData;
-import io.mapsmessaging.messaging.api.transformers.Transformer;
-import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
-
-/**
- * This class is a proof of concept on how the server could connect to other
- * messaging servers that do not support open messaging protocols but do have
- * a java API that can be used to connect, subscribe and publish.
- *
- * This is not production ready, its a POC.
  */
 public class PulsarProtocol extends ProtocolImpl implements MessageListener<byte[]> {
 
