@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,54 +27,59 @@ import lombok.Data;
 @AllArgsConstructor
 @Schema(
     title = "Destination",
-    description = "Represents a messaging destination, such as a queue or topic, within the system.",
-    requiredProperties = {"name", "type", "storedMessages", "delayedMessages", "pendingMessages", "schemaId"}
-)
+    description =
+        "Represents a messaging destination, such as a queue or topic, within the system.",
+    requiredProperties = {
+      "name",
+      "type",
+      "storedMessages",
+      "delayedMessages",
+      "pendingMessages",
+      "schemaId"
+    })
 public class DestinationDTO implements Serializable {
 
   @Schema(
       title = "Destination Name",
-      description = "The unique name of the destination, which acts as an identifier within the messaging system.",
-      example = "myDestination"
-  )
+      description =
+          "The unique name of the destination, which acts as an identifier within the messaging system.",
+      example = "myDestination")
   private final String name;
 
   @Schema(
       title = "Destination Type",
-      description = "The type of the destination, indicating whether it is a queue or a topic, for example.",
+      description =
+          "The type of the destination, indicating whether it is a queue or a topic, for example.",
       example = "queue",
-      allowableValues = {"queue", "topic"}
-  )
+      allowableValues = {"queue", "topic"})
   private final String type;
 
   @Schema(
       title = "Stored Messages",
       description = "The total count of messages currently stored in the destination.",
       example = "123",
-      minimum = "0"
-  )
+      minimum = "0")
   private final long storedMessages;
 
   @Schema(
       title = "Delayed Messages",
-      description = "The number of messages delayed for delivery, which might occur due to timing or prioritization settings.",
+      description =
+          "The number of messages delayed for delivery, which might occur due to timing or prioritization settings.",
       example = "123",
-      minimum = "0"
-  )
+      minimum = "0")
   private final long delayedMessages;
 
   @Schema(
       title = "Pending Messages",
       description = "The count of messages pending processing in the destination.",
       example = "123",
-      minimum = "0"
-  )
+      minimum = "0")
   private final long pendingMessages;
 
   @Schema(
       title = "Schema ID",
-      description = "The identifier for the schema associated with this destination, which may define the structure or rules for messages.",
-      example = "schema-123"
-  )
+      description =
+          "The identifier for the schema associated with this destination, which may define the structure or rules for messages.",
+      example = "schema-123")
   private final String schemaId;
 }

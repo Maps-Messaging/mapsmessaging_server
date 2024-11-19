@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,154 +19,26 @@
 package io.mapsmessaging.config.network;
 
 import io.mapsmessaging.config.Config;
-import io.mapsmessaging.config.auth.SaslConfig;
-import io.mapsmessaging.config.network.impl.*;
-import io.mapsmessaging.config.protocol.*;
-import io.mapsmessaging.config.protocol.impl.*;
-import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import java.util.ArrayList;
-import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class EndPointServerConfig extends Config {
-
-  private String name;
-  private String url;
-  private EndPointConfig endPointConfig;
-  private SaslConfig saslConfig;
-  private List<ProtocolConfig> protocolConfigs;
-  private String protocols;
-  private String authenticationRealm;
-  private int backlog;
-  private int selectorTaskWait;
-
+public class EndPointServerConfig extends EndPointServerConfigDTO implements Config {
 
   public EndPointServerConfig(ConfigurationProperties config) {
-    this.name = config.getProperty("name");
-    this.url = config.getProperty("url");
-    this.backlog = config.getIntProperty("backlog", 100);
-    this.selectorTaskWait = config.getIntProperty("taskWait", 10);
-    this.authenticationRealm = config.getProperty("auth", "");
-    endPointConfig = url != null ? createEndPointConfig(url, config) : null;
-    protocolConfigs = new ArrayList<>();
-
-    ConfigurationProperties saslConfiguration = (ConfigurationProperties) config.get("sasl");
-    if (saslConfiguration != null) {
-      saslConfig = new SaslConfig(saslConfiguration);
-    }
-
-    protocols = config.getProperty("protocol");
-    if (protocols != null && !protocols.isEmpty()) {
-      String[] protocolArray = protocols.split(",");
-      List<String> protocolList = new ArrayList<>();
-      for (String protocol : protocolArray) {
-        if(protocol.equalsIgnoreCase("all")){
-          if(endPointConfig instanceof UdpConfig){
-            protocolList.add("coap");
-            protocolList.add("mqtt-sn");
-          }
-          else{
-            protocolList.add("amqp");
-            protocolList.add("mqtt");
-            protocolList.add("stomp");
-            protocolList.add("ws");
-          }
-        } else {
-          protocolList.add(protocol);
-        }
-      }
-
-      for (String protocol : protocolList) {
-        ProtocolConfig protocolConfig = createProtocolConfig(protocol, config);
-        if (protocolConfig != null) {
-          protocolConfigs.add(protocolConfig);
-        }
-      }
-    }
+    EndPointConfigFactory.unpack(config, this);
   }
 
-  public ProtocolConfig getProtocolConfig(String protocol) {
-    return protocolConfigs.stream()
-        .filter(protocolConfig -> protocolConfig.getType().equalsIgnoreCase(protocol))
-        .findFirst()
-        .orElse(null);
-  }
-
-  private EndPointConfig createEndPointConfig(String url, ConfigurationProperties properties) {
-    if (url.toLowerCase().startsWith("tcp") || url.toLowerCase().startsWith("ws")) {
-      return new TcpConfig(properties);
-    } else if (url.toLowerCase().startsWith("ssl") || url.toLowerCase().startsWith("wss")) {
-      return new TlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("udp") || url.toLowerCase().startsWith("hmac") || url.toLowerCase().startsWith("lora")) {
-      return new UdpConfig(properties);
-    } else if (url.toLowerCase().startsWith("dtls")) {
-      return new DtlsConfig(properties);
-    } else if (url.toLowerCase().startsWith("serial")) {
-      return new SerialConfig(properties);
+  public boolean update(BaseConfigDTO config) {
+    if (config instanceof EndPointServerConfigDTO) {
+      return EndPointConfigFactory.update(this, (EndPointServerConfigDTO)config);
     }
-    return null;
-  }
-
-  public ProtocolConfig createProtocolConfig(String protocol, ConfigurationProperties config) {
-    if (protocol.equalsIgnoreCase("mqtt")) {
-      return new MqttV5Config(config);
-    } else if (protocol.equalsIgnoreCase("amqp")) {
-      return new AmqpConfig(config);
-    } else if (protocol.equalsIgnoreCase("stomp")) {
-      return new StompConfig(config);
-    } else if (protocol.equalsIgnoreCase("semtech")) {
-      return new SemtechConfig(config);
-    } else if (protocol.equalsIgnoreCase("mqtt-sn")) {
-      return new MqttSnConfig(config);
-    } else if (protocol.equalsIgnoreCase("coap")) {
-      return new CoapConfig(config);
-    } else if (protocol.equalsIgnoreCase("nmea")) {
-      return new NmeaConfig(config);
-    } else if (protocol.equalsIgnoreCase("lora")) {
-      return new LoRaProtocolConfig(config);
-    }
-    return null;
-  }
-
-  public boolean update(EndPointServerConfig newConfig) {
-    boolean hasChanged = false;
-    if (!this.name.equals(newConfig.getName())) {
-      this.name = newConfig.getName();
-      hasChanged = true;
-    }
-    if (!this.authenticationRealm.equals(newConfig.getAuthenticationRealm())) {
-      this.authenticationRealm = newConfig.getAuthenticationRealm();
-      hasChanged = true;
-    }
-    if (this.backlog != newConfig.getBacklog()) {
-      this.backlog = newConfig.getBacklog();
-      hasChanged = true;
-    }
-    if (this.selectorTaskWait != newConfig.getSelectorTaskWait()) {
-      this.selectorTaskWait = newConfig.getSelectorTaskWait();
-      hasChanged = true;
-    }
-    return hasChanged;
+    return false;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    config.put("name", this.name);
-    config.put("url", this.url);
-    config.put("endPoint", this.endPointConfig);
-    config.put("protocols", protocols);
-    config.put("backlog", this.backlog);
-    config.put("selectorTaskWait", this.selectorTaskWait);
-    config.put("auth", this.authenticationRealm);
-    config.put("data", protocolConfigs);
+    EndPointConfigFactory.pack(config, this);
     return config;
   }
 }

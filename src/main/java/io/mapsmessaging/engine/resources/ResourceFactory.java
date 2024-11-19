@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.config.destination.DestinationConfig;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,7 +47,7 @@ public class ResourceFactory {
     return instance;
   }
 
-  public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationConfig pathManager, String fullyQualifiedPath, UUID uuid,
+  public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationConfigDTO pathManager, String fullyQualifiedPath, UUID uuid,
                          DestinationType destinationType, SchemaConfig config) throws IOException {
     if (resourceName.toLowerCase().startsWith("$sys")) {
       return new ResourceImpl();
@@ -70,7 +71,7 @@ public class ResourceFactory {
     }
   }
 
-  public Resource scan(MessageExpiryHandler messageExpiryHandler, File directory, DestinationConfig pathManager, ResourceProperties properties) throws IOException {
+  public Resource scan(MessageExpiryHandler messageExpiryHandler, File directory, DestinationConfigDTO pathManager, ResourceProperties properties) throws IOException {
     String name = properties.getResourceName();
     String uuidProp = properties.getUuid();
     if (name != null && uuidProp != null) {
@@ -89,7 +90,7 @@ public class ResourceFactory {
     return null;
   }
 
-  private ResourceProperties createMetaData(DestinationConfig path, String resourceName, UUID uuid, DestinationType destinationType, SchemaConfig config) throws IOException {
+  private ResourceProperties createMetaData(DestinationConfigDTO path, String resourceName, UUID uuid, DestinationType destinationType, SchemaConfig config) throws IOException {
     File directoryPath = new File(path.getDirectory() + File.separator + uuid.toString() + File.separator);
     if (!directoryPath.exists()) {
       if (!directoryPath.mkdirs()) {

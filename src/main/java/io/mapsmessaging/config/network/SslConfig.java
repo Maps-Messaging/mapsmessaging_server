@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,23 +18,16 @@
 
 package io.mapsmessaging.config.network;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.SslConfigDTO;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-@Data
-@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @ToString
-public class SslConfig {
-  private boolean clientCertificateRequired;
-  private boolean clientCertificateWanted;
-  private String crlUrl;
-  private long crlInterval;
-
-  private String context;
-  private KeyStoreConfig keyStore;
-  private KeyStoreConfig trustStore;
+public class SslConfig extends SslConfigDTO implements Config  {
 
   public SslConfig(ConfigurationProperties config) {
     ConfigurationProperties securityProps = locateConfig(config);
@@ -58,32 +52,34 @@ public class SslConfig {
     return security;
   }
 
-  public boolean update(SslConfig newConfig) {
+  public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
+    if (config instanceof SslConfigDTO) {
+      SslConfigDTO newConfig = (SslConfigDTO) config;
 
-    if (this.clientCertificateRequired != newConfig.isClientCertificateRequired()) {
-      this.clientCertificateRequired = newConfig.isClientCertificateRequired();
-      hasChanged = true;
+      if (this.clientCertificateRequired != newConfig.isClientCertificateRequired()) {
+        this.clientCertificateRequired = newConfig.isClientCertificateRequired();
+        hasChanged = true;
+      }
+      if (this.clientCertificateWanted != newConfig.isClientCertificateWanted()) {
+        this.clientCertificateWanted = newConfig.isClientCertificateWanted();
+        hasChanged = true;
+      }
+      if (!this.crlUrl.equals(newConfig.getCrlUrl())) {
+        this.crlUrl = newConfig.getCrlUrl();
+        hasChanged = true;
+      }
+      if (this.crlInterval != newConfig.getCrlInterval()) {
+        this.crlInterval = newConfig.getCrlInterval();
+        hasChanged = true;
+      }
+      if (((KeyStoreConfig)this.keyStore).update(newConfig.getKeyStore())) {
+        hasChanged = true;
+      }
+      if (((KeyStoreConfig)this.trustStore).update(newConfig.getTrustStore())) {
+        hasChanged = true;
+      }
     }
-    if (this.clientCertificateWanted != newConfig.isClientCertificateWanted()) {
-      this.clientCertificateWanted = newConfig.isClientCertificateWanted();
-      hasChanged = true;
-    }
-    if (!this.crlUrl.equals(newConfig.getCrlUrl())) {
-      this.crlUrl = newConfig.getCrlUrl();
-      hasChanged = true;
-    }
-    if (this.crlInterval != newConfig.getCrlInterval()) {
-      this.crlInterval = newConfig.getCrlInterval();
-      hasChanged = true;
-    }
-    if (this.keyStore.update(newConfig.getKeyStore())) {
-      hasChanged = true;
-    }
-    if (this.trustStore.update(newConfig.getTrustStore())) {
-      hasChanged = true;
-    }
-
     return hasChanged;
   }
 
@@ -93,8 +89,8 @@ public class SslConfig {
     config.put("clientCertificateWanted", this.clientCertificateWanted);
     config.put("crlUrl", this.crlUrl);
     config.put("crlInterval", this.crlInterval);
-    config.put("keyStore", keyStore.toConfigurationProperties());
-    config.put("trustStore", trustStore.toConfigurationProperties());
+    config.put("keyStore", ((KeyStoreConfig) keyStore).toConfigurationProperties());
+    config.put("trustStore", ((KeyStoreConfig) trustStore).toConfigurationProperties());
     return config;
   }
 }

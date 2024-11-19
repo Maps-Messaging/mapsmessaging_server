@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.config.destination.DestinationConfig;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
 import io.mapsmessaging.engine.resources.Resource;
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class TemporaryDestination extends DestinationImpl {
   private boolean ownerDisconnected;
 
 
-  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfig path, @NonNull @NotNull UUID uuid,
+  public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfigDTO path, @NonNull @NotNull UUID uuid,
                               @NonNull @NotNull DestinationType destinationType) throws IOException {
     super(name, path, uuid, destinationType);
     ownerDisconnected = false;

@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,12 +19,11 @@
 package io.mapsmessaging.network.protocol.impl.amqp.jms;
 
 import jakarta.jms.*;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
+import java.io.IOException;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.io.IOException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class SimpleConnectionTest extends BaseConnection {
 

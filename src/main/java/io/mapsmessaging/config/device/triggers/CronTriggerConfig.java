@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,28 +19,44 @@
 package io.mapsmessaging.config.device.triggers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.CronTriggerConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class CronTriggerConfig extends TriggerConfig {
-  private String cron;
+public class CronTriggerConfig extends CronTriggerConfigDTO implements TriggerConfig {
 
   public CronTriggerConfig(ConfigurationProperties config) {
-    super(config);
-    cron = config.getProperty("cron", "");
+    this.type = "cron";
+    this.cron = config.getProperty("cron", "");
+    this.name = config.getProperty("name", "");
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("cron", cron);
+    ConfigurationProperties config = new ConfigurationProperties();
+    config.put("type", this.type);
+    config.put("name", this.name);
+    config.put("cron", this.cron);
     return config;
   }
 
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof CronTriggerConfigDTO) {
+      CronTriggerConfigDTO newConfig = (CronTriggerConfigDTO) config;
+      if (this.cron == null || !this.cron.equals(newConfig.getCron())) {
+        this.cron = newConfig.getCron();
+        hasChanged = true;
+      }
+      if (this.type == null || !this.type.equals(newConfig.getType())) {
+        this.type = newConfig.getType();
+        hasChanged = true;
+      }
+      if (this.name == null || !this.name.equals(newConfig.getName())) {
+        this.name = newConfig.getName();
+        hasChanged = true;
+      }
+    }
+    return hasChanged;
+  }
 }

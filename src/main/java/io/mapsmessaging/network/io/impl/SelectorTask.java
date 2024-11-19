@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,9 +21,10 @@ package io.mapsmessaging.network.io.impl;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
-import io.mapsmessaging.config.network.EndPointConfig;
 import io.mapsmessaging.config.network.impl.TcpConfig;
 import io.mapsmessaging.config.network.impl.UdpConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -51,11 +53,11 @@ public class SelectorTask implements Selectable {
   private SelectionKey selectionKey;
   private boolean isOpen;
 
-  public SelectorTask(SelectorCallback selectorCallback, EndPointConfig properties) {
+  public SelectorTask(SelectorCallback selectorCallback, EndPointConfigDTO properties) {
     this(selectorCallback, properties, false);
   }
 
-  public SelectorTask(SelectorCallback selectorCallback, EndPointConfig properties, boolean isUDP) {
+  public SelectorTask(SelectorCallback selectorCallback, EndPointConfigDTO properties, boolean isUDP) {
     logger = LoggerFactory.getLogger(SelectorTask.class);
     int readBufferSize = (int)properties.getServerReadBufferSize();
     int writeBufferSize = (int) properties.getServerWriteBufferSize();
@@ -69,13 +71,15 @@ public class SelectorTask implements Selectable {
     } else {
       int readDelay = -1;
       int readFragmentation = -1;
-      boolean readDelayEnabled = ((TcpConfig)properties).isEnableReadDelayOnFragmentation();
-      if (readDelayEnabled) {
-        readDelay = ((TcpConfig)properties).getReadDelayOnFragmentation();
-        if (readDelay <= 0) {
-          readDelay = DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION;
+      if (properties instanceof TcpConfig) {
+        boolean readDelayEnabled = ((TcpConfigDTO) properties).isEnableReadDelayOnFragmentation();
+        if (readDelayEnabled) {
+          readDelay = ((TcpConfigDTO) properties).getReadDelayOnFragmentation();
+          if (readDelay <= 0) {
+            readDelay = DefaultConstants.TCP_READ_DELAY_ON_FRAGMENTATION;
+          }
+          readFragmentation = ((TcpConfigDTO) properties).getFragmentationLimit();
         }
-        readFragmentation = ((TcpConfig)properties).getFragmentationLimit();
       }
       readTask = new ReadTask(selectorCallback, readBufferSize, logger, readDelay, readFragmentation);
       writeTask = new WriteTask(selectorCallback, writeBufferSize, this, logger);

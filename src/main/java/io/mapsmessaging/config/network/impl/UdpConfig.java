@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,78 +18,34 @@
 
 package io.mapsmessaging.config.network.impl;
 
-import io.mapsmessaging.config.network.EndPointConfig;
-import io.mapsmessaging.config.network.HmacConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import java.util.ArrayList;
-import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.UdpConfigDTO;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
 @NoArgsConstructor
-@ToString
-public class UdpConfig extends EndPointConfig {
-
-  private long packetReuseTimeout;
-  private long idleSessionTimeout;
-  private long hmacHostLookupCacheExpiry;
-  private List<HmacConfig> hmacConfigList;
+public class UdpConfig extends UdpConfigDTO implements Config {
 
   public UdpConfig(ConfigurationProperties config) {
-    super(config);
-    packetReuseTimeout = config.getLongProperty("packetReuseTimeout", 1000L);
-    idleSessionTimeout = config.getLongProperty("idleSessionTimeout", 600);
-    hmacHostLookupCacheExpiry = config.getLongProperty("HmacHostLookupCacheExpiry", 600);
-    Object t = config.get("nodeConfiguration");
-    if (t != null) {
-      hmacConfigList = loadNodeConfig((List<ConfigurationProperties>) t);
-    } else {
-      hmacConfigList = new ArrayList<>();
-    }
     setType("udp");
+    NetworkConfigFactory.unpack(config, this);
   }
 
-  private List<HmacConfig> loadNodeConfig(List<ConfigurationProperties> nodes) {
-    List<HmacConfig> list = new ArrayList<>();
-    for (ConfigurationProperties node : nodes) {
-      list.add(new HmacConfig(node));
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof UdpConfigDTO) {
+      UdpConfigDTO newConfig = ((UdpConfigDTO) config);
+      hasChanged = NetworkConfigFactory.update(this, newConfig);
     }
-    return list;
-  }
-
-  public boolean update(UdpConfig newConfig) {
-    boolean hasChanged = super.update(newConfig);
-    if (packetReuseTimeout != newConfig.packetReuseTimeout) {
-      packetReuseTimeout = newConfig.packetReuseTimeout;
-      hasChanged = true;
-    }
-    if (idleSessionTimeout != newConfig.idleSessionTimeout) {
-      idleSessionTimeout = newConfig.idleSessionTimeout;
-      hasChanged = true;
-    }
-    if (hmacHostLookupCacheExpiry != newConfig.hmacHostLookupCacheExpiry) {
-      hmacHostLookupCacheExpiry = newConfig.hmacHostLookupCacheExpiry;
-      hasChanged = true;
-    }
-
     return hasChanged;
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("packetReuseTimeout", packetReuseTimeout);
-    config.put("idleSessionTimeout", idleSessionTimeout);
-    config.put("HmacHostLookupCacheExpiry", hmacHostLookupCacheExpiry);
-
-    List<ConfigurationProperties> maps = new ArrayList<>();
-    for (HmacConfig hmacConfig : hmacConfigList) {
-      maps.add(hmacConfig.toConfigurationProperties());
-    }
-    config.put("nodeConfiguration", maps);
+    ConfigurationProperties config = new ConfigurationProperties();
+    NetworkConfigFactory.pack(config, this);
     return config;
   }
 }

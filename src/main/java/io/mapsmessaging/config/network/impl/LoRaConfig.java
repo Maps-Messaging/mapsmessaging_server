@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,10 @@
 
 package io.mapsmessaging.config.network.impl;
 
-import io.mapsmessaging.config.network.EndPointConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -28,20 +31,24 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class LoRaConfig extends EndPointConfig {
+public class LoRaConfig extends LoRaConfigDTO implements Config {
 
   public LoRaConfig(ConfigurationProperties config) {
-    super(config);
     setType("lora");
+    NetworkConfigFactory.unpack(config, this);
   }
 
-  public boolean update(LoRaConfig newConfig) {
-    return super.update(newConfig);
+  public boolean update(BaseConfigDTO newConfig) {
+    if(newConfig instanceof LoRaConfigDTO) {
+      return NetworkConfigFactory.update((LoRaConfigDTO) newConfig, this);
+    }
+    return false;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    return super.toConfigurationProperties();
+    ConfigurationProperties config = new ConfigurationProperties();
+    NetworkConfigFactory.unpack(config, this);
+    return config;
   }
-
 }

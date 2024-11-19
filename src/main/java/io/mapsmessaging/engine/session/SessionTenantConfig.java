@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.engine.session;
 
-import io.mapsmessaging.config.tenant.TenantConfig;
+import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -49,14 +50,14 @@ public class SessionTenantConfig {
    * @param tenantPath            the path of the tenant
    * @param globalConfiguration   the list of global configuration properties
    */
-  public SessionTenantConfig(String tenantPath, List<TenantConfig> globalConfiguration) {
+  public SessionTenantConfig(String tenantPath, List<TenantConfigDTO> globalConfiguration) {
     if (tenantPath.equals("/")) {
       tenantPath = "";
     }
     this.tenantPath = tenantPath;
     globalList = new ArrayList<>();
     if (globalConfiguration != null) {
-      for (TenantConfig config : globalConfiguration) {
+      for (TenantConfigDTO config : globalConfiguration) {
         String namespace = config.getNamespaceRoot();
         if (namespace != null && namespace.length() > 1) {
           globalList.add(namespace);

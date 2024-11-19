@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.impl.DtlsConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
@@ -51,12 +53,12 @@ public class DTLSEndPointServer extends UDPEndPointServer {
 
   public DTLSEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url,
       SelectorLoadManager selectorLoadManager, AcceptHandler acceptHandler, EndPointManagerJMX managerMBean,
-                            EndPointServerConfig config) throws IOException {
+                            EndPointServerConfigDTO config) throws IOException {
     super(inetSocketAddress, protocolFactory, url, selectorLoadManager, managerMBean, config);
     this.acceptHandler = acceptHandler;
     this.protocolFactory = protocolFactory;
     DtlsConfig dtls = (DtlsConfig)config.getEndPointConfig();
-    sslContext = SslHelper.createContext("dtls", dtls.getSslConfig().toConfigurationProperties(), logger);
+    sslContext = SslHelper.createContext(dtls.getSslConfig().getContext(), ((Config)dtls.getSslConfig()).toConfigurationProperties(), logger);
     bondedEndPoints = new ArrayList<>();
     port = url.getPort();
     udpInterfaceInformations = createInterfaceList(inetSocketAddress);

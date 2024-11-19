@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.network.io.impl.tcp;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -52,7 +53,7 @@ public class TCPEndPointServer extends EndPointServer {
   private SelectionKey selectionKey;
   private SelectableChannel selectable;
 
-  public TCPEndPointServer(InetSocketAddress bindAddr, SelectorLoadManager sel, AcceptHandler accept, EndPointServerConfig config, EndPointURL url, EndPointManagerJMX managerMBean) {
+  public TCPEndPointServer(InetSocketAddress bindAddr, SelectorLoadManager sel, AcceptHandler accept, EndPointServerConfigDTO config, EndPointURL url, EndPointManagerJMX managerMBean) {
     super(accept, url, config);
     this.managerMBean = managerMBean;
     selectorLoadManager = sel;

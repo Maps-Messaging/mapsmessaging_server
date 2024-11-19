@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     title = "Server Statistics",
-    description = "Contains various metrics and statistics for server performance, including message rates, connection counts, and data throughput."
-)
+    description =
+        "Contains various metrics and statistics for server performance, including message rates, connection counts, and data throughput.")
 public class ServerStatisticsDTO implements Serializable {
 
   @Schema(description = "Total packets sent", example = "1024")
@@ -86,6 +86,9 @@ public class ServerStatisticsDTO implements Serializable {
   @Schema(description = "Retrieved messages per second", example = "30")
   private long retrievedPerSecond;
 
-  @Schema(description = "Statistics map", example = "{\"latency\": {\"name\": \"latency\", \"unitName\": \"ms\", \"current\": 10, ...}}")
+  @Schema(
+      description = "Statistics map",
+      example =
+          "{\"latency\": {\"name\": \"latency\", \"unitName\": \"ms\", \"current\": 10, ...}}")
   private Map<String, LinkedMovingAverageRecordDTO> stats;
 }

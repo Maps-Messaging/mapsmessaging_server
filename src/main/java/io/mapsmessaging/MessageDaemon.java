@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,10 +26,10 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.DeviceManagerConfig;
 import io.mapsmessaging.config.MessageDaemonConfig;
 import io.mapsmessaging.config.NetworkManagerConfig;
-import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.configuration.EnvironmentPathLookup;
 import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
@@ -363,7 +364,7 @@ public class MessageDaemon {
     if (ConsulManagerFactory.getInstance().isStarted()) {
       NetworkManagerConfig networkManagerConfig = NetworkManagerConfig.getInstance();
       Map<String, String> meta = new LinkedHashMap<>();
-      for(EndPointServerConfig serverConfig: networkManagerConfig.getEndPointServerConfigList()){
+      for(EndPointServerConfigDTO serverConfig: networkManagerConfig.getEndPointServerConfigList()){
         String protocols = serverConfig.getProtocols();
         String url = serverConfig.getUrl();
         while (protocols.contains(",")) {

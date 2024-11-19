@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -65,7 +66,6 @@ public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
     logger.log(ServerLogMessages.SSL_HANDSHAKE_FINISHED);
     logger.log(ServerLogMessages.SSL_HANDSHAKE_ENCRYPTED, handshakeBufferIn.position(), handshakeBufferIn.limit());
     sslEndPointImpl.handshakeManager = new SSLHandshakeManagerFinished(handshakeBufferIn); // All done, no longer required
-    System.err.println("SSL Handshake Complete");
     if (callback != null) {
       callback.connected(sslEndPointImpl);
     }

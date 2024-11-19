@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +19,7 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.config.TenantManagementConfig;
-import io.mapsmessaging.config.tenant.TenantConfig;
+import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -75,7 +76,7 @@ public class TenantManagement {
 
   private final Logger logger = LoggerFactory.getLogger(TenantManagement.class);
   private final List<NamespaceMapper> mappers;
-  private final Map<String, List<TenantConfig>> configuration;
+  private final Map<String, List<TenantConfigDTO>> configuration;
 
   /**
    * Initializes the TenantManagement class by loading the configuration properties and creating the list of namespace mappers.
@@ -86,10 +87,10 @@ public class TenantManagement {
   private TenantManagement() {
     TenantManagementConfig config = TenantManagementConfig.getInstance();
     configuration = new LinkedHashMap<>();
-    for(TenantConfig tenantConfig:config.getTenantConfigList()){
+    for(TenantConfigDTO tenantConfig:config.getTenantConfigList()){
       if(tenantConfig.getScope() != null){
         String type = tenantConfig.getScope();
-        List<TenantConfig> existing = configuration.computeIfAbsent(type, k -> new ArrayList<>());
+        List<TenantConfigDTO> existing = configuration.computeIfAbsent(type, k -> new ArrayList<>());
         existing.add(tenantConfig);
       }
     }
@@ -148,7 +149,7 @@ public class TenantManagement {
    */
   private @NonNull @NotNull String configurationLookup(String username) {
     String conf;
-    TenantConfig userConfig = locateUserConfig(username);
+    TenantConfigDTO userConfig = locateUserConfig(username);
     if (userConfig == null) {
       conf = "";
     } else {
@@ -169,11 +170,11 @@ public class TenantManagement {
    * @param username The username for which to retrieve the configuration.
    * @return The configuration for the given username, or null if no configuration is found.
    */
-  private TenantConfig locateUserConfig(String username) {
-    TenantConfig defConfig = null;
-    List<TenantConfig> configurationList = configuration.get("user");
+  private TenantConfigDTO locateUserConfig(String username) {
+    TenantConfigDTO defConfig = null;
+    List<TenantConfigDTO> configurationList = configuration.get("user");
     if (configurationList != null) {
-      for (TenantConfig config : configurationList) {
+      for (TenantConfigDTO config : configurationList) {
         String name = config.getName();
         if (name.equals(username)) {
           return config;

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,8 +25,8 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.protocol.impl.MqttV5Config;
+import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -131,7 +132,7 @@ public class MQTT5Protocol extends ProtocolImpl {
     packetIdManager = new PacketIdManager();
     BitSetFactory bitsetFactory = new BitSetFactoryImpl(DefaultConstants.BITSET_BLOCK_SIZE);
     clientOutstanding = new NaturalOrderedLongList(0, bitsetFactory);
-    SaslConfig saslConfig = endPoint.getConfig().getSaslConfig();
+    SaslConfigDTO saslConfig = endPoint.getConfig().getSaslConfig();
     if( saslConfig!= null){
       authenticationContext = new AuthenticationContext(saslConfig.getMechanism(), saslConfig.getRealmName(), getName(), endPoint.getConfig());
     }

@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,12 +20,11 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.destination.*;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class represents a SessionDestinationManager that implements the DestinationFactory interface.

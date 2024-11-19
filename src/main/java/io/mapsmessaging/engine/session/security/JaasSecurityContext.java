@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,11 +27,10 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.SubjectHelper;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.UUID;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 public class JaasSecurityContext extends SecurityContext {
 

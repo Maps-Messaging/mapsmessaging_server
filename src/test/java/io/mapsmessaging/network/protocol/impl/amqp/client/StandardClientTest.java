@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +20,10 @@ package io.mapsmessaging.network.protocol.impl.amqp.client;
 
 import io.mapsmessaging.test.BaseTestConfig;
 import jakarta.jms.*;
-import org.junit.jupiter.api.Test;
-
+import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import java.util.Properties;
+import org.junit.jupiter.api.Test;
 
 class StandardClientTest extends BaseTestConfig {
 

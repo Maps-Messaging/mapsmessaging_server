@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ package io.mapsmessaging.network.io.impl.tcp;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
-import io.mapsmessaging.config.network.impl.TcpConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -62,7 +63,7 @@ public class TCPEndPoint extends EndPoint {
       } else {
         name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
       }
-      configure((TcpConfig) endPointServerStatus.getConfig().getEndPointConfig());
+      configure((TcpConfigDTO) endPointServerStatus.getConfig().getEndPointConfig());
     } catch (IOException e) {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
@@ -86,7 +87,7 @@ public class TCPEndPoint extends EndPoint {
       selector = select;
       authenticationConfig = authConfig;
       name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
-      configure((TcpConfig) server.getConfig().getEndPointConfig());
+      configure((TcpConfigDTO) server.getConfig().getEndPointConfig());
     } catch (IOException e) {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
       throw e;
@@ -198,7 +199,7 @@ public class TCPEndPoint extends EndPoint {
     return LoggerFactory.getLogger(TCPEndPoint.class.getName() + "_" + getId());
   }
 
-  private void configure(TcpConfig config) throws IOException {
+  private void configure(TcpConfigDTO config) throws IOException {
     /*
     These are NOT configurable and required for normal operation
      */
@@ -227,7 +228,7 @@ public class TCPEndPoint extends EndPoint {
 
   @Override
   public void completedConnection() {
-    int linger = ((TcpConfig)getConfig().getEndPointConfig()).getSoLingerDelaySec();
+    int linger = ((TcpConfigDTO)getConfig().getEndPointConfig()).getSoLingerDelaySec();
     try {
       socket.setSoLinger(true, linger);
     } catch (SocketException e) {

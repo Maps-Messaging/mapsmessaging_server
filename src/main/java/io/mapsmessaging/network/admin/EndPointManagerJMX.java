@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@ package io.mapsmessaging.network.admin;
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import com.udojava.jmx.wrapper.JMXBeanOperation;
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
@@ -41,7 +42,7 @@ public class EndPointManagerJMX implements HealthMonitor {
   private final ObjectInstance mbean;
 
   //<editor-fold desc="Life cycle functions">
-  public EndPointManagerJMX(List<String> parent, EndPointManager endPoint, EndPointServerConfig nc) {
+  public EndPointManagerJMX(List<String> parent, EndPointManager endPoint, EndPointServerConfigDTO nc) {
     endPointManager = endPoint;
     typePath = new ArrayList<>(parent);
     typePath.add("endPointManagerName=" + endPoint.getName());

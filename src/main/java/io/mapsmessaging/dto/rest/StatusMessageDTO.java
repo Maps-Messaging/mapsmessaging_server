@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(
     title = "Status Message",
-    description = "Provides detailed status information about the server, including memory usage, CPU statistics, and thread states."
-)
+    description =
+        "Provides detailed status information about the server, including memory usage, CPU statistics, and thread states.")
 public class StatusMessageDTO {
 
   @Schema(description = "Server name", example = "maps-server")
@@ -58,7 +58,9 @@ public class StatusMessageDTO {
   @Schema(description = "Server statistics", nullable = true)
   private ServerStatisticsDTO serverStatistics;
 
-  @Schema(description = "Time taken to create the status message, in nanoseconds", example = "1000000")
+  @Schema(
+      description = "Time taken to create the status message, in nanoseconds",
+      example = "1000000")
   private long timeToCreateNano;
 
   @Schema(description = "Server uptime in milliseconds", example = "123456789")
@@ -79,6 +81,8 @@ public class StatusMessageDTO {
   @Schema(description = "Storage size in bytes", example = "104857600")
   private long storageSize;
 
-  @Schema(description = "Map of thread states and their counts", example = "{\"RUNNABLE\": 50, \"WAITING\": 10}")
+  @Schema(
+      description = "Map of thread states and their counts",
+      example = "{\"RUNNABLE\": 50, \"WAITING\": 10}")
   private Map<String, Integer> threadState = new LinkedHashMap<>();
 }

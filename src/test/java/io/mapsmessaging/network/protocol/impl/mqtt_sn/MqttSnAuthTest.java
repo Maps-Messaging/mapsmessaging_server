@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +19,11 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import io.mapsmessaging.network.protocol.impl.mqtt5.ClientCallbackHandler;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.security.sasl.Sasl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slj.mqtt.sn.client.MqttsnClientConnectException;
@@ -29,13 +35,6 @@ import org.slj.mqtt.sn.spi.IMqttsnMessage;
 import org.slj.mqtt.sn.spi.IMqttsnPublishReceivedListener;
 import org.slj.mqtt.sn.spi.MqttsnException;
 import org.slj.mqtt.sn.utils.TopicPath;
-
-import javax.security.sasl.Sasl;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 
 class MqttSnAuthTest extends BaseMqttSnConfig {
 

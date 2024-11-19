@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,29 +18,20 @@
 
 package io.mapsmessaging.config;
 
-
 import io.mapsmessaging.config.tenant.TenantConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.TenantManagementConfigDTO;
+import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Tenant Management Configuration")
-public class TenantManagementConfig extends ManagementConfig {
-
-  private List<TenantConfig> tenantConfigList;
+public class TenantManagementConfig extends TenantManagementConfigDTO implements Config {
 
   public static TenantManagementConfig getInstance() {
-    return new TenantManagementConfig(ConfigurationManager.getInstance().getProperties("TenantManagement"));
+    return new TenantManagementConfig(
+        ConfigurationManager.getInstance().getProperties("TenantManagement"));
   }
 
   private TenantManagementConfig(ConfigurationProperties properties) {
@@ -55,18 +47,37 @@ public class TenantManagementConfig extends ManagementConfig {
   }
 
   @Override
-  public boolean update(ManagementConfig config) {
-    return false;
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof TenantManagementConfigDTO)) {
+      return false;
+    }
+
+    TenantManagementConfigDTO newConfig = (TenantManagementConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.tenantConfigList.size() != newConfig.getTenantConfigList().size()) {
+      this.tenantConfigList = newConfig.getTenantConfigList();
+      hasChanged = true;
+    } else {
+      for (int i = 0; i < this.tenantConfigList.size(); i++) {
+        if (!this.tenantConfigList.get(i).equals(newConfig.getTenantConfigList().get(i))) {
+          this.tenantConfigList.set(i, newConfig.getTenantConfigList().get(i));
+          hasChanged = true;
+        }
+      }
+    }
+
+    return hasChanged;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties configurationProperties = new ConfigurationProperties();
-    List<ConfigurationProperties> tenentList = new ArrayList<>();
-    for (TenantConfig tenantConfig : tenantConfigList) {
-      tenentList.add(tenantConfig.toConfigurationProperties());
+    List<ConfigurationProperties> tenantList = new ArrayList<>();
+    for (TenantConfigDTO tenantConfig : tenantConfigList) {
+      tenantList.add(((Config)tenantConfig).toConfigurationProperties());
     }
-    configurationProperties.put("data", tenentList);
+    configurationProperties.put("data", tenantList);
     return configurationProperties;
   }
 }

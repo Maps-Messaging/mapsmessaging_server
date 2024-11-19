@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,8 +25,7 @@ import java.io.IOException;
 
 public class DestinationStatusHelper {
 
-
-  public static DestinationStatusDTO createDestinationStatus(DestinationImpl destinationImpl){
+  public static DestinationStatusDTO createDestinationStatus(DestinationImpl destinationImpl) {
     DestinationStats stats = destinationImpl.getStats();
     return new DestinationStatusDTO(
         destinationImpl.getFullyQualifiedNamespace(),
@@ -40,15 +39,14 @@ public class DestinationStatusHelper {
         stats.getDeliveredMessages(),
         stats.getMessageReadTime(),
         stats.getMessageWriteTime(),
-        stats.getMessageRemovedTime()
-    );
-
+        stats.getMessageRemovedTime());
   }
 
-  private static long getStored(DestinationImpl destinationImpl){
+  private static long getStored(DestinationImpl destinationImpl) {
     try {
       return destinationImpl.getStoredMessages();
     } catch (IOException e) {
+      // todo log this
     }
     return 0;
   }

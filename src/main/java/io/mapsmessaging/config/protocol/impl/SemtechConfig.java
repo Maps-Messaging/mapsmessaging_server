@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,33 +18,64 @@
 
 package io.mapsmessaging.config.protocol.impl;
 
-import io.mapsmessaging.config.protocol.ProtocolConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.SemtechConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class SemtechConfig extends ProtocolConfig {
-  private int maxQueued;
-  private String inboundTopicName;
-  private String outboundTopicName;
-  private String statusTopicName;
+public class SemtechConfig extends SemtechConfigDTO implements Config {
 
   public SemtechConfig(ConfigurationProperties config) {
-    super(config);
-    maxQueued = config.getIntProperty("MaxQueueSize", 10);
-    inboundTopicName = config.getProperty("inbound", "/semtech/inbound");
-    outboundTopicName = config.getProperty("outbound", "/semtech/outbound");
-    statusTopicName = config.getProperty("status", inboundTopicName);
     setType("semtech");
+    ProtocolConfigFactory.unpack(config, this);
+
+    // Initialize Semtech-specific fields from config
+    this.maxQueued = config.getIntProperty("MaxQueueSize", maxQueued);
+    this.inboundTopicName = config.getProperty("inbound", inboundTopicName);
+    this.outboundTopicName = config.getProperty("outbound", outboundTopicName);
+    this.statusTopicName = config.getProperty("status", inboundTopicName);
   }
 
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof SemtechConfigDTO) {
+      SemtechConfigDTO newConfig = (SemtechConfigDTO) config;
+
+      // Check each field and update if necessary
+      if (this.maxQueued != newConfig.getMaxQueued()) {
+        this.maxQueued = newConfig.getMaxQueued();
+        hasChanged = true;
+      }
+      if (!this.inboundTopicName.equals(newConfig.getInboundTopicName())) {
+        this.inboundTopicName = newConfig.getInboundTopicName();
+        hasChanged = true;
+      }
+      if (!this.outboundTopicName.equals(newConfig.getOutboundTopicName())) {
+        this.outboundTopicName = newConfig.getOutboundTopicName();
+        hasChanged = true;
+      }
+      if (!this.statusTopicName.equals(newConfig.getStatusTopicName())) {
+        this.statusTopicName = newConfig.getStatusTopicName();
+        hasChanged = true;
+      }
+
+      // Update fields from ProtocolConfigFactory if needed
+      if (ProtocolConfigFactory.update(this, newConfig)) {
+        hasChanged = true;
+      }
+    }
+    return hasChanged;
+  }
+
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    return super.toConfigurationProperties();
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
+    properties.put("MaxQueueSize", this.maxQueued);
+    properties.put("inbound", this.inboundTopicName);
+    properties.put("outbound", this.outboundTopicName);
+    properties.put("status", this.statusTopicName);
+    return properties;
   }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,8 @@
 
 package io.mapsmessaging.hardware.trigger;
 
-import io.mapsmessaging.config.device.triggers.PeriodicTriggerConfig;
-import io.mapsmessaging.config.device.triggers.TriggerConfig;
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.PeriodicTriggerConfigDTO;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,8 +42,8 @@ public class PeriodicTrigger extends Trigger {
   }
 
   @Override
-  public Trigger build(TriggerConfig properties) throws IOException {
-    return new PeriodicTrigger(((PeriodicTriggerConfig)properties).getInterval());
+  public Trigger build(BaseTriggerConfigDTO properties) throws IOException {
+    return new PeriodicTrigger(((PeriodicTriggerConfigDTO)properties).getInterval());
   }
 
 

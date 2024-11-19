@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -58,7 +58,6 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   public LoRaDeviceConfigInfoDTO getLoRaDeviceConfig(@PathParam("deviceName") String deviceName) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    LoRaDeviceConfigInfoDTO deviceConfig = null;
     LoRaDeviceConfigInfoDTO deviceInfo = new LoRaDeviceConfigInfoDTO();
     if (deviceName != null && !deviceName.isEmpty()) {
       List<LoRaDevice> lookup = deviceManager.getDevices().stream()
@@ -69,7 +68,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
       }
     }
 
-    if (deviceConfig == null) {
+    if (deviceInfo == null) {
       response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     }
     return deviceInfo;

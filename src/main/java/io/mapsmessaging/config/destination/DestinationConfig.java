@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,66 +18,44 @@
 
 package io.mapsmessaging.config.destination;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 
-@Data
-@NoArgsConstructor
-@Schema(description = "Destination Configuration")
-public class DestinationConfig {
-
+public class DestinationConfig extends DestinationConfigDTO implements Config {
 
   private static final String OPTIONAL_PATH = "{folder}";
 
-  private boolean sync;
-  private boolean debug;
-  private boolean remap;
-  private int itemCount;
-  private int expiredEventPoll;
-  private int autoPauseTimeout;
-  private long maxPartitionSize;
-  private String trailingPath;
-  private String name;
-  private String directory;
-  private String namespace;
-  private String type;
-  private FormatConfig format;
-  private CacheConfig cache;
-  private ArchiveConfig archive;
-  private String namespaceMapping;
-
   public DestinationConfig(ConfigurationProperties properties) {
-    debug = properties.getBooleanProperty("debug", false);
-    name = properties.getProperty("name", "");
-    directory = properties.getProperty("directory", "");
-    namespace = properties.getProperty("namespace", "");
-    type = properties.getProperty("type", "");
-    sync = properties.getProperty("sync", "disable").equalsIgnoreCase("enable");
-    itemCount = properties.getIntProperty("itemCount", 100);
-    maxPartitionSize = properties.getLongProperty("maxPartitionSize", 4096L);
-    expiredEventPoll = properties.getIntProperty("expiredEventPoll", 20);
-    autoPauseTimeout = properties.getIntProperty("autoPauseTimeout", 300);
+    this.debug = properties.getBooleanProperty("debug", false);
+    this.name = properties.getProperty("name", "");
+    this.directory = properties.getProperty("directory", "");
+    this.namespace = properties.getProperty("namespace", "");
+    this.type = properties.getProperty("type", "");
+    this.sync = properties.getProperty("sync", "disable").equalsIgnoreCase("enable");
+    this.itemCount = properties.getIntProperty("itemCount", 100);
+    this.maxPartitionSize = properties.getLongProperty("maxPartitionSize", 4096L);
+    this.expiredEventPoll = properties.getIntProperty("expiredEventPoll", 20);
+    this.autoPauseTimeout = properties.getIntProperty("autoPauseTimeout", 300);
 
     if (properties.containsKey("format")) {
-      format = new FormatConfig((ConfigurationProperties) properties.get("format"));
+      this.format = new FormatConfig((ConfigurationProperties) properties.get("format"));
     }
     if (properties.containsKey("cache")) {
-      cache = new CacheConfig((ConfigurationProperties) properties.get("cache"));
+      this.cache = new CacheConfig((ConfigurationProperties) properties.get("cache"));
     }
     if (properties.containsKey("archive")) {
-      archive = new ArchiveConfig((ConfigurationProperties) properties.get("archive"));
+      this.archive = new ArchiveConfig((ConfigurationProperties) properties.get("archive"));
     }
-    String propertyNamespace = namespace;
-    remap = (propertyNamespace.endsWith(OPTIONAL_PATH) && directory.contains(OPTIONAL_PATH));
-    if (remap) {
-      namespaceMapping = propertyNamespace.substring(0, propertyNamespace.indexOf(OPTIONAL_PATH));
-    } else {
-      namespaceMapping = propertyNamespace;
-    }
+    String propertyNamespace = this.namespace;
+    this.remap =
+        (propertyNamespace.endsWith(OPTIONAL_PATH) && this.directory.contains(OPTIONAL_PATH));
+    this.namespaceMapping =
+        remap
+            ? propertyNamespace.substring(0, propertyNamespace.indexOf(OPTIONAL_PATH))
+            : propertyNamespace;
   }
-
 
   public String getTrailingPath() {
     if (remap) {
@@ -85,28 +64,92 @@ public class DestinationConfig {
     return "";
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("name", name);
-    properties.put("debug", debug);
-    properties.put("directory", directory);
-    properties.put("namespace", namespace);
-    properties.put("type", type);
-    properties.put("sync", sync?"enabled":"disable");
-    properties.put("itemCount", itemCount);
-    properties.put("maxPartitionSize", maxPartitionSize);
-    properties.put("expiredEventPoll", expiredEventPoll);
-    properties.put("autoPauseTimeout", autoPauseTimeout);
-    if (format != null) {
-      properties.put("format", format.toConfigurationProperties());
+    properties.put("name", this.name);
+    properties.put("debug", this.debug);
+    properties.put("directory", this.directory);
+    properties.put("namespace", this.namespace);
+    properties.put("type", this.type);
+    properties.put("sync", this.sync ? "enable" : "disable");
+    properties.put("itemCount", this.itemCount);
+    properties.put("maxPartitionSize", this.maxPartitionSize);
+    properties.put("expiredEventPoll", this.expiredEventPoll);
+    properties.put("autoPauseTimeout", this.autoPauseTimeout);
+
+    if (this.format != null) {
+      properties.put("format", ((Config) format).toConfigurationProperties());
     }
-    if (cache != null) {
-      properties.put("cache", cache.toConfigurationProperties());
+    if (this.cache != null) {
+      properties.put("cache", ((Config) cache).toConfigurationProperties());
     }
-    if (archive != null) {
-      properties.put("archive", archive.toConfigurationProperties());
+    if (this.archive != null) {
+      properties.put("archive", ((Config) archive).toConfigurationProperties());
     }
     return properties;
   }
-}
 
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof DestinationConfigDTO)) {
+      return false;
+    }
+
+    DestinationConfigDTO newConfig = (DestinationConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.sync != newConfig.isSync()) {
+      this.sync = newConfig.isSync();
+      hasChanged = true;
+    }
+    if (this.debug != newConfig.isDebug()) {
+      this.debug = newConfig.isDebug();
+      hasChanged = true;
+    }
+    if (this.remap != newConfig.isRemap()) {
+      this.remap = newConfig.isRemap();
+      hasChanged = true;
+    }
+    if (this.itemCount != newConfig.getItemCount()) {
+      this.itemCount = newConfig.getItemCount();
+      hasChanged = true;
+    }
+    if (this.expiredEventPoll != newConfig.getExpiredEventPoll()) {
+      this.expiredEventPoll = newConfig.getExpiredEventPoll();
+      hasChanged = true;
+    }
+    if (this.autoPauseTimeout != newConfig.getAutoPauseTimeout()) {
+      this.autoPauseTimeout = newConfig.getAutoPauseTimeout();
+      hasChanged = true;
+    }
+    if (this.maxPartitionSize != newConfig.getMaxPartitionSize()) {
+      this.maxPartitionSize = newConfig.getMaxPartitionSize();
+      hasChanged = true;
+    }
+    if (!this.directory.equals(newConfig.getDirectory())) {
+      this.directory = newConfig.getDirectory();
+      hasChanged = true;
+    }
+    if (!this.namespace.equals(newConfig.getNamespace())) {
+      this.namespace = newConfig.getNamespace();
+      hasChanged = true;
+    }
+    if (!this.type.equals(newConfig.getType())) {
+      this.type = newConfig.getType();
+      hasChanged = true;
+    }
+
+    // Update nested configs and check for changes
+    if (this.format != null && ((Config) format).update(newConfig.getFormat())) {
+      hasChanged = true;
+    }
+    if (this.cache != null && ((Config) cache).update(newConfig.getCache())) {
+      hasChanged = true;
+    }
+    if (this.archive != null && ((Config) archive).update(newConfig.getArchive())) {
+      hasChanged = true;
+    }
+
+    return hasChanged;
+  }
+}

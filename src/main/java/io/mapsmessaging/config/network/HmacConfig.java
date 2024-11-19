@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,37 +20,65 @@ package io.mapsmessaging.config.network;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.HmacConfigDTO;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
 @ToString
-public class HmacConfig extends Config {
+public class HmacConfig extends HmacConfigDTO implements Config {
 
-  private String host;
-  private int port;
-  private String secret;
-  private String hmacAlgorithm;
-  private String hmacManager;
-  private String hmacSharedKey;
-
-
-  public HmacConfig(ConfigurationProperties config){
-    host = config.getProperty("host");
-    port = config.getIntProperty("port", 0);
-    hmacAlgorithm = config.getProperty("HmacAlgorithm");
+  public HmacConfig(ConfigurationProperties config) {
+    super();
+    this.host = config.getProperty("host");
+    this.port = config.getIntProperty("port", 0);
+    this.hmacAlgorithm = config.getProperty("HmacAlgorithm");
     if (hmacAlgorithm != null) {
-      hmacManager = config.getProperty("HmacManager", "Appender");
-      hmacSharedKey = config.getProperty("HmacSharedKey");
+      this.hmacManager = config.getProperty("HmacManager", "Appender");
+      this.hmacSharedKey = config.getProperty("HmacSharedKey");
     }
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    return null;
+    ConfigurationProperties config = new ConfigurationProperties();
+    config.put("host", host);
+    config.put("port", port);
+    config.put("HmacAlgorithm", hmacAlgorithm);
+    config.put("HmacManager", hmacManager);
+    config.put("HmacSharedKey", hmacSharedKey);
+    return config;
+  }
+
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+
+    if( !(config instanceof HmacConfigDTO) ) {
+      return false;
+    }
+    HmacConfigDTO newConfig = (HmacConfigDTO)config;
+
+    if (this.host == null || !this.host.equals(newConfig.getHost())) {
+      this.host = newConfig.getHost();
+      hasChanged = true;
+    }
+    if (this.port != newConfig.getPort()) {
+      this.port = newConfig.getPort();
+      hasChanged = true;
+    }
+    if (this.hmacAlgorithm == null || !this.hmacAlgorithm.equals(newConfig.getHmacAlgorithm())) {
+      this.hmacAlgorithm = newConfig.getHmacAlgorithm();
+      hasChanged = true;
+    }
+    if (this.hmacManager == null || !this.hmacManager.equals(newConfig.getHmacManager())) {
+      this.hmacManager = newConfig.getHmacManager();
+      hasChanged = true;
+    }
+    if (this.hmacSharedKey == null || !this.hmacSharedKey.equals(newConfig.getHmacSharedKey())) {
+      this.hmacSharedKey = newConfig.getHmacSharedKey();
+      hasChanged = true;
+    }
+    return hasChanged;
   }
 }

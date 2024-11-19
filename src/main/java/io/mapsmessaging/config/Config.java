@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,52 +19,17 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Objects;
 
-public abstract class Config implements Serializable {
+public interface Config extends Serializable {
 
-  public abstract ConfigurationProperties toConfigurationProperties();
+  ConfigurationProperties toConfigurationProperties();
 
-  protected long parseBufferSize(String size) {
-    size = size.trim().toUpperCase();
-    if (size.endsWith("K")) {
-      return Long.parseLong(size.substring(0, size.length() - 1)) * 1024;
-    } else if (size.endsWith("M")) {
-      return Long.parseLong(size.substring(0, size.length() - 1)) * 1024 * 1024;
-    } else if (size.endsWith("G")) {
-      return Long.parseLong(size.substring(0, size.length() - 1)) * 1024 * 1024 * 1024;
-    } else {
-      return Long.parseLong(size);
-    }
-  }
+  boolean update(BaseConfigDTO config);
 
-  protected String formatBufferSize(long size) {
-    if (size >= 1024 * 1024 * 1024) {
-      return (size / (1024 * 1024 * 1024)) + "G";
-    } else if (size >= 1024 * 1024) {
-      return (size / (1024 * 1024)) + "M";
-    } else if (size >= 1024) {
-      return (size / 1024) + "K";
-    } else {
-      return Long.toString(size);
-    }
-  }
-
-  protected boolean updateMap(Map<String, Object> currentMap, Map<String, Object> newMap) {
-    boolean hasChanged = false;
-
-    for (Map.Entry<String, Object> entry : newMap.entrySet()) {
-      String key = entry.getKey();
-      Object newValue = entry.getValue();
-
-      if (!Objects.equals(currentMap.get(key), newValue)) {
-        currentMap.put(key, newValue);
-        hasChanged = true;
-      }
-    }
-
-    return hasChanged;
+  default boolean updateMap(Map<String, Object> currentMap, Map<String, Object> newMap) {
+    return ConfigHelper.updateMap(currentMap, newMap);
   }
 }

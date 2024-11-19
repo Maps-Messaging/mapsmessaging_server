@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,30 +19,9 @@
 package io.mapsmessaging.config.device.triggers;
 
 import io.mapsmessaging.config.Config;
-import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class TriggerConfig  extends Config{
+public interface TriggerConfig extends Config {
+  String getName();
 
-  private String type;
-  private String name;
-
-  public TriggerConfig(ConfigurationProperties config) {
-    this.type = config.getProperty("type", "");
-    this.name = config.getProperty("name", "");
-  }
-
-  public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = new ConfigurationProperties();
-    config.put("type", type);
-    config.put("name", name);
-    return config;
-  }
+  String getType();
 }

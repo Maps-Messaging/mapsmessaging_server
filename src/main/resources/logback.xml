@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright [ 2020 - 2024 ] [Matthew Buckton]
+  ~ Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -31,7 +32,7 @@
   <appender name="AsyncLogFile" class="ch.qos.logback.classic.AsyncAppender">
     <appender-ref ref="LogFile"/>
   </appender>
-  <root level="warn">
+  <root level="info">
     <appender-ref ref="AsyncLogFile"/>
   </root>
 </configuration>

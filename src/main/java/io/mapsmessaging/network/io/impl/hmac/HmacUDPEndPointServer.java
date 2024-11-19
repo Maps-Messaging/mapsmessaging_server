@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,9 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.hmac;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
-import io.mapsmessaging.config.network.HmacConfig;
 import io.mapsmessaging.config.network.impl.UdpConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.HmacConfigDTO;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
@@ -41,14 +42,14 @@ public class HmacUDPEndPointServer extends UDPEndPointServer {
 
   public HmacUDPEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url,
       SelectorLoadManager selectorLoadManager, EndPointManagerJMX managerMBean,
-                               EndPointServerConfig config) throws SocketException {
+                               EndPointServerConfigDTO config) throws SocketException {
     super(inetSocketAddress, protocolFactory, url, selectorLoadManager, managerMBean, config);
     securityMap = new LinkedHashMap<>();
     loadNodeConfig((UdpConfig) config.getEndPointConfig());
   }
 
   private void loadNodeConfig(UdpConfig udpConfig) {
-    for (HmacConfig node : udpConfig.getHmacConfigList()) {
+    for (HmacConfigDTO node : udpConfig.getHmacConfigList()) {
       PacketIntegrity packetIntegrity = PacketIntegrityFactory.getInstance().createPacketIntegrity(node);
       securityMap.put(node.getHost() + ":" + node.getPort(), new NodeSecurity(node.getHost(), node.getPort(), packetIntegrity));
     }

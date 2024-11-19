@@ -17,6 +17,68 @@
 ---
 NetworkManager:
     global:
+
+      # ---------------------------------------------------------------------------------------------------------
+      # tcp layer configuration
+      # ---------------------------------------------------------------------------------------------------------
+      receiveBufferSize: 128000
+      sendBufferSize: 128000
+      timeout: 60000
+      backlog: 100
+      soLingerDelaySec: 10
+      readDelayOnFragmentation: 100
+      fragmentationLimit: 5
+      enableReadDelayOnFragmentation: true
+
+      # ---------------------------------------------------------------------------------------------------------
+      # Generic protocol configuration
+      # ---------------------------------------------------------------------------------------------------------
+      serverReadBufferSize: 10K
+      serverWriteBufferSize: 10K
+      selectorThreadCount: 2
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT Protocol configuration
+      # ---------------------------------------------------------------------------------------------------------
+      maximumSessionExpiry: 86400
+      maximumBufferSize: 10M
+      serverReceiveMaximum: 10
+      clientReceiveMaximum: 65535
+      clientMaximumTopicAlias: 32767
+      serverMaximumTopicAlias: 0
+      strictClientId: false
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT 5.0 specific
+      # ---------------------------------------------------------------------------------------------------------
+      minServerKeepAlive: 0
+      maxServerKeepAlive: 60
+
+      # ---------------------------------------------------------------------------------------------------------
+      # LoRa Gateway specific
+      # ---------------------------------------------------------------------------------------------------------
+      # Maximum Packets per second limit to ensure the radio isn't flooded
+      LoRaMaxTransmissionRate: 20
+
+      # ---------------------------------------------------------------------------------------------------------
+      # MQTT-SN specific configuration
+      # ---------------------------------------------------------------------------------------------------------
+      maxInFlightEvents: 1
+      dropQoS0Events: true
+      eventQueueTimeout: 0
+      advertiseGateway: false
+      enablePortChanges: true
+      enableAddressChanges: true
+      packetReuseTimeout: 1000
+
+      # ---------------------------------------------------------------------------------------------------------
+      # Global configuration
+      # ---------------------------------------------------------------------------------------------------------
+      discoverable: true             # If the server registers a mdns entry for the adapter
+      preferIPv6Addresses: true      # If the server should prefer IPv6 addresses over IPv4 addresses
+      scanNetworkChanges: false      # If true, the server will scan for new interfaces or disconnected interfaces
+      scanInterval: 60000            # Time in milliseconds to scan for network changes
+
         # ---------------------------------------------------------------------------------------------------------
         # Global configuration for SSL
         # ---------------------------------------------------------------------------------------------------------
@@ -31,30 +93,16 @@ NetworkManager:
             #-----------------------------------
 
           keyStore:
-            #alias: server  # Optional
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard keystores
+            type: JKS
             managerFactory: SunX509
-            # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
 
-            #-----------------------------------
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
-            #-----------------------------------
-
           trustStore:
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard truststores
-            # Standard Key Store parameters
+            type: JKS
             path: my-truststore.jks
             passphrase: password
             managerFactory: SunX509
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
 
         dtls:
           clientCertificateRequired: false
@@ -83,66 +131,6 @@ NetworkManager:
             # provider: SunPKCS11
             # configPath: pkcs11-config.cfg
 
-      # ---------------------------------------------------------------------------------------------------------
-      # tcp layer configuration
-      # ---------------------------------------------------------------------------------------------------------
-        receiveBufferSize: 128000
-        sendBufferSize: 128000
-        timeout: 60000
-        backlog: 100
-        soLingerDelaySec: 10
-        readDelayOnFragmentation: 100
-        fragmentationLimit : 5
-        enableReadDelayOnFragmentation: true
-
-      # ---------------------------------------------------------------------------------------------------------
-      # Generic protocol configuration
-      # ---------------------------------------------------------------------------------------------------------
-        serverReadBufferSize :  10K
-        serverWriteBufferSize : 10K
-        selectorThreadCount: 2
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT Protocol configuration
-      # ---------------------------------------------------------------------------------------------------------
-        maximumSessionExpiry : 86400
-        maximumBufferSize: 10M
-        serverReceiveMaximum : 10
-        clientReceiveMaximum : 65535
-        clientMaximumTopicAlias : 32767
-        serverMaximumTopicAlias : 0
-        strictClientId : false
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT 5.0 specific
-      # ---------------------------------------------------------------------------------------------------------
-        minServerKeepAlive : 0
-        maxServerKeepAlive : 60
-
-      # ---------------------------------------------------------------------------------------------------------
-      # LoRa Gateway specific
-      # ---------------------------------------------------------------------------------------------------------
-      # Maximum Packets per second limit to ensure the radio isn't flooded
-        LoRaMaxTransmissionRate : 20
-
-      # ---------------------------------------------------------------------------------------------------------
-      # MQTT-SN specific configuration
-      # ---------------------------------------------------------------------------------------------------------
-        maxInFlightEvents : 1
-        dropQoS0Events: true
-        eventQueueTimeout: 0
-        advertiseGateway: false
-        enablePortChanges: true
-        enableAddressChanges: true
-        packetReuseTimeout: 1000
-
-      # ---------------------------------------------------------------------------------------------------------
-      # Global configuration
-      # ---------------------------------------------------------------------------------------------------------
-        discoverable: true             # If the server registers a mdns entry for the adapter
-        preferIPv6Addresses: true      # If the server should prefer IPv6 addresses over IPv4 addresses
-        scanNetworkChanges: false      # If true, the server will scan for new interfaces or disconnected interfaces
-        scanInterval: 60000            # Time in milliseconds to scan for network changes
 
     data:
 
@@ -176,8 +164,13 @@ NetworkManager:
           - name: "hostb"
             auth: usernamePassword
 
-      - name: "MQTT Interface"
+      - name: "TCP MQTT Interface"
         url: tcp://:::1883/
+        protocol: mqtt
+        auth: usernamePassword
+
+      - name: "SSL MQTT Interface"
+        url: ssl://:::1884/
         protocol: mqtt
         auth: usernamePassword
 
@@ -191,43 +184,20 @@ NetworkManager:
         protocol: stomp
         auth: usernamePassword
 
-      - url: udp://:::1883/
-        name: "MQTT-SN Interface"
+      - name: "Test Serial"
+        url: "serial://"
+        port: com7
+        protocol: nmea
+        baudRate: 9600
+        stopBit: 1
+        parity: n
+        readTimeOut: 60000
+        writeTimeOut: 60000
+        flowControl: 0
+
+      - name: "LoRa device configuration"
+        url: lora://loraDevice0:2/
         protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 5
-        maxTopicsInSleep: 10
-        advertiseGateway: true
-        sasl:
-          realmName: "mapsMessaging"
-          mechanism: SCRAM-SHA-512
-          identityProvider: system
-
-      - url: dtls://:::8883/
-        name: "MQTT-SN Interface SCRAM"
-        protocol: mqtt-sn
-        eventsPerTopicDuringSleep: 5
-        maxTopicsInSleep: 10
-        advertiseGateway: true
-        sasl:
-          realmName: "mapsMessaging"
-          mechanism: SCRAM-SHA-512
-          identityProvider: system
-
-      - url: udp://:::5683/
-        name: "CoAP Interface"
-        protocol: coap
-        maxBlockSize: 512
-        idleTimePeriod: 120
-
-      - url: dtls://:::5684/
-        name: "CoAP Interface DTLS"
-        protocol: coap
-        maxBlockSize: 512
-        idleTimePeriod: 120
-
-      - url: udp://:::1700/
-        name: "SemTech Gateway"
-        protocol: semtech
-        inbound: /semtech/{gatewayId}/in
-        status: /semtech/{gatewayId}/status
-        outbound: /semtech/{gatewayId}/out
+        auth: anon
+        selectorThreadCount: 1
+        registered: "*,2,/sensors/tank2:*,12,/sensors/weather/indoor:*,11,/sensors/weather/outdoor:*,8,/sensors/water/garden:*,9,/sensors/water/house"

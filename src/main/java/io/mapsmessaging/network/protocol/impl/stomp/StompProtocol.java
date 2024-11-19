@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,7 +25,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.config.protocol.impl.StompConfig;
+import io.mapsmessaging.dto.rest.config.protocol.impl.StompConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -64,8 +65,8 @@ public class StompProtocol extends ProtocolImpl {
     super(endPoint);
     logger = LoggerFactory.getLogger("STOMP Protocol on " + endPoint.getName());
     logger.log(ServerLogMessages.STOMP_STARTING, endPoint.toString());
-    int maxBufferSize = ((StompConfig)endPoint.getConfig().getProtocolConfig("stomp")).getMaxBufferSize();
-    maxReceiveSize = ((StompConfig)endPoint.getConfig().getProtocolConfig("stomp")).getMaxReceive();
+    int maxBufferSize = ((StompConfigDTO)endPoint.getConfig().getProtocolConfig("stomp")).getMaxBufferSize();
+    maxReceiveSize = ((StompConfigDTO)endPoint.getConfig().getProtocolConfig("stomp")).getMaxReceive();
     version = "1.2";
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     factory = new FrameFactory(maxBufferSize, endPoint.isClient());

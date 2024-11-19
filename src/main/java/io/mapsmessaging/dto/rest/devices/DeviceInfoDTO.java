@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,39 +28,36 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     title = "Device Information",
-    description = "Represents detailed information about a device, including its name, type, state, and description."
-)
+    description =
+        "Represents detailed information about a device, including its name, type, state, and description.")
 public class DeviceInfoDTO {
 
   @Schema(
       title = "Device Name",
       description = "The unique name or identifier for the device.",
       example = "temperatureSensor01",
-      nullable = false
-  )
+      nullable = false)
   private String name;
 
   @Schema(
       title = "Device Description",
       description = "A brief description of the device’s purpose or functionality.",
       example = "Temperature sensor for monitoring room temperature",
-      nullable = true
-  )
+      nullable = true)
   private String description;
 
   @Schema(
       title = "Device Type",
       description = "The type or category of the device, indicating its general function or use.",
       example = "sensor",
-      nullable = false
-  )
+      nullable = false)
   private String type;
 
   @Schema(
       title = "Device State",
-      description = "Retrieves any state registers, could be sensor data or device state, is dependent on the device.",
+      description =
+          "Retrieves any state registers, could be sensor data or device state, is dependent on the device.",
       example = "25.0C",
-      nullable = false
-  )
+      nullable = false)
   private String state;
 }

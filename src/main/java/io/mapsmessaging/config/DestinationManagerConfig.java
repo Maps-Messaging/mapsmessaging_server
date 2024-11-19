@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,58 +18,67 @@
 
 package io.mapsmessaging.config;
 
-
 import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.DestinationManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Destination Manager Configuration")
-public class DestinationManagerConfig extends ManagementConfig {
-
-  private List<DestinationConfig> data;
-
-  public static DestinationManagerConfig getInstance() {
-    return new DestinationManagerConfig(ConfigurationManager.getInstance().getProperties("DestinationManager"));
-  }
+public class DestinationManagerConfig extends DestinationManagerConfigDTO implements Config {
 
   private DestinationManagerConfig(ConfigurationProperties properties) {
-    data = new ArrayList<>();
+    this.data = new ArrayList<>();
     Object configEntry = properties.get("data");
     if (configEntry instanceof List) {
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
-        data.add(new DestinationConfig(entry));
+        this.data.add(new DestinationConfig(entry));
       }
     } else if (configEntry instanceof ConfigurationProperties) {
-      data.add(new DestinationConfig((ConfigurationProperties) configEntry));
+      this.data.add(new DestinationConfig((ConfigurationProperties) configEntry));
     }
+  }
+
+  public static DestinationManagerConfig getInstance() {
+    return new DestinationManagerConfig(
+        ConfigurationManager.getInstance().getProperties("DestinationManager"));
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     List<ConfigurationProperties> dataProperties = new ArrayList<>();
-    for (DestinationConfig destinationConfig : data) {
-      dataProperties.add(destinationConfig.toConfigurationProperties());
+    for (DestinationConfigDTO destinationConfig : this.data) {
+      dataProperties.add(((Config)destinationConfig).toConfigurationProperties());
     }
     properties.put("data", dataProperties);
     return properties;
   }
 
-  public boolean update(ManagementConfig config) {
-    DestinationManagerConfig newConfig = (DestinationManagerConfig) config;
-    boolean changed = false;
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof DestinationManagerConfigDTO)) {
+      return false;
+    }
 
-    return changed;
+    DestinationManagerConfigDTO newConfig = (DestinationManagerConfigDTO) config;
+    boolean hasChanged = false;
+
+    // ToDo : Fix this to an update, merge, delete
+    if (this.data.size() != newConfig.getData().size()) {
+      this.data = newConfig.getData();
+      hasChanged = true;
+    } else {
+      for (int i = 0; i < this.data.size(); i++) {
+        if (!this.data.get(i).equals(newConfig.getData().get(i))) {
+          this.data.set(i, newConfig.getData().get(i));
+          hasChanged = true;
+        }
+      }
+    }
+
+    return hasChanged;
   }
 }

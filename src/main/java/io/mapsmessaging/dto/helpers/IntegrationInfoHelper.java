@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import io.mapsmessaging.network.io.connection.EndPointConnection;
 
 public class IntegrationInfoHelper {
 
-
   public static IntegrationInfoDTO fromEndPointConnection(EndPointConnection endPointConnection) {
     return new IntegrationInfoDTO(endPointConnection.getProperties());
   }
-
 }

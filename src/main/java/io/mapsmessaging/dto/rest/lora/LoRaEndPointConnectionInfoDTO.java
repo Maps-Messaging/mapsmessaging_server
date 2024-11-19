@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(
     title = "LoRa Endpoint Connection Information",
-    description = "Represents connection metrics and information for a LoRa endpoint connection, including signal strength and packet details."
-)
+    description =
+        "Represents connection metrics and information for a LoRa endpoint connection, including signal strength and packet details.")
 public class LoRaEndPointConnectionInfoDTO {
 
   @Schema(
@@ -37,53 +37,46 @@ public class LoRaEndPointConnectionInfoDTO {
       description = "Received Signal Strength Indicator (RSSI) for the connection.",
       example = "-70",
       minimum = "-200",
-      maximum = "0"
-  )
+      maximum = "0")
   private long RSSI;
 
   @Schema(
       title = "Missed Packets",
       description = "The number of packets that were missed or lost.",
       example = "3",
-      minimum = "0"
-  )
+      minimum = "0")
   private long missedPackets;
 
   @Schema(
       title = "Received Packets",
       description = "The total number of packets successfully received.",
       example = "500",
-      minimum = "0"
-  )
+      minimum = "0")
   private long receivedPackets;
 
   @Schema(
       title = "Remote Node ID",
       description = "The identifier of the remote node in the connection.",
       example = "2",
-      minimum = "0"
-  )
+      minimum = "0")
   private int remoteNodeId;
 
   @Schema(
       title = "Last Packet ID",
       description = "The identifier of the last packet received.",
       example = "1000",
-      minimum = "0"
-  )
+      minimum = "0")
   private long lastPacketId;
 
   @Schema(
       title = "Last Read Time",
       description = "The timestamp of the last read operation from this connection.",
-      example = "1625812345678"
-  )
+      example = "1625812345678")
   private long lastReadTime;
 
   @Schema(
       title = "Last Write Time",
       description = "The timestamp of the last write operation to this connection.",
-      example = "1625812345678"
-  )
+      example = "1625812345678")
   private long lastWriteTime;
 }

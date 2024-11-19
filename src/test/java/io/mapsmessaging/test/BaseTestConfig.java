@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -161,7 +162,7 @@ public class BaseTestConfig extends BaseTest {
   public String getPassword(String user) throws IOException {
     if (usernamePasswordMap == null) {
       if (md != null && md.isStarted() && AuthManager.getInstance().isAuthenticationEnabled()) {
-        ConfigurationProperties properties = AuthManager.getInstance().getConfig().getAuthConfig();
+        ConfigurationProperties properties = new ConfigurationProperties(AuthManager.getInstance().getConfig().getAuthConfig());
         String path = properties.getProperty("configDirectory");
         usernamePasswordMap = Files.lines(Paths.get(path + File.separator + "admin_password"))
             .map(line -> line.split("="))

@@ -24,7 +24,5 @@
 #
 transformations:
   data:
-    - pattern: "tcp://remote_client/mqtt/fred"
-      transformation: "Message-JSON"
     - pattern: "*://*/*/*"
       transformation: ""

@@ -17,13 +17,13 @@
 ---
 NetworkConnectionManager:
     global:
-        selector_pool_size: 1
+        selector_pool_size: 5
 
         # ---------------------------------------------------------------------------------------------------------
         # tcp layer configuration
         # ---------------------------------------------------------------------------------------------------------
-        receiveBufferSize: 128000
-        sendBufferSize: 128000
+        receiveBufferSize: 1M
+        sendBufferSize: 1M
         timeout: 60000
 
         readDelayOnFragmentation: 100
@@ -36,42 +36,79 @@ NetworkConnectionManager:
         serverWriteBufferSize: 1M
         selectorThreadCount  : 5
 
-        # ---------------------------------------------------------------------------------------------------------
-        # SSL Configuration
-        # ---------------------------------------------------------------------------------------------------------
-        ssl_keyStoreFile: my-keystore.jks
-        ssl_keyStorePassphrase: password
-        ssl_trustStoreFile: my-keystore.jks
-        ssl_trustStorePassphrase: password
-        ssl_keyManagerFactory: SunX509
-        ssl_trustManagerFactory: SunX509
-        ssl_SSLContext: TLS
-        ssl_keyStore: JKS
-        ssl_trustStore: JKS
-
+        security:
+          tls:
+            context: TLSv1.3
+            clientCertificateRequired: false
+            clientCertificateWanted: false
+            keyStore:
+              type: JKS
+              managerFactory: SunX509
+              path: D:\certs\certs\loragateway01\loragateway01.jks
+              passphrase: changeit
+            trustStore:
+              type: JKS
+              path: D:\certs\ca\truststore.jks
+              passphrase: changeit
+              managerFactory: SunX509
     data:
-        - # ---------------------------------------------------------------------------------------------------------
-            #  Interface definitions for local loragateway
-            # ---------------------------------------------------------------------------------------------------------
-
-#        name: Generic name for the connection
-#        url: tcp|ssl|ws|wss://<hostname>:<port>/ This is optional, if left out it is assumed a local connection
-#        protocol: mqtt(4|5)|stomp|amqp           Only required it URL is supplied
-#        username: username to use
-#        password: password to use
-#        sessionId: Unique session identifier to use
-#
-#        The remote key is optional, and if present then username, password and sessionId are expected
-#        This enables remote connections to use different auth than local.
-#        If not present will use the standard supplied values
-#        remote:
-#              username: remote username to be used
-#              password: remote password
-#              sessionId: remote session if
-#
-#
-#       links:
-#          -
-#            direction: pull|push
-#            remote_namespace: Destination name on the remote server
-#            local_namespace: Destination name on the local server
+      -
+        name: zeropi01
+        url: tcp://zeropi01:1883/
+        protocol: mqtt
+        transformation: "Message-Raw"
+        remote:
+          sessionId: pc01
+          username: matthew
+          password: doesntmatter
+        links:
+          -
+            direction: pull
+            local_namespace: /zeropi01/
+            remote_namespace: "/device/#"
+            include_schema: true
+      -
+        name: zeropi02
+        url: tcp://zeropi02:1883/
+        protocol: mqtt
+        transformation: "Message-Raw"
+        remote:
+          sessionId: pc02
+          username: matthew
+          password: doesntmatter
+        links:
+          -
+            direction: pull
+            local_namespace: /zeropi02/
+            remote_namespace: "/device/#"
+            include_schema: true
+      -
+        name: zeropi03
+        url: tcp://10.140.12.15:1883/
+        protocol: mqtt
+        transformation: "Message-Raw"
+        remote:
+          sessionId: pc03
+          username: matthew
+          password: doesntmatter
+        links:
+          -
+            direction: pull
+            local_namespace: /zeropi03/
+            remote_namespace: "/device/#"
+            include_schema: true
+      -
+        name: devpi02
+        url: ssl://10.140.62.243:1883/
+        protocol: mqtt
+        transformation: "Message-Raw"
+        remote:
+          sessionId: pc04
+          username: matthew
+          password: doesntmatter
+        links:
+          -
+            direction: pull
+            local_namespace: /devpi02/
+            remote_namespace: "/device/#"
+            include_schema: true

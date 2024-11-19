@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,35 +18,50 @@
 
 package io.mapsmessaging.config.device;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.I2CDeviceConfigDTO;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
 @NoArgsConstructor
-@ToString
-public class I2CDeviceConfig extends DeviceConfig {
-
-  private int address;
-  private String name;
-  private String selector;
+public class I2CDeviceConfig extends I2CDeviceConfigDTO implements Config {
 
   public I2CDeviceConfig(ConfigurationProperties props) {
     String addrString = props.getProperty("address", "0");
-    address = Integer.parseInt(addrString, addrString.contains("x")?16:10);
-    name = props.getProperty("name");
-    selector = props.getProperty("selector", "");
+    setAddress(Integer.parseInt(addrString, addrString.contains("x") ? 16 : 10));
+    setName(props.getProperty("name"));
+    setSelector(props.getProperty("selector", ""));
+  }
+
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof I2CDeviceConfigDTO)) {
+      return false;
+    }
+    I2CDeviceConfigDTO newConfig = (I2CDeviceConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.getAddress() != newConfig.getAddress()) {
+      setAddress(newConfig.getAddress());
+      hasChanged = true;
+    }
+    if (this.getName() == null || !this.getName().equals(newConfig.getName())) {
+      setName(newConfig.getName());
+      hasChanged = true;
+    }
+    if (this.getSelector() == null || !this.getSelector().equals(newConfig.getSelector())) {
+      setSelector(newConfig.getSelector());
+      hasChanged = true;
+    }
+    return hasChanged;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties props = new ConfigurationProperties();
-    props.put("address", address);
-    props.put("name", name);
-    if(!selector.isEmpty())props.put("selector", selector);
+    props.put("address", getAddress());
+    props.put("name", getName());
+    if (getSelector() != null && !getSelector().isEmpty()) props.put("selector", getSelector());
     return props;
   }
 }

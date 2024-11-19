@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,28 +19,48 @@
 package io.mapsmessaging.config.device.triggers;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.PeriodicTriggerConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class PeriodicTriggerConfig extends TriggerConfig {
-  private int interval;
-
+public class PeriodicTriggerConfig extends PeriodicTriggerConfigDTO implements TriggerConfig {
 
   public PeriodicTriggerConfig(ConfigurationProperties config) {
-    super(config);
+    this.type = "interval";
     this.interval = config.getIntProperty("interval", 0);
+    this.name = config.getProperty("name", "");
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("interval", interval);
+    ConfigurationProperties config = new ConfigurationProperties();
+    config.put("type", this.type);
+    config.put("name", this.name);
+    config.put("interval", this.interval);
     return config;
+  }
+
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof PeriodicTriggerConfigDTO)) {
+      return false;
+    }
+
+    PeriodicTriggerConfigDTO newConfig = (PeriodicTriggerConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.interval != newConfig.getInterval()) {
+      this.interval = newConfig.getInterval();
+      hasChanged = true;
+    }
+    if (this.type == null || !this.type.equals(newConfig.getType())) {
+      this.type = newConfig.getType();
+      hasChanged = true;
+    }
+    if (this.name == null || !this.name.equals(newConfig.getName())) {
+      this.name = newConfig.getName();
+      hasChanged = true;
+    }
+
+    return hasChanged;
   }
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,23 +26,21 @@ import lombok.Data;
 @AllArgsConstructor
 @Schema(
     title = "New User",
-    description = "Represents a new user account with a username and password."
-)
+    description = "Represents a new user account with a username and password.")
 public class NewUserDTO {
 
   @Schema(
       title = "Username",
       description = "The unique username for the new user account.",
       example = "myNewUserName",
-      nullable = false
-  )
+      nullable = false)
   private final String username;
 
   @Schema(
       title = "Password",
-      description = "The password or passphrase for the new user, intended to provide secure access.",
+      description =
+          "The password or passphrase for the new user, intended to provide secure access.",
       example = "My Very Unique Password",
-      nullable = false
-  )
+      nullable = false)
   private final String password;
 }

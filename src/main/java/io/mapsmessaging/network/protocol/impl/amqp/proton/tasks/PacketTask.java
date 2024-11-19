@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,11 +21,10 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.tasks;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import org.apache.qpid.proton.engine.Transport;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
+import org.apache.qpid.proton.engine.Transport;
 
 public abstract class PacketTask implements Callable<Boolean> {
   protected final AMQPProtocol protocol;

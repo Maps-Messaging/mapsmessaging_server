@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,13 +18,13 @@
 
 package io.mapsmessaging.engine.destination.tasks;
 
+import static io.mapsmessaging.engine.destination.DestinationImpl.TASK_QUEUE_PRIORITY_SIZE;
+
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationUpdateManager;
 import io.mapsmessaging.engine.tasks.BooleanResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
-
-import static io.mapsmessaging.engine.destination.DestinationImpl.TASK_QUEUE_PRIORITY_SIZE;
 
 public class ShutdownPhase1Task extends StoreMessageTask {
 

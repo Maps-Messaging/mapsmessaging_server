@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     title = "Message",
-    description = "Represents a messaging entity with configurable quality, priority, and metadata attributes."
-)
+    description =
+        "Represents a messaging entity with configurable quality, priority, and metadata attributes.")
 public class MessageDTO {
 
   @NotNull
@@ -41,51 +41,48 @@ public class MessageDTO {
       title = "Payload",
       description = "The main payload content of the message, represented as a byte array.",
       example = "[72, 101, 108, 108, 111]" // Example of a "Hello" payload in ASCII bytes
-  )
+      )
   private byte[] payload;
 
   @Schema(
       title = "Content Type",
       description = "The MIME type of the message payload, indicating its format.",
-      example = "application/json"
-  )
+      example = "application/json")
   private String contentType;
 
   @Schema(
       title = "Correlation Data",
       description = "Additional data used for correlating messages, provided as a byte array.",
-      example = "[1, 2, 3, 4]"
-  )
+      example = "[1, 2, 3, 4]")
   private byte[] correlationData;
 
   @Schema(
       title = "Message Parameters",
       description = "A map containing optional key-value pairs associated with the message.",
-      example = "{\"key1\": \"value1\", \"key2\": 42}"
-  )
+      example = "{\"key1\": \"value1\", \"key2\": 42}")
   private Map<String, Object> dataMap;
 
   @Schema(
       title = "Expiry Time",
-      description = "The expiry time for the message in milliseconds. Default is -1, indicating no expiry.",
+      description =
+          "The expiry time for the message in milliseconds. Default is -1, indicating no expiry.",
       example = "60000",
-      defaultValue = "-1"
-  )
+      defaultValue = "-1")
   private long expiry = -1;
 
   @Schema(
       title = "Priority",
-      description = "The priority level of the message, ranging from 0 (lowest) to 10 (highest). Default is 4 (normal).",
+      description =
+          "The priority level of the message, ranging from 0 (lowest) to 10 (highest). Default is 4 (normal).",
       example = "4",
-      defaultValue = "4"
-  )
+      defaultValue = "4")
   private int priority = Priority.NORMAL.getValue();
 
   @Schema(
       title = "Quality of Service",
-      description = "The Quality of Service level for the message: 0 (at most once), 1 (at least once), or 2 (exactly once).",
+      description =
+          "The Quality of Service level for the message: 0 (at most once), 1 (at least once), or 2 (exactly once).",
       example = "1",
-      defaultValue = "0"
-  )
+      defaultValue = "0")
   private int qualityOfService = QualityOfService.AT_MOST_ONCE.getLevel();
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,10 +20,10 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
-import io.mapsmessaging.config.destination.ArchiveConfig;
-import io.mapsmessaging.config.destination.CacheConfig;
-import io.mapsmessaging.config.destination.DestinationConfig;
-import io.mapsmessaging.config.destination.S3ArchiveConfig;
+import io.mapsmessaging.dto.rest.config.destination.ArchiveConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.CacheConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.S3ArchiveConfigDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.storage.AsyncStorage;
 import io.mapsmessaging.storage.Statistics;
@@ -64,7 +65,7 @@ public class ResourceImpl implements Resource {
   }
 
   @SneakyThrows
-  public ResourceImpl(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationConfig destinationConfig, @NotNull String fileName,
+  public ResourceImpl(@Nullable MessageExpiryHandler messageExpiryHandler, @Nullable DestinationConfigDTO destinationConfig, @NotNull String fileName,
                       @Nullable ResourceProperties resourceProperties) throws IOException {
     keyGen = new AtomicLong(0);
     loaded = false;
@@ -89,16 +90,16 @@ public class ResourceImpl implements Resource {
         type = "Partition";
       }
       if (destinationConfig.getCache() != null) {
-        CacheConfig cacheConfig = destinationConfig.getCache();
+        CacheConfigDTO cacheConfig = destinationConfig.getCache();
         builder.setCache(cacheConfig.getType());
         builder.enableCacheWriteThrough(cacheConfig.isWriteThrough());
       }
       if(destinationConfig.getArchive() != null){
-        ArchiveConfig archiveConfig = destinationConfig.getArchive();
+        ArchiveConfigDTO archiveConfig = destinationConfig.getArchive();
         properties.put("archiveName", archiveConfig.getName() );
         properties.put("archiveIdleTime", ""+archiveConfig.getIdleTime());
         properties.put("digestName", archiveConfig.getDigestAlgorithm());
-        S3ArchiveConfig s3ArchiveConfig = archiveConfig.getS3();
+        S3ArchiveConfigDTO s3ArchiveConfig = archiveConfig.getS3();
         if(s3ArchiveConfig != null){
           properties.put("S3AccessKeyId", s3ArchiveConfig.getAccessKeyId());
           properties.put("S3SecretAccessKey", s3ArchiveConfig.getSecretAccessKey());

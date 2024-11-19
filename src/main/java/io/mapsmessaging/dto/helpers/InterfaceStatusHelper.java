@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class InterfaceStatusHelper {
-
 
   public static InterfaceStatusDTO fromServer(EndPointServer server) {
     InterfaceStatusDTO dto = new InterfaceStatusDTO();
@@ -76,7 +75,8 @@ public class InterfaceStatusHelper {
     return dto;
   }
 
-  private static void addToMap(Map<String, LinkedMovingAverageRecordDTO> stats, LinkedMovingAverageRecordDTO average) {
+  private static void addToMap(
+      Map<String, LinkedMovingAverageRecordDTO> stats, LinkedMovingAverageRecordDTO average) {
     if (average != null) {
       stats.put(average.getName(), average);
     }

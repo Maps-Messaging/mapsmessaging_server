@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,27 +18,27 @@
 
 package io.mapsmessaging.config.protocol.impl;
 
-import io.mapsmessaging.config.protocol.ProtocolConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.NmeaConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class NmeaConfig extends ProtocolConfig {
+public class NmeaConfig extends NmeaConfigDTO implements Config {
 
   public NmeaConfig(ConfigurationProperties config) {
-    super(config);
     setType("nmea");
+    ProtocolConfigFactory.unpack(config, this);
   }
 
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    return config instanceof NmeaConfigDTO && ProtocolConfigFactory.update(this, (NmeaConfigDTO) config);
+  }
+
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    return super.toConfigurationProperties();
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
+    return properties;
   }
-
-
 }

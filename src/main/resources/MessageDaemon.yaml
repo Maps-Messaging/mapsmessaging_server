@@ -80,20 +80,20 @@ MessageDaemon:
     # if enabled then 1, 5, 10 and 15 minute moving averages are calculated and $SYS topics constructed and populated
     #
     # Default: true
-    EnableSystemTopicAverages: false
+    EnableSystemTopicAverages: true
 
     #
     # Enable or Disable the construction of JMX Beans for server management / monitoring
     #
     # Default: true
-    EnableJMX: true
+    EnableJMX: false
 
 
     #
     # Enable or Disable the addition of statistics to the JMX beans
     #
     # Default: true
-    EnableJMXStatistics: true
+    EnableJMXStatistics: false
 
     #
     # Add entries to the meta data in the messages with time (ms), lar and long if available and server name

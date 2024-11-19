@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,37 +19,12 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Message Daemon Configuration")
-public class MessageDaemonConfig extends ManagementConfig {
+public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Config {
 
-  private int delayedPublishInterval;
-  private int sessionPipeLines;
-  private long transactionExpiry;
-  private long transactionScan;
-  private String compressionName;
-  private int compressMessageMinSize;
-  private boolean enableResourceStatistics;
-  private boolean enableSystemTopics;
-  private boolean enableSystemStatusTopics;
-  private boolean enableSystemTopicAverages;
-  private boolean enableJMX;
-  private boolean enableJMXStatistics;
-  private boolean tagMetaData;
-  private double latitude;
-  private double longitude;
-
-  // Constructor to load properties from ConfigurationProperties
   private MessageDaemonConfig(ConfigurationProperties config) {
     this.delayedPublishInterval = config.getIntProperty("DelayedPublishInterval", 1000);
     this.sessionPipeLines = config.getIntProperty("SessionPipeLines", 48);
@@ -72,9 +48,13 @@ public class MessageDaemonConfig extends ManagementConfig {
         ConfigurationManager.getInstance().getProperties("MessageDaemon"));
   }
 
-  // Method to update properties from another MessageDaemonConfig object
-  public boolean update(ManagementConfig config) {
-    MessageDaemonConfig newConfig = (MessageDaemonConfig) config;
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof MessageDaemonConfigDTO)) {
+      return false;
+    }
+
+    MessageDaemonConfigDTO newConfig = (MessageDaemonConfigDTO) config;
     boolean hasChanged = false;
 
     if (this.delayedPublishInterval != newConfig.getDelayedPublishInterval()) {
@@ -141,7 +121,7 @@ public class MessageDaemonConfig extends ManagementConfig {
     return hasChanged;
   }
 
-  // Method to push current values into a ConfigurationProperties object
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("DelayedPublishInterval", this.delayedPublishInterval);

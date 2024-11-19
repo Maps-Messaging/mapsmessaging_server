@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.network.io.impl.lora;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
@@ -41,7 +42,7 @@ public class LoRaEndPointServer extends EndPointServer {
   private final ProtocolFactory protocolFactory;
   private final int gatewayId;
 
-  public LoRaEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfig config, EndPointManagerJMX managerMBean) {
+  public LoRaEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfigDTO config, EndPointManagerJMX managerMBean) {
     super(accept, url, config);
     protocolFactory = new ProtocolFactory(config.getProtocols());
     gatewayId = url.getPort();

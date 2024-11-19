@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +21,8 @@ package io.mapsmessaging.hardware.device.handler;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.config.device.DeviceBusConfig;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.dto.rest.config.device.DeviceBusConfigDTO;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.hardware.device.DeviceClientConnection;
 import io.mapsmessaging.hardware.device.DeviceSessionManagement;
@@ -38,14 +39,14 @@ import lombok.SneakyThrows;
 public abstract class BusHandler implements Runnable {
   private final Map<String, DeviceSessionManagement> activeSessions;
   private final Map<String, DeviceHandler> foundDevices;
-  protected final DeviceBusConfig properties;
+  protected final DeviceBusConfigDTO properties;
   private final int scanPeriod;
   private Future<?> scheduledFuture;
   private final Trigger trigger;
   private final String topicNameTemplate;
 
 
-  protected BusHandler(DeviceBusConfig properties, Trigger trigger){
+  protected BusHandler(DeviceBusConfigDTO properties, Trigger trigger){
     foundDevices = new ConcurrentHashMap<>();
     activeSessions = new ConcurrentHashMap<>();
     this.properties = properties;
@@ -92,9 +93,9 @@ public abstract class BusHandler implements Runnable {
 
   private DeviceSessionManagement createSession(DeviceHandler deviceHandler) {
     String filterName  = properties.getFilter();
-    DataFilter filter = DataFilter.valueOf(filterName);
-    if(filter == null){
-      filter = DataFilter.ON_CHANGE;
+    DataFilter filter = DataFilter.ON_CHANGE;
+    if(filterName != null){
+      filter = DataFilter.valueOf(filterName);
     }
     String selector = getSelector(deviceHandler.getDeviceAddress());
     DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, topicNameTemplate, filter, this, selector);

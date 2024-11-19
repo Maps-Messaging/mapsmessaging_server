@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -141,16 +142,16 @@ public class SSLEndPoint extends TCPEndPoint {
         response = encryptedIn.limit();
       }
       logger.log(ServerLogMessages.SSL_READ_ENCRYPTED, response, encryptedIn.position(), encryptedIn.limit());
-      int pos = 0;
-      while (encryptedIn.hasRemaining() && applicationIn.remaining() != 0 && pos != encryptedIn.position()) {
-        pos = encryptedIn.position();
+      do {
         SSLEngineResult result = sslEngine.unwrap(encryptedIn, applicationIn);
         handleSSLEngineResult(result);
-        if(result.getStatus() == Status.BUFFER_UNDERFLOW){
+
+        if (result.getStatus() == Status.BUFFER_UNDERFLOW) {
           encryptedIn.compact();
           return response;
         }
-      }
+      } while (encryptedIn.hasRemaining() && applicationIn.remaining() != 0);
+
       if (encryptedIn.position() == encryptedIn.limit()) {
         encryptedIn.clear();
       } else {

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,8 @@
 
 package io.mapsmessaging.hardware.trigger;
 
-import io.mapsmessaging.config.device.triggers.CronTriggerConfig;
-import io.mapsmessaging.config.device.triggers.TriggerConfig;
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.CronTriggerConfigDTO;
 import java.io.IOException;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
@@ -51,8 +52,8 @@ public class CronTrigger extends Trigger {
   }
 
   @Override
-  public Trigger build(TriggerConfig properties) throws IOException {
-    return new CronTrigger(((CronTriggerConfig)properties).getCron());
+  public Trigger build(BaseTriggerConfigDTO properties) throws IOException {
+    return new CronTrigger(((CronTriggerConfigDTO)properties).getCron());
   }
 
   @Override

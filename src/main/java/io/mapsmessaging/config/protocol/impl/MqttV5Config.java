@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,46 +18,52 @@
 
 package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttV5ConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class MqttV5Config extends MqttConfig {
-
-  private int minServerKeepAlive;
-  private int maxServerKeepAlive;
+public class MqttV5Config extends MqttV5ConfigDTO implements Config {
 
   public MqttV5Config(ConfigurationProperties config) {
-    super(config);
-    this.minServerKeepAlive = config.getIntProperty("minServerKeepAlive", 0);
-    this.maxServerKeepAlive = config.getIntProperty("maxServerKeepAlive", 60);
-    setType("mqtt-v5");
+    setType("mqtt");
+    ProtocolConfigFactory.unpack(config, this);
+
+    // Initialize MQTT V5-specific fields from config
+    this.minServerKeepAlive = config.getIntProperty("minServerKeepAlive", minServerKeepAlive);
+    this.maxServerKeepAlive = config.getIntProperty("maxServerKeepAlive", maxServerKeepAlive);
   }
 
-  public boolean update(MqttV5Config newConfig) {
-    boolean hasChanged = super.update(newConfig);
-    if (minServerKeepAlive != newConfig.minServerKeepAlive) {
-      minServerKeepAlive = newConfig.minServerKeepAlive;
-      hasChanged = true;
-    }
-    if (maxServerKeepAlive != newConfig.maxServerKeepAlive) {
-      maxServerKeepAlive = newConfig.maxServerKeepAlive;
-      hasChanged = true;
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof MqttV5ConfigDTO) {
+      MqttV5ConfigDTO newConfig = (MqttV5ConfigDTO) config;
+
+      // Check each field and update if necessary
+      if (this.minServerKeepAlive != newConfig.getMinServerKeepAlive()) {
+        this.minServerKeepAlive = newConfig.getMinServerKeepAlive();
+        hasChanged = true;
+      }
+      if (this.maxServerKeepAlive != newConfig.getMaxServerKeepAlive()) {
+        this.maxServerKeepAlive = newConfig.getMaxServerKeepAlive();
+        hasChanged = true;
+      }
+
+      // Update fields from ProtocolConfigFactory if needed
+      if (ProtocolConfigFactory.update(this, newConfig)) {
+        hasChanged = true;
+      }
     }
     return hasChanged;
   }
 
-
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("minServerKeepAlive", minServerKeepAlive);
-    config.put("maxServerKeepAlive", maxServerKeepAlive);
-    return config;
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
+    properties.put("minServerKeepAlive", this.minServerKeepAlive);
+    properties.put("maxServerKeepAlive", this.maxServerKeepAlive);
+    return properties;
   }
 }

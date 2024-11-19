@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,16 +19,15 @@
 package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.test.BaseTestConfig;
-import net.ser1.stomp.Client;
-import org.junit.jupiter.params.provider.Arguments;
-import org.projectodd.stilts.stomp.Headers;
-
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import javax.security.auth.login.LoginException;
+import net.ser1.stomp.Client;
+import org.junit.jupiter.params.provider.Arguments;
+import org.projectodd.stilts.stomp.Headers;
 
 public class StompBaseTest extends BaseTestConfig {
 

@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,62 +29,56 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(
     title = "LoRa Device Information",
-    description = "Provides detailed information about a LoRa device, including sent and received data statistics and endpoint details."
-)
+    description =
+        "Provides detailed information about a LoRa device, including sent and received data statistics and endpoint details.")
 public class LoRaDeviceInfoDTO {
 
   @Schema(
       title = "Device Name",
       description = "The name of the LoRa device.",
       example = "LoRaDevice_01",
-      nullable = false
-  )
+      nullable = false)
   private String name;
 
   @Schema(
       title = "Radio Type",
       description = "Type of radio module used by the LoRa device.",
       example = "SX1276",
-      nullable = false
-  )
+      nullable = false)
   private String radio;
 
   @Schema(
       title = "Bytes Sent",
       description = "Total number of bytes sent by the LoRa device.",
       example = "1048576",
-      minimum = "0"
-  )
+      minimum = "0")
   private long bytesSent;
 
   @Schema(
       title = "Bytes Received",
       description = "Total number of bytes received by the LoRa device.",
       example = "2048000",
-      minimum = "0"
-  )
+      minimum = "0")
   private long bytesReceived;
 
   @Schema(
       title = "Packets Sent",
       description = "Total number of packets sent by the LoRa device.",
       example = "500",
-      minimum = "0"
-  )
+      minimum = "0")
   private long packetsSent;
 
   @Schema(
       title = "Packets Received",
       description = "Total number of packets received by the LoRa device.",
       example = "480",
-      minimum = "0"
-  )
+      minimum = "0")
   private long packetsReceived;
 
   @Schema(
       title = "Endpoint Information List",
-      description = "A list of endpoint information for the device, detailing each endpoint’s status and metrics.",
-      nullable = true
-  )
+      description =
+          "A list of endpoint information for the device, detailing each endpoint’s status and metrics.",
+      nullable = true)
   private List<LoRaEndPointInfoDTO> endPointInfoList;
 }

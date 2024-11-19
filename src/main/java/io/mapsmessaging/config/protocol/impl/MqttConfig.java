@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,84 +18,38 @@
 
 package io.mapsmessaging.config.protocol.impl;
 
-import io.mapsmessaging.config.protocol.ProtocolConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class MqttConfig extends ProtocolConfig {
-
-  private long maximumSessionExpiry;
-  private long maximumBufferSize;
-  private int serverReceiveMaximum;
-  private int clientReceiveMaximum;
-  private int clientMaximumTopicAlias;
-  private int serverMaximumTopicAlias;
-  private boolean strictClientId;
+public class MqttConfig extends MqttConfigDTO implements Config {
 
   public MqttConfig(ConfigurationProperties config) {
-    super(config);
-    this.maximumSessionExpiry = config.getLongProperty("maximumSessionExpiry", 86400);
-    this.maximumBufferSize = parseBufferSize(config.getProperty("maximumBufferSize", "10M"));
-    this.serverReceiveMaximum = config.getIntProperty("serverReceiveMaximum", 10);
-    this.clientReceiveMaximum = config.getIntProperty("clientReceiveMaximum", 65535);
-    this.clientMaximumTopicAlias = config.getIntProperty("clientMaximumTopicAlias", 32767);
-    this.serverMaximumTopicAlias = config.getIntProperty("serverMaximumTopicAlias", 0);
-    this.strictClientId = config.getBooleanProperty("strictClientId", false);
-    setType("mqtt");
+    setType("mqtt-v3");
+    ProtocolConfigFactory.unpack(config, this);
   }
 
-  public boolean update(MqttConfig newConfig) {
-    boolean hasChanged = super.update(newConfig);
 
-    if (this.maximumSessionExpiry != newConfig.getMaximumSessionExpiry()) {
-      this.maximumSessionExpiry = newConfig.getMaximumSessionExpiry();
-      hasChanged = true;
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof MqttConfigDTO) {
+      MqttConfigDTO newConfig = (MqttConfigDTO) config;
+      if (ProtocolConfigFactory.update(this, newConfig)) {
+        hasChanged = true;
+      }
     }
-    if (this.maximumBufferSize != newConfig.getMaximumBufferSize()) {
-      this.maximumBufferSize = newConfig.getMaximumBufferSize();
-      hasChanged = true;
-    }
-    if (this.serverReceiveMaximum != newConfig.getServerReceiveMaximum()) {
-      this.serverReceiveMaximum = newConfig.getServerReceiveMaximum();
-      hasChanged = true;
-    }
-    if (this.clientReceiveMaximum != newConfig.getClientReceiveMaximum()) {
-      this.clientReceiveMaximum = newConfig.getClientReceiveMaximum();
-      hasChanged = true;
-    }
-    if (this.clientMaximumTopicAlias != newConfig.getClientMaximumTopicAlias()) {
-      this.clientMaximumTopicAlias = newConfig.getClientMaximumTopicAlias();
-      hasChanged = true;
-    }
-    if (this.serverMaximumTopicAlias != newConfig.getServerMaximumTopicAlias()) {
-      this.serverMaximumTopicAlias = newConfig.getServerMaximumTopicAlias();
-      hasChanged = true;
-    }
-    if (this.strictClientId != newConfig.isStrictClientId()) {
-      this.strictClientId = newConfig.isStrictClientId();
-      hasChanged = true;
-    }
-
     return hasChanged;
   }
 
+
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("maximumSessionExpiry", this.maximumSessionExpiry);
-    config.put("maximumBufferSize", formatBufferSize(this.maximumBufferSize));
-    config.put("serverReceiveMaximum", this.serverReceiveMaximum);
-    config.put("clientReceiveMaximum", this.clientReceiveMaximum);
-    config.put("clientMaximumTopicAlias", this.clientMaximumTopicAlias);
-    config.put("serverMaximumTopicAlias", this.serverMaximumTopicAlias);
-    config.put("strictClientId", this.strictClientId);
+    ConfigurationProperties config = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(config, this);
     return config;
   }
+
+  public MqttConfig(){}
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,12 +21,12 @@ package io.mapsmessaging.hardware;
 import static io.mapsmessaging.logging.ServerLogMessages.DEVICE_MANAGER_FAILED_TO_REGISTER;
 
 import io.mapsmessaging.config.DeviceManagerConfig;
-import io.mapsmessaging.config.device.I2CBusConfig;
-import io.mapsmessaging.config.device.OneWireBusConfig;
-import io.mapsmessaging.config.device.triggers.TriggerConfig;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
+import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
@@ -114,16 +115,16 @@ public class DeviceManager implements ServiceManager, Agent {
       logger.log(ServerLogMessages.DEVICE_MANAGER_LOAD_PROPERTIES);
       loadI2CConfig(manager, deviceManagerConfig.getI2cBuses());
       if(deviceManagerConfig.getOneWireBus() != null){
-        OneWireBusConfig oneWireBusConfig = deviceManagerConfig.getOneWireBus();
+        OneWireBusConfigDTO oneWireBusConfig = deviceManagerConfig.getOneWireBus();
         Trigger trigger = locateNamedTrigger(oneWireBusConfig.getTrigger());
         busHandlers.add(new OneWireBusHandler(manager.getOneWireBusManager(), oneWireBusConfig, trigger));
       }
     }
   }
 
-  private void loadTriggers(List<TriggerConfig> triggerConfigList){
+  private void loadTriggers(List<BaseTriggerConfigDTO> triggerConfigList){
     if(triggerConfigList == null) return;
-    for(TriggerConfig triggerConfig:triggerConfigList){
+    for(BaseTriggerConfigDTO triggerConfig:triggerConfigList){
       String type = triggerConfig.getType();
       for(Trigger trigger:triggers){
         if(trigger.getName().equalsIgnoreCase(type)){
@@ -142,13 +143,13 @@ public class DeviceManager implements ServiceManager, Agent {
     }
   }
 
-  private void loadI2CConfig(DeviceBusManager manager, List<I2CBusConfig> deviceBusConfigs) {
-    for(I2CBusConfig i2CDeviceConfig:deviceBusConfigs){
+  private void loadI2CConfig(DeviceBusManager manager, List<I2CBusConfigDTO> deviceBusConfigs) {
+    for(I2CBusConfigDTO i2CDeviceConfig:deviceBusConfigs){
       configureI2CConfig(manager,i2CDeviceConfig);
     }
   }
 
-  private void configureI2CConfig(DeviceBusManager manager, I2CBusConfig busConfig) {
+  private void configureI2CConfig(DeviceBusManager manager, I2CBusConfigDTO busConfig) {
     for (int x = 0; x < manager.getI2cBusManager().length; x++) {
       if (busConfig.getBus() == x && busConfig.isEnabled()) {
         I2CBusManager busManager = manager.getI2cBusManager()[x];

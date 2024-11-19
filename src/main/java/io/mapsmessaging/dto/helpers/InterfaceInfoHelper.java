@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
  */
 
 package io.mapsmessaging.dto.helpers;
+
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 
@@ -26,9 +27,10 @@ public class InterfaceInfoHelper {
 
     dto.setName(endPointManager.getEndPointServer().getConfig().getName());
     dto.setPort(endPointManager.getEndPointServer().getUrl().getPort());
-    dto.setHost(endPointManager.getEndPointServer().getUrl().getProtocol() +
-        "://" +
-        endPointManager.getEndPointServer().getUrl().getHost());
+    dto.setHost(
+        endPointManager.getEndPointServer().getUrl().getProtocol()
+            + "://"
+            + endPointManager.getEndPointServer().getUrl().getHost());
     dto.setConfig(endPointManager.getEndPointServer().getConfig());
 
     // Set state based on the EndPointManager's state

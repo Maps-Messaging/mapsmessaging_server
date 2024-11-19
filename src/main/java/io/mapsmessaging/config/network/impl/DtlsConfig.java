@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,11 @@
 
 package io.mapsmessaging.config.network.impl;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.SslConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.DtlsConfigDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -28,20 +32,33 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @ToString
-public class DtlsConfig extends UdpConfig {
-
-  private SslConfig sslConfig;
+public class DtlsConfig extends DtlsConfigDTO implements Config {
 
   public DtlsConfig(ConfigurationProperties config) {
-    super(config);
     setType("dtls");
-    sslConfig.setContext("dtls");
+    NetworkConfigFactory.unpack(config, this);
     sslConfig = new SslConfig(config);
+    if(!sslConfig.getContext().toLowerCase().startsWith("dtls")){
+      sslConfig.setContext("DTLSv1.2");
+    }
+  }
+
+  public boolean update(BaseConfigDTO update) {
+    boolean hasChanged = false;
+    if (update instanceof DtlsConfigDTO) {
+      hasChanged = NetworkConfigFactory.update(this, (DtlsConfigDTO) update);
+      if(((SslConfig)sslConfig).update(update)){
+        hasChanged = true;
+      }
+    }
+    return hasChanged;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.putAll(sslConfig.toConfigurationProperties().getMap());
+    ConfigurationProperties config = new ConfigurationProperties();
+    NetworkConfigFactory.pack(config, this);
+    ConfigurationProperties security = new ConfigurationProperties();
+    security.put("dtls", ((SslConfig)sslConfig).toConfigurationProperties());
+    config.put("security", security);
     return config;
-  }
-}
+  }}

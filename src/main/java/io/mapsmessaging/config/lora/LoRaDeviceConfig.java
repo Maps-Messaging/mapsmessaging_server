@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,39 +20,44 @@ package io.mapsmessaging.config.lora;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class LoRaDeviceConfig extends Config {
-
-  private String name;
-  private String radio;
-
-  private int cs;
-  private int irq;
-  private int rst;
-  private int power;
-  private int cadTimeout;
-  private float frequency;
+public class LoRaDeviceConfig extends LoRaDeviceConfigDTO implements Config {
 
   public LoRaDeviceConfig(ConfigurationProperties properties) {
-    name = properties.getProperty("name");
-    radio =properties.getProperty("radio");
-    cs = properties.getIntProperty("cs", -1);
-    irq = properties.getIntProperty("irq", -1);
-    rst =properties.getIntProperty("rst", -1);
-    power = properties.getIntProperty("power", 14);
-    cadTimeout = properties.getIntProperty("CADTimeout", 0);
-    frequency = properties.getFloatProperty("frequency", 0.0f);
+    super();
+    this.name = properties.getProperty("name");
+    this.radio = properties.getProperty("radio");
+    this.cs = properties.getIntProperty("cs", -1);
+    this.irq = properties.getIntProperty("irq", -1);
+    this.rst = properties.getIntProperty("rst", -1);
+    this.power = properties.getIntProperty("power", 14);
+    this.cadTimeout = properties.getIntProperty("CADTimeout", 0);
+    this.frequency = properties.getFloatProperty("frequency", 0.0f);
   }
 
-  public boolean update(LoRaDeviceConfig newConfig) {
+  @Override
+  public ConfigurationProperties toConfigurationProperties() {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("name", this.name);
+    properties.put("radio", this.radio);
+    properties.put("cs", this.cs);
+    properties.put("irq", this.irq);
+    properties.put("rst", this.rst);
+    properties.put("power", this.power);
+    properties.put("cadTimeout", this.cadTimeout);
+    properties.put("frequency", this.frequency);
+    return properties;
+  }
+
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof LoRaDeviceConfigDTO)) {
+      return false;
+    }
+
+    LoRaDeviceConfigDTO newConfig = (LoRaDeviceConfigDTO) config;
     boolean hasChanged = false;
 
     if (!this.name.equals(newConfig.getName())) {
@@ -87,21 +93,6 @@ public class LoRaDeviceConfig extends Config {
       hasChanged = true;
     }
 
-    // Call the super class update method
     return hasChanged;
-  }
-
-  @Override
-  public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("name", name);
-    properties.put("radio", radio);
-    properties.put("cs", cs);
-    properties.put("irq", irq);
-    properties.put("rst", rst);
-    properties.put("power", power);
-    properties.put("cadTimeout", cadTimeout);
-    properties.put("frequency", frequency);
-    return properties;
   }
 }

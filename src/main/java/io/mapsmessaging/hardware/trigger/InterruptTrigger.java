@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,12 +19,12 @@
 package io.mapsmessaging.hardware.trigger;
 
 import com.pi4j.io.gpio.digital.DigitalState;
-import io.mapsmessaging.config.device.triggers.InterruptTriggerConfig;
-import io.mapsmessaging.config.device.triggers.TriggerConfig;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.gpio.InterruptFactory;
 import io.mapsmessaging.devices.gpio.InterruptListener;
 import io.mapsmessaging.devices.gpio.InterruptPin;
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.InterruptTriggerConfigDTO;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,8 +42,8 @@ public class InterruptTrigger extends Trigger implements InterruptListener {
   }
 
   @Override
-  public Trigger build(TriggerConfig properties) throws IOException {
-    InterruptTriggerConfig triggerConfig = (InterruptTriggerConfig)properties;
+  public Trigger build(BaseTriggerConfigDTO properties) throws IOException {
+    InterruptTriggerConfigDTO triggerConfig = (InterruptTriggerConfigDTO)properties;
     InterruptFactory interruptFactory = DeviceBusManager.getInstance().getInterruptFactory();
     Map<String, String> factoryMap = new LinkedHashMap<>();
     factoryMap.put("id", triggerConfig.getId());

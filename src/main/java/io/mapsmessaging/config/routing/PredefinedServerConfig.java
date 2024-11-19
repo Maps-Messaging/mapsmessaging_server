@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,29 +18,44 @@
 
 package io.mapsmessaging.config.routing;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.routing.PredefinedServerConfigDTO;
 
-@Data
-@NoArgsConstructor
-@Schema(description = "Predefined Server Configuration")
-public class PredefinedServerConfig {
-
-  private String name;
-  private String url;
+public class PredefinedServerConfig extends PredefinedServerConfigDTO implements Config {
 
   public PredefinedServerConfig(ConfigurationProperties properties) {
-    name = properties.getProperty("name", "");
-    url = properties.getProperty("url", "");
+    super();
+    this.name = properties.getProperty("name", "");
+    this.url = properties.getProperty("url", "");
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("name", name);
-    properties.put("url", url);
+    properties.put("name", this.name);
+    properties.put("url", this.url);
     return properties;
   }
-}
 
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (!(config instanceof PredefinedServerConfigDTO)) {
+      return false;
+    }
+
+    PredefinedServerConfigDTO newConfig = (PredefinedServerConfigDTO) config;
+    if (this.name == null || !this.name.equals(newConfig.getName())) {
+      this.name = newConfig.getName();
+      hasChanged = true;
+    }
+    if (this.url == null || !this.url.equals(newConfig.getUrl())) {
+      this.url = newConfig.getUrl();
+      hasChanged = true;
+    }
+
+    return hasChanged;
+  }
+}

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,36 +18,61 @@
 
 package io.mapsmessaging.config.device.triggers;
 
-
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.InterruptTriggerConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class InterruptTriggerConfig extends TriggerConfig {
-  private int address;
-  private String pullDirection;
-  private String id;
+public class InterruptTriggerConfig extends InterruptTriggerConfigDTO implements TriggerConfig {
 
   public InterruptTriggerConfig(ConfigurationProperties config) {
-    super(config);
-    address = config.getIntProperty("address", 0);
-    pullDirection = config.getProperty("pull", "UP");
-    id = config.getProperty("id", "");
+    this.type = "interrupt";
+    this.address = config.getIntProperty("address", 0);
+    this.pullDirection = config.getProperty("pull", "UP");
+    this.id = config.getProperty("id", "");
+    this.name = config.getProperty("name", "");
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("address", address);
-    config.put("pull", pullDirection);
-    config.put("id", id);
+    ConfigurationProperties config = new ConfigurationProperties();
+    config.put("type", this.type);
+    config.put("name", this.name);
+    config.put("address", this.address);
+    config.put("pull", this.pullDirection);
+    config.put("id", this.id);
     return config;
   }
 
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof InterruptTriggerConfigDTO)) {
+      return false;
+    }
+
+    InterruptTriggerConfigDTO newConfig = (InterruptTriggerConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.address != newConfig.getAddress()) {
+      this.address = newConfig.getAddress();
+      hasChanged = true;
+    }
+    if (this.pullDirection == null || !this.pullDirection.equals(newConfig.getPullDirection())) {
+      this.pullDirection = newConfig.getPullDirection();
+      hasChanged = true;
+    }
+    if (this.id == null || !this.id.equals(newConfig.getId())) {
+      this.id = newConfig.getId();
+      hasChanged = true;
+    }
+    if (this.type == null || !this.type.equals(newConfig.getType())) {
+      this.type = newConfig.getType();
+      hasChanged = true;
+    }
+    if (this.name == null || !this.name.equals(newConfig.getName())) {
+      this.name = newConfig.getName();
+      hasChanged = true;
+    }
+
+    return hasChanged;
+  }
 }

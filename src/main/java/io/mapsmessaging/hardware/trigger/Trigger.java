@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.hardware.trigger;
 
-import io.mapsmessaging.config.device.triggers.TriggerConfig;
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import java.util.List;
@@ -45,7 +46,7 @@ public abstract class Trigger implements Service {
     }
   }
 
-  public abstract Trigger build(TriggerConfig properties)throws IOException;
+  public abstract Trigger build(BaseTriggerConfigDTO properties)throws IOException;
 
   public abstract void start();
 

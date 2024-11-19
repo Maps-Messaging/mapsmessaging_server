@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,13 +19,12 @@
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.test.BaseTestConfig;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.junit.jupiter.params.provider.Arguments;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.junit.jupiter.params.provider.Arguments;
 
 public class MQTTBaseTest extends BaseTestConfig {
   public static final String RESTRICTED_CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

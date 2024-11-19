@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +19,8 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -30,24 +33,20 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Auth Manager Configuration")
-public class AuthManagerConfig  extends ManagementConfig {
-
-  private boolean authenticationEnabled;
-  private boolean authorisationEnabled;
-  private ConfigurationProperties authConfig;
+public class AuthManagerConfig extends AuthManagerConfigDTO {
 
   private AuthManagerConfig(ConfigurationProperties properties) {
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", false);
     authorisationEnabled = properties.getBooleanProperty("authorizationEnabled", false) && authenticationEnabled;
-    authConfig = (ConfigurationProperties)properties.get("config");
+    authConfig = ConfigHelper.buildMap((ConfigurationProperties) properties.get("config"));
   }
 
   public static AuthManagerConfig getInstance() {
     return new AuthManagerConfig(ConfigurationManager.getInstance().getProperties("AuthManager"));
   }
 
-  public boolean update(ManagementConfig config) {
-    AuthManagerConfig newConfig = (AuthManagerConfig)config;
+  public boolean update(BaseConfigDTO config) {
+    AuthManagerConfig newConfig = (AuthManagerConfig) config;
     boolean hasChanged = false;
 
     if (this.authenticationEnabled != newConfig.isAuthenticationEnabled()) {
@@ -59,10 +58,11 @@ public class AuthManagerConfig  extends ManagementConfig {
       this.authorisationEnabled = newConfig.isAuthorisationEnabled();
       hasChanged = true;
     }
-    if(updateMap(authConfig.getMap(), newConfig.authConfig.getMap())){
+    /*
+    if (updateMap(authConfig.getMap(), newConfig.authConfig.getMap())) {
       hasChanged = true;
     }
-
+*/
     return hasChanged;
   }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,8 +20,8 @@ package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.config.protocol.LinkConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -39,8 +40,8 @@ public class Connected extends State {
   @Override
   public void execute() {
     boolean failed = false;
-    List<LinkConfig> linkConfigs = endPointConnection.getProperties().getLinkConfigs();
-    for (LinkConfig property : linkConfigs) {
+    List<LinkConfigDTO> linkConfigs = endPointConnection.getProperties().getLinkConfigs();
+    for (LinkConfigDTO property : linkConfigs) {
       String direction = property.getDirection();
       String local = property.getLocalNamespace();
       String remote = property.getRemoteNamespace();

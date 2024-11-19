@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.impl.TlsConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -43,15 +45,16 @@ public class SSLEndPointServer extends TCPEndPointServer {
       InetSocketAddress bindAddr,
       SelectorLoadManager sel,
       AcceptHandler accept,
-      EndPointServerConfig config,
+      EndPointServerConfigDTO config,
       EndPointURL url,
       EndPointManagerJMX managerMBean)
       throws IOException {
     super(bindAddr, sel, accept, config, url, managerMBean);
     logger.log(ServerLogMessages.SSL_SERVER_START);
     TlsConfig tls = (TlsConfig)config.getEndPointConfig();
+
     try {
-      sslContext = SslHelper.createContext("tls", tls.getSslConfig().toConfigurationProperties(), logger);
+      sslContext = SslHelper.createContext(tls.getSslConfig().getContext(), ((Config)tls.getSslConfig()).toConfigurationProperties(), logger);
     } finally {
       logger.log(ServerLogMessages.SSL_SERVER_COMPLETED);
     }
@@ -61,7 +64,7 @@ public class SSLEndPointServer extends TCPEndPointServer {
   public void selected(Selectable selectable, Selector sel, int selection) {
     try {
       TlsConfig tls = (TlsConfig)getConfig().getEndPointConfig();
-      SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, tls.getSslConfig().toConfigurationProperties());
+      SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, ((Config)tls.getSslConfig()).toConfigurationProperties());
       SSLEndPoint sslEndPoint =
           new SSLEndPoint(
               generateID(),

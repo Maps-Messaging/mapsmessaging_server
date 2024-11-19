@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,26 +18,38 @@
 
 package io.mapsmessaging.config.destination;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.FormatConfigDTO;
 
-@Data
-@NoArgsConstructor
-@Schema(description = "Format Configuration")
-public class FormatConfig {
-
-  private String name;
+public class FormatConfig extends FormatConfigDTO implements Config {
 
   public FormatConfig(ConfigurationProperties properties) {
-    name = properties.getProperty("name", "json");
+    this.name = properties.getProperty("name", "json");
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("name", name);
+    properties.put("name", this.name);
     return properties;
   }
-}
 
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof FormatConfigDTO)) {
+      return false;
+    }
+
+    FormatConfigDTO newConfig = (FormatConfigDTO) config;
+    boolean hasChanged = false;
+
+    // Check and update name
+    if (this.name == null || !this.name.equals(newConfig.getName())) {
+      this.name = newConfig.getName();
+      hasChanged = true;
+    }
+
+    return hasChanged;
+  }
+}

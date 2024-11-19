@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,34 +19,88 @@
 package io.mapsmessaging.config.device;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class OneWireBusConfig extends DeviceBusConfig {
-
-  private String name;
-  private boolean autoScan;
-  private String trigger;
+public class OneWireBusConfig extends OneWireBusConfigDTO implements DeviceBusConfig {
 
   public OneWireBusConfig(ConfigurationProperties properties) {
-    super(properties);
-    name = properties.getProperty("name");
-    autoScan = properties.getBooleanProperty("autoScan", false);
-    trigger = properties.getProperty("trigger");
+    setEnabled(properties.getBooleanProperty("enabled", false));
+    setTopicNameTemplate(
+        properties.getProperty(
+            "topicNameTemplate",
+            "/device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]"));
+    setScanTime(properties.getIntProperty("scanTime", 120000));
+    setFilter(properties.getProperty("filter", "ON_CHANGE"));
+    setSelector(properties.getProperty("selector", null));
+    this.name = properties.getProperty("name");
+    this.autoScan = properties.getBooleanProperty("autoScan", false);
+    this.trigger = properties.getProperty("trigger");
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties props = super.toConfigurationProperties();
-    props.put("name", name);
-    props.put("autoScan", autoScan);
-    props.put("trigger", trigger);
+    ConfigurationProperties props = new ConfigurationProperties();
+    props.put("name", this.name);
+    props.put("trigger", this.trigger);
+    props.put("enabled", isEnabled());
+    props.put("topicNameTemplate", getTopicNameTemplate());
+    props.put("autoScan", isAutoScan());
+    props.put("scanTime", getScanTime());
+    if (getFilter() != null) props.put("filter", getFilter());
+    if (getSelector() != null) props.put("selector", getSelector());
     return props;
+  }
+
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof OneWireBusConfig)) {
+      return false;
+    }
+
+    OneWireBusConfigDTO newConfig = (OneWireBusConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.name == null || !this.name.equals(newConfig.getName())) {
+      this.name = newConfig.getName();
+      hasChanged = true;
+    }
+    if (this.autoScan != newConfig.isAutoScan()) {
+      this.autoScan = newConfig.isAutoScan();
+      hasChanged = true;
+    }
+    if (this.trigger == null || !this.trigger.equals(newConfig.getTrigger())) {
+      this.trigger = newConfig.getTrigger();
+      hasChanged = true;
+    }
+    if (this.isEnabled() != newConfig.isEnabled()) {
+      setEnabled(newConfig.isEnabled());
+      hasChanged = true;
+    }
+    if (this.getTopicNameTemplate() == null
+        || !this.getTopicNameTemplate().equals(newConfig.getTopicNameTemplate())) {
+      setTopicNameTemplate(newConfig.getTopicNameTemplate());
+      hasChanged = true;
+    }
+    if (this.isAutoScan() != newConfig.isAutoScan()) {
+      setAutoScan(newConfig.isAutoScan());
+      hasChanged = true;
+    }
+    if (this.getScanTime() != newConfig.getScanTime()) {
+      setScanTime(newConfig.getScanTime());
+      hasChanged = true;
+    }
+    if (this.getFilter() == null || !this.getFilter().equals(newConfig.getFilter())) {
+      setFilter(newConfig.getFilter());
+      hasChanged = true;
+    }
+    if (this.getSelector() == null || !this.getSelector().equals(newConfig.getSelector())) {
+      setSelector(newConfig.getSelector());
+      hasChanged = true;
+    }
+    if (this.getTrigger() == null || !this.getTrigger().equals(newConfig.getTrigger())) {
+      setTrigger(newConfig.getTrigger());
+      hasChanged = true;
+    }
+    return hasChanged;
   }
 }

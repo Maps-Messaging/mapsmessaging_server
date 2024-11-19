@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,12 +19,11 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
 import io.mapsmessaging.test.BaseTestConfig;
+import java.io.File;
+import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.elements.config.Configuration;
 import org.junit.jupiter.api.BeforeAll;
-
-import java.io.File;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class BaseCoapTest extends BaseTestConfig {
 

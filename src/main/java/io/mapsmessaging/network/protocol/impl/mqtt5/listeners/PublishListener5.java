@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -131,7 +132,7 @@ public class PublishListener5 extends PacketListener5 {
     if (!publish.getDestinationName().startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
       TopicAliasMapping topicAliasMapping = ((MQTT5Protocol) protocol).getClientTopicAliasMapping();
       String destinationName = publish.getDestinationName();
-      if (destinationName == null || destinationName.isEmpty()) {
+      if (destinationName.isEmpty()) {
         for (MessageProperty property : publish.getProperties().values()) {
           if (property.getId() == MessagePropertyFactory.TOPIC_ALIAS) {
             TopicAlias topicAlias = (TopicAlias) property;

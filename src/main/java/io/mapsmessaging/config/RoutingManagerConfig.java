@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,52 +20,77 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.config.routing.PredefinedServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.RoutingManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@Schema(description = "Routing Configuration")
-public class RoutingManagerConfig extends ManagementConfig{
+public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Config {
 
-  private boolean enabled;
-  private boolean autoDiscovery;
-  private List<PredefinedServerConfig> predefinedServers;
-
-  public static RoutingManagerConfig getInstance(){
-    return new RoutingManagerConfig( ConfigurationManager.getInstance().getProperties("routing"));
+  public static RoutingManagerConfig getInstance() {
+    return new RoutingManagerConfig(ConfigurationManager.getInstance().getProperties("routing"));
   }
 
   private RoutingManagerConfig(ConfigurationProperties properties) {
-    enabled = properties.getBooleanProperty("enabled", false);
-    autoDiscovery = properties.getBooleanProperty("autoDiscovery", true);
-    predefinedServers = new ArrayList<>();
+    this.enabled = properties.getBooleanProperty("enabled", false);
+    this.autoDiscovery = properties.getBooleanProperty("autoDiscovery", true);
+    this.predefinedServers = new ArrayList<>();
+
     Object servers = properties.get("predefinedServers");
     if (servers instanceof List) {
       for (ConfigurationProperties serverProps : (List<ConfigurationProperties>) servers) {
-        predefinedServers.add(new PredefinedServerConfig(serverProps));
+        this.predefinedServers.add(new PredefinedServerConfig(serverProps));
       }
     }
   }
 
   @Override
-  public boolean update(ManagementConfig config) {
-    return false;
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof RoutingManagerConfigDTO)) {
+      return false;
+    }
+
+    RoutingManagerConfigDTO newConfig = (RoutingManagerConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.enabled != newConfig.isEnabled()) {
+      this.enabled = newConfig.isEnabled();
+      hasChanged = true;
+    }
+
+    if (this.autoDiscovery != newConfig.isAutoDiscovery()) {
+      this.autoDiscovery = newConfig.isAutoDiscovery();
+      hasChanged = true;
+    }
+
+    if (this.predefinedServers.size() != newConfig.getPredefinedServers().size()) {
+      this.predefinedServers = newConfig.getPredefinedServers();
+      hasChanged = true;
+    } else {
+      for (int i = 0; i < this.predefinedServers.size(); i++) {
+        if (!this.predefinedServers.get(i).equals(newConfig.getPredefinedServers().get(i))) {
+          this.predefinedServers.set(i, newConfig.getPredefinedServers().get(i));
+          hasChanged = true;
+        }
+      }
+    }
+
+    return hasChanged;
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("enabled", enabled);
-    properties.put("autoDiscovery", autoDiscovery);
+    properties.put("enabled", this.enabled);
+    properties.put("autoDiscovery", this.autoDiscovery);
+
     List<ConfigurationProperties> serverPropertiesList = new ArrayList<>();
-    for (PredefinedServerConfig server : predefinedServers) {
+    for (PredefinedServerConfig server : this.predefinedServers) {
       serverPropertiesList.add(server.toConfigurationProperties());
     }
     properties.put("predefinedServers", serverPropertiesList);
+
     return properties;
   }
 }

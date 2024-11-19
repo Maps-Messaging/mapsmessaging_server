@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,8 +19,8 @@
 package io.mapsmessaging.network.io.impl.serial;
 
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.config.network.EndPointServerConfig;
-import io.mapsmessaging.config.network.impl.SerialConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -40,11 +41,11 @@ public class SerialEndPointServer extends EndPointServer {
   private final ProtocolFactory protocolFactory;
   private final SerialEndPointURL serialEndPointURL;
   private SerialEndPoint serialEndPoint;
-  private final SerialConfig serialConfig;
+  private final SerialConfigDTO serialConfig;
 
-  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfig config, EndPointManagerJMX managerMBean) {
+  public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfigDTO config, EndPointManagerJMX managerMBean) {
     super(acceptHandler, url, config);
-    serialConfig = (SerialConfig)config.getEndPointConfig();
+    serialConfig = (SerialConfigDTO)config.getEndPointConfig();
     serialEndPointURL = (SerialEndPointURL) url;
     protocolFactory = new ProtocolFactory(config.getProtocols());
     this.managerMBean = managerMBean;

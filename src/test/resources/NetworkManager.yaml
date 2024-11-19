@@ -53,57 +53,33 @@ NetworkManager:
       security:
         tls:
           clientCertificateRequired: false
-
+          context: TLSv1.3
           keyStore:
-            #alias: server  # Optional
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard keystores
+            type: JKS
             managerFactory: SunX509
-            # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
 
           trustStore:
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard truststores
-            # Standard Key Store parameters
+            type: JKS
             path: my-truststore.jks
             passphrase: password
             managerFactory: SunX509
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
 
         dtls:
           clientCertificateRequired: false
 
           keyStore:
-            #alias: server  # Optional
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard keystores
+            type: JKS
             managerFactory: SunX509
-            # Standard Key Store parameters
             path: my-keystore.jks
             passphrase: password
 
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # config: pkcs11-config.cfg
-
           trustStore:
-            type: JKS # | "PKCS11", "JKS", "PKCS12", "JCEKS", "BKS", "UBER"
-            # providerName: SunJSSE  # Typically not required for standard truststores
-            # Standard Key Store parameters
+            type: JKS
             path: my-truststore.jks
             passphrase: password
             managerFactory: SunX509
-            # PKCS11 specific settings
-            # provider: SunPKCS11
-            # configPath: pkcs11-config.cfg
-
 
     data:
 
@@ -262,14 +238,14 @@ NetworkManager:
         ssl_SSLContext: DTLS
 
       -
-        url: tcp://0.0.0.0:2001/
+        url: tcp://0.0.0.0:22001/
         name: "generic testing interface"
         protocol: echo
         auth: anon
 
       -
         url: ssl://0.0.0.0:8444/
-        protocol: all, echo
+        protocol: echo
         auth: anon
 
       -
@@ -289,5 +265,10 @@ NetworkManager:
       -
         name: NMEA GPS port
         url: serial://ttyUSB0,9600,8,N,1/
+        port: ttyUSB0
+        baudRate: 9600
+        dataBits: 8
+        stopBits: 1
+        parity: n
         protocol: NMEA
         selectorThreadCount: 1

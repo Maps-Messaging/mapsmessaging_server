@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.config.DestinationManagerConfig;
-import io.mapsmessaging.config.destination.DestinationConfig;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
@@ -46,18 +47,18 @@ public class DestinationManager implements DestinationFactory, Agent {
   private static final String TEMPORARY_QUEUE = "/dynamic/temporary/queue";
   private static final String TEMPORARY_TOPIC = "/dynamic/temporary/topic";
 
-  private final Map<String, DestinationConfig> properties;
+  private final Map<String, DestinationConfigDTO> properties;
   private final DestinationUpdateManager destinationManagerListeners;
   private final Logger logger;
-  private final DestinationConfig rootPath;
+  private final DestinationConfigDTO rootPath;
   private final DestinationManagerPipeline[] creatorPipelines;
 
   public DestinationManager() {
     logger = LoggerFactory.getLogger(DestinationManager.class);
     properties = new LinkedHashMap<>();
     DestinationManagerConfig config = DestinationManagerConfig.getInstance();
-    DestinationConfig rootPathLookup = null;
-    for(DestinationConfig destinationConfig:config.getData()){
+    DestinationConfigDTO rootPathLookup = null;
+    for(DestinationConfigDTO destinationConfig:config.getData()){
       properties.put(destinationConfig.getNamespaceMapping(), destinationConfig);
       if (destinationConfig.getNamespaceMapping().equals("/")) {
         rootPathLookup = destinationConfig;
@@ -141,8 +142,8 @@ public class DestinationManager implements DestinationFactory, Agent {
 
   public void initialise() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
-    for (Map.Entry<String, DestinationConfig> entry : properties.entrySet()) {
-      DestinationConfig mapManager = entry.getValue();
+    for (Map.Entry<String, DestinationConfigDTO> entry : properties.entrySet()) {
+      DestinationConfigDTO mapManager = entry.getValue();
       DestinationLocator destinationLocator = new DestinationLocator(mapManager, mapManager.getTrailingPath());
       destinationLocator.parse();
       processFileList(destinationLocator.getValid(), mapManager);
@@ -173,7 +174,7 @@ public class DestinationManager implements DestinationFactory, Agent {
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       futures.add(pipeline.stop());
     }
-    CompletableFuture<Void>[] cfs = futures.toArray(new CompletableFuture[futures.size()]);
+    CompletableFuture<Void>[] cfs = futures.toArray(new CompletableFuture[0]);
     try {
       CompletableFuture.allOf(cfs).thenApply(ignored -> futures.stream()
               .map(CompletableFuture::join)
@@ -197,14 +198,14 @@ public class DestinationManager implements DestinationFactory, Agent {
     return destinationManagerListeners.get();
   }
 
-  private void processFileList(List<File> directories, DestinationConfig pathManager) {
+  private void processFileList(List<File> directories, DestinationConfigDTO pathManager) {
     if (directories != null) {
       ResourceLoaderManagement resourceLoaderManagement = new ResourceLoaderManagement(directories, pathManager);
       resourceLoaderManagement.start();
     }
   }
 
-  private void parseDirectoryPath(File directory, DestinationConfig pathManager) {
+  private void parseDirectoryPath(File directory, DestinationConfigDTO pathManager) {
     if (directory.isDirectory()) {
       try {
         DestinationImpl destinationImpl = scanDirectory(directory, pathManager);
@@ -222,7 +223,7 @@ public class DestinationManager implements DestinationFactory, Agent {
     }
   }
 
-  private DestinationImpl scanDirectory(File directory, DestinationConfig pathManager) throws IOException {
+  private DestinationImpl scanDirectory(File directory, DestinationConfigDTO pathManager) throws IOException {
     MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
     ResourceProperties scannedProperties = ResourceFactory.getInstance().scanForProperties(directory);
     Resource resource = null;
@@ -273,10 +274,10 @@ public class DestinationManager implements DestinationFactory, Agent {
   public class ResourceLoaderManagement {
 
     private final Queue<File> fileList;
-    private final DestinationConfig pathManager;
+    private final DestinationConfigDTO pathManager;
     private final int initialSize;
 
-    public ResourceLoaderManagement(List<File> list, DestinationConfig pathManager) {
+    public ResourceLoaderManagement(List<File> list, DestinationConfigDTO pathManager) {
       this.fileList = new ConcurrentLinkedQueue<>(list);
       this.pathManager = pathManager;
       initialSize = list.size();
@@ -328,10 +329,10 @@ public class DestinationManager implements DestinationFactory, Agent {
   public class ResourceLoader extends Thread {
 
     private final Queue<File> fileList;
-    private final DestinationConfig pathManager;
+    private final DestinationConfigDTO pathManager;
     private final AtomicBoolean complete;
 
-    public ResourceLoader(Queue<File> fileList, DestinationConfig pathManager) {
+    public ResourceLoader(Queue<File> fileList, DestinationConfigDTO pathManager) {
       this.fileList = fileList;
       this.pathManager = pathManager;
       complete = new AtomicBoolean(false);

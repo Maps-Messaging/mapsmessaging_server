@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,13 +18,14 @@
 
 package io.mapsmessaging.engine.session;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_INIT_ERROR;
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_LOAD_STATE_ERROR;
+
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-import lombok.Getter;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -34,9 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
-
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_INIT_ERROR;
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_LOAD_STATE_ERROR;
+import lombok.Getter;
 
 public class PersistentSessionManager {
 

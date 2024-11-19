@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,32 +21,21 @@ package io.mapsmessaging.config;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.NetworkConnectionManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Network Connection Manager Configuration")
-public class NetworkConnectionManagerConfig extends ManagementConfig {
-
-  private EndPointServerConfig global;
-  private List<EndPointConnectionServerConfig> endPointServerConfigList;
+public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConfigDTO implements Config {
 
   private NetworkConnectionManagerConfig(ConfigurationProperties config) {
     ConfigurationProperties globalConfig = config.getGlobal();
     if (globalConfig != null) {
       this.global = new EndPointServerConfig(globalConfig);
     }
-    Object obj = config.get("data");
     endPointServerConfigList = new ArrayList<>();
+    Object obj = config.get("data");
     if (obj instanceof List) {
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) obj) {
         endPointServerConfigList.add(new EndPointConnectionServerConfig(entry));
@@ -56,12 +46,35 @@ public class NetworkConnectionManagerConfig extends ManagementConfig {
   }
 
   public static NetworkConnectionManagerConfig getInstance() {
-    return new NetworkConnectionManagerConfig (ConfigurationManager.getInstance().getProperties("NetworkConnectionManager"));
+    return new NetworkConnectionManagerConfig(
+        ConfigurationManager.getInstance().getProperties("NetworkConnectionManager"));
   }
 
   @Override
-  public boolean update(ManagementConfig config) {
-    return false;
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof NetworkConnectionManagerConfigDTO) {
+      NetworkConnectionManagerConfigDTO newConfig = (NetworkConnectionManagerConfigDTO) config;
+
+      if ((this.global == null && newConfig.getGlobal() != null) ||
+          (this.global != null && !this.global.equals(newConfig.getGlobal()))) {
+        this.global = newConfig.getGlobal();
+        hasChanged = true;
+      }
+
+      if (this.endPointServerConfigList.size() != newConfig.getEndPointServerConfigList().size()) {
+        this.endPointServerConfigList = newConfig.getEndPointServerConfigList();
+        hasChanged = true;
+      } else {
+        for (int i = 0; i < this.endPointServerConfigList.size(); i++) {
+          if (!this.endPointServerConfigList.get(i).equals(newConfig.getEndPointServerConfigList().get(i))) {
+            this.endPointServerConfigList.set(i, newConfig.getEndPointServerConfigList().get(i));
+            hasChanged = true;
+          }
+        }
+      }
+    }
+    return hasChanged;
   }
 
   @Override

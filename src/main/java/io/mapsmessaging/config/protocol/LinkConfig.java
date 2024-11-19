@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,80 +19,74 @@
 package io.mapsmessaging.config.protocol;
 
 import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.ConfigHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import java.util.Map;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class LinkConfig extends Config {
-
-  private String direction;
-  private String remoteNamespace;
-  private String localNamespace;
-  private String selector;
-  private boolean includeSchema;
-  private Map<String, Object> transformer;
+public class LinkConfig extends LinkConfigDTO implements Config {
 
   public LinkConfig(ConfigurationProperties config) {
-    direction = config.getProperty("direction");
-    remoteNamespace = config.getProperty("remote_namespace");
-    localNamespace = config.getProperty("local_namespace");
-    selector = config.getProperty("selector");
-    includeSchema = config.getBooleanProperty("include_schema", false);
+    this.direction = config.getProperty("direction");
+    this.remoteNamespace = config.getProperty("remote_namespace");
+    this.localNamespace = config.getProperty("local_namespace");
+    this.selector = config.getProperty("selector");
+    this.includeSchema = config.getBooleanProperty("include_schema", false);
     Object obj = config.get("transformer");
     if (obj instanceof ConfigurationProperties) {
-      transformer = ((ConfigurationProperties) obj).getMap();
+      this.transformer = ConfigHelper.buildMap((ConfigurationProperties) obj);
     }
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    config.put("direction", direction);
-    config.put("remote_namespace", remoteNamespace);
-    config.put("local_namespace", remoteNamespace);
-    config.put("selector", selector);
-    config.put("include_schema", includeSchema);
-    config.put("transformer", new ConfigurationProperties(transformer));
+    config.put("direction", this.direction);
+    config.put("remote_namespace", this.remoteNamespace);
+    config.put("local_namespace", this.localNamespace);
+    config.put("selector", this.selector);
+    config.put("include_schema", this.includeSchema);
+    config.put("transformer", new ConfigurationProperties(this.transformer));
     return config;
   }
 
-  public boolean update(LinkConfig newConfig) {
+  @Override
+  public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
 
-    if (this.direction == null || !this.direction.equals(newConfig.getDirection())) {
-      this.direction = newConfig.getDirection();
-      hasChanged = true;
-    }
+    if (config instanceof LinkConfigDTO) {
+      LinkConfigDTO newConfig = (LinkConfigDTO) config;
+      if (this.direction == null || !this.direction.equals(newConfig.getDirection())) {
+        this.direction = newConfig.getDirection();
+        hasChanged = true;
+      }
 
-    if (this.remoteNamespace == null || !this.remoteNamespace.equals(newConfig.getRemoteNamespace())) {
-      this.remoteNamespace = newConfig.getRemoteNamespace();
-      hasChanged = true;
-    }
+      if (this.remoteNamespace == null
+          || !this.remoteNamespace.equals(newConfig.getRemoteNamespace())) {
+        this.remoteNamespace = newConfig.getRemoteNamespace();
+        hasChanged = true;
+      }
 
-    if (this.remoteNamespace == null || !this.remoteNamespace.equals(newConfig.getLocalNamespace())) {
-      this.remoteNamespace = newConfig.getLocalNamespace();
-      hasChanged = true;
-    }
-    if (this.selector == null || !this.selector.equals(newConfig.getSelector())) {
-      this.selector = newConfig.getSelector();
-      hasChanged = true;
-    }
-    if (this.includeSchema != newConfig.isIncludeSchema()) {
-      this.includeSchema = newConfig.isIncludeSchema();
-      hasChanged = true;
-    }
-    if(super.updateMap(transformer, newConfig.getTransformer())) {
-      hasChanged = true;
+      if (this.localNamespace == null
+          || !this.localNamespace.equals(newConfig.getLocalNamespace())) {
+        this.localNamespace = newConfig.getLocalNamespace();
+        hasChanged = true;
+      }
+
+      if (this.selector == null || !this.selector.equals(newConfig.getSelector())) {
+        this.selector = newConfig.getSelector();
+        hasChanged = true;
+      }
+
+      if (this.includeSchema != newConfig.isIncludeSchema()) {
+        this.includeSchema = newConfig.isIncludeSchema();
+        hasChanged = true;
+      }
+
+      if (ConfigHelper.updateMap(this.transformer, newConfig.getTransformer())) {
+        hasChanged = true;
+      }
     }
     return hasChanged;
   }
-
-
 }

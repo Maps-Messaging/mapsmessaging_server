@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,7 +25,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.config.protocol.impl.MqttConfig;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -62,7 +63,7 @@ public class MQTTProtocol extends ProtocolImpl {
   private final long maxBufferSize;
 
   @Getter
-  private final MqttConfig mqttConfig;
+  private final MqttConfigDTO mqttConfig;
   @Getter
   private final Map<String, String> topicNameMapping;
 
@@ -79,7 +80,7 @@ public class MQTTProtocol extends ProtocolImpl {
     ThreadContext.put("version", getVersion());
     topicNameMapping = new ConcurrentHashMap<>();
     logger.log(ServerLogMessages.MQTT_START);
-    mqttConfig = (MqttConfig) endPoint.getConfig().getProtocolConfig("MQTT");
+    mqttConfig = (MqttConfigDTO) endPoint.getConfig().getProtocolConfig("mqtt");
     maxBufferSize =  mqttConfig.getMaximumBufferSize();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory();

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,52 +19,45 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.JolokiaConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Jolokia Configuration")
-public class JolokiaConfig extends ManagementConfig {
-
-  private boolean enable;
-  private ConfigurationProperties jolokiaMapping;
+//ToDo Convert configurations into map<String, String>
+public class JolokiaConfig extends JolokiaConfigDTO implements Config {
 
   private JolokiaConfig(ConfigurationProperties properties) {
-    this.enable = properties.getBooleanProperty("enable", false);
-    this.jolokiaMapping = (ConfigurationProperties) properties.get("config");
+    setEnable(properties.getBooleanProperty("enable", false));
+    setJolokiaMapping((ConfigurationProperties) properties.get("config"));
   }
 
   public static JolokiaConfig getInstance() {
     return new JolokiaConfig(ConfigurationManager.getInstance().getProperties("jolokia"));
   }
 
-  public boolean update(ManagementConfig config) {
-    JolokiaConfig newConfig = (JolokiaConfig) config;
+  @Override
+  public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
+    if (config instanceof JolokiaConfigDTO) {
+      JolokiaConfigDTO newConfig = (JolokiaConfigDTO) config;
 
-    if (this.enable != newConfig.isEnable()) {
-      this.enable = newConfig.isEnable();
-      hasChanged = true;
+      if (this.isEnable() != newConfig.isEnable()) {
+        this.setEnable(newConfig.isEnable());
+        hasChanged = true;
+      }
+      if (!this.getJolokiaMapping().equals(newConfig.getJolokiaMapping())) {
+        this.setJolokiaMapping(newConfig.getJolokiaMapping());
+        hasChanged = true;
+      }
     }
-    if (!this.jolokiaMapping.equals(newConfig.getJolokiaMapping())) {
-      this.jolokiaMapping = newConfig.getJolokiaMapping();
-      hasChanged = true;
-    }
-
     return hasChanged;
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("enable", this.enable);
-    properties.put("config", this.jolokiaMapping);
+    properties.put("enable", isEnable());
+    properties.put("config", getJolokiaMapping());
     return properties;
   }
 }

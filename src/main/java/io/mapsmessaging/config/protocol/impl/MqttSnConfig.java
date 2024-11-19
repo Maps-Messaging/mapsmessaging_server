@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,72 +18,144 @@
 
 package io.mapsmessaging.config.protocol.impl;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.protocol.PredefinedTopics;
-import io.mapsmessaging.config.protocol.ProtocolConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttSnConfigDTO;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-/*
-    logger = LoggerFactory.getLogger(MessagePipeline.class);
-    maxInFlightEvents = props.getIntProperty("maxInFlightEvents", 1);
-    dropQoS0 = props.getBooleanProperty("dropQoS0Events", false);
-
-    long t = TimeUnit.SECONDS.toMillis(props.getIntProperty("eventQueueTimeout", 0));
- */
-
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class MqttSnConfig extends ProtocolConfig {
-  private String gatewayId;
-  private int receiveMaximum;
-  private long idleSessionTimeout;
-  private long maximumSessionExpiry;
-  private boolean enablePortChanges;
-  private boolean enableAddressChanges;
-  private boolean advertiseGateway;
-  private boolean dropQoS0;
-  private String registeredTopics;
-  private int advertiseInterval;
-  private int maxRegisteredSize;
-  private int maxInFlightEvents;
-  private int eventQueueTimeout;
-
-  private List<PredefinedTopics> predefinedTopicsList;
+public class MqttSnConfig extends MqttSnConfigDTO implements Config {
 
   public MqttSnConfig(ConfigurationProperties config) {
-    super(config);
-    gatewayId = config.getProperty("gatewayId", "1");
-    idleSessionTimeout = config.getLongProperty("idleSessionTimeout", 600);
-    receiveMaximum = config.getIntProperty("receiveMaximum", 10);
-    maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", 86400);
-    enablePortChanges = config.getBooleanProperty("enablePortChanges", true);
-    enableAddressChanges = config.getBooleanProperty("enableAddressChanges", false);
-    advertiseGateway = config.getBooleanProperty("advertiseGateway", false);
-    registeredTopics = config.getProperty("registered", "");
-    advertiseInterval = config.getIntProperty("advertiseInterval", 30);
-    maxRegisteredSize = config.getIntProperty("maxRegisteredSize", ((1 << 15) - 1));
-    maxInFlightEvents = config.getIntProperty("maxInFlightEvents", 1);
-    dropQoS0 = config.getBooleanProperty("dropQoS0Events", false);
-    eventQueueTimeout = config.getIntProperty("eventQueueTimeout", 0);
+    setType("mqtt-sn");
+    ProtocolConfigFactory.unpack(config, this);
+
+    // Initialize MQTT-SN specific fields from config
+    this.gatewayId = config.getProperty("gatewayId", gatewayId);
+    this.receiveMaximum = config.getIntProperty("receiveMaximum", receiveMaximum);
+    this.idleSessionTimeout = config.getLongProperty("idleSessionTimeout", idleSessionTimeout);
+    this.maximumSessionExpiry = config.getIntProperty("maximumSessionExpiry", maximumSessionExpiry);
+    this.enablePortChanges = config.getBooleanProperty("enablePortChanges", enablePortChanges);
+    this.enableAddressChanges = config.getBooleanProperty("enableAddressChanges", enableAddressChanges);
+    this.advertiseGateway = config.getBooleanProperty("advertiseGateway", advertiseGateway);
+    this.registeredTopics = config.getProperty("registered", registeredTopics);
+    this.advertiseInterval = config.getIntProperty("advertiseInterval", advertiseInterval);
+    this.maxRegisteredSize = config.getIntProperty("maxRegisteredSize", maxRegisteredSize);
+    this.maxInFlightEvents = config.getIntProperty("maxInFlightEvents", maxInFlightEvents);
+    this.dropQoS0 = config.getBooleanProperty("dropQoS0Events", dropQoS0);
+    this.eventQueueTimeout = config.getIntProperty("eventQueueTimeout", eventQueueTimeout);
+
+    // Initialize predefined topics list
     predefinedTopicsList = new ArrayList<>();
     Object predefined = config.get("preDefinedTopics");
     if (predefined instanceof List) {
-      List<ConfigurationProperties> predefinedList = (List<ConfigurationProperties>) predefined;
-      for (ConfigurationProperties props : predefinedList) {
+      for (ConfigurationProperties props : (List<ConfigurationProperties>) predefined) {
         predefinedTopicsList.add(new PredefinedTopics(props));
       }
     }
-    setType("mqtt-sn");
   }
 
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof MqttSnConfigDTO) {
+      MqttSnConfigDTO newConfig = (MqttSnConfigDTO) config;
+
+      // Check each field and update if necessary
+      if (!this.gatewayId.equals(newConfig.getGatewayId())) {
+        this.gatewayId = newConfig.getGatewayId();
+        hasChanged = true;
+      }
+      if (this.receiveMaximum != newConfig.getReceiveMaximum()) {
+        this.receiveMaximum = newConfig.getReceiveMaximum();
+        hasChanged = true;
+      }
+      if (this.idleSessionTimeout != newConfig.getIdleSessionTimeout()) {
+        this.idleSessionTimeout = newConfig.getIdleSessionTimeout();
+        hasChanged = true;
+      }
+      if (this.maximumSessionExpiry != newConfig.getMaximumSessionExpiry()) {
+        this.maximumSessionExpiry = newConfig.getMaximumSessionExpiry();
+        hasChanged = true;
+      }
+      if (this.enablePortChanges != newConfig.isEnablePortChanges()) {
+        this.enablePortChanges = newConfig.isEnablePortChanges();
+        hasChanged = true;
+      }
+      if (this.enableAddressChanges != newConfig.isEnableAddressChanges()) {
+        this.enableAddressChanges = newConfig.isEnableAddressChanges();
+        hasChanged = true;
+      }
+      if (this.advertiseGateway != newConfig.isAdvertiseGateway()) {
+        this.advertiseGateway = newConfig.isAdvertiseGateway();
+        hasChanged = true;
+      }
+      if (!this.registeredTopics.equals(newConfig.getRegisteredTopics())) {
+        this.registeredTopics = newConfig.getRegisteredTopics();
+        hasChanged = true;
+      }
+      if (this.advertiseInterval != newConfig.getAdvertiseInterval()) {
+        this.advertiseInterval = newConfig.getAdvertiseInterval();
+        hasChanged = true;
+      }
+      if (this.maxRegisteredSize != newConfig.getMaxRegisteredSize()) {
+        this.maxRegisteredSize = newConfig.getMaxRegisteredSize();
+        hasChanged = true;
+      }
+      if (this.maxInFlightEvents != newConfig.getMaxInFlightEvents()) {
+        this.maxInFlightEvents = newConfig.getMaxInFlightEvents();
+        hasChanged = true;
+      }
+      if (this.dropQoS0 != newConfig.isDropQoS0()) {
+        this.dropQoS0 = newConfig.isDropQoS0();
+        hasChanged = true;
+      }
+      if (this.eventQueueTimeout != newConfig.getEventQueueTimeout()) {
+        this.eventQueueTimeout = newConfig.getEventQueueTimeout();
+        hasChanged = true;
+      }
+
+      // Update predefined topics list
+      if (!this.predefinedTopicsList.equals(newConfig.getPredefinedTopicsList())) {
+        this.predefinedTopicsList = newConfig.getPredefinedTopicsList();
+        hasChanged = true;
+      }
+
+      // Update fields from ProtocolConfigFactory if needed
+      if (ProtocolConfigFactory.update(this, newConfig)) {
+        hasChanged = true;
+      }
+    }
+    return hasChanged;
+  }
+
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    return super.toConfigurationProperties();
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
+    properties.put("gatewayId", this.gatewayId);
+    properties.put("receiveMaximum", this.receiveMaximum);
+    properties.put("idleSessionTimeout", this.idleSessionTimeout);
+    properties.put("maximumSessionExpiry", this.maximumSessionExpiry);
+    properties.put("enablePortChanges", this.enablePortChanges);
+    properties.put("enableAddressChanges", this.enableAddressChanges);
+    properties.put("advertiseGateway", this.advertiseGateway);
+    properties.put("registered", this.registeredTopics);
+    properties.put("advertiseInterval", this.advertiseInterval);
+    properties.put("maxRegisteredSize", this.maxRegisteredSize);
+    properties.put("maxInFlightEvents", this.maxInFlightEvents);
+    properties.put("dropQoS0Events", this.dropQoS0);
+    properties.put("eventQueueTimeout", this.eventQueueTimeout);
+
+    // Add predefined topics list to properties
+    List<ConfigurationProperties> predefinedPropsList = new ArrayList<>();
+    for (PredefinedTopics topic : predefinedTopicsList) {
+      predefinedPropsList.add(topic.toConfigurationProperties());
+    }
+    properties.put("preDefinedTopics", predefinedPropsList);
+
+    return properties;
   }
 }

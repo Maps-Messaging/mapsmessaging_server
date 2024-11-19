@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.network.io.security;
 
-import io.mapsmessaging.config.network.HmacConfig;
+import io.mapsmessaging.dto.rest.config.network.HmacConfigDTO;
 import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
 import io.mapsmessaging.network.io.security.impl.signature.PrependerSignatureManager;
 import java.security.InvalidKeyException;
@@ -42,7 +43,7 @@ public class PacketIntegrityFactory {
     return implementations.get(algoritm).initialise(stamper, key);
   }
 
-  public PacketIntegrity createPacketIntegrity(HmacConfig node) {
+  public PacketIntegrity createPacketIntegrity(HmacConfigDTO node) {
     String hmacAlgorithm = node.getHmacAlgorithm();
     if (hmacAlgorithm != null) {
       String managerName = node.getHmacManager();

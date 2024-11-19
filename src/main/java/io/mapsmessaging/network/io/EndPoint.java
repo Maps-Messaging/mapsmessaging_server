@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.network.io;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.utilities.stats.StatsFactory;
@@ -48,8 +49,10 @@ public abstract class EndPoint implements Closeable {
   private final AtomicLong lastRead = new AtomicLong();
   private final AtomicLong lastWrite = new AtomicLong();
   private final boolean isClient;
-  private boolean isClosed;
   protected List<String> jmxParentPath;
+
+  @Getter
+  private boolean isClosed;
 
   @Getter
   protected final EndPointServerStatus server;
@@ -121,7 +124,7 @@ public abstract class EndPoint implements Closeable {
 
   }
 
-  public EndPointServerConfig getConfig() {
+  public EndPointServerConfigDTO getConfig() {
     return server.getConfig();
   }
 

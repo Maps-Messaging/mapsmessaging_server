@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -83,6 +84,8 @@ public class Selector implements SelectorInt {
       } catch (CancelledKeyException cancelled) {
         logger.log(ServerLogMessages.SELECTOR_CONNECTION_CLOSE);
       } catch (Exception e) {
+        e.printStackTrace();
+
         if (logger.isDebugEnabled()) {
           logger.log(ServerLogMessages.SELECTOR_TASK_FAILED, e, key.toString());
         } else {

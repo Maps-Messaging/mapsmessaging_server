@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -68,11 +69,11 @@ public class SerialEndPortScanner implements Runnable {
   // While knownPorts.computeIfAbsent could be used, the following logic being performed
   // on the addition of a port seems rather large and the logic flows better as is
   @java.lang.SuppressWarnings("java:S3824")
-  private void scanPorts(SerialPort[] devices) {
+  private synchronized void scanPorts(SerialPort[] devices) {
     for (SerialPort serialDevice : devices) {
       String key = serialDevice.getSystemPortName().toLowerCase();
-      if (!knownPorts.containsKey(key)) {
-        knownPorts.put(key, serialDevice);
+      if (!knownPorts.containsKey(key.toLowerCase())) {
+        knownPorts.put(key.toLowerCase(), serialDevice);
         SerialEndPointServer server = serverEndPoints.get(key);
         if (server != null) {
           logger.log(ServerLogMessages.SERIAL_PORT_SCANNER_BINDING, server.getName(), key);
@@ -94,7 +95,7 @@ public class SerialEndPortScanner implements Runnable {
       boolean found = false;
       for (SerialPort port : ports) {
         String key = port.getSystemPortName().toLowerCase();
-        if (current.equals(key)) {
+        if (current.toLowerCase().equals(key)) {
           found = true;
           break;
         }
@@ -107,7 +108,7 @@ public class SerialEndPortScanner implements Runnable {
 
   private void handleNewPorts(String current) {
     SerialEndPointServer server = serverEndPoints.get(current);
-    SerialPort port = knownPorts.remove(current);
+    SerialPort port = knownPorts.remove(current.toLowerCase());
     if (server != null &&
         port != null) {
       logger.log(ServerLogMessages.SERIAL_PORT_SCANNER_UNBINDING, server.getName(), current);

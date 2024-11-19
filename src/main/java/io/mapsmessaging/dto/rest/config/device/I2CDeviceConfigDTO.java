@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,24 +16,26 @@
  *
  */
 
-package io.mapsmessaging.config.device;
+package io.mapsmessaging.dto.rest.config.device;
 
-
-import io.mapsmessaging.config.Config;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@ToString
-public class DeviceConfig extends Config {
+@Schema(description = "DTO for I2C Device configuration properties")
+public class I2CDeviceConfigDTO extends BaseConfigDTO {
 
-  @Override
-  public ConfigurationProperties toConfigurationProperties() {
-    return null;
-  }
+  @Schema(description = "Address of the I2C device")
+  protected int address;
+
+  @Schema(description = "Name of the I2C device")
+  protected String name;
+
+  @Schema(description = "Selector configuration for the I2C device")
+  protected String selector;
 }

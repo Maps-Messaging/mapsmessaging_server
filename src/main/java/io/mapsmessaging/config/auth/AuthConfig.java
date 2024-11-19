@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,38 +19,26 @@
 package io.mapsmessaging.config.auth;
 
 import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.ConfigHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import java.util.LinkedHashMap;
-import java.util.Map;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class AuthConfig  extends Config {
-
-  private String username;
-  private String password;
-  private String sessionId;
-  private String tokenGenerator;
-  private Map<String, Object> tokenConfig;
+public class AuthConfig extends AuthConfigDTO implements Config {
 
   public AuthConfig(ConfigurationProperties config) {
     ConfigurationProperties remoteAuth = (ConfigurationProperties) config.get("remote");
     tokenConfig = new LinkedHashMap<>();
 
-    if(remoteAuth != null) {
+    if (remoteAuth != null) {
       username = remoteAuth.getProperty("username");
       password = remoteAuth.getProperty("password");
       tokenGenerator = remoteAuth.getProperty("tokenGenerator");
       sessionId = remoteAuth.getProperty("sessionId");
-      if(tokenGenerator != null && !tokenGenerator.isEmpty()){
+      if (tokenGenerator != null && !tokenGenerator.isEmpty()) {
         ConfigurationProperties token = (ConfigurationProperties) remoteAuth.get("tokenConfig");
-        tokenConfig.putAll(token.getMap());
+        tokenConfig = ConfigHelper.buildMap(token);
       }
     }
   }
@@ -59,15 +48,20 @@ public class AuthConfig  extends Config {
     ConfigurationProperties config = new ConfigurationProperties();
     ConfigurationProperties remoteAuth = new ConfigurationProperties();
     config.put("remote", remoteAuth);
-    if(username != null) remoteAuth.put("username", username);
-    if(password != null) remoteAuth.put("password", password);
-    if(tokenGenerator != null) remoteAuth.put("tokenGenerator", tokenGenerator);
-    if(sessionId != null) remoteAuth.put("sessionId", sessionId);
-    if (tokenConfig != null) remoteAuth.put("tokenConfig", new ConfigurationProperties(tokenConfig));
+    if (username != null) remoteAuth.put("username", username);
+    if (password != null) remoteAuth.put("password", password);
+    if (tokenGenerator != null) remoteAuth.put("tokenGenerator", tokenGenerator);
+    if (sessionId != null) remoteAuth.put("sessionId", sessionId);
+    if (tokenConfig != null)
+      remoteAuth.put("tokenConfig", new ConfigurationProperties(tokenConfig));
     return config;
   }
 
-  public boolean update(AuthConfig newConfig) {
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof AuthConfigDTO)) {
+      return false;
+    }
+    AuthConfigDTO newConfig = (AuthConfigDTO) config;
     boolean hasChanged = false;
 
     if (this.username == null || !this.username.equals(newConfig.getUsername())) {
@@ -94,6 +88,4 @@ public class AuthConfig  extends Config {
     }
     return hasChanged;
   }
-
-
 }

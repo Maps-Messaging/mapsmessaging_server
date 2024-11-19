@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,43 +18,69 @@
 
 package io.mapsmessaging.config.device;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.SpiDeviceConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class SpiDeviceConfig extends DeviceConfig {
-
-  private int address;
-  private String name;
-  private String selector;
-  private int spiBus;
-  private int spiMode;
-  private int spiChipSelect;
+public class SpiDeviceConfig extends SpiDeviceConfigDTO implements Config {
 
   public SpiDeviceConfig(ConfigurationProperties props) {
-    address = props.getIntProperty("address", 0);
-    name = props.getProperty("name");
-    selector = props.getProperty("selector", "");
-    spiBus = props.getIntProperty("spiBus", 0);
-    spiMode = props.getIntProperty("spiMode", 0);
-    spiChipSelect = props.getIntProperty("spiChipSelect", 0);
+    this.address = props.getIntProperty("address", 0);
+    this.name = props.getProperty("name");
+    this.selector = props.getProperty("selector", "");
+    this.spiBus = props.getIntProperty("spiBus", 0);
+    this.spiMode = props.getIntProperty("spiMode", 0);
+    this.spiChipSelect = props.getIntProperty("spiChipSelect", 0);
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties props = new ConfigurationProperties();
-    props.put("address", address);
-    props.put("name", name);
-    props.put("spiBus", spiBus);
-    props.put("spiMode", spiMode);
-    props.put("spiChipSelect", spiChipSelect);
-    if(!selector.isEmpty())props.put("selector", selector);
+    props.put("address", this.address);
+    props.put("name", this.name);
+    props.put("spiBus", this.spiBus);
+    props.put("spiMode", this.spiMode);
+    props.put("spiChipSelect", this.spiChipSelect);
+    if (!this.selector.isEmpty()) {
+      props.put("selector", this.selector);
+    }
     return props;
+  }
+
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof SpiDeviceConfigDTO)) {
+      return false;
+    }
+
+    SpiDeviceConfigDTO newConfig = (SpiDeviceConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.address != newConfig.getAddress()) {
+      this.address = newConfig.getAddress();
+      hasChanged = true;
+    }
+    if (this.name == null || !this.name.equals(newConfig.getName())) {
+      this.name = newConfig.getName();
+      hasChanged = true;
+    }
+    if (this.selector == null || !this.selector.equals(newConfig.getSelector())) {
+      this.selector = newConfig.getSelector();
+      hasChanged = true;
+    }
+    if (this.spiBus != newConfig.getSpiBus()) {
+      this.spiBus = newConfig.getSpiBus();
+      hasChanged = true;
+    }
+    if (this.spiMode != newConfig.getSpiMode()) {
+      this.spiMode = newConfig.getSpiMode();
+      hasChanged = true;
+    }
+    if (this.spiChipSelect != newConfig.getSpiChipSelect()) {
+      this.spiChipSelect = newConfig.getSpiChipSelect();
+      hasChanged = true;
+    }
+
+    return hasChanged;
   }
 }

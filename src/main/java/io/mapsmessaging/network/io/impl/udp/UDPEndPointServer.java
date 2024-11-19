@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.network.io.impl.udp;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
@@ -48,7 +49,7 @@ public class UDPEndPointServer extends EndPointServer {
   private final int port;
 
   public UDPEndPointServer(InetSocketAddress inetSocketAddress, ProtocolFactory protocolFactory, EndPointURL url, SelectorLoadManager selectorLoadManager,
-      EndPointManagerJMX managerMBean, EndPointServerConfig config)
+      EndPointManagerJMX managerMBean, EndPointServerConfigDTO config)
       throws SocketException {
     super(null, url, config);
     this.managerMBean = managerMBean;

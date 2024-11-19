@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -48,7 +49,7 @@ public class ResourceList {
   public static Collection<String> getResources(@NonNull @NotNull final Pattern pattern) throws IOException {
     final ArrayList<String> returnValue = new ArrayList<>();
     final String classPath = System.getProperty("java.class.path", ".");
-    final String[] classPathElements = classPath.split(System.getProperty("path.separator"));
+    final String[] classPathElements = classPath.split(File.pathSeparator);
     for (final String element : classPathElements) {
       returnValue.addAll(getResources(element, pattern));
     }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,67 +24,120 @@ import io.mapsmessaging.config.device.SpiDeviceBusConfig;
 import io.mapsmessaging.config.device.triggers.CronTriggerConfig;
 import io.mapsmessaging.config.device.triggers.InterruptTriggerConfig;
 import io.mapsmessaging.config.device.triggers.PeriodicTriggerConfig;
-import io.mapsmessaging.config.device.triggers.TriggerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.DeviceManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Device Manager Configuration")
-public class DeviceManagerConfig extends ManagementConfig {
-  private boolean enabled;
-  private List<TriggerConfig> triggers;
-  private List<I2CBusConfig> i2cBuses;
-  private SpiDeviceBusConfig spiBus;
-  private OneWireBusConfig oneWireBus;
-
+public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Config {
 
   private DeviceManagerConfig(ConfigurationProperties config) {
     this.enabled = config.getBooleanProperty("enabled", false);
-    triggers = new ArrayList<>();
-    i2cBuses = new ArrayList<>();
+    this.triggers = new ArrayList<>();
+    this.i2cBuses = new ArrayList<>();
     processConfig(config);
   }
 
   public static DeviceManagerConfig getInstance() {
-    return new DeviceManagerConfig(ConfigurationManager.getInstance().getProperties("DeviceManager"));
+    return new DeviceManagerConfig(
+        ConfigurationManager.getInstance().getProperties("DeviceManager"));
   }
 
   @Override
-  public boolean update(ManagementConfig config) {
-    return false;
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof DeviceManagerConfigDTO)) {
+      return false;
+    }
+
+    DeviceManagerConfigDTO newConfig = (DeviceManagerConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.enabled != newConfig.isEnabled()) {
+      this.enabled = newConfig.isEnabled();
+      hasChanged = true;
+    }
+
+    // ToDO: Fix to update, add, delete
+    if (this.triggers.size() != newConfig.getTriggers().size()) {
+      this.triggers = newConfig.getTriggers();
+      hasChanged = true;
+    } else {
+      for (int i = 0; i < this.triggers.size(); i++) {
+        if (!this.triggers.get(i).equals(newConfig.getTriggers().get(i))) {
+          this.triggers.set(i, newConfig.getTriggers().get(i));
+          hasChanged = true;
+        }
+      }
+    }
+
+    if (this.i2cBuses.size() != newConfig.getI2cBuses().size()) {
+      this.i2cBuses = newConfig.getI2cBuses();
+      hasChanged = true;
+    } else {
+      for (int i = 0; i < this.i2cBuses.size(); i++) {
+        if (!this.i2cBuses.get(i).equals(newConfig.getI2cBuses().get(i))) {
+          this.i2cBuses.set(i, newConfig.getI2cBuses().get(i));
+          hasChanged = true;
+        }
+      }
+    }
+
+    if ((this.spiBus != null && !this.spiBus.equals(newConfig.getSpiBus()))
+        || (this.spiBus == null && newConfig.getSpiBus() != null)) {
+      this.spiBus = newConfig.getSpiBus();
+      hasChanged = true;
+    }
+
+    if ((this.oneWireBus != null && !this.oneWireBus.equals(newConfig.getOneWireBus()))
+        || (this.oneWireBus == null && newConfig.getOneWireBus() != null)) {
+      this.oneWireBus = newConfig.getOneWireBus();
+      hasChanged = true;
+    }
+
+    return hasChanged;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    List<ConfigurationProperties> configList = new ArrayList<>();
-    for(TriggerConfig triggerConfig : triggers) {
-      configList.add(triggerConfig.toConfigurationProperties());
+    config.put("enabled", this.enabled);
+
+    List<ConfigurationProperties> triggerConfigs = new ArrayList<>();
+    for (BaseTriggerConfigDTO trigger : this.triggers) {
+      triggerConfigs.add(((Config)trigger).toConfigurationProperties());
     }
-    config.put("triggers", configList);
+    config.put("triggers", triggerConfigs);
+
+    List<ConfigurationProperties> i2cBusConfigs = new ArrayList<>();
+    for (I2CBusConfigDTO i2cBus : this.i2cBuses) {
+      i2cBusConfigs.add(((Config)i2cBus).toConfigurationProperties());
+    }
+    config.put("i2cBuses", i2cBusConfigs);
+
+    if (this.spiBus != null) {
+      config.put("spiBus", ((Config)this.spiBus).toConfigurationProperties());
+    }
+
+    if (this.oneWireBus != null) {
+      config.put("oneWireBus", ((Config)this.oneWireBus).toConfigurationProperties());
+    }
+
     return config;
   }
 
-  private void processConfig(ConfigurationProperties properties){
+  private void processConfig(ConfigurationProperties properties) {
     Object obj = properties.get("data");
     List<ConfigurationProperties> deviceList = new ArrayList<>();
 
     if (obj instanceof List) {
-      for(ConfigurationProperties props:(List<ConfigurationProperties>) obj){
-        if(props.getProperty("name").equalsIgnoreCase("triggers")){
+      for (ConfigurationProperties props : (List<ConfigurationProperties>) obj) {
+        if (props.getProperty("name").equalsIgnoreCase("triggers")) {
           loadTriggers(props);
-        }
-        else{
+        } else {
           deviceList.add(props);
         }
       }
@@ -93,13 +147,13 @@ public class DeviceManagerConfig extends ManagementConfig {
     loadConfig(deviceList);
   }
 
-  private void loadTriggers(ConfigurationProperties deviceConfig){
+  private void loadTriggers(ConfigurationProperties deviceConfig) {
     Object configList = deviceConfig.get("config");
     if (configList instanceof List) {
       for (Object triggerConfigObj : (List) configList) {
         if (triggerConfigObj instanceof ConfigurationProperties) {
-          TriggerConfig triggerConfig = createTriggerConfig((ConfigurationProperties) triggerConfigObj);
-          if(triggerConfig != null){
+          BaseTriggerConfigDTO triggerConfig = createTriggerConfig((ConfigurationProperties) triggerConfigObj);
+          if (triggerConfig != null) {
             triggers.add(triggerConfig);
           }
         }
@@ -107,36 +161,32 @@ public class DeviceManagerConfig extends ManagementConfig {
     }
   }
 
-  private TriggerConfig createTriggerConfig(ConfigurationProperties config){
+  private BaseTriggerConfigDTO createTriggerConfig(ConfigurationProperties config) {
     String type = config.getProperty("type", "");
-    if(type.equalsIgnoreCase("cron")){
+    if (type.equalsIgnoreCase("cron")) {
       return new CronTriggerConfig(config);
-    }
-    else if(type.equalsIgnoreCase("periodic")){
+    } else if (type.equalsIgnoreCase("periodic")) {
       return new PeriodicTriggerConfig(config);
-    }
-    else if(type.equalsIgnoreCase("interrupt")){
+    } else if (type.equalsIgnoreCase("interrupt")) {
       return new InterruptTriggerConfig(config);
     }
     return null;
   }
 
-  private void loadConfig( List<ConfigurationProperties> devices) {
+  private void loadConfig(List<ConfigurationProperties> devices) {
     for (ConfigurationProperties deviceConfig : devices) {
       String deviceName = deviceConfig.getProperty("name", "");
-      if(deviceName.equalsIgnoreCase("i2c")){
+      if (deviceName.equalsIgnoreCase("i2c")) {
         loadI2CBuses(deviceConfig);
-      }
-      else if (deviceName.equalsIgnoreCase("oneWire")){
+      } else if (deviceName.equalsIgnoreCase("oneWire")) {
         oneWireBus = new OneWireBusConfig(deviceConfig);
-      }
-      else if (deviceName.equalsIgnoreCase("spi")){
+      } else if (deviceName.equalsIgnoreCase("spi")) {
         spiBus = new SpiDeviceBusConfig(deviceConfig);
       }
     }
   }
 
-  private void loadI2CBuses(ConfigurationProperties deviceConfig){
+  private void loadI2CBuses(ConfigurationProperties deviceConfig) {
     Object configList = deviceConfig.get("config");
     if (configList instanceof List) {
       for (Object i2cBusConfigObj : (List) configList) {
@@ -144,8 +194,7 @@ public class DeviceManagerConfig extends ManagementConfig {
           i2cBuses.add(new I2CBusConfig((ConfigurationProperties) i2cBusConfigObj));
         }
       }
-    }
-    else if (configList instanceof ConfigurationProperties) {
+    } else if (configList instanceof ConfigurationProperties) {
       i2cBuses.add(new I2CBusConfig((ConfigurationProperties) configList));
     }
   }

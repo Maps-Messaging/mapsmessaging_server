@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class RestAccessControl {
 
   public boolean hasAccess(String resource, Subject subject, long access){
     if(!aclMapping.containsKey(resource)){
-      System.err.println("No record for "+resource);
+      //ToDo Log yhe fact we have no mapping for resource
     }
     String key = aclMapping.keySet().stream()
         .filter(s -> s.contains(resource))

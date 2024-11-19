@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,31 +18,18 @@
 
 package io.mapsmessaging.config.protocol.impl;
 
-import io.mapsmessaging.config.protocol.ProtocolConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.AmqpConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class AmqpConfig extends ProtocolConfig {
-
-  private int idleTimeout = 30000; // Default 30 seconds
-  private int maxFrameSize = 65536; // Default 64KB
-  private int linkCredit = 50; // Default link credit
-  private boolean durable = false; // Link durability
-  private int incomingCapacity = 65536; // Session incoming capacity
-  private int outgoingWindow = 100; // Session outgoing window
+public class AmqpConfig extends AmqpConfigDTO implements Config {
 
   public AmqpConfig(ConfigurationProperties config) {
-    super(config);
     setType("amqp");
+    ProtocolConfigFactory.unpack(config, this);
 
-    // Initialize fields from config
+    // Initialize additional AMQP-specific fields from config
     this.idleTimeout = config.getIntProperty("idleTimeout", idleTimeout);
     this.maxFrameSize = config.getIntProperty("maxFrameSize", maxFrameSize);
     this.linkCredit = config.getIntProperty("linkCredit", linkCredit);
@@ -51,8 +39,49 @@ public class AmqpConfig extends ProtocolConfig {
   }
 
   @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof AmqpConfigDTO) {
+      AmqpConfigDTO newConfig = (AmqpConfigDTO) config;
+
+      // Check each field and update if necessary
+      if (this.idleTimeout != newConfig.getIdleTimeout()) {
+        this.idleTimeout = newConfig.getIdleTimeout();
+        hasChanged = true;
+      }
+      if (this.maxFrameSize != newConfig.getMaxFrameSize()) {
+        this.maxFrameSize = newConfig.getMaxFrameSize();
+        hasChanged = true;
+      }
+      if (this.linkCredit != newConfig.getLinkCredit()) {
+        this.linkCredit = newConfig.getLinkCredit();
+        hasChanged = true;
+      }
+      if (this.durable != newConfig.isDurable()) {
+        this.durable = newConfig.isDurable();
+        hasChanged = true;
+      }
+      if (this.incomingCapacity != newConfig.getIncomingCapacity()) {
+        this.incomingCapacity = newConfig.getIncomingCapacity();
+        hasChanged = true;
+      }
+      if (this.outgoingWindow != newConfig.getOutgoingWindow()) {
+        this.outgoingWindow = newConfig.getOutgoingWindow();
+        hasChanged = true;
+      }
+
+      // Update fields from ProtocolConfigFactory if needed
+      if (ProtocolConfigFactory.update(this, newConfig)) {
+        hasChanged = true;
+      }
+    }
+    return hasChanged;
+  }
+
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties properties = super.toConfigurationProperties();
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
     properties.put("idleTimeout", this.idleTimeout);
     properties.put("maxFrameSize", this.maxFrameSize);
     properties.put("linkCredit", this.linkCredit);

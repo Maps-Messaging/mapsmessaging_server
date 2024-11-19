@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network.io;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.utilities.stats.*;
@@ -59,7 +59,7 @@ public abstract class EndPointServerStatus {
     averagePacketsRead = StatsFactory.create(type, "Total Read Packets","Packets",  MovingAverageFactory.ACCUMULATOR.ADD,1, 5, 4, TimeUnit.MINUTES);
   }
 
-  public abstract EndPointServerConfig getConfig();
+  public abstract EndPointServerConfigDTO getConfig();
 
   public abstract void handleNewEndPoint(EndPoint endPoint) throws IOException;
 

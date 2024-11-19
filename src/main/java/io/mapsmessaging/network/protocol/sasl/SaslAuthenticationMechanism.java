@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,8 @@
 
 package io.mapsmessaging.network.protocol.sasl;
 
-import io.mapsmessaging.config.auth.SaslConfig;
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.network.AuthenticationMechanism;
 import io.mapsmessaging.security.identity.IdentityLookup;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
@@ -38,14 +39,14 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
   @Getter
   private final String mechanism;
 
-  public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, EndPointServerConfig properties) throws IOException {
-    SaslConfig saslConfig = properties.getSaslConfig();
+  public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, EndPointServerConfigDTO properties) throws IOException {
+    SaslConfigDTO saslConfig = properties.getSaslConfig();
     IdentityLookup identityLookup;
     ServerCallbackHandler serverCallbackHandler;
     if (saslConfig.getIdentityProvider().equalsIgnoreCase("system")) {
       identityLookup = IdentityLookupFactory.getInstance().getSiteWide("system");
     } else {
-      identityLookup = IdentityLookupFactory.getInstance().get(saslConfig.getIdentityProvider(), saslConfig.getSaslEntries().getMap());
+      identityLookup = IdentityLookupFactory.getInstance().get(saslConfig.getIdentityProvider(), saslConfig.getSaslEntries());
     }
     if(identityLookup == null){
       throw new SaslException("Unable to locate identity look up mechanism for " + saslConfig.getSaslEntries());

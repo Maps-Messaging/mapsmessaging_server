@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,9 +18,9 @@
 
 package io.mapsmessaging.hardware.device.handler.onewire;
 
-import io.mapsmessaging.config.device.OneWireBusConfig;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.onewire.OneWireBusManager;
+import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
@@ -29,7 +30,7 @@ public class OneWireBusHandler extends BusHandler {
 
   private final OneWireBusManager oneWireBusManager;
 
-  public OneWireBusHandler(OneWireBusManager oneWireBusManager, OneWireBusConfig oneWireBusConfig, Trigger trigger) {
+  public OneWireBusHandler(OneWireBusManager oneWireBusManager, OneWireBusConfigDTO oneWireBusConfig, Trigger trigger) {
     super(oneWireBusConfig, trigger);
     this.oneWireBusManager = oneWireBusManager;
   }

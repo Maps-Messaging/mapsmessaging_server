@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,20 +20,10 @@ package io.mapsmessaging.config.protocol;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.ConnectionAuthConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class ConnectionAuthConfig extends Config {
-  private String username;
-  private String password;
-  private String clientId;
-  private String tokenGenerator;
+public class ConnectionAuthConfig extends ConnectionAuthConfigDTO implements Config {
 
   public ConnectionAuthConfig(ConfigurationProperties config) {
     this.username = config.getProperty("username");
@@ -41,25 +32,37 @@ public class ConnectionAuthConfig extends Config {
     this.tokenGenerator = config.getProperty("tokenGenerator", "");
   }
 
-  public boolean update(ConnectionAuthConfig newConfig) {
+  @Override
+  public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (username != null && !username.equals(newConfig.getUsername())) {
-      username = newConfig.getUsername();
-      hasChanged = true;
-    }
 
-    if (password != null && !password.equals(newConfig.getPassword())) {
-      password = newConfig.getPassword();
-      hasChanged = true;
-    }
+    if (config instanceof ConnectionAuthConfigDTO) {
+      ConnectionAuthConfigDTO newConfig = (ConnectionAuthConfigDTO) config;
+      if (this.username == null || !this.username.equals(newConfig.getUsername())) {
+        this.username = newConfig.getUsername();
+        hasChanged = true;
+      }
 
-    if (clientId != null && !clientId.equals(newConfig.getClientId())) {
-      clientId = newConfig.getClientId();
-      hasChanged = true;
+      if (this.password == null || !this.password.equals(newConfig.getPassword())) {
+        this.password = newConfig.getPassword();
+        hasChanged = true;
+      }
+
+      if (this.clientId == null || !this.clientId.equals(newConfig.getClientId())) {
+        this.clientId = newConfig.getClientId();
+        hasChanged = true;
+      }
+
+      if (this.tokenGenerator == null
+          || !this.tokenGenerator.equals(newConfig.getTokenGenerator())) {
+        this.tokenGenerator = newConfig.getTokenGenerator();
+        hasChanged = true;
+      }
     }
     return hasChanged;
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("username", this.username);

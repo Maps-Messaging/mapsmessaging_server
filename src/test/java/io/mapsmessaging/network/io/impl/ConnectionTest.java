@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,6 +29,7 @@ import io.mapsmessaging.test.WaitForState;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import java.io.IOException;
+import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,7 +72,7 @@ public abstract class ConnectionTest extends BaseTestConfig {
 
     WaitForState.waitFor(5, TimeUnit.SECONDS, connected::get);
     Assertions.assertTrue(connected.get());
-
+    endPoint.deregister(SelectionKey.OP_READ);
     endPoint.close();
     WaitForState.waitFor(5, TimeUnit.SECONDS, ()->!connected.get());
     selectorLoadManager.close();

@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,31 +29,30 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     title = "Publish Request",
-    description = "Represents a request to publish a message to a specified topic with optional retention."
-)
+    description =
+        "Represents a request to publish a message to a specified topic with optional retention.")
 public class PublishRequestDTO {
 
   @NotNull
   @Schema(
       title = "Destination Topic",
-      description = "The topic to which the message will be published. This should be a valid topic name recognized by the messaging system.",
-      example = "sensor/data"
-  )
+      description =
+          "The topic to which the message will be published. This should be a valid topic name recognized by the messaging system.",
+      example = "sensor/data")
   private String destinationName;
 
   @NotNull
   @Schema(
       title = "Message Data",
       description = "The message object containing data, payload, and metadata to be published.",
-      nullable = false
-  )
+      nullable = false)
   private MessageDTO message;
 
   @Schema(
       title = "Retain Message",
-      description = "Indicates if the message should be retained on the destination. If true, the message will be stored and sent to new subscribers on the topic.",
+      description =
+          "Indicates if the message should be retained on the destination. If true, the message will be stored and sent to new subscribers on the topic.",
       example = "false",
-      defaultValue = "false"
-  )
+      defaultValue = "false")
   private boolean retain = false;
 }

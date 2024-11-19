@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@ package io.mapsmessaging.network.io.connection;
 import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
 
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -105,7 +106,7 @@ public class EndPointConnection extends EndPointServerStatus {
   }
 
   @Override
-  public EndPointServerConfig getConfig() {
+  public EndPointServerConfigDTO getConfig() {
     return properties;
   }
 

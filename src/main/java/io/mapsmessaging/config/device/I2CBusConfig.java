@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,54 +18,108 @@
 
 package io.mapsmessaging.config.device;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.I2CDeviceConfigDTO;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
 @NoArgsConstructor
-@ToString
-public class I2CBusConfig extends DeviceBusConfig {
-
-  private int bus;
-  private boolean autoScan;
-  private List<I2CDeviceConfig> devices;
-  private String trigger;
-
+public class I2CBusConfig extends I2CBusConfigDTO implements DeviceBusConfig {
 
   public I2CBusConfig(ConfigurationProperties config) {
-    super(config);
-    bus = config.getIntProperty("bus", 0);
-    trigger = config.getProperty("trigger", "default");
-    autoScan = config.getBooleanProperty("autoScan", false);
-    devices = new ArrayList<>();
+    setEnabled(config.getBooleanProperty("enabled", false));
+    setTopicNameTemplate(
+        config.getProperty(
+            "topicNameTemplate",
+            "/device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]"));
+    setScanTime(config.getIntProperty("scanTime", 120000));
+    setFilter(config.getProperty("filter", "ON_CHANGE"));
+    setSelector(config.getProperty("selector", null));
+    setBus(config.getIntProperty("bus", 0));
+    setTrigger(config.getProperty("trigger", "default"));
+    setAutoScan(config.getBooleanProperty("autoScan", false));
+
+    List<I2CDeviceConfigDTO> deviceList = new ArrayList<>();
     Object obj = config.get("devices");
-    if(obj instanceof List) {
+    if (obj instanceof List) {
       List<ConfigurationProperties> configList = (List<ConfigurationProperties>) obj;
-      for(ConfigurationProperties configurationProperties:configList){
-        devices.add(new I2CDeviceConfig(configurationProperties));
+      for (ConfigurationProperties configurationProperties : configList) {
+        deviceList.add(new I2CDeviceConfig(configurationProperties));
       }
+    } else if (obj instanceof ConfigurationProperties) {
+      deviceList.add(new I2CDeviceConfig((ConfigurationProperties) obj));
     }
-    else if(obj instanceof ConfigurationProperties){
-      devices.add(new I2CDeviceConfig((ConfigurationProperties) obj));
+    setDevices(deviceList);
+  }
+
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof I2CBusConfigDTO)) {
+      return false;
     }
+    I2CBusConfigDTO newConfig = (I2CBusConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.isEnabled() != newConfig.isEnabled()) {
+      setEnabled(newConfig.isEnabled());
+      hasChanged = true;
+    }
+    if (this.getTopicNameTemplate() == null
+        || !this.getTopicNameTemplate().equals(newConfig.getTopicNameTemplate())) {
+      setTopicNameTemplate(newConfig.getTopicNameTemplate());
+      hasChanged = true;
+    }
+    if (this.isAutoScan() != newConfig.isAutoScan()) {
+      setAutoScan(newConfig.isAutoScan());
+      hasChanged = true;
+    }
+    if (this.getScanTime() != newConfig.getScanTime()) {
+      setScanTime(newConfig.getScanTime());
+      hasChanged = true;
+    }
+    if (this.getFilter() == null || !this.getFilter().equals(newConfig.getFilter())) {
+      setFilter(newConfig.getFilter());
+      hasChanged = true;
+    }
+    if (this.getSelector() == null || !this.getSelector().equals(newConfig.getSelector())) {
+      setSelector(newConfig.getSelector());
+      hasChanged = true;
+    }
+    if (this.getBus() != newConfig.getBus()) {
+      setBus(newConfig.getBus());
+      hasChanged = true;
+    }
+    if (this.getTrigger() == null || !this.getTrigger().equals(newConfig.getTrigger())) {
+      setTrigger(newConfig.getTrigger());
+      hasChanged = true;
+    }
+    if (this.getDevices() == null || !this.getDevices().equals(newConfig.getDevices())) {
+      setDevices(newConfig.getDevices());
+      hasChanged = true;
+    }
+    return hasChanged;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties props = super.toConfigurationProperties();
-    props.put("bus", bus);
-    props.put("autoScan", autoScan);
-    if(!trigger.isEmpty())props.put("trigger", trigger);
+    ConfigurationProperties props = new ConfigurationProperties();
+    props.put("enabled", isEnabled());
+    props.put("topicNameTemplate", getTopicNameTemplate());
+    props.put("scanTime", getScanTime());
+    props.put("bus", getBus());
+    props.put("autoScan", isAutoScan());
+    if (getFilter() != null) props.put("filter", getFilter());
+    if (getSelector() != null) props.put("selector", getSelector());
+    if (getTrigger() != null && !getTrigger().isEmpty()) props.put("trigger", getTrigger());
 
     List<ConfigurationProperties> deviceList = new ArrayList<>();
-    for(I2CDeviceConfig device:devices){
-      deviceList.add(device.toConfigurationProperties());
+    for (I2CDeviceConfigDTO device : getDevices()) {
+      if (device instanceof Config) {
+        deviceList.add(((Config) device).toConfigurationProperties());
+      }
     }
     props.put("devices", deviceList);
     return props;

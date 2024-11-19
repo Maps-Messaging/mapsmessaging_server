@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,9 @@
 
 package io.mapsmessaging.network.io.impl.dtls;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.impl.DtlsConfig;
-import io.mapsmessaging.config.network.impl.UdpConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.UdpConfigDTO;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPoint;
@@ -74,7 +76,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     this.inetAddress = new UDPInterfaceInformation(inetAddress);
     this.managerMBean = managerMBean;
     selectorTask = new SelectorTask(this, udpEndPoint.getConfig().getEndPointConfig(), udpEndPoint.isUDP());
-    long timeout = ((UdpConfig)udpEndPoint.getConfig().getEndPointConfig()).getIdleSessionTimeout();
+    long timeout = ((UdpConfigDTO)udpEndPoint.getConfig().getEndPointConfig()).getIdleSessionTimeout();
     sessionMapping = new UDPSessionManager<>(timeout);
     udpEndPoint.register(SelectionKey.OP_READ, selectorTask);
   }
@@ -85,7 +87,7 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
     DTLSEndPoint endPoint;
     if (state == null) {
       StateEngine stateEngine;
-      SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, ((DtlsConfig)udpEndPoint.getConfig().getEndPointConfig()).getSslConfig().toConfigurationProperties());
+      SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, ((Config)((DtlsConfig)udpEndPoint.getConfig().getEndPointConfig()).getSslConfig()).toConfigurationProperties());
       SSLParameters paras = sslEngine.getSSLParameters();
       //int mtu = inetAddress.getMTU()-40;
       int mtu = 8192;

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -70,7 +71,9 @@ public class ReadTask implements Selectable {
       if (readDelay > 0 && underflow > readFragmentation) {
         underflow = 0;
         endPoint.deregister(SelectionKey.OP_READ);
-        SimpleTaskScheduler.getInstance().schedule(new ScheduledRead(selectable), readDelay, TimeUnit.MILLISECONDS);
+        if (!endPoint.isClosed()) {
+          SimpleTaskScheduler.getInstance().schedule(new ScheduledRead(selectable), readDelay, TimeUnit.MILLISECONDS);
+        }
       } else {
         ThreadContext.put("endpoint", endPoint.getName());
         ThreadContext.put("protocol", selectorCallback.getName());
@@ -82,6 +85,7 @@ public class ReadTask implements Selectable {
         }
       }
     } catch (IOException e) {
+      e.printStackTrace();
       if (!(e.getMessage().equalsIgnoreCase("Socket closed") || e.getMessage().equalsIgnoreCase("Connection reset"))) {
         logger.log(READ_TASK_PACKET_EXCEPTION, e);
       }

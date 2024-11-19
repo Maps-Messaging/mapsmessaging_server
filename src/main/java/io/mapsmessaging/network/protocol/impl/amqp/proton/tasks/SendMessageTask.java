@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,13 +25,11 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.SubscriptionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslatorFactory;
+import java.io.IOException;
 import org.apache.qpid.proton.codec.DroppingWritableBuffer;
 import org.apache.qpid.proton.codec.WritableBuffer;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
-
-import java.io.IOException;
-import java.util.Map;
 
 public class SendMessageTask extends PacketTask {
 

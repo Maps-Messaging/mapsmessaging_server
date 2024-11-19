@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,30 +18,23 @@
 
 package io.mapsmessaging.config.network;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.config.protocol.LinkConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class EndPointConnectionServerConfig extends EndPointServerConfig{
+public class EndPointConnectionServerConfig extends EndPointConnectionServerConfigDTO implements Config {
 
-  private AuthConfig authConfig;
-  private String linkTransformation;
-  private List<LinkConfig> linkConfigs;
-
-  public EndPointConnectionServerConfig(ConfigurationProperties props){
-    super(props);
-    authConfig = new AuthConfig(props);
-    linkTransformation = props.getProperty("transformation", "");
+  public EndPointConnectionServerConfig(ConfigurationProperties props) {
+    EndPointConfigFactory.unpack(props, this);
+    this.authConfig = new AuthConfig(props);
+    this.linkTransformation = props.getProperty("transformation", "");
 
     linkConfigs = new ArrayList<>();
     Object obj = props.get("links");
@@ -53,18 +47,52 @@ public class EndPointConnectionServerConfig extends EndPointServerConfig{
     }
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
+    ConfigurationProperties config = new ConfigurationProperties();
+    EndPointConfigFactory.pack(config, this);
     config.put("transformation", linkTransformation);
+    List<ConfigurationProperties> linkProperties = new ArrayList<>();
+    for (LinkConfigDTO linkConfig : linkConfigs) {
+      linkProperties.add(((Config)linkConfig).toConfigurationProperties());
+    }
+    config.put("links", linkProperties);
     return config;
   }
 
-  public boolean update(EndPointConnectionServerConfig newConfig) {
+  @Override
+  public boolean update(BaseConfigDTO update) {
     boolean hasChanged = false;
-    if (this.linkTransformation == null || !this.linkTransformation.equals(newConfig.getLinkTransformation())) {
-      this.linkTransformation = newConfig.getLinkTransformation();
-      hasChanged = true;
+
+    if(update instanceof EndPointServerConfigDTO) {
+      hasChanged = EndPointConfigFactory.update(this, (EndPointServerConfigDTO) update);
+
+      if (update instanceof EndPointConnectionServerConfigDTO) {
+        EndPointConnectionServerConfig config = (EndPointConnectionServerConfig) update;
+        if ((this.linkTransformation == null && config.getLinkTransformation() != null)
+            || (this.linkTransformation != null
+                && !this.linkTransformation.equals(config.getLinkTransformation()))) {
+          this.linkTransformation = config.getLinkTransformation();
+          hasChanged = true;
+        }
+
+        if (!this.authConfig.update(config.getAuthConfig())) {
+          hasChanged = true;
+        }
+
+        if (this.linkConfigs.size() != config.getLinkConfigs().size()) {
+          this.linkConfigs = config.getLinkConfigs();
+          hasChanged = true;
+        } else {
+          for (int i = 0; i < this.linkConfigs.size(); i++) {
+            if (!this.linkConfigs.get(i).equals(config.getLinkConfigs().get(i))) {
+              this.linkConfigs.set(i, config.getLinkConfigs().get(i));
+              hasChanged = true;
+            }
+          }
+        }
+      }
     }
-    return super.update(newConfig) || this.authConfig.update(newConfig.getAuthConfig()) || hasChanged;
+    return hasChanged;
   }
 }

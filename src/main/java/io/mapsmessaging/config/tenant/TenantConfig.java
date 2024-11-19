@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,30 +18,36 @@
 
 package io.mapsmessaging.config.tenant;
 
-
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 
-@Data
-@NoArgsConstructor
-@Schema(description = "Tenant Configuration")
-public class TenantConfig {
-
-  private String name;
-  private String namespaceRoot;
-  private String scope;
+public class TenantConfig extends TenantConfigDTO implements Config {
 
   public TenantConfig(ConfigurationProperties properties) {
-    name = properties.getProperty("name", "");
-    namespaceRoot = properties.getProperty("namespaceRoot", "");
-    scope = properties.getProperty("scope", "");
+    super();
+    this.name = properties.getProperty("name", "");
+    this.namespaceRoot = properties.getProperty("namespaceRoot", "");
+    this.scope = properties.getProperty("scope", "");
   }
 
-  public boolean update(TenantConfig newConfig) {
-    boolean hasChanged = false;
+  @Override
+  public ConfigurationProperties toConfigurationProperties() {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    properties.put("name", this.name);
+    properties.put("namespaceRoot", this.namespaceRoot);
+    properties.put("scope", this.scope);
+    return properties;
+  }
 
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (!(config instanceof TenantConfigDTO)) {
+      return false;
+    }
+
+    TenantConfigDTO newConfig = (TenantConfigDTO) config;
     if (!this.name.equals(newConfig.getName())) {
       this.name = newConfig.getName();
       hasChanged = true;
@@ -56,13 +63,4 @@ public class TenantConfig {
 
     return hasChanged;
   }
-
-  public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("name", name);
-    properties.put("namespaceRoot", namespaceRoot);
-    properties.put("scope", scope);
-    return properties;
-  }
 }
-

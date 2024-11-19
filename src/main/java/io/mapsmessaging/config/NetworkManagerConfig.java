@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,32 +20,19 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.NetworkManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Network Manager Configuration")
-public class NetworkManagerConfig extends ManagementConfig {
-
-  private boolean preferIpV6Addresses;
-  private boolean scanNetworkChanges;
-  private int scanInterval;
-  private EndPointServerConfig global;
-  private List<EndPointServerConfig> endPointServerConfigList;
+public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Config {
 
   private NetworkManagerConfig(ConfigurationProperties config) {
-    preferIpV6Addresses = config.getBooleanProperty("preferIPv6Addresses", true);
+    this.preferIpV6Addresses = config.getBooleanProperty("preferIPv6Addresses", true);
     this.scanNetworkChanges = config.getBooleanProperty("scanNetworkChanges", true);
     this.scanInterval = config.getIntProperty("scanInterval", 60000);
 
@@ -52,41 +40,82 @@ public class NetworkManagerConfig extends ManagementConfig {
     if (globalConfig != null) {
       this.global = new EndPointServerConfig(globalConfig);
     }
+
+    this.endPointServerConfigList = new ArrayList<>();
     Object obj = config.get("data");
-    endPointServerConfigList = new ArrayList<>();
     if (obj instanceof List) {
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) obj) {
-        endPointServerConfigList.add(new EndPointServerConfig(entry));
+        this.endPointServerConfigList.add(new EndPointServerConfig(entry));
       }
     } else if (obj instanceof ConfigurationProperties) {
-      endPointServerConfigList.add(new EndPointServerConfig((ConfigurationProperties) obj));
+      this.endPointServerConfigList.add(new EndPointServerConfig((ConfigurationProperties) obj));
     }
   }
 
   @Contract(" -> new")
   public static @NotNull NetworkManagerConfig getInstance() {
-    return new NetworkManagerConfig(ConfigurationManager.getInstance().getProperties("NetworkManager"));
+    return new NetworkManagerConfig(
+        ConfigurationManager.getInstance().getProperties("NetworkManager"));
   }
 
   @Override
-  public boolean update(ManagementConfig config) {
-    return false;
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof NetworkManagerConfigDTO)) {
+      return false;
+    }
+
+    NetworkManagerConfigDTO newConfig = (NetworkManagerConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.preferIpV6Addresses != newConfig.isPreferIpV6Addresses()) {
+      this.preferIpV6Addresses = newConfig.isPreferIpV6Addresses();
+      hasChanged = true;
+    }
+    if (this.scanNetworkChanges != newConfig.isScanNetworkChanges()) {
+      this.scanNetworkChanges = newConfig.isScanNetworkChanges();
+      hasChanged = true;
+    }
+    if (this.scanInterval != newConfig.getScanInterval()) {
+      this.scanInterval = newConfig.getScanInterval();
+      hasChanged = true;
+    }
+    if (this.global != null && !this.global.equals(newConfig.getGlobal())) {
+      this.global = newConfig.getGlobal();
+      hasChanged = true;
+    }
+
+    if (this.endPointServerConfigList.size() != newConfig.getEndPointServerConfigList().size()) {
+      this.endPointServerConfigList = newConfig.getEndPointServerConfigList();
+      hasChanged = true;
+    } else {
+      for (int i = 0; i < this.endPointServerConfigList.size(); i++) {
+        if (!this.endPointServerConfigList.get(i).equals(newConfig.getEndPointServerConfigList().get(i))) {
+          this.endPointServerConfigList.set(i, newConfig.getEndPointServerConfigList().get(i));
+          hasChanged = true;
+        }
+      }
+    }
+
+    return hasChanged;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    if (global != null) {
-      config.put("global", this.global.toConfigurationProperties());
+    if (this.global != null) {
+      config.put("global", ((Config)this.global).toConfigurationProperties());
     }
+
     List<ConfigurationProperties> data = new ArrayList<>();
-    for (EndPointServerConfig endPointServerConfig : endPointServerConfigList) {
-      data.add(endPointServerConfig.toConfigurationProperties());
+    for (EndPointServerConfigDTO endPointServerConfig : this.endPointServerConfigList) {
+      data.add(((Config)endPointServerConfig).toConfigurationProperties());
     }
+
     config.put("data", data);
-    config.put("preferIPv6Addresses", preferIpV6Addresses);
-    config.put("scanInterval", scanInterval);
-    config.put("scanNetworkChanges", scanNetworkChanges);
+    config.put("preferIPv6Addresses", this.preferIpV6Addresses);
+    config.put("scanInterval", this.scanInterval);
+    config.put("scanNetworkChanges", this.scanNetworkChanges);
+
     return config;
   }
 }

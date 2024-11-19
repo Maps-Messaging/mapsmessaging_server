@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,29 +20,47 @@ package io.mapsmessaging.config.protocol;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.PredefinedTopicsDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class PredefinedTopics extends Config {
-  private int id;
-  private String topic;
-  private String address;
+public class PredefinedTopics extends PredefinedTopicsDTO implements Config {
 
-  public PredefinedTopics(ConfigurationProperties config){
-    id = config.getIntProperty("id", 0);
-    topic = config.getProperty("topic", "");
-    address = config.getProperty("address", "*");
+  public PredefinedTopics(ConfigurationProperties config) {
+    this.id = config.getIntProperty("id", 0);
+    this.topic = config.getProperty("topic", "");
+    this.address = config.getProperty("address", "*");
+  }
+
+
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+
+    if (config instanceof PredefinedTopicsDTO) {
+    PredefinedTopicsDTO newConfig = (PredefinedTopicsDTO) config;
+      if (this.id != newConfig.getId()) {
+        this.id = newConfig.getId();
+        hasChanged = true;
+      }
+      if (!this.topic.equals(newConfig.getTopic())) {
+        this.topic = newConfig.getTopic();
+        hasChanged = true;
+      }
+      if (!this.address.equals(newConfig.getAddress())) {
+        this.address = newConfig.getAddress();
+        hasChanged = true;
+      }
+    }
+    return hasChanged;
   }
 
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
-    return null;
+    ConfigurationProperties config = new ConfigurationProperties();
+    config.put("id", this.id);
+    config.put("topic", this.topic);
+    config.put("address", this.address);
+    return config;
   }
 }

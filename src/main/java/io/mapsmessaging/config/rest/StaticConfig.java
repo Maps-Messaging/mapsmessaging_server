@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,31 +18,45 @@
 
 package io.mapsmessaging.config.rest;
 
-
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.rest.StaticConfigDTO;
 
-@Data
-@NoArgsConstructor
-@Schema(description = "Static Configuration")
-public class StaticConfig extends Config {
-
-  private boolean enabled;
-  private String directory;
+public class StaticConfig extends StaticConfigDTO implements Config {
 
   public StaticConfig(ConfigurationProperties properties) {
-    enabled = properties.getBooleanProperty("enabled", true);
-    directory = properties.getProperty("directory", "{{MAPS_HOME}}/www");
+    super();
+    this.enabled = properties.getBooleanProperty("enabled", true);
+    this.directory = properties.getProperty("directory", "{{MAPS_HOME}}/www");
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("enabled", enabled);
-    properties.put("directory", directory);
+    properties.put("enabled", this.enabled);
+    properties.put("directory", this.directory);
     return properties;
+  }
+
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof StaticConfigDTO)) {
+      return false;
+    }
+
+    StaticConfigDTO newConfig = (StaticConfigDTO) config;
+    boolean hasChanged = false;
+
+    if (this.enabled != newConfig.isEnabled()) {
+      this.enabled = newConfig.isEnabled();
+      hasChanged = true;
+    }
+    if (this.directory == null || !this.directory.equals(newConfig.getDirectory())) {
+      this.directory = newConfig.getDirectory();
+      hasChanged = true;
+    }
+
+    return hasChanged;
   }
 }

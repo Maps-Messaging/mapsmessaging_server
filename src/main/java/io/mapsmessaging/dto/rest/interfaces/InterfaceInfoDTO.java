@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.dto.rest.interfaces;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
@@ -30,41 +30,28 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     title = "Interface Information",
-    description = "Contains details about an interface, including its name, host, port, and current state."
-)
+    description =
+        "Contains details about an interface, including its name, host, port, and current state.")
 public class InterfaceInfoDTO implements Serializable {
 
   @Schema(
       title = "Interface Name",
       description = "Unique name of the interface",
-      example = "myInterface"
-  )
+      example = "myInterface")
   private String name;
 
-  @Schema(
-      title = "Port",
-      description = "Port that the interface is bound to",
-      example = "8080"
-  )
+  @Schema(title = "Port", description = "Port that the interface is bound to", example = "8080")
   private int port;
 
   @Schema(
       title = "Host",
       description = "Host that the interface is bound to",
-      example = "http://localhost"
-  )
+      example = "http://localhost")
   private String host;
 
-  @Schema(
-      title = "State",
-      description = "Current state of the interface",
-      example = "Started"
-  )
+  @Schema(title = "State", description = "Current state of the interface", example = "Started")
   private String state;
 
-  @Schema(
-      title = "Configuration",
-      description = "Configuration settings for the interface"
-  )
-  private EndPointServerConfig config;
+  @Schema(title = "Configuration", description = "Configuration settings for the interface")
+  private EndPointServerConfigDTO config;
 }

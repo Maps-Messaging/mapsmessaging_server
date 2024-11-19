@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -44,8 +46,8 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
   public EndPoint connect(EndPointURL url, SelectorLoadManager selector, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxPath)
       throws IOException {
     TlsConfig securityProps = (TlsConfig) endPointServerStatus.getConfig().getEndPointConfig();
-    SSLContext context = SslHelper.createContext(securityProps.getSslConfig().getContext(), securityProps.getSslConfig().toConfigurationProperties(), logger);
-    SSLEngine engine = SslHelper.createSSLEngine(context, securityProps.getSslConfig().toConfigurationProperties());
+    SSLContext context = SslHelper.createContext(securityProps.getSslConfig().getContext(),((Config) securityProps.getSslConfig()).toConfigurationProperties(), logger);
+    SSLEngine engine = SslHelper.createSSLEngine(context, ((Config)securityProps.getSslConfig()).toConfigurationProperties());
     SocketChannel channel = SocketChannel.open();
     InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
     channel.configureBlocking(true);

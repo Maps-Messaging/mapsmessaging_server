@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,32 +28,30 @@ import lombok.Data;
 @AllArgsConstructor
 @Schema(
     title = "Group",
-    description = "Represents a group of users within the system, identified by a unique name and ID."
-)
+    description =
+        "Represents a group of users within the system, identified by a unique name and ID.")
 public class GroupDTO {
 
   @Schema(
       title = "Group Name",
       description = "The name of the group, such as an administrative or user-defined role.",
       example = "admin",
-      nullable = false
-  )
+      nullable = false)
   private final String name;
 
   @Schema(
       title = "Group Unique ID",
       description = "The unique identifier for the group, generated as a UUID.",
       example = "e808afcb-1ff9-46cd-a322-3119dbf1d071",
-      nullable = false
-  )
+      nullable = false)
   private final UUID uniqueId;
 
   @Schema(
       title = "Group Members",
       description = "A list of unique IDs representing the members of this group.",
       type = "array",
-      example = "[\"83db8741-57ca-4147-a973-49789d9150bb\",\"32708878-2eba-4dec-b5f5-94e63fb45c0d\",\"e59b1a11-73d7-4962-b3be-65715d99b172\"]",
-      nullable = true
-  )
+      example =
+          "[\"83db8741-57ca-4147-a973-49789d9150bb\",\"32708878-2eba-4dec-b5f5-94e63fb45c0d\",\"e59b1a11-73d7-4962-b3be-65715d99b172\"]",
+      nullable = true)
   private final List<UUID> usersList;
 }

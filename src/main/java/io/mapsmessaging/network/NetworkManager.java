@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,7 +19,7 @@
 package io.mapsmessaging.network;
 
 import io.mapsmessaging.config.NetworkManagerConfig;
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -73,7 +74,7 @@ public class NetworkManager implements ServiceManager, Agent {
   }
 
   public void initialise() {
-    for (EndPointServerConfig endPointServerConfig : config.getEndPointServerConfigList()) {
+    for (EndPointServerConfigDTO endPointServerConfig : config.getEndPointServerConfigList()) {
       EndPointURL endPointURL = EndPointURLFactory.getInstance().create(endPointServerConfig.getUrl());
       initialiseInstance(endPointURL, endPointServerConfig);
     }
@@ -83,7 +84,7 @@ public class NetworkManager implements ServiceManager, Agent {
   // We are constructing end points which open a resource, we need this resource to remain open
   // we add it to a list that manages the close
   @SuppressWarnings("java:S2095")
-  private void initialiseInstance(EndPointURL endPointURL, EndPointServerConfig endPointServerConfig) {
+  private void initialiseInstance(EndPointURL endPointURL, EndPointServerConfigDTO endPointServerConfig) {
     for (EndPointServerFactory endPointServerFactory : endPointServers) {
       if (endPointServerFactory.getName().equals(endPointURL.getProtocol())) {
         if (endPointServerFactory.active()) {

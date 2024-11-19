@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +28,7 @@ import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.config.AuthManagerConfig;
+import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.Group;
@@ -80,9 +82,9 @@ public class AuthManager implements Agent {
   public void start() {
     if (authenticationEnabled) {
       try {
-        authenticationStorage = new AuthenticationStorage(config.getAuthConfig());
+        authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()));
         if (authenticationStorage.isFirstBoot()) {
-          createInitialUsers(config.getAuthConfig().getProperty("configDirectory"));
+          createInitialUsers((String)config.getAuthConfig().get("configDirectory"));
         }
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {

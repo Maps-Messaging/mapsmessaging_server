@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,21 +28,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     title = "Schema Post Data",
-    description = "Represents the data required to post a new schema, including the JSON-encoded schema object and its context."
-)
+    description =
+        "Represents the data required to post a new schema, including the JSON-encoded schema object and its context.")
 public class SchemaPostDTO {
 
   @Schema(
       title = "Schema",
       description = "A JSON-encoded string representing the schema object to be posted.",
-      example = "{\"type\": \"record\", \"name\": \"User\", \"fields\": [{\"name\": \"id\", \"type\": \"string\"}]}"
-  )
+      example =
+          "{\"type\": \"record\", \"name\": \"User\", \"fields\": [{\"name\": \"id\", \"type\": \"string\"}]}")
   private String schema;
 
   @Schema(
       title = "Context",
-      description = "The name or context of the schema, identifying the scope or purpose for which it is used.",
-      example = "UserProfile"
-  )
+      description =
+          "The name or context of the schema, identifying the scope or purpose for which it is used.",
+      example = "UserProfile")
   private String context;
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,10 +19,11 @@
 package io.mapsmessaging.hardware.device.handler.i2c;
 
 import io.mapsmessaging.config.device.I2CBusConfig;
-import io.mapsmessaging.config.device.I2CDeviceConfig;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.devices.i2c.I2CDeviceController;
+import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
+import io.mapsmessaging.dto.rest.config.device.I2CDeviceConfigDTO;
 import io.mapsmessaging.hardware.device.DeviceSessionManagement;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
@@ -36,7 +38,7 @@ public class I2CBusHandler extends BusHandler {
   private final I2CBusManager i2CBusManager;
   private final Map<Integer, String> selectorMap;
 
-  public I2CBusHandler(I2CBusManager i2CBusManager, I2CBusConfig properties, Trigger trigger){
+  public I2CBusHandler(I2CBusManager i2CBusManager, I2CBusConfigDTO properties, Trigger trigger){
     super(properties, trigger);
     this.i2CBusManager = i2CBusManager;
     selectorMap = new LinkedHashMap<>();
@@ -60,13 +62,13 @@ public class I2CBusHandler extends BusHandler {
   }
 
   private void processConfiguredDevices(){
-    List<I2CDeviceConfig> i2CDeviceConfigs = ((I2CBusConfig)properties).getDevices();
-    for(I2CDeviceConfig deviceConfig: i2CDeviceConfigs){
+    List<I2CDeviceConfigDTO> i2CDeviceConfigs = ((I2CBusConfig)properties).getDevices();
+    for(I2CDeviceConfigDTO deviceConfig: i2CDeviceConfigs){
       configureDevice(deviceConfig);
     }
   }
 
-  private void configureDevice(I2CDeviceConfig deviceConfig){
+  private void configureDevice(I2CDeviceConfigDTO deviceConfig){
     String name = deviceConfig.getName();
     int addr = deviceConfig.getAddress();
     String selector = deviceConfig.getSelector();

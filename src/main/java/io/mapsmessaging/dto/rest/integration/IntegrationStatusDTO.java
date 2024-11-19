@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,85 +30,76 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     title = "Integration Status",
-    description = "Represents the status of an integration, including bytes and messages processed, connection state, errors, and performance statistics."
-)
+    description =
+        "Represents the status of an integration, including bytes and messages processed, connection state, errors, and performance statistics.")
 public class IntegrationStatusDTO {
 
   @Schema(
       title = "Interface Name",
       description = "The name of the interface associated with this integration.",
       example = "myInterface",
-      nullable = false
-  )
+      nullable = false)
   private String interfaceName;
 
   @Schema(
       title = "Bytes Sent",
       description = "The total number of bytes sent by the interface.",
       example = "123456",
-      minimum = "0"
-  )
+      minimum = "0")
   private long bytesSent;
 
   @Schema(
       title = "Bytes Received",
       description = "The total number of bytes received by the interface.",
       example = "654321",
-      minimum = "0"
-  )
+      minimum = "0")
   private long bytesReceived;
 
   @Schema(
       title = "Messages Sent",
       description = "The total number of messages sent by the interface.",
       example = "100",
-      minimum = "0"
-  )
+      minimum = "0")
   private long messagesSent;
 
   @Schema(
       title = "Messages Received",
       description = "The total number of messages received by the interface.",
       example = "95",
-      minimum = "0"
-  )
+      minimum = "0")
   private long messagesReceived;
 
   @Schema(
       title = "Connection Errors",
       description = "The total count of connection errors encountered.",
       example = "2",
-      minimum = "0"
-  )
+      minimum = "0")
   private long errors;
 
   @Schema(
       title = "Last Read Time",
       description = "The timestamp of the last read operation.",
-      example = "1625812345678"
-  )
+      example = "1625812345678")
   private long lastReadTime;
 
   @Schema(
       title = "Last Write Time",
       description = "The timestamp of the last write operation.",
-      example = "1625812345678"
-  )
+      example = "1625812345678")
   private long lastWriteTime;
 
   @Schema(
       title = "Interface State",
       description = "The current state of the interface (e.g., active, inactive).",
       example = "active",
-      nullable = false
-  )
+      nullable = false)
   private String state;
 
   @Schema(
       title = "Statistics",
       description = "A map of moving averages related to interface performance metrics.",
-      example = "{\"averageRead\": {\"name\": \"averageRead\", \"unitName\": \"bytes\", \"current\": 50, ...}}",
-      nullable = true
-  )
+      example =
+          "{\"averageRead\": {\"name\": \"averageRead\", \"unitName\": \"bytes\", \"current\": 50, ...}}",
+      nullable = true)
   private Map<String, LinkedMovingAverageRecordDTO> statistics;
 }

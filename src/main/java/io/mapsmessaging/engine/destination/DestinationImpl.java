@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,8 +21,8 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.admin.DestinationJMX;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
@@ -144,7 +145,7 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of resource that this destination represents
    * @throws IOException if, at anytime, the file system was unable to construct, read or write to the required files
    */
-  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfig pathManager, @NonNull @NotNull UUID uuid,
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfigDTO pathManager, @NonNull @NotNull UUID uuid,
                          @NonNull @NotNull DestinationType destinationType) throws IOException {
     schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
     this.fullyQualifiedNamespace = name;
@@ -309,7 +310,7 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
-  private static String computePath(@NonNull @NotNull DestinationConfig pathManager, UUID uuid) {
+  private static String computePath(@NonNull @NotNull DestinationConfigDTO pathManager, UUID uuid) {
     return FilePathHelper.cleanPath(pathManager.getDirectory() + File.separator + uuid.toString() + File.separator);
   }
 

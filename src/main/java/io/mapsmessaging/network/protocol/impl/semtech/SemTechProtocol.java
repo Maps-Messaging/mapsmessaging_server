@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.semtech;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.config.protocol.impl.SemtechConfig;
+import io.mapsmessaging.dto.rest.config.protocol.impl.SemtechConfigDTO;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -72,7 +73,7 @@ public class SemTechProtocol extends ProtocolImpl {
         "anonymous"
     );
 
-    SemtechConfig semtechConfig = (SemtechConfig) endPoint.getConfig().getProtocolConfig("semtech");
+    SemtechConfigDTO semtechConfig = (SemtechConfigDTO) endPoint.getConfig().getProtocolConfig("semtech");
     int maxQueued = semtechConfig.getMaxQueued();
     SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), new ProtocolClientConnection(this));
     sessionContext.setPersistentSession(false);

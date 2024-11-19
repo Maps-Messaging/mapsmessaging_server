@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,12 +20,11 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.storage.Statistics;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Future;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.Nullable;
 
 public interface Resource extends AutoCloseable {
 

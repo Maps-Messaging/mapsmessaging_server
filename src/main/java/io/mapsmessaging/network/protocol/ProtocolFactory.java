@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -53,7 +54,9 @@ public class ProtocolFactory implements ServiceManager {
     int failed = 0;
     StringBuilder sb = new StringBuilder();
     for (ProtocolImplFactory protocol : protocolServiceList) {
-      if ((protocols.contains("all") && !protocol.getName().equalsIgnoreCase("echo") && !protocol.getName().equalsIgnoreCase("nmea")) ||
+      if ((protocols.contains("all") &&
+          !protocol.getName().equalsIgnoreCase("echo") &&
+          !protocol.getName().equalsIgnoreCase("nmea")) ||
           protocols.contains(protocol.getName().toLowerCase())) {
         sb.append(protocol.getName()).append(",");
         potential++;

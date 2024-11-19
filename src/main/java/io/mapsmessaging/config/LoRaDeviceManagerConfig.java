@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,26 +20,17 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.config.lora.LoRaDeviceConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.LoRaDeviceManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "LoRa Device Management Configuration")
-public class LoRaDeviceManagerConfig extends ManagementConfig {
-
-  private List<LoRaDeviceConfig> deviceConfigList;
+public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implements Config {
 
   public static LoRaDeviceManagerConfig getInstance() {
-    return new LoRaDeviceManagerConfig(ConfigurationManager.getInstance().getProperties("LoRaDevice"));
+    return new LoRaDeviceManagerConfig(
+        ConfigurationManager.getInstance().getProperties("LoRaDevice"));
   }
 
   private LoRaDeviceManagerConfig(ConfigurationProperties properties) {
@@ -54,14 +46,30 @@ public class LoRaDeviceManagerConfig extends ManagementConfig {
   }
 
   @Override
-  public boolean update(ManagementConfig config) {
-    return false;
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof LoRaDeviceManagerConfigDTO) {
+      LoRaDeviceManagerConfigDTO newConfig = (LoRaDeviceManagerConfigDTO) config;
+
+      if (this.deviceConfigList.size() != newConfig.getDeviceConfigList().size()) {
+        this.deviceConfigList = newConfig.getDeviceConfigList();
+        hasChanged = true;
+      } else {
+        for (int i = 0; i < this.deviceConfigList.size(); i++) {
+          if (!this.deviceConfigList.get(i).equals(newConfig.getDeviceConfigList().get(i))) {
+            this.deviceConfigList.set(i, newConfig.getDeviceConfigList().get(i));
+            hasChanged = true;
+          }
+        }
+      }
+    }
+    return hasChanged;
   }
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     List<ConfigurationProperties> configList = new ArrayList<>();
-    for(LoRaDeviceConfig config:deviceConfigList){
+    for (LoRaDeviceConfig config : deviceConfigList) {
       configList.add(config.toConfigurationProperties());
     }
     ConfigurationProperties properties = new ConfigurationProperties();

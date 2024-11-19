@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +18,8 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
-import io.mapsmessaging.config.auth.SaslConfig;
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import java.io.IOException;
 import java.util.HashMap;
@@ -63,9 +64,9 @@ public class SaslManager {
     }
   }
 
-  private SaslAuthenticationMechanism buildMechansim(EndPointServerConfig config) throws IOException {
+  private SaslAuthenticationMechanism buildMechansim(EndPointServerConfigDTO config) throws IOException {
     SaslAuthenticationMechanism authenticationContext = null;
-    SaslConfig saslConfig = config.getSaslConfig();
+    SaslConfigDTO saslConfig = config.getSaslConfig();
     if (saslConfig != null) {
       Map<String, String> props = new HashMap<>();
       props.put(javax.security.sasl.Sasl.QOP, "auth");

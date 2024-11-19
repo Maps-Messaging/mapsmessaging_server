@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,33 +18,52 @@
 
 package io.mapsmessaging.config.protocol.impl;
 
-import io.mapsmessaging.config.protocol.ProtocolConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.StompConfigDTO;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-public class StompConfig extends ProtocolConfig {
-
-  private int maxBufferSize;
-  private int maxReceive;
+public class StompConfig extends StompConfigDTO implements Config {
 
   public StompConfig(ConfigurationProperties config) {
-    super(config);
-    maxBufferSize = config.getIntProperty("maximumBufferSize", 65535);
-    maxReceive = config.getIntProperty("maximumReceive", 1000);
     setType("stomp");
+    ProtocolConfigFactory.unpack(config, this);
+
+    // Initialize Stomp-specific fields from config
+    this.maxBufferSize = config.getIntProperty("maximumBufferSize", maxBufferSize);
+    this.maxReceive = config.getIntProperty("maximumReceive", maxReceive);
   }
 
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    boolean hasChanged = false;
+    if (config instanceof StompConfigDTO) {
+      StompConfigDTO newConfig = (StompConfigDTO) config;
+
+      // Check each field and update if necessary
+      if (this.maxBufferSize != newConfig.getMaxBufferSize()) {
+        this.maxBufferSize = newConfig.getMaxBufferSize();
+        hasChanged = true;
+      }
+      if (this.maxReceive != newConfig.getMaxReceive()) {
+        this.maxReceive = newConfig.getMaxReceive();
+        hasChanged = true;
+      }
+
+      // Update fields from ProtocolConfigFactory if needed
+      if (ProtocolConfigFactory.update(this, newConfig)) {
+        hasChanged = true;
+      }
+    }
+    return hasChanged;
+  }
+
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("maximumBufferSize", maxBufferSize);
-    config.put("maximumReceive", maxReceive);
-    return config;
+    ConfigurationProperties properties = new ConfigurationProperties();
+    ProtocolConfigFactory.pack(properties, this);
+    properties.put("maximumBufferSize", this.maxBufferSize);
+    properties.put("maximumReceive", this.maxReceive);
+    return properties;
   }
 }

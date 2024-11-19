@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,26 +19,12 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.DiscoveryManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
-@ToString
-@Schema(description = "Discovery Manager Configuration")
-public class DiscoveryManagerConfig extends ManagementConfig {
+public class DiscoveryManagerConfig extends DiscoveryManagerConfigDTO implements Config {
 
-  private boolean enabled;
-  private String hostnames;
-  private boolean addTxtRecords;
-  private String domainName;
-
-  // Constructor to load properties from ConfigurationProperties
   private DiscoveryManagerConfig(ConfigurationProperties config) {
     this.enabled = config.getBooleanProperty("enabled", false);
     this.hostnames = config.getProperty("hostnames", "::");
@@ -50,8 +37,13 @@ public class DiscoveryManagerConfig extends ManagementConfig {
         ConfigurationManager.getInstance().getProperties("DiscoveryManager"));
   }
 
-  // Method to update properties from another DiscoveryManagerConfig object
-  public boolean update(DiscoveryManagerConfig newConfig) {
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof DiscoveryManagerConfigDTO)) {
+      return false;
+    }
+
+    DiscoveryManagerConfigDTO newConfig = (DiscoveryManagerConfigDTO) config;
     boolean hasChanged = false;
 
     if (this.enabled != newConfig.isEnabled()) {
@@ -75,18 +67,12 @@ public class DiscoveryManagerConfig extends ManagementConfig {
   }
 
   @Override
-  public boolean update(ManagementConfig config) {
-    return false;
-  }
-
-  // Method to push current values into a ConfigurationProperties object
-  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    config.put("DiscoveryManager.enabled", this.enabled);
-    config.put("DiscoveryManager.hostnames", this.hostnames);
-    config.put("DiscoveryManager.addTxtRecords", this.addTxtRecords);
-    config.put("DiscoveryManager.domainName", this.domainName);
+    config.put("enabled", this.enabled);
+    config.put("hostnames", this.hostnames);
+    config.put("addTxtRecords", this.addTxtRecords);
+    config.put("domainName", this.domainName);
     return config;
   }
 }

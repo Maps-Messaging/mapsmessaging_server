@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,29 +18,47 @@
 
 package io.mapsmessaging.config.destination;
 
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.CacheConfigDTO;
 
-@Data
-@NoArgsConstructor
-@Schema(description = "Cache Configuration")
-public class CacheConfig {
-
-  private String type;
-  private boolean writeThrough;
+public class CacheConfig extends CacheConfigDTO implements Config {
 
   public CacheConfig(ConfigurationProperties properties) {
-    type = properties.getProperty("type", "WeakReference");
-    writeThrough = properties.getProperty("writeThrough", "disable").equalsIgnoreCase("enable");
+    this.type = properties.getProperty("type", "WeakReference");
+    this.writeThrough =
+        properties.getProperty("writeThrough", "disable").equalsIgnoreCase("enable");
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("type", type);
-    properties.put("writeThrough", writeThrough?"enable":"disable");
+    properties.put("type", this.type);
+    properties.put("writeThrough", this.writeThrough ? "enable" : "disable");
     return properties;
   }
-}
 
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof CacheConfigDTO)) {
+      return false;
+    }
+
+    CacheConfigDTO newConfig = (CacheConfigDTO) config;
+    boolean hasChanged = false;
+
+    // Check and update type
+    if (this.type == null || !this.type.equals(newConfig.getType())) {
+      this.type = newConfig.getType();
+      hasChanged = true;
+    }
+
+    // Check and update writeThrough
+    if (this.writeThrough != newConfig.isWriteThrough()) {
+      this.writeThrough = newConfig.isWriteThrough();
+      hasChanged = true;
+    }
+
+    return hasChanged;
+  }
+}

@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +26,13 @@ public class HeightType implements Type {
   private final char unit;
 
   public HeightType(String value, String unit) {
-    height = Double.parseDouble(value);
+    double t = 0.0d;
+    try {
+      t = Double.parseDouble(value);
+    } catch (NumberFormatException e) {
+      //Ignore, it could simply be blank
+    }
+    height = t;
     this.unit = unit.toUpperCase(Locale.ROOT).charAt(0);
   }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@
  */
 package io.mapsmessaging.engine.destination;
 
-import io.mapsmessaging.config.destination.DestinationConfig;
+import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.engine.resources.ResourceFactory;
 import java.io.File;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import lombok.Getter;
  */
 public class DestinationLocator {
 
-  private final DestinationConfig pathManager;
+  private final DestinationConfigDTO pathManager;
   private final String subDirectory;
 
   @Getter
@@ -39,7 +40,7 @@ public class DestinationLocator {
   @Getter
   private final List<File> valid;
 
-  public DestinationLocator(DestinationConfig pathManager, String subdirectory) {
+  public DestinationLocator(DestinationConfigDTO pathManager, String subdirectory) {
     this.pathManager = pathManager;
     this.subDirectory = subdirectory;
     valid = new ArrayList<>();

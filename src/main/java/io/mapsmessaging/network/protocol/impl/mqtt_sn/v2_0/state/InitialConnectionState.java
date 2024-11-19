@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,8 +20,8 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.config.auth.SaslConfig;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
@@ -60,7 +61,7 @@ public class InitialConnectionState implements State {
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) throws IOException {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       SaslAuthenticationMechanism saslAuthenticationMechanism = ((MQTT_SNProtocolV2)protocol).getSaslAuthenticationMechanism();
-      SaslConfig saslConfig = endPoint.getConfig().getSaslConfig();
+      SaslConfigDTO saslConfig = endPoint.getConfig().getSaslConfig();
 
       Connect connect = (Connect) mqtt;
 

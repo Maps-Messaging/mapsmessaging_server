@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +20,8 @@ package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.engine.session.SessionManagerTest;
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
@@ -26,9 +29,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class ServerTopicTest extends MQTTBaseTest {
 

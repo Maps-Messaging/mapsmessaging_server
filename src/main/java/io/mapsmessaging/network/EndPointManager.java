@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 package io.mapsmessaging.network;
 
-import io.mapsmessaging.config.network.EndPointServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -45,7 +46,7 @@ public class EndPointManager implements Closeable, AcceptHandler {
   @Getter
   private EndPointServer endPointServer;
 
-  public EndPointManager(EndPointURL url, EndPointServerFactory factory, EndPointServerConfig endPointServerConfig, NetworkManagerJMX managerBean) throws IOException {
+  public EndPointManager(EndPointURL url, EndPointServerFactory factory, EndPointServerConfigDTO endPointServerConfig, NetworkManagerJMX managerBean) throws IOException {
     logger = LoggerFactory.getLogger(NetworkManager.class.getName());
     ThreadContext.put("endpoint", url.toString());
     endPointURL = url;

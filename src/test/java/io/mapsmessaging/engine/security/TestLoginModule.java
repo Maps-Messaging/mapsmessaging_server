@@ -1,5 +1,6 @@
 /*
- * Copyright [ 2020 - 2023 ] [Matthew Buckton]
+ * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,14 +19,13 @@
 package io.mapsmessaging.engine.security;
 
 import io.mapsmessaging.security.jaas.AnonymousPrincipal;
-
+import java.io.IOException;
+import java.util.stream.IntStream;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
-import java.util.stream.IntStream;
 
 public class TestLoginModule extends BaseLoginModule {
 

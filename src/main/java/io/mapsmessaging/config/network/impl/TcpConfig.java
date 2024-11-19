@@ -1,5 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
+ * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,91 +18,34 @@
 
 package io.mapsmessaging.config.network.impl;
 
-import io.mapsmessaging.config.network.EndPointConfig;
+import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import lombok.Data;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @EqualsAndHashCode(callSuper = true)
-@Data
-@NoArgsConstructor
 @ToString
-public class TcpConfig extends EndPointConfig {
-
-  private int receiveBufferSize;
-  private int sendBufferSize;
-  private int timeout;
-  private int backlog;
-  private int soLingerDelaySec;
-  private int readDelayOnFragmentation;
-  private int fragmentationLimit;
-  private boolean enableReadDelayOnFragmentation;
+public class TcpConfig extends TcpConfigDTO implements Config {
 
   public TcpConfig(ConfigurationProperties config) {
-    super(config);
-    this.receiveBufferSize = config.getIntProperty("receiveBufferSize", 128000);
-    this.sendBufferSize = config.getIntProperty("sendBufferSize", 128000);
-    this.timeout = config.getIntProperty("timeout", 60000);
-    this.backlog = config.getIntProperty("backlog", 100);
-    this.soLingerDelaySec = config.getIntProperty("soLingerDelaySec", 10);
-    this.readDelayOnFragmentation = config.getIntProperty("readDelayOnFragmentation", 100);
-    this.fragmentationLimit = config.getIntProperty("fragmentationLimit", 5);
-    this.enableReadDelayOnFragmentation = config.getBooleanProperty("enableReadDelayOnFragmentation", true);
     setType("tcp");
+    NetworkConfigFactory.unpack(config, this);
   }
 
-  public boolean update(TcpConfig newConfig) {
-    boolean hasChanged = super.update(newConfig);
-
-    if (this.receiveBufferSize != newConfig.getReceiveBufferSize()) {
-      this.receiveBufferSize = newConfig.getReceiveBufferSize();
-      hasChanged = true;
-    }
-    if (this.sendBufferSize != newConfig.getSendBufferSize()) {
-      this.sendBufferSize = newConfig.getSendBufferSize();
-      hasChanged = true;
-    }
-    if (this.timeout != newConfig.getTimeout()) {
-      this.timeout = newConfig.getTimeout();
-      hasChanged = true;
-    }
-    if (this.backlog != newConfig.getBacklog()) {
-      this.backlog = newConfig.getBacklog();
-      hasChanged = true;
-    }
-    if (this.soLingerDelaySec != newConfig.getSoLingerDelaySec()) {
-      this.soLingerDelaySec = newConfig.getSoLingerDelaySec();
-      hasChanged = true;
-    }
-
-    if (this.fragmentationLimit != newConfig.getFragmentationLimit()) {
-      this.fragmentationLimit = newConfig.getFragmentationLimit();
-      hasChanged = true;
-    }
-    if (this.readDelayOnFragmentation != newConfig.getReadDelayOnFragmentation()) {
-      this.readDelayOnFragmentation = newConfig.getReadDelayOnFragmentation();
-      hasChanged = true;
-    }
-    if (this.enableReadDelayOnFragmentation != newConfig.isEnableReadDelayOnFragmentation()) {
-      this.enableReadDelayOnFragmentation = newConfig.isEnableReadDelayOnFragmentation();
-      hasChanged = true;
+  public boolean update(BaseConfigDTO update) {
+    boolean hasChanged = false;
+    if (update instanceof TcpConfigDTO) {
+      hasChanged = NetworkConfigFactory.update(this, (TcpConfigDTO) update);
     }
 
     return hasChanged;
   }
 
   public ConfigurationProperties toConfigurationProperties() {
-    ConfigurationProperties config = super.toConfigurationProperties();
-    config.put("receiveBufferSize", this.receiveBufferSize);
-    config.put("sendBufferSize", this.sendBufferSize);
-    config.put("timeout", this.timeout);
-    config.put("backlog", this.backlog);
-    config.put("soLingerDelaySec", this.soLingerDelaySec);
-    config.put("readDelayOnFragmentation", this.readDelayOnFragmentation);
-    config.put("enableReadDelayOnFragmentation", this.enableReadDelayOnFragmentation);
-    config.put("fragmentationLimit", this.fragmentationLimit);
+    ConfigurationProperties config = new ConfigurationProperties();
+    NetworkConfigFactory.pack(config, this);
     return config;
   }
 }
