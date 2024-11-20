@@ -24,27 +24,25 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SemTechProtocolFactory extends ProtocolImplFactory {
 
-  private final Map<EndPoint, SemTechProtocol> mappedInterfaces;
+//  private final Map<EndPoint, SemTechProtocol> mappedInterfaces;
 
   public SemTechProtocolFactory() {
     super("semtech", "SemTech UDP protocol", null);
-    mappedInterfaces = new ConcurrentHashMap<>();
+  //  mappedInterfaces = new ConcurrentHashMap<>();
   }
 
   @Override
   public void closed(EndPoint endPoint) {
-    mappedInterfaces.remove(endPoint);
+  //  mappedInterfaces.remove(endPoint);
   }
 
   @Override
   public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     SemTechProtocol protocol = new SemTechProtocol(endPoint, sessionId);
-    mappedInterfaces.put(endPoint, protocol);
+ //   mappedInterfaces.put(endPoint, protocol);
     return protocol;
   }
 
@@ -60,7 +58,7 @@ public class SemTechProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-    SemTechProtocol protocol = new SemTechProtocol(endPoint);
-    mappedInterfaces.put(endPoint, protocol);
+    new SemTechProtocol(endPoint);
+   // mappedInterfaces.put(endPoint, protocol);
   }
 }

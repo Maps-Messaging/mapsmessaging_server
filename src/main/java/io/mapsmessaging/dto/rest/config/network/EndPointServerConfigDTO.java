@@ -49,7 +49,7 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   @Schema(description = "SASL configuration", implementation = SaslConfigDTO.class)
   protected SaslConfigDTO saslConfig;
 
-  @Schema(description = "List of protocol configurations for the endpoint", implementation = ProtocolConfigDTO.class)
+  @Schema(description = "List of protocol configurations for the endpoint")
   protected List<ProtocolConfigDTO> protocolConfigs;
 
   @Schema(description = "Protocol types available at the endpoint", example = "mqtt, amqp, stomp")

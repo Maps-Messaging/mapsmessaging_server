@@ -49,6 +49,7 @@ public class PubRelListener extends PacketListener {
           tx.commit();
           session.closeTransaction(tx);
         } catch (IOException e) {
+          //ToDo Add Logging
         }
       }
     });

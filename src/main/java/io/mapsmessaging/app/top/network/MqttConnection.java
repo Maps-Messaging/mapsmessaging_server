@@ -89,9 +89,9 @@ public class MqttConnection implements IMqttMessageListener {
         Arrays.fill(listeners, this);
         Thread t = new Thread(() -> {
           try {
-            client.subscribe(topics.toArray(new String[topics.size()]), qos, listeners);
+            client.subscribe(topics.toArray(new String[0]), qos, listeners);
           } catch (MqttException e) {
-            e.printStackTrace();
+            //ToDo Add Logging
           }
         });
         t.start();

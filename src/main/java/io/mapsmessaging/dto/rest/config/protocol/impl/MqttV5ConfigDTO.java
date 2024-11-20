@@ -30,9 +30,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "MQTT V5 Protocol Configuration DTO")
 public class MqttV5ConfigDTO extends MqttConfig {
 
-  @Schema(description = "Type of the protocol configuration", example = "mqtt-v5")
-  private final String type = "mqtt-v5";
-
   @Schema(description = "Minimum server keep-alive interval in seconds", example = "0")
   protected int minServerKeepAlive = 0;
 

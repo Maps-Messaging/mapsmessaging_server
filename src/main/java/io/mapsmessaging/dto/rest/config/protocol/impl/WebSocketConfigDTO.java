@@ -30,6 +30,5 @@ import lombok.NoArgsConstructor;
 @Schema(description = "WebSocket Protocol Configuration DTO")
 public class WebSocketConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "websocket")
-  private final String type = "websocket";
+
 }

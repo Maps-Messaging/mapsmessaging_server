@@ -38,6 +38,7 @@ import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Objects;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,8 +46,8 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
 
   private final DestinationSubscription parent;
 
-  public BrowserSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, DestinationSubscription parent) throws IOException {
-    super(destination, context, parent.getContext());
+  public BrowserSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent) throws IOException {
+    super(destination, context, Objects.requireNonNull(parent.getContext()));
     this.parent = parent;
   }
 

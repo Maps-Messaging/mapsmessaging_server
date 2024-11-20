@@ -30,9 +30,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "LoRa Protocol Configuration DTO")
 public class LoRaProtocolConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "lora")
-  private final String type = "lora";
-
   @Schema(description = "Maximum retransmission rate for LoRa", example = "10")
   protected int retransmit = 10;
 }

@@ -49,13 +49,13 @@ public class Services {
   }
 
   public String toString(){
-    String header = protocol + ":" + port;
+    StringBuilder header = new StringBuilder(protocol).append( ":").append(port);
 
-    header += "\t\t[" + String.join(",", addresses)+"]";
+    header.append("\t\t[").append(String.join(",", addresses)).append("]");
     for(Map.Entry<String, String> entry : properties.entrySet()){
-      header += "\n\t\t\t[" + entry.getKey() + "=" + entry.getValue() + "]";
+      header.append("\n\t\t\t[").append(entry.getKey()).append("=").append(entry.getValue()).append("]");
     }
-    return header;
+    return header.toString();
   }
 
 }

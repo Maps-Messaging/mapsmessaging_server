@@ -25,12 +25,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import lombok.Getter;
 
 public class NMEAPacket {
 
+  @Getter
   private final String sentence;
-  private final List<String> entries;
+  @Getter
   private final String name;
+
+  private final List<String> entries;
 
   public NMEAPacket(Packet packet) throws IOException {
     int pos = packet.position();
@@ -49,14 +53,6 @@ public class NMEAPacket {
       sentence = "";
       entries = new ArrayList<>();
     }
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getSentence() {
-    return sentence;
   }
 
   public Iterator<String> getEntries() {

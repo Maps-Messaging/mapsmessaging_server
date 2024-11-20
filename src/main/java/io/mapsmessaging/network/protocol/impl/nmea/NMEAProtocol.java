@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -144,7 +146,7 @@ public class NMEAProtocol extends ProtocolImpl {
     return true;
   }
 
-  private void prepareSentence(String sentence, String sentenceId, Iterator<String> gpsWords) throws IOException {
+  private void prepareSentence(String sentence, String sentenceId, Iterator<String> gpsWords) {
     if (registeredSentences.isEmpty()) {
       publishMessage(sentence, sentenceId, gpsWords, destinationName, null);
     } else {
@@ -167,7 +169,7 @@ public class NMEAProtocol extends ProtocolImpl {
   // findDestination throws an IOException, using computeIfAbsent tends to hide or swallow the exceptions
   @SneakyThrows
   @java.lang.SuppressWarnings({"java:S3824"})
-  private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) throws IOException {
+  private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) {
     String processed = parseSentence(sentence, sentenceId, gpsWords);
     if (publishRecords) {
       Destination destination = sentenceMap.get(sentenceId);
@@ -224,15 +226,11 @@ public class NMEAProtocol extends ProtocolImpl {
   }
 
 
+  @Data
+  @AllArgsConstructor
   private static final class SentenceMapping {
-
     private final String destination;
     private final Transformer transformer;
-
-    public SentenceMapping(String destination, Transformer transformer) {
-      this.destination = destination;
-      this.transformer = transformer;
-    }
   }
 
 }

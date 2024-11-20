@@ -30,9 +30,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "AMQP Protocol Configuration DTO")
 public class AmqpConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "amqp")
-  private final String type = "amqp";
-
   @Schema(description = "Idle timeout in milliseconds", example = "30000")
   protected int idleTimeout = 30000;
 

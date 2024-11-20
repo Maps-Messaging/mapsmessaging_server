@@ -68,13 +68,9 @@ public class ProtonEngine {
     transport = Transport.Factory.create();
     subscriptions = new SubscriptionManager();
     eventListenerFactory = new EventListenerFactory(protocol, this);
-    try {
-      saslManager = new SaslManager(this);
-      if (saslManager.isDone()) {
-        transport.bind(connection);
-      }
-    } catch (IOException ioException) {
-      throw ioException;
+    saslManager = new SaslManager(this);
+    if (saslManager.isDone()) {
+      transport.bind(connection);
     }
   }
 

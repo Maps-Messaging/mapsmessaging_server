@@ -90,6 +90,7 @@ public class NetworkAddressHelper {
             .anyMatch(ifAddr -> ifAddr.getAddress().equals(address));
       }
     } catch (SocketException e) {
+      //ToDo Add Logging
     }
     return false;
   }

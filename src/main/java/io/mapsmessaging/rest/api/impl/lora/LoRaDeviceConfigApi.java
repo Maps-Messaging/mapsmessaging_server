@@ -58,7 +58,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   public LoRaDeviceConfigInfoDTO getLoRaDeviceConfig(@PathParam("deviceName") String deviceName) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    LoRaDeviceConfigInfoDTO deviceInfo = new LoRaDeviceConfigInfoDTO();
+    LoRaDeviceConfigInfoDTO deviceInfo = null;
     if (deviceName != null && !deviceName.isEmpty()) {
       List<LoRaDevice> lookup = deviceManager.getDevices().stream()
           .filter(device -> deviceName.equals(device.getName()))

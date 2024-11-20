@@ -30,6 +30,4 @@ import lombok.NoArgsConstructor;
 @Schema(description = "NMEA Protocol Configuration DTO")
 public class NmeaConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "nmea")
-  private final String type = "nmea";
 }

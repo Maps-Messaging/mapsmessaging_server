@@ -69,7 +69,7 @@ public class RestAccessControl {
 
   public boolean hasAccess(String resource, Subject subject, long access){
     if(!aclMapping.containsKey(resource)){
-      //ToDo Log yhe fact we have no mapping for resource
+      //ToDo Log the fact we have no mapping for resource
     }
     String key = aclMapping.keySet().stream()
         .filter(s -> s.contains(resource))

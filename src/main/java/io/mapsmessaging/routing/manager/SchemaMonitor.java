@@ -51,7 +51,7 @@ public class SchemaMonitor implements Runnable {
         .build();
     OkHttpClient client = new OkHttpClient();
     try (Response response = client.newCall(request).execute()) {
-      if (response.isSuccessful()) {
+      if (response.isSuccessful() && response.body() != null) {
         String responseBody = response.body().string();
         JSONObject json = new JSONObject(responseBody);
         JSONArray jsonArray = json.getJSONArray("data");
@@ -64,9 +64,11 @@ public class SchemaMonitor implements Runnable {
           }
         }
       } else {
+        // ToDo log exception
         throw new RuntimeException("Request failed: " + response.code() + " " + response.message());
       }
     } catch (IOException e) {
+      // ToDo log exception
       throw new RuntimeException("Request failed due to IOException", e);
     }
   }

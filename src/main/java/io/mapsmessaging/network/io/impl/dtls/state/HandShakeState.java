@@ -60,21 +60,26 @@ public class HandShakeState extends State {
       SSLEngineResult r = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), iApp);
       SSLEngineResult.Status rs = r.getStatus();
       hs = r.getHandshakeStatus();
-      if (rs == SSLEngineResult.Status.OK) {
-        //
-      } else if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
-        // the client maximum fragment size config does not work?
-        throw new IOException("Buffer overflow: incorrect client maximum fragment size");
-      } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-        // bad packet, or the client maximum fragment size
-        // config does not work?
-        if (hs != NOT_HANDSHAKING) {
-          throw new IOException("Buffer underflow: incorrect client maximum fragment size");
-        } // otherwise, ignore this packet
-      } else if (rs == SSLEngineResult.Status.CLOSED) {
-        throw new IOException("SSL engine closed, handshake status is " + hs);
-      } else {
-        throw new IOException("Can't reach here, result is " + rs);
+      switch (rs) {
+        case OK:
+          // No action required
+          break;
+
+        case BUFFER_OVERFLOW:
+          throw new IOException("Buffer overflow: incorrect client maximum fragment size");
+
+        case BUFFER_UNDERFLOW:
+          if (hs != NOT_HANDSHAKING) {
+            throw new IOException("Buffer underflow: incorrect client maximum fragment size");
+          }
+          // Ignore this packet if not handshaking
+          break;
+
+        case CLOSED:
+          throw new IOException("SSL engine closed, handshake status is " + hs);
+
+        default:
+          throw new IOException("Unexpected result: " + rs);
       }
 
       if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {

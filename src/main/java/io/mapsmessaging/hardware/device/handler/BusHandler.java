@@ -37,7 +37,7 @@ import java.util.concurrent.*;
 import lombok.SneakyThrows;
 
 public abstract class BusHandler implements Runnable {
-  private final Map<String, DeviceSessionManagement> activeSessions;
+ // private final Map<String, DeviceSessionManagement> activeSessions;
   private final Map<String, DeviceHandler> foundDevices;
   protected final DeviceBusConfigDTO properties;
   private final int scanPeriod;
@@ -48,7 +48,7 @@ public abstract class BusHandler implements Runnable {
 
   protected BusHandler(DeviceBusConfigDTO properties, Trigger trigger){
     foundDevices = new ConcurrentHashMap<>();
-    activeSessions = new ConcurrentHashMap<>();
+   // activeSessions = new ConcurrentHashMap<>();
     this.properties = properties;
     this.trigger = trigger;
     scanPeriod = properties.getScanTime();
@@ -83,7 +83,7 @@ public abstract class BusHandler implements Runnable {
   }
 
   public void closedSession(DeviceSessionManagement deviceSessionManagement){
-    activeSessions.remove(deviceSessionManagement.getName());
+   // activeSessions.remove(deviceSessionManagement.getName());
     foundDevices.remove(deviceSessionManagement.getDevice().getKey());
   }
 
@@ -124,7 +124,7 @@ public abstract class BusHandler implements Runnable {
 
   public void deviceDetected(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
     DeviceSessionManagement deviceSessionManagement = createSession(deviceHandler);
-    activeSessions.put(deviceSessionManagement.getName(), deviceSessionManagement);
+   // activeSessions.put(deviceSessionManagement.getName(), deviceSessionManagement);
     deviceSessionManagement.start();
   }
 

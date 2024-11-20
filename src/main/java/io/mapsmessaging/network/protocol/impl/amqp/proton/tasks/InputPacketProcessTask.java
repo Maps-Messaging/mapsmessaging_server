@@ -79,11 +79,7 @@ public class InputPacketProcessTask extends PacketTask {
     while (incomingPacket.hasRemaining()) {
       processBuffers();
       TransportResult result = transport.processInput();
-      try {
-        isInSasl();
-      } catch (IOException e) {
-        throw e;
-      }
+      isInSasl();
       if (!result.isOk()) {
         if (result.getException() != null) {
           protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());

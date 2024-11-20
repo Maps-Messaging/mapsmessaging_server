@@ -30,9 +30,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "STOMP Protocol Configuration DTO")
 public class StompConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "stomp")
-  private final String type = "stomp";
-
   @Schema(description = "Maximum buffer size for STOMP", example = "65535")
   protected int maxBufferSize = 65535;
 

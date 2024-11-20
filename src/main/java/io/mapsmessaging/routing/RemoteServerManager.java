@@ -68,7 +68,7 @@ public class RemoteServerManager implements Runnable{
         .build();
     OkHttpClient client = new OkHttpClient();
     try (Response response = client.newCall(request).execute()) {
-      if (response.isSuccessful()) {
+      if (response.isSuccessful() && response.body() != null) {
         String responseBody = response.body().string();
         JSONObject json = new JSONObject(responseBody);
         if(schemaManager != null) schemaManager.scanForUpdates(json.getLong("schemaUpdate"));

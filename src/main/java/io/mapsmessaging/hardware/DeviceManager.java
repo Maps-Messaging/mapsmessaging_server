@@ -87,11 +87,10 @@ public class DeviceManager implements ServiceManager, Agent {
 
   public  List<String> scan() throws InterruptedException {
     List<String> scanResults = new ArrayList<>();
+
     for(I2CBusManager i2CBusManager:deviceBusManager.getI2cBusManager()){
       List<Integer> list = i2CBusManager.findDevicesOnBus(0);
-      for (String line : i2CBusManager.listDetected(list)) {
-        scanResults.add(line);
-      }
+      scanResults.addAll(i2CBusManager.listDetected(list));
     }
     return scanResults;
   }

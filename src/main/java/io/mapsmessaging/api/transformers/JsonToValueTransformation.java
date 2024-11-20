@@ -38,8 +38,7 @@ public class JsonToValueTransformation implements Transformer {
     try {
       parser = new JsonParserExtension(List.of(key));
     } catch (ParseException e) {
-      // To Do
-      parser = null;
+      // ToDo log exception
     }
     jsonParser = parser;
   }

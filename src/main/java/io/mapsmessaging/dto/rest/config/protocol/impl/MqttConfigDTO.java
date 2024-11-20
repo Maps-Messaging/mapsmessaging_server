@@ -30,9 +30,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "MQTT Protocol Configuration DTO")
 public class MqttConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "mqtt")
-  private final String type = "mqtt";
-
   @Schema(description = "Maximum session expiry for MQTT", example = "86400")
   protected long maximumSessionExpiry = 86400;
 

@@ -30,9 +30,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Semtech Protocol Configuration DTO")
 public class SemtechConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "semtech")
-  private final String type = "semtech";
-
   @Schema(description = "Maximum queue size for Semtech", example = "10")
   protected int maxQueued = 10;
 

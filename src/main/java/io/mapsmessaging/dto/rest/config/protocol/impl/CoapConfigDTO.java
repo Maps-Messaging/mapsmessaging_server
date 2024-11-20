@@ -25,17 +25,15 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "CoAP Protocol Configuration DTO")
 public class CoapConfigDTO extends ProtocolConfigDTO {
-
-  @Schema(description = "Type of the protocol configuration", example = "coap")
-  private final String type = "coap";
 
   @Schema(description = "Maximum block size for CoAP", example = "128")
   protected int maxBlockSize = 128;
 
   @Schema(description = "Idle time period for CoAP connections in seconds", example = "120")
   protected int idleTime = 120;
+
 }

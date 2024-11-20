@@ -23,6 +23,8 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.builders.*;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import java.io.IOException;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public class SubscriptionFactory {
 
@@ -49,7 +51,7 @@ public class SubscriptionFactory {
     return new StandardSubscriptionBuilder(destination, context, isPersist);
   }
 
-  public SubscriptionBuilder getBrowserBuilder(DestinationImpl destination, SubscriptionContext context, DestinationSubscription parent) throws IOException {
+  public SubscriptionBuilder getBrowserBuilder(DestinationImpl destination, SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent) throws IOException {
     return new BrowserSubscriptionBuilder(destination, context, parent);
   }
 

@@ -53,11 +53,12 @@ public class RemoteServers extends DiscoveredServersDTO implements Serializable 
   }
 
   public String toString(){
-    String header = serverName +" Version:"+version +" Schema Prefix:"+schemaPrefix+" Topic Prefix:"+ systemTopicPrefix;
+    StringBuilder header = new StringBuilder(serverName);
+    header.append(" Version:").append(version).append(" Schema Prefix:").append(schemaPrefix).append(" Topic Prefix:").append(systemTopicPrefix);
     for(Services service : services.values()){
-      header += "\n\t"+service.toString();
+      header.append("\n\t").append(service.toString());
     }
-    header+="\n\n";
-    return header;
+    header.append("\n\n");
+    return header.toString();
   }
 }

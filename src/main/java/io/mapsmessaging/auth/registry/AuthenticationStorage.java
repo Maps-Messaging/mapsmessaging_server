@@ -100,7 +100,7 @@ public class AuthenticationStorage implements Closeable {
       userPermisionManager.add(quotas);
       return true;
     } catch (IOException | GeneralSecurityException e) {
-
+      //ToDo Add Logging
     }
     return false;
   }
@@ -115,7 +115,7 @@ public class AuthenticationStorage implements Closeable {
       }
       return true;
     } catch (IOException e) {
-
+      //ToDo Add Logging
     }
     return false;
   }

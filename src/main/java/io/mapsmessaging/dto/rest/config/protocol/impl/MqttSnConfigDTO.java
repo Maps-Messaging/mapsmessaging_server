@@ -32,9 +32,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "MQTT-SN Protocol Configuration DTO")
 public class MqttSnConfigDTO extends ProtocolConfigDTO {
 
-  @Schema(description = "Type of the protocol configuration", example = "mqtt-sn")
-  private final String type = "mqtt-sn";
-
   @Schema(description = "Gateway ID for MQTT-SN", example = "1")
   protected String gatewayId = "1";
 

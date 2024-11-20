@@ -43,7 +43,6 @@ public class PacketListenerFactory {
     listeners[MQTTPacket.PINGREQ] = new PingRequestListener();
     listeners[MQTTPacket.SUBSCRIBE] = new SubscribeListener();
     listeners[MQTTPacket.PUBACK] = new PubAckListener();
-    listeners[MQTTPacket.PUBREL] = new PubRelListener();
     listeners[MQTTPacket.PUBREC] = new PubRecListener();
     listeners[MQTTPacket.PUBCOMP] = new PubCompListener();
     listeners[MQTTPacket.UNSUBSCRIBE] = new UnsubscribeListener();
