@@ -93,14 +93,11 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       response.setStatus(403);
       return null;
     }
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
-        return handleRequest(STATE.STOPPED, endPointManager);
-      }
+    Response response = lookup(endpointName, STATE.STOPPED);
+    if(response != null) {
+      return response;
     }
-    return Response.noContent()
-        .build();
+    return Response.noContent().build();
   }
 
   @PUT
@@ -112,14 +109,12 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       response.setStatus(403);
       return null;
     }
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
-        return handleRequest(STATE.START, endPointManager);
-      }
+    Response response = lookup(endpointName, STATE.START);
+    if(response != null) {
+      return response;
     }
-    return Response.noContent()
-        .build();
+    return Response.noContent().build();
+
   }
 
 
@@ -132,14 +127,12 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       response.setStatus(403);
       return null;
     }
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
-        return handleRequest(STATE.RESUME, endPointManager);
-      }
+    Response response = lookup(endpointName, STATE.RESUME);
+    if(response != null) {
+      return response;
     }
-    return Response.noContent()
-        .build();
+    return Response.noContent().build();
+
   }
 
   @PUT
@@ -151,14 +144,21 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       response.setStatus(403);
       return null;
     }
+    Response response = lookup(endpointName, STATE.PAUSED);
+    if(response != null) {
+      return response;
+    }
+    return Response.noContent().build();
+  }
+
+  private Response lookup(String endpointName, STATE state){
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
-        return handleRequest(STATE.PAUSED, endPointManager);
+        return handleRequest(state, endPointManager);
       }
     }
-    return Response.noContent()
-        .build();
+    return null;
   }
 
   private Response handleRequest(STATE newState, EndPointManager endPointManager) {

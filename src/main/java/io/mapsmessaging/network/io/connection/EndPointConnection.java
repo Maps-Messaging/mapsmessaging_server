@@ -133,22 +133,34 @@ public class EndPointConnection extends EndPointServerStatus {
     }
   }
 
+  public boolean isStarted(){
+    return running.get();
+  }
+
   public void start() {
-    setRunState(true, new Disconnected(this));
-    logger.log(ServerLogMessages.END_POINT_CONNECTION_STARTING);
+    if (!running.get()) {
+      setRunState(true, new Disconnected(this));
+      logger.log(ServerLogMessages.END_POINT_CONNECTION_STARTING);
+    }
   }
 
   public void stop() {
-    setRunState(false, new Shutdown(this));
-    logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
+    if(running.get()){
+      setRunState(false, new Shutdown(this));
+      logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
+    }
   }
 
   public void pause() {
-    paused.set(true);
+    if(paused.get()){
+      paused.set(true);
+    }
   }
 
   public void resume() {
-    paused.set(false);
+    if (paused.get()) {
+      paused.set(false);
+    }
   }
 
   public List<String> getJMXPath() {

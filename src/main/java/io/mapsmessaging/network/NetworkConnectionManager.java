@@ -108,13 +108,31 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     initialise();
     logger.log(ServerLogMessages.NETWORK_MANAGER_START_ALL);
     for (EndPointConnection endPointConnection : endPointConnectionList) {
-      endPointConnection.start();
+      if (!endPointConnection.isStarted()) {
+        endPointConnection.start();
+      }
     }
   }
 
   public void stop() {
     for (EndPointConnection endPointConnection : endPointConnectionList) {
-      endPointConnection.stop();
+      if(endPointConnection.isStarted()){
+        endPointConnection.stop();
+      }
+    }
+  }
+
+
+  public void pause() {
+    for (EndPointConnection endPointConnection : endPointConnectionList) {
+      endPointConnection.pause();
+    }
+  }
+
+
+  public void resume() {
+    for (EndPointConnection endPointConnection : endPointConnectionList) {
+      endPointConnection.resume();
     }
   }
 

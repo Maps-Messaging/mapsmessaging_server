@@ -31,17 +31,16 @@ import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Tag(name = "Server Integration Management")
 @Path(URI_PATH)
 public class IntegrationManagementApi  extends BaseRestApi {
+  private static final String INTERFACES = "Interfaces";
 
   @GET
   @Path("/server/integration")
@@ -61,5 +60,58 @@ public class IntegrationManagementApi  extends BaseRestApi {
             .filter(info -> parser == null || parser.evaluate(info))
             .collect(Collectors.toList());
     return new IntegrationDetailResponse(request, protocols, global);
+  }
+
+  @PUT
+  @Path("/server/integration/stopAll")
+  //@ApiOperation(value = "Stops all all configured interfaces")
+  public Response stopAllInterfaces() {
+    checkAuthentication();
+    if (!hasAccess(INTERFACES)) {
+      response.setStatus(403);
+      return null;
+    }
+    MessageDaemon.getInstance().getNetworkConnectionManager().stop();
+    return Response.ok().build();
+  }
+
+  @PUT
+  @Path("/server/integration/startAll")
+  //@ApiOperation(value = "Starts all all configured interfaces")
+  public Response startAllInterfaces() {
+    checkAuthentication();
+    if (!hasAccess(INTERFACES)) {
+      response.setStatus(403);
+      return null;
+    }
+    MessageDaemon.getInstance().getNetworkConnectionManager().start();
+    return Response.ok().build();
+  }
+
+  @PUT
+  @Path("/server/integration/pauseAll")
+  //@ApiOperation(value = "Pauses all all configured interfaces")
+  public Response pauseAllInterfaces() {
+    checkAuthentication();
+    if (!hasAccess(INTERFACES)) {
+      response.setStatus(403);
+      return null;
+    }
+    MessageDaemon.getInstance().getNetworkConnectionManager().pause();
+    return Response.ok().build();
+  }
+
+
+  @PUT
+  @Path("/server/integration/resumeAll")
+  //@ApiOperation(value = "Resumes all all configured interfaces")
+  public Response resumeAllInterfaces() {
+    checkAuthentication();
+    if (!hasAccess(INTERFACES)) {
+      response.setStatus(403);
+      return null;
+    }
+    MessageDaemon.getInstance().getNetworkConnectionManager().resume();
+    return Response.ok().build();
   }
 }
