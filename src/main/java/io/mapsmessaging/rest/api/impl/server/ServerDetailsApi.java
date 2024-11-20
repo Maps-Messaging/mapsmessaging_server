@@ -29,6 +29,7 @@ import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -63,7 +64,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
     return new ServerStatisticsResponse(request, ServerStatisticsHelper.create());
   }
 
-  @GET
+  @PUT
   @Path("/server/restart")
   @Produces({MediaType.APPLICATION_JSON})
 //  @ApiOperation(value = "Retrieve the server statistics")
@@ -78,7 +79,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
 
   }
 
-  @GET
+  @PUT
   @Path("/server/shutdown")
   @Produces({MediaType.APPLICATION_JSON})
 //  @ApiOperation(value = "Retrieve the server statistics")
