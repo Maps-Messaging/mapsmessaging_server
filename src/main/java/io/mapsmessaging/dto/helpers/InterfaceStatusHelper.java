@@ -81,4 +81,8 @@ public class InterfaceStatusHelper {
       stats.put(average.getName(), average);
     }
   }
+
+  private InterfaceStatusHelper() {
+  }
+
 }

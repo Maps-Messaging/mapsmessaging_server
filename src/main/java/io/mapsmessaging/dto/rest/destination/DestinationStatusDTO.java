@@ -101,19 +101,19 @@ public class DestinationStatusDTO implements Serializable {
       description = "The average time, in nanoseconds, to read messages from the store.",
       example = "1500",
       minimum = "0")
-  private long readTimeAve_ns;
+  private long readTimeAveNs;
 
   @Schema(
       title = "Average Write Time",
       description = "The average time, in nanoseconds, to write messages to the store.",
       example = "2000",
       minimum = "0")
-  private long writeTimeAve_ns;
+  private long writeTimeAveNs;
 
   @Schema(
       title = "Average Delete Time",
       description = "The average time, in nanoseconds, to delete messages from the store.",
       example = "1200",
       minimum = "0")
-  private long deleteTimeAve_ns;
+  private long deleteTimeAveNs;
 }

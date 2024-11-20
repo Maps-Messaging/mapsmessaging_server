@@ -45,4 +45,7 @@ public class ServerStatisticsHelper {
         DestinationImpl.getGlobalStats().getRetrievedPerSecond(),
         DestinationImpl.getGlobalStats().getGlobalStats());
   }
+
+  private ServerStatisticsHelper() {
+  }
 }

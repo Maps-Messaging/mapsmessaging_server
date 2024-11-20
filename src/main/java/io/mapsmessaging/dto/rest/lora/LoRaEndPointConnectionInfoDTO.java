@@ -38,7 +38,7 @@ public class LoRaEndPointConnectionInfoDTO {
       example = "-70",
       minimum = "-200",
       maximum = "0")
-  private long RSSI;
+  private long rssi;
 
   @Schema(
       title = "Missed Packets",

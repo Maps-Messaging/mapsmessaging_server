@@ -50,4 +50,7 @@ public class DestinationStatusHelper {
     }
     return 0;
   }
+
+  private DestinationStatusHelper() {
+  }
 }

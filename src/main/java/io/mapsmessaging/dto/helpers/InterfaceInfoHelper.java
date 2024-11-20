@@ -49,4 +49,7 @@ public class InterfaceInfoHelper {
     }
     return dto;
   }
+
+  private InterfaceInfoHelper() {
+  }
 }

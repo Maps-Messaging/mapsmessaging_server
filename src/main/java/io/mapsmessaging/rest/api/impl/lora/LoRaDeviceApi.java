@@ -134,7 +134,7 @@ public class LoRaDeviceApi extends BaseRestApi {
     connectionInfo.setLastWriteTime(clientStats.getLastWriteTime());
     connectionInfo.setLastReadTime(clientStats.getLastReadTime());
     connectionInfo.setLastPacketId(clientStats.getLastPacketId());
-    connectionInfo.setRSSI(clientStats.getRssi());
+    connectionInfo.setRssi(clientStats.getRssi());
     connectionInfo.setMissedPackets(clientStats.getMissed());
     connectionInfo.setReceivedPackets(clientStats.getReceived());
     connectionInfo.setRemoteNodeId((int)clientStats.getNodeId());

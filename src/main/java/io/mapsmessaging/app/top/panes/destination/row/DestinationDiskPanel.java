@@ -36,9 +36,9 @@ public class DestinationDiskPanel extends DestinationStatusUpdate {
   @Override
   public void update( DestinationStatusDTO statusMessage) {
     StringBuilder value = new StringBuilder();
-    value.append(formatNanoseconds(statusMessage.getReadTimeAve_ns())).append(" ");
-    value.append(formatNanoseconds(statusMessage.getWriteTimeAve_ns())).append(" ");
-    value.append(formatNanoseconds(statusMessage.getDeleteTimeAve_ns()));
+    value.append(formatNanoseconds(statusMessage.getReadTimeAveNs())).append(" ");
+    value.append(formatNanoseconds(statusMessage.getWriteTimeAveNs())).append(" ");
+    value.append(formatNanoseconds(statusMessage.getDeleteTimeAveNs()));
     panel.update(value.toString());
   }
 

@@ -26,4 +26,7 @@ public class IntegrationInfoHelper {
   public static IntegrationInfoDTO fromEndPointConnection(EndPointConnection endPointConnection) {
     return new IntegrationInfoDTO(endPointConnection.getProperties());
   }
+
+  private IntegrationInfoHelper() {
+  }
 }

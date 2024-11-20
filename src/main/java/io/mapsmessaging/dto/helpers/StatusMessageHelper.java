@@ -65,4 +65,7 @@ public class StatusMessageHelper {
 
     return dto;
   }
+
+  private StatusMessageHelper() {
+  }
 }
