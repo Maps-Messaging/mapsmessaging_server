@@ -195,4 +195,8 @@ public class EndPointConnection extends EndPointServerStatus {
   private void setState(State state) {
     this.state = state;
   }
+
+  public boolean isPaused() {
+    return paused.get();
+  }
 }

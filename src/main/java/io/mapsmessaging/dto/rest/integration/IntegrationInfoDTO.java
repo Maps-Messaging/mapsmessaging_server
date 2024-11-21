@@ -38,4 +38,6 @@ public class IntegrationInfoDTO implements Serializable {
       description = "Configuration details for the integration connection.",
       nullable = false)
   private EndPointConnectionServerConfig config;
+
+  private String state;
 }

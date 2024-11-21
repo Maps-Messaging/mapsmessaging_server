@@ -24,7 +24,17 @@ import io.mapsmessaging.network.io.connection.EndPointConnection;
 public class IntegrationInfoHelper {
 
   public static IntegrationInfoDTO fromEndPointConnection(EndPointConnection endPointConnection) {
-    return new IntegrationInfoDTO(endPointConnection.getProperties());
+    String runState = "";
+    if(endPointConnection.isStarted()){
+      runState = "Started";
+      if(endPointConnection.isPaused()){
+        runState = "Paused";
+      }
+    }
+    else{
+      runState = "Stopped";
+    }
+    return new IntegrationInfoDTO( endPointConnection.getProperties(),  runState);
   }
 
   private IntegrationInfoHelper() {
