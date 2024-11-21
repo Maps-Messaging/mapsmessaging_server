@@ -41,7 +41,7 @@ public class MessageDaemonConfigDTO extends BaseConfigDTO {
   @Schema(description = "Transaction scan interval in milliseconds", example = "5000")
   protected long transactionScan;
 
-  @Schema(description = "Compression algorithm name", example = "None")
+  @Schema(description = "Compression algorithm name", example = "None", allowableValues = {"inflator", "none"})
   protected String compressionName;
 
   @Schema(description = "Minimum size for message compression", example = "1024")
