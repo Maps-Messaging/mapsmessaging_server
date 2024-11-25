@@ -22,6 +22,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
+import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import java.io.IOException;
@@ -65,7 +66,7 @@ public class CoapInterfaceManager implements SelectorCallback {
     CoapProtocol protocol = currentSessions.get(packet.getFromAddress());
     if (protocol == null) {
       try {
-        CoapClientEndPoint coapClientEndPoint = new CoapClientEndPoint(endPoint);
+        UDPFacadeEndPoint coapClientEndPoint = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
         protocol = new CoapProtocol(coapClientEndPoint, this, packet.getFromAddress());
         endPoint.getServer().handleNewEndPoint(coapClientEndPoint);
         currentSessions.put(packet.getFromAddress(), protocol);

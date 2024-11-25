@@ -28,9 +28,11 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
+import javax.security.auth.Subject;
 
 public class UDPFacadeEndPoint extends EndPoint {
 
@@ -62,12 +64,6 @@ public class UDPFacadeEndPoint extends EndPoint {
   public String getProtocol() {
     return endPoint.getProtocol();
   }
-
-  @Override
-  public List<String> getJMXTypePath() {
-    return jmxParentPath;
-  }
-
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
@@ -103,4 +99,38 @@ public class UDPFacadeEndPoint extends EndPoint {
   protected Logger createLogger() {
     return LoggerFactory.getLogger(UDPFacadeEndPoint.class);
   }
+
+
+
+  @Override
+  public void close() throws IOException {
+    endPoint.close();
+  }
+
+  @Override
+  public boolean isClient(){
+    return endPoint.isClient();
+  }
+
+  @Override
+  public boolean isUDP() {
+    return endPoint.isUDP();
+  }
+
+  @Override
+  public Subject getEndPointSubject() {
+    return endPoint.getEndPointSubject();
+  }
+
+  @Override
+  public Principal getEndPointPrincipal() {
+    return endPoint.getEndPointPrincipal();
+  }
+
+  @Override
+  public boolean isSSL() {
+    return endPoint.isSSL();
+  }
+
+
 }
