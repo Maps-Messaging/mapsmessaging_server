@@ -65,7 +65,9 @@ public class CoapInterfaceManager implements SelectorCallback {
     CoapProtocol protocol = currentSessions.get(packet.getFromAddress());
     if (protocol == null) {
       try {
-        protocol = new CoapProtocol(endPoint, this, packet.getFromAddress());
+        CoapClientEndPoint coapClientEndPoint = new CoapClientEndPoint(endPoint);
+        protocol = new CoapProtocol(coapClientEndPoint, this, packet.getFromAddress());
+        endPoint.getServer().handleNewEndPoint(coapClientEndPoint);
         currentSessions.put(packet.getFromAddress(), protocol);
       } catch (LoginException e) {
         throw new IOException(e);
@@ -73,6 +75,7 @@ public class CoapInterfaceManager implements SelectorCallback {
     }
     if (protocol.getSession().isClosed()) {
       currentSessions.remove(packet.getFromAddress());
+      endPoint.getServer().handleCloseEndPoint(protocol.getEndPoint());
       return processPacket(packet);
     }
     return protocol.processPacket(packet);

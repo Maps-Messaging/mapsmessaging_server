@@ -23,6 +23,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
@@ -121,6 +122,12 @@ public class UDPEndPointServer extends EndPointServer {
         // We can ignore since we are closing
       }
     }
+  }
+
+
+  @Override
+  public void handleNewEndPoint(EndPoint endPoint) throws IOException {
+    activeEndPoints.put(endPoint.getId(), endPoint);
   }
 
   @Override

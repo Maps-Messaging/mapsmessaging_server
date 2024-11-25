@@ -134,6 +134,7 @@ public abstract class PublishListener extends  Listener {
           try {
             handleEvent(isDelete, exists, destination, request, protocol);
           } catch (IOException e) {
+            e.printStackTrace();
             protocol.getLogger().log(COAP_FAILED_TO_PROCESS, request.getFromAddress(), e);
             try {
               protocol.close();

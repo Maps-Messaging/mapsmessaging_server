@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.dto.rest.interfaces;
 
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -32,7 +33,7 @@ import lombok.NoArgsConstructor;
     title = "Interface Information",
     description =
         "Contains details about an interface, including its name, host, port, and current state.")
-public class InterfaceInfoDTO implements Serializable {
+public class InterfaceInfoDTO extends BaseConfigDTO implements Serializable {
 
   @Schema(
       title = "Interface Name",

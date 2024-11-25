@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.dto.helpers;
 
+import io.mapsmessaging.config.Config;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 
@@ -30,7 +32,8 @@ public class InterfaceInfoHelper {
     dto.setHost(
         endPointManager.getEndPointServer().getUrl().getProtocol()
             + "://"
-            + endPointManager.getEndPointServer().getUrl().getHost());
+            + endPointManager.getEndPointServer().getUrl().getHost()
+    );
     dto.setConfig(endPointManager.getEndPointServer().getConfig());
 
     // Set state based on the EndPointManager's state
@@ -48,6 +51,17 @@ public class InterfaceInfoHelper {
         dto.setState("Unknown");
     }
     return dto;
+  }
+
+  public static boolean updateConfig(EndPointManager endPointManager, InterfaceInfoDTO dto) {
+    boolean upated = false;
+    EndPointServerConfigDTO endPointServerConfigDTO = endPointManager.getEndPointServer().getConfig();
+    if(endPointServerConfigDTO instanceof Config) {
+      Config config = (Config) endPointServerConfigDTO;
+      config.update(dto);
+    }
+
+    return upated;
   }
 
   private InterfaceInfoHelper() {

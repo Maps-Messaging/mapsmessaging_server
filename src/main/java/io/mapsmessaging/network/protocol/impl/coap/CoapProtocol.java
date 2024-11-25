@@ -137,6 +137,7 @@ public class CoapProtocol extends ProtocolImpl {
     SessionManager.getInstance().close(session, true);
     outboundPipeline.close();
     coapInterfaceManager.close(socketAddress);
+    endPoint.getServer().handleCloseEndPoint(endPoint);
     if (mbean != null) {
       mbean.close();
     }
@@ -152,6 +153,8 @@ public class CoapProtocol extends ProtocolImpl {
     if (context == null) {
       return;
     }
+    endPoint.updateWriteBytes(messageEvent.getMessage().getOpaqueData().length);
+    endPoint.getEndPointStatus().incrementSentMessages();
     boolean doBlockwise = false;
     int blockSize = 0;
     int blockNumber = 0;
@@ -242,6 +245,8 @@ public class CoapProtocol extends ProtocolImpl {
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) {
     try {
+      endPoint.updateReadBytes(packet.available());
+      endPoint.getEndPointStatus().incrementReceivedMessages();
       BasePacket basePacket = packetFactory.parseFrame(packet);
       lastAccess.set(System.currentTimeMillis());
       if (basePacket != null) {

@@ -22,6 +22,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
@@ -59,6 +60,28 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     }
     return null;
   }
+
+  @PUT
+  @Path("/server/interface/{endpoint}")
+  @Produces({MediaType.APPLICATION_JSON})
+  //@ApiOperation(value = "Get the endpoint current status and configuration")
+  public boolean updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) {
+    checkAuthentication();
+    if (!hasAccess("interfaces")) {
+      response.setStatus(403);
+      return false;
+    }
+
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    for (EndPointManager endPointManager : endPointManagers) {
+      if (isMatch(endpointName, endPointManager)) {
+        InterfaceInfoDTO infoDTO = InterfaceInfoHelper.fromEndPointManager(endPointManager);
+        return InterfaceInfoHelper.updateConfig(endPointManager, infoDTO);
+      }
+    }
+    return false;
+  }
+
 
   @GET
   @Path("/server/interface/{endpoint}/connections")
