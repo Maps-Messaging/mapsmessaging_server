@@ -72,19 +72,19 @@ public class ServerStatisticsDTO implements Serializable {
   private long totalDeliveredMessages;
 
   @Schema(description = "Published messages per second", example = "50")
-  private long publishedPerSecond;
+  private float publishedPerSecond;
 
   @Schema(description = "Subscribed messages per second", example = "45")
-  private long subscribedPerSecond;
+  private float subscribedPerSecond;
 
   @Schema(description = "No interest messages per second", example = "5")
-  private long noInterestPerSecond;
+  private float noInterestPerSecond;
 
   @Schema(description = "Delivered messages per second", example = "60")
-  private long deliveredPerSecond;
+  private float deliveredPerSecond;
 
   @Schema(description = "Retrieved messages per second", example = "30")
-  private long retrievedPerSecond;
+  private float retrievedPerSecond;
 
   @Schema(
       description = "Statistics map",

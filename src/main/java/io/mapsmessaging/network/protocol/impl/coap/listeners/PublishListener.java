@@ -37,6 +37,7 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public abstract class PublishListener extends  Listener {
@@ -123,31 +124,36 @@ public abstract class PublishListener extends  Listener {
       UriPath uriPath = (UriPath) optionSet.getOption(URI_PATH);
       path = uriPath.toString();
     }
-    if(optionSet.hasOption(BLOCK1) && !handleBlock(request, path, optionSet, protocol)){
+    if (optionSet.hasOption(BLOCK1) && !handleBlock(request, path, optionSet, protocol)) {
       return;
     }
 
     String finalPath = path;
-    protocol.getSession().destinationExists(path).thenApply(exists -> {
-      protocol.getSession().findDestination(finalPath, DestinationType.TOPIC).thenApply(destination -> {
-        if (destination != null) {
-          try {
-            handleEvent(isDelete, exists, destination, request, protocol);
-          } catch (IOException e) {
-            e.printStackTrace();
-            protocol.getLogger().log(COAP_FAILED_TO_PROCESS, request.getFromAddress(), e);
-            try {
-              protocol.close();
-            } catch (IOException ioException) {
-              // Ignore we are in an error state
-            }
-          }
-        }
-        return destination;
-      });
-      return exists;
-    });
+
+    try {
+      boolean exists = protocol.getSession().destinationExists(path).get(); // Waits for the result
+      Destination destination = protocol.getSession()
+          .findDestination(finalPath, DestinationType.TOPIC)
+          .get(); // Waits for the destination
+
+      if (destination != null) {
+        handleEvent(isDelete, exists, destination, request, protocol);
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      protocol.getLogger().log(COAP_FAILED_TO_PROCESS, request.getFromAddress(), e);
+      try {
+        protocol.close();
+      } catch (IOException ioException) {
+        // Ignore, we are in an error state
+      }
+    } catch (InterruptedException | ExecutionException e) {
+      // Handle InterruptedException or ExecutionException
+      Thread.currentThread().interrupt(); // Restore interrupted state
+      protocol.getLogger().log(COAP_FAILED_TO_PROCESS, request.getFromAddress(), e);
+    }
   }
+
 
 
   private boolean canProcess(Destination destination, BasePacket request) throws IOException {

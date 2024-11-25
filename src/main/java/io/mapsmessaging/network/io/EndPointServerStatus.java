@@ -112,20 +112,20 @@ public abstract class EndPointServerStatus {
     return totalErrors.sum();
   }
 
-  public long getBytesSentPerSecond(){
+  public float getBytesSentPerSecond(){
     return averageBytesSent.getPerSecond();
   }
 
 
-  public long getBytesReadPerSecond(){
+  public float getBytesReadPerSecond(){
     return averageBytesRead.getPerSecond();
   }
 
-  public long getMessagesSentPerSecond(){
+  public float getMessagesSentPerSecond(){
     return averagePacketsSent.getPerSecond();
   }
 
-  public long getMessagesReadPerSecond(){
+  public float getMessagesReadPerSecond(){
     return averagePacketsRead.getPerSecond();
   }
 

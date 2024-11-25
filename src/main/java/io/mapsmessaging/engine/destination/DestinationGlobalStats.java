@@ -106,23 +106,23 @@ public class DestinationGlobalStats {
     totalDeliveredMessagesAverages.increment();
   }
 
-  public long getPublishedPerSecond(){
+  public float getPublishedPerSecond(){
     return totalPublishedMessagesAverages.getPerSecond();
   }
 
-  public long getSubscribedPerSecond(){
+  public float getSubscribedPerSecond(){
     return totalSubscribedMessagesAverages.getPerSecond();
   }
 
-  public long getNoInterestPerSecond(){
+  public float getNoInterestPerSecond(){
     return totalNoInterestMessagesAverages.getPerSecond();
   }
 
-  public long getDeliveredPerSecond(){
+  public float getDeliveredPerSecond(){
     return totalDeliveredMessagesAverages.getPerSecond();
   }
 
-  public long getRetrievedPerSecond(){
+  public float getRetrievedPerSecond(){
     return totalRetrievedMessagesAverages.getPerSecond();
   }
 

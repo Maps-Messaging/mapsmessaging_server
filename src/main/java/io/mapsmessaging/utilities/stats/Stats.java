@@ -24,7 +24,7 @@ public interface Stats {
   String getUnits();
   void reset();
 
-  long getPerSecond();
+  float getPerSecond();
   long getCurrent();
   long getTotal();
 

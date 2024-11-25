@@ -30,7 +30,7 @@ public class SimpleStats implements Stats{
   private final String units;
   private final long timeSpan;
   private long value;
-  private long perSecond;
+  private float perSecond;
   private long previousSum;
   private final LongAdder current;
   private long nextProcessed;
@@ -45,15 +45,18 @@ public class SimpleStats implements Stats{
 
   @Override
   public void reset() {
+    if(nextProcessed +timeSpan > System.currentTimeMillis()) {
+      return;
+    }
     value = 0;
     current.reset();
     perSecond = 0;
     previousSum = 0;
-    nextProcessed = System.currentTimeMillis()+timeSpan;
+    nextProcessed = System.currentTimeMillis();
   }
 
   @Override
-  public long getPerSecond() {
+  public float getPerSecond() {
     process();
     return perSecond;
   }
@@ -82,11 +85,15 @@ public class SimpleStats implements Stats{
 
   private synchronized void process() {
     long currentTime = System.currentTimeMillis();
-    if(nextProcessed < currentTime) {
-      long duration = (currentTime - (nextProcessed-timeSpan))/1000L;
-      nextProcessed = currentTime + timeSpan;
+    if((nextProcessed+timeSpan) < currentTime) {
+      double duration = (currentTime - nextProcessed);
       long t = current.sum();
-      perSecond = (t-previousSum)/duration;
+      duration = duration/1000L;
+      if(duration == 0){
+        duration = timeSpan;
+      }
+      perSecond = (float) ((t-previousSum)/duration);
+      nextProcessed = currentTime;
       previousSum = t;
     }
   }

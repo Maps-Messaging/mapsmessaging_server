@@ -39,8 +39,8 @@ public class NoStats implements Stats{
   }
 
   @Override
-  public long getPerSecond() {
-    return 0;
+  public float getPerSecond() {
+    return 0f;
   }
 
   @Override

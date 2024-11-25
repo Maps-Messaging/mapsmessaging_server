@@ -86,8 +86,8 @@ public class LinkedMovingAverages implements Stats {
     currentStatistics = new SummaryStatistics();
   }
 
-  public long getPerSecond(){
-    return perSecond.get();
+  public float getPerSecond(){
+    return perSecond.get()/100f;
   }
   /**
    * @return The name of the units being measured
@@ -204,7 +204,7 @@ public class LinkedMovingAverages implements Stats {
       }
       long measurementTime = (now - (lastUpdate-timeSpan))/1000;
       if(measurementTime >= 2) {
-        perSecond.set((currentQuantum.sum() / measurementTime));
+        perSecond.set(( (currentQuantum.sum() * 100)/ measurementTime));
       }
 
       previousStatistics = currentStatistics;

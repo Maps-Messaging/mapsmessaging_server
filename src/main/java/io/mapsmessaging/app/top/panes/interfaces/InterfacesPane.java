@@ -65,9 +65,9 @@ public class InterfacesPane extends PaneUpdate {
 
   private void sort(List<InterfaceStatusDTO> list) {
     list.sort((o1, o2) -> {
-      long val1 = o1.getBytesReceived() + o1.getBytesSent() + o1.getMessagesSent() + o1.getTotalMessagesReceived() + o1.getConnections();
-      long val2 = o2.getBytesReceived() + o2.getBytesSent() + o2.getMessagesSent() + o2.getTotalMessagesReceived() + o2.getConnections();
-      return Long.compare(val2, val1);
+      float val1 = o1.getBytesReceived() + o1.getBytesSent() + o1.getMessagesSent() + o1.getTotalMessagesReceived() + o1.getConnections();
+      float val2 = o2.getBytesReceived() + o2.getBytesSent() + o2.getMessagesSent() + o2.getTotalMessagesReceived() + o2.getConnections();
+      return Float.compare(val2, val1);
     });
   }
 

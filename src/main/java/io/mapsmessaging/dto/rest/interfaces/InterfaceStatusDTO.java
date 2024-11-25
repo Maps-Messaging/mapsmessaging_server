@@ -74,28 +74,28 @@ public class InterfaceStatusDTO {
       description = "Number of bytes sent per second.",
       example = "1000",
       minimum = "0")
-  private long bytesSent;
+  private float bytesSent;
 
   @Schema(
       title = "Bytes Received per Second",
       description = "Number of bytes received per second.",
       example = "2000",
       minimum = "0")
-  private long bytesReceived;
+  private float bytesReceived;
 
   @Schema(
       title = "Messages Sent per Second",
       description = "Number of messages sent per second.",
       example = "5",
       minimum = "0")
-  private long messagesSent;
+  private float messagesSent;
 
   @Schema(
       title = "Messages Received per Second",
       description = "Number of messages received per second.",
       example = "4",
       minimum = "0")
-  private long messagesReceived;
+  private float messagesReceived;
 
   @Schema(
       title = "Current Connections",

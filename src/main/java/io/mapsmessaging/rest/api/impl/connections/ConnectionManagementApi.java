@@ -34,7 +34,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,20 +49,15 @@ public class ConnectionManagementApi extends BaseDestinationApi {
       response.setStatus(403);
       return null;
     }
-    try {
-      ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
-      List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-      List<EndPointDetails> endPointDetails = endPointManagers.stream()
-          .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
-              .map(endPoint -> new EndPointDetails(endPointManager.getName(), endPoint)))
-          .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
-          .collect(Collectors.toList());
+    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointDetails> endPointDetails = endPointManagers.stream()
+        .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
+            .map(endPoint -> new EndPointDetails(endPointManager.getName(), endPoint)))
+        .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
+        .collect(Collectors.toList());
 
-      return new EndPointDetailResponse(request, endPointDetails);
-    } catch (Throwable e) {
-      e.printStackTrace();
-    }
-    return new EndPointDetailResponse(request, new ArrayList<>());
+    return new EndPointDetailResponse(request, endPointDetails);
   }
 
 }
