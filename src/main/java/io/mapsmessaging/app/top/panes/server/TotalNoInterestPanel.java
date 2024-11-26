@@ -20,16 +20,16 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 
-public class TotalNoInterestPanel extends ServerStatusUpdate {
+public class TotalNoInterestPanel extends ServerStatsUpdate {
 
   public TotalNoInterestPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "NoInt: ", labelText, valueText, new DecimalSizeFormatter(6));
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
-    panel.update(statusMessage.getServerStatistics().getTotalNoInterestMessages());
+  public void update(ServerStatisticsDTO statusMessage) {
+    panel.update(statusMessage.getTotalNoInterestMessages());
   }
 }

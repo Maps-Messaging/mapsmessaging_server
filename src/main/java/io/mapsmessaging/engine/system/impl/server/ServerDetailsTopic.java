@@ -19,17 +19,18 @@
 package io.mapsmessaging.engine.system.impl.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
-import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
+import io.mapsmessaging.dto.helpers.StatusMessageHelper;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import java.io.IOException;
 
-public class ServerStatusTopic extends SystemTopic {
+public class ServerDetailsTopic extends SystemTopic {
 
-  public ServerStatusTopic() throws IOException {
-    super("$SYS/server/status");
+  public ServerDetailsTopic() throws IOException {
+    super("$SYS/server/details");
   }
 
   @Override
@@ -45,7 +46,7 @@ public class ServerStatusTopic extends SystemTopic {
 
   @Override
   protected Message generateMessage() {
-    ServerStatisticsDTO statusMessage = ServerStatisticsHelper.create();
+    ServerInfoDTO statusMessage = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
     ObjectMapper mapper = new ObjectMapper();
     try {
       String jsonString = mapper.writeValueAsString(statusMessage);

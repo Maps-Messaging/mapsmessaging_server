@@ -20,16 +20,16 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 
-public class ConnectedPanel extends ServerStatusUpdate {
+public class ConnectedPanel extends ServerDetailsUpdate {
 
   public ConnectedPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "Con: ", labelText, valueText, new StringFormatter(5, true));
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
+  public void update(ServerInfoDTO statusMessage) {
     panel.update(statusMessage.getConnections());
   }
 }

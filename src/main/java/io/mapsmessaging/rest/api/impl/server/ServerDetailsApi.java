@@ -24,7 +24,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.ServerRunner;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
@@ -40,7 +40,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @GET
   @Path("/server/details/info")
   @Produces({MediaType.APPLICATION_JSON})
-  public StatusMessageDTO getBuildInfo() {
+  public ServerInfoDTO getBuildInfo() {
     checkAuthentication();
 
     if (!hasAccess("servers")) {
@@ -51,13 +51,13 @@ public class ServerDetailsApi extends BaseInterfaceApi {
     CacheKey key = new CacheKey(uriInfo.getPath(), "buildInfo");
 
     // Try to retrieve from cache
-    StatusMessageDTO cachedResponse = getFromCache(key, StatusMessageDTO.class);
+    ServerInfoDTO cachedResponse = getFromCache(key, ServerInfoDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
     // Fetch and cache response
-    StatusMessageDTO response = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
+    ServerInfoDTO response = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
     putToCache(key, response);
     return response;
   }

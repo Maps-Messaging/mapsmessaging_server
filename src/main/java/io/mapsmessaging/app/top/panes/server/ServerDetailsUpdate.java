@@ -19,17 +19,19 @@
 package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
-import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
-import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
+import io.mapsmessaging.app.top.formatters.Formatter;
+import io.mapsmessaging.app.top.panels.Panel;
+import io.mapsmessaging.app.top.panels.StringPanel;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 
-public class TotalPublishedPanel extends ServerStatsUpdate {
+public abstract class ServerDetailsUpdate {
 
-  public TotalPublishedPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
-    super(row, col, "Pub: ", labelText, valueText, new DecimalSizeFormatter(6));
+  protected final Panel panel;
+
+  protected ServerDetailsUpdate(int row, int col, String label, TextGraphics labelText, TextGraphics valueText, Formatter formatter) {
+    panel = new StringPanel(row, col, label, labelText, valueText, formatter);
   }
 
-  @Override
-  public void update(ServerStatisticsDTO statusMessage) {
-    panel.update(statusMessage.getTotalPublishedMessages());
-  }
+  public abstract void update(ServerInfoDTO statusMessage);
+
 }

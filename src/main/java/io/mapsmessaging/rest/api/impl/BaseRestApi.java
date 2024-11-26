@@ -48,7 +48,7 @@ public class BaseRestApi {
   @Context
   protected UriInfo uriInfo;
 
-  private Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
+  private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
 
   protected HttpSession getSession() {
     return request.getSession(true);

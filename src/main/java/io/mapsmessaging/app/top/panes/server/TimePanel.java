@@ -20,17 +20,17 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import java.time.LocalDateTime;
 
-public class TimePanel extends ServerStatusUpdate {
+public class TimePanel extends ServerDetailsUpdate {
 
   public TimePanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "", labelText, valueText, new StringFormatter(10, false));
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
+  public void update(ServerInfoDTO statusMessage) {
     LocalDateTime dateTime = LocalDateTime.now();
     panel.update(String.format("%02d:%02d:%02d", dateTime.getHour(), dateTime.getMinute(), dateTime.getSecond()));
   }

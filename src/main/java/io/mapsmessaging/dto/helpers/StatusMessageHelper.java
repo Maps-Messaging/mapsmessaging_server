@@ -20,8 +20,7 @@ package io.mapsmessaging.dto.helpers;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.utilities.SystemUtils;
 import java.util.LinkedHashMap;
@@ -29,10 +28,10 @@ import java.util.Map;
 
 public class StatusMessageHelper {
 
-  public static StatusMessageDTO fromMessageDaemon(MessageDaemon messageDaemon) {
+  public static ServerInfoDTO fromMessageDaemon(MessageDaemon messageDaemon) {
     long nano = System.nanoTime();
 
-    StatusMessageDTO dto = new StatusMessageDTO();
+    ServerInfoDTO dto = new ServerInfoDTO();
     dto.setVersion(BuildInfo.getBuildVersion());
     dto.setBuildDate(BuildInfo.getBuildDate());
     dto.setServerName(messageDaemon.getId());
@@ -40,9 +39,6 @@ public class StatusMessageHelper {
     dto.setDestinations(messageDaemon.getDestinationManager().size());
     dto.setStorageSize(messageDaemon.getDestinationManager().getStorageSize());
     dto.setConnections(EndPoint.currentConnections.sum());
-
-    // Overall server statistics
-    dto.setServerStatistics(new ServerStatisticsDTO());
 
     // Memory stats
     dto.setMaxMemory(Runtime.getRuntime().maxMemory());

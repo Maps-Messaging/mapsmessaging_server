@@ -20,16 +20,16 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.ByteSizeFormatter;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 
-public class TotalBytesSentPanel extends ServerStatusUpdate {
+public class TotalBytesSentPanel extends ServerStatsUpdate {
 
   public TotalBytesSentPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "Out: ", labelText, valueText, new ByteSizeFormatter(7));
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
-    panel.update(statusMessage.getServerStatistics().getTotalWriteBytes());
+  public void update(ServerStatisticsDTO statusMessage) {
+    panel.update(statusMessage.getTotalWriteBytes());
   }
 }

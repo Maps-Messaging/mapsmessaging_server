@@ -39,5 +39,6 @@ io.mapsmessaging.engine.system.impl.messages.publish.Dropped
 io.mapsmessaging.engine.system.impl.messages.publish.Received
 io.mapsmessaging.engine.system.impl.messages.publish.Sent
 io.mapsmessaging.engine.system.impl.server.ServerStatusTopic
+io.mapsmessaging.engine.system.impl.server.ServerDetailsTopic
 io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic
 io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic

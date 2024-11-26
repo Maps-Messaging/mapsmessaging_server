@@ -20,16 +20,16 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 
-public class TotalDeliveredPanel extends ServerStatusUpdate {
+public class TotalDeliveredPanel extends ServerStatsUpdate {
 
   public TotalDeliveredPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "Del: ", labelText, valueText, new DecimalSizeFormatter(6));
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
-    panel.update(statusMessage.getServerStatistics().getTotalDeliveredMessages());
+  public void update(ServerStatisticsDTO statusMessage) {
+    panel.update(statusMessage.getTotalDeliveredMessages());
   }
 }

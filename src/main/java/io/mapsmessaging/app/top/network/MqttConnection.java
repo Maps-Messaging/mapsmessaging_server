@@ -20,7 +20,8 @@ package io.mapsmessaging.app.top.network;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
 import io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic;
 import io.mapsmessaging.security.uuid.UuidGenerator;
@@ -140,13 +141,16 @@ public class MqttConnection implements IMqttMessageListener {
 
   private Object parse(String jsonString) throws JsonProcessingException {
     if(jsonString.contains("buildDate")) {
-      return mapper.readValue(jsonString, StatusMessageDTO.class);
+      return mapper.readValue(jsonString, ServerInfoDTO.class);
     }
     if(jsonString.contains("destinationStatusList")){
       return mapper.readValue(jsonString, DestinationStatusTopic.DestinationStatusMessage.class);
     }
     if (jsonString.contains("interfaceName")) {
       return mapper.readValue(jsonString, InterfaceStatusTopic.InterfaceStatusMessage.class);
+    }
+    if(jsonString.contains("packetsSent")){
+      return mapper.readValue(jsonString, ServerStatisticsDTO.class);
     }
     return null;
   }

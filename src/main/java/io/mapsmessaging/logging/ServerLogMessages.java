@@ -682,7 +682,7 @@ public enum ServerLogMessages implements LogMessage {
   //<editor-fold desc="Rest API log messages">
   REST_API_ACCESS(LEVEL.INFO, SERVER_CATEGORY.REST, "Address {} requested {}, returning Status:{} with length {} bytes"),
   REST_API_FAILURE(LEVEL.ERROR, SERVER_CATEGORY.REST, "Rest Server unable to start due to exception"),
-  REST_API_SUCCESSFUL_REQUEST(LEVEL.INFO, SERVER_CATEGORY.REST, "Rest request type {} for {} with status {} returned {} bytes"),
+  REST_API_SUCCESSFUL_REQUEST(LEVEL.INFO, SERVER_CATEGORY.REST, "Rest request type {} for {} with status {}"),
   REST_CACHE_HIT(LEVEL.INFO, SERVER_CATEGORY.REST,"Cache hit for key: {}"),
   REST_CACHE_MISS(LEVEL.INFO, SERVER_CATEGORY.REST,"Cache miss for key: {}"),
   //</editor-fold>

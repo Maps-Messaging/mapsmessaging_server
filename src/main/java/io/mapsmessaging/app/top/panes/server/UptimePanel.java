@@ -20,16 +20,16 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.UptimeFormatter;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 
-public class UptimePanel extends ServerStatusUpdate {
+public class UptimePanel extends ServerDetailsUpdate {
 
   public UptimePanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "Up ", labelText, valueText, new UptimeFormatter(20, false));
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
+  public void update(ServerInfoDTO statusMessage) {
     panel.update(statusMessage.getUptime());
   }
 }

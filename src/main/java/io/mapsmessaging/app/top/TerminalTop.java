@@ -27,6 +27,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import io.mapsmessaging.app.top.network.MqttConnection;
 import io.mapsmessaging.app.top.panes.PaneUpdate;
+import io.mapsmessaging.app.top.panes.ServerDetailsPane;
 import io.mapsmessaging.app.top.panes.ServerStatusPane;
 import io.mapsmessaging.app.top.panes.destination.DestinationPane;
 import io.mapsmessaging.app.top.panes.interfaces.InterfacesPane;
@@ -38,6 +39,7 @@ public class TerminalTop {
 
   private final MqttConnection mqttConnection;
 
+  private final ServerDetailsPane serverDetailsPane;
   private final ServerStatusPane serverStatusPane;
   private final DestinationPane destinationPane;
   private final InterfacesPane interfacesPane;
@@ -68,6 +70,7 @@ public class TerminalTop {
     headerText.setForegroundColor(TextColor.ANSI.BLACK);
     normalText.setForegroundColor(TextColor.ANSI.WHITE);
     boldText.setForegroundColor(TextColor.ANSI.WHITE_BRIGHT);
+    serverDetailsPane = new ServerDetailsPane(normalText, boldText);
     serverStatusPane = new ServerStatusPane(normalText, boldText);
     destinationPane = new DestinationPane(6, rows,  normalText, boldText, headerText);
     interfacesPane = new InterfacesPane(6, rows, normalText, boldText, headerText);
@@ -94,6 +97,7 @@ public class TerminalTop {
           disconnected = false;
           screen.clear();
         }
+        serverDetailsPane.update(message);
         serverStatusPane.update(message);
         destinationPane.update(message);
         interfacesPane.update(message);
@@ -154,6 +158,7 @@ public class TerminalTop {
   }
 
   public void connectAndSubscribeToServer() throws MqttException {
+    mqttConnection.subscribe("$SYS/server/details");
     mqttConnection.subscribe("$SYS/server/status");
     mqttConnection.subscribe("$SYS/server/destination/status");
     mqttConnection.subscribe("$SYS/server/interface/status");

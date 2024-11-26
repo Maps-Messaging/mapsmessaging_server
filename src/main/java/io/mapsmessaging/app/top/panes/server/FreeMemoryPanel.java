@@ -20,16 +20,16 @@ package io.mapsmessaging.app.top.panes.server;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.ByteSizeFormatter;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 
-public class FreeMemoryPanel extends ServerStatusUpdate {
+public class FreeMemoryPanel extends ServerDetailsUpdate {
 
   public FreeMemoryPanel(int row, int col, TextGraphics labelText, TextGraphics valueText) {
     super(row, col, "Free ", labelText, valueText, new ByteSizeFormatter(7));
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
+  public void update(ServerInfoDTO statusMessage) {
     panel.update(statusMessage.getFreeMemory());
   }
 }

@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
     title = "Status Message",
     description =
         "Provides detailed status information about the server, including memory usage, CPU statistics, and thread states.")
-public class StatusMessageDTO {
+public class ServerInfoDTO {
 
   @Schema(description = "Server name", example = "maps-server")
   private String serverName;
@@ -54,9 +54,6 @@ public class StatusMessageDTO {
 
   @Schema(description = "Number of active threads", example = "120")
   private int numberOfThreads;
-
-  @Schema(description = "Server statistics", nullable = true)
-  private ServerStatisticsDTO serverStatistics;
 
   @Schema(
       description = "Time taken to create the status message, in nanoseconds",

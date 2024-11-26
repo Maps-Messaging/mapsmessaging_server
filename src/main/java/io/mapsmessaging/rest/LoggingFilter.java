@@ -37,13 +37,15 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
   private final Logger logger = LoggerFactory.getLogger(LoggingFilter.class);
   @Override
-  public void filter(ContainerRequestContext requestContext) throws IOException {}
+  public void filter(ContainerRequestContext requestContext) throws IOException {
+    // needs to be implemented, but do not need to do anything here
+  }
 
   @Override
   public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
     int status = responseContext.getStatus();
     String method = requestContext.getMethod();
     String path = requestContext.getUriInfo().getPath();
-    logger.log(REST_API_SUCCESSFUL_REQUEST, method, path, status, responseContext.getLength());
+    logger.log(REST_API_SUCCESSFUL_REQUEST, method, path, status);
   }
 }

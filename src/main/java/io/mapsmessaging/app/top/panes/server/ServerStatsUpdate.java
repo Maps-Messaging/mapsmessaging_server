@@ -22,16 +22,16 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.panels.Panel;
 import io.mapsmessaging.app.top.panels.StringPanel;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
 
-public abstract class ServerStatusUpdate {
+public abstract class ServerStatsUpdate {
 
   protected final Panel panel;
 
-  protected ServerStatusUpdate(int row, int col, String label, TextGraphics labelText, TextGraphics valueText, Formatter formatter) {
+  protected ServerStatsUpdate(int row, int col, String label, TextGraphics labelText, TextGraphics valueText, Formatter formatter) {
     panel = new StringPanel(row, col, label, labelText, valueText, formatter);
   }
 
-  public abstract void update(StatusMessageDTO statusMessage);
+  public abstract void update(ServerStatisticsDTO statusMessage);
 
 }

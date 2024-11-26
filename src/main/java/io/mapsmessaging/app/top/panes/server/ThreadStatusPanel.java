@@ -21,10 +21,10 @@ package io.mapsmessaging.app.top.panes.server;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panels.Panel;
-import io.mapsmessaging.dto.rest.StatusMessageDTO;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import java.util.Map;
 
-public class ThreadStatusPanel extends ServerStatusUpdate {
+public class ThreadStatusPanel extends ServerDetailsUpdate {
 
   private final Panel[] values = new Panel[6];
 
@@ -39,7 +39,7 @@ public class ThreadStatusPanel extends ServerStatusUpdate {
   }
 
   @Override
-  public void update(StatusMessageDTO statusMessage) {
+  public void update(ServerInfoDTO statusMessage) {
     panel.update("");
     Map<String, Integer> map = statusMessage.getThreadState();
     values[0].update(map.getOrDefault("RUNNABLE", 0));
