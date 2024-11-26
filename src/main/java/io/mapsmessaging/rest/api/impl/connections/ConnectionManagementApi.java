@@ -23,17 +23,16 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.impl.destination.BaseDestinationApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
 import io.mapsmessaging.rest.responses.EndPointDetails;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,21 +42,34 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   @GET
   @Path("/server/connections")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the specific destination details")
   public EndPointDetailResponse getAllConnections(@QueryParam("filter") String filter) throws ParseException {
     if (!hasAccess("connections")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
+
+    // Try to retrieve from cache
+    EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+
     List<EndPointDetails> endPointDetails = endPointManagers.stream()
         .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
             .map(endPoint -> new EndPointDetails(endPointManager.getName(), endPoint)))
         .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
         .collect(Collectors.toList());
 
-    return new EndPointDetailResponse(request, endPointDetails);
+    EndPointDetailResponse response = new EndPointDetailResponse(request, endPointDetails);
+    putToCache(key, response);
+    return response;
   }
+
 
 }

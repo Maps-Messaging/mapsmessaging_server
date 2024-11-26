@@ -26,13 +26,12 @@ import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.dto.rest.StatusMessageDTO;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @Tag(name = "Server Management")
 @Path(URI_PATH)
@@ -41,28 +40,53 @@ public class ServerDetailsApi extends BaseInterfaceApi {
   @GET
   @Path("/server/details/info")
   @Produces({MediaType.APPLICATION_JSON})
-  // @ApiOperation(value = "Returns the servers unique name")
   public StatusMessageDTO getBuildInfo() {
     checkAuthentication();
+
     if (!hasAccess("servers")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    return StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), "buildInfo");
+
+    // Try to retrieve from cache
+    StatusMessageDTO cachedResponse = getFromCache(key, StatusMessageDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    StatusMessageDTO response = StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance());
+    putToCache(key, response);
+    return response;
   }
 
   @GET
   @Path("/server/details/stats")
   @Produces({MediaType.APPLICATION_JSON})
-//  @ApiOperation(value = "Retrieve the server statistics")
   public ServerStatisticsResponse getStats() {
     checkAuthentication();
+
     if (!hasAccess("servers")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    return new ServerStatisticsResponse(request, ServerStatisticsHelper.create());
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
+
+    // Try to retrieve from cache
+    ServerStatisticsResponse cachedResponse = getFromCache(key, ServerStatisticsResponse.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    ServerStatisticsResponse response = new ServerStatisticsResponse(request, ServerStatisticsHelper.create());
+    putToCache(key, response);
+    return response;
   }
+
 
   @PUT
   @Path("/server/restart")

@@ -43,6 +43,12 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     this.enableInterfaceManagement = properties.getBooleanProperty("enableInterfaceManagement", true);
     this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
 
+
+    this.enableCache = properties.getBooleanProperty("enableCache", true);
+    this.cacheLifetime = properties.getLongProperty("cacheLifetime", 10000L);
+    this.cacheCleanup = properties.getLongProperty("cacheCleanup", 5000L);
+    this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
+
     if (properties.containsKey("tls")) {
       this.tlsConfig = new TlsConfig((ConfigurationProperties) properties.get("tls"));
     }

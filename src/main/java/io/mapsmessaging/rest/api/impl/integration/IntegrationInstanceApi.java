@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.helpers.IntegrationInfoHelper;
 import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
@@ -39,41 +40,64 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
   @GET
   @Path("/server/integration/{name}")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the endpoint current status and configuration")
   public IntegrationInfoDTO getIntegration(@PathParam("name") String name) {
     checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
-    EndPointConnection endPointConnection = locateInstance(name);
-    if(endPointConnection == null) {
-      response.setStatus(404);
-      return null;
-    }
-    return IntegrationInfoHelper.fromEndPointConnection(endPointConnection);
-  }
 
+    if (!hasAccess("interfaces")) {
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
+    }
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), name);
+
+    // Try to retrieve from cache
+    IntegrationInfoDTO cachedResponse = getFromCache(key, IntegrationInfoDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    EndPointConnection endPointConnection = locateInstance(name);
+    if (endPointConnection == null) {
+      throw new WebApplicationException("Integration not found", Response.Status.NOT_FOUND);
+    }
+
+    IntegrationInfoDTO response = IntegrationInfoHelper.fromEndPointConnection(endPointConnection);
+    putToCache(key, response);
+    return response;
+  }
 
   @GET
   @Path("/server/integration/{name}/connection")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the endpoint current status and configuration")
   public EndPointDetails getIntegrationConnection(@PathParam("name") String name) {
     checkAuthentication();
+
     if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), name);
+
+    // Try to retrieve from cache
+    EndPointDetails cachedResponse = getFromCache(key, EndPointDetails.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
     EndPointConnection endPointConnection = locateInstance(name);
-    if(endPointConnection == null) {
-      response.setStatus(404);
-      return null;
+    if (endPointConnection == null) {
+      throw new WebApplicationException("Integration not found", Response.Status.NOT_FOUND);
     }
-    if(endPointConnection.getEndPoint() != null) {
-      return new EndPointDetails(name, endPointConnection.getEndPoint());
-    }
-    return new EndPointDetails();
+
+    EndPointDetails response = (endPointConnection.getEndPoint() != null)
+        ? new EndPointDetails(name, endPointConnection.getEndPoint())
+        : new EndPointDetails();
+
+    putToCache(key, response);
+    return response;
   }
 
   @PUT

@@ -16,18 +16,12 @@
  *
  */
 
-package io.mapsmessaging.rest.api;
+package io.mapsmessaging.rest.cache;
 
-import io.mapsmessaging.rest.cache.Cache;
-import io.mapsmessaging.rest.cache.CacheKey;
-import lombok.Getter;
-import lombok.Setter;
-
-public class Constants {
-
-  public static final String URI_PATH = "/api/v1";
-
-  @Getter
-  @Setter
-  private static Cache<CacheKey, Object> centralCache;
+public interface Cache<K, V> {
+  void put(K key, V value);
+  V get(K key);
+  void remove(K key);
+  void clear();
 }
+

@@ -30,6 +30,8 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
+import io.mapsmessaging.rest.cache.impl.NoCache;
+import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.rest.translation.GsonMessageBodyReader;
 import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
@@ -126,6 +128,14 @@ public class RestApiServerManager implements Agent {
   }
 
   public void startServer() {
+    if(config.isEnableCache()){
+      long entryLifeTime = config.getCacheLifetime();
+      long cleanupTime = config.getCacheCleanup();
+      io.mapsmessaging.rest.api.Constants.setCentralCache( new RoleBasedCache<>(entryLifeTime, cleanupTime));
+    }
+    else{
+      io.mapsmessaging.rest.api.Constants.setCentralCache(new NoCache<>());
+    }
     List<String> endpoints = new ArrayList<>();
     endpoints.add("io.mapsmessaging.rest.api.impl");
     endpoints.add("io.mapsmessaging.rest.api.impl.messaging");

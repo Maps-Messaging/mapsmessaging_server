@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
 import io.mapsmessaging.rest.responses.EndPointDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,21 +45,68 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @GET
   @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the endpoint current status and configuration")
   public InterfaceInfoDTO getInterface(@PathParam("endpoint") String endpointName) {
     checkAuthentication();
+
     if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
 
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+
+    // Try to retrieve from cache
+    InterfaceInfoDTO cachedResponse = getFromCache(key, InterfaceInfoDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
-        return InterfaceInfoHelper.fromEndPointManager(endPointManager);
+        InterfaceInfoDTO response = InterfaceInfoHelper.fromEndPointManager(endPointManager);
+        putToCache(key, response);
+        return response;
       }
     }
+
     return null;
+  }
+
+  @GET
+  @Path("/server/interface/{endpoint}/connections")
+  @Produces({MediaType.APPLICATION_JSON})
+  public EndPointDetailResponse getInterfaceConnections(@PathParam("endpoint") String endpointName) {
+    checkAuthentication();
+
+    if (!hasAccess("interfaces")) {
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
+    }
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+
+    // Try to retrieve from cache
+    EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointDetails> endPointDetails = new ArrayList<>();
+    for (EndPointManager endPointManager : endPointManagers) {
+      if (isMatch(endpointName, endPointManager)) {
+        for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
+          endPointDetails.add(new EndPointDetails(endPointManager.getName(), endPoint));
+        }
+      }
+    }
+
+    EndPointDetailResponse response = new EndPointDetailResponse(request, endPointDetails);
+    putToCache(key, response);
+    return response;
   }
 
   @PUT
@@ -80,31 +128,6 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       }
     }
     return false;
-  }
-
-
-  @GET
-  @Path("/server/interface/{endpoint}/connections")
-  @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the endpoint current status and configuration")
-  public EndPointDetailResponse getInterfaceConnections(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
-
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    List<EndPointDetails> endPointDetails = new ArrayList<>();
-    for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
-        for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
-          endPointDetails.add(new EndPointDetails(endPointManager.getName(), endPoint));
-        }
-      }
-    }
-
-    return new EndPointDetailResponse(request, endPointDetails);
   }
 
   @PUT

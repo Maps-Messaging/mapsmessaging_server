@@ -27,6 +27,10 @@ RestApi:
   enableSchemaManagement: true
   enableInterfaceManagement: true
   enableDestinationManagement: true
+  enableCache: true
+  cacheLifetime: 30000
+  cacheCleanup: 10000
+
 
 #    tls:
 #      clientCertificateRequired: false

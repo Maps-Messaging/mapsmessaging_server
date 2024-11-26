@@ -25,6 +25,7 @@ import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.dto.rest.auth.GroupDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.GroupListResponse;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
@@ -34,10 +35,10 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Tag(name = "Authentication and Authorisation Management")
@@ -50,30 +51,58 @@ public class GroupManagementApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   public GroupListResponse getAllGroups(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
+
+    // Prepare the parser and cache key
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
+
+    // Check cache
+    GroupListResponse cachedResponse = getFromCache(key, GroupListResponse.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch groups
     AuthManager authManager = AuthManager.getInstance();
     List<GroupDetails> groups = authManager.getGroups();
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+
+    // Transform and filter groups
     List<GroupDTO> results = groups.stream()
-        .map(groupDetails -> new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers()))
-        .filter(group -> parser == null || parser.evaluate(group))
+        .map(groupDetails -> new GroupDTO(
+            groupDetails.getName(),
+            groupDetails.getGroupId(),
+            groupDetails.getUsers()))
+        .filter(group -> filterGroup(parser, group))
         .collect(Collectors.toList());
-    return new GroupListResponse(request, results);
+
+    // Create response and cache it
+    GroupListResponse result = new GroupListResponse(request, results);
+    putToCache(key, result);
+    return result;
   }
+
 
   @GET
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
   public GroupDTO getGroupsById(@PathParam("groupUuid") String groupUuid) {
     checkAuthentication();
+
+    // Fetch the group by UUID
     AuthManager authManager = AuthManager.getInstance();
-    GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
+    GroupDetails groupDetails = authManager.getGroups()
+        .stream()
+        .filter(g -> g.getGroupId().toString().equals(groupUuid))
+        .findFirst()
+        .orElse(null);
+
+    // Return the GroupDTO if found
     if (groupDetails != null) {
-      String groupName = groupDetails.getName();
-      UUID groupId = groupDetails.getGroupId();
-      return new GroupDTO(groupName, groupId, groupDetails.getUsers());
+      return new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers());
     }
-    response.setStatus(500);
-    return null;
+
+    // Return a 404 if the group is not found
+    throw new WebApplicationException("Group not found", Response.Status.NOT_FOUND);
   }
 
   @POST
@@ -128,4 +157,11 @@ public class GroupManagementApi extends BaseRestApi {
     response.setStatus(500);
     return new BaseResponse(request);
   }
+
+
+  // Helper methods
+  private boolean filterGroup(ParserExecutor parser, GroupDTO group) {
+    return parser == null || parser.evaluate(group);
+  }
+
 }

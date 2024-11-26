@@ -43,6 +43,15 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Port for the REST API", example = "8080")
   protected int port;
 
+  @Schema(description = "Enable Caching of rest responses", example = "true")
+  protected boolean enableCache;
+
+  @Schema(description = "Cache element life time in ms", example = "10000")
+  protected long cacheLifetime;
+
+  @Schema(description = "Cache element cleanup time in ms", example = "5000")
+  protected long cacheCleanup;
+
   @Schema(description = "Enables Swagger documentation", example = "true")
   protected boolean enableSwagger;
 

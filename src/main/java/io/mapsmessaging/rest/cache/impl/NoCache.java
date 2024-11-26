@@ -16,18 +16,30 @@
  *
  */
 
-package io.mapsmessaging.rest.api;
+package io.mapsmessaging.rest.cache.impl;
 
 import io.mapsmessaging.rest.cache.Cache;
 import io.mapsmessaging.rest.cache.CacheKey;
-import lombok.Getter;
-import lombok.Setter;
 
-public class Constants {
+public class NoCache <V> implements Cache<CacheKey, V> {
 
-  public static final String URI_PATH = "/api/v1";
+  public NoCache() {
+  }
 
-  @Getter
-  @Setter
-  private static Cache<CacheKey, Object> centralCache;
+  @Override
+  public void put(CacheKey key, V value) {
+  }
+
+  @Override
+  public V get(CacheKey key) {
+    return null;
+  }
+
+  @Override
+  public void remove(CacheKey key) {
+  }
+
+  @Override
+  public void clear() {
+  }
 }

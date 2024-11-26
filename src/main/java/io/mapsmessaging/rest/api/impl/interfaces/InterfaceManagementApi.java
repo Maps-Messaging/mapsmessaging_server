@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -41,26 +42,41 @@ import java.util.stream.Collectors;
 public class InterfaceManagementApi extends BaseRestApi {
 
   private static final String INTERFACES = "Interfaces";
-      
   @GET
   @Path("/server/interfaces")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Retrieve a list of all configured interfaces")
   public InterfaceDetailResponse getAllInterfaces(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
+
     if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
+
+    // Try to retrieve from cache
+    InterfaceDetailResponse cachedResponse = getFromCache(key, InterfaceDetailResponse.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and filter response
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
 
     List<InterfaceInfoDTO> protocols = endPointManagers.stream()
         .map(InterfaceInfoHelper::fromEndPointManager)
         .filter(protocol -> parser == null || parser.evaluate(protocol))
         .collect(Collectors.toList());
-    return new InterfaceDetailResponse(request, protocols);
+
+    InterfaceDetailResponse response = new InterfaceDetailResponse(request, protocols);
+
+    // Cache the response
+    putToCache(key, response);
+    return response;
   }
+
 
 
   @PUT

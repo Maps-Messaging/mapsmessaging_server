@@ -25,13 +25,14 @@ import io.mapsmessaging.dto.rest.integration.IntegrationStatusDTO;
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import java.util.ArrayList;
+import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,23 +42,35 @@ import java.util.stream.Collectors;
 @Path(URI_PATH)
 public class IntergrationStatusApi extends BaseInterfaceApi {
 
-
   @GET
   @Path("/server/integration/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
   public IntegrationStatusDTO getIntegrationStatus(@PathParam("endpoint") String endpointName) {
     checkAuthentication();
+
     if (!hasAccess("integrations")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
 
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+
+    // Try to retrieve from cache
+    IntegrationStatusDTO cachedResponse = getFromCache(key, IntegrationStatusDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
     List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
     for (EndPointConnection endPointConnection : endPointManagers) {
       if (endpointName.equals(endPointConnection.getConfigName())) {
-        return fromConnection(endPointConnection);
+        IntegrationStatusDTO response = fromConnection(endPointConnection);
+        putToCache(key, response);
+        return response;
       }
     }
+
     return null;
   }
 
@@ -66,17 +79,31 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   public List<IntegrationStatusDTO> getAllIntegrationStatus(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
+
     if (!hasAccess("integrations")) {
-      response.setStatus(403);
-      return new ArrayList<>();
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
+
+    // Try to retrieve from cache
+    List<IntegrationStatusDTO> cachedResponse = getFromCache(key, List.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
-    return endPointManagers.stream()
+
+    List<IntegrationStatusDTO> response = endPointManagers.stream()
         .map(IntergrationStatusApi::fromConnection)
         .filter(status -> parser == null || parser.evaluate(status))
         .collect(Collectors.toList());
 
+    putToCache(key, response);
+    return response;
   }
 
   public static IntegrationStatusDTO fromConnection(EndPointConnection connection) {

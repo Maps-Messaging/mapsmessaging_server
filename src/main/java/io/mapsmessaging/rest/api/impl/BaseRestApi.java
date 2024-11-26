@@ -18,16 +18,24 @@
 
 package io.mapsmessaging.rest.api.impl;
 
+import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
+import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
+
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.rest.api.Constants;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.auth.RestAclMapping;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.security.access.Identity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.UriInfo;
 import javax.security.auth.Subject;
 
 public class BaseRestApi {
@@ -36,6 +44,11 @@ public class BaseRestApi {
 
   @Context
   protected HttpServletResponse response;
+
+  @Context
+  protected UriInfo uriInfo;
+
+  private Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
 
   protected HttpSession getSession() {
     return request.getSession(true);
@@ -84,5 +97,20 @@ public class BaseRestApi {
       default:
         return RestAclMapping.READ_VALUE;
     }
+  }
+
+  protected <T> T getFromCache(CacheKey key, Class<T> type) {
+    Object cachedResponse =Constants.getCentralCache().get(key);
+    T typedResponse = type.isInstance(cachedResponse) ? type.cast(cachedResponse) : null;
+    if (typedResponse != null) {
+      logger.log(REST_CACHE_HIT, key);
+    } else {
+      logger.log(REST_CACHE_MISS, key);
+    }
+    return typedResponse;
+  }
+
+  protected void putToCache(CacheKey key, Object value){
+    Constants.getCentralCache().put(key, value);
   }
 }

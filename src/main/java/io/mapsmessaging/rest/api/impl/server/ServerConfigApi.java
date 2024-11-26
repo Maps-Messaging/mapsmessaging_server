@@ -23,11 +23,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -38,14 +36,26 @@ public class ServerConfigApi  extends BaseInterfaceApi {
   @GET
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
-  // @ApiOperation(value = "Returns the servers unique name")
   public MessageDaemonConfigDTO getServerConfig() {
     checkAuthentication();
+
     if (!hasAccess("servers")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    return MessageDaemon.getInstance().getMessageDaemonConfig();
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), "serverConfig");
+
+    // Try to retrieve from cache
+    MessageDaemonConfigDTO cachedResponse = getFromCache(key, MessageDaemonConfigDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    MessageDaemonConfigDTO response = MessageDaemon.getInstance().getMessageDaemonConfig();
+    putToCache(key, response);
+    return response;
   }
 
   @PUT

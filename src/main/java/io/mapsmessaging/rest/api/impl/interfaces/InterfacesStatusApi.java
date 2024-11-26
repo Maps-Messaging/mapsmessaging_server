@@ -24,12 +24,14 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,22 +39,35 @@ import java.util.stream.Collectors;
 @Path(URI_PATH)
 public class InterfacesStatusApi extends BaseInterfaceApi {
 
-
   @GET
   @Path("/server/interface/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
   public InterfaceStatusDTO getInterfaceStatus(@PathParam("endpoint") String endpointName) {
     checkAuthentication();
+
     if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+
+    // Try to retrieve from cache
+    InterfaceStatusDTO cachedResponse = getFromCache(key, InterfaceStatusDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
-        return InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer());
+        InterfaceStatusDTO response = InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer());
+        putToCache(key, response);
+        return response;
       }
     }
+
     return null;
   }
 
@@ -61,16 +76,31 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   public List<InterfaceStatusDTO> getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
+
     if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
+
+    // Try to retrieve from cache
+    List<InterfaceStatusDTO> cachedResponse = getFromCache(key, List.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
 
-    return endPointManagers.stream()
+    List<InterfaceStatusDTO> response = endPointManagers.stream()
         .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
         .filter(status -> parser == null || parser.evaluate(status))
         .collect(Collectors.toList());
+
+    putToCache(key, response);
+    return response;
   }
+
 }
