@@ -29,6 +29,9 @@ public class BaseDestinationApi extends BaseRestApi {
 
 
   protected DestinationImpl lookup(String name) throws ExecutionException, InterruptedException, TimeoutException {
+    if(name.startsWith("$")){
+      return null;
+    }
     DestinationImpl destinationImpl = MessageDaemon.getInstance().getDestinationManager().find(name).get(60, TimeUnit.SECONDS);
     if(destinationImpl == null && !name.startsWith("/")){
       name = "/"+name;

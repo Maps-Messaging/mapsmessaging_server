@@ -42,33 +42,39 @@ import java.util.concurrent.TimeoutException;
 @Path(URI_PATH)
 public class DestinationStatusApi extends BaseDestinationApi {
   @GET
-  @Path("/server/destination/status/{destination}")
+  @Path("/server/destination/status/byname")
   @Produces({MediaType.APPLICATION_JSON})
-  public DestinationStatusResponse getDestinationStats(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
-    checkAuthentication();
+  public DestinationStatusDTO getDestinationStats(@QueryParam("destinationName")String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
+    try {
+      checkAuthentication();
 
-    if (!hasAccess("destinations")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
+      if (!hasAccess("destinations")) {
+        throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
+      }
+      if(destinationName==null) {
+        throw new WebApplicationException("Destination not found", Response.Status.NOT_FOUND);
+      }
+      // Create cache key
+      CacheKey key = new CacheKey(uriInfo.getPath(), destinationName);
+
+      // Try to retrieve from cache
+      DestinationStatusDTO cachedResponse = getFromCache(key, DestinationStatusDTO.class);
+      if (cachedResponse != null) {
+        return cachedResponse;
+      }
+
+      // Fetch and cache response
+      DestinationStatusDTO destination = lookupDestination(destinationName);
+      if (destination == null) {
+        throw new WebApplicationException("Destination not found", Response.Status.NOT_FOUND);
+      }
+
+      putToCache(key, destination);
+      return destination;
+    } catch (Throwable e) {
+      e.printStackTrace();
+      throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
     }
-
-    // Create cache key
-    CacheKey key = new CacheKey(uriInfo.getPath(), destinationName);
-
-    // Try to retrieve from cache
-    DestinationStatusResponse cachedResponse = getFromCache(key, DestinationStatusResponse.class);
-    if (cachedResponse != null) {
-      return cachedResponse;
-    }
-
-    // Fetch and cache response
-    DestinationStatusDTO destination = lookupDestination(destinationName);
-    if (destination == null) {
-      throw new WebApplicationException("Destination not found", Response.Status.NOT_FOUND);
-    }
-
-    DestinationStatusResponse response = new DestinationStatusResponse(request, destination);
-    putToCache(key, response);
-    return response;
   }
 
   @GET
