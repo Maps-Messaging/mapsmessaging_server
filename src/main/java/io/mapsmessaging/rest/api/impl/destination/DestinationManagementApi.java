@@ -133,9 +133,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
     if (size > 0 && size < results.size()) {
       results = results.subList(0, size);
     }
-    for(DestinationDTO destination : results) {
-      System.out.println(destination.getName()+":"+destination.getStoredMessages());
-    }
+
     DestinationResponse destinationResponse =  new DestinationResponse(request, results);
     putToCache(key, destinationResponse);
     return destinationResponse;
