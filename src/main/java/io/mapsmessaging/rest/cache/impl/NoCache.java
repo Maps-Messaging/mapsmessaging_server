@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.rest.cache.impl;
 
+import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.cache.Cache;
 import io.mapsmessaging.rest.cache.CacheKey;
 
@@ -41,5 +42,15 @@ public class NoCache <V> implements Cache<CacheKey, V> {
 
   @Override
   public void clear() {
+  }
+
+  @Override
+  public long size() {
+    return 0;
+  }
+
+  @Override
+  public CacheInfo getCacheInfo() {
+    return new CacheInfo(false, 0, 0, 0, 0, 0);
   }
 }

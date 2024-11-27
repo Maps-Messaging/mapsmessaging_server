@@ -18,17 +18,25 @@
 
 package io.mapsmessaging.rest.cache.impl;
 
+import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.cache.Cache;
 import io.mapsmessaging.rest.cache.CacheKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
 
 public class RoleBasedCache<V> implements Cache<CacheKey, V> {
   private final Map<CacheKey, CacheEntry<V>> cache = new ConcurrentHashMap<>();
   private final long expiryDuration;
+  private final long cleanupInterval;
+  private LongAdder cacheHits;
+  private LongAdder cacheMisses;
 
   public RoleBasedCache(long expiryDuration, long cleanupInterval) {
     this.expiryDuration = expiryDuration;
+    this.cleanupInterval = cleanupInterval;
+    cacheHits = new LongAdder();
+    cacheMisses = new LongAdder();
     // Schedule periodic cleanup if needed
     new Thread(() -> {
       while (true) {
@@ -45,9 +53,7 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
 
   @Override
   public void put(CacheKey key, V value) {
-    CacheEntry<V> existingEntry = cache.computeIfAbsent(key, k -> {
-      return new CacheEntry<>(value, System.currentTimeMillis());
-    });
+    CacheEntry<V> existingEntry = cache.computeIfAbsent(key, k -> new CacheEntry<>(value, System.currentTimeMillis()));
 
     if (isExpired(System.currentTimeMillis(), existingEntry)) {
       remove(key); // Remove the expired entry
@@ -61,8 +67,10 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
     CacheEntry<V> entry = cache.get(key);
     if (entry == null || isExpired(System.currentTimeMillis(), entry)) {
       cache.remove(key);
+      cacheMisses.increment();
       return null;
     }
+    cacheHits.increment();
     return entry.value;
   }
 
@@ -74,6 +82,16 @@ public class RoleBasedCache<V> implements Cache<CacheKey, V> {
   @Override
   public void clear() {
     cache.clear();
+  }
+
+  @Override
+  public long size() {
+    return cache.size();
+  }
+
+  @Override
+  public CacheInfo getCacheInfo() {
+    return new CacheInfo(true, expiryDuration, cleanupInterval, cache.size(), cacheHits.sum(), cacheMisses.sum());
   }
 
   private void cleanup() {

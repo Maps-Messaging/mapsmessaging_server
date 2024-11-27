@@ -23,6 +23,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -78,7 +79,18 @@ public class DiscoveryManagementApi extends BaseRestApi {
       response.setStatus(403);
       return new ArrayList<>();
     }
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), ((filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "") );
+
+    // Try to retrieve from cache
+    @SuppressWarnings("unchecked")
+    List<DiscoveredServersDTO> cachedResponse = getFromCache(key, List.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : SelectorParser.compile("true");
-    return MessageDaemon.getInstance().getServerConnectionManager().getServers().stream().filter(parser::evaluate).collect(Collectors.toList());
+    List<DiscoveredServersDTO> result = MessageDaemon.getInstance().getServerConnectionManager().getServers().stream().filter(parser::evaluate).collect(Collectors.toList());
+    putToCache(key, result);
+    return result;
   }
 }

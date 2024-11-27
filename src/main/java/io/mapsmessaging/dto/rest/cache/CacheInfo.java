@@ -16,16 +16,20 @@
  *
  */
 
-package io.mapsmessaging.rest.cache;
+package io.mapsmessaging.dto.rest.cache;
 
-import io.mapsmessaging.dto.rest.cache.CacheInfo;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface Cache<K, V> {
-  void put(K key, V value);
-  V get(K key);
-  void remove(K key);
-  void clear();
-  long size();
-  CacheInfo getCacheInfo();
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CacheInfo {
+  private boolean enabled;
+  private long lifeTime;
+  private long scanTime;
+  private long cacheSize;
+  private long cacheHits;
+  private long cacheMisses;
 }
-
