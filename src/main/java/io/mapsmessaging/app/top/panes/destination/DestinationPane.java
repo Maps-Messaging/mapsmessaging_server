@@ -21,7 +21,7 @@ package io.mapsmessaging.app.top.panes.destination;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.destination.row.DestinationStatusRowPanel;
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,18 +50,18 @@ public class DestinationPane extends PaneUpdate {
     }
     clear(labelText, startRow - 1, startRow + rowList.size());
     DestinationStatusTopic.DestinationStatusMessage statusMessage = (DestinationStatusTopic.DestinationStatusMessage) obj;
-    List<DestinationStatusDTO> destinationStatusList = statusMessage.getDestinationStatusList();
+    List<DestinationDTO> destinationStatusList = statusMessage.getDestinationStatusList();
     sort(destinationStatusList);
     headerText.putString(0, startRow-1, "     NAME      |PUB |SENT|DISK|DROP|PTX |RTV |EXP |DLY | Read | Write |Delete |");
     int len = Math.min(rowList.size(), destinationStatusList.size());
     for(int x=0;x<len;x++) {
-      DestinationStatusDTO destinationStatus = destinationStatusList.get(x);
+      DestinationDTO destinationStatus = destinationStatusList.get(x);
       DestinationStatusRowPanel statusRow = rowList.get(x);
       statusRow.update(destinationStatus);
     }
   }
 
-  private  void sort( List<DestinationStatusDTO> list){
+  private  void sort( List<DestinationDTO> list){
     list.sort((o1, o2) -> {
       long val1 = o1.getPublishedMessages() + o1.getDeliveredMessages() + o1.getStoredMessages();
       long val2 = o2.getPublishedMessages() + o2.getDeliveredMessages() + o2.getStoredMessages();

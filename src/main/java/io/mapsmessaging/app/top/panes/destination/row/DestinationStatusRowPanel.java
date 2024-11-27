@@ -20,7 +20,7 @@ package io.mapsmessaging.app.top.panes.destination.row;
 
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.destination.DestinationStatusUpdate;
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class DestinationStatusRowPanel {
 
   }
 
-  public void update(DestinationStatusDTO statusMessage){
+  public void update(DestinationDTO statusMessage){
     for(DestinationStatusUpdate update:rowItems){
       update.update(statusMessage);
     }

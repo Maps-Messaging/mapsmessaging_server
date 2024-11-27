@@ -82,4 +82,60 @@ public class DestinationDTO implements Serializable {
           "The identifier for the schema associated with this destination, which may define the structure or rules for messages.",
       example = "schema-123")
   private final String schemaId;
+
+  @Schema(
+      title = "No Interest Messages",
+      description = "The count of messages dropped due to lack of interest by consumers.",
+      example = "5",
+      minimum = "0")
+  private long noInterestMessages;
+
+  @Schema(
+      title = "Published Messages",
+      description = "Total count of messages published to this destination.",
+      example = "1000",
+      minimum = "0")
+  private long publishedMessages;
+
+  @Schema(
+      title = "Retrieved Messages",
+      description = "The total number of messages retrieved from the destination by consumers.",
+      example = "980",
+      minimum = "0")
+  private long retrievedMessages;
+
+  @Schema(
+      title = "Expired Messages",
+      description = "The count of messages that expired before being delivered.",
+      example = "10",
+      minimum = "0")
+  private long expiredMessages;
+
+  @Schema(
+      title = "Delivered Messages",
+      description = "The number of messages successfully delivered to consumers.",
+      example = "970",
+      minimum = "0")
+  private long deliveredMessages;
+
+  @Schema(
+      title = "Average Read Time",
+      description = "The average time, in nanoseconds, to read messages from the store.",
+      example = "1500",
+      minimum = "0")
+  private long readTimeAveNs;
+
+  @Schema(
+      title = "Average Write Time",
+      description = "The average time, in nanoseconds, to write messages to the store.",
+      example = "2000",
+      minimum = "0")
+  private long writeTimeAveNs;
+
+  @Schema(
+      title = "Average Delete Time",
+      description = "The average time, in nanoseconds, to delete messages from the store.",
+      example = "1200",
+      minimum = "0")
+  private long deleteTimeAveNs;
 }

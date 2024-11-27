@@ -18,20 +18,26 @@
 
 package io.mapsmessaging.dto.helpers;
 
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationStats;
 import java.io.IOException;
 
 public class DestinationStatusHelper {
 
-  public static DestinationStatusDTO createDestinationStatus(DestinationImpl destinationImpl) {
+  public static DestinationDTO createDestination(DestinationImpl destinationImpl) {
+    if(destinationImpl == null) {
+      return null;
+    }
     DestinationStats stats = destinationImpl.getStats();
-    return new DestinationStatusDTO(
+
+    return new DestinationDTO(
         destinationImpl.getFullyQualifiedNamespace(),
+        destinationImpl.getResourceType().getName(),
         getStored(destinationImpl),
         destinationImpl.getDelayedMessages(),
         destinationImpl.getPendingTransactions(),
+        destinationImpl.getSchema().getUniqueId(),
         stats.getNoInterest(),
         stats.getMessagePublished(),
         stats.getRetrievedMessage(),
@@ -39,7 +45,8 @@ public class DestinationStatusHelper {
         stats.getDeliveredMessages(),
         stats.getMessageReadTime(),
         stats.getMessageWriteTime(),
-        stats.getMessageRemovedTime());
+        stats.getMessageRemovedTime()
+    );
   }
 
   private static long getStored(DestinationImpl destinationImpl) {

@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.helpers.DestinationStatusHelper;
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
@@ -74,7 +74,7 @@ public class DestinationStatusTopic extends SystemTopic {
   @Data
   @NoArgsConstructor
   public static final class DestinationStatusMessage{
-    private List<DestinationStatusDTO> destinationStatusList;
+    private List<DestinationDTO> destinationStatusList;
 
     public DestinationStatusMessage(List<String> destinations){
       destinationStatusList = new ArrayList<>();
@@ -82,7 +82,7 @@ public class DestinationStatusTopic extends SystemTopic {
         try {
           DestinationImpl destination = MessageDaemon.getInstance().getDestinationManager().find(destinationName).get();
           if(!destination.getFullyQualifiedNamespace().startsWith("$SYS")) {
-            destinationStatusList.add(DestinationStatusHelper.createDestinationStatus(destination));
+            destinationStatusList.add(DestinationStatusHelper.createDestination(destination));
           }
         } catch (InterruptedException | ExecutionException e) {
           throw new RuntimeException(e);

@@ -22,8 +22,8 @@ package io.mapsmessaging.rest.api.impl.destination;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.helpers.DestinationStatusHelper;
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
-import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.responses.DestinationResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -31,7 +31,7 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import java.io.IOException;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -42,24 +42,28 @@ import java.util.concurrent.TimeoutException;
 public class DestinationManagementApi extends BaseDestinationApi {
 
   @GET
-  @Path("/server/destination/{destination}")
+  @Path("/server/destination")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public DestinationResponse getDestination(@PathParam("destination") String destinationName) throws ExecutionException, InterruptedException, TimeoutException, IOException {
+  public DestinationDTO getDestination(@QueryParam("destinationName")String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
     checkAuthentication();
     if (!hasAccess("destinations")) {
       response.setStatus(403);
       return null;
     }
-    DestinationDTO destination = lookupDestination(destinationName);
-    return new DestinationResponse(request, destination);
+
+    DestinationDTO destination = DestinationStatusHelper.createDestination(lookup(destinationName));
+    if(destination == null) {
+      throw new WebApplicationException("Destination not found", Response.Status.NOT_FOUND);
+    }
+    return destination;
   }
 
   @GET
-  @Path("/server/destination")
+  @Path("/server/destinations")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get all the destination configuration")
-  public DestinationResponse getAllDestinations(@QueryParam("filter") String filter) throws IOException, ExecutionException, InterruptedException, TimeoutException, ParseException {
+  public DestinationResponse getAllDestinations(@QueryParam("filter") String filter) throws ExecutionException, InterruptedException, TimeoutException, ParseException {
     checkAuthentication();
     if (!hasAccess("destinations")) {
       response.setStatus(403);
@@ -69,7 +73,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
     List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
     List<DestinationDTO> results  = new ArrayList<>();
     for(String name:destinations){
-      DestinationDTO destination = lookupDestination(name);
+      DestinationDTO destination = DestinationStatusHelper.createDestination(lookup(name));
       if(parser == null || parser.evaluate(destination)) {
         results.add(destination);
       }
@@ -77,18 +81,6 @@ public class DestinationManagementApi extends BaseDestinationApi {
     return new DestinationResponse(request, results);
   }
 
-  protected DestinationDTO lookupDestination(String name) throws IOException, ExecutionException, InterruptedException, TimeoutException {
-    DestinationImpl destinationImpl = super.lookup(name);
-    if(destinationImpl == null){
-      return null;
-    }
-    return new DestinationDTO(
-        destinationImpl.getFullyQualifiedNamespace(),
-        destinationImpl.getResourceType().getName(),
-        destinationImpl.getStoredMessages(),
-        destinationImpl.getDelayedMessages(),
-        destinationImpl.getPendingTransactions(),
-        destinationImpl.getSchema().getUniqueId()
-    );
-  }
+
+
 }

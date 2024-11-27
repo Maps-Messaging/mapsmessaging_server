@@ -22,7 +22,7 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panes.destination.DestinationStatusUpdate;
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 
 public class DestinationDiskPanel extends DestinationStatusUpdate {
 
@@ -34,7 +34,7 @@ public class DestinationDiskPanel extends DestinationStatusUpdate {
   }
 
   @Override
-  public void update( DestinationStatusDTO statusMessage) {
+  public void update( DestinationDTO statusMessage) {
     StringBuilder value = new StringBuilder();
     value.append(formatNanoseconds(statusMessage.getReadTimeAveNs())).append(" ");
     value.append(formatNanoseconds(statusMessage.getWriteTimeAveNs())).append(" ");

@@ -23,7 +23,7 @@ import io.mapsmessaging.app.top.formatters.DecimalSizeFormatter;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panes.destination.DestinationStatusUpdate;
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 
 public class DestinationMetricsPanel extends DestinationStatusUpdate {
 
@@ -35,13 +35,13 @@ public class DestinationMetricsPanel extends DestinationStatusUpdate {
   }
 
   @Override
-  public void update(DestinationStatusDTO statusMessage) {
+  public void update(DestinationDTO statusMessage) {
     StringBuilder value = new StringBuilder();
     value.append(unitFormatter.format(statusMessage.getPublishedMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getDeliveredMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getStoredMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getNoInterestMessages())).append(" ");
-    value.append(unitFormatter.format(statusMessage.getPendingTransactions())).append(" ");
+    value.append(unitFormatter.format(statusMessage.getPendingMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getRetrievedMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getExpiredMessages())).append(" ");
     value.append(unitFormatter.format(statusMessage.getDelayedMessages())).append(" ");

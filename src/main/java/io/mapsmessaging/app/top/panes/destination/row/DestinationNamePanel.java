@@ -21,7 +21,7 @@ package io.mapsmessaging.app.top.panes.destination.row;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panes.destination.DestinationStatusUpdate;
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 
 public class DestinationNamePanel extends DestinationStatusUpdate {
 
@@ -30,7 +30,7 @@ public class DestinationNamePanel extends DestinationStatusUpdate {
   }
 
   @Override
-  public void update(DestinationStatusDTO statusMessage) {
+  public void update(DestinationDTO statusMessage) {
     String name = statusMessage.getName();
     if(name.length() > 15){
 

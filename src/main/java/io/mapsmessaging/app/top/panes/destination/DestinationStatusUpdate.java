@@ -22,7 +22,7 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.Formatter;
 import io.mapsmessaging.app.top.panels.Panel;
 import io.mapsmessaging.app.top.panels.StringPanel;
-import io.mapsmessaging.dto.rest.destination.DestinationStatusDTO;
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 
 public abstract class DestinationStatusUpdate {
 
@@ -32,6 +32,6 @@ public abstract class DestinationStatusUpdate {
     panel = new StringPanel(row, col, label, labelText, valueText, formatter);
   }
 
-  public abstract void update(DestinationStatusDTO statusMessage);
+  public abstract void update(DestinationDTO statusMessage);
 
 }
