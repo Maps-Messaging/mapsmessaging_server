@@ -22,6 +22,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.engine.closure.ClosureTask;
 import io.mapsmessaging.engine.closure.ClosureTaskManager;
 import io.mapsmessaging.engine.destination.DestinationFactory;
@@ -458,4 +459,31 @@ public class SessionImpl {
     return null;
   }
 
+  public SessionInformationDTO getSessionInformation() {
+    SessionInformationDTO sessionInfo = new SessionInformationDTO();
+    sessionInfo.setSessionInfo(context);
+
+    return sessionInfo;
+  }
+
 }
+/*
+ protected final Logger logger;
+  private final SessionContext context;
+  private final Future<?> scheduledFuture;
+  private final SubscriptionController subscriptionManager;
+  private final DestinationFactory destinationManager;
+  private final NamespaceMap namespaceMapping;
+  private final ClosureTaskManager closureTaskManager;
+  private boolean isClosed;
+
+  @Getter
+  private final SecurityContext securityContext;
+  @Getter
+  private WillTaskImpl willTaskImpl;
+@Setter
+@Getter
+private MessageCallback messageCallback;
+@Getter
+private long expiry;
+ */

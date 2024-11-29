@@ -40,7 +40,7 @@ public abstract class ProtocolImplFactory implements Service {
     this.detection = detection;
   }
 
-  public abstract ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException;
+  public abstract Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException;
 
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
 

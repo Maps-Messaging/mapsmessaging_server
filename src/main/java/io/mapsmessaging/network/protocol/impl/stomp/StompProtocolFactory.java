@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.stomp;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class StompProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     StompProtocol protocol = new StompProtocol(endPoint);
     protocol.connect(sessionId, username, password);
     return protocol;

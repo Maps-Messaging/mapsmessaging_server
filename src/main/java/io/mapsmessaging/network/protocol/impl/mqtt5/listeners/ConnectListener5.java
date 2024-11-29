@@ -26,7 +26,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
@@ -45,7 +45,7 @@ import javax.security.auth.login.LoginException;
 public class ConnectListener5 extends PacketListener5 {
 
   @Override
-  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session shouldBeNull, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session shouldBeNull, EndPoint endPoint, Protocol protocol) throws MalformedException {
     if (shouldBeNull != null) {
       logger.log(ServerLogMessages.MQTT5_SECOND_CONNECT);
       try {
@@ -91,7 +91,7 @@ public class ConnectListener5 extends PacketListener5 {
     return connAck;
   }
 
-  private void handleSessionCreation(ProtocolImpl protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint)
+  private void handleSessionCreation(Protocol protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint)
       throws MalformedException {
     Session session = null;
     try {

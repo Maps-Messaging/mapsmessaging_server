@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdentifierMap;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
@@ -31,7 +31,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 public class PubRecListener5 extends PacketListener5 {
 
   @Override
-  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     PubRec5 pubRec = (PubRec5) mqttPacket;
     PacketIdentifierMap mapping = ((MQTT5Protocol) protocol).getPacketIdManager().receivedPacket(pubRec.getPacketIdentifier());
     if (mapping != null) {

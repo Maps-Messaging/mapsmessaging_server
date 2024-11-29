@@ -22,7 +22,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 
@@ -31,6 +31,6 @@ public abstract class PacketListener5 {
   protected Logger logger = LoggerFactory.getLogger("MQTT_Packet_Listener");
 
   public abstract MQTTPacket5 handlePacket(
-      MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol)
+      MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol)
       throws MalformedException;
 }

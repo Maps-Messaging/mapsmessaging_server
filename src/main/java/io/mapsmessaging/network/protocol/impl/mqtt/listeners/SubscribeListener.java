@@ -24,7 +24,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
 import java.io.IOException;
 import java.util.List;
@@ -41,7 +41,7 @@ public class SubscribeListener extends PacketListener {
   }
 
   @Override
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     checkState(session);
     Subscribe subscribe = (Subscribe) mqttPacket;
     List<SubscriptionInfo> subscriptionInfos = subscribe.getSubscriptionList();

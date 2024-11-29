@@ -19,13 +19,13 @@
 package io.mapsmessaging.network;
 
 import io.mapsmessaging.engine.session.ClientConnection;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import java.security.Principal;
 
 public class ProtocolClientConnection implements ClientConnection {
 
-  private final ProtocolImpl protocol;
-  public ProtocolClientConnection(ProtocolImpl protocol){
+  private final Protocol protocol;
+  public ProtocolClientConnection(Protocol protocol){
     this.protocol = protocol;
   }
 

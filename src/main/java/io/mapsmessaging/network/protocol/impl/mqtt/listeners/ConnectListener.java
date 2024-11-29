@@ -24,7 +24,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.Connect;
@@ -41,7 +41,7 @@ public class ConnectListener extends BaseConnectionListener {
   private static final String RESTRICTED_CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   private static final int RESTRICTED_LENGTH = 23;
 
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session shouldBeNull, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session shouldBeNull, EndPoint endPoint, Protocol protocol) throws MalformedException {
     if (shouldBeNull != null) {
       logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SECOND_CONNECT);
       try {
@@ -100,7 +100,7 @@ public class ConnectListener extends BaseConnectionListener {
     connAck.setCallback(session::resumeState);
   }
 
-  private CompletableFuture<Session> constructSession(EndPoint endPoint, ProtocolImpl protocol, String sessionId, Connect connect) {
+  private CompletableFuture<Session> constructSession(EndPoint endPoint, Protocol protocol, String sessionId, Connect connect) {
     SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
       Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null, null);
@@ -110,7 +110,7 @@ public class ConnectListener extends BaseConnectionListener {
     return createSession(endPoint, protocol, scb, sessionId);
   }
 
-  private void handleSessionException(Throwable e, ConnAck connAck, ProtocolImpl protocol) {
+  private void handleSessionException(Throwable e, ConnAck connAck, Protocol protocol) {
     connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
     connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
       try {
@@ -121,7 +121,7 @@ public class ConnectListener extends BaseConnectionListener {
     }, 100, TimeUnit.MILLISECONDS));
   }
 
-  boolean checkStrict(Connect connect, ProtocolImpl protocol) {
+  boolean checkStrict(Connect connect, Protocol protocol) {
     boolean strict;
     if (connect.getProtocolLevel() == 3) {
       strict = true; // For MQTT 3.1 it must be strict to adhere to the standard

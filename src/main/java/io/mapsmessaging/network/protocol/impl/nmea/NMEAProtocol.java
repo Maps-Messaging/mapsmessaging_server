@@ -23,6 +23,8 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.NmeaProtocolInformation;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -30,7 +32,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.StreamEndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.Sentence;
 import io.mapsmessaging.network.protocol.impl.nmea.sentences.SentenceFactory;
@@ -53,7 +55,7 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class NMEAProtocol extends ProtocolImpl {
+public class NMEAProtocol extends Protocol {
 
   private final Session session;
   private final SelectorTask selectorTask;
@@ -231,6 +233,13 @@ public class NMEAProtocol extends ProtocolImpl {
   private static final class SentenceMapping {
     private final String destination;
     private final Transformer transformer;
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    NmeaProtocolInformation information = new NmeaProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 
 }

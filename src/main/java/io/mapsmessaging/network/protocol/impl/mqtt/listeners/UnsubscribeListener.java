@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.UnsubAck;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.Unsubscribe;
@@ -30,7 +30,7 @@ public class UnsubscribeListener extends PacketListener {
 
   @Override
   public MQTTPacket handlePacket(
-      MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
+      MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     Unsubscribe unsubscribe = (Unsubscribe) mqttPacket;
     List<String> unsubscribeList = unsubscribe.getUnsubscribeList();
     for (String info : unsubscribeList) {

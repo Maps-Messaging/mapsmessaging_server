@@ -26,6 +26,8 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.config.protocol.impl.CoapConfig;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.CoapProtocolInformation;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
@@ -33,7 +35,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveMonitor;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.Listener;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.ListenerFactory;
@@ -56,7 +58,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class CoapProtocol extends ProtocolImpl {
+public class CoapProtocol extends Protocol {
 
   @Getter
   private final Logger logger;
@@ -348,5 +350,12 @@ public class CoapProtocol extends ProtocolImpl {
       transactionState.ack(ackPacket.getMessageId(), token);
     }
     outboundPipeline.ack(ackPacket);
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    CoapProtocolInformation information = new CoapProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 }

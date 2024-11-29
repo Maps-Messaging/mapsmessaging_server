@@ -20,13 +20,15 @@ package io.mapsmessaging.network.protocol.impl.amqp;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.AmqpProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -38,7 +40,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-public class AMQPProtocol extends ProtocolImpl {
+public class AMQPProtocol extends Protocol {
 
   private final Logger logger;
   private final SelectorTask selectorTask;
@@ -173,5 +175,13 @@ public class AMQPProtocol extends ProtocolImpl {
       return (protonEngine.getSaslManager().isDone());
     }
     return false;
+  }
+
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    AmqpProtocolInformation information = new AmqpProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 }

@@ -22,6 +22,8 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SemtechConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.SemtechProtocolInformation;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -30,7 +32,7 @@ import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.semtech.handlers.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
@@ -43,7 +45,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class SemTechProtocol extends ProtocolImpl {
+public class SemTechProtocol extends Protocol {
 
   @Getter
   private final Logger logger;
@@ -106,6 +108,13 @@ public class SemTechProtocol extends ProtocolImpl {
     logger.log(ServerLogMessages.SEMTECH_CLOSE, endPoint.toString());
     SessionManager.getInstance().close(session, true);
     endPoint.close();
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    SemtechProtocolInformation information = new SemtechProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 
   @Override

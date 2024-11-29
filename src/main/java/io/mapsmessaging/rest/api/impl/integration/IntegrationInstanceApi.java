@@ -21,12 +21,13 @@ package io.mapsmessaging.rest.api.impl.integration;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.helpers.EndPointHelper;
 import io.mapsmessaging.dto.helpers.IntegrationInfoHelper;
+import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.cache.CacheKey;
-import io.mapsmessaging.rest.responses.EndPointDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -70,7 +71,7 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
   @GET
   @Path("/server/integration/{name}/connection")
   @Produces({MediaType.APPLICATION_JSON})
-  public EndPointDetails getIntegrationConnection(@PathParam("name") String name) {
+  public EndPointSummaryDTO getIntegrationConnection(@PathParam("name") String name) {
     checkAuthentication();
 
     if (!hasAccess("interfaces")) {
@@ -81,7 +82,7 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
     CacheKey key = new CacheKey(uriInfo.getPath(), name);
 
     // Try to retrieve from cache
-    EndPointDetails cachedResponse = getFromCache(key, EndPointDetails.class);
+    EndPointSummaryDTO cachedResponse = getFromCache(key, EndPointSummaryDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -92,9 +93,9 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
       throw new WebApplicationException("Integration not found", Response.Status.NOT_FOUND);
     }
 
-    EndPointDetails response = (endPointConnection.getEndPoint() != null)
-        ? new EndPointDetails(name, endPointConnection.getEndPoint())
-        : new EndPointDetails();
+    EndPointSummaryDTO response = (endPointConnection.getEndPoint() != null)
+        ? EndPointHelper.buildSummaryDTO(name, endPointConnection.getEndPoint())
+        : new EndPointSummaryDTO();
 
     putToCache(key, response);
     return response;

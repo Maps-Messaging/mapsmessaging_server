@@ -16,24 +16,20 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.dto.rest.protocol.impl;
 
-import io.mapsmessaging.BuildInfo;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.Getter;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Getter
-public class ServerInfo extends BaseResponse {
+@Data
+@EqualsAndHashCode(callSuper=false)
 
-  private final String name;
-  private final String version;
-  private final String buildDate;
+public class NmeaProtocolInformation extends ProtocolInformationDTO {
 
-
-  public ServerInfo(HttpServletRequest request, String name) {
-    super(request);
-    version = BuildInfo.getBuildVersion();
-    buildDate = BuildInfo.getBuildDate();
-    this.name = name;
+  public NmeaProtocolInformation() {
+    type = "nmea";
   }
+
+
 }

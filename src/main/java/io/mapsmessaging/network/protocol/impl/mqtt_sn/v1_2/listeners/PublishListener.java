@@ -27,7 +27,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
@@ -43,7 +43,7 @@ public class PublishListener extends PacketListener {
       MQTT_SNPacket mqttPacket,
       Session session,
       EndPoint endPoint,
-      ProtocolImpl protocol,
+      Protocol protocol,
       StateEngine stateEngine) {
 
     Publish publish = (Publish) mqttPacket;
@@ -61,7 +61,7 @@ public class PublishListener extends PacketListener {
     return null;
   }
 
-  private void processValidMessage(Session session, QualityOfService qos, Publish publish, ProtocolImpl protocol, String topicName){
+  private void processValidMessage(Session session, QualityOfService qos, Publish publish, Protocol protocol, String topicName){
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT-SN");
     meta.put("version", "1.2");

@@ -24,7 +24,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.SubscriptionInfo;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
@@ -60,7 +60,7 @@ public class SubscribeListener5 extends PacketListener5 {
   }
 
   @Override
-  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     Subscribe5 subscribe = (Subscribe5) mqttPacket;
     List<SubscriptionInfo> subscriptionInfos = subscribe.getSubscriptionList();
     StatusCode[] result = new StatusCode[subscriptionInfos.size()];

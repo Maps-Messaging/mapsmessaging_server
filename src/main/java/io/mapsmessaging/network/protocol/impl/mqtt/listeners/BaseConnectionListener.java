@@ -24,7 +24,7 @@ import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 
 public abstract class BaseConnectionListener extends PacketListener {
 
-  protected CompletableFuture<Session> createSession(EndPoint endPoint, ProtocolImpl protocol, SessionContextBuilder scb, String sessionId) {
+  protected CompletableFuture<Session> createSession(EndPoint endPoint, Protocol protocol, SessionContextBuilder scb, String sessionId) {
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(scb.build(), protocol);
     future.thenApply(
         session -> {
@@ -69,7 +69,7 @@ public abstract class BaseConnectionListener extends PacketListener {
     return future;
   }
 
-  protected SessionContextBuilder getBuilder(EndPoint endPoint, ProtocolImpl protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
+  protected SessionContextBuilder getBuilder(EndPoint endPoint, Protocol protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
     scb.setPersistentSession(true)
         .setResetState(isClean)

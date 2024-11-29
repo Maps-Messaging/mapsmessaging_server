@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.local;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.NoOpDetection;
 import java.io.IOException;
@@ -32,8 +32,8 @@ public class LocalLoopProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
-    ProtocolImpl protocol = new LocalLoopProtocol(endPoint);
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+    Protocol protocol = new LocalLoopProtocol(endPoint);
     protocol.connect(sessionId, username, password);
     return protocol;
   }

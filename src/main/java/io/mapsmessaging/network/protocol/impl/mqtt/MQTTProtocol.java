@@ -26,6 +26,8 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MqttProtocolInformation;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -36,7 +38,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
@@ -52,7 +54,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
-public class MQTTProtocol extends ProtocolImpl {
+public class MQTTProtocol extends Protocol {
 
   private final Logger logger;
   private final PacketFactory packetFactory;
@@ -293,5 +295,13 @@ public class MQTTProtocol extends ProtocolImpl {
 
   public long getMaximumBufferSize() {
     return maxBufferSize;
+  }
+
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    MqttProtocolInformation information = new MqttProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 }

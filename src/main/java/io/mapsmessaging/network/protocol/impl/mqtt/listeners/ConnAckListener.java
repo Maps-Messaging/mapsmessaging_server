@@ -23,7 +23,7 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.config.auth.AuthConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
 public class ConnAckListener extends BaseConnectionListener {
 
   @Override
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
 
     AuthConfig config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
 

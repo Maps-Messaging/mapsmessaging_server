@@ -26,7 +26,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
@@ -38,7 +38,7 @@ import java.io.IOException;
 public class SubscribeListener extends PacketListener {
 
   @Override
-  public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
+  public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol, StateEngine stateEngine) {
 
     Subscribe subscribe = (Subscribe) mqttPacket;
     String topicName;

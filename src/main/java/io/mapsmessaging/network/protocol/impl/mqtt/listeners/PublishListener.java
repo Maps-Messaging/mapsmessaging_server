@@ -28,7 +28,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
@@ -72,7 +72,7 @@ public class PublishListener extends PacketListener {
     return null;
   }
 
-  private String parseForLookup(ProtocolImpl protocol, Publish publish){
+  private String parseForLookup(Protocol protocol, Publish publish){
     String lookup = publish.getDestinationName();
 
     Map<String, String> map = ((MQTTProtocol) protocol).getTopicNameMapping();
@@ -101,7 +101,7 @@ public class PublishListener extends PacketListener {
 
   @SneakyThrows
   @Override
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     checkState(session);
 
     Publish publish = (Publish) mqttPacket;
@@ -116,7 +116,7 @@ public class PublishListener extends PacketListener {
     return null;
   }
 
-  private void processValidDestinations(Publish publish, Session session, String lookup, ProtocolImpl protocol, MQTTPacket response, EndPoint endPoint)
+  private void processValidDestinations(Publish publish, Session session, String lookup, Protocol protocol, MQTTPacket response, EndPoint endPoint)
       throws ExecutionException, InterruptedException {
     CompletableFuture<Destination> future = session.findDestination(lookup, DestinationType.TOPIC);
     future.thenApply(destination -> {
@@ -142,7 +142,7 @@ public class PublishListener extends PacketListener {
   }
 
 
-  private void processMessage(Publish publish, ProtocolImpl protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
+  private void processMessage(Publish publish, Protocol protocol, Session session, MQTTPacket response, Destination destination) throws IOException {
     Transformer transformer = protocol.destinationTransformationLookup(destination.getFullyQualifiedNamespace());
     Message message = createMessage(
         publish.getPayload(),

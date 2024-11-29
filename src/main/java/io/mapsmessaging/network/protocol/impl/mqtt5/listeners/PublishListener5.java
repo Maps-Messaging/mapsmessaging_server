@@ -27,7 +27,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -104,7 +104,7 @@ public class PublishListener5 extends PacketListener5 {
   @SneakyThrows
   @java.lang.SuppressWarnings("squid:S3776")
   @Override
-  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     Publish5 publish = (Publish5) mqttPacket;
     PublishMonitorPacket5 response = null;
     if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {

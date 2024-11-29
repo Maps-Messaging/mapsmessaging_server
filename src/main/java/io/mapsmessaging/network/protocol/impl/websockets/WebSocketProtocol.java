@@ -19,17 +19,18 @@
 package io.mapsmessaging.network.protocol.impl.websockets;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketEndPoint;
 import java.io.IOException;
 import javax.security.auth.Subject;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class WebSocketProtocol extends ProtocolImpl {
+public class WebSocketProtocol extends Protocol {
 
   private final Connecting connectingHandler;
 
@@ -52,6 +53,11 @@ public class WebSocketProtocol extends ProtocolImpl {
   @Override
   public void sendKeepAlive() {
     // Keep alives are sent via the embedded protocol
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    return null;
   }
 
   @Override

@@ -22,13 +22,15 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
@@ -48,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
 
 // The protocol is MQTT_SN, so it makes sense, ignoring the Camel Case rule in class names
 @java.lang.SuppressWarnings("squid:S00101")
-public class MQTT_SNProtocol extends ProtocolImpl {
+public class MQTT_SNProtocol extends Protocol {
 
   protected final Logger logger;
   protected final PacketFactory packetFactory;
@@ -222,6 +224,13 @@ public class MQTT_SNProtocol extends ProtocolImpl {
     publish.setCallback(messageEvent.getCompletionTask());
     publish.setTopicIdType(stateEngine.getTopicAliasManager().getTopicAliasType(messageEvent.getDestinationName()));
     return publish;
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    MqttSnProtocolInformation information = new MqttSnProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 
   public MQTT_SNPacket getPingRequest() {

@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.PubComp;
@@ -28,7 +28,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.PubComp;
 public class PubCompListener extends PacketListener {
 
   @Override
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     PubComp pubComp = (PubComp) mqttPacket;
     ((MQTTProtocol) protocol).getPacketIdManager().completePacketId(pubComp.getPacketIdentifier());
     return null;

@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -29,7 +29,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.SubAck;
 public class SubAckListener extends PacketListener {
 
   @Override
-  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     SubAck subAck = (SubAck) mqttPacket;
     ((MQTTProtocol) protocol).getPacketIdManager().completePacketId(subAck.getPacketId());
     return null;

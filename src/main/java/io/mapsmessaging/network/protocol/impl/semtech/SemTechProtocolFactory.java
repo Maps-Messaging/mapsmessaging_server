@@ -21,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.semtech;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
 
@@ -40,7 +40,7 @@ public class SemTechProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     SemTechProtocol protocol = new SemTechProtocol(endPoint, sessionId);
  //   mappedInterfaces.put(endPoint, protocol);
     return protocol;

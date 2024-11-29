@@ -20,19 +20,20 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class FakeProtocolImpl extends ProtocolImpl  {
+public class FakeProtocol extends Protocol {
 
   private static final AtomicLong counter = new AtomicLong(0);
   private MessageListener listener;
 
-  public FakeProtocolImpl(MessageListener listener) {
+  public FakeProtocol(MessageListener listener) {
     super(new FakeEndPoint(counter.incrementAndGet(), null));
     this.listener = listener;
     keepAlive = 10;
@@ -63,6 +64,11 @@ public class FakeProtocolImpl extends ProtocolImpl  {
     if(listener instanceof ProtocolMessageListener){
       ((ProtocolMessageListener)listener).sendKeepAlive();
     }
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    return null;
   }
 
   @Override

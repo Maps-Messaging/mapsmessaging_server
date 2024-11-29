@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.echo;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.detection.ScanningByteArrayDetection;
 import java.io.IOException;
 
@@ -33,7 +33,7 @@ public class EchoProtocolFactory extends io.mapsmessaging.network.protocol.Proto
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     return null;
 
   }

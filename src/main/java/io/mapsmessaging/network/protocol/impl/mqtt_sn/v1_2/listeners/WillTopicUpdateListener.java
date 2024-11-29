@@ -23,7 +23,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.WillTask;
 import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillTopicResponse;
@@ -33,7 +33,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 public class WillTopicUpdateListener extends PacketListener {
 
   @Override
-  public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol, StateEngine stateEngine) {
+  public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol, StateEngine stateEngine) {
     WillTopicUpdate willTopicUpdate = (WillTopicUpdate) mqttPacket;
     ReasonCodes status = ReasonCodes.SUCCESS;
     WillTask task = session.getWillTask();

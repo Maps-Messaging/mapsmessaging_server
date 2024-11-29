@@ -20,10 +20,10 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.EngineManager;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.test.BaseTestConfig;
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
@@ -54,7 +54,7 @@ public class MessageAPITest extends BaseTestConfig {
   }
 
   public Session createSession(String name, int keepAlive, int expiry, boolean persistent, MessageListener listener, boolean resetState) throws LoginException, IOException {
-    ProtocolImpl fakeProtocol = new FakeProtocolImpl(listener);
+    Protocol fakeProtocol = new FakeProtocol(listener);
     SessionContextBuilder scb = new SessionContextBuilder(name, new ProtocolClientConnection(fakeProtocol));
     scb.setPersistentSession(true)
         .setKeepAlive(keepAlive)

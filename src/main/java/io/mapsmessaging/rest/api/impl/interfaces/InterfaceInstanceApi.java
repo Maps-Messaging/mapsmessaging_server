@@ -21,15 +21,16 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.helpers.EndPointHelper;
 import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
-import io.mapsmessaging.rest.responses.EndPointDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -95,11 +96,11 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
 
     // Fetch and cache response
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
-    List<EndPointDetails> endPointDetails = new ArrayList<>();
+    List<EndPointSummaryDTO> endPointDetails = new ArrayList<>();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
         for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
-          endPointDetails.add(new EndPointDetails(endPointManager.getName(), endPoint));
+          endPointDetails.add(EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint));
         }
       }
     }

@@ -20,7 +20,7 @@ package io.mapsmessaging.api.transactions;
 
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.*;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
@@ -46,7 +46,7 @@ class SimpleTransactionalTest extends MessageAPITest implements MessageListener 
     if(testInfo.getTestMethod().isPresent()){
       name = testInfo.getTestMethod().get().getName();
     }
-    SessionContextBuilder scb = new SessionContextBuilder(name + "_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb = new SessionContextBuilder(name + "_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb.setReceiveMaximum(1); // ensure it is low
     scb.setSessionExpiry(2); // 2 seconds, more then enough time
     scb.setKeepAlive(120); // large enough to not worry about

@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.echo;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -26,7 +27,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -36,7 +37,7 @@ import javax.security.auth.Subject;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class EchoProtocol extends ProtocolImpl implements Selectable {
+public class EchoProtocol extends Protocol implements Selectable {
 
   private final Executor executor = Executors.newFixedThreadPool(10);
   private final Packet packet;
@@ -92,6 +93,11 @@ public class EchoProtocol extends ProtocolImpl implements Selectable {
   @Override
   public void sendKeepAlive() {
     // There is no keep alive here
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    return null;
   }
 
   private class Task implements Runnable {

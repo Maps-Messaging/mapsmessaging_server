@@ -23,7 +23,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
 import java.util.Map;
@@ -46,7 +46,7 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     return null;
   }
 

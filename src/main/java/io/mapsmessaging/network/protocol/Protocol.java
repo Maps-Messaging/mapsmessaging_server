@@ -25,6 +25,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
 import io.mapsmessaging.network.io.EndPoint;
@@ -34,6 +35,7 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,9 +46,13 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class ProtocolImpl implements SelectorCallback, MessageListener, Timeoutable {
+public abstract class Protocol implements SelectorCallback, MessageListener, Timeoutable {
   protected final EndPoint endPoint;
+
+  @Getter
   protected final Map<String, Transformer> destinationTransformerMap;
+
+  @Getter
   protected final Map<String, ParserExecutor> parserLookup;
   protected final ProtocolJMX mbean;
 
@@ -62,7 +68,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   @Setter
   protected ProtocolMessageTransformation transformation;
 
-  protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint) {
+  protected Protocol(@NonNull @NotNull EndPoint endPoint) {
     this.endPoint = endPoint;
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
     connected = false;
@@ -72,7 +78,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     endPoint.setBoundProtocol(this);
   }
 
-  protected ProtocolImpl(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
+  protected Protocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
     this.endPoint = endPoint;
     String endPointName = socketAddress.toString();
     endPointName = endPointName.replace(":", "_");
@@ -134,7 +140,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
   }
 
   public void sendKeepAlive() {
-    // by default we don't do anything. A protocol that needs to do something can override this function
+    // by default, we don't do anything. A protocol that needs to do something can override this function
   }
 
   @Override
@@ -156,7 +162,7 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
         try {
           endPoint.close();
         } catch (IOException e) {
-          // we are closing due to an exception, we know we are in an exception state but we just need to tidy up
+          // we are closing due to an exception, we know we are in an exception state but, we just need to tidy up
         }
       }
     }
@@ -188,4 +194,33 @@ public abstract class ProtocolImpl implements SelectorCallback, MessageListener,
     }
     return builder;
   }
+
+  public abstract ProtocolInformationDTO getInformation();
+
+  protected void updateInformation(ProtocolInformationDTO dto){
+    dto.setSessionId(getSessionId());
+    dto.setTimeout(getTimeOut());
+    dto.setKeepAlive(keepAlive);
+    if(transformation != null){
+      dto.setMessageTransformationName(transformation.getName());
+    }
+    else{
+      dto.setMessageTransformationName("none");
+    }
+    Map<String, String> tansMap = new LinkedHashMap<>();
+    if(destinationTransformerMap != null){
+      for(Map.Entry<String, Transformer > entry : destinationTransformerMap.entrySet()){
+        tansMap.put(entry.getKey(), entry.getValue().getName());
+      }
+    }
+    dto.setDestinationTransformationMapping(tansMap);
+    Map<String, String> parseMap = new LinkedHashMap<>();
+    if(parserLookup != null){
+      for(Map.Entry<String, ParserExecutor > entry : parserLookup.entrySet()){
+        parseMap.put(entry.getKey(), entry.getValue().toString());
+      }
+    }
+    dto.setSelectorMapping(parseMap);
+  }
+
 }

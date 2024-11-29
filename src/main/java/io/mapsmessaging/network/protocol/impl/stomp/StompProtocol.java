@@ -26,6 +26,8 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.config.protocol.impl.StompConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.StompProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -33,7 +35,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
@@ -47,7 +49,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class StompProtocol extends ProtocolImpl {
+public class StompProtocol extends Protocol {
 
   private final Logger logger;
 
@@ -184,6 +186,13 @@ public class StompProtocol extends ProtocolImpl {
   @Override
   public void sendKeepAlive() {
     // Nothing to do, yet
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    StompProtocolInformation information = new StompProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 
   private boolean processEvent(Packet packet) throws IOException {

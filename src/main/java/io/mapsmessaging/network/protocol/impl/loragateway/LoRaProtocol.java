@@ -23,6 +23,8 @@ import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSI
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.LoraProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -31,7 +33,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.DataHandlerFactory;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
@@ -56,7 +58,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-public class LoRaProtocol extends ProtocolImpl {
+public class LoRaProtocol extends Protocol {
 
   public final SelectorCallback protocolInterfaceManager;
   private final Logger logger;
@@ -253,6 +255,13 @@ public class LoRaProtocol extends ProtocolImpl {
   @Override
   public void sendKeepAlive() {
     // This should not be called since this protocol is NOT registered with the messaging engine
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    LoraProtocolInformation information = new LoraProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 
   public void handleIncomingPacket(Packet packet, int clientId, int rssi) throws IOException {

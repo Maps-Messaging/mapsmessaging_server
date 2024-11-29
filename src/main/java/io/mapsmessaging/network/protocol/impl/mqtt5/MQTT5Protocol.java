@@ -27,6 +27,8 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.config.protocol.impl.MqttV5Config;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MqttV5ProtocolInformation;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -37,7 +39,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.PacketListenerFactory5;
@@ -59,7 +61,7 @@ import org.jetbrains.annotations.NotNull;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("DuplicatedBlocks")
-public class MQTT5Protocol extends ProtocolImpl {
+public class MQTT5Protocol extends Protocol {
 
   private final Logger logger;
   private final PacketFactory5 packetFactory;
@@ -377,5 +379,12 @@ public class MQTT5Protocol extends ProtocolImpl {
     sentMessage();
     selectorTask.push(frame);
     logger.log(ServerLogMessages.PUSH_WRITE, frame);
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    MqttV5ProtocolInformation information = new MqttV5ProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 }

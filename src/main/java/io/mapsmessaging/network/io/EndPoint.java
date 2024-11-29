@@ -20,7 +20,7 @@ package io.mapsmessaging.network.io;
 
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import java.io.Closeable;
 import java.io.IOException;
@@ -69,7 +69,7 @@ public abstract class EndPoint implements Closeable {
 
   @Getter
   @Setter
-  private ProtocolImpl boundProtocol;
+  private Protocol boundProtocol;
 
   protected EndPoint(long id, EndPointServerStatus server) {
     this.server = server;

@@ -130,7 +130,6 @@ public class MessagingApi extends BaseRestApi {
   @ApiResponse(responseCode = "200",
       description = "Message depths retrieved successfully",
       content = @Content(schema = @Schema(implementation = String.class)))
-
   @Produces(MediaType.APPLICATION_JSON)
   public Response getAllSubscriptionDepth() {
     if (!hasAccess("messaging")) {

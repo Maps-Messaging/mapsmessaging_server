@@ -24,7 +24,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
@@ -71,7 +71,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
 
     for (int x = 0; x < sessions.length; x++) {
       MessageListener listener = new SelectorProtocolListener(expected[x % selector.length]);
-      SessionContextBuilder scb = new SessionContextBuilder(name + "_"+x, new ProtocolClientConnection(new FakeProtocolImpl(listener)));
+      SessionContextBuilder scb = new SessionContextBuilder(name + "_"+x, new ProtocolClientConnection(new FakeProtocol(listener)));
       scb.setReceiveMaximum(1); // ensure it is low
       scb.setSessionExpiry(2); // 2 seconds, more than enough time
       scb.setKeepAlive(60); // large enough to not worry about
@@ -135,7 +135,7 @@ class FilteredQueueSubscriptionTest extends MessageAPITest implements MessageLis
     for (String s : destinationName) {
       for (int x = 0; x < selector.length * SESSION_PER_SELECTOR; x++) {
         MessageListener listener = new SelectorProtocolListener(expected[x % selector.length]);
-        SessionContextBuilder scb = new SessionContextBuilder(name + "_" + index, new ProtocolClientConnection(new FakeProtocolImpl(listener)));
+        SessionContextBuilder scb = new SessionContextBuilder(name + "_" + index, new ProtocolClientConnection(new FakeProtocol(listener)));
         scb.setReceiveMaximum(1); // ensure it is low
         scb.setSessionExpiry(0); // 2 seconds, more then enough time
         scb.setKeepAlive(60); // large enough to not worry about

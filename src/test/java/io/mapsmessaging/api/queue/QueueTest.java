@@ -22,9 +22,9 @@ import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import java.io.IOException;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
@@ -39,7 +39,7 @@ public class QueueTest extends MessageAPITest implements MessageListener {
   @SneakyThrows
   @Test
   void createQueueAndSendEvents() throws IOException, LoginException {
-    ProtocolImpl protocol = new FakeProtocolImpl(this);
+    Protocol protocol = new FakeProtocol(this);
     SessionContextBuilder scb = new SessionContextBuilder("createQueueAndSendEvents_1", new ProtocolClientConnection(protocol));
     scb.setReceiveMaximum(1); // ensure it is low
     scb.setSessionExpiry(2); // 2 seconds, more then enough time

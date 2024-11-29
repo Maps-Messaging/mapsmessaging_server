@@ -23,7 +23,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
@@ -50,7 +50,7 @@ class DelayedPublishTest extends MessageAPITest {
     String name = testInfo.getTestMethod().get().getName();
 
     CountingMessageReceiver messageReceiver = new CountingMessageReceiver(counter);
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(messageReceiver)));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(messageReceiver)));
     scb1.setReceiveMaximum(10); // ensure it is low
     scb1.setSessionExpiry(60); // 60 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about

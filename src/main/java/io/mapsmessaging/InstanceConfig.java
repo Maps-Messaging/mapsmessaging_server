@@ -29,11 +29,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.representer.Representer;
 
 /**
  * This is the InstanceConfig class.
@@ -88,7 +86,7 @@ public class InstanceConfig {
   public void loadState() {
     LoaderOptions options = new LoaderOptions();
     options.setTagInspector(tag -> true);
-    Yaml yaml = new Yaml(new Constructor(options), new Representer(new DumperOptions()));
+    Yaml yaml = new Yaml(new Constructor(options));
     FileInputStream fileInputStream = null;
     try {
       fileInputStream = new FileInputStream(path + INSTANCE_CONFIG_YAML);

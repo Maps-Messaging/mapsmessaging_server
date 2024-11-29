@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.UnsubAck5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Unsubscribe5;
@@ -29,7 +29,7 @@ import java.util.List;
 public class UnsubscribeListener5 extends PacketListener5 {
 
   @Override
-  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     Unsubscribe5 unsubscribe = (Unsubscribe5) mqttPacket;
     List<String> unsubscribeList = unsubscribe.getUnsubscribeList();
     for (String info : unsubscribeList) {

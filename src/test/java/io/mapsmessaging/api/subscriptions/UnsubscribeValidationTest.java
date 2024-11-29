@@ -23,7 +23,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
@@ -73,7 +73,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
   @SneakyThrows
   public void eventCleanUpTest(String name, String destinationName, boolean isQueue, boolean unsubscribe, boolean resumeSession) throws LoginException, IOException {
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more than enough time
     scb1.setKeepAlive(120); // large enough to not worry about
@@ -81,7 +81,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
     Session delayedSession1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more than enough time
     scb2.setKeepAlive(120); // large enough to not worry about

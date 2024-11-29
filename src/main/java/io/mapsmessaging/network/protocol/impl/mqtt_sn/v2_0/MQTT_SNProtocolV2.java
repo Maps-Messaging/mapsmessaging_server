@@ -20,6 +20,8 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.impl.SelectorTask;
@@ -104,5 +106,12 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   @Override
   public MQTT_SNPacket getPingRequest() {
     return new PingRequestV2();
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    MqttSnProtocolInformation information = new MqttSnProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 }

@@ -23,7 +23,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.engine.session.FakeProtocolImpl;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
@@ -47,14 +47,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   void topicTrueSelectorTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about
@@ -111,14 +111,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   public void topicSelectorDisconnectTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about
@@ -178,14 +178,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   public void topicSelectorUnsubscribeTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about
@@ -240,14 +240,14 @@ class SelectorTest extends MessageAPITest implements MessageListener {
   public void topicSelectorOverlappedUnsubscribeTest(TestInfo testInfo) throws LoginException, IOException, InterruptedException {
     String destinationName = "topic/selectorTest";
     String name = testInfo.getTestMethod().get().getName();
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more then enough time
     scb1.setKeepAlive(60); // large enough to not worry about
     scb1.setPersistentSession(true); // store the details
     Session session1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocolImpl(this)));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more then enough time
     scb2.setKeepAlive(60); // large enough to not worry about

@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.loragateway;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.ByteArrayDetection;
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class LoRaProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     return null;
 
   }

@@ -33,7 +33,7 @@ import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.connection.state.*;
 import io.mapsmessaging.network.io.connection.state.Shutdown;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class EndPointConnection extends EndPointServerStatus {
   private EndPoint endPoint;
   @Getter
   @Setter
-  private ProtocolImpl connection;
+  private Protocol connection;
 
   public EndPointConnection(
       EndPointURL url, EndPointConnectionServerConfig properties,

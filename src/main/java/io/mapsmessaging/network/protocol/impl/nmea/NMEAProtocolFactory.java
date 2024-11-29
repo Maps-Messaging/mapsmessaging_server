@@ -21,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.nmea;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -35,7 +35,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     if (endPoint instanceof TCPEndPoint) {
       Packet packet = new Packet(ByteBuffer.allocate(256));
       packet.put("?WATCH={\"enable\":true,\"nmea\":true}".getBytes(StandardCharsets.UTF_8));
@@ -51,7 +51,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
     build(endPoint, packet);
   }
 
-  private ProtocolImpl build(EndPoint endPoint, Packet packet) throws IOException {
+  private Protocol build(EndPoint endPoint, Packet packet) throws IOException {
     try {
       return new NMEAProtocol(endPoint, packet);
     } catch (LoginException e) {

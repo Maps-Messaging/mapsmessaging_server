@@ -20,7 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.ByteArrayDetection;
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public ProtocolImpl connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
     MQTT5Protocol protocol = new MQTT5Protocol(endPoint);
     protocol.connect(sessionId, username, password);
     return protocol;

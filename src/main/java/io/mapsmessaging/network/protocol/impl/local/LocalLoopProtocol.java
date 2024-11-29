@@ -22,13 +22,15 @@ import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.protocol.impl.LocalProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import java.util.Map;
@@ -40,7 +42,7 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class LocalLoopProtocol extends ProtocolImpl {
+public class LocalLoopProtocol extends Protocol {
 
   private final Map<String, String> nameMapping;
   private final Logger logger;
@@ -147,6 +149,13 @@ public class LocalLoopProtocol extends ProtocolImpl {
   @Override
   public String getVersion() {
     return "1.0";
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    LocalProtocolInformation information = new LocalProtocolInformation();
+    updateInformation(information);
+    return information;
   }
 
 }

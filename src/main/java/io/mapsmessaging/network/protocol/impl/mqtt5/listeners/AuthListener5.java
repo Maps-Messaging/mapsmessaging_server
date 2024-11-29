@@ -21,7 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 public class AuthListener5 extends PacketListener5 {
 
   @Override
-  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, ProtocolImpl protocol) throws MalformedException {
+  public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     // Need to push this until we have finished our auth
     AuthenticationContext context= null;
     if (mqttPacket instanceof Connect5) {
@@ -76,7 +76,7 @@ public class AuthListener5 extends PacketListener5 {
     }
   }
 
-  private MQTTPacket5 handleAuth(AuthenticationContext context, ProtocolImpl protocol,MQTTPacket5 mqttPacket, Session session, EndPoint endPoint) throws MalformedException {
+  private MQTTPacket5 handleAuth(AuthenticationContext context, Protocol protocol, MQTTPacket5 mqttPacket, Session session, EndPoint endPoint) throws MalformedException {
       AuthenticationData clientData = (AuthenticationData) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_DATA);
       byte[] clientChallenge;
       try {

@@ -30,8 +30,8 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
@@ -75,7 +75,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       }
 
       endPointConnection.scheduleState(new Connecting(endPointConnection));
-      ProtocolImpl protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
+      Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
 
       protocolImpl.setTransformation(transformation);
       endPointConnection.setConnection(protocolImpl);

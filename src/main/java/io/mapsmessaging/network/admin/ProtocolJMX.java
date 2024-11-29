@@ -22,7 +22,7 @@ import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import com.udojava.jmx.wrapper.JMXBeanOperation;
 import io.mapsmessaging.network.io.EndPointStatus;
-import io.mapsmessaging.network.protocol.ProtocolImpl;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
@@ -37,13 +37,13 @@ import javax.management.ObjectInstance;
 @JMXBean(description = "Protocol JMX Bean, manages a single instance of a protocol")
 public class ProtocolJMX implements HealthMonitor {
 
-  private final ProtocolImpl protocol;
+  private final Protocol protocol;
   private final ObjectInstance mbean;
 
   private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
 
   //<editor-fold desc="Life cycle functions">
-  public ProtocolJMX(List<String> parent, ProtocolImpl protocol) {
+  public ProtocolJMX(List<String> parent, Protocol protocol) {
     this.protocol = protocol;
     List<String> list = new ArrayList<>(parent);
     list.add("Protocol=" + protocol.getName());
