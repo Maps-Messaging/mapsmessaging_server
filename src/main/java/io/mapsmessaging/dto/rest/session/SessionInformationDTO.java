@@ -18,9 +18,7 @@
 
 package io.mapsmessaging.dto.rest.session;
 
-import io.mapsmessaging.engine.session.SessionContext;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -31,7 +29,7 @@ import lombok.NoArgsConstructor;
     title = "End Point Information",
     description = "Provides detailed information about the session")
 public class SessionInformationDTO {
-  private SessionContext sessionInfo;
-  private List<SubscriptionInformationDTO> subscriptionList;
+  private SessionContextDTO sessionInfo;
+  private SubscriptionInformationDTO subscriptionInfo;
 
 }

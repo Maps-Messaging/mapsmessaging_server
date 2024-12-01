@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -29,7 +29,7 @@ public abstract class BaseConnectListener implements FrameListener {
 
   protected static final String CONTENT_TYPE_TEXT = "text/plain";
 
-  protected float processVersion(StateEngine engine, String versionHeader) {
+  protected float processVersion(SessionState engine, String versionHeader) {
     if (versionHeader == null || versionHeader.length() == 0) {
       io.mapsmessaging.network.protocol.impl.stomp.frames.Error error = new io.mapsmessaging.network.protocol.impl.stomp.frames.Error();
       error.setContentType(CONTENT_TYPE_TEXT);
@@ -51,7 +51,7 @@ public abstract class BaseConnectListener implements FrameListener {
     return version;
   }
 
-  protected void handleFailedAuth(Exception failedAuth, StateEngine engine) {
+  protected void handleFailedAuth(Exception failedAuth, SessionState engine) {
     io.mapsmessaging.network.protocol.impl.stomp.frames.Error error = new io.mapsmessaging.network.protocol.impl.stomp.frames.Error();
     error.setContentType(CONTENT_TYPE_TEXT);
     error.setContent(("Failed to authenticate: " + failedAuth.getMessage()).getBytes());

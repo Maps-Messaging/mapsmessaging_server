@@ -24,14 +24,14 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.ClientTransaction;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Receipt;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.ServerFrame;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.io.IOException;
 
 public interface FrameListener {
 
-  void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException;
+  void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) throws IOException;
 
-  default void postFrameHandling(Frame frame, StateEngine engine) {
+  default void postFrameHandling(Frame frame, SessionState engine) {
     if (frame.getReceipt() != null) {
       ServerFrame receipt = new Receipt();
       receipt.setReceipt(frame.getReceipt());
@@ -43,7 +43,7 @@ public interface FrameListener {
     }
   }
 
-  default Transaction find(ClientTransaction transactionFrame, StateEngine engine) throws StompProtocolException {
+  default Transaction find(ClientTransaction transactionFrame, SessionState engine) throws StompProtocolException {
     String transaction = transactionFrame.getTransaction();
     if (transaction == null || transaction.length() == 0) {
       throw new StompProtocolException("Illegal transaction ID received");

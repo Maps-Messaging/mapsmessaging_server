@@ -29,7 +29,7 @@ import java.io.IOException;
 
 public class ConnectedState implements State {
 
-  public void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException {
+  public void handleFrame(SessionState engine, Frame frame, boolean endOfBuffer) throws IOException {
     FrameListener listener = frame.getFrameListener();
     if (listener != null) {
       try {
@@ -51,7 +51,7 @@ public class ConnectedState implements State {
   }
 
   @Override
-  public boolean sendMessage(StateEngine engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
+  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
     io.mapsmessaging.network.protocol.impl.stomp.frames.Message msg = new io.mapsmessaging.network.protocol.impl.stomp.frames.Message(1024);
     msg.packMessage(destinationName, context.getAlias(), message);
     msg.setCallback(new MessageCompletionHandler(completionTask));

@@ -230,6 +230,7 @@ public class MQTT_SNProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MqttSnProtocolInformation information = new MqttSnProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 

@@ -19,6 +19,7 @@
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.subscription.OutstandingEventDetails;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -84,6 +85,14 @@ public class SessionSharedSubscription extends Subscription {
   public boolean expired(long messageIdentifier) {
     // Should be done via the main subscription
     return false;
+  }
+
+  @Override
+  public SubscriptionStateDTO getState() {
+    SubscriptionStateDTO subscriptionStateDTO = new SubscriptionStateDTO();
+    subscriptionStateDTO.setDestinationName(sharedSubscription.getDestinationImpl().getFullyQualifiedNamespace());
+    subscriptionStateDTO.setPaused(hibernating);
+    return subscriptionStateDTO;
   }
 
   public void pause() {

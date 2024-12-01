@@ -19,6 +19,7 @@
 package io.mapsmessaging.dto.rest.session;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -29,5 +30,12 @@ import lombok.NoArgsConstructor;
     title = "End Point Information",
     description = "Provides detailed information about the individual subscription")
 public class SubscriptionInformationDTO {
+
+  private boolean hibernated;
+  private boolean persistent;
+  private String sessionId;
+  private String uniqueId;
+  private List<SubscriptionContextDTO> subscriptionContextList;
+  private List<SubscriptionStateDTO> subscriptionStateList;
 
 }

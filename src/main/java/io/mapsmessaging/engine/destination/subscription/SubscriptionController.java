@@ -22,6 +22,9 @@ import io.mapsmessaging.admin.SubscriptionControllerJMX;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.RetainHandler;
+import io.mapsmessaging.dto.rest.session.SubscriptionContextDTO;
+import io.mapsmessaging.dto.rest.session.SubscriptionInformationDTO;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.DestinationFactory;
 import io.mapsmessaging.engine.destination.DestinationFilter;
 import io.mapsmessaging.engine.destination.DestinationImpl;
@@ -356,6 +359,26 @@ public class SubscriptionController implements DestinationManagerListener {
       contextMap.put(context.getKey(), context);
     }
     return subscription;
+  }
+
+  public SubscriptionInformationDTO getSubscriptionInformation() {
+    SubscriptionInformationDTO dto = new SubscriptionInformationDTO();
+    dto.setHibernated(isHibernating());
+    dto.setPersistent(isPersistent);
+    dto.setSessionId(sessionId);
+    dto.setUniqueId(uniqueSessionId);
+    List<SubscriptionContextDTO> subscriptionList = new ArrayList<>();
+    for(SubscriptionContext context : contextMap.values()) {
+      subscriptionList.add(context.getDetails());
+    }
+    dto.setSubscriptionContextList(subscriptionList);
+
+    List<SubscriptionStateDTO> stateList = new ArrayList<>();
+    for(SubscriptionModeManager managers: subscriptionModeManager.values()){
+      stateList.addAll(managers.getDetails());
+    }
+    dto.setSubscriptionStateList(stateList);
+    return dto;
   }
 
 }

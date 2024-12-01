@@ -20,12 +20,12 @@ package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Unsubscribe;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 
 public class UnsubscribeListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     Unsubscribe unsubscribe = (Unsubscribe) frame;
     engine.removeSubscription(unsubscribe.getId());
   }

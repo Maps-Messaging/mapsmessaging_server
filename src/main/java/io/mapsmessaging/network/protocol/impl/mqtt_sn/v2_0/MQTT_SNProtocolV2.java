@@ -112,6 +112,7 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
   public ProtocolInformationDTO getInformation() {
     MqttSnProtocolInformation information = new MqttSnProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 }

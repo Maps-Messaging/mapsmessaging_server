@@ -26,7 +26,7 @@ import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ClientConnectedState;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import java.util.concurrent.CompletableFuture;
@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutionException;
 public class ConnectedListener extends BaseConnectListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     Connected connected = (Connected) frame;
 
     // No version header supplied
@@ -71,7 +71,7 @@ public class ConnectedListener extends BaseConnectListener {
     }
   }
 
-  private CompletableFuture<Session> createSession(StateEngine engine) {
+  private CompletableFuture<Session> createSession(SessionState engine) {
     SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     scb.setPersistentSession(false);
     scb.setKeepAlive(120);

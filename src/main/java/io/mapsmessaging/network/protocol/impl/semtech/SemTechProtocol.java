@@ -114,6 +114,7 @@ public class SemTechProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     SemtechProtocolInformation information = new SemtechProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 

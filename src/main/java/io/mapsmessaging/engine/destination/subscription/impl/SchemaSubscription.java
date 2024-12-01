@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -47,17 +48,31 @@ public class SchemaSubscription extends Subscription {
   }
 
   @Override
-  public void hibernate() {
-    super.hibernate();
-  }
-
-
-  @Override
   public void wakeUp(SessionImpl sessionImpl) {
     super.wakeUp(sessionImpl);
     if (sessionImpl != null) {
       sessionId = sessionImpl.getName();
     }
+  }
+
+  @Override
+  public SubscriptionStateDTO getState() {
+    SubscriptionStateDTO subscriptionStateDTO = new SubscriptionStateDTO();
+    subscriptionStateDTO.setDestinationName(destinationImpl.getFullyQualifiedNamespace());
+    subscriptionStateDTO.setPaused(hibernating);
+    subscriptionStateDTO.setMessagesSent(0);
+    subscriptionStateDTO.setMessagesAcked(0);
+    subscriptionStateDTO.setMessagesIgnored(0);
+    subscriptionStateDTO.setMessagesExpired(0);
+    subscriptionStateDTO.setMessagesRegistered(0);
+    subscriptionStateDTO.setMessagesRolledBack(0);
+
+    subscriptionStateDTO.setPending(0);
+    subscriptionStateDTO.setSize(0);
+    subscriptionStateDTO.setHasAtRestMessages(false);
+    subscriptionStateDTO.setHasMessagesInFlight(false);
+
+    return subscriptionStateDTO;
   }
 
   @Override

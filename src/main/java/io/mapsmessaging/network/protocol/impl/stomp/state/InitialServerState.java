@@ -28,7 +28,7 @@ import java.io.IOException;
 
 public class InitialServerState implements State {
 
-  public void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException {
+  public void handleFrame(SessionState engine, Frame frame, boolean endOfBuffer) throws IOException {
     if (frame instanceof Connect) {
       FrameListener listener = frame.getFrameListener();
       listener.frameEvent(frame, engine, endOfBuffer);
@@ -39,7 +39,7 @@ public class InitialServerState implements State {
   }
 
   @Override
-  public boolean sendMessage(StateEngine engine, String destinationName, SubscriptionContext info, Message message, Runnable completionTask) {
+  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext info, Message message, Runnable completionTask) {
     return false;
   }
 }

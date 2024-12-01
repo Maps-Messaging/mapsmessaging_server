@@ -37,8 +37,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import lombok.Getter;
 
-public class StateEngine implements CloseHandler, CompletionHandler {
+public class SessionState implements CloseHandler, CompletionHandler {
 
   private final Logger logger;
   private final StompProtocol protocolImpl;
@@ -49,9 +50,10 @@ public class StateEngine implements CloseHandler, CompletionHandler {
   private int requestCounter;
   private State currentState;
   private boolean isValid;
+  @Getter
   private Session session;
 
-  public StateEngine(StompProtocol protocolImpl) {
+  public SessionState(StompProtocol protocolImpl) {
     this.protocolImpl = protocolImpl;
     destinationMap = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
@@ -101,10 +103,6 @@ public class StateEngine implements CloseHandler, CompletionHandler {
 
   public boolean isValid() {
     return isValid;
-  }
-
-  public Session getSession() {
-    return session;
   }
 
   public void setSession(Session session) throws StompProtocolException {

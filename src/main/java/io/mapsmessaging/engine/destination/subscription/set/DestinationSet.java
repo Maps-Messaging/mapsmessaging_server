@@ -114,13 +114,12 @@ public class DestinationSet implements Set<DestinationImpl> {
   }
 
   @Override
-  public Object[] toArray() {
-    Object[] ret = new Object[matching.size()];
-    return matching.values().toArray(ret);
+  public Object @NotNull [] toArray() {
+    return matching.values().toArray(new Object[0]);
   }
 
   @Override
-  public <T> T[] toArray(T[] a) {
+  public <T> T @NotNull [] toArray(T @NotNull [] a) {
     return matching.values().toArray(a);
   }
 
@@ -187,7 +186,7 @@ public class DestinationSet implements Set<DestinationImpl> {
   }
 
   @Override
-  public boolean removeIf(Predicate<? super DestinationImpl> filter) {
+  public boolean removeIf(@NotNull Predicate<? super DestinationImpl> filter) {
     for (DestinationImpl destinationImpl : matching.values()) {
       if (filter.test(destinationImpl)) {
         remove(destinationImpl);

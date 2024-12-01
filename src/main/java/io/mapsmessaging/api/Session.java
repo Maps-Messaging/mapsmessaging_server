@@ -21,6 +21,7 @@ package io.mapsmessaging.api;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.engine.closure.TemporaryDestinationDeletionTask;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.TemporaryDestination;
@@ -262,5 +263,9 @@ public class Session {
     }
   }
   //</editor-fold>
+
+  public SessionInformationDTO getSessionInformation() {
+    return sessionImpl.getSessionInformation();
+  }
 
 }

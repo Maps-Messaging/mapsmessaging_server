@@ -69,7 +69,6 @@ import org.jetbrains.annotations.NotNull;
 public class SessionImpl {
 
   protected final Logger logger;
-  private final SessionContext context;
   private final Future<?> scheduledFuture;
   private final SubscriptionController subscriptionManager;
   private final DestinationFactory destinationManager;
@@ -77,6 +76,7 @@ public class SessionImpl {
   private final ClosureTaskManager closureTaskManager;
   private boolean isClosed;
 
+  private final SessionContext context;
   @Getter
   private final SecurityContext securityContext;
   @Getter
@@ -460,30 +460,10 @@ public class SessionImpl {
   }
 
   public SessionInformationDTO getSessionInformation() {
-    SessionInformationDTO sessionInfo = new SessionInformationDTO();
-    sessionInfo.setSessionInfo(context);
-
-    return sessionInfo;
+    SessionInformationDTO sessionInformationDTO = new SessionInformationDTO();
+    sessionInformationDTO.setSessionInfo(context.getDetails());
+    sessionInformationDTO.setSubscriptionInfo(subscriptionManager.getSubscriptionInformation());
+    return sessionInformationDTO;
   }
-
 }
-/*
- protected final Logger logger;
-  private final SessionContext context;
-  private final Future<?> scheduledFuture;
-  private final SubscriptionController subscriptionManager;
-  private final DestinationFactory destinationManager;
-  private final NamespaceMap namespaceMapping;
-  private final ClosureTaskManager closureTaskManager;
-  private boolean isClosed;
 
-  @Getter
-  private final SecurityContext securityContext;
-  @Getter
-  private WillTaskImpl willTaskImpl;
-@Setter
-@Getter
-private MessageCallback messageCallback;
-@Getter
-private long expiry;
- */

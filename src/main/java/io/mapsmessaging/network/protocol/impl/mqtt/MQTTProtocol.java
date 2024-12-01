@@ -302,6 +302,7 @@ public class MQTTProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MqttProtocolInformation information = new MqttProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 }

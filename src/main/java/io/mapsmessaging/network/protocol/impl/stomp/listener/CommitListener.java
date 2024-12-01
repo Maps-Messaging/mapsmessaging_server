@@ -21,13 +21,13 @@ package io.mapsmessaging.network.protocol.impl.stomp.listener;
 import io.mapsmessaging.api.Transaction;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Commit;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.io.IOException;
 
 public class CommitListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     Commit commit = (Commit) frame;
     Transaction transaction = find(commit, engine);
     transaction.commit();

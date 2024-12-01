@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
+import io.mapsmessaging.dto.rest.session.SessionContextDTO;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Data;
 import lombok.ToString;
@@ -60,5 +61,19 @@ public class SessionContext {
 
   public void update(SessionPrivileges sessionPrivileges) {
 
+  }
+
+  public SessionContextDTO getDetails(){
+    SessionContextDTO sessionContextDTO = new SessionContextDTO();
+    sessionContextDTO.setId(id);
+    sessionContextDTO.setUniqueId(uniqueId);
+    sessionContextDTO.setPersistentSession(persistentSession);
+    sessionContextDTO.setHasWill(willMessage != null);
+    sessionContextDTO.setAuthorized(authorized);
+    sessionContextDTO.setRestored(isRestored);
+    sessionContextDTO.setResetState(resetState);
+    sessionContextDTO.setExpiry(expiry);
+    sessionContextDTO.setReceiveMaximum(receiveMaximum);
+    return sessionContextDTO;
   }
 }

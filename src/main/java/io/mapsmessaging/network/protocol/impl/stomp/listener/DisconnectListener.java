@@ -23,12 +23,12 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Receipt;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.ServerFrame;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ClosedState;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 
 public class DisconnectListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     engine.changeState(new ClosedState());
     if (frame.getReceipt() != null) {
       ServerFrame receipt = new Receipt();
@@ -41,9 +41,9 @@ public class DisconnectListener implements FrameListener {
 
   static class DisconnectCompletion implements CompletionHandler {
 
-    private final StateEngine engine;
+    private final SessionState engine;
 
-    public DisconnectCompletion(StateEngine engine) {
+    public DisconnectCompletion(SessionState engine) {
       this.engine = engine;
     }
 

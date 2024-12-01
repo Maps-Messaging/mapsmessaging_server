@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.session.SessionImpl;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,5 +96,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
   public abstract void sendMessage(Message message);
 
   public abstract String getAcknowledgementType();
+
+  public abstract SubscriptionStateDTO getState();
 
 }

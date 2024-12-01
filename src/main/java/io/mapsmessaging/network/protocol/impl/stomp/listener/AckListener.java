@@ -22,12 +22,12 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Ack;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 
 public class AckListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     Ack ackFrame = (Ack) frame;
     SubscribedEventManager subscription = engine.findSubscription(ackFrame.getSubscription());
     if (subscription != null) {

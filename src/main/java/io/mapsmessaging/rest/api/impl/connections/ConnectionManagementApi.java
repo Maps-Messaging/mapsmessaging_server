@@ -22,10 +22,10 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.EndPointHelper;
+import io.mapsmessaging.dto.rest.endpoint.EndPointDetailsDTO;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.rest.api.impl.destination.BaseDestinationApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
@@ -78,18 +78,28 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   }
 
   @GET
-  @Path("/server/connection/{connectionId}")
+  @Path("/server/connection")
   @Produces({MediaType.APPLICATION_JSON})
-  public Response getAllConnectionDetails(@PathParam("connectionId")  String connectionId) {
+  public EndPointDetailsDTO getConnectionDetails(@QueryParam("connectionId")  String connectionId) {
     if (!hasAccess("connections")) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
-    // Fetch and cache response
+
+    CacheKey key = new CacheKey(uriInfo.getPath(), connectionId);
+
+    // Try to retrieve from cache
+    EndPointDetailsDTO cachedResponse = getFromCache(key, EndPointDetailsDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
     for(EndPointManager endPointManager : endPointManagers) {
       for(EndPoint endPoint: endPointManager.getEndPointServer().getActiveEndPoints()){
         if(endPoint.getName().equals(connectionId)) {
-          buildConnectionDetails(endPoint);
+          EndPointDetailsDTO dto = buildConnectionDetails(endPointManager.getName(), endPoint);
+          putToCache(key, dto);
+          return dto;
         }
       }
     }
@@ -98,9 +108,9 @@ public class ConnectionManagementApi extends BaseDestinationApi {
 
 
   @PUT
-  @Path("/server/connection/{connectionId}")
+  @Path("/server/connection")
   @Produces({MediaType.APPLICATION_JSON})
-  public Response closeSpecificConnection(@PathParam("connectionId")  String connectionId) {
+  public Response closeSpecificConnection(@QueryParam("connectionId")  String connectionId) {
     if (!hasAccess("connections")) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
@@ -121,9 +131,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
     throw new WebApplicationException("Connection not found", Response.Status.NOT_FOUND);
   }
 
-  private void buildConnectionDetails(EndPoint endPoint) {
-    Protocol protocol = endPoint.getBoundProtocol();
-
-
+  private EndPointDetailsDTO buildConnectionDetails(String adapterName, EndPoint endPoint) {
+    return EndPointHelper.buildDetailsDTO(adapterName, endPoint);
   }
 }

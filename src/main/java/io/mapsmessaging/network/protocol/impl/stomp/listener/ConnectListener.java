@@ -28,7 +28,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.HeartBeat;
 import io.mapsmessaging.network.protocol.impl.stomp.state.ConnectedState;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
 public class ConnectListener extends BaseConnectListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     Connect connect = (Connect) frame;
 
     // No version header supplied
@@ -85,7 +85,7 @@ public class ConnectListener extends BaseConnectListener {
     }
   }
 
-  private CompletableFuture<Session> createSession(StateEngine engine, Connect connect, HeartBeat hb) {
+  private CompletableFuture<Session> createSession(SessionState engine, Connect connect, HeartBeat hb) {
     SessionContextBuilder scb = new SessionContextBuilder(UuidGenerator.getInstance().generate().toString(), new ProtocolClientConnection(engine.getProtocol()));
     String username = connect.getLogin();
     if (username == null) {

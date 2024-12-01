@@ -19,6 +19,7 @@
 package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.features.*;
+import io.mapsmessaging.dto.rest.session.SubscriptionContextDTO;
 import io.mapsmessaging.utilities.PersistentObject;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+@Getter
 @ToString
 public class SubscriptionContext  extends PersistentObject implements Comparable<SubscriptionContext> {
 
@@ -38,63 +40,48 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   private static final int ALLOW_OVERLAP = 2;
   private static final int BROWSER_FLAG = 3;
 
-  @Getter
   private String destinationName;
 
-  @Getter
   @Setter
   private BitSet flags;
 
-  @Getter
   private String rootPath;
 
-  @Getter
   @Setter
   private ClientAcknowledgement acknowledgementController;
 
   @Setter
-  @Getter
   private String sharedName;
 
-  @Getter
   @Setter
   private String selector;
 
-  @Getter
   private String alias;
 
-  @Getter
   @Setter
   private long subscriptionId;
 
-  @Getter
   @Setter
   private int maxAtRest;
 
-  @Getter
   @Setter
   private int receiveMaximum;
 
-  @Getter
   @Setter
   private RetainHandler retainHandler;
 
-  @Getter
   @Setter
   private QualityOfService qualityOfService;
 
-  @Getter
   @Setter
   private CreditHandler creditHandler;
 
-  @Getter
   @Setter
   private DestinationMode destinationMode;
 
   //
   // Server Only flag
   //
-  @Getter
   @Setter
   private boolean replaced;
 
@@ -277,4 +264,26 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     return lookup.replace("//", "/");
   }
 
+  public SubscriptionContextDTO getDetails() {
+    SubscriptionContextDTO dto = new SubscriptionContextDTO();
+    dto.setSubscriptionId(subscriptionId);
+    dto.setAlias(alias);
+    dto.setSharedName(sharedName);
+    dto.setSelector(selector);
+    dto.setReceiveMaximum(receiveMaximum);
+    dto.setMaxAtRest(maxAtRest);
+    dto.setDestinationName(getCorrectedPath());
+
+    dto.setQualityOfService(qualityOfService.name());
+    dto.setAcknowledgementController(acknowledgementController.name());
+    dto.setDestinationMode(destinationMode.getName());
+    dto.setCreditHandler(creditHandler.getName());
+    dto.setRetainHandler(retainHandler.name());
+
+    dto.setNoLocalMessages(noLocalMessages());
+    dto.setAllowOverlap(allowOverlap());
+    dto.setBrowser(isBrowser());
+    dto.setRetainAsPublish(isRetainAsPublish());
+    return dto;
+  }
 }

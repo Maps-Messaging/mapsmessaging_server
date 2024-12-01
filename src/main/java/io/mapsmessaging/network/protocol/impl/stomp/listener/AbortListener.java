@@ -23,13 +23,13 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Abort;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.io.IOException;
 
 public class AbortListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws StompProtocolException {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) throws StompProtocolException {
     Abort abort = (Abort) frame;
     Transaction transaction = find(abort, engine);
     try {

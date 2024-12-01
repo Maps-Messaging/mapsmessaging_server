@@ -155,6 +155,7 @@ public class LocalLoopProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     LocalProtocolInformation information = new LocalProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 

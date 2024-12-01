@@ -19,17 +19,17 @@
 package io.mapsmessaging.dto.rest.protocol.impl;
 
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
+public class MqttSnProtocolInformation extends ProtocolInformationDTO {
 
-public class MqttSnProtocolInformation  extends ProtocolInformationDTO {
+  private SessionInformationDTO sessionInfo;
 
   public MqttSnProtocolInformation() {
     type = "mqtt-sn";
   }
-
-
 }

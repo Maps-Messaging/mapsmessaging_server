@@ -16,19 +16,34 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.stomp.state;
+package io.mapsmessaging.dto.rest.session;
 
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Send;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class ClientConnectedState extends ConnectedState {
+@Data
+@NoArgsConstructor
+public class SubscriptionContextDTO {
 
-  @Override
-  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    Send msg = new Send(1024);
-    msg.packMessage(destinationName, message);
-    msg.setCallback(new MessageCompletionHandler(completionTask));
-    return engine.send(msg);
-  }
+  private int maxAtRest;
+  private int receiveMaximum;
+
+  private long subscriptionId;
+
+  private String destinationName;
+  private String sharedName;
+  private String selector;
+  private String alias;
+
+  private String acknowledgementController;
+  private String retainHandler;
+  private String qualityOfService;
+  private String creditHandler;
+  private String destinationMode;
+
+  private boolean noLocalMessages;
+  private boolean retainAsPublish;
+  private boolean allowOverlap;
+  private boolean browser;
+
 }

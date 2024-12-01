@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.destination.subscription.modes;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.RetainHandler;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -252,5 +253,13 @@ public abstract class SubscriptionModeManager {
         logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
       }
     }
+  }
+
+  public List<SubscriptionStateDTO> getDetails() {
+    List<SubscriptionStateDTO> states = new ArrayList<>();
+    for(Subscription subscription : activeSubscriptions.values()){
+      states.add(subscription.getState());
+    }
+    return states;
   }
 }

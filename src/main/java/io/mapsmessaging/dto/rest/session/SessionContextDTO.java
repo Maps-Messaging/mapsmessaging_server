@@ -16,19 +16,28 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.stomp.state;
+package io.mapsmessaging.dto.rest.session;
 
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Send;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class ClientConnectedState extends ConnectedState {
+@Data
+@NoArgsConstructor
+public class SessionContextDTO {
 
-  @Override
-  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    Send msg = new Send(1024);
-    msg.packMessage(destinationName, message);
-    msg.setCallback(new MessageCompletionHandler(completionTask));
-    return engine.send(msg);
-  }
+  // <editor-fold desc="These fields are persisted and on reload describes the session">
+  private String id;
+  private String uniqueId;
+  private boolean hasWill;
+  private long expiry;
+  // </editor-fold>
+
+  // <editor-fold desc="These are volatile fields and must not be persisted since they change at run
+  // time">
+  private boolean authorized;
+  private int receiveMaximum;
+  private boolean isRestored;
+  private boolean resetState;
+  private boolean persistentSession;
+  // </editor-fold>
 }

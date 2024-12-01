@@ -22,12 +22,12 @@ import io.mapsmessaging.api.TransactionException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Begin;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 
 public class BeginListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     Begin begin = (Begin) frame;
     try {
       String transaction = begin.getTransaction();

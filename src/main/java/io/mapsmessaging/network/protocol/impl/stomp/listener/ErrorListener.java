@@ -19,13 +19,13 @@
 package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.io.IOException;
 
 public class ErrorListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     // ToDo: If the remote server returns an error, we need to process it and handle the error state
   }
 }

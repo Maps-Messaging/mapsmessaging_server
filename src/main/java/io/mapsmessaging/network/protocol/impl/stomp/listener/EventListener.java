@@ -28,7 +28,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Event;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class EventListener implements FrameListener {
 
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) throws IOException {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     Event event = (Event) frame;
     Map<String, TypedData> dataMap = new HashMap<>();
     for (Map.Entry<String, String> entry : event.getHeader().entrySet()) {
@@ -60,7 +60,7 @@ public abstract class EventListener implements FrameListener {
     processEvent(engine, event, message);
   }
 
-  protected void handleMessageStoreToDestination(Destination destination, StateEngine engine, Event event, Message message) throws IOException {
+  protected void handleMessageStoreToDestination(Destination destination, SessionState engine, Event event, Message message) throws IOException {
     if (destination != null) {
       if (event.getTransaction() != null) {
         Transaction transaction = engine.getSession().getTransaction(event.getTransaction());
@@ -79,5 +79,5 @@ public abstract class EventListener implements FrameListener {
     }
   }
 
-  protected abstract void processEvent(StateEngine engine, Event event, Message message) throws IOException;
+  protected abstract void processEvent(SessionState engine, Event event, Message message) throws IOException;
 }

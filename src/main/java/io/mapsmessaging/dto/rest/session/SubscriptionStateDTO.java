@@ -16,19 +16,28 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.stomp.state;
+package io.mapsmessaging.dto.rest.session;
 
-import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Send;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class ClientConnectedState extends ConnectedState {
+@Data
+@NoArgsConstructor
+public class SubscriptionStateDTO {
 
-  @Override
-  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    Send msg = new Send(1024);
-    msg.packMessage(destinationName, message);
-    msg.setCallback(new MessageCompletionHandler(completionTask));
-    return engine.send(msg);
-  }
+  private String destinationName;
+  private int size;
+  private int pending;
+
+  private boolean hasMessagesInFlight;
+  private boolean hasAtRestMessages;
+
+  private boolean isPaused;
+
+  private long messagesIgnored;
+  private long messagesRegistered;
+  private long messagesSent;
+  private long messagesAcked;
+  private long messagesRolledBack;
+  private long messagesExpired;
 }

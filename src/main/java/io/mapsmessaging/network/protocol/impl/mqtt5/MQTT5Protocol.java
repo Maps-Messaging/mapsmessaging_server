@@ -385,6 +385,7 @@ public class MQTT5Protocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MqttV5ProtocolInformation information = new MqttV5ProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 }

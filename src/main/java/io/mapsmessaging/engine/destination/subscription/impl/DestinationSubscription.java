@@ -20,6 +20,7 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.admin.SubscriptionJMX;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
@@ -183,6 +184,26 @@ public class DestinationSubscription extends Subscription {
   @Override
   public String getAcknowledgementType() {
     return acknowledgementController.getType();
+  }
+
+  @Override
+  public SubscriptionStateDTO getState() {
+    SubscriptionStateDTO subscriptionStateDTO = new SubscriptionStateDTO();
+    subscriptionStateDTO.setDestinationName(destinationImpl.getFullyQualifiedNamespace());
+    subscriptionStateDTO.setPaused(isPaused);
+    subscriptionStateDTO.setMessagesSent(messagesSent);
+    subscriptionStateDTO.setMessagesAcked(messagesAcked);
+    subscriptionStateDTO.setMessagesIgnored(messagesIgnored);
+    subscriptionStateDTO.setMessagesExpired(messagesExpired);
+    subscriptionStateDTO.setMessagesRegistered(messagesRegistered);
+    subscriptionStateDTO.setMessagesRolledBack(messagesRolledBack);
+
+    subscriptionStateDTO.setPending(messageStateManager.pending());
+    subscriptionStateDTO.setSize(messageStateManager.size());
+    subscriptionStateDTO.setHasAtRestMessages(messageStateManager.hasAtRestMessages());
+    subscriptionStateDTO.setHasMessagesInFlight(messageStateManager.hasMessagesInFlight());
+
+    return subscriptionStateDTO;
   }
 
   @Override

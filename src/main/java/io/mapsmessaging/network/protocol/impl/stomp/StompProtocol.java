@@ -40,7 +40,7 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
 import javax.security.auth.Subject;
@@ -51,17 +51,19 @@ import org.jetbrains.annotations.Nullable;
 
 public class StompProtocol extends Protocol {
 
+  @Getter
   private final Logger logger;
 
   private final FrameFactory factory;
-  private final StateEngine stateEngine;
+  private final SessionState sessionState;
   private final SelectorTask selectorTask;
   private Frame activeFrame;
+
+  @Getter
+  private final int maxReceiveSize;
   @Getter
   private String version;
 
-  @Getter
-  private int maxReceiveSize;
 
   public StompProtocol(EndPoint endPoint) {
     super(endPoint);
@@ -73,7 +75,7 @@ public class StompProtocol extends Protocol {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     factory = new FrameFactory(maxBufferSize, endPoint.isClient());
     activeFrame = null;
-    stateEngine = new StateEngine(this);
+    sessionState = new SessionState(this);
   }
 
   public StompProtocol(EndPoint endPoint, Packet packet) throws IOException {
@@ -96,7 +98,7 @@ public class StompProtocol extends Protocol {
 
   @Override
   public Subject getSubject() {
-    return stateEngine.getSession().getSecurityContext().getSubject();
+    return sessionState.getSession().getSecurityContext().getSubject();
   }
 
   @Override
@@ -111,7 +113,7 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
-    stateEngine.addMapping(resource, mappedResource);
+    sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -125,20 +127,20 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
-    stateEngine.addMapping(resource, mappedResource);
+    sessionState.addMapping(resource, mappedResource);
     if (transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
     SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, QualityOfService.AT_MOST_ONCE, 10240);
-    stateEngine.createSubscription(scb.build());
+    sessionState.createSubscription(scb.build());
   }
 
   @Override
   public String getSessionId() {
-    if (stateEngine.getSession() == null) {
+    if (sessionState.getSession() == null) {
       return "unknown";
     }
-    return stateEngine.getSession().getName();
+    return sessionState.getSession().getName();
   }
 
   public String getName() {
@@ -158,7 +160,7 @@ public class StompProtocol extends Protocol {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Message message = processTransformer(messageEvent.getDestinationName(), messageEvent.getMessage());
-    stateEngine.sendMessage(messageEvent.getDestinationName(), messageEvent.getSubscription().getContext(), message, messageEvent.getCompletionTask());
+    sessionState.sendMessage(messageEvent.getDestinationName(), messageEvent.getSubscription().getContext(), message, messageEvent.getCompletionTask());
   }
 
   // <editor-fold desc="Read Frame functions">
@@ -192,6 +194,7 @@ public class StompProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     StompProtocolInformation information = new StompProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(sessionState.getSession().getSessionInformation());
     return information;
   }
 
@@ -220,17 +223,13 @@ public class StompProtocol extends Protocol {
     if (activeFrame.isValid()) {
       logger.log(ServerLogMessages.RECEIVE_PACKET, activeFrame);
       selectorTask.cancel(OP_READ); // Disable read until this frame is complete
-      stateEngine.handleFrame(activeFrame, remaining == 0);
+      sessionState.handleFrame(activeFrame, remaining == 0);
     } else {
       logger.log(ServerLogMessages.STOMP_INVALID_FRAME, frame.toString());
-      throw new IOException("Invalid STOMP frame received.. Unable to process" + frame.toString());
+      throw new IOException("Invalid STOMP frame received.. Unable to process" + frame);
     }
     activeFrame = null;
     return remaining != 0;
-  }
-
-  public Logger getLogger() {
-    return logger;
   }
 
 }

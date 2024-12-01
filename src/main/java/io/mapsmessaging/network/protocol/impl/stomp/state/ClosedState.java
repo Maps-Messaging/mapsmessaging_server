@@ -25,12 +25,12 @@ import java.io.IOException;
 
 public class ClosedState implements State {
 
-  public void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException {
+  public void handleFrame(SessionState engine, Frame frame, boolean endOfBuffer) throws IOException {
     throw new IOException("State is closed");
   }
 
   @Override
-  public boolean sendMessage(StateEngine engine, String destinationName, SubscriptionContext info, Message message, Runnable completionTask) {
+  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext info, Message message, Runnable completionTask) {
     return false;
   }
 }

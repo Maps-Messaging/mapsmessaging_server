@@ -19,17 +19,18 @@
 package io.mapsmessaging.dto.rest.protocol.impl;
 
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper=false)
-
+@EqualsAndHashCode(callSuper = false)
 public class AmqpProtocolInformation extends ProtocolInformationDTO {
+
+  private List<SessionInformationDTO> sessionInfoList;
 
   public AmqpProtocolInformation() {
     type = "amqp";
   }
-
-
 }

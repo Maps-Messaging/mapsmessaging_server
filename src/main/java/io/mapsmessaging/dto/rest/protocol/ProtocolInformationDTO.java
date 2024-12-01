@@ -18,9 +18,7 @@
 
 package io.mapsmessaging.dto.rest.protocol;
 
-import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -46,7 +44,4 @@ public class ProtocolInformationDTO {
   private String messageTransformationName;
   private Map<String, String> selectorMapping;
   private Map<String, String> destinationTransformationMapping;
-  private List<SessionInformationDTO> sessionList;
-
-
 }

@@ -25,7 +25,7 @@ import java.io.IOException;
 
 public interface State {
 
-  void handleFrame(StateEngine engine, Frame frame, boolean endOfBuffer) throws IOException;
+  void handleFrame(SessionState engine, Frame frame, boolean endOfBuffer) throws IOException;
 
-  boolean sendMessage(StateEngine engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask);
+  boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask);
 }

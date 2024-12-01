@@ -356,6 +356,7 @@ public class CoapProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     CoapProtocolInformation information = new CoapProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 }

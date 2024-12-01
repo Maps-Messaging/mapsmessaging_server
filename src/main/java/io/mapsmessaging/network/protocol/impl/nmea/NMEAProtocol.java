@@ -239,6 +239,7 @@ public class NMEAProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     NmeaProtocolInformation information = new NmeaProtocolInformation();
     updateInformation(information);
+    information.setSessionInfo(session.getSessionInformation());
     return information;
   }
 

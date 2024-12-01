@@ -22,6 +22,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.AmqpProtocolInformation;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ThreadContext;
@@ -32,7 +33,9 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import javax.security.auth.Subject;
 import lombok.Getter;
@@ -182,6 +185,11 @@ public class AMQPProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     AmqpProtocolInformation information = new AmqpProtocolInformation();
     updateInformation(information);
+    List<SessionInformationDTO> sessions = new ArrayList<>();
+    for(SessionManager sessionManager : activeSessions.values()) {
+      sessions.add(sessionManager.getSession().getSessionInformation());
+    }
+    information.setSessionInfoList(sessions);
     return information;
   }
 }

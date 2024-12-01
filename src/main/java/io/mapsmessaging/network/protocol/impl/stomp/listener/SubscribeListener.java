@@ -23,13 +23,13 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.io.IOException;
 
 public class SubscribeListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, StateEngine engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
     ClientAcknowledgement ackManger;
     Subscribe subscribe = (Subscribe) frame;
     switch (subscribe.getAck()) {

@@ -22,13 +22,13 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Event;
-import io.mapsmessaging.network.protocol.impl.stomp.state.StateEngine;
+import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 public class MessageListener extends EventListener {
 
-  protected void processEvent(StateEngine engine, Event event, Message message) throws IOException {
+  protected void processEvent(SessionState engine, Event event, Message message) throws IOException {
     String lookup = engine.getMapping(event.getDestination());
     CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
     if (future != null) {
