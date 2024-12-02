@@ -18,23 +18,53 @@
 
 package io.mapsmessaging.dto.rest.protocol;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.mapsmessaging.dto.rest.config.protocol.impl.*;
+import io.mapsmessaging.dto.rest.protocol.impl.*;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = AmqpProtocolInformation.class, name = "amqp"),
+    @JsonSubTypes.Type(value = CoapProtocolInformation.class, name = "coap"),
+    @JsonSubTypes.Type(value = LoraProtocolInformation.class, name = "lora"),
+    @JsonSubTypes.Type(value = MqttProtocolInformation.class, name = "mqtt"),
+    @JsonSubTypes.Type(value = MqttSnProtocolInformation.class, name = "mqtt-sn"),
+    @JsonSubTypes.Type(value = MqttV5ProtocolInformation.class, name = "mqttV5"),
+    @JsonSubTypes.Type(value = NmeaProtocolInformation.class, name = "nmea"),
+    @JsonSubTypes.Type(value = SemtechProtocolInformation.class, name = "semtech"),
+    @JsonSubTypes.Type(value = StompProtocolInformation.class, name = "stomp")
+})
 @Schema(
     title = "Protocol Information",
-    description = "Provides detailed information about the protocol and session"
+    description = "Provides detailed information about the protocol and session",
+    discriminatorProperty = "type",
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "amqp", schema = AmqpProtocolInformation.class),
+        @DiscriminatorMapping(value = "coap", schema = CoapProtocolInformation.class),
+        @DiscriminatorMapping(value = "lora", schema = LoraProtocolInformation.class),
+        @DiscriminatorMapping(value = "mqtt", schema = MqttProtocolInformation.class),
+        @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnProtocolInformation.class),
+        @DiscriminatorMapping(value = "mqttV5", schema = MqttV5ProtocolInformation.class),
+        @DiscriminatorMapping(value = "nmea", schema = NmeaProtocolInformation.class),
+        @DiscriminatorMapping(value = "semtech", schema = SemtechProtocolInformation.class),
+        @DiscriminatorMapping(value = "stomp", schema = StompProtocolInformation.class),
+    },
+    requiredProperties = {"type"}
 )
+@Data
+@EqualsAndHashCode(callSuper=false)
+@NoArgsConstructor
 public class ProtocolInformationDTO {
 
   @Schema(description = "Type of the protocol", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "nmea", "semtech", "stomp", "websocket"
+      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "nmea", "semtech", "stomp"
   })
   protected String type;
 
