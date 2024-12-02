@@ -24,7 +24,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.DestinationStatusHelper;
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
+import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.responses.DestinationDetailsResponse;
 import io.mapsmessaging.rest.responses.DestinationResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -46,7 +48,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Path("/server/destination")
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Get the specific destination details")
-  public DestinationDTO getDestination(@QueryParam("destinationName")String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
+  public DestinationDetailsResponse getDestinationDetails(@QueryParam("destinationName")String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
     checkAuthentication();
     if (!hasAccess("destinations")) {
       response.setStatus(403);
@@ -56,16 +58,20 @@ public class DestinationManagementApi extends BaseDestinationApi {
     CacheKey key = new CacheKey(uriInfo.getPath(), destinationName);
 
     // Try to retrieve from cache
-    DestinationDTO cachedResponse = getFromCache(key, DestinationDTO.class);
+    DestinationDetailsResponse cachedResponse = getFromCache(key, DestinationDetailsResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-    DestinationDTO destination = DestinationStatusHelper.createDestination(lookup(destinationName));
-    if(destination == null) {
+    DestinationImpl destinationImpl = lookup(destinationName);
+    if(destinationImpl == null) {
       throw new WebApplicationException("Destination not found", Response.Status.NOT_FOUND);
     }
-    putToCache(key, destination);
-    return destination;
+    DestinationDetailsResponse result = new DestinationDetailsResponse(request);
+    result.setDestination(DestinationStatusHelper.createDestination(destinationImpl));
+    result.setSubscriptionList(destinationImpl.getSubscriptionStates());
+
+    putToCache(key, result);
+    return result;
   }
 
   @GET
@@ -99,15 +105,26 @@ public class DestinationManagementApi extends BaseDestinationApi {
 
     for (String name : destinations) {
       DestinationDTO destination = DestinationStatusHelper.createDestination(lookup(name));
-      if (parser == null || parser.evaluate(destination)) {
-        if (destination != null) {
-          results.add(destination);
-        }
+      if (destination != null && (parser == null || parser.evaluate(destination))) {
+        results.add(destination);
       }
     }
+    sortDestinationList(results, sortBy);
 
+
+    // Limit the size of the returned results
+    if (size > 0 && size < results.size()) {
+      results = results.subList(0, size);
+    }
+
+    DestinationResponse destinationResponse =  new DestinationResponse(request, results);
+    putToCache(key, destinationResponse);
+    return destinationResponse;
+  }
+
+  private void sortDestinationList(List<DestinationDTO> destinations, String sortBy) {
     // Sort by specified field
-    results.sort((d1, d2) -> {
+    destinations.sort((d1, d2) -> {
       switch (sortBy) {
         case "Name":
           return d2.getName().compareTo(d1.getName());
@@ -127,15 +144,5 @@ public class DestinationManagementApi extends BaseDestinationApi {
           throw new IllegalArgumentException("Invalid sortBy parameter: " + sortBy);
       }
     });
-
-
-    // Limit the size of the returned results
-    if (size > 0 && size < results.size()) {
-      results = results.subList(0, size);
-    }
-
-    DestinationResponse destinationResponse =  new DestinationResponse(request, results);
-    putToCache(key, destinationResponse);
-    return destinationResponse;
   }
 }

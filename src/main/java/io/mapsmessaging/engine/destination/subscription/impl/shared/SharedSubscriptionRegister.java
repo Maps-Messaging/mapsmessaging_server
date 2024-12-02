@@ -18,7 +18,10 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,6 +51,15 @@ public class SharedSubscriptionRegister {
 
   public void del(String name) {
     activeGroups.remove(name);
+  }
+
+  public List<SubscriptionStateDTO> getState(){
+
+    List<SubscriptionStateDTO> result = new ArrayList<>();
+    for(SharedSubscriptionManager manager : activeGroups.values()) {
+      result.addAll(manager.getSubscriptionStates());
+    }
+    return result;
   }
 
 }

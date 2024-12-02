@@ -19,6 +19,7 @@
 package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -172,5 +173,15 @@ public class DestinationSubscriptionManager implements Subscribable {
 
   public Subscribable getSubscription(String subscriptionName) {
     return subscriptions.get(subscriptionName);
+  }
+
+  public List<SubscriptionStateDTO> getSubscriptionStates() {
+    List<SubscriptionStateDTO> states = new ArrayList<>();
+    for (Subscribable subscribable : subscriptions.values()) {
+      if (subscribable instanceof Subscription){
+        states.add( ((Subscription)subscribable).getState());
+      }
+    }
+    return states;
   }
 }

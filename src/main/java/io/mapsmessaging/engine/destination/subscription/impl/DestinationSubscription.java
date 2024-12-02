@@ -190,6 +190,8 @@ public class DestinationSubscription extends Subscription {
   public SubscriptionStateDTO getState() {
     SubscriptionStateDTO subscriptionStateDTO = new SubscriptionStateDTO();
     subscriptionStateDTO.setDestinationName(destinationImpl.getFullyQualifiedNamespace());
+    subscriptionStateDTO.setHibernating(hibernating);
+    subscriptionStateDTO.setSessionId(sessionId);
     subscriptionStateDTO.setPaused(isPaused);
     subscriptionStateDTO.setMessagesSent(messagesSent);
     subscriptionStateDTO.setMessagesAcked(messagesAcked);

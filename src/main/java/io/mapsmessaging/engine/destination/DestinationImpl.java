@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
@@ -73,7 +74,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class DestinationImpl implements BaseDestination {
   @Getter
-  private static DestinationGlobalStats globalStats = new DestinationGlobalStats(StatsFactory.getDefaultType());
+  private static final DestinationGlobalStats globalStats = new DestinationGlobalStats(StatsFactory.getDefaultType());
 
   //<editor-fold desc="Global static final fields used by all destinations">
   public static final int TASK_QUEUE_PRIORITY_SIZE = 2;
@@ -103,7 +104,6 @@ public class DestinationImpl implements BaseDestination {
    * -- GETTER --
    *  Returns the stats object for this destination. All metrics about this destination are maintained in this class
    *
-   * @return DestinationStats for this instance
    */
   @Getter
   private final DestinationStats stats;
@@ -120,7 +120,6 @@ public class DestinationImpl implements BaseDestination {
    * -- GETTER --
    *  This returns the user supplied name for the destination
    *
-   * @return String name of the destination
    */
   @Getter
   private final String fullyQualifiedNamespace;       // This is the actual name of this resource within the servers namespace
@@ -344,6 +343,14 @@ public class DestinationImpl implements BaseDestination {
         }
       }
     }
+  }
+
+  public List<SubscriptionStateDTO> getSubscriptionStates() {
+    List<SubscriptionStateDTO> result = new ArrayList<>();
+    result.addAll(subscriptionManager.getSubscriptionStates());
+    result.addAll(schemaSubscriptionManager.getSubscriptionStates());
+    result.addAll(sharedSubscriptionRegistry.getState());
+    return result;
   }
 
   public void stopSubscriptions() {

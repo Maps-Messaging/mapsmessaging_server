@@ -18,12 +18,17 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.subscription.state.BoundedMessageStateManager;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 
 public class SharedSubscriptionManager {
 
+  @Getter
   private final String name;
   private final Map<String, SharedSubscription> activeSubscriptions;
   private final BoundedMessageStateManager completionHandlerMap;
@@ -32,10 +37,6 @@ public class SharedSubscriptionManager {
     this.name = name;
     activeSubscriptions = new LinkedHashMap<>();
     completionHandlerMap = new BoundedMessageStateManager();
-  }
-
-  public String getName() {
-    return name;
   }
 
   public void close() {
@@ -68,5 +69,13 @@ public class SharedSubscriptionManager {
     for (SharedSubscription sharedSubscription : activeSubscriptions.values()) {
       sharedSubscription.expired(messageIdentifier);
     }
+  }
+
+  public List<SubscriptionStateDTO> getSubscriptionStates(){
+    List<SubscriptionStateDTO> states = new ArrayList<>();
+    for (SharedSubscription sharedSubscription : activeSubscriptions.values()) {
+      states.add(sharedSubscription.getState());
+    }
+    return states;
   }
 }

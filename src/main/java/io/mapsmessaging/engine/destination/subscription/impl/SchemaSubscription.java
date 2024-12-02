@@ -59,7 +59,9 @@ public class SchemaSubscription extends Subscription {
   public SubscriptionStateDTO getState() {
     SubscriptionStateDTO subscriptionStateDTO = new SubscriptionStateDTO();
     subscriptionStateDTO.setDestinationName(destinationImpl.getFullyQualifiedNamespace());
-    subscriptionStateDTO.setPaused(hibernating);
+    subscriptionStateDTO.setHibernating(hibernating);
+    subscriptionStateDTO.setSessionId(sessionId);
+    subscriptionStateDTO.setPaused(false);
     subscriptionStateDTO.setMessagesSent(0);
     subscriptionStateDTO.setMessagesAcked(0);
     subscriptionStateDTO.setMessagesIgnored(0);

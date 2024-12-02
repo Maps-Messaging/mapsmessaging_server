@@ -16,30 +16,23 @@
  *
  */
 
-package io.mapsmessaging.dto.rest.session;
+package io.mapsmessaging.rest.responses;
 
+import io.mapsmessaging.dto.rest.destination.DestinationDTO;
+import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 @Data
-@NoArgsConstructor
-public class SubscriptionStateDTO {
+@EqualsAndHashCode(callSuper=false)
+public class DestinationDetailsResponse  extends BaseResponse {
 
-  private String destinationName;
-  private String sessionId;
-  private boolean hibernating;
-  private int size;
-  private int pending;
+  private DestinationDTO destination;
+  private List<SubscriptionStateDTO> subscriptionList;
 
-  private boolean hasMessagesInFlight;
-  private boolean hasAtRestMessages;
-
-  private boolean isPaused;
-
-  private long messagesIgnored;
-  private long messagesRegistered;
-  private long messagesSent;
-  private long messagesAcked;
-  private long messagesRolledBack;
-  private long messagesExpired;
+  public DestinationDetailsResponse(HttpServletRequest response){
+    super(response);
+  }
 }
