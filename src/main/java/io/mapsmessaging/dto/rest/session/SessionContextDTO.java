@@ -25,19 +25,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SessionContextDTO {
 
-  // <editor-fold desc="These fields are persisted and on reload describes the session">
   private String id;
   private String uniqueId;
   private boolean hasWill;
   private long expiry;
-  // </editor-fold>
-
-  // <editor-fold desc="These are volatile fields and must not be persisted since they change at run
-  // time">
   private boolean authorized;
   private int receiveMaximum;
   private boolean isRestored;
   private boolean resetState;
   private boolean persistentSession;
-  // </editor-fold>
+
 }
