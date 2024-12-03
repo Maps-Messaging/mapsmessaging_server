@@ -50,6 +50,7 @@ public class CacheManagementApi  extends BaseInterfaceApi {
     if (!hasAccess("servers")) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
+    Constants.getCentralCache().clear();
     response.setStatus(Response.Status.NO_CONTENT.getStatusCode());
   }
 

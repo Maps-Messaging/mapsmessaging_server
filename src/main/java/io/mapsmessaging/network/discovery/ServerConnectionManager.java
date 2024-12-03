@@ -116,8 +116,13 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    status.setComment("");
-    status.setStatus(Status.DISABLED);
+    if (MessageDaemon.getInstance().getDiscoveryManager().isEnabled()) {
+      status.setComment("Discovered: " + serviceInfoMap.size());
+      status.setStatus(Status.OK);
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
     return status;
   }
 

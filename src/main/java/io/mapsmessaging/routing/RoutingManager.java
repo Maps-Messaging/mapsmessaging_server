@@ -140,8 +140,8 @@ public class RoutingManager implements Agent, ServiceListener {
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    status.setComment("");
-    status.setStatus(Status.OK);
+    status.setComment("Not Active");
+    status.setStatus(Status.DISABLED);
     return status;
   }
 

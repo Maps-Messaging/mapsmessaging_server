@@ -70,6 +70,8 @@ public class AuthManager implements Agent {
   @Getter
   private final boolean authorisationEnabled;
 
+  private String errMessage="";
+
   @Override
   public String getName() {
     return "AuthManager";
@@ -90,6 +92,7 @@ public class AuthManager implements Agent {
         }
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {
+        errMessage = e.getMessage();
         throw new RuntimeException(e);
       }
     }
@@ -242,7 +245,16 @@ public class AuthManager implements Agent {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
     status.setComment("");
-    status.setStatus(Status.OK);
+    if (authenticationEnabled) {
+      status.setStatus(Status.OK);
+      if(!errMessage.isEmpty()){
+        status.setComment(errMessage);
+        status.setStatus(Status.ERROR);
+      }
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
     return status;
   }
 

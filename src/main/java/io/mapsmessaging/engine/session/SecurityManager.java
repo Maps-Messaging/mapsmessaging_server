@@ -146,7 +146,6 @@ public class SecurityManager implements Agent {
     status.setName(getName());
     status.setComment("");
     status.setStatus(Status.OK);
-
     return status;
   }
 

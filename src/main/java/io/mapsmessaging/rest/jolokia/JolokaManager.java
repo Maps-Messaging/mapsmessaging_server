@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import org.jolokia.jvmagent.JolokiaServer;
 import org.jolokia.jvmagent.JolokiaServerConfig;
-import org.jolokia.util.LogHandler;
 
 public class JolokaManager implements Agent {
 
@@ -41,10 +40,12 @@ public class JolokaManager implements Agent {
   private final JolokiaConfig config;
   private final boolean enabled;
   private Startup startup;
+  private String errorMsg;
 
   public JolokaManager() {
     config = JolokiaConfig.getInstance();
     enabled = config.isEnable();
+    errorMsg = "";
   }
 
   @Override
@@ -85,6 +86,7 @@ public class JolokaManager implements Agent {
       if (jolokiaServer != null) {
         try {
           jolokiaServer.stop();
+          jolokiaServer = null;
         } catch (Exception e) {
           // Do not log this, Jolokia throws a NPE every time we shut down
         }
@@ -105,9 +107,9 @@ public class JolokaManager implements Agent {
         jolokiaServer = new JolokiaServer(jolokiaConfig, true);
         jolokiaServer.start();
       } catch (IOException e) {
+        errorMsg = e.getMessage();
         logger.log(ServerLogMessages.JOLOKIA_STARTUP_FAILURE, e);
       }
-      LogHandler.StdoutLogHandler logg;
     }
   }
   @Override
@@ -115,7 +117,21 @@ public class JolokaManager implements Agent {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
     status.setComment("");
-    status.setStatus(Status.OK);
+    if (enabled) {
+      status.setStatus(Status.OK);
+      if(startup != null) {
+        status.setStatus(Status.STOPPED);
+      }
+      else{
+        if(!errorMsg.isEmpty()){
+          status.setStatus(Status.ERROR);
+          status.setComment(errorMsg);
+        }
+      }
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
     return status;
   }
 

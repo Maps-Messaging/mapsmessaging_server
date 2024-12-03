@@ -156,7 +156,7 @@ public class DestinationManager implements DestinationFactory, Agent {
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    status.setComment("");
+    status.setComment("Running Pipelines:"+creatorPipelines.length);
     status.setStatus(Status.OK);
     return status;
   }

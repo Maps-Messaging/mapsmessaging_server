@@ -189,7 +189,7 @@ public class SchemaManager implements SchemaRepository, Agent {
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    status.setComment("");
+    status.setComment("Registered Schemas: " + repository.getMappedSchemas().size());
     status.setStatus(Status.OK);
     return status;
   }

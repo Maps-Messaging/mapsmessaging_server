@@ -29,6 +29,7 @@ import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.rest.api.Constants;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
@@ -59,7 +60,7 @@ import org.glassfish.jersey.uri.UriComponent;
 
 public class RestApiServerManager implements Agent {
 
-  private RestApiManagerConfig config;
+  private final RestApiManagerConfig config;
   private final Logger logger = LoggerFactory.getLogger(RestApiServerManager.class);
 
   private boolean isSecure;
@@ -251,9 +252,14 @@ public class RestApiServerManager implements Agent {
   @Override
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
-    status.setName(getName());
-    status.setComment("");
-    status.setStatus(Status.OK);
+    status.setName("RestAPI Caching");
+    if(Constants.getCentralCache() instanceof RoleBasedCache){
+      status.setStatus(Status.OK);
+      status.setComment("Cached Items:"+Constants.getCentralCache().size());
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
     return status;
   }
 

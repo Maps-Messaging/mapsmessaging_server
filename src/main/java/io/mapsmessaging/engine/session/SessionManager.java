@@ -232,6 +232,10 @@ public class SessionManager implements Agent {
     status.setComment("");
     status.setStatus(Status.OK);
 
+    if(sessionPipeLines.length == 0) {
+      status.setStatus(Status.ERROR);
+      status.setComment("No Pipelines defined!!");
+    }
     return status;
   }
 

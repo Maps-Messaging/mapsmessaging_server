@@ -143,7 +143,7 @@ public class TransactionManager implements Runnable, Agent {
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    status.setComment("");
+    status.setComment("Transaction List: " + transactionList.size());
     status.setStatus(Status.OK);
     return status;
   }

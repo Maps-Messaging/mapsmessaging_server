@@ -218,7 +218,13 @@ public class NetworkInterfaceMonitor implements Agent {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
     status.setComment("");
-    status.setStatus(Status.OK);
+    if(enabled){
+      status.setStatus(Status.OK);
+      status.setComment("Monitoring : "+lastInterfaces.size());
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
     return status;
   }
 

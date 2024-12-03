@@ -141,7 +141,15 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
     status.setComment("");
-    status.setStatus(Status.OK);
+    if (enableStatistics) {
+      status.setStatus(Status.OK);
+      if(enableAdvancedStats){
+        status.setComment("Advanced statistics being recorded");
+      }
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
     return status;
   }
 
