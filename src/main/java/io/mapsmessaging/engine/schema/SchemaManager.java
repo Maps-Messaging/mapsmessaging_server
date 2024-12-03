@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.engine.schema;
 
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.impl.JsonSchemaConfig;
 import io.mapsmessaging.schemas.config.impl.NativeSchemaConfig;
@@ -182,6 +184,14 @@ public class SchemaManager implements SchemaRepository, Agent {
   private SchemaManager() {
     repository = new SimpleSchemaRepository();
     loadedFormatter = new LinkedHashMap<>();
+  }
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
   }
 
 }

@@ -25,6 +25,7 @@ import io.mapsmessaging.ServerRunner;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
@@ -32,6 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 @Tag(name = "Server Management")
 @Path(URI_PATH)
@@ -83,6 +85,32 @@ public class ServerDetailsApi extends BaseInterfaceApi {
 
     // Fetch and cache response
     ServerStatisticsResponse response = new ServerStatisticsResponse(request, ServerStatisticsHelper.create());
+    putToCache(key, response);
+    return response;
+  }
+
+
+  @GET
+  @Path("/server/status")
+  @Produces({MediaType.APPLICATION_JSON})
+  public List<SubSystemStatusDTO> getServerStatus() {
+    checkAuthentication();
+
+    if (!hasAccess("servers")) {
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
+    }
+
+    // Create cache key
+    CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
+
+    // Try to retrieve from cache
+    List<SubSystemStatusDTO> cachedResponse = getFromCache(key, List.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    List<SubSystemStatusDTO> response = MessageDaemon.getInstance().getSubSystemStatus();
     putToCache(key, response);
     return response;
   }

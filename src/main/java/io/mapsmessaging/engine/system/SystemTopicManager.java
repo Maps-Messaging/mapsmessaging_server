@@ -20,6 +20,8 @@ package io.mapsmessaging.engine.system;
 
 import static io.mapsmessaging.logging.ServerLogMessages.SYSTEM_TOPIC_MESSAGE_ERROR;
 
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -133,4 +135,14 @@ public class SystemTopicManager implements Runnable, ServiceManager, Agent {
     systemTopics.forEach(service::add);
     return service.listIterator();
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
+  }
+
 }

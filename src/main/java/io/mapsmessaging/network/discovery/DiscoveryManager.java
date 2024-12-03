@@ -24,6 +24,8 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.config.DiscoveryManagerConfig;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -125,6 +127,27 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
     Thread t = new Thread(this::deregisterAll);
     t.start();
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    if(enabled){
+      if(boundedNetworks.isEmpty()){
+        status.setStatus(Status.WARN);
+        status.setComment("No bound networks");
+      }
+      else{
+        status.setStatus(Status.OK);
+      }
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
+    return status;
+  }
+
 
   private AdapterManager bindInterface(InetAddress homeAddress, boolean stampMeta) throws IOException {
     return new AdapterManager(homeAddress.getHostAddress(), serverName, JmDNS.create(homeAddress, serverName), stampMeta, domainName);

@@ -25,6 +25,8 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.RestApiManagerConfig;
 import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
@@ -244,6 +246,15 @@ public class RestApiServerManager implements Agent {
         }
       }
     }
+  }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
   }
 
 }

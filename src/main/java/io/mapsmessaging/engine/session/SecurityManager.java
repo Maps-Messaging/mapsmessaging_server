@@ -22,6 +22,8 @@ import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURI
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
 import io.mapsmessaging.engine.session.security.JaasSecurityContext;
 import io.mapsmessaging.engine.session.security.SaslSecurityContext;
@@ -137,4 +139,15 @@ public class SecurityManager implements Agent {
       }
     }
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+
+    return status;
+  }
+
 }

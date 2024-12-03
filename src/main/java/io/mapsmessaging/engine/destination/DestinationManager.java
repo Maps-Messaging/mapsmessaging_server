@@ -21,6 +21,8 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.config.DestinationManagerConfig;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.resources.MessageExpiryHandler;
 import io.mapsmessaging.engine.resources.Resource;
 import io.mapsmessaging.engine.resources.ResourceFactory;
@@ -149,6 +151,16 @@ public class DestinationManager implements DestinationFactory, Agent {
       processFileList(destinationLocator.getValid(), mapManager);
     }
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
+  }
+
 
   @Override
   public String getName() {

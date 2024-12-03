@@ -29,6 +29,8 @@ import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.config.AuthManagerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.access.Group;
@@ -234,4 +236,14 @@ public class AuthManager implements Agent {
   public void removeUserFromGroup(String username, String groupName) throws IOException {
     authenticationStorage.removeUserFromGroup(username, groupName);
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
+  }
+
 }

@@ -19,6 +19,8 @@
 package io.mapsmessaging.engine;
 
 import io.mapsmessaging.api.Transaction;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -31,7 +33,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -40,20 +44,11 @@ import org.jetbrains.annotations.NotNull;
  */
 public class TransactionManager implements Runnable, Agent {
 
+  @Setter
   private static long timeOutInterval = 100;
+  @Setter
+  @Getter
   private static long expiryTime = 3600000;
-
-  public static void setTimeOutInterval(long timeout) {
-    timeOutInterval = timeout;
-  }
-
-  public static long getExpiryTime() {
-    return expiryTime;
-  }
-
-  public static void setExpiryTime(long expiry) {
-    expiryTime = expiry;
-  }
 
   private static final TransactionManager instance = new TransactionManager();
 
@@ -143,5 +138,15 @@ public class TransactionManager implements Runnable, Agent {
     transactionList = new ConcurrentSkipListMap<>();
     schedule = null;
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
+  }
+
 
 }

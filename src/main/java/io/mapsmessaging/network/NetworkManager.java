@@ -20,6 +20,8 @@ package io.mapsmessaging.network;
 
 import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -32,6 +34,7 @@ import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NetworkManager implements ServiceManager, Agent {
 
@@ -80,6 +83,61 @@ public class NetworkManager implements ServiceManager, Agent {
     }
     startAll();
   }
+
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    if(endPointManagers.isEmpty()){
+      status.setStatus(Status.WARN);
+      status.setComment("No bound end points");
+      return status;
+    }
+    status.setStatus(Status.OK);
+
+    AtomicInteger stopped = new AtomicInteger(0);
+    endPointManagers.entrySet().forEach(entry -> {
+      EndPointManager endPointManager = entry.getValue();
+      if (endPointManager.getState() == STATE.STOPPED) {
+        stopped.incrementAndGet();
+      }
+    });
+    if(stopped.get() != 0){
+      if(stopped.get() == endPointManagers.size()){
+        status.setStatus(Status.STOPPED);
+        status.setComment("All end points are stopped");
+      }
+      else{
+        status.setStatus(Status.WARN);
+        status.setComment("Some end points are stopped");
+      }
+      return status;
+    }
+
+    stopped.set(0);
+    endPointManagers.entrySet().forEach(entry -> {
+      EndPointManager endPointManager = entry.getValue();
+      if (endPointManager.getState() == STATE.PAUSED) {
+        stopped.incrementAndGet();
+      }
+    });
+    if(stopped.get() != 0){
+      if(stopped.get() == endPointManagers.size()){
+        status.setStatus(Status.PAUSED);
+        status.setComment("All end points are stopped");
+      }
+      else{
+        status.setStatus(Status.WARN);
+        status.setComment("Some end points are paused");
+      }
+      return status;
+    }
+
+    return status;
+  }
+
 
   // We are constructing end points which open a resource, we need this resource to remain open
   // we add it to a list that manages the close

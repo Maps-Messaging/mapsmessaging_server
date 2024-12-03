@@ -21,6 +21,8 @@ package io.mapsmessaging.network;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.NetworkConnectionManagerConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -34,6 +36,7 @@ import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
 
 public class NetworkConnectionManager implements ServiceManager, Agent {
@@ -93,6 +96,38 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
       }
     }
   }
+
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    if(endPointConnectionList.isEmpty()){
+      status.setStatus(Status.WARN);
+      status.setComment("No configured connections");
+      return status;
+    }
+    status.setStatus(Status.OK);
+    AtomicInteger stopped = new AtomicInteger(0);
+    endPointConnectionList.forEach(endPointConnection -> {
+      if (!endPointConnection.getState().getName().equals("Established")) {
+        stopped.incrementAndGet();
+      }
+    });
+    if(stopped.get() != 0){
+      if(stopped.get() == endPointConnectionList.size()){
+        status.setStatus(Status.ERROR);
+        status.setComment("No inter server connections have been established");
+      }
+      else{
+        status.setStatus(Status.WARN);
+        status.setComment("Some inter server connections have not been established : ("+stopped.get()+" of "+endPointConnectionList.size()+")");
+      }
+    }
+    return status;
+  }
+
 
   @Override
   public String getName() {

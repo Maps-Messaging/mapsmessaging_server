@@ -21,6 +21,8 @@ package io.mapsmessaging.network.monitor;
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 import io.mapsmessaging.config.NetworkManagerConfig;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
@@ -210,4 +212,14 @@ public class NetworkInterfaceMonitor implements Agent {
     }
     return interfacesMap;
   }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
+  }
+
 }

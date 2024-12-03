@@ -19,6 +19,8 @@
 package io.mapsmessaging.network.discovery;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -109,5 +111,14 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   public void stop() {
   }
 
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.DISABLED);
+    return status;
+  }
 
 }

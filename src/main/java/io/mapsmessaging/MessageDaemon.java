@@ -30,6 +30,7 @@ import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.configuration.EnvironmentPathLookup;
 import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
@@ -450,5 +451,13 @@ public class MessageDaemon {
 
   public static void main(String[] args) throws IOException, InterruptedException {
     ServerRunner.main(args);
+  }
+
+  public List<SubSystemStatusDTO> getSubSystemStatus() {
+    List<SubSystemStatusDTO> list = new ArrayList<>();
+    for(AgentOrder agent:agentMap.values()){
+      list.add(agent.getAgent().getStatus());
+    }
+    return list;
   }
 }

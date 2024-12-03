@@ -27,6 +27,8 @@ import io.mapsmessaging.devices.i2c.I2CBusManager;
 import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
@@ -52,6 +54,7 @@ public class DeviceManager implements ServiceManager, Agent {
   private final Map<String, Trigger> configuredTriggers;
 
   private final DeviceBusManager deviceBusManager;
+  private String errorMessage;
 
   public DeviceManager() {
     triggers = new ArrayList<>();
@@ -79,6 +82,7 @@ public class DeviceManager implements ServiceManager, Agent {
       }
     } catch (Throwable th) {
       manager = null;
+      errorMessage = th.getMessage();
       logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_FAILED, th);
     }
 
@@ -193,6 +197,25 @@ public class DeviceManager implements ServiceManager, Agent {
     }
   }
 
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    if(enabled){
+      if(deviceBusManager == null){
+        status.setStatus(Status.ERROR);
+        status.setComment(errorMessage);
+      }
+      else{
+        status.setStatus(Status.OK);
+      }
+    }
+    else{
+      status.setStatus(Status.DISABLED);
+    }
+    return status;
+  }
+
   public void initialise() {
     if(!enabled) return;
     startAll();
@@ -230,7 +253,6 @@ public class DeviceManager implements ServiceManager, Agent {
       busHandler.resume();
     }
   }
-
 
   @Override
   public Iterator<Service> getServices() {

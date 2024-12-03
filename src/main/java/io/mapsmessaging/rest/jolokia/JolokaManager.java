@@ -21,6 +21,8 @@ package io.mapsmessaging.rest.jolokia;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.JolokiaConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -107,6 +109,14 @@ public class JolokaManager implements Agent {
       }
       LogHandler.StdoutLogHandler logg;
     }
+  }
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+    return status;
   }
 
 }

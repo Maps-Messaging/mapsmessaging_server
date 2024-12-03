@@ -19,6 +19,8 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.admin.SessionManagerJMX;
+import io.mapsmessaging.dto.rest.system.Status;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
@@ -221,6 +223,16 @@ public class SessionManager implements Agent {
 
   public long getTotalExpired() {
     return expiredSessions.sum();
+  }
+
+  @Override
+  public SubSystemStatusDTO getStatus() {
+    SubSystemStatusDTO status = new SubSystemStatusDTO();
+    status.setName(getName());
+    status.setComment("");
+    status.setStatus(Status.OK);
+
+    return status;
   }
 
 }
