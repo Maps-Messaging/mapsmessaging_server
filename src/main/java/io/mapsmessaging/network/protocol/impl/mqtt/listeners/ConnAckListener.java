@@ -40,7 +40,7 @@ public class ConnAckListener extends BaseConnectionListener {
     String user = config.getUsername();
     String pass = config.getPassword();
 
-    SessionContextBuilder scb = getBuilder(endPoint, protocol, sess, false, 30000, user, pass.toCharArray());
+    SessionContextBuilder scb = getBuilder(protocol, sess, false, 30000, user, pass.toCharArray());
     protocol.setKeepAlive(30000);
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
     sessionFuture.thenApply(session1 -> {

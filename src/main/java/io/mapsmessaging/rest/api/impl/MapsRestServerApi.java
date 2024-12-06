@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.rest.api.impl;
 
-import static io.mapsmessaging.BuildInfo.buildVersion;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
+import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.responses.LoginResponse;
@@ -43,7 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 @OpenAPIDefinition(
     info = @Info(
         description = "Maps Messaging Server Rest API, provides simple Rest API to manage and interact with the server",
-        version = buildVersion,
+        version = BuildInfo.BUILD_VERSION,
         title = "Maps Messaging Rest Server",
         contact = @Contact(
             name = "Matthew Buckton",
@@ -81,7 +81,7 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   //@ApiOperation(value = "Simple request to test if the server is running")
   public StringResponse getPing() {
-    return new StringResponse(request, "ok");
+    return new StringResponse("ok");
   }
 
   @GET
@@ -89,7 +89,7 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   // @ApiOperation(value = "Returns the servers unique name")
   public StringResponse getName() {
-    return new StringResponse(request, MessageDaemon.getInstance().getId());
+    return new StringResponse(MessageDaemon.getInstance().getId());
   }
 
   @GET

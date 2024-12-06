@@ -47,12 +47,12 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
     activeEndPoints = new ConcurrentHashMap<>();
     logger = createLogger(url.toString());
     if(config != null) {
-      MessageDaemon.getInstance().getDiscoveryManager().register(this);
+      MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().register(this);
     }
   }
 
   public void close()throws IOException{
-    MessageDaemon.getInstance().getDiscoveryManager().deregister(this);
+    MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().deregister(this);
   }
 
   public long generateID() {

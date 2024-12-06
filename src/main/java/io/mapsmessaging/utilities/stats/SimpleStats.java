@@ -46,7 +46,7 @@ public class SimpleStats implements Stats{
   @Override
   public void reset() {
     if(nextProcessed +timeSpan > System.currentTimeMillis()) {
-      return;
+     // return;
     }
     value = 0;
     current.reset();

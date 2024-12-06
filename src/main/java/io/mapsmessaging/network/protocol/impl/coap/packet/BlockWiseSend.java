@@ -81,13 +81,6 @@ public class BlockWiseSend extends BasePacket {
   @Override
   public boolean isComplete(){
     return true;
-/*
-    if(sendController == null){
-      return false;
-    }
-    return sendController.isComplete();
-
- */
   }
 
 }

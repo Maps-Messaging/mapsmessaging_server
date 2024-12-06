@@ -50,7 +50,7 @@ public class InitialWillTopicState implements State {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLTOPIC) {
       // Awesome we are on track
       WillTopic willTopic = (WillTopic) mqtt;
-      if (willTopic.getTopic() != null && willTopic.getTopic().length() > 0) {
+      if (willTopic.getTopic() != null && !willTopic.getTopic().isEmpty()) {
         SessionContextBuilder scb = stateEngine.getSessionContextBuilder();
         scb.setWillTopic(willTopic.getTopic());
       }

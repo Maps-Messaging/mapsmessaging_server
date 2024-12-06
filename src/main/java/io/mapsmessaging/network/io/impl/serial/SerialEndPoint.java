@@ -57,7 +57,6 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   }
 
   private void configure(SerialConfig config) {
-    int stop;
     serialPort.setBaudRate(config.getBaudRate());
     serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
     serialPort.setFlowControl(config.getFlowControl());

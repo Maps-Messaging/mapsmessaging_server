@@ -27,16 +27,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransformerManager implements ServiceManager {
 
-  public static TransformerManager getInstance() {
-    return instance;
+  private static class Holder {
+    static final TransformerManager INSTANCE = new TransformerManager();
   }
-
-  private static final TransformerManager instance;
-
-  static {
-    instance = new TransformerManager();
+  public static TransformerManager getInstance() {
+    return Holder.INSTANCE;
   }
 
   private final Map<String, Service> transformerMap;

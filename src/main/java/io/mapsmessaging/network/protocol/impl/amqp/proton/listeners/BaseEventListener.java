@@ -114,6 +114,10 @@ public abstract class BaseEventListener implements EventListener {
     if (symbols == null) {
       symbols = new Symbol[0];
     }
+    return locateType(symbols, dynamic);
+  }
+
+  private DestinationType locateType(Symbol[] symbols, boolean dynamic) {
     for (Symbol symbol : symbols) {
       if (symbol.equals(Symbol.getSymbol("queue"))) {
         if (dynamic) {

@@ -20,7 +20,6 @@ package io.mapsmessaging.dto.rest.protocol;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.mapsmessaging.dto.rest.config.protocol.impl.*;
 import io.mapsmessaging.dto.rest.protocol.impl.*;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;

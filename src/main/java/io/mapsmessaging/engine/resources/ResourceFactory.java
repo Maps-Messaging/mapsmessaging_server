@@ -33,18 +33,22 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.inspector.TagInspector;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class ResourceFactory {
 
-  public static final String RESOURCE_FILE_NAME = "resource.yaml";
 
-  private static final ResourceFactory instance = new ResourceFactory();
-
-
-  private ResourceFactory() {
+  private static class Holder {
+    static final ResourceFactory INSTANCE = new ResourceFactory();
   }
 
   public static ResourceFactory getInstance() {
-    return instance;
+    return Holder.INSTANCE;
+  }
+
+
+  public static final String RESOURCE_FILE_NAME = "resource.yaml";
+
+  private ResourceFactory() {
   }
 
   public Resource create(MessageExpiryHandler messageExpiryHandler, String resourceName, DestinationConfigDTO pathManager, String fullyQualifiedPath, UUID uuid,

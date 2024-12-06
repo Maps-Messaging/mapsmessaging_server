@@ -18,7 +18,6 @@
 
 package io.mapsmessaging;
 
-import lombok.Getter;
 import lombok.ToString;
 
 /**
@@ -31,9 +30,17 @@ import lombok.ToString;
 @ToString
 public class BuildInfo {
 
-  @Getter
-  public static final String buildDate = "dd-mmm-yyyy HH:MM:SS";
-  @Getter
-  public static final String buildVersion = "00.00.00-SNAPSHOT";
+  public static final String BUILD_DATE = "dd-mmm-yyyy HH:MM:SS";
+  public static final String BUILD_VERSION = "00.00.00-SNAPSHOT";
 
+
+  public static String getBuildDate() {
+    return BUILD_DATE;
+  }
+
+  public static String getBuildVersion() {
+    return BUILD_VERSION;
+  }
+
+  private BuildInfo(){}
 }

@@ -63,7 +63,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     }
 
     // Fetch and cache response
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
         InterfaceInfoDTO response = InterfaceInfoHelper.fromEndPointManager(endPointManager);
@@ -95,7 +95,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     }
 
     // Fetch and cache response
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     List<EndPointSummaryDTO> endPointDetails = new ArrayList<>();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
@@ -105,7 +105,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       }
     }
 
-    EndPointDetailResponse response = new EndPointDetailResponse(request, endPointDetails);
+    EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
     putToCache(key, response);
     return response;
   }
@@ -121,7 +121,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       return false;
     }
 
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
         InterfaceInfoDTO infoDTO = InterfaceInfoHelper.fromEndPointManager(endPointManager);
@@ -199,7 +199,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   }
 
   private Response lookup(String endpointName, STATE state){
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
         return handleRequest(state, endPointManager);

@@ -19,7 +19,6 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.Getter;
 
@@ -29,8 +28,7 @@ public class InterfaceDetailResponse extends BaseResponse {
 //  @ApiModelProperty(value="List of interfaces")
   private final List<InterfaceInfoDTO> data;
 
-  public InterfaceDetailResponse(HttpServletRequest request, List<InterfaceInfoDTO> list) {
-    super(request);
+  public InterfaceDetailResponse(List<InterfaceInfoDTO> list) {
     data = list;
   }
 

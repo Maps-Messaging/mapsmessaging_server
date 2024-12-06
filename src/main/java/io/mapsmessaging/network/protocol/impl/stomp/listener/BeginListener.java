@@ -31,7 +31,7 @@ public class BeginListener implements FrameListener {
     Begin begin = (Begin) frame;
     try {
       String transaction = begin.getTransaction();
-      if (transaction != null && transaction.length() > 0) {
+      if (transaction != null && !transaction.isEmpty()) {
         engine.getSession().startTransaction(transaction);
       } else {
         Error error = new Error();

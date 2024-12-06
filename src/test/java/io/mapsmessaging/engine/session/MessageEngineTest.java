@@ -33,7 +33,7 @@ public abstract class MessageEngineTest extends BaseTestConfig {
     if(!BaseTestConfig.md.isStarted()){
       BaseTestConfig.md.start(null);
     }
-    manager = BaseTestConfig.md.getSessionManager();
+    manager = BaseTestConfig.md.getSubSystemManager().getSessionManager();
     previous = manager.getSecurityManager();
     manager.setSecurityManager(new FakeSecurityManager());
   }

@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.rest.responses;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 
 public class StringResponse extends BaseResponse {
@@ -26,8 +25,7 @@ public class StringResponse extends BaseResponse {
   @Getter
   private final String data;
 
-  public StringResponse(HttpServletRequest request, String data) {
-    super(request);
+  public StringResponse(String data) {
     this.data = data;
   }
 }

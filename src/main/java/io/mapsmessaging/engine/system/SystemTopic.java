@@ -57,7 +57,6 @@ public abstract class SystemTopic extends DestinationImpl implements Service {
   @Override
   public synchronized void addSubscription(@NonNull @NotNull Subscription subscription) {
     super.addSubscription(subscription);
-//    subscription.sendMessage(generateMessage());
   }
 
   @Override

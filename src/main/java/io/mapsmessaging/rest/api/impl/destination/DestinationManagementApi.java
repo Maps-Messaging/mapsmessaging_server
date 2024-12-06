@@ -66,7 +66,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
     if(destinationImpl == null) {
       throw new WebApplicationException("Destination not found", Response.Status.NOT_FOUND);
     }
-    DestinationDetailsResponse result = new DestinationDetailsResponse(request);
+    DestinationDetailsResponse result = new DestinationDetailsResponse();
     result.setDestination(DestinationStatusHelper.createDestination(destinationImpl));
     result.setSubscriptionList(destinationImpl.getSubscriptionStates());
 
@@ -117,7 +117,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
       results = results.subList(0, size);
     }
 
-    DestinationResponse destinationResponse =  new DestinationResponse(request, results);
+    DestinationResponse destinationResponse =  new DestinationResponse(results);
     putToCache(key, destinationResponse);
     return destinationResponse;
   }

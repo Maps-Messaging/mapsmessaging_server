@@ -51,7 +51,7 @@ public class DiscoveryManagementApi extends BaseRestApi {
       response.setStatus(403);
       return false;
     }
-    MessageDaemon.getInstance().getDiscoveryManager().start();
+    MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().start();
     return true;
   }
 
@@ -65,7 +65,7 @@ public class DiscoveryManagementApi extends BaseRestApi {
       response.setStatus(403);
       return false;
     }
-    MessageDaemon.getInstance().getDiscoveryManager().stop();
+    MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().stop();
     return true;
   }
 
@@ -89,7 +89,7 @@ public class DiscoveryManagementApi extends BaseRestApi {
       return cachedResponse;
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : SelectorParser.compile("true");
-    List<DiscoveredServersDTO> result = MessageDaemon.getInstance().getServerConnectionManager().getServers().stream().filter(parser::evaluate).collect(Collectors.toList());
+    List<DiscoveredServersDTO> result = MessageDaemon.getInstance().getSubSystemManager().getServerConnectionManager().getServers().stream().filter(parser::evaluate).collect(Collectors.toList());
     putToCache(key, result);
     return result;
   }

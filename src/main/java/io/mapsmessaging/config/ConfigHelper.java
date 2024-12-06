@@ -81,4 +81,6 @@ public class ConfigHelper {
       return Long.toString(size);
     }
   }
+
+  private ConfigHelper(){}
 }

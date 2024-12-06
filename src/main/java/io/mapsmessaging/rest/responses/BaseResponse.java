@@ -19,16 +19,10 @@
 package io.mapsmessaging.rest.responses;
 
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
+import lombok.Data;
 
+@Data
 public class BaseResponse implements Serializable {
 
-
-  public BaseResponse(){
-
-  }
-  public BaseResponse(HttpServletRequest request) {
-
-  }
 }

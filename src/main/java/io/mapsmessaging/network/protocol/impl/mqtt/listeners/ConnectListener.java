@@ -80,14 +80,14 @@ public class ConnectListener extends BaseConnectionListener {
     CompletableFuture<Session> sessionFuture = constructSession(endPoint, protocol, sessionId, connect);
     sessionFuture.whenComplete((session, throwable) -> {
       if (throwable != null) {
-        handleSessionException(throwable, connAck, protocol);
+        handleSessionException(connAck, protocol);
       } else {
         try {
           setupConnAck(session, connAck);
           protocol.registerRead();
           protocol.writeFrame(connAck);
         } catch (IOException e) {
-          handleSessionException(e, connAck, protocol);
+          handleSessionException(connAck, protocol);
         }
       }
     });
@@ -101,7 +101,7 @@ public class ConnectListener extends BaseConnectionListener {
   }
 
   private CompletableFuture<Session> constructSession(EndPoint endPoint, Protocol protocol, String sessionId, Connect connect) {
-    SessionContextBuilder scb = getBuilder(endPoint, protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
+    SessionContextBuilder scb = getBuilder(protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
       Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null, null);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
@@ -110,7 +110,7 @@ public class ConnectListener extends BaseConnectionListener {
     return createSession(endPoint, protocol, scb, sessionId);
   }
 
-  private void handleSessionException(Throwable e, ConnAck connAck, Protocol protocol) {
+  private void handleSessionException(ConnAck connAck, Protocol protocol) {
     connAck.setResponseCode(ConnAck.BAD_USERNAME_PASSWORD);
     connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
       try {

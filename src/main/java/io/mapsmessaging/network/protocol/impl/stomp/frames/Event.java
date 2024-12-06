@@ -109,7 +109,7 @@ public abstract class Event extends Frame {
     priority = parseHeaderInt("priority", Priority.NORMAL.getValue());
     expiry = parseHeaderLong("expiry", 0);
     delay = parseHeaderLong("delay", 0);
-    return destination != null && destination.length() > 0;
+    return destination != null && !destination.isEmpty();
   }
 
   @Override

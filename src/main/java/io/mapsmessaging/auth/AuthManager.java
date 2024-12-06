@@ -18,8 +18,7 @@
 
 package io.mapsmessaging.auth;
 
-import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_CREATE_USER;
-import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_FAILED_TO_INITIALISE_USER;
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
@@ -48,20 +47,28 @@ import java.util.*;
 import javax.security.auth.Subject;
 import lombok.Getter;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class AuthManager implements Agent {
+
+
   private static final String ADMIN_USER = "admin";
   private static final String USER = "user";
 
   private static final String ADMIN_GROUP = "admin";
   private static final String EVERYONE = "everyone";
 
-  @Getter
-  private static final AuthManager instance = new AuthManager();
+  private static class Holder {
+    static final AuthManager INSTANCE = new AuthManager();
+  }
+  public static AuthManager getInstance() {
+    return Holder.INSTANCE;
+  }
+
 
   private final Logger logger;
 
   @Getter
-  private AuthManagerConfig config;
+  private final AuthManagerConfig config;
   private AuthenticationStorage authenticationStorage;
   private final Map<String, Subject> subjectMap = new WeakHashMap<>();
 
@@ -93,7 +100,7 @@ public class AuthManager implements Agent {
         IdentityLookupFactory.getInstance().registerSiteIdentityLookup("system", authenticationStorage.getIdentityAccessManager().getIdentityLookup());
       } catch (Exception e) {
         errMessage = e.getMessage();
-        throw new RuntimeException(e);
+        logger.log(AUTH_STARTUP_FAILED, e);
       }
     }
   }
@@ -105,21 +112,18 @@ public class AuthManager implements Agent {
         bw.newLine(); // Add a newline character after each line
       }
     } catch (IOException e) {
-      // todo add log
+      logger.log(AUTH_SAVE_FAILED, e);
     }
   }
 
   @Override
   public void stop() {
-    try {
-      if (authenticationStorage != null) authenticationStorage.close();
-    } catch (IOException e) {
-      // todo add log
-    }
+    if (authenticationStorage != null) authenticationStorage.close();
   }
 
   public boolean addUser(String username, char[] password, SessionPrivileges quotas, String[] groups) {
     if (authenticationStorage != null) {
+      logger.log(AUTH_ADDED_USER, username);
       return authenticationStorage.addUser(username, password, quotas, groups);
     }
     return false;
@@ -127,6 +131,7 @@ public class AuthManager implements Agent {
 
   public boolean delUser(String username) {
     if (authenticationStorage != null) {
+      logger.log(AUTH_DELETED_USER, username);
       return authenticationStorage.delUser(username);
     }
     return false;
@@ -225,18 +230,22 @@ public class AuthManager implements Agent {
   }
 
   public void delGroup(String groupName) throws IOException {
+    logger.log(AUTH_DELETED_GROUP, groupName);
     authenticationStorage.delGroup(groupName);
   }
 
   public GroupIdMap addGroup(String groupName) throws IOException {
+    logger.log(AUTH_ADDED_GROUP, groupName);
     return authenticationStorage.addGroup(groupName);
   }
 
   public void addUserToGroup(String user, String group) throws IOException {
+    logger.log(AUTH_MODIFIED_GROUP, user, "added to",  group);
     authenticationStorage.addUserToGroup(user, group);
   }
 
   public void removeUserFromGroup(String username, String groupName) throws IOException {
+    logger.log(AUTH_MODIFIED_GROUP, username, "removed from",  groupName);
     authenticationStorage.removeUserFromGroup(username, groupName);
   }
 

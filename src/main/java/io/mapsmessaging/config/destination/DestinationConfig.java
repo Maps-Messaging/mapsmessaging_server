@@ -57,6 +57,7 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
             : propertyNamespace;
   }
 
+  @Override
   public String getTrailingPath() {
     if (remap) {
       return directory.substring(directory.indexOf(OPTIONAL_PATH) + OPTIONAL_PATH.length());

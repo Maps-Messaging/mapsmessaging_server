@@ -22,9 +22,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @Schema(
     title = "Destination",
     description =
@@ -44,7 +46,7 @@ public class DestinationDTO implements Serializable {
       description =
           "The unique name of the destination, which acts as an identifier within the messaging system.",
       example = "myDestination")
-  private final String name;
+  private String name;
 
   @Schema(
       title = "Destination Type",
@@ -52,14 +54,14 @@ public class DestinationDTO implements Serializable {
           "The type of the destination, indicating whether it is a queue or a topic, for example.",
       example = "queue",
       allowableValues = {"queue", "topic"})
-  private final String type;
+  private String type;
 
   @Schema(
       title = "Stored Messages",
       description = "The total count of messages currently stored in the destination.",
       example = "123",
       minimum = "0")
-  private final long storedMessages;
+  private long storedMessages;
 
   @Schema(
       title = "Delayed Messages",
@@ -67,21 +69,21 @@ public class DestinationDTO implements Serializable {
           "The number of messages delayed for delivery, which might occur due to timing or prioritization settings.",
       example = "123",
       minimum = "0")
-  private final long delayedMessages;
+  private long delayedMessages;
 
   @Schema(
       title = "Pending Messages",
       description = "The count of messages pending processing in the destination.",
       example = "123",
       minimum = "0")
-  private final long pendingMessages;
+  private long pendingMessages;
 
   @Schema(
       title = "Schema ID",
       description =
           "The identifier for the schema associated with this destination, which may define the structure or rules for messages.",
       example = "schema-123")
-  private final String schemaId;
+  private String schemaId;
 
   @Schema(
       title = "No Interest Messages",

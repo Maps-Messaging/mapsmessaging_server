@@ -114,7 +114,7 @@ public class BaseTestConfig extends BaseTest {
   @AfterEach
   public void checkSessionState()  {
     try {
-      SessionManager manager = md.getSessionManager();
+      SessionManager manager = md.getSubSystemManager().getSessionManager();
       List<SessionImpl> sessionImpls = manager.getSessions();
       for (SessionImpl sessionImpl : sessionImpls) {
         System.err.println("Session still active::" + sessionImpl.getName());
@@ -142,7 +142,7 @@ public class BaseTestConfig extends BaseTest {
           md.getDestinationManager().delete(destinationImpl);
         }
       }
-      Assertions.assertFalse(md.getSessionManager().hasSessions());
+      Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
       long timeout = System.currentTimeMillis()+ 2000;
       while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
         delay(100);

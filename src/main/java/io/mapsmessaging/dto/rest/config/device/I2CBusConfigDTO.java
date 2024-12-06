@@ -33,9 +33,6 @@ public class I2CBusConfigDTO extends DeviceBusConfigDTO {
   @Schema(description = "Bus number for the I2C device")
   protected int bus;
 
-  @Schema(description = "Indicates if auto-scan is enabled for the I2C bus")
-  protected boolean autoScan;
-
   @Schema(description = "Trigger configuration for the I2C bus")
   protected String trigger;
 

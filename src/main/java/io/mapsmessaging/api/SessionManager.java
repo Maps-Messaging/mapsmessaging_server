@@ -65,14 +65,14 @@ public class SessionManager {
     Callable<SessionImpl> task = () -> {
       SessionImpl sessionImpl = null;
       try {
-        sessionImpl = MessageDaemon.getInstance().getSessionManager().create(sessionContext);
+        sessionImpl = MessageDaemon.getInstance().getSubSystemManager().getSessionManager().create(sessionContext);
         completableFuture.complete(new Session(sessionImpl, listener));
       } catch (LoginException e) {
         completableFuture.completeExceptionally(e);
       }
       return sessionImpl;
     };
-    MessageDaemon.getInstance().getSessionManager().submit(sessionContext.getId(), task);
+    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().submit(sessionContext.getId(), task);
     return completableFuture;
   }
 
@@ -98,7 +98,7 @@ public class SessionManager {
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
     Callable<Void> task = () -> {
       try {
-        MessageDaemon.getInstance().getSessionManager().close(session.getSession(), clearWillTask);
+        MessageDaemon.getInstance().getSubSystemManager().getSessionManager().close(session.getSession(), clearWillTask);
         session.close();
         completableFuture.complete(session);
       } catch (Exception e) {
@@ -106,7 +106,7 @@ public class SessionManager {
       }
       return null;
     };
-    MessageDaemon.getInstance().getSessionManager().submit(session.getName(), task);
+    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().submit(session.getName(), task);
     return completableFuture;
   }
 

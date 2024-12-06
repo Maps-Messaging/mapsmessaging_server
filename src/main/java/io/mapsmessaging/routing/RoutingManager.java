@@ -61,7 +61,7 @@ public class RoutingManager implements Agent, ServiceListener {
     if (config.isEnabled()) {
       logger.log(ROUTING_STARTUP);
       if (config.isAutoDiscovery()) {
-        DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
+        DiscoveryManager discoveryManager = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager();
         if(discoveryManager.isEnabled()) {
           // Register listener for map server notification
           discoveryManager.registerListener("_maps._tcp.local.", this);
@@ -73,7 +73,7 @@ public class RoutingManager implements Agent, ServiceListener {
   public void stop() {
     logger.log(ROUTING_SHUTDOWN);
     if(config.isAutoDiscovery()) {
-      DiscoveryManager discoveryManager = MessageDaemon.getInstance().getDiscoveryManager();
+      DiscoveryManager discoveryManager = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager();
       if(discoveryManager.isEnabled()) {
         discoveryManager.removeListener("_maps._tcp.local.", this);
       }

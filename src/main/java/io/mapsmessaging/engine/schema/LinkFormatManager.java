@@ -59,7 +59,7 @@ public class LinkFormatManager {
   }
 
   private ParserExecutor build(String filter) {
-    if (filter != null && filter.length() > 0) {
+    if (filter != null && !filter.isEmpty()) {
       try {
         return io.mapsmessaging.selector.SelectorParser.compile(filter);
       } catch (ParseException e) {

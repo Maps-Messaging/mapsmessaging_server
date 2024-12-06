@@ -68,7 +68,7 @@ public class PushData extends SemTechPacket {
 
 
   public boolean isValid() {
-    return jsonObject.length() == 0 || (jsonObject.startsWith("{") && jsonObject.endsWith("}"));
+    return jsonObject.isEmpty() || (jsonObject.startsWith("{") && jsonObject.endsWith("}"));
   }
 
   @Override

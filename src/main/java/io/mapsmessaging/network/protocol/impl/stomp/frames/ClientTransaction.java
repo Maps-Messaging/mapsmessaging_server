@@ -36,6 +36,6 @@ public abstract class ClientTransaction extends Frame {
 
   @Override
   public boolean isValid() {
-    return hasEndOfFrame && endOfHeader && transaction != null && transaction.length() > 0;
+    return hasEndOfFrame && endOfHeader && transaction != null && !transaction.isEmpty();
   }
 }

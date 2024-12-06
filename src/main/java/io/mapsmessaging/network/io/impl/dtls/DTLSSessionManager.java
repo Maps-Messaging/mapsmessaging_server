@@ -89,7 +89,6 @@ public class DTLSSessionManager implements Closeable, SelectorCallback {
       StateEngine stateEngine;
       SSLEngine sslEngine = SslHelper.createSSLEngine(sslContext, ((Config)((DtlsConfig)udpEndPoint.getConfig().getEndPointConfig()).getSslConfig()).toConfigurationProperties());
       SSLParameters paras = sslEngine.getSSLParameters();
-      //int mtu = inetAddress.getMTU()-40;
       int mtu = 8192;
       paras.setMaximumPacketSize(mtu);
       paras.setEnableRetransmissions(true);

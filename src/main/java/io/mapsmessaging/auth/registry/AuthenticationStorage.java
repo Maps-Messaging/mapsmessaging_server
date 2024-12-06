@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.auth.registry;
 
+import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_ON_UPDATE;
+import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_TO_LOAD;
+
 import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
@@ -25,11 +28,12 @@ import io.mapsmessaging.auth.registry.mapping.IdDbStore;
 import io.mapsmessaging.auth.registry.mapping.UserIdSerializer;
 import io.mapsmessaging.auth.registry.principal.SessionPrivilegePrincipal;
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -39,7 +43,9 @@ import lombok.Getter;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
-public class AuthenticationStorage implements Closeable {
+public class AuthenticationStorage {
+  private static final String CERTIFICATE_STORE = "certificateStore";
+
   @Getter
   private final IdentityAccessManager identityAccessManager;
   private final UserPermisionManager userPermisionManager;
@@ -47,7 +53,9 @@ public class AuthenticationStorage implements Closeable {
   @Getter
   private final boolean firstBoot;
 
-  public AuthenticationStorage(ConfigurationProperties config) throws Exception {
+  private final Logger logger = LoggerFactory.getLogger(AuthenticationStorage.class);
+
+  public AuthenticationStorage(ConfigurationProperties config)  {
     String securityDirectory = config.getProperty("configDirectory", "./.security");
     if (securityDirectory != null) {
       File file = new File(securityDirectory);
@@ -74,9 +82,9 @@ public class AuthenticationStorage implements Closeable {
     map.put("configDirectory", securityDirectory);
     map.put("passwordHandler", config.getProperty("passwordHandler"));
 
-    if (config.containsKey("certificateStore")) {
-      Map<String, ?> cert = ((ConfigurationProperties) config.get("certificateStore")).getMap();
-      map.put("certificateStore", cert);
+    if (config.containsKey(CERTIFICATE_STORE)) {
+      Map<String, ?> cert = ((ConfigurationProperties) config.get(CERTIFICATE_STORE)).getMap();
+      map.put(CERTIFICATE_STORE, cert);
     }
 
     String authProvider = config.getProperty("identityProvider", "Apache-Basic-Auth");
@@ -100,7 +108,7 @@ public class AuthenticationStorage implements Closeable {
       userPermisionManager.add(quotas);
       return true;
     } catch (IOException | GeneralSecurityException e) {
-      //ToDo Add Logging
+      logger.log(AUTH_STORAGE_FAILED_TO_LOAD, e);
     }
     return false;
   }
@@ -115,7 +123,7 @@ public class AuthenticationStorage implements Closeable {
       }
       return true;
     } catch (IOException e) {
-      //ToDo Add Logging
+      logger.log(AUTH_STORAGE_FAILED_ON_UPDATE, e);
     }
     return false;
   }
@@ -123,10 +131,6 @@ public class AuthenticationStorage implements Closeable {
 
   public boolean validateUser(String username, char[] password) throws IOException {
     return identityAccessManager.validateUser(username, password);
-  }
-
-  @Override
-  public void close() throws IOException {
   }
 
   public SessionPrivileges getQuota(UUID userId) {
@@ -218,4 +222,7 @@ public class AuthenticationStorage implements Closeable {
     identityAccessManager.getGroupManagement().removeUserFromGroup(username, groupName);
   }
 
+  public void close() {
+    db.close();
+  }
 }

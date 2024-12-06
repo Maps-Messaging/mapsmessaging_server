@@ -79,7 +79,7 @@ public class TxAcknowledge extends SemTechPacket {
     packet.putShort(token);
     packet.putByte(TX_ACK);
     packet.put(gatewayIdentifier);
-    if (jsonObject.length() > 0) {
+    if (!jsonObject.isEmpty()) {
       packet.put(jsonObject.getBytes(StandardCharsets.UTF_8));
     }
     return 12 + jsonObject.length();

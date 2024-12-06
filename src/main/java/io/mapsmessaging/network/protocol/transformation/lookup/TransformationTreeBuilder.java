@@ -44,5 +44,7 @@ public class TransformationTreeBuilder {
 
     currentNode.setTransformation(transformationValue);
   }
+
+  private TransformationTreeBuilder() {}
 }
 

@@ -28,26 +28,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "OneWire Bus Configuration DTO")
 public class OneWireBusConfigDTO extends DeviceBusConfigDTO {
-  @Schema(description = "Indicates if the device bus is enabled")
-  protected boolean enabled;
-
-  @Schema(description = "Template for the topic name")
-  protected String topicNameTemplate;
-
-  @Schema(description = "Scan time interval in milliseconds")
-  protected int scanTime;
-
-  @Schema(description = "Filter configuration for the device bus")
-  protected String filter;
-
-  @Schema(description = "Selector configuration for the device bus")
-  protected String selector;
 
   @Schema(description = "Name of the OneWire bus", example = "oneWireBus1")
   protected String name;
-
-  @Schema(description = "Enable or disable auto-scanning of devices", example = "true")
-  protected boolean autoScan;
 
   @Schema(description = "Trigger mechanism for OneWire bus", example = "temperatureTrigger")
   protected String trigger;

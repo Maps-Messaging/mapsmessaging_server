@@ -73,10 +73,10 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
 
 
   private boolean selectorHasChanged(String parentSelector, String selector) throws IOException {
-    if (selector == null || selector.length() == 0) {
+    if (selector == null || selector.isEmpty()) {
       return false;
     }
-    if (parentSelector == null || parentSelector.length() == 0) {
+    if (parentSelector == null || parentSelector.isEmpty()) {
       return true; // It's true, since the selector has in fact been set by the new one
     }
     ParserExecutor executor = compileParser(selector);

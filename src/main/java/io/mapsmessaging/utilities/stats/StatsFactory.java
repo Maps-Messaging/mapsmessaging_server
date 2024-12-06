@@ -51,4 +51,6 @@ public class StatsFactory {
         return new NoStats(name, unitName);
     }
   }
+
+  private StatsFactory(){}
 }

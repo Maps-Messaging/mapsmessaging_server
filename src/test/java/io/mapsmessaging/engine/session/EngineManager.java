@@ -26,7 +26,7 @@ public class EngineManager {
   protected SecurityManager previous;
 
   public EngineManager(MessageDaemon md){
-    manager = md.getSessionManager();
+    manager = md.getSubSystemManager().getSessionManager();
   }
 
   public void setup(){

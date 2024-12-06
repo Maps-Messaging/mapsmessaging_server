@@ -58,7 +58,7 @@ public class UserManagementApi extends BaseRestApi {
         .map(userDetails -> buildUser(userDetails, authManager))
         .filter(user -> parser == null || parser.evaluate(user))
         .collect(Collectors.toList());
-    return new UserListResponse(request, results);
+    return new UserListResponse( results);
   }
 
   @GET
@@ -85,9 +85,9 @@ public class UserManagementApi extends BaseRestApi {
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
     if (authManager.addUser(newUser.getUsername(), newUser.getPassword().toCharArray(), sessionPrivileges, new String[0])) {
-      return new BaseResponse(request);
+      return new BaseResponse();
     }
-    return new BaseResponse(request);//, 500, "Failed to create user");
+    return new BaseResponse();
   }
 
   @DELETE
@@ -99,10 +99,10 @@ public class UserManagementApi extends BaseRestApi {
     Identity userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
     if (userIdMap != null) {
       authManager.delUser(userIdMap.getUsername());
-      return new BaseResponse(request);
+      return new BaseResponse();
     }
     response.setStatus(500);
-    return new BaseResponse(request);
+    return new BaseResponse();
   }
 
   private UserDTO buildUser(UserDetails user, AuthManager authManager){

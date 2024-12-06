@@ -25,7 +25,7 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
-import io.mapsmessaging.app.top.network.MqttConnection;
+import io.mapsmessaging.app.top.network.RestRequestManager;
 import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.ServerDetailsPane;
 import io.mapsmessaging.app.top.panes.ServerStatusPane;
@@ -33,11 +33,10 @@ import io.mapsmessaging.app.top.panes.destination.DestinationPane;
 import io.mapsmessaging.app.top.panes.interfaces.InterfacesPane;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.eclipse.paho.client.mqttv3.MqttException;
 
 public class TerminalTop {
 
-  private final MqttConnection mqttConnection;
+  private final RestRequestManager restConnection;
 
   private final ServerDetailsPane serverDetailsPane;
   private final ServerStatusPane serverStatusPane;
@@ -53,9 +52,9 @@ public class TerminalTop {
   private long switchDisplay = System.currentTimeMillis() + 3000;
 
 
-  public TerminalTop(String url, String username, String password) throws IOException, MqttException {
+  public TerminalTop(String url, String username, String password) throws IOException {
     runFlag = new AtomicBoolean(true);
-    mqttConnection = new MqttConnection(url, username, password);
+    restConnection = new RestRequestManager(url, username, password);
 
     // Setup terminal and screen layers
     terminal = new DefaultTerminalFactory().createTerminal();
@@ -78,7 +77,6 @@ public class TerminalTop {
     panels[0] = destinationPane;
     panels[1] = interfacesPane;
     panels[0].enable();
-    connectAndSubscribeToServer();
     runLoop();
   }
 
@@ -91,7 +89,7 @@ public class TerminalTop {
     long nextUpdate = System.currentTimeMillis()+60000;
     while(runFlag.get()){
       nextUpdate = waitForSomething(nextUpdate);
-      message = mqttConnection.getUpdate();
+      message = restConnection.getUpdate();
       if (message != null) {
         if (disconnected) {
           disconnected = false;
@@ -107,14 +105,14 @@ public class TerminalTop {
     }
     try {
       screen.stopScreen(); // Properly stop the screen when done
-      mqttConnection.close();
-    } catch (IOException | MqttException e) {
+      restConnection.close();
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
   private long waitForSomething(long nextUpdate) {
-    while (mqttConnection.isQueueEmpty()) {
+    while (restConnection.isQueueEmpty()) {
       if (!runFlag.get()) {
         return 0;
       }
@@ -124,7 +122,7 @@ public class TerminalTop {
         panels[idx].enable();
         switchDisplay = System.currentTimeMillis() + 10000;
       }
-      if (!mqttConnection.isConnected() && System.currentTimeMillis() > nextUpdate) {
+      if (!restConnection.isConnected() && System.currentTimeMillis() > nextUpdate) {
         disconnectDisplay();
         nextUpdate = System.currentTimeMillis() + 60000;
       }
@@ -153,15 +151,8 @@ public class TerminalTop {
       screen.refresh();
       disconnected = true;
     } catch (IOException e) {
-      e.printStackTrace();
+      // Ignore
     }
-  }
-
-  public void connectAndSubscribeToServer() throws MqttException {
-    mqttConnection.subscribe("$SYS/server/details");
-    mqttConnection.subscribe("$SYS/server/status");
-    mqttConnection.subscribe("$SYS/server/destination/status");
-    mqttConnection.subscribe("$SYS/server/interface/status");
   }
 
 }

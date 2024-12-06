@@ -43,20 +43,8 @@ public class AuthListener5 extends PacketListener5 {
       MQTT5Protocol mqtt5Protocol = ((MQTT5Protocol) protocol);
       AuthenticationMethod authMethod = (AuthenticationMethod) mqttPacket.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);
       if (mqtt5Protocol.getAuthenticationContext() != null && authMethod != null) {
-        String serverConfig = mqtt5Protocol.getAuthenticationContext().getAuthMethod();
-        String clientConfig = authMethod.getAuthenticationMethod();
-        if (!serverConfig.equalsIgnoreCase(clientConfig)) {
-          ConnAck5 connAck = new ConnAck5();
-          connAck.setStatusCode(StatusCode.BAD_AUTHENTICATION_METHOD); // MQTT Standard
-          connAck.getProperties().add(authMethod);
-          connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
-            try {
-              protocol.close();
-            } catch (IOException e1) {
-              logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e1);
-            }
-          }, 100, TimeUnit.MILLISECONDS));
-          return connAck;
+        if (!mqtt5Protocol.getAuthenticationContext().getAuthMethod().equalsIgnoreCase(authMethod.getAuthenticationMethod())) {
+          return rejectAuth(authMethod, protocol);
         }
         context = mqtt5Protocol.getAuthenticationContext();
         mqttPacket.getProperties().remove(MessagePropertyFactory.AUTHENTICATION_METHOD);
@@ -74,6 +62,21 @@ public class AuthListener5 extends PacketListener5 {
     } else {
       throw new MalformedException("Expected Authentication Context but none found");
     }
+  }
+  
+  private MQTTPacket5 rejectAuth(AuthenticationMethod authMethod, Protocol protocol){
+    ConnAck5 connAck = new ConnAck5();
+    connAck.setStatusCode(StatusCode.BAD_AUTHENTICATION_METHOD); // MQTT Standard
+    connAck.getProperties().add(authMethod);
+    connAck.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
+      try {
+        protocol.close();
+      } catch (IOException e1) {
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e1);
+      }
+    }, 100, TimeUnit.MILLISECONDS));
+    return connAck;
+
   }
 
   private MQTTPacket5 handleAuth(AuthenticationContext context, Protocol protocol, MQTTPacket5 mqttPacket, Session session, EndPoint endPoint) throws MalformedException {

@@ -176,7 +176,7 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
 
 
   private EndPointConnection locateInstance(String name){
-    List<EndPointConnection> list = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
+    List<EndPointConnection> list = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
     for (EndPointConnection endPointConnection : list) {
       if(endPointConnection.getConfigName().equalsIgnoreCase(name)){
         return endPointConnection;

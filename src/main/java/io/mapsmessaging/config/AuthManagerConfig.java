@@ -58,11 +58,6 @@ public class AuthManagerConfig extends AuthManagerConfigDTO {
       this.authorisationEnabled = newConfig.isAuthorisationEnabled();
       hasChanged = true;
     }
-    /*
-    if (updateMap(authConfig.getMap(), newConfig.authConfig.getMap())) {
-      hasChanged = true;
-    }
-*/
     return hasChanged;
   }
 

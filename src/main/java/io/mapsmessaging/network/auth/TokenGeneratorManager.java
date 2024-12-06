@@ -25,13 +25,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class TokenGeneratorManager implements ServiceManager {
 
-  public static TokenGeneratorManager getInstance() {
-    return instance;
+  private static class Holder {
+    static final TokenGeneratorManager INSTANCE = new TokenGeneratorManager();
   }
 
-  private static final TokenGeneratorManager instance = new TokenGeneratorManager();
+  public static TokenGeneratorManager getInstance() {
+    return Holder.INSTANCE;
+  }
+
 
   private final Map<String, Service> tokenGeneratorMap;
 

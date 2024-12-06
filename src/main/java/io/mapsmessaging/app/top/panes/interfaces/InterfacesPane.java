@@ -22,7 +22,7 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.interfaces.row.InterfacesStatusRowPanel;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
-import io.mapsmessaging.engine.system.impl.server.InterfaceStatusTopic;
+import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,12 +47,12 @@ public class InterfacesPane extends PaneUpdate {
   @Override
   public void update(Object obj) {
     if (!enabled) return;
-    if (!(obj instanceof InterfaceStatusTopic.InterfaceStatusMessage)) {
+    if (!(obj instanceof InterfaceStatusResponse)) {
       return;
     }
     clear(labelText, startRow - 1, startRow + rowList.size());
-    InterfaceStatusTopic.InterfaceStatusMessage statusMessage = (InterfaceStatusTopic.InterfaceStatusMessage) obj;
-    List<InterfaceStatusDTO> statusList = statusMessage.getInterfaceStatusList();
+    InterfaceStatusResponse statusMessage = (InterfaceStatusResponse) obj;
+    List<InterfaceStatusDTO> statusList = statusMessage.getData();
     sort(statusList);                         //  "12345678901234567890123456789012345"
     headerText.putString(0, startRow - 1, "        NAME                   |CONN|ERRS|PKTS IN |PKTS OUT|BYTES IN|BYTES OUT|");
     int len = Math.min(rowList.size(), statusList.size());

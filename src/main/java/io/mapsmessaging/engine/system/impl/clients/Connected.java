@@ -35,6 +35,6 @@ public class Connected extends SystemTopicWithAverage {
 
   @Override
   public long getData() {
-    return MessageDaemon.getInstance().getSessionManager().getConnected();
+    return MessageDaemon.getInstance().getSubSystemManager().getSessionManager().getConnected();
   }
 }

@@ -688,6 +688,21 @@ public enum ServerLogMessages implements LogMessage {
   //</editor-fold>
 
   SYSTEM_TOPIC_MESSAGE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to send update to {}, exception raised"),
+
+  AUTH_STARTUP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to start up"),
+  AUTH_SAVE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to save initial user configuration"),
+  AUTH_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager raised exception during stop"),
+  AUTH_ADDED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} added"),
+  AUTH_DELETED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} deleted"),
+  AUTH_MODIFIED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} modified"),
+
+  AUTH_ADDED_GROUP(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "Group: {} added"),
+  AUTH_DELETED_GROUP(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "Group: {} deleted"),
+  AUTH_MODIFIED_GROUP(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User:{} {} Group: {}"),
+
+  AUTH_STORAGE_FAILED_TO_LOAD(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage level failed to load"),
+  AUTH_STORAGE_FAILED_ON_UPDATE(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage unable to update state"),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

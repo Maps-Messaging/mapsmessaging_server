@@ -44,13 +44,13 @@ class SimpleStatsTest {
       stats.update();
       count++;
       if(count > 9){
-        Assertions.assertEquals(1, stats.getPerSecond());
+        Assertions.assertEquals(1, Math.round(stats.getPerSecond()));
       }
       else{
-        Assertions.assertEquals(0, stats.getPerSecond());
+        Assertions.assertEquals(0, (int)stats.getPerSecond());
       }
       Assertions.assertEquals(count, stats.getTotal());
-      Assertions.assertEquals(1, stats.getCurrent());
+      Assertions.assertEquals(1, (int)stats.getCurrent());
     }
     stats.reset();
     count =0;
@@ -60,10 +60,10 @@ class SimpleStatsTest {
       stats.update();
       count++;
       if(count > 9){
-        Assertions.assertEquals(2, stats.getPerSecond());
+        Assertions.assertEquals(2.0f, Math.round(stats.getPerSecond()));
       }
       else{
-        Assertions.assertEquals(0, stats.getPerSecond());
+        Assertions.assertEquals(0, (int)stats.getPerSecond());
       }
       Assertions.assertEquals(count*2, stats.getTotal());
       Assertions.assertEquals(2, stats.getCurrent());

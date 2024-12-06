@@ -42,19 +42,25 @@ import org.jetbrains.annotations.NotNull;
  * This class manages the timeouts of transactions, if we do not have timeouts it is a simple DOS attack to simply start transactions and publish messages with no commit or abort,
  * resulting in a build up of messages that can never be delivered.
  */
+
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransactionManager implements Runnable, Agent {
 
+  private static class Holder {
+    static final TransactionManager INSTANCE = new TransactionManager();
+  }
+
+  public static TransactionManager getInstance() {
+    return Holder.INSTANCE;
+  }
+
   @Setter
+  @Getter
   private static long timeOutInterval = 100;
+
   @Setter
   @Getter
   private static long expiryTime = 3600000;
-
-  private static final TransactionManager instance = new TransactionManager();
-
-  public static TransactionManager getInstance() {
-    return instance;
-  }
 
   private final Logger logger = LoggerFactory.getLogger(TransactionManager.class);
   /**

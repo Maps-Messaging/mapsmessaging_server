@@ -47,7 +47,7 @@ public class HardwareManagementApi extends BaseRestApi {
       response.setStatus(403);
       return new ArrayList<>();
     }
-    return MessageDaemon.getInstance().getDeviceManager().scan();
+    return MessageDaemon.getInstance().getSubSystemManager().getDeviceManager().scan();
   }
 
   @GET
@@ -60,7 +60,7 @@ public class HardwareManagementApi extends BaseRestApi {
       return new ArrayList<>();
     }
     List<DeviceInfoDTO> devices = new ArrayList<>();
-    DeviceManager deviceManager = MessageDaemon.getInstance().getDeviceManager();
+    DeviceManager deviceManager = MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
     List<DeviceController> activeDevices = deviceManager.getActiveDevices();
     for(DeviceController device : activeDevices) {
       DeviceInfoDTO deviceInfo = new DeviceInfoDTO();

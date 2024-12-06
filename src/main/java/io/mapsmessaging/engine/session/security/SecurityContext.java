@@ -44,7 +44,7 @@ public abstract class SecurityContext {
 
   public abstract void logout();
 
-  static protected Subject buildSubject(String user, Principal endPointPrincipal) {
+  protected static Subject buildSubject(String user, Principal endPointPrincipal) {
     Set<Principal> principalSet = new HashSet<>();
     Set<String> credentials = new HashSet<>();
     Set<String> privileges = new HashSet<>();

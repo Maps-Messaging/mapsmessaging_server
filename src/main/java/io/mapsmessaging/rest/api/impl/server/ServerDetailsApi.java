@@ -84,7 +84,7 @@ public class ServerDetailsApi extends BaseInterfaceApi {
     }
 
     // Fetch and cache response
-    ServerStatisticsResponse response = new ServerStatisticsResponse(request, ServerStatisticsHelper.create());
+    ServerStatisticsResponse response = new ServerStatisticsResponse(ServerStatisticsHelper.create());
     putToCache(key, response);
     return response;
   }

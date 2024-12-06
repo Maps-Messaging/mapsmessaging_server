@@ -59,9 +59,9 @@ public class SchemaQueryApi extends BaseRestApi {
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
       SchemaManager.getInstance().removeSchema(schemaId);
-      return new BaseResponse(request);
+      return new BaseResponse();
     }
-    return new BaseResponse(request);
+    return new BaseResponse();
   }
 
   @DELETE
@@ -83,7 +83,7 @@ public class SchemaQueryApi extends BaseRestApi {
     for(SchemaConfig schema : result) {
       SchemaManager.getInstance().removeSchema(schema.getUniqueId());
     }
-    return new BaseResponse(request);
+    return new BaseResponse();
   }
 
   //@ApiOperation(value = "Add a new schema configuration to the repository")
@@ -99,7 +99,7 @@ public class SchemaQueryApi extends BaseRestApi {
     }
     SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.getSchema());
     SchemaManager.getInstance().addSchema(jsonString.getContext(), config);
-    return new BaseResponse(request);
+    return new BaseResponse();
   }
 
   @GET
@@ -114,9 +114,9 @@ public class SchemaQueryApi extends BaseRestApi {
     }
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
-      return new SchemaResponse(request, config.pack());
+      return new SchemaResponse(config.pack());
     }
-    return new SchemaResponse(request, new ArrayList<>());
+    return new SchemaResponse(new ArrayList<>());
   }
 
   @GET
@@ -131,9 +131,9 @@ public class SchemaQueryApi extends BaseRestApi {
     }
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
     if (config != null) {
-      return new SchemaResponse(request, convert(config));
+      return new SchemaResponse(convert(config));
     }
-    return new SchemaResponse(request, new ArrayList<>());
+    return new SchemaResponse(new ArrayList<>());
   }
 
   @GET
@@ -148,9 +148,9 @@ public class SchemaQueryApi extends BaseRestApi {
     }
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
     if (config != null) {
-      return new SchemaResponse(request, convert(config));
+      return new SchemaResponse(convert(config));
     }
-    return new SchemaResponse(request, new ArrayList<>());
+    return new SchemaResponse(new ArrayList<>());
   }
 
   @GET
@@ -169,7 +169,7 @@ public class SchemaQueryApi extends BaseRestApi {
         .stream()
         .filter(protocol -> parser == null || parser.evaluate(protocol))
         .collect(Collectors.toList());
-    return new SchemaConfigResponse(request, result);
+    return new SchemaConfigResponse(result);
   }
 
   @GET
@@ -187,7 +187,7 @@ public class SchemaQueryApi extends BaseRestApi {
     for (Entry<String, List<SchemaConfig>> entry : map.entrySet()) {
       responseMap.put(entry.getKey(), (convertToId(entry.getValue())));
     }
-    return new SchemaMapResponse(request, responseMap);
+    return new SchemaMapResponse(responseMap);
   }
 
   @GET
@@ -200,7 +200,7 @@ public class SchemaQueryApi extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    return new StringListResponse(request, SchemaManager.getInstance().getMessageFormats());
+    return new StringListResponse(SchemaManager.getInstance().getMessageFormats());
   }
 
   @GET

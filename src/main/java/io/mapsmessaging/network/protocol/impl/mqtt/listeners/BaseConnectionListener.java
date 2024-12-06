@@ -69,7 +69,7 @@ public abstract class BaseConnectionListener extends PacketListener {
     return future;
   }
 
-  protected SessionContextBuilder getBuilder(EndPoint endPoint, Protocol protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
+  protected SessionContextBuilder getBuilder(Protocol protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
     scb.setPersistentSession(true)
         .setResetState(isClean)

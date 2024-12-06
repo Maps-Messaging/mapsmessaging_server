@@ -35,6 +35,6 @@ public class Disconnected extends SystemTopicWithAverage {
 
   @Override
   public long getData() {
-    return MessageDaemon.getInstance().getSessionManager().getDisconnected();
+    return MessageDaemon.getInstance().getSubSystemManager().getSessionManager().getDisconnected();
   }
 }

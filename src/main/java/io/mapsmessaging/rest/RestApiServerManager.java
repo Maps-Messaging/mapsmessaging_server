@@ -87,7 +87,7 @@ public class RestApiServerManager implements Agent {
       Thread t= new Thread(() -> {
         setupSSL();
         startServer();
-        serviceInfos = MessageDaemon.getInstance().getDiscoveryManager().register(this);
+        serviceInfos = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().register(this);
       });
       t.setDaemon(true);
       t.start();
@@ -125,7 +125,7 @@ public class RestApiServerManager implements Agent {
     if(serviceInfos != null) {
       for (ServiceInfo serviceInfo : serviceInfos) {
         httpServer.shutdown();
-        MessageDaemon.getInstance().getDiscoveryManager().deregister(serviceInfo);
+        MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().deregister(serviceInfo);
       }
     }
   }

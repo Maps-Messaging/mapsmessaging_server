@@ -31,7 +31,8 @@ public class SubSystemStatusDTO {
       title = "Name",
       description = "The name of the subsystem.",
       example = "Messaging Service",
-      required = true)
+      requiredMode = Schema.RequiredMode.REQUIRED
+  )
   private String name;
 
   @Schema(
@@ -43,7 +44,7 @@ public class SubSystemStatusDTO {
   @Schema(
       title = "Status",
       description = "The current status of the subsystem.",
-      required = true,
+      requiredMode = Schema.RequiredMode.REQUIRED,
       example = "OK")
   private Status status;
 }

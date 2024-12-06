@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -59,7 +60,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
     }
 
     // Fetch and cache response
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
         InterfaceStatusDTO response = InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer());
@@ -74,7 +75,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @GET
   @Path("/server/interface/status")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<InterfaceStatusDTO> getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
+  public InterfaceStatusResponse getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
     checkAuthentication();
 
     if (!hasAccess("interfaces")) {
@@ -85,20 +86,21 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
 
     // Try to retrieve from cache
-    List<InterfaceStatusDTO> cachedResponse = getFromCache(key, List.class);
+    InterfaceStatusResponse cachedResponse = getFromCache(key, InterfaceStatusResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
     // Fetch and cache response
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
-    List<InterfaceStatusDTO> response = endPointManagers.stream()
+    List<InterfaceStatusDTO> list = endPointManagers.stream()
         .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
         .filter(status -> parser == null || parser.evaluate(status))
         .collect(Collectors.toList());
 
+    InterfaceStatusResponse response = new InterfaceStatusResponse(list);
     putToCache(key, response);
     return response;
   }

@@ -23,7 +23,7 @@ public class DoubleType implements Type {
   private final double value;
 
   public DoubleType(String value) {
-    if (value.length() > 0) {
+    if (!value.isEmpty()) {
       this.value = Double.parseDouble(value);
     } else {
       this.value = 0.0;

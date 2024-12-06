@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.rest.responses;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.Getter;
 
@@ -27,8 +26,7 @@ public class StringListResponse extends BaseResponse {
   @Getter
   private final List<String> data;
 
-  public StringListResponse(HttpServletRequest request, List<String> data) {
-    super(request);
+  public StringListResponse(List<String> data) {
     this.data = data;
   }
 }

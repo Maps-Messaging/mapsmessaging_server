@@ -19,25 +19,26 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
+import lombok.Data;
 
+@Data
 public class DestinationResponse extends BaseResponse {
 
-  @Getter
-  private final List<DestinationDTO> data;
+  private List<DestinationDTO> data;
 
-  public DestinationResponse(HttpServletRequest request, DestinationDTO data) {
-    super(request);
+  public DestinationResponse() {}
+
+  public DestinationResponse(DestinationDTO data) {
+
     this.data = new ArrayList<>();
     this.data.add(data);
   }
 
 
-  public DestinationResponse(HttpServletRequest request, List<DestinationDTO> data) {
-    super(request);
+  public DestinationResponse(List<DestinationDTO> data) {
+
     this.data = data;
   }
 }

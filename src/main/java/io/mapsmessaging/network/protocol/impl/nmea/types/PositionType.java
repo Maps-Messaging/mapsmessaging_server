@@ -30,12 +30,12 @@ public class PositionType implements Type {
     double min = 0;
     int deg = 0;
     char dire = ' ';
-    if (value.length() > 0) {
+    if (!value.isEmpty()) {
       double numeric = Double.parseDouble(value);
       deg = (int) (numeric / 100);
       min = (numeric % 100.0f) / 60.0f;
     }
-    if (dir.length() > 0) {
+    if (!dir.isEmpty()) {
       dire = dir.toUpperCase(Locale.ROOT).charAt(0);
     }
     minutes = min;

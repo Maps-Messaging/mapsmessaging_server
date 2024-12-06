@@ -29,10 +29,6 @@ public class BlockReceiveMonitor {
 
   private final Map<String, BlockReceiveState> blockBasedPackets = new LinkedHashMap<>();
 
-  public BlockReceiveMonitor() {
-
-  }
-
   public synchronized BlockReceiveState registerOrGet(Block block, String path) {
     BlockReceiveState state = blockBasedPackets.computeIfAbsent(path, k -> new BlockReceiveState(new ReceivePacket(block.getSizeEx())));
     state.setLastAccess(System.currentTimeMillis());

@@ -30,7 +30,7 @@ public class GroupListResponse extends BaseResponse {
 
 
   public GroupListResponse(HttpServletRequest request, List<GroupDTO> data) {
-    super(request);
+    super();
     this.data = data;
   }
 }

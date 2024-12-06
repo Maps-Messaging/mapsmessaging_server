@@ -39,8 +39,20 @@ public class Connected extends State {
 
   @Override
   public void execute() {
-    boolean failed = false;
-    List<LinkConfigDTO> linkConfigs = endPointConnection.getProperties().getLinkConfigs();
+    if (processLinkRequests(endPointConnection.getProperties().getLinkConfigs())) {
+      endPointConnection.scheduleState(new Established(endPointConnection));
+    } else {
+      try {
+        endPointConnection.getConnection().close();
+      } catch (IOException ioException) {
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
+      }
+      endPointConnection.scheduleState(new Disconnected(endPointConnection));
+    }
+  }
+
+  private boolean processLinkRequests(List<LinkConfigDTO> linkConfigs){
+    boolean success = true;
     for (LinkConfigDTO property : linkConfigs) {
       String direction = property.getDirection();
       String local = property.getLocalNamespace();
@@ -65,20 +77,11 @@ public class Connected extends State {
         }
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, local, remote);
       } catch (IOException ioException) {
-        failed = true;
+        success = false;
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, local, remote, ioException);
       }
     }
-    if (!failed) {
-      endPointConnection.scheduleState(new Established(endPointConnection));
-    } else {
-      try {
-        endPointConnection.getConnection().close();
-      } catch (IOException ioException) {
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
-      }
-      endPointConnection.scheduleState(new Disconnected(endPointConnection));
-    }
+    return success;
   }
 
   private void subscribeLocal(String local, String remote, String selector, Transformer transformer, boolean includeSchema) throws IOException {

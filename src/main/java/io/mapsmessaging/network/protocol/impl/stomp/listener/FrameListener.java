@@ -45,7 +45,7 @@ public interface FrameListener {
 
   default Transaction find(ClientTransaction transactionFrame, SessionState engine) throws StompProtocolException {
     String transaction = transactionFrame.getTransaction();
-    if (transaction == null || transaction.length() == 0) {
+    if (transaction == null || transaction.isEmpty()) {
       throw new StompProtocolException("Illegal transaction ID received");
     }
     Transaction clientTransaction = engine.getSession().getTransaction(transaction);

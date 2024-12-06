@@ -30,4 +30,6 @@ public class Constants {
   @Getter
   @Setter
   private static Cache<CacheKey, Object> centralCache;
+
+  private Constants() {}
 }

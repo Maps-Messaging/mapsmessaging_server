@@ -19,12 +19,11 @@
 package io.mapsmessaging.app.top;
 
 import java.io.IOException;
-import org.eclipse.paho.client.mqttv3.MqttException;
 
 public class ServerTop {
 
-  public static void main(String[] args) throws IOException, MqttException, InterruptedException {
-    String url = "tcp://localhost:1883";
+  public static void main(String[] args) throws IOException, InterruptedException {
+    String url = "http://localhost:8080";
     String username = null;
     String password = null;
     if(args.length > 0){

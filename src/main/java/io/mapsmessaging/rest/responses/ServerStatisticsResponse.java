@@ -19,18 +19,18 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.ServerStatisticsDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 public class ServerStatisticsResponse extends BaseResponse {
 
-  private final ServerStatisticsDTO data;
+  private ServerStatisticsDTO data;
 
-  public ServerStatisticsResponse(HttpServletRequest request, ServerStatisticsDTO data) {
-    super(request);
+  public ServerStatisticsResponse( ServerStatisticsDTO data) {
     this.data = data;
   }
 }

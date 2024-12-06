@@ -63,7 +63,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
 
     // Fetch and cache response
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
     List<EndPointSummaryDTO> endPointDetails =
         endPointManagers.stream()
@@ -72,7 +72,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
             .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
             .collect(Collectors.toList());
 
-    EndPointDetailResponse response = new EndPointDetailResponse(request, endPointDetails);
+    EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
     putToCache(key, response);
     return response;
   }
@@ -93,7 +93,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
       return cachedResponse;
     }
 
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for(EndPointManager endPointManager : endPointManagers) {
       for(EndPoint endPoint: endPointManager.getEndPointServer().getActiveEndPoints()){
         if(endPoint.getName().equals(connectionId)) {
@@ -115,7 +115,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
     // Fetch and cache response
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for(EndPointManager endPointManager : endPointManagers) {
       for(EndPoint endPoint: endPointManager.getEndPointServer().getActiveEndPoints()){
         if(endPoint.getName().equals(connectionId)) {

@@ -127,6 +127,7 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeo
     }
   }
 
+  @Override
   public boolean isUDP() {
     return true;
   }

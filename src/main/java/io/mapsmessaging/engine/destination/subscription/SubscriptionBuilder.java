@@ -55,12 +55,12 @@ public abstract class SubscriptionBuilder {
   private String combineSelectors(String lhs, String rhs) {
     StringBuilder sb = new StringBuilder();
     boolean hasLhs = false;
-    if (lhs != null && lhs.length() > 0) {
+    if (lhs != null && !lhs.isEmpty()) {
       sb.append(lhs).append(" ");
       hasLhs = true;
     }
 
-    if (rhs != null && rhs.length() > 0) {
+    if (rhs != null && !rhs.isEmpty()) {
       if (hasLhs) {
         sb.append(" and ");
       }
@@ -99,7 +99,7 @@ public abstract class SubscriptionBuilder {
 
   protected ParserExecutor compileParser(String selector) throws IOException {
     ParserExecutor parser;
-    if (selector != null && selector.length() > 0) {
+    if (selector != null && !selector.isEmpty()) {
       try {
         parser = SelectorParser.compile(selector);
       } catch (ParseException e) {

@@ -126,7 +126,7 @@ public class GroupManagementApi extends BaseRestApi {
     if (groupDetails != null && userDetails != null) {
       authManager.addUserToGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
     }
-    return new BaseResponse(request);
+    return new BaseResponse();
   }
 
   @DELETE
@@ -140,7 +140,7 @@ public class GroupManagementApi extends BaseRestApi {
     if (groupDetails != null && userDetails != null) {
       authManager.removeUserFromGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
     }
-    return new BaseResponse(request);
+    return new BaseResponse();
   }
 
   @DELETE
@@ -152,10 +152,10 @@ public class GroupManagementApi extends BaseRestApi {
     GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
     if (groupDetails != null) {
       authManager.delGroup(groupDetails.getName());
-      return new BaseResponse(request);
+      return new BaseResponse();
     }
     response.setStatus(500);
-    return new BaseResponse(request);
+    return new BaseResponse();
   }
 
 

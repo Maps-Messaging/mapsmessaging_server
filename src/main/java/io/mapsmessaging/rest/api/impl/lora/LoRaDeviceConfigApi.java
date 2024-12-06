@@ -49,7 +49,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
     for (LoRaDevice device : deviceManager.getDevices()) {
       deviceInfos.add(createInfo(device));
     }
-    return new LoRaConfigListResponse(request, deviceInfos);
+    return new LoRaConfigListResponse(deviceInfos);
   }
 
   @GET
@@ -81,7 +81,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
   public BaseResponse addLoRaDeviceConfig(LoRaDeviceConfigInfoDTO newDevice) {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    return new BaseResponse(request);
+    return new BaseResponse();
 //    response.setStatus(500);
     //  return new BaseResponse(request);
   }
@@ -93,7 +93,7 @@ public class LoRaDeviceConfigApi extends BaseRestApi {
     checkAuthentication();
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
 //    if (deviceManager.deleteDevice(UUID.fromString(deviceId)))
-    return new BaseResponse(request);
+    return new BaseResponse();
 //    }
 //    response.setStatus(500);
 //    return new BaseResponse(request);

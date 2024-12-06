@@ -23,7 +23,7 @@ public class LongType implements Type {
   private final long value;
 
   public LongType(String value) {
-    if (value.length() == 0) {
+    if (value.isEmpty()) {
       this.value = 0;
     } else {
       this.value = Long.parseLong(value);

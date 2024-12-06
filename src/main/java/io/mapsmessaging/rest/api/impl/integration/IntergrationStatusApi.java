@@ -62,7 +62,7 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
     }
 
     // Fetch and cache response
-    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
+    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
     for (EndPointConnection endPointConnection : endPointManagers) {
       if (endpointName.equals(endPointConnection.getConfigName())) {
         IntegrationStatusDTO response = fromConnection(endPointConnection);
@@ -95,7 +95,7 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
 
     // Fetch and cache response
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
+    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
 
     List<IntegrationStatusDTO> response = endPointManagers.stream()
         .map(IntergrationStatusApi::fromConnection)

@@ -20,15 +20,12 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.lora.LoRaDeviceInfoDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @Schema(
     title = "LoRa List Response",
     description = "A response wrapper containing a list of LoRa device information details."
@@ -42,8 +39,7 @@ public class LoRaListResponse extends BaseResponse {
   )
   private final List<LoRaDeviceInfoDTO> data;
 
-  public LoRaListResponse(HttpServletRequest request, List<LoRaDeviceInfoDTO> data) {
-    super(request);
+  public LoRaListResponse(List<LoRaDeviceInfoDTO> data) {
     this.data = data;
   }
 }

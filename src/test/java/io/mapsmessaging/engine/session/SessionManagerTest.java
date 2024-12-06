@@ -33,7 +33,7 @@ public class SessionManagerTest {
   private final SessionManager manager;
 
   SessionManagerTest(){
-    manager = MessageDaemon.getInstance().getSessionManager();
+    manager = MessageDaemon.getInstance().getSubSystemManager().getSessionManager();
   }
 
 

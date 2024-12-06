@@ -20,7 +20,6 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
@@ -36,8 +35,7 @@ public class IntegrationDetailResponse extends BaseResponse {
   private final Map<String, Object> globalConfig;
 
 
-  public IntegrationDetailResponse(HttpServletRequest request, List<IntegrationInfoDTO> list, ConfigurationProperties map) {
-    super(request);
+  public IntegrationDetailResponse( List<IntegrationInfoDTO> list, ConfigurationProperties map) {
     data = list;
     if(map != null) {
       globalConfig = map.getMap();

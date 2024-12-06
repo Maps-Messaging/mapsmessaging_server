@@ -37,7 +37,6 @@ import java.util.concurrent.*;
 import lombok.SneakyThrows;
 
 public abstract class BusHandler implements Runnable {
- // private final Map<String, DeviceSessionManagement> activeSessions;
   private final Map<String, DeviceHandler> foundDevices;
   protected final DeviceBusConfigDTO properties;
   private final int scanPeriod;
@@ -48,7 +47,6 @@ public abstract class BusHandler implements Runnable {
 
   protected BusHandler(DeviceBusConfigDTO properties, Trigger trigger){
     foundDevices = new ConcurrentHashMap<>();
-   // activeSessions = new ConcurrentHashMap<>();
     this.properties = properties;
     this.trigger = trigger;
     scanPeriod = properties.getScanTime();
@@ -83,7 +81,6 @@ public abstract class BusHandler implements Runnable {
   }
 
   public void closedSession(DeviceSessionManagement deviceSessionManagement){
-   // activeSessions.remove(deviceSessionManagement.getName());
     foundDevices.remove(deviceSessionManagement.getDevice().getKey());
   }
 
@@ -97,7 +94,7 @@ public abstract class BusHandler implements Runnable {
     if(filterName != null){
       filter = DataFilter.valueOf(filterName);
     }
-    String selector = getSelector(deviceHandler.getDeviceAddress());
+    String selector = getSelector(0);
     DeviceSessionManagement deviceSessionManagement = new DeviceSessionManagement(deviceHandler, topicNameTemplate, filter, this, selector);
     SessionContext context = createContext(deviceHandler);
     CompletableFuture<Session> future = SessionManager.getInstance().createAsync(context, deviceSessionManagement);
@@ -124,7 +121,6 @@ public abstract class BusHandler implements Runnable {
 
   public void deviceDetected(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
     DeviceSessionManagement deviceSessionManagement = createSession(deviceHandler);
-   // activeSessions.put(deviceSessionManagement.getName(), deviceSessionManagement);
     deviceSessionManagement.start();
   }
 

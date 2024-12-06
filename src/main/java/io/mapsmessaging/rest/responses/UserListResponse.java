@@ -19,18 +19,15 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.auth.UserDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import lombok.Getter;
+import lombok.Data;
 
+@Data
 public class UserListResponse extends BaseResponse {
 
-  @Getter
-  private final List<UserDTO> data;
+  private List<UserDTO> data;
 
-
-  public UserListResponse(HttpServletRequest request, List<UserDTO> data) {
-    super(request);
+  public UserListResponse(List<UserDTO> data) {
     this.data = data;
   }
 }

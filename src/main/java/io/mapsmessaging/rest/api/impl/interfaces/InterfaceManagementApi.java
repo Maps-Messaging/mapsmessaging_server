@@ -63,14 +63,14 @@ public class InterfaceManagementApi extends BaseRestApi {
 
     // Fetch and filter response
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
     List<InterfaceInfoDTO> protocols = endPointManagers.stream()
         .map(InterfaceInfoHelper::fromEndPointManager)
         .filter(protocol -> parser == null || parser.evaluate(protocol))
         .collect(Collectors.toList());
 
-    InterfaceDetailResponse response = new InterfaceDetailResponse(request, protocols);
+    InterfaceDetailResponse response = new InterfaceDetailResponse(protocols);
 
     // Cache the response
     putToCache(key, response);
@@ -88,7 +88,7 @@ public class InterfaceManagementApi extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkManager().stopAll();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().stopAll();
     return Response.ok().build();
   }
 
@@ -101,7 +101,7 @@ public class InterfaceManagementApi extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkManager().startAll();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().startAll();
     return Response.ok().build();
   }
 
@@ -114,7 +114,7 @@ public class InterfaceManagementApi extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkManager().pauseAll();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().pauseAll();
     return Response.ok().build();
   }
 
@@ -128,7 +128,7 @@ public class InterfaceManagementApi extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkManager().resumeAll();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().resumeAll();
     return Response.ok().build();
   }
 }

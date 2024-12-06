@@ -22,7 +22,6 @@ import static io.mapsmessaging.logging.ServerLogMessages.CONFIG_PROPERTY_ACCESS;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import lombok.Getter;
 
 /**
  * This class represents a utility class for accessing system properties.
@@ -30,17 +29,18 @@ import lombok.Getter;
  * from the system properties or environment variables.
  * The class also logs the access to the properties using a logger.
  */
+
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class SystemProperties {
 
-  /**
-   * Initializes the 'instance' variable with a new instance of the 'SystemProperties' class.
-   */
-  static {
-    instance = new SystemProperties();
+  private static class Holder {
+    static final SystemProperties INSTANCE = new SystemProperties();
   }
 
-  @Getter
-  private static final SystemProperties instance;
+  public static SystemProperties getInstance() {
+    return Holder.INSTANCE;
+  }
+
 
   private final Logger logger = LoggerFactory.getLogger(SystemProperties.class);
 

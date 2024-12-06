@@ -59,7 +59,7 @@ public class Frame implements ServerPacket {
       String header = getHeaderLine(packet);
       if (header != null) {
         header = header.trim();
-        if (header.length() > 0) {
+        if (!header.isEmpty()) {
           int keyLocale = header.indexOf(':');
           if (keyLocale > 0) {
 

@@ -35,6 +35,6 @@ public class Expired extends SystemTopicWithAverage {
 
   @Override
   public long getData() {
-    return MessageDaemon.getInstance().getSessionManager().getTotalExpired();
+    return MessageDaemon.getInstance().getSubSystemManager().getSessionManager().getTotalExpired();
   }
 }

@@ -52,14 +52,14 @@ public class IntegrationManagementApi  extends BaseRestApi {
       return null;
     }
     ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
-    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getNetworkConnectionManager().getEndPointConnectionList();
+    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
     ConfigurationProperties global = null;
     List<IntegrationInfoDTO> protocols =
         endPointManagers.stream()
             .map(IntegrationInfoHelper::fromEndPointConnection)
             .filter(info -> parser == null || parser.evaluate(info))
             .collect(Collectors.toList());
-    return new IntegrationDetailResponse(request, protocols, global);
+    return new IntegrationDetailResponse(protocols, global);
   }
 
   @PUT
@@ -71,7 +71,7 @@ public class IntegrationManagementApi  extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkConnectionManager().stop();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().stop();
     return Response.ok().build();
   }
 
@@ -84,7 +84,7 @@ public class IntegrationManagementApi  extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkConnectionManager().start();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().start();
     return Response.ok().build();
   }
 
@@ -97,7 +97,7 @@ public class IntegrationManagementApi  extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkConnectionManager().pause();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().pause();
     return Response.ok().build();
   }
 
@@ -111,7 +111,7 @@ public class IntegrationManagementApi  extends BaseRestApi {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getNetworkConnectionManager().resume();
+    MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().resume();
     return Response.ok().build();
   }
 }

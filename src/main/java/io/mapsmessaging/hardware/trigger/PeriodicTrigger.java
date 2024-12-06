@@ -48,9 +48,7 @@ public class PeriodicTrigger extends Trigger {
 
 
   public void start() {
-    executorService.scheduleAtFixedRate(() -> {
-      runActions();
-    }, 0, periodInMilliseconds, TimeUnit.MILLISECONDS);
+    executorService.scheduleAtFixedRate(this::runActions, 0, periodInMilliseconds, TimeUnit.MILLISECONDS);
   }
 
   public void stop() {

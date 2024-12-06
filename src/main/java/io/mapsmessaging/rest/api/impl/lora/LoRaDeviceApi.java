@@ -52,7 +52,7 @@ public class LoRaDeviceApi extends BaseRestApi {
     for(LoRaDevice device : deviceManager.getDevices()) {
       deviceInfos.add(createInfo(device));
     }
-    return new LoRaListResponse(request, deviceInfos);
+    return new LoRaListResponse( deviceInfos);
   }
 
   @GET

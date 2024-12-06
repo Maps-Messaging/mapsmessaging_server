@@ -59,7 +59,6 @@ public class WriteTask implements Selectable {
     try {
       handleWrite();
     } catch (Exception e) {
-      e.printStackTrace();
       logger.log(WRITE_TASK_SEND_FAILED, e);
     }
     ThreadContext.clearMap();

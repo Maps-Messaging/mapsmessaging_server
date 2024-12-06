@@ -30,7 +30,7 @@ public abstract class BaseConnectListener implements FrameListener {
   protected static final String CONTENT_TYPE_TEXT = "text/plain";
 
   protected float processVersion(SessionState engine, String versionHeader) {
-    if (versionHeader == null || versionHeader.length() == 0) {
+    if (versionHeader == null || versionHeader.isEmpty()) {
       io.mapsmessaging.network.protocol.impl.stomp.frames.Error error = new io.mapsmessaging.network.protocol.impl.stomp.frames.Error();
       error.setContentType(CONTENT_TYPE_TEXT);
       error.setContent("No version header supplied".getBytes());

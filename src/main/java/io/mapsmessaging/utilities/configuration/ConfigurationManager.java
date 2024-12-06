@@ -57,7 +57,7 @@ public class ConfigurationManager {
   }
 
   public void register(){
-
+    // nothing to do here
   }
 
   public void initialise(@NonNull @NotNull String serverId) {

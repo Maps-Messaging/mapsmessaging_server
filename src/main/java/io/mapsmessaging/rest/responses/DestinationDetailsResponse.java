@@ -20,7 +20,6 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,7 +31,4 @@ public class DestinationDetailsResponse  extends BaseResponse {
   private DestinationDTO destination;
   private List<SubscriptionStateDTO> subscriptionList;
 
-  public DestinationDetailsResponse(HttpServletRequest response){
-    super(response);
-  }
 }

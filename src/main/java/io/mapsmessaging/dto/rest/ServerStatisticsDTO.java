@@ -20,7 +20,6 @@ package io.mapsmessaging.dto.rest;
 
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,7 +32,7 @@ import lombok.NoArgsConstructor;
     title = "Server Statistics",
     description =
         "Contains various metrics and statistics for server performance, including message rates, connection counts, and data throughput.")
-public class ServerStatisticsDTO implements Serializable {
+public class ServerStatisticsDTO {
 
   @Schema(description = "Total packets sent", example = "1024")
   private long packetsSent;

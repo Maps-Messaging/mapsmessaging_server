@@ -19,7 +19,6 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -29,15 +28,15 @@ public class EndPointDetailResponse extends BaseResponse {
   @Getter
   private final List<EndPointSummaryDTO> data;
 
-  public EndPointDetailResponse(HttpServletRequest request, EndPointSummaryDTO endPoints) {
-    super(request);
+  public EndPointDetailResponse( EndPointSummaryDTO endPoints) {
+    super();
     this.data = new ArrayList<>();
     data.add(endPoints);
   }
 
 
-  public EndPointDetailResponse(HttpServletRequest request, List<EndPointSummaryDTO> endPoints) {
-    super(request);
+  public EndPointDetailResponse( List<EndPointSummaryDTO> endPoints) {
+    super();
     this.data = endPoints;
   }
 }

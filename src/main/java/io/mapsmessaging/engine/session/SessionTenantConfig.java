@@ -102,7 +102,7 @@ public class SessionTenantConfig {
     if (destinationName.startsWith("$SYS") || isGlobal(destinationName)) { // This is a global common path used by all users
       return destinationName;
     }
-    if (tenantPath.length() > 0 && destinationName.startsWith("/")) {
+    if (!tenantPath.isEmpty() && destinationName.startsWith("/")) {
       destinationName = "_" + destinationName.substring(1);
     }
     return tenantPath + destinationName;

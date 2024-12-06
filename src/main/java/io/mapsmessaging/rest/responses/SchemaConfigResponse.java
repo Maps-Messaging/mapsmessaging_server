@@ -19,7 +19,6 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -29,15 +28,13 @@ public class SchemaConfigResponse extends BaseResponse {
 
   private final List<SchemaConfig> data;
 
-  public SchemaConfigResponse(HttpServletRequest request, SchemaConfig schema) {
-    super(request);
+  public SchemaConfigResponse(SchemaConfig schema) {
     this.data = new ArrayList<>();
     data.add(schema);
   }
 
 
-  public SchemaConfigResponse(HttpServletRequest request, List<SchemaConfig> data) {
-    super(request);
+  public SchemaConfigResponse(List<SchemaConfig> data) {
     this.data = data;
   }
 }

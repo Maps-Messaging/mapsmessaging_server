@@ -99,12 +99,13 @@ public class ServerConnectionManager implements ServiceListener, Agent {
 
   @Override
   public void start() {
-    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_maps._tcp.local.", this);
-    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_mqtt._tcp.local.", this);
-    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_amqp._tcp.local.", this);
-    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_stomp._tcp.local.", this);
-    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_coap._udp.local.", this);
-    MessageDaemon.getInstance().getDiscoveryManager().registerListener("_mqtt-sn._udp.local.", this);
+    DiscoveryManager discoveryManager = MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager();
+    discoveryManager.registerListener("_maps._tcp.local.", this);
+    discoveryManager.registerListener("_mqtt._tcp.local.", this);
+    discoveryManager.registerListener("_amqp._tcp.local.", this);
+    discoveryManager.registerListener("_stomp._tcp.local.", this);
+    discoveryManager.registerListener("_coap._udp.local.", this);
+    discoveryManager.registerListener("_mqtt-sn._udp.local.", this);
   }
 
   @Override
@@ -116,7 +117,7 @@ public class ServerConnectionManager implements ServiceListener, Agent {
   public SubSystemStatusDTO getStatus() {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
-    if (MessageDaemon.getInstance().getDiscoveryManager().isEnabled()) {
+    if (MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().isEnabled()) {
       status.setComment("Discovered: " + serviceInfoMap.size());
       status.setStatus(Status.OK);
     }

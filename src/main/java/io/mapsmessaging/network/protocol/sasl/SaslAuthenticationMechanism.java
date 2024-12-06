@@ -32,8 +32,6 @@ import lombok.Getter;
 
 public class SaslAuthenticationMechanism implements AuthenticationMechanism {
 
-  private static final String IDENTITY_PROVIDER = "identityProvider";
-
   private final SaslServer saslServer;
 
   @Getter

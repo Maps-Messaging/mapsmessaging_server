@@ -25,7 +25,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.SerialEndPointURL;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
@@ -39,14 +38,12 @@ public class SerialEndPointServer extends EndPointServer {
 
   private final EndPointManagerJMX managerMBean;
   private final ProtocolFactory protocolFactory;
-  private final SerialEndPointURL serialEndPointURL;
   private SerialEndPoint serialEndPoint;
   private final SerialConfigDTO serialConfig;
 
   public SerialEndPointServer(AcceptHandler acceptHandler, EndPointURL url, EndPointServerConfigDTO config, EndPointManagerJMX managerMBean) {
     super(acceptHandler, url, config);
     serialConfig = (SerialConfigDTO)config.getEndPointConfig();
-    serialEndPointURL = (SerialEndPointURL) url;
     protocolFactory = new ProtocolFactory(config.getProtocols());
     this.managerMBean = managerMBean;
     serialEndPoint = null;

@@ -26,17 +26,17 @@ import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class SubscriptionFactory {
 
-  private static final SubscriptionFactory instance;
-
-  static {
-    instance = new SubscriptionFactory();
+  private static class Holder {
+    static final SubscriptionFactory INSTANCE = new SubscriptionFactory();
   }
 
   public static SubscriptionFactory getInstance() {
-    return instance;
+    return Holder.INSTANCE;
   }
+
 
   public SubscriptionBuilder getBuilder(DestinationImpl destination, SubscriptionContext context, boolean isPersist) throws IOException {
     if (context.getDestinationMode().equals(DestinationMode.SCHEMA)) {

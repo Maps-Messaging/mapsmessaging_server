@@ -80,10 +80,10 @@ public class InterfaceStatusTopic extends SystemTopic {
 
     public InterfaceStatusMessage(MessageDaemon messageDaemon) {
       interfaceStatusList = new ArrayList<>();
-      for (EndPointManager endPointManager : messageDaemon.getNetworkManager().getAll()) {
+      for (EndPointManager endPointManager : messageDaemon.getSubSystemManager().getNetworkManager().getAll()) {
         interfaceStatusList.add(InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()));
       }
-      for(EndPointConnection endPointConnection:messageDaemon.getNetworkConnectionManager().getEndPointConnectionList()){
+      for(EndPointConnection endPointConnection:messageDaemon.getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList()){
         interfaceStatusList.add(InterfaceStatusHelper.fromConnection(endPointConnection));
       }
     }

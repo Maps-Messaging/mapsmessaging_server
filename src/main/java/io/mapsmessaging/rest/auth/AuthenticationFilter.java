@@ -23,12 +23,9 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.SubjectHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import javax.security.auth.Subject;
@@ -37,19 +34,6 @@ import javax.security.auth.Subject;
 public class AuthenticationFilter implements ContainerRequestFilter {
 
   private static final String USERNAME = "username";
-
-  private static final Response unauthorizedResponse = Response
-      .status(Response.Status.UNAUTHORIZED)
-      .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"realm\"")
-      .entity("<html><body>Page requires login.</body></html>").build();
-
-
-  // Exception thrown if user is unauthorized.
-  private static final WebApplicationException unauthorized =
-      new WebApplicationException(
-          Response.status(Response.Status.UNAUTHORIZED)
-              .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"realm\"")
-              .entity("<html><body>Page requires login.</body></html>").build());
 
   @Context
   private HttpServletRequest httpRequest;

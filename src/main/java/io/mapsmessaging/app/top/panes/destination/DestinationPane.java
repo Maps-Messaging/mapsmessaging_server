@@ -22,7 +22,7 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.PaneUpdate;
 import io.mapsmessaging.app.top.panes.destination.row.DestinationStatusRowPanel;
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
-import io.mapsmessaging.engine.system.impl.server.DestinationStatusTopic;
+import io.mapsmessaging.rest.responses.DestinationResponse;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,12 +45,12 @@ public class DestinationPane extends PaneUpdate {
 
   public void update(Object obj) {
     if (!enabled) return;
-    if (!(obj instanceof DestinationStatusTopic.DestinationStatusMessage)) {
+    if (!(obj instanceof DestinationResponse)) {
       return;
     }
     clear(labelText, startRow - 1, startRow + rowList.size());
-    DestinationStatusTopic.DestinationStatusMessage statusMessage = (DestinationStatusTopic.DestinationStatusMessage) obj;
-    List<DestinationDTO> destinationStatusList = statusMessage.getDestinationStatusList();
+    DestinationResponse statusMessage = (DestinationResponse) obj;
+    List<DestinationDTO> destinationStatusList = statusMessage.getData();
     sort(destinationStatusList);
     headerText.putString(0, startRow-1, "     NAME      |PUB |SENT|DISK|DROP|PTX |RTV |EXP |DLY | Read | Write |Delete |");
     int len = Math.min(rowList.size(), destinationStatusList.size());
