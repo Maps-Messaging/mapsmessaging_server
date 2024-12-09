@@ -160,7 +160,9 @@ public class MQTT5Protocol extends Protocol {
     if (!closed) {
       closed = true;
       selectorTask.close();
-      SessionManager.getInstance().close(session, false);
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
     }
     super.close();
   }
@@ -234,7 +236,7 @@ public class MQTT5Protocol extends Protocol {
       boolean clientHasAuth = false;
       MessageProperty authMethod = null;
       if (mqtt instanceof Connect5) {
-        // We may have an auth / sasl request so lets check first, if so we need to park the connect until after
+        // We may have an auth / sasl request so lets c heck first, if so we need to park the connect until after
         // we have authenticated
         Connect5 connect5 = (Connect5) mqtt;
         authMethod = connect5.getProperties().get(MessagePropertyFactory.AUTHENTICATION_METHOD);

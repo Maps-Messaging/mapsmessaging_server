@@ -91,8 +91,10 @@ public class MQTTBaseTest extends BaseTestConfig {
     String[] mechanisms = {mechanism};
     ClientCallbackHandler clientHandler = new ClientCallbackHandler(username, password, "servername");
     SaslClient saslClient = Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
-    options.setAuthMethod(mechanism);
-    options.setAuthData(new byte[0]);
+    if (options != null) {
+      options.setAuthMethod(mechanism);
+      options.setAuthData(new byte[0]);
+    }
     return saslClient;
   }
 
@@ -101,6 +103,14 @@ public class MQTTBaseTest extends BaseTestConfig {
     int[] ports = isSsl ? ssl_ports : tcp_ports;
     int portIndex = auth ? 1 : 0;
     return protocol + "://localhost:" + ports[portIndex];
+  }
+
+  public int getPort(String protocol, boolean auth) {
+    boolean isSsl = protocol.equalsIgnoreCase("ssl") || protocol.equalsIgnoreCase("wss");
+    int portIndex = auth ? 1 : 0;
+    int[] ports = isSsl ? ssl_ports : tcp_ports;
+    return  ports[portIndex];
+
   }
 
   public MqttConnectionOptions getOptions(boolean auth) throws IOException {

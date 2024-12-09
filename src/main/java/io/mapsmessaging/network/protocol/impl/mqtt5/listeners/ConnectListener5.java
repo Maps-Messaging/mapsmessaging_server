@@ -143,6 +143,10 @@ public class ConnectListener5 extends PacketListener5 {
         .add(new ServerKeepAlive(((int) protocol.getTimeOut() / 1000)))
         .add(new ReceiveMaximum(protocol.getServerReceiveMaximum()))
         .add(new TopicAliasMaximum(protocol.getClientTopicAliasMapping().getMaximum()));
+    if(protocol.getAuthenticationContext() != null && protocol.getAuthenticationContext().getAuthenticationMethod() != null){
+      String auth = protocol.getAuthenticationContext().getAuthenticationMethod().getAuthenticationMethod();
+      connAck.add(new AuthenticationMethod(auth));
+    }
     connAck.setCallback(session::resumeState);
   }
 
@@ -194,7 +198,13 @@ public class ConnectListener5 extends PacketListener5 {
       logger.log(ServerLogMessages.MQTT5_DUPLICATE_PROPERTIES_DETECTED, duplicateReport);
     }
     AuthenticationContext context = protocol.getAuthenticationContext();
-    scb.isAuthorized(context != null && context.isComplete() && context.getUsername() != null);
+    if(context != null && context.isComplete() && context.getUsername() != null){
+      scb.setUsername(context.getUsername());
+      scb.isAuthorized(true);
+    }
+    else{
+      scb.isAuthorized(false);
+    }
     return SessionManager.getInstance().create(scb.build(), protocol);
   }
 
