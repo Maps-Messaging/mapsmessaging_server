@@ -30,7 +30,7 @@ class EchoConnectionTest  extends BaseTestConfig {
   @DisplayName("Simple connect to the server using the ECHO protocol")
   void connectToServer() {
     try {
-      EchoClient echoClient = new EchoClient("localhost", 2001);
+      EchoClient echoClient = new EchoClient("localhost", 22001);
       echoClient.close();
     } catch (IOException e) {
       Assertions.fail("Test should have connected but failed with ", e);

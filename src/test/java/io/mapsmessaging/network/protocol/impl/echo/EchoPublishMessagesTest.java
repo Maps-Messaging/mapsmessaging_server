@@ -29,7 +29,7 @@ class EchoPublishMessagesTest extends BaseTestConfig {
   @Test
   @DisplayName("Test simple echo messages")
   void testEchoMessages() throws IOException {
-    EchoClient echoClient = new EchoClient("localhost", 2001);
+    EchoClient echoClient = new EchoClient("localhost", 22001);
     for(int x=0;x<100;x++) {
       String sentMsg = "This should be returned to me";
       echoClient.send(sentMsg);
