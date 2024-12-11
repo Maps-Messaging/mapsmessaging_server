@@ -24,7 +24,6 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.session.SessionManagerTest;
@@ -39,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
 
@@ -129,10 +129,7 @@ public class BaseTestConfig extends BaseTest {
       List<String> idleSessions = SessionManagerTest.getInstance().getIdleSessions();
       for (String idleSession : idleSessions) {
         System.err.println("Idle Session still active::" + idleSession);
-        SubscriptionController subCtl = SessionManagerTest.getInstance().getIdleSubscriptions(idleSession);
-        if (subCtl != null) {
-          SessionManagerTest.getInstance().closeSubscriptionController(subCtl);
-        }
+        SessionManagerTest.getInstance().closeIdleSession(idleSession);
       }
 
       Map<String, DestinationImpl> destinationImpls = md.getDestinationManager().get(null);
@@ -141,11 +138,18 @@ public class BaseTestConfig extends BaseTest {
           md.getDestinationManager().delete(destinationImpl);
         }
       }
-//      Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
-//      long timeout = System.currentTimeMillis()+ 2000;
-//      while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
-//        delay(100);
-//      }
+      Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
+      long timeout = System.currentTimeMillis()+ 10_000;
+      while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){
+        delay(100);
+      }
+      if(SessionManagerTest.getInstance().hasIdleSessions()){
+        List<String> listeners = md.getDestinationManager().getAll();
+        for (String listener : listeners) {
+          System.err.println("has listener " + listener);
+        }
+      }
+
 //      Assertions.assertFalse(SessionManagerTest.getInstance().hasIdleSessions());
 
       List<DestinationManagerListener> listeners = md.getDestinationManager().getListeners();

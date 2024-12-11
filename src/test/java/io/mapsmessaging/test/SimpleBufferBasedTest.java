@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
 
 public class SimpleBufferBasedTest extends BaseTestConfig {
@@ -172,6 +173,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
   private class TestClient implements AutoCloseable {
     final Socket connection;
     final Thread readThread;
+    @Getter
     final OutputStream outputStream;
     final InputStream inputStream;
     final int frameCharacter;
@@ -238,11 +240,10 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
         System.err.println(sb.toString());
       }
     }
-    public OutputStream getOutputStream(){
-      return outputStream;
-    }
 
     public void close() throws IOException {
+      outputStream.close();
+      inputStream.close();
       connection.close();
     }
 

@@ -26,7 +26,7 @@ public class SessionManagerTest {
 
   private static final SessionManagerTest instance = new SessionManagerTest();
 
-  public static final SessionManagerTest getInstance(){
+  public static SessionManagerTest getInstance(){
     return instance;
   }
 
@@ -49,12 +49,15 @@ public class SessionManagerTest {
     return manager.hasIdleSessions();
   }
 
-  public void closeSubscriptionController(SubscriptionController subCtl){
-    manager.closeSubscriptionController(subCtl);
-  }
-
   public boolean hasSessions() {
     return manager.hasSessions();
   }
 
+  public void closeIdleSession(String idleSession) {
+    SubscriptionController sub = manager.getIdleSubscriptions(idleSession);
+    if(sub != null){
+      manager.closeSubscriptionController(sub);
+      sub.close();
+    }
+  }
 }
