@@ -18,20 +18,18 @@
 
 package io.mapsmessaging.app.top.network;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.gson.*;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 
-public class ServerDetailsRequest extends RestApiConnection{
+public class ServerDetailsRequest extends RestApiConnection {
 
   public ServerDetailsRequest(String url, String username, String password) {
     super(url, "/api/v1/server/details/stats", username, password);
   }
 
   @Override
-  public Object parse(JSONObject jsonObject) throws JsonProcessingException, JSONException {
-    ServerStatisticsResponse statisticsResponse =  mapper.readValue(jsonObject.toString(), ServerStatisticsResponse.class);
+  public Object parse(JsonElement jsonElement) {
+    ServerStatisticsResponse statisticsResponse = gson.fromJson(jsonElement, ServerStatisticsResponse.class);
     return statisticsResponse.getData();
   }
 }

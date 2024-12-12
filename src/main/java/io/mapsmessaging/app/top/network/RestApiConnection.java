@@ -18,48 +18,46 @@
 
 package io.mapsmessaging.app.top.network;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.*;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 
-public abstract class  RestApiConnection {
-  protected final ObjectMapper mapper;
+public abstract class RestApiConnection {
+  protected final Gson gson;
   protected final String url;
   protected final String endpoint;
 
   protected RestApiConnection(String url, String endpoint, String username, String password) {
     this.url = url;
     this.endpoint = endpoint;
-    mapper = new ObjectMapper();
+    this.gson = new GsonBuilder().create();
   }
 
-  public abstract Object parse(JSONObject jsonObject) throws JsonProcessingException, JSONException;
+  public abstract Object parse(JsonElement jsonElement) throws JsonParseException;
 
-  public Object getData() throws IOException, JSONException {
+  public Object getData() throws IOException {
     Client client = ClientBuilder.newClient();
     try {
       WebTarget target = client.target(url).path(endpoint);
       Response response = target.request(MediaType.APPLICATION_JSON).get();
 
       if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-        String jsonString =  response.readEntity(String.class);
-        JSONObject jsonObject;
-        if(jsonString.startsWith("[")){
-          JSONArray jsonArray = new JSONArray(jsonString);
-          jsonObject = new JSONObject();
-          jsonObject.put("data", jsonArray);
+        String jsonString = response.readEntity(String.class);
+        JsonElement jsonElement;
+
+        if (jsonString.trim().startsWith("[")) {
+          JsonArray jsonArray = JsonParser.parseString(jsonString).getAsJsonArray();
+          JsonObject jsonObject = new JsonObject();
+          jsonObject.add("data", jsonArray);
+          jsonElement = jsonObject;
         } else {
-          jsonObject = new JSONObject(jsonString);
+          jsonElement = JsonParser.parseString(jsonString);
         }
-        return parse(jsonObject);
+        return parse(jsonElement);
       } else if (response.getStatus() == Response.Status.FORBIDDEN.getStatusCode()) {
         throw new IOException("Access denied");
       } else {
@@ -69,6 +67,4 @@ public abstract class  RestApiConnection {
       client.close();
     }
   }
-
-
 }

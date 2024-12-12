@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.codehaus.jettison.json.JSONException;
 
 public class RestRequestManager implements Runnable {
   private final List<Object> queue;
@@ -55,7 +54,7 @@ public class RestRequestManager implements Runnable {
           if(result != null){
             queue.add(result);
           }
-        } catch (IOException | JSONException e) {
+        } catch (IOException e) {
           connected.set(false);
           test = false;
           // Ignore

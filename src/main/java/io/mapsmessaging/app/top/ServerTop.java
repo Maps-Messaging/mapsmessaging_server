@@ -22,7 +22,7 @@ import java.io.IOException;
 
 public class ServerTop {
 
-  public static void main(String[] args) throws IOException, InterruptedException {
+  public static void main(String[] args) throws IOException {
     String url = "http://localhost:8080";
     String username = null;
     String password = null;

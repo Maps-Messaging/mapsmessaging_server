@@ -18,19 +18,17 @@
 
 package io.mapsmessaging.app.top.network;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.gson.*;
 import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
-import org.codehaus.jettison.json.JSONObject;
 
-public class ServerInterfaceStatusRequest extends RestApiConnection{
-  
+public class ServerInterfaceStatusRequest extends RestApiConnection {
+
   public ServerInterfaceStatusRequest(String url, String username, String password) {
     super(url, "/api/v1/server/interface/status", username, password);
   }
 
-
   @Override
-  public Object parse(JSONObject jsonObject) throws JsonProcessingException {
-    return mapper.readValue(jsonObject.toString(), InterfaceStatusResponse.class);
+  public Object parse(JsonElement jsonElement) {
+    return gson.fromJson(jsonElement, InterfaceStatusResponse.class);
   }
 }
