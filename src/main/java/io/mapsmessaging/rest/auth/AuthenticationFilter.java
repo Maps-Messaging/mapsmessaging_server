@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.rest.auth;
 
-import com.sun.jersey.core.util.Base64;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.SubjectHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +27,7 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
+import java.util.Base64;
 import javax.security.auth.Subject;
 
 @Provider
@@ -56,7 +56,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     auth = auth.replaceFirst("[Bb]asic ", "");
-    String userColonPass = Base64.base64Decode(auth);
+    Base64.Decoder decoder = Base64.getDecoder();
+    String userColonPass =new String(decoder.decode(auth));
     String[] split = userColonPass.split(":");
     String username = split[0];
     char[] password = split[1].toCharArray();
