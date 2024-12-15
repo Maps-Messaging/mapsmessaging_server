@@ -46,6 +46,18 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Enable Caching of rest responses", example = "true")
   protected boolean enableCache;
 
+  @Schema(description = "Minimum number of network threads", example = "10")
+  protected int minThreads;
+
+  @Schema(description = "Maximum number of network threads", example = "50")
+  protected int maxThreads;
+
+  @Schema(description = "Thread queue limit", example = "100")
+  protected int threadQueueLimit;
+
+  @Schema(description = "Selector threads", example = "2")
+  protected int selectorThreads;
+
   @Schema(description = "Cache element life time in ms", example = "10000")
   protected long cacheLifetime;
 

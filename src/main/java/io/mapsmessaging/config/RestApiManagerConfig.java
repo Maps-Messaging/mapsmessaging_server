@@ -43,6 +43,10 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     this.enableInterfaceManagement = properties.getBooleanProperty("enableInterfaceManagement", true);
     this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
 
+    this.maxThreads = properties.getIntProperty("maxThreads",10);
+    this.minThreads = properties.getIntProperty("minThreads",5);
+    this.threadQueueLimit  = properties.getIntProperty("threadQueueLimit ",100);
+    this.selectorThreads = properties.getIntProperty("selectorThreads ",2);
 
     this.enableCache = properties.getBooleanProperty("enableCache", true);
     this.cacheLifetime = properties.getLongProperty("cacheLifetime", 10000L);

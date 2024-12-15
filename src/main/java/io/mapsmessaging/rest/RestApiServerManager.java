@@ -48,10 +48,12 @@ import java.util.List;
 import javax.jmdns.ServiceInfo;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
+import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpContainer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -187,14 +189,13 @@ public class RestApiServerManager implements Agent {
       String baseUri = protocol+"://" + getHost() + ":" + getPort() + "/";
 
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
-
       httpServer.start();
     } catch (IOException e) {
       logger.log(REST_API_FAILURE, e);
     }
   }
 
-  public HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig) {
+  public HttpServer startHttpService(URI uri, Servlet servlet, SSLContextConfigurator sslConfig) throws IOException {
     String path = uri.getPath();
     if (path == null || path.isEmpty() || path.charAt(0) != '/') {
       throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null, present and start with a '/'");
@@ -210,8 +211,18 @@ public class RestApiServerManager implements Agent {
       SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
       server = GrizzlyHttpServerFactory.createHttpServer(uri, ((GrizzlyHttpContainer) null), true, sslEngineConfigurator, false);
     } else {
-      server = GrizzlyHttpServerFactory.createHttpServer(uri);
+      server = GrizzlyHttpServerFactory.createHttpServer(uri, false);
     }
+    ThreadPoolConfig threadPoolConfig = ThreadPoolConfig.defaultConfig()
+        .setCorePoolSize(config.getMinThreads()) // Minimum threads
+        .setMaxPoolSize(config.getMaxThreads()) // Maximum threads
+        .setQueueLimit(config.getThreadQueueLimit()); // Task queue limit
+
+    TCPNIOTransport transport = server.getListener("grizzly").getTransport();
+    transport.setSelectorRunnersCount(config.getSelectorThreads());
+    transport.setWorkerThreadPoolConfig(threadPoolConfig);
+    transport.setKernelThreadPoolConfig(threadPoolConfig);
+
     context.deploy(server);
     loadStatic(server);
     return server;

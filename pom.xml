@@ -735,8 +735,8 @@
           </execution>
         </executions>
         <configuration>
-          <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
           <reportOutputDirectory>${project.build.directory}/site/docs</reportOutputDirectory>
+          <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
           <show>public</show>
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
@@ -1054,12 +1054,7 @@
       <artifactId>jackson-jaxrs-json-provider</artifactId>
       <version>2.18.2</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/com.sun.jersey/jersey-json -->
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-json</artifactId>
-      <version>1.19.4</version>
-    </dependency>
+
 
     <!-- End RestAPI Support Dependencies -->
 
@@ -1192,6 +1187,14 @@
     <!-- *********************** -->
     <!-- Test Dependency Imports -->
     <!-- *********************** -->
+
+    <!-- https://mvnrepository.com/artifact/org.apache.activemq/activemq-stomp -->
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-stomp</artifactId>
+      <version>6.1.4</version>
+      <scope>test</scope>
+    </dependency>
 
 
     <!-- https://mvnrepository.com/artifact/org.projectodd.stilts/stilts-stomp-server-core -->
