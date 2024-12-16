@@ -33,7 +33,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Auth Manager Configuration")
-public class AuthManagerConfig extends AuthManagerConfigDTO {
+public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigManager {
 
   private AuthManagerConfig(ConfigurationProperties properties) {
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", false);
@@ -42,7 +42,7 @@ public class AuthManagerConfig extends AuthManagerConfigDTO {
   }
 
   public static AuthManagerConfig getInstance() {
-    return new AuthManagerConfig(ConfigurationManager.getInstance().getProperties("AuthManager"));
+    return ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
   }
 
   public boolean update(BaseConfigDTO config) {
@@ -67,5 +67,20 @@ public class AuthManagerConfig extends AuthManagerConfigDTO {
     properties.put("authorisationEnabled", authorisationEnabled);
     properties.put("config", authConfig);
     return properties;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new AuthManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "AuthManager";
   }
 }

@@ -40,6 +40,10 @@ public class Constants {
   private int minimumMessageSize = 1024;
 
   public void setMessageCompression(String name){
+    if(name == null){
+      name = "none";
+    }
+
     switch(name.toLowerCase()){
       case "inflator":
         messageCompression = CompressionMode.INFLATOR;

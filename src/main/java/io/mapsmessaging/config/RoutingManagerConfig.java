@@ -25,11 +25,13 @@ import io.mapsmessaging.dto.rest.config.RoutingManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 
-public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Config, ConfigManager {
 
   public static RoutingManagerConfig getInstance() {
-    return new RoutingManagerConfig(ConfigurationManager.getInstance().getProperties("routing"));
+    return ConfigurationManager.getInstance().getConfiguration(RoutingManagerConfig.class);
   }
 
   private RoutingManagerConfig(ConfigurationProperties properties) {
@@ -92,5 +94,20 @@ public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Con
     properties.put("predefinedServers", serverPropertiesList);
 
     return properties;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new RoutingManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "routing";
   }
 }

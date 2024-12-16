@@ -25,12 +25,13 @@ import io.mapsmessaging.dto.rest.config.LoRaDeviceManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 
-public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implements Config, ConfigManager {
 
   public static LoRaDeviceManagerConfig getInstance() {
-    return new LoRaDeviceManagerConfig(
-        ConfigurationManager.getInstance().getProperties("LoRaDevice"));
+    return ConfigurationManager.getInstance().getConfiguration(LoRaDeviceManagerConfig.class);
   }
 
   private LoRaDeviceManagerConfig(ConfigurationProperties properties) {
@@ -75,5 +76,20 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("data", configList);
     return properties;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new LoRaDeviceManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "LoRaDevice";
   }
 }

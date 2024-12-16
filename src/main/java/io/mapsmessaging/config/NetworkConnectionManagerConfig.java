@@ -26,8 +26,10 @@ import io.mapsmessaging.dto.rest.config.NetworkConnectionManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 
-public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConfigDTO implements Config, ConfigManager {
 
   private NetworkConnectionManagerConfig(ConfigurationProperties config) {
     ConfigurationProperties globalConfig = config.getGlobal();
@@ -46,8 +48,7 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
   }
 
   public static NetworkConnectionManagerConfig getInstance() {
-    return new NetworkConnectionManagerConfig(
-        ConfigurationManager.getInstance().getProperties("NetworkConnectionManager"));
+    return ConfigurationManager.getInstance().getConfiguration(NetworkConnectionManagerConfig.class);
   }
 
   @Override
@@ -89,5 +90,19 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
     }
     config.put("data", data);
     return config;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new NetworkConnectionManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "NetworkConnectionManager";
   }
 }

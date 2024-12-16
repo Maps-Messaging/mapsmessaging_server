@@ -26,8 +26,10 @@ import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 
-public class DestinationManagerConfig extends DestinationManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class DestinationManagerConfig extends DestinationManagerConfigDTO implements Config, ConfigManager {
 
   private DestinationManagerConfig(ConfigurationProperties properties) {
     this.data = new ArrayList<>();
@@ -42,8 +44,7 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
   }
 
   public static DestinationManagerConfig getInstance() {
-    return new DestinationManagerConfig(
-        ConfigurationManager.getInstance().getProperties("DestinationManager"));
+    return ConfigurationManager.getInstance().getConfiguration(DestinationManagerConfig.class);
   }
 
   @Override
@@ -80,5 +81,21 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
     }
 
     return hasChanged;
+  }
+
+
+  @Override
+  public ConfigManager load() {
+    return new DestinationManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "DestinationManager";
   }
 }

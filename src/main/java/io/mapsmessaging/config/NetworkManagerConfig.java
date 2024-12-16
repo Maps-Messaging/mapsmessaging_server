@@ -26,10 +26,10 @@ import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 import java.util.List;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
+import lombok.NoArgsConstructor;
 
-public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Config, ConfigManager {
 
   private NetworkManagerConfig(ConfigurationProperties config) {
     this.preferIpV6Addresses = config.getBooleanProperty("preferIPv6Addresses", true);
@@ -52,10 +52,8 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
     }
   }
 
-  @Contract(" -> new")
-  public static @NotNull NetworkManagerConfig getInstance() {
-    return new NetworkManagerConfig(
-        ConfigurationManager.getInstance().getProperties("NetworkManager"));
+  public static NetworkManagerConfig getInstance() {
+    return  ConfigurationManager.getInstance().getConfiguration(NetworkManagerConfig.class);
   }
 
   @Override
@@ -117,5 +115,20 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
     config.put("scanNetworkChanges", this.scanNetworkChanges);
 
     return config;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new NetworkManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "NetworkManager";
   }
 }

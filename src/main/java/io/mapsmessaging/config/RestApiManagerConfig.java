@@ -24,11 +24,13 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.RestApiManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
 
-public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Config, ConfigManager {
 
   public static RestApiManagerConfig getInstance() {
-    return new RestApiManagerConfig(ConfigurationManager.getInstance().getProperties("RestApi"));
+    return ConfigurationManager.getInstance().getConfiguration(RestApiManagerConfig.class);
   }
 
   private RestApiManagerConfig(ConfigurationProperties properties) {
@@ -145,5 +147,20 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     }
 
     return properties;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new RestApiManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "RestApi";
   }
 }

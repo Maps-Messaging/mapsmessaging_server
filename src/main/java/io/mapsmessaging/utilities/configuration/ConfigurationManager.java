@@ -20,6 +20,7 @@ package io.mapsmessaging.utilities.configuration;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
+import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.PropertyManager;
 import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
@@ -29,11 +30,12 @@ import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {
@@ -48,12 +50,14 @@ public class ConfigurationManager {
   private final Logger logger = LoggerFactory.getLogger(ConfigurationManager.class);
 
   private final List<PropertyManager> propertyManagers;
+  private final Map<String, ConfigManager> managerMap;
   private PropertyManager authoritative;
 
   private ConfigurationManager() {
     logger.log(ServerLogMessages.PROPERTY_MANAGER_START);
     propertyManagers = new ArrayList<>();
     authoritative = null;
+    managerMap = new ConcurrentHashMap<>();
   }
 
   public void register(){
@@ -61,28 +65,10 @@ public class ConfigurationManager {
   }
 
   public void initialise(@NonNull @NotNull String serverId) {
+
     PropertyManager defaultManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
-      String configPath = ConsulManagerFactory.getInstance().getPath();
-      if (configPath == null) {
-        configPath = "/";
-      }
-      String defaultName = "default";
-      if (!configPath.endsWith("/")) {
-        configPath = configPath + "/";
-      }
-      serverId = configPath + serverId;
-      defaultName = configPath + defaultName;
-      authoritative = new ConsulPropertyManager(serverId);
-      authoritative.load();
-      String locatedDefault = authoritative.scanForDefaultConfig(configPath);
-      if(!locatedDefault.isEmpty()){
-        defaultName = locatedDefault;
-      }
-
-      defaultManager = new ConsulPropertyManager(defaultName);
-      defaultManager.load();
-      propertyManagers.add(defaultManager);
+      defaultManager = processConsulConfig(serverId);
     }
     YamlPropertyManager yamlPropertyManager = new FileYamlPropertyManager();
     propertyManagers.add(yamlPropertyManager);
@@ -105,6 +91,20 @@ public class ConfigurationManager {
     }
   }
 
+  public @Nullable <T extends ConfigManager> T getConfiguration(Class<T> clazz) {
+    synchronized (managerMap) {
+      if (managerMap.isEmpty()) {
+        loadAll();
+      }
+    }
+    Object config = managerMap.get(clazz.getSimpleName());
+    if (clazz.isInstance(config)) {
+      return clazz.cast(config);
+    }
+    return null;
+  }
+
+
   public @NonNull @NotNull ConfigurationProperties getProperties(String name) {
     if (authoritative != null && authoritative.contains(name)) {
       logger.log(PROPERTY_MANAGER_LOOKUP, name, "Main");
@@ -119,5 +119,53 @@ public class ConfigurationManager {
     }
     logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, name);
     return new ConfigurationProperties(new HashMap<>());
+  }
+
+  public void saveConfiguration(ConfigManager config) throws IOException {
+    String configName = config.getName();
+
+    if(authoritative != null && authoritative.contains(configName)){
+      authoritative.store(configName);
+    }
+    else{
+      for (PropertyManager manager : propertyManagers) {
+        if ( manager.contains(configName)) {
+          logger.log(PROPERTY_MANAGER_LOOKUP, configName, "Backup");
+          manager.store(configName);
+        }
+      }
+    }
+  }
+
+  private PropertyManager processConsulConfig(String serverId){
+    String configPath = ConsulManagerFactory.getInstance().getPath();
+    if (configPath == null) {
+      configPath = "/";
+    }
+    String defaultName = "default";
+    if (!configPath.endsWith("/")) {
+      configPath = configPath + "/";
+    }
+    serverId = configPath + serverId;
+    defaultName = configPath + defaultName;
+    authoritative = new ConsulPropertyManager(serverId);
+    authoritative.load();
+    String locatedDefault = authoritative.scanForDefaultConfig(configPath);
+    if(!locatedDefault.isEmpty()){
+      defaultName = locatedDefault;
+    }
+
+    PropertyManager defaultManager = new ConsulPropertyManager(defaultName);
+    defaultManager.load();
+    propertyManagers.add(defaultManager);
+    return defaultManager;
+  }
+
+  private void loadAll(){
+    ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
+    for(ConfigManager manager : configManagers){
+      ConfigManager loaded = manager.load();
+      managerMap.put(loaded.getClass().getSimpleName(), loaded);
+    }
   }
 }

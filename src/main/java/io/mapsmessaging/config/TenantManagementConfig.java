@@ -26,12 +26,13 @@ import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 
-public class TenantManagementConfig extends TenantManagementConfigDTO implements Config {
+@NoArgsConstructor
+public class TenantManagementConfig extends TenantManagementConfigDTO implements Config, ConfigManager {
 
   public static TenantManagementConfig getInstance() {
-    return new TenantManagementConfig(
-        ConfigurationManager.getInstance().getProperties("TenantManagement"));
+    return ConfigurationManager.getInstance().getConfiguration(TenantManagementConfig.class);
   }
 
   private TenantManagementConfig(ConfigurationProperties properties) {
@@ -79,5 +80,20 @@ public class TenantManagementConfig extends TenantManagementConfigDTO implements
     }
     configurationProperties.put("data", tenantList);
     return configurationProperties;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new TenantManagementConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "TenantManagement";
   }
 }

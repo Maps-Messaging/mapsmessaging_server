@@ -38,6 +38,7 @@ import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -154,7 +155,7 @@ public class AuthManager implements Agent {
 
   private AuthManager() {
     logger = LoggerFactory.getLogger(AuthManager.class);
-    config = AuthManagerConfig.getInstance();
+    config = ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
     authenticationEnabled = config.isAuthenticationEnabled();
     authorisationEnabled  = config.isAuthorisationEnabled();
   }

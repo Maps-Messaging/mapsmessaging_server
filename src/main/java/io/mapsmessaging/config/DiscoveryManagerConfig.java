@@ -22,8 +22,10 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.DiscoveryManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
 
-public class DiscoveryManagerConfig extends DiscoveryManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class DiscoveryManagerConfig extends DiscoveryManagerConfigDTO implements Config, ConfigManager {
 
   private DiscoveryManagerConfig(ConfigurationProperties config) {
     this.enabled = config.getBooleanProperty("enabled", false);
@@ -33,8 +35,7 @@ public class DiscoveryManagerConfig extends DiscoveryManagerConfigDTO implements
   }
 
   public static DiscoveryManagerConfig getInstance() {
-    return new DiscoveryManagerConfig(
-        ConfigurationManager.getInstance().getProperties("DiscoveryManager"));
+    return ConfigurationManager.getInstance().getConfiguration(DiscoveryManagerConfig.class);
   }
 
   @Override
@@ -74,5 +75,23 @@ public class DiscoveryManagerConfig extends DiscoveryManagerConfigDTO implements
     config.put("addTxtRecords", this.addTxtRecords);
     config.put("domainName", this.domainName);
     return config;
+  }
+
+
+
+  @Override
+  public ConfigManager load() {
+    return new DiscoveryManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "DiscoveryManager";
   }
 }

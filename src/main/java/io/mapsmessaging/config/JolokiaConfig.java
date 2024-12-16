@@ -22,9 +22,11 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.JolokiaConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
 
 //ToDo Convert configurations into map<String, String>
-public class JolokiaConfig extends JolokiaConfigDTO implements Config {
+@NoArgsConstructor
+public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigManager {
 
   private JolokiaConfig(ConfigurationProperties properties) {
     setEnable(properties.getBooleanProperty("enable", false));
@@ -32,7 +34,7 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config {
   }
 
   public static JolokiaConfig getInstance() {
-    return new JolokiaConfig(ConfigurationManager.getInstance().getProperties("jolokia"));
+    return ConfigurationManager.getInstance().getConfiguration(JolokiaConfig.class);
   }
 
   @Override
@@ -59,5 +61,20 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config {
     properties.put("enable", isEnable());
     properties.put("config", getJolokiaMapping());
     return properties;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new JolokiaConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "jolokia";
   }
 }

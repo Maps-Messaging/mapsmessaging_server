@@ -22,8 +22,10 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
 
-public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Config {
+@NoArgsConstructor
+public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Config, ConfigManager {
 
   private MessageDaemonConfig(ConfigurationProperties config) {
     this.delayedPublishInterval = config.getIntProperty("DelayedPublishInterval", 1000);
@@ -44,8 +46,7 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
   }
 
   public static MessageDaemonConfig getInstance() {
-    return new MessageDaemonConfig(
-        ConfigurationManager.getInstance().getProperties("MessageDaemon"));
+    return ConfigurationManager.getInstance().getConfiguration(MessageDaemonConfig.class);
   }
 
   @Override
@@ -140,5 +141,20 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     config.put("latitude", this.latitude);
     config.put("longitude", this.longitude);
     return config;
+  }
+
+  @Override
+  public ConfigManager load() {
+    return new MessageDaemonConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "MessageDaemon";
   }
 }

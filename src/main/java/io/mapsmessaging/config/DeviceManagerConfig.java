@@ -32,8 +32,10 @@ import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 
-public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Config {
+@NoArgsConstructor
+public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Config, ConfigManager {
 
   private DeviceManagerConfig(ConfigurationProperties config) {
     this.enabled = config.getBooleanProperty("enabled", false);
@@ -43,8 +45,7 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
   }
 
   public static DeviceManagerConfig getInstance() {
-    return new DeviceManagerConfig(
-        ConfigurationManager.getInstance().getProperties("DeviceManager"));
+    return ConfigurationManager.getInstance().getConfiguration(DeviceManagerConfig.class);
   }
 
   @Override
@@ -197,5 +198,21 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
     } else if (configList instanceof ConfigurationProperties) {
       i2cBuses.add(new I2CBusConfig((ConfigurationProperties) configList));
     }
+  }
+
+
+  @Override
+  public ConfigManager load() {
+    return new DeviceManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() {
+
+  }
+
+  @Override
+  public String getName() {
+    return "DeviceManager";
   }
 }
