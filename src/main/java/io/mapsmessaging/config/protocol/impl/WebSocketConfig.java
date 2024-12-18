@@ -27,7 +27,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.WebSocketConfigDTO;
 public class WebSocketConfig extends WebSocketConfigDTO implements Config {
 
   public WebSocketConfig(ConfigurationProperties config) {
-    setType("websocket");
+    setType("ws");
     ProtocolConfigFactory.unpack(config, this);
   }
 
