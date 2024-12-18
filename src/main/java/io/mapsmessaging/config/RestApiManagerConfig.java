@@ -24,6 +24,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.RestApiManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
@@ -155,9 +156,10 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
   }
 
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
+
 
   @Override
   public String getName() {

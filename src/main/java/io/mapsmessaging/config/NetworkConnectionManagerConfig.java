@@ -19,11 +19,11 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
-import io.mapsmessaging.config.network.EndPointServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.NetworkConnectionManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.NoArgsConstructor;
@@ -33,9 +33,6 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
 
   private NetworkConnectionManagerConfig(ConfigurationProperties config) {
     ConfigurationProperties globalConfig = config.getGlobal();
-    if (globalConfig != null) {
-      this.global = new EndPointServerConfig(globalConfig);
-    }
     endPointServerConfigList = new ArrayList<>();
     Object obj = config.get("data");
     if (obj instanceof List) {
@@ -56,13 +53,6 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
     boolean hasChanged = false;
     if (config instanceof NetworkConnectionManagerConfigDTO) {
       NetworkConnectionManagerConfigDTO newConfig = (NetworkConnectionManagerConfigDTO) config;
-
-      if ((this.global == null && newConfig.getGlobal() != null) ||
-          (this.global != null && !this.global.equals(newConfig.getGlobal()))) {
-        this.global = newConfig.getGlobal();
-        hasChanged = true;
-      }
-
       if (this.endPointServerConfigList.size() != newConfig.getEndPointServerConfigList().size()) {
         this.endPointServerConfigList = newConfig.getEndPointServerConfigList();
         hasChanged = true;
@@ -81,9 +71,6 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    if (global != null) {
-      config.put("global", this.global.toConfigurationProperties());
-    }
     List<ConfigurationProperties> data = new ArrayList<>();
     for (EndPointConnectionServerConfig endPointServerConfig : endPointServerConfigList) {
       data.add(endPointServerConfig.toConfigurationProperties());
@@ -97,9 +84,10 @@ public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConf
     return new NetworkConnectionManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));  }
 
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
+
 
   @Override
   public String getName() {

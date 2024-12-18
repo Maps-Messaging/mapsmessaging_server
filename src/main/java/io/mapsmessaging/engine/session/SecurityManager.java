@@ -21,7 +21,8 @@ package io.mapsmessaging.engine.session;
 import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
 
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.config.SecurityManagerConfig;
+import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.session.security.AnonymousSecurityContext;
@@ -34,7 +35,6 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.MapsSecurityProvider;
 import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.security.Principal;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -46,13 +46,12 @@ import javax.security.auth.login.LoginException;
 public class SecurityManager implements Agent {
 
   private final Logger logger = LoggerFactory.getLogger(SecurityManager.class);
-  private final ConfigurationProperties authMap;
+  private final SecurityManagerDTO authMap;
 
   public SecurityManager() {
     logger.log(ServerLogMessages.SECURITY_MANAGER_STARTUP);
-    ConfigurationProperties props = ConfigurationManager.getInstance().getProperties("SecurityManager");
     logger.log(ServerLogMessages.SESSION_MANAGER_CREATE_SECURITY_CONTEXT);
-    authMap = props;
+    authMap = SecurityManagerConfig.getInstance();
     MapsSecurityProvider.register();
   }
 
@@ -88,11 +87,7 @@ public class SecurityManager implements Agent {
 
   public String getAuthenticationName(ClientConnection clientConnection) {
     String authConfig = clientConnection.getAuthenticationConfig();
-    if (authConfig != null && !authConfig.isEmpty()) {
-      return authMap.getProperty(authConfig);
-    } else {
-      return authMap.getProperty("default");
-    }
+    return authMap.getAuthName(authConfig);
   }
 
   @Override

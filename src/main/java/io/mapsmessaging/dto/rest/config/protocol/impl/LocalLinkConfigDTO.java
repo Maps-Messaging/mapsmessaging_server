@@ -16,20 +16,19 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import io.mapsmessaging.dto.rest.auth.UserDTO;
-import java.util.List;
+
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class UserListResponse extends BaseResponse {
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@Schema(description = "Local Loop Configuration DTO")
+public class LocalLinkConfigDTO extends ProtocolConfigDTO {
 
-  private List<UserDTO> data;
-
-  public UserListResponse(List<UserDTO> data) {
-    this.data = data;
-  }
 }

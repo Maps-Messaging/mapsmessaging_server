@@ -18,11 +18,13 @@
 
 package io.mapsmessaging.config;
 
+import java.io.IOException;
+
 public interface ConfigManager {
 
   ConfigManager load();
 
-  void save();
+  void save() throws IOException;
 
   String getName();
 }

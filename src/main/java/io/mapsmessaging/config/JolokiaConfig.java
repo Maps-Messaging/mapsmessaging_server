@@ -22,6 +22,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.JolokiaConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
 import lombok.NoArgsConstructor;
 
 //ToDo Convert configurations into map<String, String>
@@ -69,8 +70,8 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
   }
 
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
 
   @Override

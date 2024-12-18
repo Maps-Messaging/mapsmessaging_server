@@ -51,10 +51,6 @@ public class EndPointConfigFactory {
         hasChanged = true;
       }
 
-      if (!orig.getProtocols().equals(upd.getProtocols())) {
-        orig.setProtocols(upd.getProtocols());
-        hasChanged = true;
-      }
       if(orig.getEndPointConfig() != null && ((Config)orig.getEndPointConfig() ).update(upd.getEndPointConfig())){
         hasChanged = true;
       }
@@ -68,11 +64,10 @@ public class EndPointConfigFactory {
   public static void pack(ConfigurationProperties config, EndPointServerConfigDTO server){
     config.put("name", server.getName());
     config.put("url", server.getUrl());
-    config.put("protocols", server.getProtocols());
     config.put("backlog", server.getBacklog());
     config.put("selectorTaskWait", server.getSelectorTaskWait());
     config.put("auth", server.getAuthenticationRealm());
-    config.put("data", server.getProtocolConfigs()); // ToDo - Convert to Configuration props
+    config.put("protocols", packProtocolConfig(server)); // ToDo - Convert to Configuration props
     if (server.getEndPointConfig() != null) {
       config.put("endPoint", ((Config) server.getEndPointConfig()).toConfigurationProperties());
     }
@@ -95,12 +90,29 @@ public class EndPointConfigFactory {
       server.setSaslConfig(new SaslConfig(saslConfiguration));
     }
 
-   server.setProtocols(config.getProperty("protocol"));
-    String protocols = server.getProtocols();
-    if (protocols != null && !protocols.isEmpty()) {
-      String[] protocolArray = protocols.split(",");
+    if(config.containsKey("protocol")) {
+      loadDefaultProtocols(config, server, config.getProperty("protocol"));
+    }
+    else{
+      List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get("protocols");
+      loadSpecificProtocols(server, protocolConfig);
+    }
+  }
+
+  private static void loadSpecificProtocols(EndPointServerConfigDTO server, List<ConfigurationProperties> protocolConfig) {
+    List<ProtocolConfigDTO> protocolConfigs = new ArrayList<>();
+    for(ConfigurationProperties prop : protocolConfig) {
+      String type = prop.getProperty("type");
+      protocolConfigs.add(createProtocolConfig(type, prop));
+    }
+    server.setProtocolConfigs(protocolConfigs);
+  }
+
+  private static void loadDefaultProtocols(ConfigurationProperties config, EndPointServerConfigDTO server, String protocol) {
+    if (protocol != null && !protocol.isEmpty()) {
+      String[] protocolArray = protocol.split(",");
       List<String> protocolList = new ArrayList<>();
-      for (String protocol : protocolArray) {
+      for (String protocolName : protocolArray) {
         if (protocol.equalsIgnoreCase("all")) {
           if (server.getEndPointConfig() instanceof UdpConfig) {
             protocolList.add("coap");
@@ -112,20 +124,29 @@ public class EndPointConfigFactory {
             protocolList.add("ws");
           }
         } else {
-          protocolList.add(protocol);
+          protocolList.add(protocolName);
         }
       }
 
       List<ProtocolConfigDTO> protocolConfigs = new ArrayList<>();
-      for (String protocol : protocolList) {
-        ProtocolConfigDTO protocolConfig = createProtocolConfig(protocol.trim(), config);
+      for (String protocolName : protocolList) {
+        ProtocolConfigDTO protocolConfig = createProtocolConfig(protocolName.trim(), config);
         if (protocolConfig != null) {
           protocolConfigs.add(protocolConfig);
         }
       }
       server.setProtocolConfigs(protocolConfigs);
     }
+  }
 
+  private static List<ConfigurationProperties> packProtocolConfig(EndPointServerConfigDTO server) {
+    List<ConfigurationProperties> protocolConfigs = new ArrayList<>();
+    for(ProtocolConfigDTO protocolConfigDTO : server.getProtocolConfigs()){
+      if(protocolConfigDTO instanceof Config){
+        protocolConfigs.add  (((Config)protocolConfigDTO).toConfigurationProperties());
+      }
+    }
+    return protocolConfigs;
   }
 
   private static EndPointConfigDTO createEndPointConfig(String url, ConfigurationProperties properties) {

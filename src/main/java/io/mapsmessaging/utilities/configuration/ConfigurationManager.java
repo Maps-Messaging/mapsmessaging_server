@@ -121,17 +121,17 @@ public class ConfigurationManager {
     return new ConfigurationProperties(new HashMap<>());
   }
 
-  public void saveConfiguration(ConfigManager config) throws IOException {
-    String configName = config.getName();
-
+  public void saveConfiguration(String configName, ConfigurationProperties config) throws IOException {
+    ConfigurationProperties newConfig = new ConfigurationProperties();
+    newConfig.put(configName, config);
     if(authoritative != null && authoritative.contains(configName)){
-      authoritative.store(configName);
+      authoritative.store("./conf", configName);
     }
     else{
       for (PropertyManager manager : propertyManagers) {
         if ( manager.contains(configName)) {
           logger.log(PROPERTY_MANAGER_LOOKUP, configName, "Backup");
-          manager.store(configName);
+          manager.update("./conf", configName, newConfig);
         }
       }
     }

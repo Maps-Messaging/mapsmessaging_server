@@ -23,6 +23,7 @@ import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -52,9 +53,6 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
   @Schema(description = "List of protocol configurations for the endpoint")
   protected List<ProtocolConfigDTO> protocolConfigs;
 
-  @Schema(description = "Protocol types available at the endpoint", example = "mqtt, amqp, stomp")
-  protected String protocols;
-
   @Schema(description = "Authentication realm", example = "defaultRealm")
   protected String authenticationRealm;
 
@@ -76,6 +74,12 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
           .orElse(null);
     }
     return config;
+  }
+
+  public String getProtocols() {
+    return protocolConfigs.stream()
+        .map(ProtocolConfigDTO::getType)
+        .collect(Collectors.joining(", "));
   }
 
 }

@@ -16,21 +16,36 @@
  *
  */
 
-package io.mapsmessaging.dto.rest.config;
+package io.mapsmessaging.dto.rest.auth;
 
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
+import java.util.Map;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@Schema(description = "Network Connection Manager Configuration DTO")
-public class NetworkConnectionManagerConfigDTO extends BaseConfigDTO {
+@AllArgsConstructor
+@Schema(
+    title = "Security Manager",
+    description = "Mapping between auth config and JAAS configurations")
+public class SecurityManagerDTO {
 
-  @Schema(description = "List of endpoint connection server configurations")
-  protected List<EndPointConnectionServerConfig> endPointServerConfigList;
+  @Schema(
+      title = "Mapping",
+      description = "The auth name as key and the JAAS implementation name as value map",
+      example = "Default:PublicAuthConfig",
+      nullable = false)
+  protected Map<String, String> map;
+
+
+
+  public String getAuthName(String authName){
+    if (authName != null && !authName.isEmpty()) {
+      return map.get(authName);
+    } else {
+      return map.get("default");
+    }
+  }
 }

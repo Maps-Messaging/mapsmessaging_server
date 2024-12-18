@@ -24,8 +24,10 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.NetworkManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
@@ -37,9 +39,6 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
     this.scanInterval = config.getIntProperty("scanInterval", 60000);
 
     ConfigurationProperties globalConfig = config.getGlobal();
-    if (globalConfig != null) {
-      this.global = new EndPointServerConfig(globalConfig);
-    }
 
     this.endPointServerConfigList = new ArrayList<>();
     Object obj = config.get("data");
@@ -77,11 +76,6 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
       this.scanInterval = newConfig.getScanInterval();
       hasChanged = true;
     }
-    if (this.global != null && !this.global.equals(newConfig.getGlobal())) {
-      this.global = newConfig.getGlobal();
-      hasChanged = true;
-    }
-
     if (this.endPointServerConfigList.size() != newConfig.getEndPointServerConfigList().size()) {
       this.endPointServerConfigList = newConfig.getEndPointServerConfigList();
       hasChanged = true;
@@ -100,13 +94,10 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
-    if (this.global != null) {
-      config.put("global", ((Config)this.global).toConfigurationProperties());
-    }
-
-    List<ConfigurationProperties> data = new ArrayList<>();
+    List<Map<String, Object>> data = new ArrayList<>();
     for (EndPointServerConfigDTO endPointServerConfig : this.endPointServerConfigList) {
-      data.add(((Config)endPointServerConfig).toConfigurationProperties());
+      ConfigurationProperties endPoint = ((Config)endPointServerConfig).toConfigurationProperties();
+      data.add(endPoint.getMap());
     }
 
     config.put("data", data);
@@ -123,9 +114,10 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
   }
 
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
+
 
   @Override
   public String getName() {

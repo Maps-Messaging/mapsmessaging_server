@@ -22,6 +22,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.DiscoveryManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
@@ -84,10 +85,9 @@ public class DiscoveryManagerConfig extends DiscoveryManagerConfigDTO implements
     return new DiscoveryManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 
-
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
 
   @Override

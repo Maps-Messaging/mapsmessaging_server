@@ -24,6 +24,7 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.TenantManagementConfigDTO;
 import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.NoArgsConstructor;
@@ -88,9 +89,10 @@ public class TenantManagementConfig extends TenantManagementConfigDTO implements
   }
 
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
+
 
   @Override
   public String getName() {

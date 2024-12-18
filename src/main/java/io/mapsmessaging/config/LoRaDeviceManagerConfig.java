@@ -23,6 +23,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.LoRaDeviceManagerConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.NoArgsConstructor;
@@ -84,8 +85,8 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
   }
 
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
 
   @Override

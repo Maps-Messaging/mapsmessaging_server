@@ -21,6 +21,8 @@ package io.mapsmessaging.network;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.NetworkConnectionManagerConfig;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.config.protocol.impl.LocalLoopConfig;
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
@@ -75,7 +77,10 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
         if (urlString == null) {
           urlString = "noop://localhost/";
           properties.setUrl("noop://localhost/");
-          properties.setProtocols("loop");
+          LocalLoopConfig localProtocolInformation = new LocalLoopConfig();
+          List<ProtocolConfigDTO> protocols = new ArrayList<>();
+          protocols.add(localProtocolInformation);
+          properties.setProtocolConfigs(protocols);
         }
 
         EndPointURL endPointURL = new EndPointURL(urlString);

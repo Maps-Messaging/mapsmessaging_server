@@ -49,6 +49,12 @@ public class SslConfig extends SslConfigDTO implements Config  {
     if (security != null) {
       security = (ConfigurationProperties) security.get("tls");
     }
+
+    ConfigurationProperties endPoint = (ConfigurationProperties) config.get("endPoint");
+    if (endPoint != null) {
+      return locateConfig(endPoint);
+    }
+
     return security;
   }
 

@@ -46,7 +46,9 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     config.put("local_namespace", this.localNamespace);
     config.put("selector", this.selector);
     config.put("include_schema", this.includeSchema);
-    config.put("transformer", new ConfigurationProperties(this.transformer));
+    if (transformer != null) {
+      config.put("transformer", new ConfigurationProperties(this.transformer));
+    }
     return config;
   }
 

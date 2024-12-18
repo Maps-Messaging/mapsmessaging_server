@@ -41,9 +41,6 @@ public class NetworkManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Scan interval in milliseconds", example = "60000")
   protected int scanInterval;
 
-  @Schema(description = "Global endpoint server configuration", implementation = EndPointServerConfigDTO.class)
-  protected EndPointServerConfigDTO global;
-
   @Schema(description = "List of endpoint server configurations")
   protected List<EndPointServerConfigDTO> endPointServerConfigList;
 }

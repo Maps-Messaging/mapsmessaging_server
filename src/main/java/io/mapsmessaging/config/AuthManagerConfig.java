@@ -23,6 +23,7 @@ import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.IOException;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -75,8 +76,8 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
   }
 
   @Override
-  public void save() {
-
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
   }
 
   @Override
