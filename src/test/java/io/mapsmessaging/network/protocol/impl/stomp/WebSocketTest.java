@@ -22,6 +22,7 @@ import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,7 +36,6 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
@@ -49,7 +49,7 @@ class WebSocketTest extends StompBaseTest {
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     webSocketStompClient.setMessageConverter(new SimpleMessageConverter());
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
+    CompletableFuture<StompSession> futureSession = webSocketStompClient.connectAsync("ws://localhost:8674", handler);
 
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
@@ -82,7 +82,7 @@ class WebSocketTest extends StompBaseTest {
     WebSocketClient client = new StandardWebSocketClient();
     WebSocketStompClient webSocketStompClient = new WebSocketStompClient(client);
     StompSessionHandlerImpl handler = new StompSessionHandlerImpl();
-    ListenableFuture<StompSession> futureSession = webSocketStompClient.connect("ws://localhost:8674", handler);
+    CompletableFuture<StompSession> futureSession = webSocketStompClient.connectAsync("ws://localhost:8674", handler);
     StompSession stompSession = futureSession.get(5000, TimeUnit.MILLISECONDS);
     Assertions.assertNotNull(stompSession);
 
