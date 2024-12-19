@@ -40,6 +40,6 @@ public class SendListener extends EventListener {
         throw new RuntimeException(e);
       }
       return destination;
-    });
+    }).join();
   }
 }

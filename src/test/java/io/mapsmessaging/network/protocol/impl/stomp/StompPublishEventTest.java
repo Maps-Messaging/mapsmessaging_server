@@ -117,6 +117,7 @@ class StompPublishEventTest extends StompBaseTest implements Listener {
         start = stompSubscriber.counter.get();
       }
     }
+    Assertions.assertEquals(10, stompSubscriber.counter.get());
 
     stompConnection.begin("tx2");
     for (int x = 0; x < 100; x++) {
@@ -160,7 +161,7 @@ class StompPublishEventTest extends StompBaseTest implements Listener {
       stompConnection.open(hostname, port );
       stompConnection.connect(username, getPassword(username), "client-subscribe");
       headers = new HashMap<>();
-      headers.put("id", "client-subscribe/"+topicName);
+      headers.put("id", topicName);
       stompConnection.subscribe(topicName, "client-individual", headers);
       Thread t = new Thread(this);
       t.start();
@@ -180,12 +181,13 @@ class StompPublishEventTest extends StompBaseTest implements Listener {
       while (!end.get()) {
         try {
           try {
-            StompFrame stompFrame = stompConnection.receive(100);
+            StompFrame stompFrame = stompConnection.receive(1000);
             if (stompFrame.isMessage()) {
                 stompConnection.ack(stompFrame);
             }
             counter.incrementAndGet();
           } catch (SocketTimeoutException e) {
+            System.err.println("SocketTimeoutException");
             // ignore
           }
         } catch (Exception e) {
