@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.rest.translation;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.MessageBodyWriter;
@@ -27,12 +28,16 @@ import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class GsonMessageBodyWriter implements MessageBodyWriter<Object> {
 
-  private final Gson gson = new Gson();
+  private final Gson gson = new GsonBuilder()
+      .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
+      .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
+      .create();
 
   @Override
   public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, jakarta.ws.rs.core.MediaType mediaType) {

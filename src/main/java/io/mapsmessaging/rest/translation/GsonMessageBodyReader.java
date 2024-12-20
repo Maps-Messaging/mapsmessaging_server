@@ -18,7 +18,7 @@
 
 package io.mapsmessaging.rest.translation;
 
-import com.google.gson.Gson;
+import com.google.gson.*;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.MessageBodyReader;
@@ -27,12 +27,16 @@ import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
 public class GsonMessageBodyReader implements MessageBodyReader<Object> {
 
-  private final Gson gson = new Gson();
+  private final Gson gson = new GsonBuilder()
+      .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
+      .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
+      .create();
 
   @Override
   public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, jakarta.ws.rs.core.MediaType mediaType) {
@@ -44,5 +48,6 @@ public class GsonMessageBodyReader implements MessageBodyReader<Object> {
                          jakarta.ws.rs.core.MultivaluedMap<String, String> httpHeaders, java.io.InputStream entityStream) {
     return gson.fromJson(new InputStreamReader(entityStream, StandardCharsets.UTF_8), genericType);
   }
+
 }
 

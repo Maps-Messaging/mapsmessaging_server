@@ -37,7 +37,7 @@ import jakarta.ws.rs.core.Response;
 @Path(URI_PATH + "/messaging")
 public class MessagingApi extends BaseRestApi {
 
-  @Path("/messaging/publish")
+  @Path("/publish")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Publish a message", description = "Publishes a message to a specified topic")
@@ -56,7 +56,7 @@ public class MessagingApi extends BaseRestApi {
     return Response.ok().entity("Message published successfully").build();
   }
 
-  @Path("/messaging/subscribe")
+  @Path("/subscribe")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Subscribe to a topic", description = "Subscribes to a specified topic")
@@ -73,7 +73,7 @@ public class MessagingApi extends BaseRestApi {
     return Response.ok().entity("Subscribed to topic successfully").build();
   }
 
-  @Path("/messaging/consume/{subscriptionName}")
+  @Path("/consume/{subscriptionName}")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get messages", description = "Retrieves messages for a specified subscription")
   @ApiResponse(responseCode = "200",
@@ -90,7 +90,7 @@ public class MessagingApi extends BaseRestApi {
     return Response.ok().entity("Messages retrieved successfully").build();
   }
 
-  @Path("/messaging/consume")
+  @Path("/consume")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get all messages", description = "Retrieves messages for a specified subscription")
   @ApiResponse(responseCode = "200",
@@ -108,7 +108,7 @@ public class MessagingApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/messaging/subscriptionDepth/{subscriptionName}")
+  @Path("/subscriptionDepth/{subscriptionName}")
   @Operation(summary = "Get message depth", description = "Get the depth of the queue for a specified subscription")
   @ApiResponse(responseCode = "200",
       description = "Message depth retrieved successfully",
@@ -125,7 +125,7 @@ public class MessagingApi extends BaseRestApi {
   }
 
   @GET
-  @Path("/messaging/subscriptionDepth")
+  @Path("/subscriptionDepth")
   @Operation(summary = "Get all message depth", description = "Get the depth of the queue for all subscriptions")
   @ApiResponse(responseCode = "200",
       description = "Message depths retrieved successfully",
