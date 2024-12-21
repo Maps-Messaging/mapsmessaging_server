@@ -35,6 +35,7 @@ import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.cache.impl.NoCache;
 import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
+import io.mapsmessaging.rest.translation.CorsFilter;
 import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.rest.translation.GsonMessageBodyReader;
 import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
@@ -180,6 +181,7 @@ public class RestApiServerManager implements Agent {
       }
       resourceConfig.register(DebugMapper.class );
       resourceConfig.register(LoggingFilter.class);
+      resourceConfig.register(CorsFilter.class);
       ServletContainer sc = new ServletContainer(resourceConfig);
       SSLContextConfigurator sslConfig = setupSSL();
       String protocol = "http";

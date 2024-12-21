@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.io.IOException;
 
 @Tag(name = "Server Config Management")
 @Path(URI_PATH)
@@ -61,13 +62,17 @@ public class ServerConfigApi  extends BaseInterfaceApi {
   @PUT
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
-  public Response updateServerConfig(MessageDaemonConfigDTO dto) {
+  public Response updateServerConfig(MessageDaemonConfigDTO dto) throws IOException {
     checkAuthentication();
     if (!hasAccess("servers")) {
       response.setStatus(403);
       return null;
     }
-    MessageDaemon.getInstance().getMessageDaemonConfig().update(dto);
+    if(MessageDaemon.getInstance().getMessageDaemonConfig().update(dto)){
+      MessageDaemon.getInstance().getMessageDaemonConfig().save();
+      removeFromCache(new CacheKey(uriInfo.getPath(), "serverConfig"));
+
+    }
     return Response.ok().build();
   }
 

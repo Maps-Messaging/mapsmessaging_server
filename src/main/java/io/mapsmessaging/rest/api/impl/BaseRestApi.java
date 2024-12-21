@@ -113,4 +113,8 @@ public class BaseRestApi {
   protected void putToCache(CacheKey key, Object value){
     Constants.getCentralCache().put(key, value);
   }
+
+  protected void removeFromCache(CacheKey key){
+    Constants.getCentralCache().remove(key);
+  }
 }
