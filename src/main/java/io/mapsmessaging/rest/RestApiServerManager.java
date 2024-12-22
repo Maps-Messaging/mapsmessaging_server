@@ -35,10 +35,9 @@ import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.cache.impl.NoCache;
 import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
-import io.mapsmessaging.rest.translation.CorsFilter;
-import io.mapsmessaging.rest.translation.DebugMapper;
-import io.mapsmessaging.rest.translation.GsonMessageBodyReader;
-import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
+import io.mapsmessaging.rest.handler.CorsEnabledStaticHttpHandler;
+import io.mapsmessaging.rest.handler.CorsFilter;
+import io.mapsmessaging.rest.translation.*;
 import io.mapsmessaging.utilities.Agent;
 import jakarta.servlet.Servlet;
 import java.io.File;
@@ -253,7 +252,7 @@ public class RestApiServerManager implements Agent {
           if (file.isDirectory()) {
             String location = path+file.getName();
             String uriMapping = "/"+file.getName()+"/";
-            StaticHttpHandler staticHttpHandler = new StaticHttpHandler(location+File.separator);
+            StaticHttpHandler staticHttpHandler = new CorsEnabledStaticHttpHandler(location+File.separator);
             staticHttpHandler.setFileCacheEnabled(true);
             server.getServerConfiguration().addHttpHandler(staticHttpHandler, uriMapping+"*" );
           }

@@ -16,7 +16,7 @@
  *
  */
 
-package io.mapsmessaging.rest.translation;
+package io.mapsmessaging.rest.handler;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -25,11 +25,11 @@ import jakarta.ws.rs.ext.Provider;
 
 @Provider
 public class CorsFilter implements ContainerResponseFilter {
+
+  private final CorsHeaders corsHeaders = new CorsHeaders();
+
   @Override
   public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-    responseContext.getHeaders().add("Access-Control-Allow-Origin", "*"); // Use "*" or specific domain
-    responseContext.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    responseContext.getHeaders().add("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    responseContext.getHeaders().add("Access-Control-Allow-Credentials", "true"); // Include if using cookies or authentication
+    corsHeaders.addFilter(responseContext);
   }
 }
