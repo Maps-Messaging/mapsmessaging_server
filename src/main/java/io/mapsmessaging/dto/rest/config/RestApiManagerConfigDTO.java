@@ -20,6 +20,7 @@ package io.mapsmessaging.dto.rest.config;
 
 import io.mapsmessaging.config.network.impl.TlsConfig;
 import io.mapsmessaging.config.rest.StaticConfig;
+import io.mapsmessaging.rest.handler.CorsHeaders;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -87,4 +88,8 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Static configuration", implementation = StaticConfig.class)
   protected StaticConfig staticConfig;
+
+  @Schema(description = "CORS headers", implementation = CorsHeaders.class)
+  protected CorsHeaders corsHeaders;
+
 }

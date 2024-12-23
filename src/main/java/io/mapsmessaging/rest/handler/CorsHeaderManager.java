@@ -18,16 +18,25 @@
 
 package io.mapsmessaging.rest.handler;
 
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.container.ContainerResponseFilter;
-import jakarta.ws.rs.ext.Provider;
 
-@Provider
-public class CorsFilter implements ContainerResponseFilter {
+import lombok.Getter;
 
-  @Override
-  public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-    CorsHeaderManager.getInstance().getCorsHeaders().addFilter(responseContext);
+@SuppressWarnings("java:S6548") // yes it is a singleton
+@Getter
+public class CorsHeaderManager {
+
+  private static class Holder {
+    static final CorsHeaderManager INSTANCE = new CorsHeaderManager();
   }
+
+  public static CorsHeaderManager getInstance() {
+    return Holder.INSTANCE;
+  }
+
+  private final CorsHeaders corsHeaders;
+
+  private CorsHeaderManager() {
+    corsHeaders = new CorsHeaders();
+  }
+
 }

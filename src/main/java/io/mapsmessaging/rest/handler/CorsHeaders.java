@@ -21,20 +21,21 @@ package io.mapsmessaging.rest.handler;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Data;
 import org.glassfish.grizzly.http.server.Response;
 
+@Data
 public class CorsHeaders {
 
   private final Map<String, String> headers;
 
   public CorsHeaders() {
     headers = new ConcurrentHashMap<>();
-    headers.put("Access-Control-Allow-Origin", "*"); // Use "*" or specific domain
-    headers.put("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    headers.put("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    headers.put("Access-Control-Allow-Credentials", "true"); // Include if using cookies or authentication
   }
 
+  public void addHeader(String header, String value) {
+    headers.put(header, value);
+  }
 
   public void updateResponseHeaders(Response response) {
     for(Map.Entry<String, String> header:headers.entrySet()) {

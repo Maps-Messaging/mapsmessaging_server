@@ -23,8 +23,11 @@ import io.mapsmessaging.config.rest.StaticConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.RestApiManagerConfigDTO;
+import io.mapsmessaging.rest.handler.CorsHeaderManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
@@ -62,6 +65,16 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
 
     if (properties.containsKey("static")) {
       this.staticConfig = new StaticConfig((ConfigurationProperties) properties.get("static"));
+    }
+
+    corsHeaders = CorsHeaderManager.getInstance().getCorsHeaders();
+    if(properties.containsKey("corsHeaders")) {
+      Map<String, Object> corsHeadersProp = ((ConfigurationProperties) properties.get("corsHeaders")).getMap();
+      for(Map.Entry<String, Object> entry : corsHeadersProp.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue().toString();
+        corsHeaders.addHeader(key, value);
+      }
     }
   }
 
@@ -146,7 +159,8 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     if (this.staticConfig != null) {
       properties.put("static", this.staticConfig.toConfigurationProperties());
     }
-
+    Map<String, Object> corsHeadersProp = new HashMap<>(CorsHeaderManager.getInstance().getCorsHeaders().getHeaders());
+    properties.put("corsHeaders", corsHeadersProp);
     return properties;
   }
 

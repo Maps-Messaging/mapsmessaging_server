@@ -24,16 +24,13 @@ import org.glassfish.grizzly.http.server.StaticHttpHandler;
 
 public class CorsEnabledStaticHttpHandler extends StaticHttpHandler {
 
-  private final CorsHeaders corsHeaders;
-
   public CorsEnabledStaticHttpHandler(String... docRoots) {
     super(docRoots);
-    corsHeaders = new CorsHeaders();
   }
 
   @Override
   protected boolean handle(String uri, Request request, Response response) throws Exception {
-    corsHeaders.updateResponseHeaders(response);
+    CorsHeaderManager.getInstance().getCorsHeaders().updateResponseHeaders(response);
     return super.handle(uri, request, response);
   }
 }
