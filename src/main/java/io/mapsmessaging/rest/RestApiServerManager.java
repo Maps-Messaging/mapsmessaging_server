@@ -166,6 +166,7 @@ public class RestApiServerManager implements Agent {
     if (config.isEnableSchemaManagement()) {
       endpoints.add("io.mapsmessaging.rest.api.impl.schema");
     }
+    endpoints.add("io.mapsmessaging.rest.api.impl.hardware");
     endpoints.add("io.mapsmessaging.rest.api.impl.server");
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
