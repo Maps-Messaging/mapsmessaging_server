@@ -21,12 +21,15 @@ package io.mapsmessaging.rest.api.impl.hardware;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.config.DeviceManagerConfig;
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.dto.rest.config.DeviceManagerConfigDTO;
 import io.mapsmessaging.dto.rest.devices.DeviceInfoDTO;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -41,7 +44,6 @@ public class HardwareManagementApi extends BaseRestApi {
   @GET
   @Path("/server/hardware/scan")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the specific destination details")
   public List<String> scanForDevices() throws InterruptedException {
     if (!hasAccess("hardware")) {
       response.setStatus(403);
@@ -53,7 +55,6 @@ public class HardwareManagementApi extends BaseRestApi {
   @GET
   @Path("/server/hardware")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the specific destination details")
   public List<DeviceInfoDTO> getAllDiscoveredDevices() throws IOException {
     if (!hasAccess("hardware")) {
       response.setStatus(403);
@@ -72,4 +73,27 @@ public class HardwareManagementApi extends BaseRestApi {
     }
     return devices;
   }
+
+  @GET
+  @Path("/server/hardware/config")
+  @Produces({MediaType.APPLICATION_JSON})
+  public DeviceManagerConfigDTO getConfig() {
+    if (!hasAccess("hardware")) {
+      response.setStatus(403);
+      return null;
+    }
+    return DeviceManagerConfig.getInstance();
+  }
+
+  @POST
+  @Path("/server/hardware/config")
+  @Produces({MediaType.APPLICATION_JSON})
+  public boolean getConfig(DeviceManagerConfigDTO update) {
+    if (!hasAccess("hardware")) {
+      response.setStatus(403);
+      return false;
+    }
+    return DeviceManagerConfig.getInstance().update(update);
+  }
+
 }
