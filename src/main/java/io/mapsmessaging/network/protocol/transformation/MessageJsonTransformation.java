@@ -22,9 +22,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.internal.MessageLoader;
 import io.mapsmessaging.network.protocol.transformation.internal.MessagePacker;
+
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
 
 public class MessageJsonTransformation implements ProtocolMessageTransformation {
 
@@ -36,6 +40,8 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
     mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     return mapper;
   }
+
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   @Override
   public String getName() {
@@ -57,8 +63,7 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
         message.load(messageBuilder);
       }
     } catch (Exception e) {
-      // Log the exception and handle it as needed
-      e.printStackTrace();
+      logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
     }
   }
 
@@ -68,7 +73,7 @@ public class MessageJsonTransformation implements ProtocolMessageTransformation 
       try {
         return objectMapper.writeValueAsBytes(new MessagePacker(message));
       } catch (Exception e) {
-        // Log the exception and handle it as needed
+        logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
       }
     }
     return message.getOpaqueData();

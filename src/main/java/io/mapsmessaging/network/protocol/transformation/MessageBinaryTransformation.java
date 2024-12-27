@@ -21,12 +21,18 @@ package io.mapsmessaging.network.protocol.transformation;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.internal.MetaRouteHandler;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
+
 public class MessageBinaryTransformation implements ProtocolMessageTransformation {
+
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   @Override
   public String getName() {
@@ -84,8 +90,7 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
             .setSchemaId(message.getSchemaId());
       }
     } catch (Exception e) {
-      // Log the exception and handle it as needed
-      e.printStackTrace();
+      logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
     }
   }
 
@@ -115,8 +120,7 @@ public class MessageBinaryTransformation implements ProtocolMessageTransformatio
         }
         return response;
       } catch (Exception e) {
-        e.printStackTrace();
-        // Log the exception and handle it as needed
+        logger.log(MESSAGE_TRANSFORMATION_EXCEPTION, e);
       }
     }
     return message.getOpaqueData();

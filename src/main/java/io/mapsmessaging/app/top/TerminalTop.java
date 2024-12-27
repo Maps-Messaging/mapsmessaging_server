@@ -43,7 +43,6 @@ public class TerminalTop {
   private final DestinationPane destinationPane;
   private final InterfacesPane interfacesPane;
 
-  private final Terminal terminal;
   private final  Screen screen;
   private final AtomicBoolean runFlag;
   private boolean disconnected = false;
@@ -57,7 +56,7 @@ public class TerminalTop {
     restConnection = new RestRequestManager(url, username, password);
 
     // Setup terminal and screen layers
-    terminal = new DefaultTerminalFactory().createTerminal();
+    Terminal terminal = new DefaultTerminalFactory().createTerminal();
     screen = new TerminalScreen(terminal);
     screen.startScreen();
     screen.clear();
@@ -107,7 +106,7 @@ public class TerminalTop {
       screen.stopScreen(); // Properly stop the screen when done
       restConnection.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      // ignore since it is an expected exceptio that we handle
     }
   }
 
@@ -134,8 +133,10 @@ public class TerminalTop {
           return 0;
         }
       } catch (IOException e) {
+        // ignore
       } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        Thread.currentThread().interrupt();
+        return nextUpdate;
       }
     }
     return nextUpdate;

@@ -703,6 +703,8 @@ public enum ServerLogMessages implements LogMessage {
   AUTH_STORAGE_FAILED_TO_LOAD(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage level failed to load"),
   AUTH_STORAGE_FAILED_ON_UPDATE(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication storage unable to update state"),
 
+  MESSAGE_TRANSFORMATION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.TRANSFORMATION, "Exception raised during transformation"),
+
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 
@@ -732,6 +734,7 @@ public enum ServerLogMessages implements LogMessage {
     PROTOCOL("Protocol"),
     DISCOVERY("Discovery"),
     REST("Rest"),
+    TRANSFORMATION("Transformation"),
     DEVICE("Device"),
     ENGINE("Engine");
 
