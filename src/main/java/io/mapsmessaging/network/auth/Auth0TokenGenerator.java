@@ -20,11 +20,11 @@ package io.mapsmessaging.network.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Map;
 import lombok.Getter;
 
@@ -54,38 +54,47 @@ public class Auth0TokenGenerator implements TokenGenerator {
     try {
       ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
       String json = ow.writeValueAsString(body);
-      HttpResponse<JsonNode> response = Unirest.post("https://" + domain + "/oauth/token")
-          .header("content-type", "application/json")
-          .body(json)
-          .asJson();
-      return response.getBody().getObject().getString("access_token");
-    } catch (UnirestException e) {
-      throw new IOException(e);
+
+      HttpClient client = HttpClient.newHttpClient();
+      HttpRequest request = HttpRequest.newBuilder()
+          .uri(URI.create("https://" + domain + "/oauth/token"))
+          .header("Content-Type", "application/json")
+          .POST(HttpRequest.BodyPublishers.ofString(json))
+          .build();
+
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+      if (response.statusCode() != 200) {
+        throw new IOException("Failed to fetch token: " + response.body());
+      }
+
+      ObjectMapper objectMapper = new ObjectMapper();
+      return objectMapper.readTree(response.body()).get("access_token").asText();
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Request interrupted", e);
     }
   }
 
-  private Auth0TokenGenerator(Map<String, Object>  properties) {
-    domain = ((String)properties.get("domain")).trim();
+  private Auth0TokenGenerator(Map<String, Object> properties) {
+    domain = ((String) properties.get("domain")).trim();
     body = new Auth0TokenBody(properties);
   }
 
+  @Getter
   private static final class Auth0TokenBody {
 
-    @Getter
     private final String clientId;
-    @Getter
     private final String clientSecret;
-    @Getter
     private final String audience;
-    @Getter
     private final String grantType;
 
-    public Auth0TokenBody(Map<String, Object>  properties) {
-      clientId = ((String)properties.get("client_id")).trim();
-      clientSecret = ((String)properties.get("client_secret")).trim();
-      audience = "https://" + ((String)properties.get("domain")).trim() + "/api/v2/";
-      grantType = ((String)properties.get("grant_type")).trim();
+    public Auth0TokenBody(Map<String, Object> properties) {
+      clientId = ((String) properties.get("client_id")).trim();
+      clientSecret = ((String) properties.get("client_secret")).trim();
+      audience = "https://" + ((String) properties.get("domain")).trim() + "/api/v2/";
+      grantType = ((String) properties.get("grant_type")).trim();
     }
   }
-
 }

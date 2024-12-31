@@ -735,7 +735,7 @@
           </execution>
         </executions>
         <configuration>
-          <reportOutputDirectory>${project.build.directory}/site/docs</reportOutputDirectory>
+          <outputDirectory>${project.build.directory}/site/docs</outputDirectory>
           <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
           <show>public</show>
           <encoding>UTF-8</encoding>
@@ -1073,13 +1073,6 @@
       <groupId>com.auth0</groupId>
       <artifactId>jwks-rsa</artifactId>
       <version>0.22.1</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.mashape.unirest/unirest-java -->
-    <dependency>
-      <groupId>com.mashape.unirest</groupId>
-      <artifactId>unirest-java</artifactId>
-      <version>1.4.9</version>
     </dependency>
 
     <!-- Add annotations for not null -->
