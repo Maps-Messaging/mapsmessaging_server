@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.network.protocol.transformation;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.mapsmessaging.api.MessageBuilder;
@@ -27,8 +29,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.internal.MessageLoader;
 import io.mapsmessaging.network.protocol.transformation.internal.MessagePacker;
-
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
 
 public class MessageJsonTransformation implements ProtocolMessageTransformation {
 
