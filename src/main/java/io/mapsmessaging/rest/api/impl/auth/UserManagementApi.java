@@ -34,6 +34,8 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -53,23 +55,32 @@ public class UserManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all users",
-      description = "Retrieves all currently known users filtered by the optional filter string, SQL like syntax. Requires authentication if enabled in the configuration."
+      description = "Retrieves all currently known users filtered by the optional filter string, SQL-like syntax. Requires authentication if enabled in the configuration.",
+      operationId = "getAllUsers"
   )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "List of users returned"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "500", description = "Unexpected error")
+  })
   public UserListResponse getAllUsers(
       @Parameter(
-          description = "Optional filter string ",
-          schema = @Schema(type= "String", example = "username = 'bill'")
+          description = "Optional filter string",
+          schema = @Schema(type = "string", example = "username = 'bill'")
       )
-      @QueryParam("filter") String filter) throws ParseException {
+      @QueryParam("filter") String filter
+  ) throws ParseException {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
+
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<UserDTO> results =
         users.stream()
             .map(userDetails -> buildUser(userDetails, authManager))
             .filter(user -> parser == null || parser.evaluate(user))
             .collect(Collectors.toList());
+
     return new UserListResponse(results);
   }
 
@@ -78,8 +89,14 @@ public class UserManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get user by username",
-      description = "Retrieve the user by username. Requires authentication if enabled in the configuration."
+      description = "Retrieve the user by username. Requires authentication if enabled in the configuration.",
+      operationId = "getUserByUsername"
   )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "User returned"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "404", description = "User not found")
+  })
   public UserDTO getUser(@PathParam("username") String username) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
@@ -98,8 +115,14 @@ public class UserManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add a new user",
-      description = "Adds a new user to the system. Requires authentication if enabled in the configuration."
+      description = "Adds a new user to the system. Requires authentication if enabled in the configuration.",
+      operationId = "addUser"
   )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "User added"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "500", description = "Unexpected error")
+  })
   public BaseResponse addUser(NewUserDTO newUser) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
@@ -119,8 +142,14 @@ public class UserManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a user",
-      description = "Deletes a user from the system. Requires authentication if enabled in the configuration."
+      description = "Deletes a user from the system. Requires authentication if enabled in the configuration.",
+      operationId = "deleteUser"
   )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "User deleted"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "500", description = "User could not be deleted")
+  })
   public BaseResponse deleteUser(@PathParam("userUuid") String userUuid) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();

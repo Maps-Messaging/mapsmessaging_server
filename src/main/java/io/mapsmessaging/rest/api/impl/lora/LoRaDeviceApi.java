@@ -13,7 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.mapsmessaging.rest.api.impl.lora;
@@ -29,6 +28,8 @@ import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.rest.responses.LoRaListResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -44,6 +45,13 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get all LoRa devices",
+      description = "Returns a list of all known LoRa devices. Requires authentication if enabled."
+  )
+  @ApiResponse(responseCode = "200", description = "LoRa devices returned")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public LoRaListResponse getAllLoRaDevices() {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
@@ -57,6 +65,14 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get LoRa device by name",
+      description = "Returns information about the specified LoRa device. Requires authentication if enabled."
+  )
+  @ApiResponse(responseCode = "200", description = "LoRa device returned")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Device not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public LoRaDeviceInfoDTO getLoRaDevice(@PathParam("deviceName") String deviceName) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
@@ -77,7 +93,18 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}/{nodeId}")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<LoRaEndPointConnectionInfoDTO> getLoRaEndPointConnections(@PathParam("deviceName") String deviceName, @PathParam("nodeId") String nodeId) {
+  @Operation(
+      summary = "Get LoRa endpoint connections",
+      description = "Returns connection info for the specified node on the specified LoRa device. Requires authentication if enabled."
+  )
+  @ApiResponse(responseCode = "200", description = "Endpoint connections returned")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Device or node not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
+  public List<LoRaEndPointConnectionInfoDTO> getLoRaEndPointConnections(
+      @PathParam("deviceName") String deviceName,
+      @PathParam("nodeId") String nodeId
+  ) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     int parsedInt = Integer.parseInt(nodeId);

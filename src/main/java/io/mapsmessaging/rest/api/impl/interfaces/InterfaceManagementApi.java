@@ -13,7 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.mapsmessaging.rest.api.impl.interfaces;
@@ -32,6 +31,7 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -47,13 +47,16 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   @Path("/server/interfaces")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get all end point details",
-      description = "get all end point configuration details, filtered with the optional filter."
+      summary = "Get all endpoint details",
+      description = "Returns configuration details for all endpoints, optionally filtered. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "List of endpoints returned")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public InterfaceDetailResponse getAllInterfaces(
       @Parameter(
-          description = "Optional filter string ",
-          schema = @Schema(type= "String", example = "state = 'started'")
+          description = "Optional filter string",
+          schema = @Schema(type = "string", example = "state = 'started'")
       )
       @QueryParam("filter") String filter
   ) throws ParseException {
@@ -63,6 +66,7 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     if (cachedResponse != null) {
       return cachedResponse;
     }
+
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers =
         MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
@@ -74,8 +78,6 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
             .collect(Collectors.toList());
 
     InterfaceDetailResponse response = new InterfaceDetailResponse(protocols);
-
-    // Cache the response
     putToCache(key, response);
     return response;
   }
@@ -83,9 +85,12 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interfaces/stopAll")
   @Operation(
-      summary = "Stop all end points",
-      description = "Stops all running endpoints."
+      summary = "Stop all endpoints",
+      description = "Stops all currently running endpoints. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "All endpoints stopped")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response stopAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().stopAll();
@@ -95,9 +100,12 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interfaces/startAll")
   @Operation(
-      summary = "Start all end points",
-      description = "Starts all stopped endpoints."
+      summary = "Start all endpoints",
+      description = "Starts all endpoints if they are stopped. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "All endpoints started")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response startAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().startAll();
@@ -107,9 +115,12 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interfaces/pauseAll")
   @Operation(
-      summary = "Pause all end points",
-      description = "Pauses all running endpoints and stops new incoming connections."
+      summary = "Pause all endpoints",
+      description = "Pauses all running endpoints and stops new incoming connections. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "All endpoints paused")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response pauseAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().pauseAll();
@@ -119,9 +130,12 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interfaces/resumeAll")
   @Operation(
-      summary = "Resume all end points",
-      description = "Resumes all paused endpoints and allows new incoming connections."
+      summary = "Resume all endpoints",
+      description = "Resumes all paused endpoints, allowing new incoming connections. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "All endpoints resumed")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response resumeAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().resumeAll();

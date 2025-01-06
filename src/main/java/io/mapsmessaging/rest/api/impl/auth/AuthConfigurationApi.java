@@ -23,6 +23,8 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
@@ -38,8 +40,13 @@ public class AuthConfigurationApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get the auth configuration",
-      description = "Retrieves the configuration used to setup the authentication and authorisation. Requires authentication if enabled in the configuration."
+      description = "Retrieves the current configuration for authentication and authorisation.",
+      operationId = "getAuthConfiguration"
   )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Auth configuration retrieved"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized")
+  })
   public AuthManagerConfigDTO getAuthConfiguration() {
     hasAccess(RESOURCE);
     return AuthManager.getInstance().getConfig();
@@ -47,13 +54,19 @@ public class AuthConfigurationApi extends BaseAuthRestApi {
 
   @POST
   @Path("/auth/config")
-  @Produces({MediaType.APPLICATION_JSON})
   @Consumes({MediaType.APPLICATION_JSON})
+  @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update the auth configuration",
-      description = "Updates the configuration used to setup the authentication and authorisation. Requires authentication if enabled in the configuration.",
-      security = {@SecurityRequirement(name ="basicAuth")}
+      description = "Updates and saves the configuration for authentication and authorisation.",
+      operationId = "updateAuthConfiguration",
+      security = {@SecurityRequirement(name = "basicAuth")}
   )
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Auth configuration updated"),
+      @ApiResponse(responseCode = "400", description = "Bad request or invalid data"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized")
+  })
   public boolean updateAuthConfiguration(AuthManagerConfigDTO update) throws IOException {
     hasAccess(RESOURCE);
     if (AuthManager.getInstance().getConfig().update(update)) {

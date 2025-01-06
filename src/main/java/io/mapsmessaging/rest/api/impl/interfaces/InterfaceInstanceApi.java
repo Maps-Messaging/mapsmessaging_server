@@ -13,7 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.mapsmessaging.rest.api.impl.interfaces;
@@ -32,6 +31,7 @@ import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -49,9 +49,13 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get end point configurations",
-      description = "Get the end point configuration specifed by the name. Requires authentication if enabled in the configuration."
+      summary = "Get endpoint configuration",
+      description = "Returns the endpoint configuration for the specified name. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "Endpoint configuration returned")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Endpoint not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public InterfaceInfoDTO getEndPoint(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
@@ -60,13 +64,13 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
       return cachedResponse;
     }
 
-    // Fetch and cache response
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers =
+        MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
-        InterfaceInfoDTO response = InterfaceInfoHelper.fromEndPointManager(endPointManager);
-        putToCache(key, response);
-        return response;
+        InterfaceInfoDTO responseDto = InterfaceInfoHelper.fromEndPointManager(endPointManager);
+        putToCache(key, responseDto);
+        return responseDto;
       }
     }
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -77,9 +81,13 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Path("/server/interface/{endpoint}/connections")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get end point connections",
-      description = "Get current connections on this endpoint. Requires authentication if enabled in the configuration."
+      summary = "Get endpoint connections",
+      description = "Returns current connections on the specified endpoint. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "Connections returned")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Endpoint not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public EndPointDetailResponse getEndPointConnections(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
@@ -87,33 +95,45 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     if (cachedResponse != null) {
       return cachedResponse;
     }
-    List<EndPointSummaryDTO> endPointDetails = MessageDaemon.getInstance()
-        .getSubSystemManager()
-        .getNetworkManager()
-        .getAll()
-        .stream()
-        .filter(endPointManager -> isMatch(endpointName, endPointManager))
-        .flatMap(endPointManager -> endPointManager.getEndPointServer()
-            .getActiveEndPoints()
-            .stream()
-            .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint)))
-        .collect(Collectors.toList());
 
-    EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
-    putToCache(key, response);
-    return response;
+    List<EndPointSummaryDTO> endPointDetails =
+        MessageDaemon.getInstance()
+            .getSubSystemManager()
+            .getNetworkManager()
+            .getAll()
+            .stream()
+            .filter(endPointManager -> isMatch(endpointName, endPointManager))
+            .flatMap(endPointManager ->
+                endPointManager
+                    .getEndPointServer()
+                    .getActiveEndPoints()
+                    .stream()
+                    .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
+            )
+            .collect(Collectors.toList());
+
+    EndPointDetailResponse responseDto = new EndPointDetailResponse(endPointDetails);
+    putToCache(key, responseDto);
+    return responseDto;
   }
 
   @PUT
   @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Update end point configuration",
-      description = "Update the configuration supplied for the named endpoint."
+      summary = "Update endpoint configuration",
+      description = "Updates the configuration for the named endpoint. Requires authentication if enabled."
   )
-  public boolean updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) throws IOException {
+  @ApiResponse(responseCode = "200", description = "Endpoint configuration updated")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Endpoint not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
+  public boolean updateInterfaceConfiguration(
+      @PathParam("endpoint") String endpointName,
+      EndPointServerConfigDTO config
+  ) throws IOException {
     hasAccess(RESOURCE);
-    if(endpointName.equals(config.getName()) && NetworkManagerConfig.getInstance().update(config)){
+    if (endpointName.equals(config.getName()) && NetworkManagerConfig.getInstance().update(config)) {
       NetworkManagerConfig.getInstance().save();
       return true;
     }
@@ -124,14 +144,18 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interface/{endpoint}/stop")
   @Operation(
-      summary = "Stop the end point",
-      description = "Stops the specified end point from accepting new connections and closes connections."
+      summary = "Stop endpoint",
+      description = "Stops the specified endpoint from accepting new connections. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "Endpoint stopped")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Endpoint not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response stopInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.STOPPED);
-    if (response != null) {
-      return response;
+    Response result = lookup(endpointName, STATE.STOPPED);
+    if (result != null) {
+      return result;
     }
     return Response.noContent().build();
   }
@@ -139,14 +163,18 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interface/{endpoint}/start")
   @Operation(
-      summary = "Start the end point",
-      description = "Starts the specified end point accepting new connections."
+      summary = "Start endpoint",
+      description = "Starts the specified endpoint, allowing new connections. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "Endpoint started")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Endpoint not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response startInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.START);
-    if (response != null) {
-      return response;
+    Response result = lookup(endpointName, STATE.START);
+    if (result != null) {
+      return result;
     }
     return Response.noContent().build();
   }
@@ -154,14 +182,18 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interface/{endpoint}/resume")
   @Operation(
-      summary = "Resume the end point",
-      description = "Resume the specified end point accepting new connections."
+      summary = "Resume endpoint",
+      description = "Resumes the specified endpoint if it is paused, allowing new connections. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "Endpoint resumed")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Endpoint not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response resumeInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.RESUME);
-    if (response != null) {
-      return response;
+    Response result = lookup(endpointName, STATE.RESUME);
+    if (result != null) {
+      return result;
     }
     return Response.noContent().build();
   }
@@ -169,14 +201,18 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interface/{endpoint}/pause")
   @Operation(
-      summary = "Pause the end point",
-      description = "Pauses the specified end point from accepting new connections."
+      summary = "Pause endpoint",
+      description = "Pauses the specified endpoint, stopping new connections. Requires authentication if enabled."
   )
+  @ApiResponse(responseCode = "200", description = "Endpoint paused")
+  @ApiResponse(responseCode = "401", description = "Unauthorized")
+  @ApiResponse(responseCode = "404", description = "Endpoint not found")
+  @ApiResponse(responseCode = "500", description = "Server error")
   public Response pauseInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.PAUSED);
-    if (response != null) {
-      return response;
+    Response result = lookup(endpointName, STATE.PAUSED);
+    if (result != null) {
+      return result;
     }
     return Response.noContent().build();
   }
@@ -193,14 +229,13 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   }
 
   private Response handleRequest(STATE newState, EndPointManager endPointManager) {
-
     try {
       if (newState == STATE.START && endPointManager.getState() == STATE.STOPPED) {
         endPointManager.start();
         return Response.ok().build();
       } else if (newState == STATE.STOPPED
           && (endPointManager.getState() == STATE.START
-              || endPointManager.getState() == STATE.PAUSED)) {
+          || endPointManager.getState() == STATE.PAUSED)) {
         endPointManager.close();
         return Response.ok().build();
       } else if (newState == STATE.RESUME && endPointManager.getState() == STATE.PAUSED) {
