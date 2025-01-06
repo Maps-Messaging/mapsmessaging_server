@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.rest.api.impl;
 
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -30,8 +33,31 @@ public class ConsulHealth extends BaseRestApi {
 
   @GET
   @Produces({MediaType.TEXT_PLAIN})
-  //  @ApiOperation(value = "Simple request to test if the server is running")
-  public String getPing() {
-    return "Ok";
+  @Operation(
+      summary = "Check server health",
+      description = "Checks the health of all subsystems and returns their overall status. Possible values are 'Ok', 'Warning', or 'Error'."
+  )
+  public String getHealth() {
+    String state = "";
+    for(SubSystemStatusDTO status : MessageDaemon.getInstance().getSubSystemManager().getSubSystemStatus()){
+      switch(status.getStatus()){
+        case ERROR:
+          state = "Error";
+          break;
+
+        case WARN:
+          if(state.isEmpty()){
+            state = "Warning";
+          }
+          break;
+
+        default:
+          break;
+      }
+    }
+    if(state.isEmpty()){
+      state = "Ok";
+    }
+    return state;
   }
 }

@@ -29,6 +29,7 @@ import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.rest.responses.LoRaListResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -44,6 +45,10 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Retrieve all LoRa devices",
+      description = "Fetches a list of all LoRa devices along with their configurations and statistics."
+  )
   public LoRaListResponse getAllLoRaDevices() {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
@@ -57,6 +62,10 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Retrieve a specific LoRa device",
+      description = "Fetches the details of a specific LoRa device identified by its name."
+  )
   public LoRaDeviceInfoDTO getLoRaDevice(@PathParam("deviceName") String deviceName) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
@@ -77,7 +86,12 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}/{nodeId}")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<LoRaEndPointConnectionInfoDTO> getLoRaEndPointConnections(@PathParam("deviceName") String deviceName, @PathParam("nodeId") String nodeId) {
+  @Operation(
+      summary = "Retrieve endpoint connections for a LoRa device",
+      description = "Fetches the connection information for a specific endpoint of a LoRa device, identified by the device name and node ID."
+  )
+  public List<LoRaEndPointConnectionInfoDTO> getLoRaEndPointConnections(
+      @PathParam("deviceName") String deviceName, @PathParam("nodeId") String nodeId) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     int parsedInt = Integer.parseInt(nodeId);

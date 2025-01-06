@@ -50,10 +50,17 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Path("/server/destination")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get destination details",
-      description = "Retrieve details for the specified destination. Requires authentication if enabled in the configuration."
+      summary = "Retrieve detailed information about a destination",
+      description = "Fetch detailed information for a specific destination identified by its name. Authentication is required if the server configuration mandates it. Cached results are returned if available to enhance performance."
   )
-  public DestinationDetailsResponse getDestinationDetails(@QueryParam("destinationName") String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
+  public DestinationDetailsResponse getDestinationDetails(
+      @Parameter(
+          description = "The name of the destination for which details are requested",
+          required = true,
+          schema = @Schema(type = "string", example = "destination-01")
+      )
+      @QueryParam("destinationName") String destinationName
+  ) throws ExecutionException, InterruptedException, TimeoutException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), destinationName);
     DestinationDetailsResponse cachedResponse = getFromCache(key, DestinationDetailsResponse.class);
@@ -76,23 +83,23 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Path("/server/destinations")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get all destination details",
-      description = "Retrieve details on all known destinations. Requires authentication if enabled in the configuration."
+      summary = "Retrieve a list of all destinations with optional filtering and sorting",
+      description = "Fetch a paginated list of all known destinations. You can filter the list using a selector string, limit the number of returned entries using the 'size' parameter, and sort the results by attributes such as Name, Published Messages, or Stored Messages. Cached results are returned if available to enhance performance. Authentication is required if the server configuration mandates it."
   )
   public DestinationResponse getAllDestinations(
       @Parameter(
-          description = "Optional filter string ",
-          schema = @Schema(type= "String", example = "type = 'topic AND 10 OR storedMessages > 50")
+          description = "An optional filter string for selecting specific destinations. The filter should be a valid expression that complies with the selector syntax.",
+          schema = @Schema(type = "string", example = "type = 'topic' AND storedMessages > 50")
       )
       @QueryParam("filter") String filter,
       @Parameter(
-          description = "Number of entries to return",
-          schema = @Schema(type= "int", example = "100", defaultValue = "40")
+          description = "The maximum number of destinations to return in the response. A default value is used if this parameter is not provided.",
+          schema = @Schema(type = "int", example = "100", defaultValue = "40")
       )
       @QueryParam("size") @DefaultValue("40") int size,
       @Parameter(
-          description = "How to sort the data before returning the list",
-          schema = @Schema(type= "String", example = "Published", defaultValue = "Published", allowableValues = {"Name", "Published", "Delivered", "Stored", "Pending", "Delayed", "Expired"})
+          description = "The attribute by which the list of destinations should be sorted before returning. Possible values include Name, Published, Delivered, Stored, Pending, Delayed, and Expired.",
+          schema = @Schema(type = "string", example = "Published", defaultValue = "Published", allowableValues = {"Name", "Published", "Delivered", "Stored", "Pending", "Delayed", "Expired"})
       )
       @QueryParam("sortBy") @DefaultValue("Published") String sortBy
   ) throws ExecutionException, InterruptedException, TimeoutException, ParseException {

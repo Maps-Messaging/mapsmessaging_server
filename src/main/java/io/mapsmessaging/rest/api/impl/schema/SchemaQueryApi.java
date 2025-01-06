@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-@Tag(name = "Schema Management")
+@Tag(name = "Schema Management", description = "Endpoints for managing and querying schemas in the system.")
 @Path(URI_PATH)
 public class SchemaQueryApi extends BaseRestApi {
 
@@ -52,13 +52,13 @@ public class SchemaQueryApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete specific schema",
-      description = "Delete the schema configuration by unique id")
+      description = "Deletes a schema configuration by its unique ID."
+  )
   public BaseResponse deleteSchemaById(@PathParam("schemaId") String schemaId) {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
       SchemaManager.getInstance().removeSchema(schemaId);
-      return new BaseResponse();
     }
     return new BaseResponse();
   }
@@ -66,7 +66,10 @@ public class SchemaQueryApi extends BaseRestApi {
   @DELETE
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Delete all schemas", description = "Deletes all the schema configurations")
+  @Operation(
+      summary = "Delete all schemas",
+      description = "Deletes all schemas, optionally filtered by a query string."
+  )
   public BaseResponse deleteAllSchemas(@QueryParam("filter") String filter) throws ParseException {
     hasAccess(RESOURCE);
     ParserExecutor parser =
@@ -81,11 +84,13 @@ public class SchemaQueryApi extends BaseRestApi {
     return new BaseResponse();
   }
 
-  // @ApiOperation(value = "Add a new schema configuration to the repository")
-  @Path("/server/schema")
   @POST
+  @Path("/server/schema")
   @Consumes({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Add new schema", description = "Adds a new schema to the registry")
+  @Operation(
+      summary = "Add new schema",
+      description = "Adds a new schema configuration to the system."
+  )
   public BaseResponse addSchema(SchemaPostDTO jsonString) throws IOException {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.getSchema());
@@ -96,7 +101,10 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get schema", description = "Returns a specific schema")
+  @Operation(
+      summary = "Get specific schema",
+      description = "Retrieves the details of a specific schema by its unique ID."
+  )
   public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) throws IOException {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
@@ -110,10 +118,10 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema/context/{context}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get schema by context",
-      description = "Returns all schemas that match the context")
-  public SchemaResponse getSchemaByContext(@PathParam("context") String context)
-      throws IOException {
+      summary = "Get schemas by context",
+      description = "Retrieves all schemas that match the specified context."
+  )
+  public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
     hasAccess(RESOURCE);
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
     if (config != null) {
@@ -126,8 +134,9 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema/type/{type}")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get schema by type",
-      description = "Returns all schemas that match the type")
+      summary = "Get schemas by type",
+      description = "Retrieves all schemas that match the specified type."
+  )
   public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
     hasAccess(RESOURCE);
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
@@ -140,9 +149,11 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get all schemas", description = "Returns all schemas")
-  public SchemaConfigResponse getAllSchemas(@QueryParam("filter") String filter)
-      throws ParseException {
+  @Operation(
+      summary = "Get all schemas",
+      description = "Retrieves all schema configurations, optionally filtered by a query string."
+  )
+  public SchemaConfigResponse getAllSchemas(@QueryParam("filter") String filter) throws ParseException {
     hasAccess(RESOURCE);
     ParserExecutor parser =
         (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
@@ -157,14 +168,15 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema/map")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get schemas and the configuration",
-      description = "Returns all schemas and mapping information")
+      summary = "Get schema mappings",
+      description = "Retrieves all schemas and their associated mapping information."
+  )
   public SchemaMapResponse getSchemaMapping() {
     hasAccess(RESOURCE);
     Map<String, List<SchemaConfig>> map = SchemaManager.getInstance().getMappedSchemas();
     Map<String, List<String>> responseMap = new LinkedHashMap<>();
     for (Entry<String, List<SchemaConfig>> entry : map.entrySet()) {
-      responseMap.put(entry.getKey(), (convertToId(entry.getValue())));
+      responseMap.put(entry.getKey(), convertToId(entry.getValue()));
     }
     return new SchemaMapResponse(responseMap);
   }
@@ -173,8 +185,9 @@ public class SchemaQueryApi extends BaseRestApi {
   @Path("/server/schema/formats")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get all known formats supported",
-      description = "Returns list of supported formats")
+      summary = "Get supported formats",
+      description = "Retrieves a list of all known schema formats supported by the system."
+  )
   public StringListResponse getKnownFormats() {
     hasAccess(RESOURCE);
     return new StringListResponse(SchemaManager.getInstance().getMessageFormats());
@@ -183,7 +196,10 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/link-format")
   @Produces({MediaType.TEXT_PLAIN})
-  @Operation(summary = "Get the link-format config", description = "Returns link-format list")
+  @Operation(
+      summary = "Get link-format configuration",
+      description = "Retrieves the link-format configuration list."
+  )
   public String getLinkFormat() {
     hasAccess(RESOURCE);
     return SchemaManager.getInstance().buildLinkFormatResponse();

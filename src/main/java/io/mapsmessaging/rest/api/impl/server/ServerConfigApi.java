@@ -23,6 +23,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -36,6 +37,10 @@ public class ServerConfigApi extends ServerBaseRestApi {
   @GET
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Retrieve server configuration",
+      description = "Fetches the current server configuration settings as a JSON object. Uses caching for improved performance."
+  )
   public MessageDaemonConfigDTO getServerConfig() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverConfig");
@@ -51,6 +56,10 @@ public class ServerConfigApi extends ServerBaseRestApi {
   @PUT
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Update server configuration",
+      description = "Updates the server configuration with the provided settings. Saves changes to disk and clears relevant cache entries to ensure consistency."
+  )
   public Response updateServerConfig(MessageDaemonConfigDTO dto) throws IOException {
     hasAccess(RESOURCE);
     if (MessageDaemon.getInstance().getMessageDaemonConfig().update(dto)) {

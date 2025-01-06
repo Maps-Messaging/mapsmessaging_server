@@ -26,6 +26,7 @@ import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.LoRaConfigListResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -41,6 +42,10 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora/config")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Retrieve all LoRa device configurations",
+      description = "Fetches a list of all configured LoRa devices and their settings."
+  )
   public LoRaConfigListResponse getAllLoRaDeviceConfigs() {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
@@ -54,6 +59,10 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
   @GET
   @Path("/device/lora/{deviceName}/config")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Retrieve a specific LoRa device configuration",
+      description = "Fetches the configuration for a specific LoRa device identified by its name."
+  )
   public LoRaDeviceConfigInfoDTO getLoRaDeviceConfig(@PathParam("deviceName") String deviceName) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
@@ -78,25 +87,27 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
   @Path("/device/lora/config")
   @Consumes({MediaType.APPLICATION_JSON})
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Add a new LoRa device configuration",
+      description = "Creates a new LoRa device configuration and adds it to the system."
+  )
   public BaseResponse addLoRaDeviceConfig(LoRaDeviceConfigInfoDTO newDevice) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     return new BaseResponse();
-    //    response.setStatus(500);
-    //  return new BaseResponse(request);
   }
 
   @DELETE
   @Path("/device/lora/{deviceId}/config")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Delete a specific LoRa device configuration",
+      description = "Removes a LoRa device configuration identified by its unique ID."
+  )
   public BaseResponse deleteLoRaDeviceConfig(@PathParam("deviceId") String deviceId) {
     hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
-    //    if (deviceManager.deleteDevice(UUID.fromString(deviceId)))
     return new BaseResponse();
-    //    }
-    //    response.setStatus(500);
-    //    return new BaseResponse(request);
   }
 
   private LoRaDeviceConfigInfoDTO createInfo(LoRaDevice device) {
@@ -113,3 +124,4 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
     return deviceInfo;
   }
 }
+

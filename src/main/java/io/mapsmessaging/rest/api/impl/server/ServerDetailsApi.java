@@ -28,6 +28,8 @@ import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -40,6 +42,10 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @GET
   @Path("/server/details/info")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get server build information",
+      description = "Retrieves detailed information about the server build, such as version and configuration details. Uses caching for improved performance."
+  )
   public ServerInfoDTO getBuildInfo() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "buildInfo");
@@ -57,6 +63,10 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @GET
   @Path("/server/details/stats")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get server statistics",
+      description = "Retrieves server usage statistics, including metrics such as CPU usage, memory usage, and active connections. Uses caching for improved performance."
+  )
   public ServerStatisticsResponse getStats() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
@@ -75,6 +85,10 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @GET
   @Path("/server/status")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get server subsystem status",
+      description = "Retrieves the current status of all server subsystems, including their operational state (e.g., OK, Warning, or Error). Uses caching for improved performance."
+  )
   public List<SubSystemStatusDTO> getServerStatus() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
@@ -92,21 +106,27 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @PUT
   @Path("/server/restart")
   @Produces({MediaType.APPLICATION_JSON})
-  //  @ApiOperation(value = "Retrieve the server statistics")
-  public String restartServer() {
+  @Operation(
+      summary = "Restart the server",
+      description = "Restarts the server gracefully, preserving any necessary state before the restart operation begins."
+  )
+  public StatusResponse restartServer() {
     hasAccess(RESOURCE);
     shutdown(8);
-    return "{\"status\":\"Restarting\"}";
+    return new StatusResponse("Restarting");
   }
 
   @PUT
   @Path("/server/shutdown")
   @Produces({MediaType.APPLICATION_JSON})
-  //  @ApiOperation(value = "Retrieve the server statistics")
-  public String shutdownServer() {
+  @Operation(
+      summary = "Shut down the server",
+      description = "Shuts down the server gracefully. Any necessary cleanup or state preservation is performed before shutting down."
+  )
+  public StatusResponse shutdownServer() {
     hasAccess(RESOURCE);
     shutdown(0);
-    return "{\"status\":\"Shutting down\"}";
+    return new StatusResponse("Shutting down");
   }
 
   private void shutdown(int exitCode) {

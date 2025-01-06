@@ -24,6 +24,7 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.responses.LoginResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -58,37 +59,64 @@ import javax.security.auth.Subject;
                     url = "http://mapsmessaging.io"),
             license =
                 @License(name = "Apache 2.0", url = "http://www.apache.org/licenses/LICENSE-2.0")),
-    // schemes = {SwaggerDefinition.Scheme.HTTP, SwaggerDefinition.Scheme.HTTPS},
     tags = {
-      @Tag(
-          name = "Authentication and Authorisation Management",
-          description = "Managers authentication and authorisation of users on the server"),
-      @Tag(
-          name = "Destination Management",
-          description = "Used to manage the destinations (topic/queues) and the subscriptions"),
-      @Tag(
-          name = "Messaging Interface",
-          description = "Used to send and receive messages from the server"),
-      @Tag(name = "Server Health", description = "Simple server health endpoint"),
-      @Tag(
-          name = "Server Interface Management",
-          description = "Used to manage the servers network interfaces"),
-      @Tag(
-          name = "Schema Management",
-          description = "Used to manage the schemas configured on the server"),
-      @Tag(name = "Server Management", description = "Server status and management"),
-      @Tag(
-          name = "Server Integration Management",
-          description = "Manages interconnections with other brokers"),
-      @Tag(name = "Connection Management", description = "Manages client connections"),
-      @Tag(name = "Discovery Management", description = "Manages servers discovery agent")
+        @Tag(
+            name = "Authentication and Authorisation Management",
+            description = "Provides endpoints for managing user authentication and authorisation, including login, logout, token management, and role-based access control to ensure secure interactions with the server."
+        ),
+        @Tag(
+            name = "Destination Management",
+            description = "Facilitates the management of destinations such as topics and queues. Includes operations for creating, updating, deleting, and querying destinations, as well as managing subscriptions."
+        ),
+        @Tag(
+            name = "Messaging Interface",
+            description = "Offers APIs for sending and receiving messages, enabling communication between clients and the server. Supports various messaging protocols and real-time event handling."
+        ),
+        @Tag(
+            name = "Server Health",
+            description = "Includes endpoints for monitoring the server's health and operational status, providing simple and detailed responses for status checks and diagnostics."
+        ),
+        @Tag(
+            name = "Server Interface Management",
+            description = "Manages the server's network interfaces, including configuration, monitoring, and troubleshooting of connections to ensure optimal performance and reliability."
+        ),
+        @Tag(
+            name = "Schema Management",
+            description = "Provides functionality to configure, manage, and query schemas used by the server, enabling seamless integration with structured data formats and validation mechanisms."
+        ),
+        @Tag(
+            name = "Server Management",
+            description = "Includes operations for monitoring and managing the server's status, configurations, and performance metrics to ensure smooth and efficient operation."
+        ),
+        @Tag(
+            name = "Server Integration Management",
+            description = "Manages the server's integrations with other messaging brokers, enabling interoperability and seamless data exchange across distributed systems."
+        ),
+        @Tag(
+            name = "Connection Management",
+            description = "Handles client connections to the server, offering endpoints for monitoring, managing, and troubleshooting active connections and session details."
+        ),
+        @Tag(
+            name = "Discovery Management",
+            description = "Provides mechanisms for managing the server's discovery agents, allowing automated detection and configuration of network services and resources."
+        ),
+        @Tag(
+            name = "Hardware Management",
+            description = "Enables the management of hardware devices integrated with the server, including configuration, monitoring, and diagnostics for seamless hardware-software interaction."
+        ),
+        @Tag(
+            name = "LoRa Device Management",
+            description = "Offers APIs for managing LoRa devices, including adding, updating, retrieving configurations, monitoring device statistics, and managing endpoint connections."
+        )
     },
+
     externalDocs =
         @ExternalDocumentation(
             description = "Maps Messaging",
             url = "https://www.mapsmessaging.io/"),
     security = {
-        @SecurityRequirement(name = "basicAuth")
+        @SecurityRequirement(name = "basicAuth"),
+        @SecurityRequirement(name = "authScheme")
     }
 
 )
@@ -115,15 +143,22 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/ping")
   @Produces({MediaType.APPLICATION_JSON})
-  // @ApiOperation(value = "Simple request to test if the server is running")
-  public StringResponse getPing() {
-    return new StringResponse("ok");
+  @Operation(
+      summary = "Ping the server",
+      description = "A simple endpoint to verify that the server is operational and responsive."
+  )
+  public StatusResponse getPing() {
+    return new StatusResponse("Success");
+
   }
 
   @GET
   @Path("/name")
   @Produces({MediaType.APPLICATION_JSON})
-  // @ApiOperation(value = "Returns the servers unique name")
+  @Operation(
+      summary = "Retrieve the server's unique name",
+      description = "Returns the unique identifier of the server instance."
+  )
   public StringResponse getName() {
     return new StringResponse(MessageDaemon.getInstance().getId());
   }
@@ -131,11 +166,15 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/updates")
   @Produces({MediaType.APPLICATION_JSON})
-  // @ApiOperation(value = "Check for changes to the configuration update counts")
+  @Operation(
+      summary = "Check for configuration updates",
+      description = "Provides information about any changes in the server's configuration update counts."
+  )
   public UpdateCheckResponse checkForUpdates() {
     long schema = SchemaManager.getInstance().getUpdateCount();
     return new UpdateCheckResponse(schema, 0, 0);
   }
+
 
   @GET
   @Path("/login")
@@ -143,8 +182,8 @@ public class MapsRestServerApi extends BaseRestApi {
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "User login",
-      description = "Allows a user to log in and obtain an authentication token.",
-      security = {} // Overrides global security, making this endpoint accessible without authentication
+      description = "Allows a user to log in and obtain an authentication token. This endpoint does not require authentication and overrides global security settings.",
+      security = {} // Overrides global security to make this endpoint accessible without authentication
   )
   public LoginResponse login() {
     HttpSession session = request.getSession(false);
@@ -160,12 +199,15 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/logout")
   @Produces({MediaType.APPLICATION_JSON})
-  // @ApiOperation(value = "Check for changes to the configuration update counts")
-  public String logout() {
+  @Operation(
+      summary = "User logout",
+      description = "Logs out the currently authenticated user by invalidating their session."
+  )  public StatusResponse logout() {
     HttpSession session = request.getSession(false);
     if (session != null) {
       session.invalidate();
     }
-    return "{\"Status\": \"OK\"}";
+    return new StatusResponse("Success");
   }
+
 }

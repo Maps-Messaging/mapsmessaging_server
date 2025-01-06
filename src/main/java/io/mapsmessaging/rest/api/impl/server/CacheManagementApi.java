@@ -22,6 +22,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.api.Constants;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -33,6 +34,10 @@ public class CacheManagementApi extends ServerBaseRestApi {
   @GET
   @Path("/server/cache")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Retrieve cache information",
+      description = "Fetches detailed information about the server's central cache, including size, usage statistics, and entries."
+  )
   public CacheInfo getCacheInformation() {
     hasAccess(RESOURCE);
     return Constants.getCentralCache().getCacheInfo();
@@ -41,6 +46,10 @@ public class CacheManagementApi extends ServerBaseRestApi {
   @PUT
   @Path("/server/cache")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Clear cache",
+      description = "Clears all entries in the server's central cache to free up memory and ensure data consistency."
+  )
   public void clearCacheInformation() {
     hasAccess(RESOURCE);
     Constants.getCentralCache().clear();
