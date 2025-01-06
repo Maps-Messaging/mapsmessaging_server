@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,17 +27,18 @@ import java.util.concurrent.TimeoutException;
 
 public class BaseDestinationApi extends BaseRestApi {
 
+  protected static final String RESOURCE = "destinations";
 
-  protected DestinationImpl lookup(String name) throws ExecutionException, InterruptedException, TimeoutException {
-    if(name.startsWith("$")){
+  protected DestinationImpl lookup(String name)
+      throws ExecutionException, InterruptedException, TimeoutException {
+    if (name.startsWith("$")) {
       return null;
     }
     DestinationImpl destinationImpl = MessageDaemon.getInstance().getDestinationManager().find(name).get(60, TimeUnit.SECONDS);
-    if(destinationImpl == null && !name.startsWith("/")){
-      name = "/"+name;
+    if (destinationImpl == null && !name.startsWith("/")) {
+      name = "/" + name;
       destinationImpl = MessageDaemon.getInstance().getDestinationManager().find(name).get(60, TimeUnit.SECONDS);
     }
     return destinationImpl;
   }
-
 }

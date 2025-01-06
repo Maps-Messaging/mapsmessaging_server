@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.dto.helpers;
 
-import io.mapsmessaging.config.Config;
-import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 
@@ -51,17 +49,6 @@ public class InterfaceInfoHelper {
         dto.setState("Unknown");
     }
     return dto;
-  }
-
-  public static boolean updateConfig(EndPointManager endPointManager, InterfaceInfoDTO dto) {
-    boolean upated = false;
-    EndPointServerConfigDTO endPointServerConfigDTO = endPointManager.getEndPointServer().getConfig();
-    if(endPointServerConfigDTO instanceof Config) {
-      Config config = (Config) endPointServerConfigDTO;
-      config.update(dto);
-    }
-
-    return upated;
   }
 
   private InterfaceInfoHelper() {

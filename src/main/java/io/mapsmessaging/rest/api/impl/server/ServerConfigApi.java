@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
-import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
@@ -32,28 +31,18 @@ import java.io.IOException;
 
 @Tag(name = "Server Config Management")
 @Path(URI_PATH)
-public class ServerConfigApi  extends BaseInterfaceApi {
+public class ServerConfigApi extends ServerBaseRestApi {
 
   @GET
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
   public MessageDaemonConfigDTO getServerConfig() {
-    checkAuthentication();
-
-    if (!hasAccess("servers")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverConfig");
-
-    // Try to retrieve from cache
     MessageDaemonConfigDTO cachedResponse = getFromCache(key, MessageDaemonConfigDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
-    // Fetch and cache response
     MessageDaemonConfigDTO response = MessageDaemon.getInstance().getMessageDaemonConfig();
     putToCache(key, response);
     return response;
@@ -63,17 +52,11 @@ public class ServerConfigApi  extends BaseInterfaceApi {
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
   public Response updateServerConfig(MessageDaemonConfigDTO dto) throws IOException {
-    checkAuthentication();
-    if (!hasAccess("servers")) {
-      response.setStatus(403);
-      return null;
-    }
-    if(MessageDaemon.getInstance().getMessageDaemonConfig().update(dto)){
+    hasAccess(RESOURCE);
+    if (MessageDaemon.getInstance().getMessageDaemonConfig().update(dto)) {
       MessageDaemon.getInstance().getMessageDaemonConfig().save();
       removeFromCache(new CacheKey(uriInfo.getPath(), "serverConfig"));
-
     }
     return Response.ok().build();
   }
-
 }

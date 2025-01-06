@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,13 +25,15 @@ import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.dto.rest.auth.NewUserDTO;
 import io.mapsmessaging.dto.rest.auth.UserDTO;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -44,32 +46,46 @@ import java.util.stream.Collectors;
 
 @Tag(name = "Authentication and Authorisation Management")
 @Path(URI_PATH)
-public class UserManagementApi extends BaseRestApi {
+public class UserManagementApi extends BaseAuthRestApi {
 
   @GET
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
-  public UserListResponse getAllUsers(@QueryParam("filter") String filter) throws ParseException {
-    checkAuthentication();
+  @Operation(
+      summary = "Get all users",
+      description = "Retrieves all currently known users filtered by the optional filter string, SQL like syntax. Requires authentication if enabled in the configuration."
+  )
+  public UserListResponse getAllUsers(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "username = 'bill'")
+      )
+      @QueryParam("filter") String filter) throws ParseException {
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
-    List<UserDTO> results = users.stream()
-        .map(userDetails -> buildUser(userDetails, authManager))
-        .filter(user -> parser == null || parser.evaluate(user))
-        .collect(Collectors.toList());
-    return new UserListResponse( results);
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    List<UserDTO> results =
+        users.stream()
+            .map(userDetails -> buildUser(userDetails, authManager))
+            .filter(user -> parser == null || parser.evaluate(user))
+            .collect(Collectors.toList());
+    return new UserListResponse(results);
   }
 
   @GET
   @Path("/auth/user/{username}")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get user by username",
+      description = "Retrieve the user by username. Requires authentication if enabled in the configuration."
+  )
   public UserDTO getUser(@PathParam("username") String username) {
-    checkAuthentication();
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     List<UserDetails> users = authManager.getUsers();
     for (UserDetails user : users) {
-      if(user.getIdentityEntry().getUsername().equals(username)) {
+      if (user.getIdentityEntry().getUsername().equals(username)) {
         return buildUser(user, authManager);
       }
     }
@@ -80,11 +96,19 @@ public class UserManagementApi extends BaseRestApi {
   @POST
   @Path("/auth/users")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Add a new user",
+      description = "Adds a new user to the system. Requires authentication if enabled in the configuration."
+  )
   public BaseResponse addUser(NewUserDTO newUser) {
-    checkAuthentication();
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
-    if (authManager.addUser(newUser.getUsername(), newUser.getPassword().toCharArray(), sessionPrivileges, new String[0])) {
+    if (authManager.addUser(
+        newUser.getUsername(),
+        newUser.getPassword().toCharArray(),
+        sessionPrivileges,
+        new String[0])) {
       return new BaseResponse();
     }
     return new BaseResponse();
@@ -93,8 +117,12 @@ public class UserManagementApi extends BaseRestApi {
   @DELETE
   @Path("/auth/users/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Delete a user",
+      description = "Deletes a user from the system. Requires authentication if enabled in the configuration."
+  )
   public BaseResponse deleteUser(@PathParam("userUuid") String userUuid) {
-    checkAuthentication();
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     Identity userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
     if (userIdMap != null) {
@@ -105,7 +133,7 @@ public class UserManagementApi extends BaseRestApi {
     return new BaseResponse();
   }
 
-  private UserDTO buildUser(UserDetails user, AuthManager authManager){
+  private UserDTO buildUser(UserDetails user, AuthManager authManager) {
     List<String> groupNames = new ArrayList<>();
     for (UUID groupId : user.getGroups()) {
       groupNames.add(authManager.getGroupIdentity(groupId).getName());
@@ -114,7 +142,6 @@ public class UserManagementApi extends BaseRestApi {
         user.getIdentityEntry().getUsername(),
         user.getIdentityEntry().getId(),
         groupNames,
-        new LinkedHashMap<>(user.getIdentityEntry().getAttributes())
-    );
+        new LinkedHashMap<>(user.getIdentityEntry().getAttributes()));
   }
 }

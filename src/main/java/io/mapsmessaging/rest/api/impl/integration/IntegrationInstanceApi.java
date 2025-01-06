@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import io.mapsmessaging.dto.helpers.IntegrationInfoHelper;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -36,22 +36,18 @@ import java.util.List;
 
 @Tag(name = "Server integration Management")
 @Path(URI_PATH)
-public class IntegrationInstanceApi extends BaseInterfaceApi {
+public class IntegrationInstanceApi extends IntegrationBaseRestApi {
 
   @GET
   @Path("/server/integration/{name}")
   @Produces({MediaType.APPLICATION_JSON})
-  public IntegrationInfoDTO getIntegration(@PathParam("name") String name) {
-    checkAuthentication();
-
-    if (!hasAccess("interfaces")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
+  @Operation(
+      summary = "Get integration by name",
+      description = "Retrieves the configuration on the inter-server integration connection. Requires authentication if enabled in the configuration."
+  )
+  public IntegrationInfoDTO getByNameIntegration(@PathParam("name") String name) {
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), name);
-
-    // Try to retrieve from cache
     IntegrationInfoDTO cachedResponse = getFromCache(key, IntegrationInfoDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -71,31 +67,26 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
   @GET
   @Path("/server/integration/{name}/connection")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get integration status by name",
+      description = "Retrieves the current status on the inter-server integration connection. Requires authentication if enabled in the configuration."
+  )
   public EndPointSummaryDTO getIntegrationConnection(@PathParam("name") String name) {
-    checkAuthentication();
-
-    if (!hasAccess("interfaces")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), name);
-
-    // Try to retrieve from cache
     EndPointSummaryDTO cachedResponse = getFromCache(key, EndPointSummaryDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
-    // Fetch and cache response
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
       throw new WebApplicationException("Integration not found", Response.Status.NOT_FOUND);
     }
 
-    EndPointSummaryDTO response = (endPointConnection.getEndPoint() != null)
-        ? EndPointHelper.buildSummaryDTO(name, endPointConnection.getEndPoint())
-        : new EndPointSummaryDTO();
+    EndPointSummaryDTO response =
+        (endPointConnection.getEndPoint() != null)
+            ? EndPointHelper.buildSummaryDTO(name, endPointConnection.getEndPoint())
+            : new EndPointSummaryDTO();
 
     putToCache(key, response);
     return response;
@@ -103,15 +94,14 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
 
   @PUT
   @Path("/server/integration/{name}/stop")
-  //@ApiOperation(value = "Stops the specified endpoint and closes existing connections")
+  @Operation(
+      summary = "Stop integration by name",
+      description = "Stops the inter-server connection specified by the name, if started else nothing changes. Requires authentication if enabled in the configuration."
+  )
   public Response stopIntegration(@PathParam("name") String name) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
-    if(endPointConnection == null) {
+    if (endPointConnection == null) {
       response.setStatus(404);
       return null;
     }
@@ -121,15 +111,14 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
 
   @PUT
   @Path("/server/integration/{name}/start")
-  //@ApiOperation(value = "Starts the specified endpoint")
+  @Operation(
+      summary = "Start integration by name",
+      description = "Starts the inter-server connection specified by the name, if stopped else nothing changes. Requires authentication if enabled in the configuration."
+  )
   public Response startIntegration(@PathParam("name") String name) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
-    if(endPointConnection == null) {
+    if (endPointConnection == null) {
       response.setStatus(404);
       return null;
     }
@@ -137,18 +126,16 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
     return Response.noContent().build();
   }
 
-
   @PUT
   @Path("/server/integration/{name}/resume")
-  //@ApiOperation(value = "Resumes the specified endpoint if the endpoint had been paused")
+  @Operation(
+      summary = "Resume integration by name",
+      description = "Resumes the inter-server connection specified by the name, if paused else nothing changes. Requires authentication if enabled in the configuration."
+  )
   public Response resumeIntegration(@PathParam("name") String name) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
-    if(endPointConnection == null) {
+    if (endPointConnection == null) {
       response.setStatus(404);
       return null;
     }
@@ -158,15 +145,14 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
 
   @PUT
   @Path("/server/integration/{name}/pause")
-  //@ApiOperation(value = "Pauses the specified endpoint, existing connections are maintained but no new connections can be made")
+  @Operation(
+      summary = "Pause integration by name",
+      description = "Pauses the inter-server connection specified by the name, if started else nothing changes. Requires authentication if enabled in the configuration."
+  )
   public Response pauseIntegration(@PathParam("name") String name) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
-    if(endPointConnection == null) {
+    if (endPointConnection == null) {
       response.setStatus(404);
       return null;
     }
@@ -174,16 +160,17 @@ public class IntegrationInstanceApi extends BaseInterfaceApi {
     return Response.noContent().build();
   }
 
-
-  private EndPointConnection locateInstance(String name){
-    List<EndPointConnection> list = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
+  private EndPointConnection locateInstance(String name) {
+    List<EndPointConnection> list =
+        MessageDaemon.getInstance()
+            .getSubSystemManager()
+            .getNetworkConnectionManager()
+            .getEndPointConnectionList();
     for (EndPointConnection endPointConnection : list) {
-      if(endPointConnection.getConfigName().equalsIgnoreCase(name)){
+      if (endPointConnection.getConfigName().equalsIgnoreCase(name)) {
         return endPointConnection;
       }
     }
     return null;
   }
-
-
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,11 +25,13 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.helpers.IntegrationInfoHelper;
 import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.IntegrationDetailResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -39,20 +41,29 @@ import java.util.stream.Collectors;
 
 @Tag(name = "Server Integration Management")
 @Path(URI_PATH)
-public class IntegrationManagementApi  extends BaseRestApi {
-  private static final String INTERFACES = "Interfaces";
+public class IntegrationManagementApi extends IntegrationBaseRestApi {
 
   @GET
   @Path("/server/integration")
   @Produces({MediaType.APPLICATION_JSON})
-  public IntegrationDetailResponse getAllIntegrations(@QueryParam("filter") String filter) throws ParseException {
-    checkAuthentication();
-    if (!hasAccess("integrations")) {
-      response.setStatus(403);
-      return null;
-    }
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : null;
-    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
+  @Operation(
+      summary = "get all inter-server connections",
+      description = "Retrieves a list of all inter-server configurations. Requires authentication if enabled in the configuration."
+  )
+  public IntegrationDetailResponse getAllIntegrations(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "state = PAUSED")
+      )
+      @QueryParam("filter") String filter
+  ) throws ParseException {
+    hasAccess(RESOURCE);
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    List<EndPointConnection> endPointManagers =
+        MessageDaemon.getInstance()
+            .getSubSystemManager()
+            .getNetworkConnectionManager()
+            .getEndPointConnectionList();
     ConfigurationProperties global = null;
     List<IntegrationInfoDTO> protocols =
         endPointManagers.stream()
@@ -64,53 +75,48 @@ public class IntegrationManagementApi  extends BaseRestApi {
 
   @PUT
   @Path("/server/integration/stopAll")
-  //@ApiOperation(value = "Stops all all configured interfaces")
+  @Operation(
+      summary = "Stop all inter-server connections",
+      description = "Stops all currently running inter-server connections. Requires authentication if enabled in the configuration."
+  )
   public Response stopAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().stop();
     return Response.ok().build();
   }
 
   @PUT
   @Path("/server/integration/startAll")
-  //@ApiOperation(value = "Starts all all configured interfaces")
+  @Operation(
+      summary = "Start all inter-server connections",
+      description = "Starts all currently stopped inter-server connections. Requires authentication if enabled in the configuration."
+  )
   public Response startAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().start();
     return Response.ok().build();
   }
 
   @PUT
   @Path("/server/integration/pauseAll")
-  //@ApiOperation(value = "Pauses all all configured interfaces")
+  @Operation(
+      summary = "Pause all inter-server connections",
+      description = "Pauses all currently running inter-server connections. Requires authentication if enabled in the configuration."
+  )
   public Response pauseAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().pause();
     return Response.ok().build();
   }
 
-
   @PUT
   @Path("/server/integration/resumeAll")
-  //@ApiOperation(value = "Resumes all all configured interfaces")
+  @Operation(
+      summary = "Resume all inter-server connections",
+      description = "Resumes all currently paused inter-server connections. Requires authentication if enabled in the configuration."
+  )
   public Response resumeAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().resume();
     return Response.ok().build();
   }

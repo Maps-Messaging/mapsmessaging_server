@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -57,9 +57,14 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
 
   @Override
   public boolean update(BaseConfigDTO config) {
+    if(config instanceof EndPointServerConfigDTO) {
+      return updateEndPointServerConfig((EndPointServerConfigDTO) config);
+    }
+
     if (!(config instanceof NetworkManagerConfigDTO)) {
       return false;
     }
+
 
     NetworkManagerConfigDTO newConfig = (NetworkManagerConfigDTO) config;
     boolean hasChanged = false;
@@ -89,6 +94,15 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
     }
 
     return hasChanged;
+  }
+
+  private boolean updateEndPointServerConfig(EndPointServerConfigDTO endPointServerConfig) {
+    for(EndPointServerConfigDTO endPointServerConfigDTO : this.endPointServerConfigList) {
+      if(endPointServerConfigDTO.getName().equals(endPointServerConfig.getName()) && endPointServerConfigDTO instanceof EndPointServerConfig) {
+        return ((EndPointServerConfig) endPointServerConfig).update(endPointServerConfigDTO);
+      }
+    }
+    return false;
   }
 
   @Override

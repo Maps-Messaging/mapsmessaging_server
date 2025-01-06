@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,35 +22,35 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Tag(name = "Discovery Management")
 @Path(URI_PATH)
-public class DiscoveryManagementApi extends BaseRestApi {
+public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
 
   @GET
   @Path("/server/discovery/start")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the specific destination details")
+  @Operation(
+      summary = "Start Discovery agent",
+      description = "Starts the mDNS discovery sub-system. Requires authentication if enabled in the configuration."
+  )
   public boolean startDiscovery() {
-    checkAuthentication();
-    if (!hasAccess("discovery")) {
-      response.setStatus(403);
-      return false;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().start();
     return true;
   }
@@ -58,13 +58,12 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @GET
   @Path("/server/discovery/stop")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the specific destination details")
+  @Operation(
+      summary = "Stop Discovery daemon",
+      description = "Stops the mDNS discovery sub-system. Requires authentication if enabled in the configuration."
+  )
   public boolean stopDiscovery() {
-    checkAuthentication();
-    if (!hasAccess("discovery")) {
-      response.setStatus(403);
-      return false;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().stop();
     return true;
   }
@@ -72,24 +71,33 @@ public class DiscoveryManagementApi extends BaseRestApi {
   @GET
   @Path("/server/discovery")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the specific destination details")
-  public List<DiscoveredServersDTO> getAllDiscoveredServers(@QueryParam("filter") String filter) throws ParseException {
-    checkAuthentication();
-    if (!hasAccess("discovery")) {
-      response.setStatus(403);
-      return new ArrayList<>();
-    }
-    // Create cache key
-    CacheKey key = new CacheKey(uriInfo.getPath(), ((filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "") );
+  @Operation(
+      summary = "Get discovered servers",
+      description = "Retrieve a list of all currently discovered servers, can be filtered with the optional filter. Requires authentication if enabled in the configuration."
+  )  public List<DiscoveredServersDTO> getAllDiscoveredServers(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "schemaSupport = TRUE OR systemTopicPrefix IS NOT NULL")
+      )
+      @QueryParam("filter") String filter
+  ) throws ParseException {
+    hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), ((filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : ""));
 
-    // Try to retrieve from cache
     @SuppressWarnings("unchecked")
     List<DiscoveredServersDTO> cachedResponse = getFromCache(key, List.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-    ParserExecutor parser = (filter != null && !filter.isEmpty())  ? SelectorParser.compile(filter) : SelectorParser.compile("true");
-    List<DiscoveredServersDTO> result = MessageDaemon.getInstance().getSubSystemManager().getServerConnectionManager().getServers().stream().filter(parser::evaluate).collect(Collectors.toList());
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : SelectorParser.compile("true");
+    List<DiscoveredServersDTO> result =
+        MessageDaemon.getInstance()
+            .getSubSystemManager()
+            .getServerConnectionManager()
+            .getServers()
+            .stream()
+            .filter(parser::evaluate)
+            .collect(Collectors.toList());
     putToCache(key, result);
     return result;
   }

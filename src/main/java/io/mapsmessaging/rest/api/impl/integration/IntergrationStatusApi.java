@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,15 +24,16 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.integration.IntegrationStatusDTO;
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
-import io.mapsmessaging.rest.api.impl.interfaces.BaseInterfaceApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,29 +41,29 @@ import java.util.stream.Collectors;
 
 @Tag(name = "Server Integration Management")
 @Path(URI_PATH)
-public class IntergrationStatusApi extends BaseInterfaceApi {
+public class IntergrationStatusApi extends IntegrationBaseRestApi {
 
   @GET
   @Path("/server/integration/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get inter-server status",
+      description = "Retrieve the current status for the inter-server specified by name. Requires authentication if enabled in the configuration."
+  )
   public IntegrationStatusDTO getIntegrationStatus(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-
-    if (!hasAccess("integrations")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
-
-    // Try to retrieve from cache
     IntegrationStatusDTO cachedResponse = getFromCache(key, IntegrationStatusDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
     // Fetch and cache response
-    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
+    List<EndPointConnection> endPointManagers =
+        MessageDaemon.getInstance()
+            .getSubSystemManager()
+            .getNetworkConnectionManager()
+            .getEndPointConnectionList();
     for (EndPointConnection endPointConnection : endPointManagers) {
       if (endpointName.equals(endPointConnection.getConfigName())) {
         IntegrationStatusDTO response = fromConnection(endPointConnection);
@@ -77,17 +78,19 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
   @GET
   @Path("/server/integration/status")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<IntegrationStatusDTO> getAllIntegrationStatus(@QueryParam("filter") String filter) throws ParseException {
-    checkAuthentication();
-
-    if (!hasAccess("integrations")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
-    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
-
-    // Try to retrieve from cache
+  @Operation(
+      summary = "Get all inter-server status",
+      description = "Retrieve all current statuses for the inter-server. Requires authentication if enabled in the configuration."
+  )
+  public List<IntegrationStatusDTO> getAllIntegrationStatus(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "state = PAUSED")
+      )
+      @QueryParam("filter") String filter
+  ) throws ParseException {
+    hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
     List<IntegrationStatusDTO> cachedResponse = getFromCache(key, List.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -95,12 +98,17 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
 
     // Fetch and cache response
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointConnection> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().getEndPointConnectionList();
+    List<EndPointConnection> endPointManagers =
+        MessageDaemon.getInstance()
+            .getSubSystemManager()
+            .getNetworkConnectionManager()
+            .getEndPointConnectionList();
 
-    List<IntegrationStatusDTO> response = endPointManagers.stream()
-        .map(IntergrationStatusApi::fromConnection)
-        .filter(status -> parser == null || parser.evaluate(status))
-        .collect(Collectors.toList());
+    List<IntegrationStatusDTO> response =
+        endPointManagers.stream()
+            .map(IntergrationStatusApi::fromConnection)
+            .filter(status -> parser == null || parser.evaluate(status))
+            .collect(Collectors.toList());
 
     putToCache(key, response);
     return response;
@@ -133,7 +141,8 @@ public class IntergrationStatusApi extends BaseInterfaceApi {
     return dto;
   }
 
-  private static void addToMap(Map<String, LinkedMovingAverageRecordDTO> stats, LinkedMovingAverageRecordDTO average) {
+  private static void addToMap(
+      Map<String, LinkedMovingAverageRecordDTO> stats, LinkedMovingAverageRecordDTO average) {
     if (average != null) {
       stats.put(average.getName(), average);
     }

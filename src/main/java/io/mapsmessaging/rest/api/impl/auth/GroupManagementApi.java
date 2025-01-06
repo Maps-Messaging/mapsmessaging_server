@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.dto.rest.auth.GroupDTO;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.GroupListResponse;
@@ -32,6 +31,9 @@ import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -43,18 +45,25 @@ import java.util.stream.Collectors;
 
 @Tag(name = "Authentication and Authorisation Management")
 @Path(URI_PATH)
-public class GroupManagementApi extends BaseRestApi {
-
+public class GroupManagementApi extends BaseAuthRestApi {
 
   @GET
   @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
-  public GroupListResponse getAllGroups(@QueryParam("filter") String filter) throws ParseException {
-    checkAuthentication();
-
+  @Operation(
+      summary = "Get all groups",
+      description = "Retrieves all currently known groups. Requires authentication if enabled in the configuration."
+  )
+  public GroupListResponse getAllGroups(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "name = 'admin'")
+      )
+      @QueryParam("filter") String filter) throws ParseException {
+    hasAccess(RESOURCE);
     // Prepare the parser and cache key
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
 
     // Check cache
     GroupListResponse cachedResponse = getFromCache(key, GroupListResponse.class);
@@ -67,13 +76,11 @@ public class GroupManagementApi extends BaseRestApi {
     List<GroupDetails> groups = authManager.getGroups();
 
     // Transform and filter groups
-    List<GroupDTO> results = groups.stream()
-        .map(groupDetails -> new GroupDTO(
-            groupDetails.getName(),
-            groupDetails.getGroupId(),
-            groupDetails.getUsers()))
-        .filter(group -> filterGroup(parser, group))
-        .collect(Collectors.toList());
+    List<GroupDTO> results =
+        groups.stream()
+            .map(groupDetails -> new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers()))
+            .filter(group -> filterGroup(parser, group))
+            .collect(Collectors.toList());
 
     // Create response and cache it
     GroupListResponse result = new GroupListResponse(request, results);
@@ -81,24 +88,28 @@ public class GroupManagementApi extends BaseRestApi {
     return result;
   }
 
-
   @GET
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
-  public GroupDTO getGroupsById(@PathParam("groupUuid") String groupUuid) {
-    checkAuthentication();
+  @Operation(
+      summary = "Get group by UUID",
+      description = "Retrieve the group using the UUID of the specific group. Requires authentication if enabled in the configuration."
+  )
+  public GroupDTO getGroupById(@PathParam("groupUuid") String groupUuid) {
+    hasAccess(RESOURCE);
 
     // Fetch the group by UUID
     AuthManager authManager = AuthManager.getInstance();
-    GroupDetails groupDetails = authManager.getGroups()
-        .stream()
-        .filter(g -> g.getGroupId().toString().equals(groupUuid))
-        .findFirst()
-        .orElse(null);
+    GroupDetails groupDetails =
+        authManager.getGroups().stream()
+            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .findFirst()
+            .orElse(null);
 
     // Return the GroupDTO if found
     if (groupDetails != null) {
-      return new GroupDTO(groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers());
+      return new GroupDTO(
+          groupDetails.getName(), groupDetails.getGroupId(), groupDetails.getUsers());
     }
 
     // Return a 404 if the group is not found
@@ -108,8 +119,13 @@ public class GroupManagementApi extends BaseRestApi {
   @POST
   @Path("/auth/groups")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Add new group",
+      description = "Adds a new group to the group list. Requires authentication if enabled in the configuration."
+  )
+
   public GroupDTO addGroup(String groupName) throws IOException {
-    checkAuthentication();
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     GroupIdMap groupIdMap = authManager.addGroup(groupName);
     return new GroupDTO(groupName, groupIdMap.getAuthId(), new ArrayList<>());
@@ -118,13 +134,28 @@ public class GroupManagementApi extends BaseRestApi {
   @POST
   @Path("/auth/groups/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse addUserToGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
-    checkAuthentication();
+  @Operation(
+      summary = "Add user to group",
+      description = "Adds a user to a group using the UUID of the user and UUID of the group . Requires authentication if enabled in the configuration."
+  )
+  public BaseResponse addUserToGroup(
+      @PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid)
+      throws IOException {
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
-    UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid)).findFirst().orElse(null);
+    GroupDetails groupDetails =
+        authManager.getGroups().stream()
+            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .findFirst()
+            .orElse(null);
+    UserDetails userDetails =
+        authManager.getUsers().stream()
+            .filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid))
+            .findFirst()
+            .orElse(null);
     if (groupDetails != null && userDetails != null) {
-      authManager.addUserToGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
+      authManager.addUserToGroup(
+          userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
     }
     return new BaseResponse();
   }
@@ -132,13 +163,28 @@ public class GroupManagementApi extends BaseRestApi {
   @DELETE
   @Path("/auth/groups/{groupUuid}/{userUuid}")
   @Produces({MediaType.APPLICATION_JSON})
-  public BaseResponse removeUserFromGroup(@PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid) throws IOException {
-    checkAuthentication();
+  @Operation(
+      summary = "Removes a user from group",
+      description = "Removes a user from a group using the users UUID and the groups UUID . Requires authentication if enabled in the configuration."
+  )
+  public BaseResponse removeUserFromGroup(
+      @PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid)
+      throws IOException {
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
-    UserDetails userDetails = authManager.getUsers().stream().filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid)).findFirst().orElse(null);
+    GroupDetails groupDetails =
+        authManager.getGroups().stream()
+            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .findFirst()
+            .orElse(null);
+    UserDetails userDetails =
+        authManager.getUsers().stream()
+            .filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid))
+            .findFirst()
+            .orElse(null);
     if (groupDetails != null && userDetails != null) {
-      authManager.removeUserFromGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
+      authManager.removeUserFromGroup(
+          userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
     }
     return new BaseResponse();
   }
@@ -146,10 +192,18 @@ public class GroupManagementApi extends BaseRestApi {
   @DELETE
   @Path("/auth/groups/{groupUuid}")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Delete a group",
+      description = "Deletes a group from the list and removes all user memberships. Requires authentication if enabled in the configuration."
+  )
   public BaseResponse deleteGroup(@PathParam("groupUuid") String groupUuid) throws IOException {
-    checkAuthentication();
+    hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    GroupDetails groupDetails = authManager.getGroups().stream().filter(g -> g.getGroupId().toString().equals(groupUuid)).findFirst().orElse(null);
+    GroupDetails groupDetails =
+        authManager.getGroups().stream()
+            .filter(g -> g.getGroupId().toString().equals(groupUuid))
+            .findFirst()
+            .orElse(null);
     if (groupDetails != null) {
       authManager.delGroup(groupDetails.getName());
       return new BaseResponse();
@@ -158,10 +212,8 @@ public class GroupManagementApi extends BaseRestApi {
     return new BaseResponse();
   }
 
-
   // Helper methods
   private boolean filterGroup(ParserExecutor parser, GroupDTO group) {
     return parser == null || parser.evaluate(group);
   }
-
 }

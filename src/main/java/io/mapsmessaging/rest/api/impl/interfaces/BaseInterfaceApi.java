@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 
 public class BaseInterfaceApi extends BaseRestApi {
+  protected static final String RESOURCE = "Interfaces";
+
   protected boolean isMatch(String name, EndPointManager endPointManager) {
     return (endPointManager.getEndPointServer().getConfig().getName().equals(name));
   }
-
 }

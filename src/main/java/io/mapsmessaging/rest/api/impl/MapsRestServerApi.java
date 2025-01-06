@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,50 +28,86 @@ import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletResponse;
 
 @OpenAPIDefinition(
-    info = @Info(
-        description = "Maps Messaging Server Rest API, provides simple Rest API to manage and interact with the server",
-        version = BuildInfo.BUILD_VERSION,
-        title = "Maps Messaging Rest Server",
-        contact = @Contact(
-            name = "Matthew Buckton",
-            email = "info@mapsmessaging.io",
-            url = "http://mapsmessaging.io"
-        ),
-        license = @License(
-            name = "Apache 2.0",
-            url = "http://www.apache.org/licenses/LICENSE-2.0"
-        )
-    ),
-    //schemes = {SwaggerDefinition.Scheme.HTTP, SwaggerDefinition.Scheme.HTTPS},
+    info =
+        @Info(
+            description =
+                "Maps Messaging Server Rest API, provides simple Rest API to manage and interact with the server",
+            version = BuildInfo.BUILD_VERSION,
+            title = "Maps Messaging Rest Server",
+            contact =
+                @Contact(
+                    name = "Matthew Buckton",
+                    email = "info@mapsmessaging.io",
+                    url = "http://mapsmessaging.io"),
+            license =
+                @License(name = "Apache 2.0", url = "http://www.apache.org/licenses/LICENSE-2.0")),
+    // schemes = {SwaggerDefinition.Scheme.HTTP, SwaggerDefinition.Scheme.HTTPS},
     tags = {
-        @Tag(name = "Authentication and Authorisation Management", description = "Managers authentication and authorisation of users on the server"),
-        @Tag(name = "Destination Management", description = "Used to manage the destinations (topic/queues) and the subscriptions"),
-        @Tag(name = "Messaging Interface", description = "Used to send and receive messages from the server"),
-        @Tag(name = "Server Health", description = "Simple server health endpoint"),
-        @Tag(name = "Server Interface Management", description = "Used to manage the servers network interfaces"),
-        @Tag(name = "Schema Management", description = "Used to manage the schemas configured on the server"),
-        @Tag(name = "Server Management", description = "Server status and management"),
-        @Tag(name = "Server Integration Management", description = "Manages interconnections with other brokers"),
-        @Tag(name = "Connection Management", description = "Manages client connections"),
-        @Tag(name = "Discovery Management", description = "Manages servers discovery agent")
-
-
+      @Tag(
+          name = "Authentication and Authorisation Management",
+          description = "Managers authentication and authorisation of users on the server"),
+      @Tag(
+          name = "Destination Management",
+          description = "Used to manage the destinations (topic/queues) and the subscriptions"),
+      @Tag(
+          name = "Messaging Interface",
+          description = "Used to send and receive messages from the server"),
+      @Tag(name = "Server Health", description = "Simple server health endpoint"),
+      @Tag(
+          name = "Server Interface Management",
+          description = "Used to manage the servers network interfaces"),
+      @Tag(
+          name = "Schema Management",
+          description = "Used to manage the schemas configured on the server"),
+      @Tag(name = "Server Management", description = "Server status and management"),
+      @Tag(
+          name = "Server Integration Management",
+          description = "Manages interconnections with other brokers"),
+      @Tag(name = "Connection Management", description = "Manages client connections"),
+      @Tag(name = "Discovery Management", description = "Manages servers discovery agent")
     },
-    externalDocs = @ExternalDocumentation(description = "Maps Messaging", url = "https://www.mapsmessaging.io/")
+    externalDocs =
+        @ExternalDocumentation(
+            description = "Maps Messaging",
+            url = "https://www.mapsmessaging.io/"),
+    security = {
+        @SecurityRequirement(name = "basicAuth")
+    }
+
 )
+
+@SecurityScheme(
+    name = "basicAuth",
+    type = SecuritySchemeType.HTTP,
+    scheme = "basic"
+)
+@SecurityScheme(
+    name = "authScheme",
+    type = SecuritySchemeType.HTTP,
+    scheme = "bearer",
+    bearerFormat = "JWT"
+)
+
+
+
+
 @Tag(name = "Server Health")
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
@@ -79,7 +115,7 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/ping")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Simple request to test if the server is running")
+  // @ApiOperation(value = "Simple request to test if the server is running")
   public StringResponse getPing() {
     return new StringResponse("ok");
   }
@@ -104,14 +140,16 @@ public class MapsRestServerApi extends BaseRestApi {
   @GET
   @Path("/login")
   @Produces({MediaType.APPLICATION_JSON})
-  // @ApiOperation(value = "Check for changes to the configuration update counts")
+  @Consumes({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "User login",
+      description = "Allows a user to log in and obtain an authentication token.",
+      security = {} // Overrides global security, making this endpoint accessible without authentication
+  )
   public LoginResponse login() {
     HttpSession session = request.getSession(false);
-    if(session != null){
-      if (!hasAccess("root")) {
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        return new LoginResponse("No Access");
-      }
+    if (session != null) {
+      hasAccess("root");
       Subject subject = (Subject) getSession().getAttribute("subject");
       String username = (String) getSession().getAttribute("username");
       return new LoginResponse("Success", subject, username);
@@ -125,10 +163,9 @@ public class MapsRestServerApi extends BaseRestApi {
   // @ApiOperation(value = "Check for changes to the configuration update counts")
   public String logout() {
     HttpSession session = request.getSession(false);
-    if(session != null){
+    if (session != null) {
       session.invalidate();
     }
     return "{\"Status\": \"OK\"}";
   }
-
 }

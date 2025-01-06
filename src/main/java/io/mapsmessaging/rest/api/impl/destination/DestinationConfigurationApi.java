@@ -16,34 +16,14 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl.server;
+package io.mapsmessaging.rest.api.impl.destination;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
-import io.mapsmessaging.dto.rest.cache.CacheInfo;
-import io.mapsmessaging.rest.api.Constants;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.Path;
 
-@Tag(name = "Server Config Management")
+@Tag(name = "Destination Management")
 @Path(URI_PATH)
-public class CacheManagementApi extends ServerBaseRestApi {
-  @GET
-  @Path("/server/cache")
-  @Produces({MediaType.APPLICATION_JSON})
-  public CacheInfo getCacheInformation() {
-    hasAccess(RESOURCE);
-    return Constants.getCentralCache().getCacheInfo();
-  }
-
-  @PUT
-  @Path("/server/cache")
-  @Produces({MediaType.APPLICATION_JSON})
-  public void clearCacheInformation() {
-    hasAccess(RESOURCE);
-    Constants.getCentralCache().clear();
-    response.setStatus(Response.Status.NO_CONTENT.getStatusCode());
-  }
-}
+public class DestinationConfigurationApi extends BaseRestApi {}

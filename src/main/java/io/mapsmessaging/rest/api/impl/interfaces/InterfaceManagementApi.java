@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -39,36 +41,37 @@ import java.util.stream.Collectors;
 
 @Tag(name = "Server Interface Management")
 @Path(URI_PATH)
-public class InterfaceManagementApi extends BaseRestApi {
+public class InterfaceManagementApi extends BaseInterfaceApi {
 
-  private static final String INTERFACES = "Interfaces";
   @GET
   @Path("/server/interfaces")
   @Produces({MediaType.APPLICATION_JSON})
-  public InterfaceDetailResponse getAllInterfaces(@QueryParam("filter") String filter) throws ParseException {
-    checkAuthentication();
-
-    if (!hasAccess(INTERFACES)) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
-    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
-
-    // Try to retrieve from cache
+  @Operation(
+      summary = "Get all end point details",
+      description = "get all end point configuration details, filtered with the optional filter."
+  )
+  public InterfaceDetailResponse getAllInterfaces(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "state = 'started'")
+      )
+      @QueryParam("filter") String filter
+  ) throws ParseException {
+    hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
     InterfaceDetailResponse cachedResponse = getFromCache(key, InterfaceDetailResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
-    // Fetch and filter response
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers =
+        MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
-    List<InterfaceInfoDTO> protocols = endPointManagers.stream()
-        .map(InterfaceInfoHelper::fromEndPointManager)
-        .filter(protocol -> parser == null || parser.evaluate(protocol))
-        .collect(Collectors.toList());
+    List<InterfaceInfoDTO> protocols =
+        endPointManagers.stream()
+            .map(InterfaceInfoHelper::fromEndPointManager)
+            .filter(protocol -> parser == null || parser.evaluate(protocol))
+            .collect(Collectors.toList());
 
     InterfaceDetailResponse response = new InterfaceDetailResponse(protocols);
 
@@ -77,57 +80,50 @@ public class InterfaceManagementApi extends BaseRestApi {
     return response;
   }
 
-
-
   @PUT
   @Path("/server/interfaces/stopAll")
-  //@ApiOperation(value = "Stops all all configured interfaces")
+  @Operation(
+      summary = "Stop all end points",
+      description = "Stops all running endpoints."
+  )
   public Response stopAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().stopAll();
     return Response.ok().build();
   }
 
   @PUT
   @Path("/server/interfaces/startAll")
-  //@ApiOperation(value = "Starts all all configured interfaces")
+  @Operation(
+      summary = "Start all end points",
+      description = "Starts all stopped endpoints."
+  )
   public Response startAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().startAll();
     return Response.ok().build();
   }
 
   @PUT
   @Path("/server/interfaces/pauseAll")
-  //@ApiOperation(value = "Pauses all all configured interfaces")
+  @Operation(
+      summary = "Pause all end points",
+      description = "Pauses all running endpoints and stops new incoming connections."
+  )
   public Response pauseAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().pauseAll();
     return Response.ok().build();
   }
 
-
   @PUT
   @Path("/server/interfaces/resumeAll")
-  //@ApiOperation(value = "Resumes all all configured interfaces")
+  @Operation(
+      summary = "Resume all end points",
+      description = "Resumes all paused endpoints and allows new incoming connections."
+  )
   public Response resumeAllInterfaces() {
-    checkAuthentication();
-    if (!hasAccess(INTERFACES)) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().resumeAll();
     return Response.ok().build();
   }

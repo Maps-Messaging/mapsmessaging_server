@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.dto.helpers.EndPointHelper;
 import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
@@ -28,16 +29,17 @@ import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
-import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Tag(name = "Server Interface Management")
 @Path(URI_PATH)
@@ -46,17 +48,13 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @GET
   @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
-  public InterfaceInfoDTO getInterface(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-
-    if (!hasAccess("interfaces")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
+  @Operation(
+      summary = "Get end point configurations",
+      description = "Get the end point configuration specifed by the name. Requires authentication if enabled in the configuration."
+  )
+  public InterfaceInfoDTO getEndPoint(@PathParam("endpoint") String endpointName) {
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
-
-    // Try to retrieve from cache
     InterfaceInfoDTO cachedResponse = getFromCache(key, InterfaceInfoDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -71,39 +69,35 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
         return response;
       }
     }
-
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     return null;
   }
 
   @GET
   @Path("/server/interface/{endpoint}/connections")
   @Produces({MediaType.APPLICATION_JSON})
-  public EndPointDetailResponse getInterfaceConnections(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-
-    if (!hasAccess("interfaces")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
+  @Operation(
+      summary = "Get end point connections",
+      description = "Get current connections on this endpoint. Requires authentication if enabled in the configuration."
+  )
+  public EndPointDetailResponse getEndPointConnections(@PathParam("endpoint") String endpointName) {
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
-
-    // Try to retrieve from cache
     EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
-    // Fetch and cache response
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-    List<EndPointSummaryDTO> endPointDetails = new ArrayList<>();
-    for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
-        for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
-          endPointDetails.add(EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint));
-        }
-      }
-    }
+    List<EndPointSummaryDTO> endPointDetails = MessageDaemon.getInstance()
+        .getSubSystemManager()
+        .getNetworkManager()
+        .getAll()
+        .stream()
+        .filter(endPointManager -> isMatch(endpointName, endPointManager))
+        .flatMap(endPointManager -> endPointManager.getEndPointServer()
+            .getActiveEndPoints()
+            .stream()
+            .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint)))
+        .collect(Collectors.toList());
 
     EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
     putToCache(key, response);
@@ -113,35 +107,30 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @PUT
   @Path("/server/interface/{endpoint}")
   @Produces({MediaType.APPLICATION_JSON})
-  //@ApiOperation(value = "Get the endpoint current status and configuration")
-  public boolean updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return false;
+  @Operation(
+      summary = "Update end point configuration",
+      description = "Update the configuration supplied for the named endpoint."
+  )
+  public boolean updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) throws IOException {
+    hasAccess(RESOURCE);
+    if(endpointName.equals(config.getName()) && NetworkManagerConfig.getInstance().update(config)){
+      NetworkManagerConfig.getInstance().save();
+      return true;
     }
-
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-    for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
-        InterfaceInfoDTO infoDTO = InterfaceInfoHelper.fromEndPointManager(endPointManager);
-        return InterfaceInfoHelper.updateConfig(endPointManager, infoDTO);
-      }
-    }
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     return false;
   }
 
   @PUT
   @Path("/server/interface/{endpoint}/stop")
-  //@ApiOperation(value = "Stops the specified endpoint and closes existing connections")
+  @Operation(
+      summary = "Stop the end point",
+      description = "Stops the specified end point from accepting new connections and closes connections."
+  )
   public Response stopInterface(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.STOPPED);
-    if(response != null) {
+    if (response != null) {
       return response;
     }
     return Response.noContent().build();
@@ -149,57 +138,52 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
 
   @PUT
   @Path("/server/interface/{endpoint}/start")
-  //@ApiOperation(value = "Starts the specified endpoint")
+  @Operation(
+      summary = "Start the end point",
+      description = "Starts the specified end point accepting new connections."
+  )
   public Response startInterface(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.START);
-    if(response != null) {
+    if (response != null) {
       return response;
     }
     return Response.noContent().build();
-
   }
-
 
   @PUT
   @Path("/server/interface/{endpoint}/resume")
-  //@ApiOperation(value = "Resumes the specified endpoint if the endpoint had been paused")
+  @Operation(
+      summary = "Resume the end point",
+      description = "Resume the specified end point accepting new connections."
+  )
   public Response resumeInterface(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.RESUME);
-    if(response != null) {
+    if (response != null) {
       return response;
     }
     return Response.noContent().build();
-
   }
 
   @PUT
   @Path("/server/interface/{endpoint}/pause")
-  //@ApiOperation(value = "Pauses the specified endpoint, existing connections are maintained but no new connections can be made")
+  @Operation(
+      summary = "Pause the end point",
+      description = "Pauses the specified end point from accepting new connections."
+  )
   public Response pauseInterface(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-    if (!hasAccess("interfaces")) {
-      response.setStatus(403);
-      return null;
-    }
+    hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.PAUSED);
-    if(response != null) {
+    if (response != null) {
       return response;
     }
     return Response.noContent().build();
   }
 
-  private Response lookup(String endpointName, STATE state){
-    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+  private Response lookup(String endpointName, STATE state) {
+    List<EndPointManager> endPointManagers =
+        MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
         return handleRequest(state, endPointManager);
@@ -213,28 +197,22 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     try {
       if (newState == STATE.START && endPointManager.getState() == STATE.STOPPED) {
         endPointManager.start();
-        return Response.ok()
-            .build();
-      } else if (newState == STATE.STOPPED &&
-          (endPointManager.getState() == STATE.START || endPointManager.getState() == STATE.PAUSED)) {
+        return Response.ok().build();
+      } else if (newState == STATE.STOPPED
+          && (endPointManager.getState() == STATE.START
+              || endPointManager.getState() == STATE.PAUSED)) {
         endPointManager.close();
-        return Response.ok()
-            .build();
+        return Response.ok().build();
       } else if (newState == STATE.RESUME && endPointManager.getState() == STATE.PAUSED) {
         endPointManager.resume();
-        return Response.ok()
-            .build();
+        return Response.ok().build();
       } else if (newState == STATE.PAUSED && endPointManager.getState() == STATE.START) {
         endPointManager.pause();
-        return Response.ok()
-            .build();
+        return Response.ok().build();
       }
     } catch (IOException e) {
-      return Response.serverError()
-          .entity(e)
-          .build();
+      return Response.serverError().entity(e).build();
     }
-    return Response.noContent()
-        .build();
+    return Response.noContent().build();
   }
 }

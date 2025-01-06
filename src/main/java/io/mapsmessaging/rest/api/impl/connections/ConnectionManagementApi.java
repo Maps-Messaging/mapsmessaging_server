@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,6 +32,9 @@ import io.mapsmessaging.rest.responses.EndPointDetailResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -47,15 +50,19 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   @GET
   @Path("/server/connections")
   @Produces({MediaType.APPLICATION_JSON})
-  public EndPointDetailResponse getAllConnections(@QueryParam("filter") String filter) throws ParseException {
-    if (!hasAccess("connections")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
-    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
-
-    // Try to retrieve from cache
+  @Operation(
+      summary = "Get all connections",
+      description = "Retrieve a list of all current connections to the server, can be filtered with the optional filter string. Requires authentication if enabled in the configuration."
+  )
+  public EndPointDetailResponse getAllConnections(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "totalOverflow > 10 OR totalUnderflow > 5")
+      )
+      @QueryParam("filter") String filter
+  ) throws ParseException {
+    hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
     EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -67,8 +74,9 @@ public class ConnectionManagementApi extends BaseDestinationApi {
 
     List<EndPointSummaryDTO> endPointDetails =
         endPointManagers.stream()
-            .flatMap(endPointManager ->
-                endPointManager.getEndPointServer().getActiveEndPoints().stream().map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint)))
+            .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
+                .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
+            )
             .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
             .collect(Collectors.toList());
 
@@ -80,11 +88,12 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   @GET
   @Path("/server/connection")
   @Produces({MediaType.APPLICATION_JSON})
-  public EndPointDetailsDTO getConnectionDetails(@QueryParam("connectionId")  String connectionId) {
-    if (!hasAccess("connections")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
+  @Operation(
+      summary = "Get connection details for the specified id",
+      description = "Retrieve the details of the specified connection id. Requires authentication if enabled in the configuration."
+  )
+  public EndPointDetailsDTO getConnectionDetails(@QueryParam("connectionId") String connectionId) {
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), connectionId);
 
     // Try to retrieve from cache
@@ -94,9 +103,9 @@ public class ConnectionManagementApi extends BaseDestinationApi {
     }
 
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-    for(EndPointManager endPointManager : endPointManagers) {
-      for(EndPoint endPoint: endPointManager.getEndPointServer().getActiveEndPoints()){
-        if(endPoint.getName().equals(connectionId)) {
+    for (EndPointManager endPointManager : endPointManagers) {
+      for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
+        if (endPoint.getName().equals(connectionId)) {
           EndPointDetailsDTO dto = buildConnectionDetails(endPointManager.getName(), endPoint);
           putToCache(key, dto);
           return dto;
@@ -106,24 +115,24 @@ public class ConnectionManagementApi extends BaseDestinationApi {
     throw new WebApplicationException("Connection not found", Response.Status.NOT_FOUND);
   }
 
-
   @PUT
-  @Path("/server/connection")
+  @Path("/server/connection/close")
   @Produces({MediaType.APPLICATION_JSON})
-  public Response closeSpecificConnection(@QueryParam("connectionId")  String connectionId) {
-    if (!hasAccess("connections")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-    // Fetch and cache response
+  @Operation(
+      summary = "Close a connection",
+      description = "Requests the connection specified be closed. Requires authentication if enabled in the configuration."
+  )
+  public Response closeSpecificConnection(@QueryParam("connectionId") String connectionId) {
+    hasAccess(RESOURCE);
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-    for(EndPointManager endPointManager : endPointManagers) {
-      for(EndPoint endPoint: endPointManager.getEndPointServer().getActiveEndPoints()){
-        if(endPoint.getName().equals(connectionId)) {
+    for (EndPointManager endPointManager : endPointManagers) {
+      for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
+        if (endPoint.getName().equals(connectionId)) {
           try {
             endPoint.close();
             return Response.ok().build();
           } catch (IOException e) {
-            throw new WebApplicationException("Connection close issue:"+e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException("Connection close issue:" + e.getMessage(), Response.Status.BAD_REQUEST);
           }
         }
       }

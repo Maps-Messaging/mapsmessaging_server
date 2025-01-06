@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,10 +29,13 @@ import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,23 +46,17 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @GET
   @Path("/server/interface/{endpoint}/status")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get end point status",
+      description = "Get the current status and metrics for the specified end point."
+  )
   public InterfaceStatusDTO getInterfaceStatus(@PathParam("endpoint") String endpointName) {
-    checkAuthentication();
-
-    if (!hasAccess("interfaces")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
+    hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
-
-    // Try to retrieve from cache
     InterfaceStatusDTO cachedResponse = getFromCache(key, InterfaceStatusDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
-    // Fetch and cache response
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       if (isMatch(endpointName, endPointManager)) {
@@ -68,24 +65,27 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
         return response;
       }
     }
-
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     return null;
   }
 
   @GET
   @Path("/server/interface/status")
   @Produces({MediaType.APPLICATION_JSON})
-  public InterfaceStatusResponse getAllInterfaceStatus(@QueryParam("filter") String filter) throws ParseException {
-    checkAuthentication();
+  @Operation(
+      summary = "Get all end point status",
+      description = "Get all end point statuses and metrics, fitlered with the optional filter."
+  )
 
-    if (!hasAccess("interfaces")) {
-      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
-    }
-
-    // Create cache key
-    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? ""+filter.hashCode() : "");
-
-    // Try to retrieve from cache
+  public InterfaceStatusResponse getAllInterfaceStatus(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "state = 'started'")
+      )
+      @QueryParam("filter") String filter
+  ) throws ParseException {
+    hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
     InterfaceStatusResponse cachedResponse = getFromCache(key, InterfaceStatusResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -95,14 +95,14 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
-    List<InterfaceStatusDTO> list = endPointManagers.stream()
-        .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
-        .filter(status -> parser == null || parser.evaluate(status))
-        .collect(Collectors.toList());
+    List<InterfaceStatusDTO> list =
+        endPointManagers.stream()
+            .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
+            .filter(status -> parser == null || parser.evaluate(status))
+            .collect(Collectors.toList());
 
     InterfaceStatusResponse response = new InterfaceStatusResponse(list);
     putToCache(key, response);
     return response;
   }
-
 }

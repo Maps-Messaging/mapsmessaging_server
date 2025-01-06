@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,15 +21,12 @@ package io.mapsmessaging.rest.api.impl.hardware;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.config.DeviceManagerConfig;
 import io.mapsmessaging.devices.DeviceController;
-import io.mapsmessaging.dto.rest.config.DeviceManagerConfigDTO;
 import io.mapsmessaging.dto.rest.devices.DeviceInfoDTO;
 import io.mapsmessaging.hardware.DeviceManager;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -39,31 +36,34 @@ import java.util.List;
 
 @Tag(name = "Hardware Management")
 @Path(URI_PATH)
-public class HardwareManagementApi extends BaseRestApi {
+public class HardwareManagementApi extends HardwareBaseRestApi {
 
   @GET
   @Path("/server/hardware/scan")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Scan for new hardware",
+      description = "Requests a scan to detect new hardware on I2C bus or configured devices. Requires authentication if enabled in the configuration."
+  )
   public List<String> scanForDevices() throws InterruptedException {
-    if (!hasAccess("hardware")) {
-      response.setStatus(403);
-      return new ArrayList<>();
-    }
+    hasAccess(RESOURCE);
     return MessageDaemon.getInstance().getSubSystemManager().getDeviceManager().scan();
   }
 
   @GET
   @Path("/server/hardware")
   @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get known devices",
+      description = "Retreive a list of all detected devices currently online. Requires authentication if enabled in the configuration."
+  )
   public List<DeviceInfoDTO> getAllDiscoveredDevices() throws IOException {
-    if (!hasAccess("hardware")) {
-      response.setStatus(403);
-      return new ArrayList<>();
-    }
+    hasAccess(RESOURCE);
     List<DeviceInfoDTO> devices = new ArrayList<>();
-    DeviceManager deviceManager = MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
+    DeviceManager deviceManager =
+        MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
     List<DeviceController> activeDevices = deviceManager.getActiveDevices();
-    for(DeviceController device : activeDevices) {
+    for (DeviceController device : activeDevices) {
       DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
       deviceInfo.setName(device.getName());
       deviceInfo.setType(device.getType().name());
@@ -73,27 +73,4 @@ public class HardwareManagementApi extends BaseRestApi {
     }
     return devices;
   }
-
-  @GET
-  @Path("/server/hardware/config")
-  @Produces({MediaType.APPLICATION_JSON})
-  public DeviceManagerConfigDTO getConfig() {
-    if (!hasAccess("hardware")) {
-      response.setStatus(403);
-      return null;
-    }
-    return DeviceManagerConfig.getInstance();
-  }
-
-  @POST
-  @Path("/server/hardware/config")
-  @Produces({MediaType.APPLICATION_JSON})
-  public boolean getConfig(DeviceManagerConfigDTO update) {
-    if (!hasAccess("hardware")) {
-      response.setStatus(403);
-      return false;
-    }
-    return DeviceManagerConfig.getInstance().update(update);
-  }
-
 }

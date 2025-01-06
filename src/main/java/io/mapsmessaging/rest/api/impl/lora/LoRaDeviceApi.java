@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
-import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.LoRaListResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
@@ -40,33 +39,34 @@ import javax.servlet.http.HttpServletResponse;
 
 @Tag(name = "LoRa Device Management")
 @Path(URI_PATH)
-public class LoRaDeviceApi extends BaseRestApi {
+public class LoRaDeviceApi extends LoraBaseRestApi {
 
   @GET
   @Path("/device/lora")
   @Produces({MediaType.APPLICATION_JSON})
   public LoRaListResponse getAllLoRaDevices() {
-    checkAuthentication();
+    hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     List<LoRaDeviceInfoDTO> deviceInfos = new ArrayList<>();
-    for(LoRaDevice device : deviceManager.getDevices()) {
+    for (LoRaDevice device : deviceManager.getDevices()) {
       deviceInfos.add(createInfo(device));
     }
-    return new LoRaListResponse( deviceInfos);
+    return new LoRaListResponse(deviceInfos);
   }
 
   @GET
   @Path("/device/lora/{deviceName}")
   @Produces({MediaType.APPLICATION_JSON})
   public LoRaDeviceInfoDTO getLoRaDevice(@PathParam("deviceName") String deviceName) {
-    checkAuthentication();
+    hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     LoRaDeviceInfoDTO deviceInfo = new LoRaDeviceInfoDTO();
     if (deviceName != null && !deviceName.isEmpty()) {
-      List<LoRaDevice> lookup = deviceManager.getDevices().stream()
-          .filter(device -> deviceName.equals(device.getName()))
-          .collect(Collectors.toList());
-      if(!lookup.isEmpty()) {
+      List<LoRaDevice> lookup =
+          deviceManager.getDevices().stream()
+              .filter(device -> deviceName.equals(device.getName()))
+              .collect(Collectors.toList());
+      if (!lookup.isEmpty()) {
         return createInfo(lookup.get(0));
       }
     }
@@ -74,26 +74,23 @@ public class LoRaDeviceApi extends BaseRestApi {
     return deviceInfo;
   }
 
-
   @GET
   @Path("/device/lora/{deviceName}/{nodeId}")
   @Produces({MediaType.APPLICATION_JSON})
-  public List<LoRaEndPointConnectionInfoDTO> getLoRaEndPointConnections(
-      @PathParam("deviceName") String deviceName,
-      @PathParam("nodeId") String nodeId
-  ) {
-    checkAuthentication();
+  public List<LoRaEndPointConnectionInfoDTO> getLoRaEndPointConnections(@PathParam("deviceName") String deviceName, @PathParam("nodeId") String nodeId) {
+    hasAccess(RESOURCE);
     LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
     int parsedInt = Integer.parseInt(nodeId);
     if (deviceName != null && !deviceName.isEmpty()) {
-      List<LoRaDevice> lookup = deviceManager.getDevices().stream()
-          .filter(device -> deviceName.equals(device.getName()))
-          .collect(Collectors.toList());
-      if(!lookup.isEmpty()) {
+      List<LoRaDevice> lookup =
+          deviceManager.getDevices().stream()
+              .filter(device -> deviceName.equals(device.getName()))
+              .collect(Collectors.toList());
+      if (!lookup.isEmpty()) {
         LoRaDevice device = lookup.get(0);
         List<LoRaEndPointConnectionInfoDTO> infoList = new ArrayList<>();
         LoRaEndPoint loRaEndPoint = device.getEndPoint(parsedInt);
-        for(LoRaClientStats clientStats : loRaEndPoint.getStats()) {
+        for (LoRaClientStats clientStats : loRaEndPoint.getStats()) {
           infoList.add(createConnectionInfo(clientStats));
         }
         return infoList;
@@ -113,7 +110,7 @@ public class LoRaDeviceApi extends BaseRestApi {
     deviceInfo.setPacketsReceived(device.getPacketsReceived().sum());
     deviceInfo.setPacketsSent(device.getPacketsSent().sum());
     List<LoRaEndPointInfoDTO> endPointInfoList = new ArrayList<>();
-    for(LoRaEndPoint endPoint: device.getEndPoints()){
+    for (LoRaEndPoint endPoint : device.getEndPoints()) {
       endPointInfoList.add(createEndPointInfo(endPoint));
     }
     deviceInfo.setEndPointInfoList(endPointInfoList);
@@ -137,7 +134,7 @@ public class LoRaDeviceApi extends BaseRestApi {
     connectionInfo.setRssi(clientStats.getRssi());
     connectionInfo.setMissedPackets(clientStats.getMissed());
     connectionInfo.setReceivedPackets(clientStats.getReceived());
-    connectionInfo.setRemoteNodeId((int)clientStats.getNodeId());
+    connectionInfo.setRemoteNodeId((int) clientStats.getNodeId());
     return connectionInfo;
   }
 }

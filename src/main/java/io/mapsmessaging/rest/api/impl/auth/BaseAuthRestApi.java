@@ -16,22 +16,10 @@
  *
  */
 
-package io.mapsmessaging.rest.api.impl;
+package io.mapsmessaging.rest.api.impl.auth;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
+import io.mapsmessaging.rest.api.impl.BaseRestApi;
 
-@Tag(name = "Server Health")
-@Path("/health")
-public class ConsulHealth extends BaseRestApi {
-
-  @GET
-  @Produces({MediaType.TEXT_PLAIN})
-  //  @ApiOperation(value = "Simple request to test if the server is running")
-  public String getPing() {
-    return "Ok";
-  }
+public class BaseAuthRestApi extends BaseRestApi {
+  protected static final String RESOURCE = "auth";
 }

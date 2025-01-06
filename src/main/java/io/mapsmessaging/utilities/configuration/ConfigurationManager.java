@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,7 +87,7 @@ public class ConfigurationManager {
         authoritative.copy(defaultManager); // Define the local host
       }
     }
-    catch(Throwable th){
+    catch(IOException th){
       logger.log(CONSUL_CLIENT_EXCEPTION, th);
     }
   }
@@ -144,7 +145,7 @@ public class ConfigurationManager {
     }
     String defaultName = "default";
     if (!configPath.endsWith("/")) {
-      configPath = configPath + "/";
+      configPath = configPath + File.separator;
     }
     serverId = configPath + serverId;
     defaultName = configPath + defaultName;

@@ -1,6 +1,6 @@
 /*
  * Copyright [ 2020 - 2024 ] [Matthew Buckton]
- * Copyright [ 2024 - 2024 ] [Maps Messaging B.V.]
+ * Copyright [ 2024 - 2025 ] [Maps Messaging B.V.]
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,18 +35,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import javax.security.auth.Subject;
 
 public class BaseRestApi {
-  @Context
-  protected HttpServletRequest request;
+  @Context protected HttpServletRequest request;
 
-  @Context
-  protected HttpServletResponse response;
+  @Context protected HttpServletResponse response;
 
-  @Context
-  protected UriInfo uriInfo;
+  @Context protected UriInfo uriInfo;
 
   private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
 
@@ -58,33 +56,36 @@ public class BaseRestApi {
     return (Subject) getSession().getAttribute("subject");
   }
 
-  protected void checkAuthentication() {
+  private void checkAuthentication() {
     if (AuthManager.getInstance().isAuthorisationEnabled()) {
       HttpSession session = getSession();
-      if(session == null || session.getAttribute("uuid") == null){
+      if (session == null || session.getAttribute("uuid") == null) {
         throw new WebApplicationException(401);
       }
     }
   }
 
-  protected boolean hasAccess(String resource) {
+
+  protected void hasAccess(String resource) {
+    checkAuthentication();
     String method = request.getMethod();
     Subject subject = (Subject) getSession().getAttribute("subject");
     boolean access = true;
 
-    if(AuthManager.getInstance().isAuthorisationEnabled()) {
+    if (AuthManager.getInstance().isAuthorisationEnabled()) {
       Identity userIdMap = AuthManager.getInstance().getUserIdentity((String) getSession().getAttribute("username"));
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
-      if(accessControl != null){
+      if (accessControl != null) {
         access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
       }
     }
-
-    return access;
+    if(!access) {
+      throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
+    }
   }
 
-  private long computeAccess(String method){
-    switch(method){
+  private long computeAccess(String method) {
+    switch (method) {
       case "GET":
       case "HEAD":
         return RestAclMapping.READ_VALUE;
@@ -100,7 +101,7 @@ public class BaseRestApi {
   }
 
   protected <T> T getFromCache(CacheKey key, Class<T> type) {
-    Object cachedResponse =Constants.getCentralCache().get(key);
+    Object cachedResponse = Constants.getCentralCache().get(key);
     T typedResponse = type.isInstance(cachedResponse) ? type.cast(cachedResponse) : null;
     if (typedResponse != null) {
       logger.log(REST_CACHE_HIT, key);
@@ -110,11 +111,11 @@ public class BaseRestApi {
     return typedResponse;
   }
 
-  protected void putToCache(CacheKey key, Object value){
+  protected void putToCache(CacheKey key, Object value) {
     Constants.getCentralCache().put(key, value);
   }
 
-  protected void removeFromCache(CacheKey key){
+  protected void removeFromCache(CacheKey key) {
     Constants.getCentralCache().remove(key);
   }
 }
