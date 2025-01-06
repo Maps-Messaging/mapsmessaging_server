@@ -13,6 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.mapsmessaging.rest.api.impl.destination;
@@ -32,8 +33,6 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -52,25 +51,15 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get destination details",
-      description = "Retrieve details for the specified destination. Requires authentication if enabled.",
-      operationId = "getDestinationDetails"
+      description = "Retrieve details for the specified destination. Requires authentication if enabled in the configuration."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "Destination details returned"),
-      @ApiResponse(responseCode = "401", description = "Unauthorized"),
-      @ApiResponse(responseCode = "404", description = "Destination not found"),
-      @ApiResponse(responseCode = "500", description = "Unexpected server error")
-  })
-  public DestinationDetailsResponse getDestinationDetails(
-      @QueryParam("destinationName") String destinationName
-  ) throws ExecutionException, InterruptedException, TimeoutException {
+  public DestinationDetailsResponse getDestinationDetails(@QueryParam("destinationName") String destinationName) throws ExecutionException, InterruptedException, TimeoutException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), destinationName);
     DestinationDetailsResponse cachedResponse = getFromCache(key, DestinationDetailsResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
-
     DestinationImpl destinationImpl = lookup(destinationName);
     if (destinationImpl == null) {
       throw new WebApplicationException("Destination not found", Response.Status.NOT_FOUND);
@@ -88,56 +77,38 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all destination details",
-      description = "Retrieve details on all known destinations. Requires authentication if enabled.",
-      operationId = "getAllDestinations"
+      description = "Retrieve details on all known destinations. Requires authentication if enabled in the configuration."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "List of destinations returned"),
-      @ApiResponse(responseCode = "401", description = "Unauthorized"),
-      @ApiResponse(responseCode = "500", description = "Unexpected server error")
-  })
   public DestinationResponse getAllDestinations(
       @Parameter(
-          description = "Optional filter string",
-          schema = @Schema(type = "string", example = "type = 'topic AND 10 OR storedMessages > 50")
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "type = 'topic AND 10 OR storedMessages > 50")
       )
       @QueryParam("filter") String filter,
       @Parameter(
           description = "Number of entries to return",
-          schema = @Schema(type = "int", example = "100", defaultValue = "40")
+          schema = @Schema(type= "int", example = "100", defaultValue = "40")
       )
       @QueryParam("size") @DefaultValue("40") int size,
       @Parameter(
           description = "How to sort the data before returning the list",
-          schema = @Schema(
-              type = "string",
-              example = "Published",
-              defaultValue = "Published",
-              allowableValues = {"Name", "Published", "Delivered", "Stored", "Pending", "Delayed", "Expired"}
-          )
+          schema = @Schema(type= "String", example = "Published", defaultValue = "Published", allowableValues = {"Name", "Published", "Delivered", "Stored", "Pending", "Delayed", "Expired"})
       )
       @QueryParam("sortBy") @DefaultValue("Published") String sortBy
   ) throws ExecutionException, InterruptedException, TimeoutException, ParseException {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(
-        uriInfo.getPath(),
-        ((filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "") + ":" + sortBy + ":" + size
-    );
+    CacheKey key = new CacheKey(uriInfo.getPath(), ((filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "") + ":" + sortBy + ":" + size);
 
+    // Try to retrieve from cache
     DestinationResponse cachedResponse = getFromCache(key, DestinationResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
-    ParserExecutor parser = (filter != null && !filter.isEmpty())
-        ? SelectorParser.compile(filter)
-        : null;
-
-    List<String> destinations = MessageDaemon.getInstance()
-        .getDestinationManager()
-        .getAll();
-
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    List<String> destinations = MessageDaemon.getInstance().getDestinationManager().getAll();
     List<DestinationDTO> results = new ArrayList<>();
+
     for (String name : destinations) {
       DestinationDTO destination = DestinationStatusHelper.createDestination(lookup(name));
       if (destination != null && (parser == null || parser.evaluate(destination))) {
@@ -146,6 +117,7 @@ public class DestinationManagementApi extends BaseDestinationApi {
     }
     sortDestinationList(results, sortBy);
 
+    // Limit the size of the returned results
     if (size > 0 && size < results.size()) {
       results = results.subList(0, size);
     }
@@ -156,25 +128,26 @@ public class DestinationManagementApi extends BaseDestinationApi {
   }
 
   private void sortDestinationList(List<DestinationDTO> destinations, String sortBy) {
-    destinations.sort((d1, d2) -> {
-      switch (sortBy) {
-        case "Name":
-          return d2.getName().compareTo(d1.getName());
-        case "Published":
-          return Long.compare(d2.getPublishedMessages(), d1.getPublishedMessages());
-        case "Delivered":
-          return Long.compare(d2.getDeliveredMessages(), d1.getDeliveredMessages());
-        case "Stored":
-          return Long.compare(d2.getStoredMessages(), d1.getStoredMessages());
-        case "Pending":
-          return Long.compare(d2.getPendingMessages(), d1.getPendingMessages());
-        case "Delayed":
-          return Long.compare(d2.getDelayedMessages(), d1.getDelayedMessages());
-        case "Expired":
-          return Long.compare(d2.getExpiredMessages(), d1.getExpiredMessages());
-        default:
-          throw new IllegalArgumentException("Invalid sortBy parameter: " + sortBy);
-      }
-    });
+    destinations.sort(
+        (d1, d2) -> {
+          switch (sortBy) {
+            case "Name":
+              return d2.getName().compareTo(d1.getName());
+            case "Published":
+              return Long.compare(d2.getPublishedMessages(), d1.getPublishedMessages());
+            case "Delivered":
+              return Long.compare(d2.getDeliveredMessages(), d1.getDeliveredMessages());
+            case "Stored":
+              return Long.compare(d2.getStoredMessages(), d1.getStoredMessages());
+            case "Pending":
+              return Long.compare(d2.getPendingMessages(), d1.getPendingMessages());
+            case "Delayed":
+              return Long.compare(d2.getDelayedMessages(), d1.getDelayedMessages());
+            case "Expired":
+              return Long.compare(d2.getExpiredMessages(), d1.getExpiredMessages());
+            default:
+              throw new IllegalArgumentException("Invalid sortBy parameter: " + sortBy);
+          }
+        });
   }
 }

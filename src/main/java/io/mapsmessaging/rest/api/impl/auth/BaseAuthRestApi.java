@@ -21,7 +21,5 @@ package io.mapsmessaging.rest.api.impl.auth;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 
 public class BaseAuthRestApi extends BaseRestApi {
-
   protected static final String RESOURCE = "auth";
-
 }

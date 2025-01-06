@@ -13,6 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.mapsmessaging.rest.api.impl.server;
@@ -22,8 +23,6 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -37,13 +36,6 @@ public class ServerConfigApi extends ServerBaseRestApi {
   @GET
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(
-      summary = "Get server config",
-      description = "Retrieves the current server configuration. Requires authentication if enabled."
-  )
-  @ApiResponse(responseCode = "200", description = "Server configuration returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
   public MessageDaemonConfigDTO getServerConfig() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverConfig");
@@ -59,13 +51,6 @@ public class ServerConfigApi extends ServerBaseRestApi {
   @PUT
   @Path("/server/config")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(
-      summary = "Update server config",
-      description = "Updates and persists the server configuration. Requires authentication if enabled."
-  )
-  @ApiResponse(responseCode = "200", description = "Server config updated")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
   public Response updateServerConfig(MessageDaemonConfigDTO dto) throws IOException {
     hasAccess(RESOURCE);
     if (MessageDaemon.getInstance().getMessageDaemonConfig().update(dto)) {

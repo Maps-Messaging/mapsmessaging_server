@@ -13,6 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.mapsmessaging.rest.api.impl.connections;
@@ -34,8 +35,6 @@ import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -53,18 +52,12 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all connections",
-      description = "Retrieve a list of all current connections to the server, optionally filtered by the given string. Requires authentication if enabled.",
-      operationId = "getAllConnections"
+      description = "Retrieve a list of all current connections to the server, can be filtered with the optional filter string. Requires authentication if enabled in the configuration."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "Connections returned"),
-      @ApiResponse(responseCode = "401", description = "Unauthorized"),
-      @ApiResponse(responseCode = "500", description = "Server error")
-  })
   public EndPointDetailResponse getAllConnections(
       @Parameter(
-          description = "Optional filter string",
-          schema = @Schema(type = "string", example = "totalOverflow > 10 OR totalUnderflow > 5")
+          description = "Optional filter string ",
+          schema = @Schema(type= "String", example = "totalOverflow > 10 OR totalUnderflow > 5")
       )
       @QueryParam("filter") String filter
   ) throws ParseException {
@@ -75,15 +68,14 @@ public class ConnectionManagementApi extends BaseDestinationApi {
       return cachedResponse;
     }
 
+    // Fetch and cache response
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-    List<EndPointManager> endPointManagers =
-        MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
 
     List<EndPointSummaryDTO> endPointDetails =
         endPointManagers.stream()
-            .flatMap(endPointManager ->
-                endPointManager.getEndPointServer().getActiveEndPoints().stream()
-                    .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
+            .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
+                .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
             )
             .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
             .collect(Collectors.toList());
@@ -97,26 +89,20 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   @Path("/server/connection")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "Get connection details",
-      description = "Retrieve the details of a specific connection by ID. Requires authentication if enabled.",
-      operationId = "getConnectionDetails"
+      summary = "Get connection details for the specified id",
+      description = "Retrieve the details of the specified connection id. Requires authentication if enabled in the configuration."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "Connection found and details returned"),
-      @ApiResponse(responseCode = "401", description = "Unauthorized"),
-      @ApiResponse(responseCode = "404", description = "Connection not found")
-  })
   public EndPointDetailsDTO getConnectionDetails(@QueryParam("connectionId") String connectionId) {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), connectionId);
 
+    // Try to retrieve from cache
     EndPointDetailsDTO cachedResponse = getFromCache(key, EndPointDetailsDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
-    List<EndPointManager> endPointManagers =
-        MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
         if (endPoint.getName().equals(connectionId)) {
@@ -134,20 +120,11 @@ public class ConnectionManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Close a connection",
-      description = "Attempts to close the connection with the provided ID. Requires authentication if enabled.",
-      operationId = "closeSpecificConnection"
+      description = "Requests the connection specified be closed. Requires authentication if enabled in the configuration."
   )
-  @ApiResponses({
-      @ApiResponse(responseCode = "200", description = "Connection closed"),
-      @ApiResponse(responseCode = "400", description = "Connection could not be closed"),
-      @ApiResponse(responseCode = "401", description = "Unauthorized"),
-      @ApiResponse(responseCode = "404", description = "Connection not found")
-  })
   public Response closeSpecificConnection(@QueryParam("connectionId") String connectionId) {
     hasAccess(RESOURCE);
-    List<EndPointManager> endPointManagers =
-        MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
-
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
         if (endPoint.getName().equals(connectionId)) {
@@ -155,7 +132,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
             endPoint.close();
             return Response.ok().build();
           } catch (IOException e) {
-            throw new WebApplicationException("Connection close issue: " + e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new WebApplicationException("Connection close issue:" + e.getMessage(), Response.Status.BAD_REQUEST);
           }
         }
       }

@@ -13,6 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.mapsmessaging.rest.api.impl.schema;
@@ -22,18 +23,13 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import io.mapsmessaging.dto.rest.schema.SchemaPostDTO;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
-import io.mapsmessaging.rest.responses.BaseResponse;
-import io.mapsmessaging.rest.responses.SchemaConfigResponse;
-import io.mapsmessaging.rest.responses.SchemaMapResponse;
-import io.mapsmessaging.rest.responses.SchemaResponse;
-import io.mapsmessaging.rest.responses.StringListResponse;
+import io.mapsmessaging.rest.responses.*;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -54,15 +50,15 @@ public class SchemaQueryApi extends BaseRestApi {
   @DELETE
   @Path("/server/schema/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Delete specific schema", description = "Delete the schema configuration by unique id")
-  @ApiResponse(responseCode = "200", description = "Schema deleted (or does not exist)")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
+  @Operation(
+      summary = "Delete specific schema",
+      description = "Delete the schema configuration by unique id")
   public BaseResponse deleteSchemaById(@PathParam("schemaId") String schemaId) {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
       SchemaManager.getInstance().removeSchema(schemaId);
+      return new BaseResponse();
     }
     return new BaseResponse();
   }
@@ -70,13 +66,11 @@ public class SchemaQueryApi extends BaseRestApi {
   @DELETE
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Delete all schemas", description = "Deletes all the schema configurations (optionally filtered)")
-  @ApiResponse(responseCode = "200", description = "Schemas deleted")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
+  @Operation(summary = "Delete all schemas", description = "Deletes all the schema configurations")
   public BaseResponse deleteAllSchemas(@QueryParam("filter") String filter) throws ParseException {
     hasAccess(RESOURCE);
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    ParserExecutor parser =
+        (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<SchemaConfig> result =
         SchemaManager.getInstance().getAll().stream()
             .filter(protocol -> parser == null || parser.evaluate(protocol))
@@ -87,13 +81,11 @@ public class SchemaQueryApi extends BaseRestApi {
     return new BaseResponse();
   }
 
-  @POST
+  // @ApiOperation(value = "Add a new schema configuration to the repository")
   @Path("/server/schema")
+  @POST
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(summary = "Add new schema", description = "Adds a new schema to the registry")
-  @ApiResponse(responseCode = "200", description = "Schema added")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
   public BaseResponse addSchema(SchemaPostDTO jsonString) throws IOException {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonString.getSchema());
@@ -104,28 +96,24 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/{schemaId}")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get schema", description = "Returns a specific schema by its unique ID")
-  @ApiResponse(responseCode = "200", description = "Schema returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "404", description = "Schema not found")
-  @ApiResponse(responseCode = "500", description = "Server error")
+  @Operation(summary = "Get schema", description = "Returns a specific schema")
   public SchemaResponse getSchemaById(@PathParam("schemaId") String schemaId) throws IOException {
     hasAccess(RESOURCE);
     SchemaConfig config = SchemaManager.getInstance().getSchema(schemaId);
     if (config != null) {
       return new SchemaResponse(config.pack());
     }
-    throw new WebApplicationException("Schema not found", 404);
+    return new SchemaResponse(new ArrayList<>());
   }
 
   @GET
   @Path("/server/schema/context/{context}")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get schema by context", description = "Returns all schemas matching the provided context")
-  @ApiResponse(responseCode = "200", description = "Schemas returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
-  public SchemaResponse getSchemaByContext(@PathParam("context") String context) throws IOException {
+  @Operation(
+      summary = "Get schema by context",
+      description = "Returns all schemas that match the context")
+  public SchemaResponse getSchemaByContext(@PathParam("context") String context)
+      throws IOException {
     hasAccess(RESOURCE);
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemaByContext(context);
     if (config != null) {
@@ -137,10 +125,9 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/type/{type}")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get schema by type", description = "Returns all schemas matching the provided type")
-  @ApiResponse(responseCode = "200", description = "Schemas returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
+  @Operation(
+      summary = "Get schema by type",
+      description = "Returns all schemas that match the type")
   public SchemaResponse getSchemaByType(@PathParam("type") String type) throws IOException {
     hasAccess(RESOURCE);
     List<SchemaConfig> config = SchemaManager.getInstance().getSchemas(type);
@@ -153,13 +140,12 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get all schemas", description = "Returns all schemas, optionally filtered")
-  @ApiResponse(responseCode = "200", description = "List of schemas returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
-  public SchemaConfigResponse getAllSchemas(@QueryParam("filter") String filter) throws ParseException {
+  @Operation(summary = "Get all schemas", description = "Returns all schemas")
+  public SchemaConfigResponse getAllSchemas(@QueryParam("filter") String filter)
+      throws ParseException {
     hasAccess(RESOURCE);
-    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    ParserExecutor parser =
+        (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<SchemaConfig> result =
         SchemaManager.getInstance().getAll().stream()
             .filter(protocol -> parser == null || parser.evaluate(protocol))
@@ -170,16 +156,15 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/map")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get schemas and their configuration mappings", description = "Returns mapping of context to schema IDs")
-  @ApiResponse(responseCode = "200", description = "Mapping returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
+  @Operation(
+      summary = "Get schemas and the configuration",
+      description = "Returns all schemas and mapping information")
   public SchemaMapResponse getSchemaMapping() {
     hasAccess(RESOURCE);
     Map<String, List<SchemaConfig>> map = SchemaManager.getInstance().getMappedSchemas();
     Map<String, List<String>> responseMap = new LinkedHashMap<>();
     for (Entry<String, List<SchemaConfig>> entry : map.entrySet()) {
-      responseMap.put(entry.getKey(), convertToId(entry.getValue()));
+      responseMap.put(entry.getKey(), (convertToId(entry.getValue())));
     }
     return new SchemaMapResponse(responseMap);
   }
@@ -187,10 +172,9 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/formats")
   @Produces({MediaType.APPLICATION_JSON})
-  @Operation(summary = "Get all known formats", description = "Returns a list of supported message formats")
-  @ApiResponse(responseCode = "200", description = "Formats returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
+  @Operation(
+      summary = "Get all known formats supported",
+      description = "Returns list of supported formats")
   public StringListResponse getKnownFormats() {
     hasAccess(RESOURCE);
     return new StringListResponse(SchemaManager.getInstance().getMessageFormats());
@@ -199,10 +183,7 @@ public class SchemaQueryApi extends BaseRestApi {
   @GET
   @Path("/server/schema/link-format")
   @Produces({MediaType.TEXT_PLAIN})
-  @Operation(summary = "Get link-format config", description = "Returns the link-format list")
-  @ApiResponse(responseCode = "200", description = "Link-format returned")
-  @ApiResponse(responseCode = "401", description = "Unauthorized")
-  @ApiResponse(responseCode = "500", description = "Server error")
+  @Operation(summary = "Get the link-format config", description = "Returns link-format list")
   public String getLinkFormat() {
     hasAccess(RESOURCE);
     return SchemaManager.getInstance().buildLinkFormatResponse();
