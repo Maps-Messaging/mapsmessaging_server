@@ -101,7 +101,7 @@ public class MessagingApi extends BaseRestApi {
   public StatusResponse commitMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
     RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    messageListener.ackReceived(transactionData.getDestinationName(), transactionData.getEventId());
+    messageListener.ackReceived(transactionData.getDestinationName(), transactionData.getEventIds());
     return new StatusResponse("Successfully committed messages");
   }
 
@@ -116,7 +116,7 @@ public class MessagingApi extends BaseRestApi {
   public StatusResponse abortMessages(@Valid TransactionData transactionData) {
     hasAccess(RESOURCE);
     RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    messageListener.nakReceived(transactionData.getDestinationName(), transactionData.getEventId());
+    messageListener.nakReceived(transactionData.getDestinationName(), transactionData.getEventIds());
     return new StatusResponse("Successfully aborted messages");
   }
 

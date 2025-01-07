@@ -62,17 +62,21 @@ public class RestMessageListener implements MessageListener {
     }
   }
 
-  public void ackReceived(String destination, long messageId) {
+  public void ackReceived(String destination, List<Long> messageId) {
     SubscribedEventManager subscribedEventManager = subscribedEventManagerMap.get(destination);
     if (subscribedEventManager != null) {
-      subscribedEventManager.ackReceived(messageId);
+      for (long id : messageId) {
+        subscribedEventManager.ackReceived(id);
+      }
     }
   }
 
-  public void nakReceived(String destination, long messageId) {
+  public void nakReceived(String destination, List<Long> messageId) {
     SubscribedEventManager subscribedEventManager = subscribedEventManagerMap.get(destination);
     if (subscribedEventManager != null) {
-      subscribedEventManager.rollbackReceived(messageId);
+      for (long id : messageId) {
+        subscribedEventManager.rollbackReceived(id);
+      }
     }
   }
 
