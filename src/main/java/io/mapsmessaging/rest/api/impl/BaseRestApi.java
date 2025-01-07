@@ -20,6 +20,7 @@ package io.mapsmessaging.rest.api.impl;
 
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
+import static io.mapsmessaging.rest.auth.AuthenticationFilter.constructAnonymousSession;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.logging.Logger;
@@ -49,7 +50,11 @@ public class BaseRestApi {
   private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
 
   protected HttpSession getSession() {
-    return request.getSession(true);
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      throw new WebApplicationException(401);
+    }
+    return session;
   }
 
   protected Subject getSubject() {
@@ -57,10 +62,12 @@ public class BaseRestApi {
   }
 
   private void checkAuthentication() {
-    if (AuthManager.getInstance().isAuthorisationEnabled()) {
-      HttpSession session = getSession();
-      if (session == null || session.getAttribute("uuid") == null) {
+    HttpSession session = getSession();
+    if (session.getAttribute("uuid") == null) {
+      if (AuthManager.getInstance().isAuthorisationEnabled()) {
         throw new WebApplicationException(401);
+      } else {
+        constructAnonymousSession(request.getSession(true));
       }
     }
   }

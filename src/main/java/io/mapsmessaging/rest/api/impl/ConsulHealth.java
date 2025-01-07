@@ -35,7 +35,8 @@ public class ConsulHealth extends BaseRestApi {
   @Produces({MediaType.TEXT_PLAIN})
   @Operation(
       summary = "Check server health",
-      description = "Checks the health of all subsystems and returns their overall status. Possible values are 'Ok', 'Warning', or 'Error'."
+      description = "Checks the health of all subsystems and returns their overall status. Possible values are 'Ok', 'Warning', or 'Error'.",
+      security = {} // Overrides global security to make this endpoint accessible without authentication
   )
   public String getHealth() {
     String state = "";

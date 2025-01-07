@@ -149,11 +149,11 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Ping the server",
-      description = "A simple endpoint to verify that the server is operational and responsive."
+      description = "A simple endpoint to verify that the server is operational and responsive.",
+      security = {} // Overrides global security to make this endpoint accessible without authentication
   )
   public StatusResponse getPing() {
     return new StatusResponse("Success");
-
   }
 
   @GET
@@ -186,11 +186,10 @@ public class MapsRestServerApi extends BaseRestApi {
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "User login",
-      description = "Allows a user to log in and obtain an authentication token. This endpoint does not require authentication and overrides global security settings.",
-      security = {} // Overrides global security to make this endpoint accessible without authentication
+      description = "Allows a user to log in and obtain an authentication token. This endpoint does not require authentication and overrides global security settings."
   )
   public LoginResponse login() {
-    HttpSession session = request.getSession(false);
+    HttpSession session = request.getSession(true);
     if (session != null) {
       hasAccess("root");
       Subject subject = (Subject) getSession().getAttribute("subject");

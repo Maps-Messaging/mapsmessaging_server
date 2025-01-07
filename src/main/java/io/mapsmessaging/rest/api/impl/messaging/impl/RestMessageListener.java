@@ -24,6 +24,8 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
+
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
@@ -31,13 +33,13 @@ import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-public class RestMessageListener implements MessageListener {
+public class RestMessageListener implements MessageListener, Serializable {
 
   @Getter
   @Setter
   private static int maxSubscribedMessages = 10;
 
-  private final Map<String, List<Message>> messages;
+  private final Map<String, List<MessageEvent>> messages;
   private final Map<String, SubscribedEventManager> subscribedEventManagerMap;
 
   private boolean closed = false;
@@ -49,14 +51,14 @@ public class RestMessageListener implements MessageListener {
 
   @Override
   public synchronized void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    messageEvent.getCompletionTask().run(); // ensure the server knows the event has been handled
-    messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
     if (closed) {
+      messageEvent.getCompletionTask().run(); // ensure the server knows the event has been handled
+      messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
       return;
     }
     String destination = messageEvent.getDestinationName();
-    List<Message> destinationMessages = messages.computeIfAbsent(destination, k -> new ArrayList<>());
-    destinationMessages.add(messageEvent.getMessage());
+    List<MessageEvent> destinationMessages = messages.computeIfAbsent(destination, k -> new ArrayList<>());
+    destinationMessages.add(messageEvent);
     if(destinationMessages.size() > maxSubscribedMessages){
       destinationMessages.remove(0);
     }
@@ -81,7 +83,7 @@ public class RestMessageListener implements MessageListener {
   }
 
   public int subscriptionDepth(String destination) {
-    List<Message> destinationMessages = messages.get(destination);
+    List<MessageEvent> destinationMessages = messages.get(destination);
     if(destinationMessages == null){
       return 0;
     }
@@ -90,7 +92,7 @@ public class RestMessageListener implements MessageListener {
 
   public Map<String, Integer> subscriptionDepth() {
     Map<String, Integer> result = new LinkedHashMap<>();
-    for(Map.Entry<String, List<Message>> entry : messages.entrySet()){
+    for (Map.Entry<String, List<MessageEvent>> entry : messages.entrySet()) {
       result.put(entry.getKey(), subscriptionDepth(entry.getKey()));
     }
     return result;
@@ -103,11 +105,11 @@ public class RestMessageListener implements MessageListener {
   public List<MessageDTO> getMessages(String destinationName, int max) {
     if (max <= 0) max = 10;
     if(max > 1000) max = 1000;
-    List<Message> destinationMessages = messages.get(destinationName);
+    List<MessageEvent> destinationMessages = messages.get(destinationName);
     if(destinationMessages == null){
       destinationMessages = new ArrayList<>();
     }
-    List<Message> subMessages;
+    List<MessageEvent> subMessages;
     if(destinationMessages.size() > max){
       subMessages = destinationMessages.subList(0, max);
       destinationMessages = destinationMessages.subList(max, destinationMessages.size());
@@ -120,21 +122,23 @@ public class RestMessageListener implements MessageListener {
     }
 
     List<MessageDTO> messageList = new ArrayList<>();
-    for(Message message : subMessages) {
+    for (MessageEvent message : subMessages) {
       MessageDTO messageDTO = new MessageDTO();
-      messageDTO.setPriority(message.getPriority().getValue());
-      messageDTO.setPayload(Base64.getEncoder().encodeToString(message.getOpaqueData()));
-      messageDTO.setExpiry(message.getExpiry());
+      Message msg = message.getMessage();
+      messageDTO.setPriority(msg.getPriority().getValue());
+      messageDTO.setPayload(Base64.getEncoder().encodeToString(msg.getOpaqueData()));
+      messageDTO.setExpiry(msg.getExpiry());
 
-      messageDTO.setCorrelationData(message.getCorrelationData());
-      messageDTO.setContentType(message.getContentType());
-      messageDTO.setQualityOfService(message.getQualityOfService().getLevel());
+      messageDTO.setCorrelationData(msg.getCorrelationData());
+      messageDTO.setContentType(msg.getContentType());
+      messageDTO.setQualityOfService(msg.getQualityOfService().getLevel());
       Map<String, Object> map =new LinkedHashMap<>();
-      for(Map.Entry<String, TypedData> entry: message.getDataMap().entrySet()) {
+      for (Map.Entry<String, TypedData> entry : msg.getDataMap().entrySet()) {
         map.put(entry.getKey(), entry.getValue().getData());
       }
       messageDTO.setDataMap(map);
       messageList.add(messageDTO);
+      message.getCompletionTask().run();
     }
     return messageList;
   }

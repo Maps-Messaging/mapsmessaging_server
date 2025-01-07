@@ -18,8 +18,10 @@
 
 package io.mapsmessaging.rest.auth;
 
+import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.SubjectHelper;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -27,7 +29,10 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
 import javax.security.auth.Subject;
 
 @Provider
@@ -40,16 +45,23 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
   @Override
   public void filter(ContainerRequestContext containerRequest) throws IOException {
-    if(!AuthManager.getInstance().isAuthenticationEnabled())return;
-
     if (containerRequest.getUriInfo().getRequestUri().getPath().contains("openapi.json")) {
       return;
     }
+    if (!AuthManager.getInstance().isAuthenticationEnabled()) {
+      HttpSession session = httpRequest.getSession(true);
+      constructAnonymousSession(session);
+    } else {
+      processAuthentication(containerRequest);
+    }
+  }
+
+  private void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
     // Get the authentication passed in HTTP headers parameters
     String auth = containerRequest.getHeaderString("authorization");
     if (auth == null) {
       HttpSession session = httpRequest.getSession(false);
-      if(session != null) {
+      if (session != null) {
         session.invalidate();
       }
       return;
@@ -57,7 +69,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     auth = auth.replaceFirst("[Bb]asic ", "");
     Base64.Decoder decoder = Base64.getDecoder();
-    String userColonPass =new String(decoder.decode(auth));
+    String userColonPass = new String(decoder.decode(auth));
     String[] split = userColonPass.split(":");
     String username = split[0];
     char[] password = split[1].toCharArray();
@@ -65,7 +77,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     HttpSession session = httpRequest.getSession(false);
     if (session != null) {
       Subject subject = (Subject) session.getAttribute("subject");
-      if (subject != null && session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(username)){
+      if (subject != null && session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(username)) {
         return; // all ok
       }
     }
@@ -74,10 +86,25 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       Subject subject = AuthManager.getInstance().getUserSubject(username);
       session.setAttribute(USERNAME, username);
       session.setAttribute("subject", subject);
-      session.setAttribute("uuid",  SubjectHelper.getUniqueId(subject));
+      session.setAttribute("uuid", SubjectHelper.getUniqueId(subject));
       return;
     }
-    if(session != null) session.invalidate();
+    if (session != null) session.invalidate();
   }
 
+
+  public static void constructAnonymousSession(HttpSession session) {
+    Subject subject = (Subject) session.getAttribute("subject");
+    if (subject != null &&
+        session.getAttribute(USERNAME) != null &&
+        session.getAttribute(USERNAME).equals("anonymous")) {
+      return; // all ok
+    }
+    session.setAttribute(USERNAME, "anonymous");
+    Set<Principal> principals = new HashSet<>();
+    principals.add(new UserPrincipal("anonymous"));
+    subject = new Subject(true, principals, new HashSet<>(), new HashSet<>());
+    session.setAttribute("subject", subject);
+    session.setAttribute("uuid", UuidGenerator.getInstance().generate());
+  }
 }

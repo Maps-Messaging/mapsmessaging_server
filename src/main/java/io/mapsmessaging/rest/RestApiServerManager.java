@@ -38,6 +38,7 @@ import io.mapsmessaging.rest.cache.impl.NoCache;
 import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
 import io.mapsmessaging.rest.handler.CorsEnabledStaticHttpHandler;
 import io.mapsmessaging.rest.handler.CorsFilter;
+import io.mapsmessaging.rest.handler.SessionTracker;
 import io.mapsmessaging.rest.translation.*;
 import io.mapsmessaging.utilities.Agent;
 import jakarta.servlet.Servlet;
@@ -208,7 +209,7 @@ public class RestApiServerManager implements Agent {
     path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
     WebappContext context = new WebappContext("GrizzlyContext", path);
     ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
-
+    context.addListener(new SessionTracker());
     registration.addMapping("/*");
     HttpServer server;
     if (sslConfig != null) {
