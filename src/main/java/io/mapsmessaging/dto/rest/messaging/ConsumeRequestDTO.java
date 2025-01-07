@@ -16,9 +16,9 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.dto.rest.messaging;
 
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,6 +26,20 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AllConsumedMessages {
-  private List<ConsumedMessages> consumedMessages;
+@Schema(
+    title = "Consume Request",
+    description = "Requests the server to respond with any outstanding messages specified by the destination or all if no destination supplied")
+public class ConsumeRequestDTO {
+  @Schema(
+      title = "Destination name",
+      description = "Optional, if supplied gets any messages outstanding for this destination, else all messages pending delivery",
+      example = "topicName")
+  private String destination;
+
+  @Schema(
+      title = "Depth",
+      description = "The max number of events that should be returned",
+      example = "60",
+      defaultValue = "10")
+  private int depth;
 }

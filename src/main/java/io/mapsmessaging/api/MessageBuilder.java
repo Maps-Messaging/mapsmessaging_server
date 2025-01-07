@@ -25,6 +25,7 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +105,7 @@ public class MessageBuilder {
     for(Map.Entry<String, Object> entry : messageDTO.getDataMap().entrySet()) {
       dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
     }
-    opaqueData = messageDTO.getPayload();
+    opaqueData = Base64.getDecoder().decode(messageDTO.getPayload());
     priority = Priority.getInstance(messageDTO.getPriority());
     expiry = messageDTO.getExpiry();
     contentType = messageDTO.getContentType();

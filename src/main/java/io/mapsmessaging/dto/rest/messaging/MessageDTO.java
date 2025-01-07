@@ -39,10 +39,10 @@ public class MessageDTO {
   @NotNull
   @Schema(
       title = "Payload",
-      description = "The main payload content of the message, represented as a byte array.",
-      example = "[72, 101, 108, 108, 111]" // Example of a "Hello" payload in ASCII bytes
+      description = "The main payload content of the message, represented as a byte64 string.",
+      example = "VGhpcyBpcyBhIGV4YW1wbGUgZGF0YS4="
       )
-  private byte[] payload;
+  private String payload;
 
   @Schema(
       title = "Content Type",

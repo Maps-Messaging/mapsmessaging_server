@@ -24,8 +24,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class AllSubscriptionDepth {
-  private List<SubscriptionDepth> subscriptionDepths;
+@AllArgsConstructor
+public class ConsumedResponse {
+  private List<ConsumedMessages> consumedMessages;
 }

@@ -23,10 +23,7 @@ import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -74,6 +71,8 @@ public class RestMessageListener implements MessageListener {
   }
 
   public List<MessageDTO> getMessages(String destinationName, int max) {
+    if (max <= 0) max = 10;
+    if(max > 1000) max = 1000;
     List<Message> destinationMessages = messages.get(destinationName);
     if(destinationMessages == null){
       destinationMessages = new ArrayList<>();
@@ -94,7 +93,7 @@ public class RestMessageListener implements MessageListener {
     for(Message message : subMessages) {
       MessageDTO messageDTO = new MessageDTO();
       messageDTO.setPriority(message.getPriority().getValue());
-      messageDTO.setPayload(message.getOpaqueData());
+      messageDTO.setPayload(Base64.getEncoder().encodeToString(message.getOpaqueData()));
       messageDTO.setExpiry(message.getExpiry());
 
       messageDTO.setCorrelationData(message.getCorrelationData());

@@ -25,6 +25,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
+import io.mapsmessaging.dto.rest.messaging.ConsumeRequestDTO;
 import io.mapsmessaging.dto.rest.messaging.PublishRequestDTO;
 import io.mapsmessaging.dto.rest.messaging.SubscriptionRequestDTO;
 import io.mapsmessaging.engine.session.SessionContext;
@@ -88,67 +89,57 @@ public class MessagingApi extends BaseRestApi {
     return new StatusResponse("Successfully subscribed to "+destinationName);
   }
 
-  @Path("/consume/{destinationName}")
+  @Path("/consume")
   @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get messages",
       description = "Retrieves messages for a specified subscription")
   @POST
-  public ConsumedMessages consumeMessages(
-      @PathParam("destinationName") String destinationName
+  public ConsumedResponse consumeMessages(
+      @Valid ConsumeRequestDTO consumeRequestDTO
   ) {
     hasAccess(RESOURCE);
     RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    return new ConsumedMessages(destinationName, messageListener.getMessages(destinationName, 100));
-  }
-
-  @Path("/consume")
-  @Produces(MediaType.APPLICATION_JSON)
-  @Operation(
-      summary = "Get all messages",
-      description = "Retrieves messages for all subscriptions")
-  @POST
-  public AllConsumedMessages consumeAllMessages() {
-    hasAccess(RESOURCE);
-    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    List<ConsumedMessages> messages = new ArrayList<>();
-    for(String destination : messageListener.getKnownDestinations()){
-      messages.add(new ConsumedMessages(destination, messageListener.getMessages(destination, 100)));
+    if(consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
+      List<ConsumedMessages> messages = new ArrayList<>();
+      for(String destination : messageListener.getKnownDestinations()){
+        messages.add(new ConsumedMessages(destination, messageListener.getMessages(destination, consumeRequestDTO.getDepth())));
+      }
+      return new ConsumedResponse(messages);
     }
-    return new AllConsumedMessages(messages);
+    else{
+      ConsumedMessages messages = new ConsumedMessages(consumeRequestDTO.getDestination(), messageListener.getMessages(consumeRequestDTO.getDestination(), consumeRequestDTO.getDepth()));
+      return new ConsumedResponse(List.of(messages));
+    }
   }
 
-  @GET
-  @Path("/subscriptionDepth/{destinationName}")
+  @POST
+  @Path("/subscriptionDepth")
   @Operation(
       summary = "Get message depth",
       description = "Get the depth of the queue for a specified subscription"
   )
   @Produces(MediaType.APPLICATION_JSON)
-  public SubscriptionDepth getSubscriptionDepth(@PathParam("destinationName") String destinationName) {
+  @Consumes(MediaType.APPLICATION_JSON)
+  public SubscriptionDepthResponse getSubscriptionDepth(@Valid ConsumeRequestDTO consumeRequestDTO) {
     hasAccess(RESOURCE);
     RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    int depth = messageListener.subscriptionDepth(destinationName);
-    return new SubscriptionDepth(depth, destinationName);
-  }
-
-  @GET
-  @Path("/subscriptionDepth")
-  @Operation(
-      summary = "Get all message depth",
-      description = "Get the depth of the queue for all subscriptions"
-  )
-
-  @Produces(MediaType.APPLICATION_JSON)
-  public AllSubscriptionDepth getAllSubscriptionDepth() {
-    hasAccess(RESOURCE);    // Implement the logic to get the depth of the subscription queue
-    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    Map<String, Integer> depth = messageListener.subscriptionDepth();
-    List<SubscriptionDepth> depths = new ArrayList<>();
-    for(Map.Entry<String, Integer> entry : depth.entrySet()) {
-      depths.add(new SubscriptionDepth(entry.getValue(), entry.getKey()));
+    if(consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
+      Map<String, Integer> depth = messageListener.subscriptionDepth();
+      List<SubscriptionDepth> depths = new ArrayList<>();
+      for(Map.Entry<String, Integer> entry : depth.entrySet()) {
+        depths.add(new SubscriptionDepth(entry.getValue(), entry.getKey()));
+      }
+      return new SubscriptionDepthResponse(depths);
     }
-    return new AllSubscriptionDepth(depths);
+    else{
+
+      int depth = messageListener.subscriptionDepth(consumeRequestDTO.getDestination());
+      SubscriptionDepth subscriptionDepth = new SubscriptionDepth(depth, consumeRequestDTO.getDestination());
+      return new SubscriptionDepthResponse(List.of(subscriptionDepth));
+    }
+
   }
 
   private Session getAuthenticatedSession() throws LoginException, IOException {
