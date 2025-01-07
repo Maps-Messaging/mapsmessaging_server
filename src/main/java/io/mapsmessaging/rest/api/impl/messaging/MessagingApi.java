@@ -57,7 +57,8 @@ public class MessagingApi extends BaseRestApi {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Publish a message",
-      description = "Publishes a message to a specified topic")
+      description = "Publishes a message to a specified topic"
+  )
   @POST
   public StatusResponse publishMessage(@Valid PublishRequestDTO publishRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
@@ -89,12 +90,43 @@ public class MessagingApi extends BaseRestApi {
     return new StatusResponse("Successfully subscribed to "+destinationName);
   }
 
+  @Path("/commit")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(
+      summary = "Commit the message",
+      description = "Commit the message specifed by the id and the destination name"
+  )
+  @POST
+  public StatusResponse commitMessages(@Valid TransactionData transactionData) {
+    hasAccess(RESOURCE);
+    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    messageListener.ackReceived(transactionData.getDestinationName(), transactionData.getEventId());
+    return new StatusResponse("Successfully committed messages");
+  }
+
+  @Path("/abort")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(
+      summary = "Abort the message",
+      description = "Abort the message specifed by the id and the destination name"
+  )
+  @POST
+  public StatusResponse abortMessages(@Valid TransactionData transactionData) {
+    hasAccess(RESOURCE);
+    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    messageListener.nakReceived(transactionData.getDestinationName(), transactionData.getEventId());
+    return new StatusResponse("Successfully aborted messages");
+  }
+
   @Path("/consume")
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get messages",
-      description = "Retrieves messages for a specified subscription")
+      description = "Retrieves messages for a specified subscription"
+  )
   @POST
   public ConsumedResponse consumeMessages(
       @Valid ConsumeRequestDTO consumeRequestDTO
@@ -139,7 +171,6 @@ public class MessagingApi extends BaseRestApi {
       SubscriptionDepth subscriptionDepth = new SubscriptionDepth(depth, consumeRequestDTO.getDestination());
       return new SubscriptionDepthResponse(List.of(subscriptionDepth));
     }
-
   }
 
   private Session getAuthenticatedSession() throws LoginException, IOException {

@@ -20,6 +20,7 @@ package io.mapsmessaging.rest.api.impl.messaging.impl;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
@@ -37,16 +38,19 @@ public class RestMessageListener implements MessageListener {
   private static int maxSubscribedMessages = 10;
 
   private final Map<String, List<Message>> messages;
+  private final Map<String, SubscribedEventManager> subscribedEventManagerMap;
 
   private boolean closed = false;
 
   public RestMessageListener() {
     messages = new ConcurrentHashMap<>();
+    subscribedEventManagerMap = new ConcurrentHashMap<>();
   }
 
   @Override
   public synchronized void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     messageEvent.getCompletionTask().run(); // ensure the server knows the event has been handled
+    messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
     if (closed) {
       return;
     }
@@ -55,6 +59,20 @@ public class RestMessageListener implements MessageListener {
     destinationMessages.add(messageEvent.getMessage());
     if(destinationMessages.size() > maxSubscribedMessages){
       destinationMessages.remove(0);
+    }
+  }
+
+  public void ackReceived(String destination, long messageId) {
+    SubscribedEventManager subscribedEventManager = subscribedEventManagerMap.get(destination);
+    if (subscribedEventManager != null) {
+      subscribedEventManager.ackReceived(messageId);
+    }
+  }
+
+  public void nakReceived(String destination, long messageId) {
+    SubscribedEventManager subscribedEventManager = subscribedEventManagerMap.get(destination);
+    if (subscribedEventManager != null) {
+      subscribedEventManager.rollbackReceived(messageId);
     }
   }
 
