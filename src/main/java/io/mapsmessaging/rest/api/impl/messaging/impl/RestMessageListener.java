@@ -25,12 +25,17 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 public class RestMessageListener implements MessageListener {
 
-  private static int MAX_SUBSCRIBED_MESSAGES = 10;
+  @Getter
+  @Setter
+  private static int maxSubscribedMessages = 10;
+
   private final Map<String, List<Message>> messages;
 
   private boolean closed = false;
@@ -45,7 +50,7 @@ public class RestMessageListener implements MessageListener {
     String destination = messageEvent.getDestinationName();
     List<Message> destinationMessages = messages.computeIfAbsent(destination, k -> new ArrayList<>());
     destinationMessages.add(messageEvent.getMessage());
-    if(destinationMessages.size() > MAX_SUBSCRIBED_MESSAGES){
+    if(destinationMessages.size() > maxSubscribedMessages){
       destinationMessages.remove(0);
     }
   }

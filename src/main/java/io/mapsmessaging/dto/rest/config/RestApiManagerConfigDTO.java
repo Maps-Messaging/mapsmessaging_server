@@ -59,6 +59,9 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Selector threads", example = "2")
   protected int selectorThreads;
 
+  @Schema(description = "Max outstanding events per destination", example="10")
+  protected int maxEventsPerDestination;
+
   @Schema(description = "Cache element life time in ms", example = "10000")
   protected long cacheLifetime;
 

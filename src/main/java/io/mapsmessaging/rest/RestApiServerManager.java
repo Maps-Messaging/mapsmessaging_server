@@ -30,6 +30,7 @@ import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.api.Constants;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
@@ -133,6 +134,7 @@ public class RestApiServerManager implements Agent {
   }
 
   public void startServer() {
+    RestMessageListener.setMaxSubscribedMessages(config.getMaxEventsPerDestination());
     if(config.isEnableCache()){
       long entryLifeTime = config.getCacheLifetime();
       long cleanupTime = config.getCacheCleanup();
