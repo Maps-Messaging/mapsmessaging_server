@@ -22,9 +22,11 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -54,12 +56,13 @@ public class AuthConfigurationApi extends BaseAuthRestApi {
       description = "Updates the configuration used to setup the authentication and authorisation. Requires authentication if enabled in the configuration.",
       security = {@SecurityRequirement(name ="basicAuth")}
   )
-  public boolean updateAuthConfiguration(AuthManagerConfigDTO update) throws IOException {
+  public StatusResponse updateAuthConfiguration(AuthManagerConfigDTO update) throws IOException {
     hasAccess(RESOURCE);
     if (AuthManager.getInstance().getConfig().update(update)) {
       AuthManager.getInstance().getConfig().save();
-      return true;
+      return new StatusResponse("Successfully updated the configuration");
     }
-    return false;
+    response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+    return new StatusResponse("Failed to update the configuration");
   }
 }

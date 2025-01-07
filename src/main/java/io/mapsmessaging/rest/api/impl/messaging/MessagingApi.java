@@ -20,18 +20,30 @@ package io.mapsmessaging.rest.api.impl.messaging;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
+import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.dto.rest.messaging.PublishRequestDTO;
 import io.mapsmessaging.dto.rest.messaging.SubscriptionRequestDTO;
+import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestClientConnection;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
+import io.mapsmessaging.rest.responses.*;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.security.auth.login.LoginException;
 
 @Tag(name = "Messaging Interface")
 @Path(URI_PATH + "/messaging")
@@ -45,96 +57,124 @@ public class MessagingApi extends BaseRestApi {
   @Operation(
       summary = "Publish a message",
       description = "Publishes a message to a specified topic")
-  @ApiResponse(
-      responseCode = "200",
-      description = "Message published successfully",
-      content = @Content(schema = @Schema(implementation = String.class)))
   @POST
-  public Response publishMessage(@Valid PublishRequestDTO publishRequest) {
+  public StatusResponse publishMessage(@Valid PublishRequestDTO publishRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
-    // Implement the logic to publish a message
-    // messagingService.publish(publishRequest.getTopic(), publishRequest.getMessage());
-    return Response.ok().entity("Message published successfully").build();
+    Session session = getAuthenticatedSession();
+    String destinationName = publishRequest.getDestinationName();
+    Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).join();
+    MessageBuilder messageBuilder = new MessageBuilder(publishRequest.getMessage());
+    destination.storeMessage(messageBuilder.build());
+    return new StatusResponse("Message published successfully");
   }
 
   @Path("/subscribe")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Subscribe to a topic", description = "Subscribes to a specified topic")
-  @ApiResponse(
-      responseCode = "200",
-      description = "Subscribed to topic successfully",
-      content = @Content(schema = @Schema(implementation = String.class)))
   @POST
-  public Response subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) {
-    hasAccess(RESOURCE);    // Implement the logic to subscribe to a topic
-    // messagingService.subscribe(subscriptionRequest.getTopic());
-    return Response.ok().entity("Subscribed to topic successfully").build();
+  public StatusResponse subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
+    hasAccess(RESOURCE);
+    Session session = getAuthenticatedSession();
+    String destinationName = subscriptionRequest.getDestinationName();
+    SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.AUTO)
+        .setReceiveMaximum(10)
+        .setQos(QualityOfService.AT_MOST_ONCE)
+        .setSelector(subscriptionRequest.getFilter())
+        .setRetainHandler(RetainHandler.SEND_IF_NEW)
+        .setNoLocalMessages(true);
+    session.addSubscription(contextBuilder.build());
+
+    return new StatusResponse("Successfully subscribed to "+destinationName);
   }
 
-  @Path("/consume/{subscriptionName}")
+  @Path("/consume/{destinationName}")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get messages",
       description = "Retrieves messages for a specified subscription")
-  @ApiResponse(
-      responseCode = "200",
-      description = "Messages retrieved successfully",
-      content = @Content(schema = @Schema(implementation = String.class)))
   @POST
-  public Response consumeMessages(@PathParam("subscriptionName") String subscriptionName) {
-    hasAccess(RESOURCE);    // Implement the logic to retrieve messages
-    // List<Message> messages = messagingService.getMessages(topic);
-    return Response.ok().entity("Messages retrieved successfully").build();
+  public ConsumedMessages consumeMessages(
+      @PathParam("destinationName") String destinationName
+  ) {
+    hasAccess(RESOURCE);
+    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    return new ConsumedMessages(destinationName, messageListener.getMessages(destinationName, 100));
   }
 
   @Path("/consume")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
       summary = "Get all messages",
-      description = "Retrieves messages for a specified subscription")
-  @ApiResponse(
-      responseCode = "200",
-      description = "Messages retrieved successfully",
-      content = @Content(schema = @Schema(implementation = String.class)))
+      description = "Retrieves messages for all subscriptions")
   @POST
-  public Response consumeAllMessages() {
-    hasAccess(RESOURCE);    // Implement the logic to retrieve messages
-    // List<Message> messages = messagingService.getMessages(topic);
-    return Response.ok().entity("Messages retrieved successfully").build();
+  public AllConsumedMessages consumeAllMessages() {
+    hasAccess(RESOURCE);
+    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    List<ConsumedMessages> messages = new ArrayList<>();
+    for(String destination : messageListener.getKnownDestinations()){
+      messages.add(new ConsumedMessages(destination, messageListener.getMessages(destination, 100)));
+    }
+    return new AllConsumedMessages(messages);
   }
 
   @GET
-  @Path("/subscriptionDepth/{subscriptionName}")
+  @Path("/subscriptionDepth/{destinationName}")
   @Operation(
       summary = "Get message depth",
-      description = "Get the depth of the queue for a specified subscription")
-  @ApiResponse(
-      responseCode = "200",
-      description = "Message depth retrieved successfully",
-      content = @Content(schema = @Schema(implementation = String.class)))
+      description = "Get the depth of the queue for a specified subscription"
+  )
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getSubscriptionDepth(@PathParam("subscriptionName") String subscriptionName) {
-    hasAccess(RESOURCE);    // Implement the logic to get the depth of the subscription queue
-    // int depth = messagingService.getSubscriptionDepth(subscriptionName);
-    return Response.ok()
-        .entity("Queue depth for subscription '" + subscriptionName + "' is: [depth]")
-        .build();
+  public SubscriptionDepth getSubscriptionDepth(@PathParam("destinationName") String destinationName) {
+    hasAccess(RESOURCE);
+    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    int depth = messageListener.subscriptionDepth(destinationName);
+    return new SubscriptionDepth(depth, destinationName);
   }
 
   @GET
   @Path("/subscriptionDepth")
   @Operation(
       summary = "Get all message depth",
-      description = "Get the depth of the queue for all subscriptions")
-  @ApiResponse(
-      responseCode = "200",
-      description = "Message depths retrieved successfully",
-      content = @Content(schema = @Schema(implementation = String.class)))
+      description = "Get the depth of the queue for all subscriptions"
+  )
+
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getAllSubscriptionDepth() {
+  public AllSubscriptionDepth getAllSubscriptionDepth() {
     hasAccess(RESOURCE);    // Implement the logic to get the depth of the subscription queue
-    // int depth = messagingService.getSubscriptionDepth(subscriptionName);
-    return Response.ok().entity("Queue depth for subscription ' is: [depth]").build();
+    RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
+    Map<String, Integer> depth = messageListener.subscriptionDepth();
+    List<SubscriptionDepth> depths = new ArrayList<>();
+    for(Map.Entry<String, Integer> entry : depth.entrySet()) {
+      depths.add(new SubscriptionDepth(entry.getValue(), entry.getKey()));
+    }
+    return new AllSubscriptionDepth(depths);
+  }
+
+  private Session getAuthenticatedSession() throws LoginException, IOException {
+    HttpSession httpSession = getSession();
+    Object lookup = httpSession.getAttribute("authenticatedSession");
+    if (lookup == null) {
+      RestClientConnection restClientConnection = new RestClientConnection(httpSession);
+      String username = (String) httpSession.getAttribute("username");
+      if(username == null) {
+        username = httpSession.getId();
+        httpSession.setAttribute("username", username);
+      }
+      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(restClientConnection.getName(), restClientConnection)
+        .isAuthorized(true)
+        .setUsername(username)
+        .setPersistentSession(false);
+      SessionContext sessionContext = sessionContextBuilder.build();
+      RestMessageListener restMessageListener = new RestMessageListener();
+      Session session = SessionManager.getInstance().create(sessionContext, restMessageListener );
+      httpSession.setAttribute("authenticatedSession", session);
+      httpSession.setAttribute("restListener", restMessageListener);
+      return session;
+    }
+    if(lookup instanceof Session) {
+      return (Session) lookup;
+    }
+    throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
   }
 }

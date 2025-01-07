@@ -23,7 +23,9 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.messaging.MessageDTO;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Data;
@@ -85,6 +87,29 @@ public class MessageBuilder {
     correlationData = previousMessage.getCorrelationData();
     qualityOfService = previousMessage.getQualityOfService();
     delayed = previousMessage.getDelayed();
+  }
+
+
+  public MessageBuilder(MessageDTO messageDTO) {
+    id = 0;
+    meta = null;
+    retain = false;
+    storeOffline = false;
+    payloadUTF8 = false;
+    delayed = 0;
+    creation = System.currentTimeMillis();
+    schemaId = null;
+
+    dataMap = new LinkedHashMap<>();
+    for(Map.Entry<String, Object> entry : messageDTO.getDataMap().entrySet()) {
+      dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+    }
+    opaqueData = messageDTO.getPayload();
+    priority = Priority.getInstance(messageDTO.getPriority());
+    expiry = messageDTO.getExpiry();
+    contentType = messageDTO.getContentType();
+    correlationData = messageDTO.getCorrelationData();
+    qualityOfService = QualityOfService.getInstance(messageDTO.getQualityOfService());
   }
 
   public @NonNull @NotNull MessageBuilder setCreation(long creation) {

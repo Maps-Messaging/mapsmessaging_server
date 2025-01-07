@@ -22,7 +22,10 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.StringResponse;
@@ -43,6 +46,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.io.IOException;
 import javax.security.auth.Subject;
 
 @OpenAPIDefinition(
@@ -204,10 +208,25 @@ public class MapsRestServerApi extends BaseRestApi {
       description = "Logs out the currently authenticated user by invalidating their session."
   )  public StatusResponse logout() {
     HttpSession session = request.getSession(false);
+    String response = "Success";
     if (session != null) {
+      Session msgSession = (Session) getSession().getAttribute("authenticatedSession");
+      if (msgSession != null) {
+        try {
+          SessionManager.getInstance().close(msgSession, true);
+        } catch (IOException e) {
+          response = "Failure : "+e.getMessage();
+        }
+        msgSession.removeSubscription("authenticatedSession");
+      }
+      RestMessageListener msgListener = (RestMessageListener) getSession().getAttribute("restListener");
+      if (msgListener != null) {
+        msgListener.close();
+        session.removeAttribute("restListener");
+      }
       session.invalidate();
     }
-    return new StatusResponse("Success");
+    return new StatusResponse(response);
   }
 
 }

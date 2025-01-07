@@ -25,7 +25,7 @@ import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.UserDetails;
 import io.mapsmessaging.dto.rest.auth.NewUserDTO;
 import io.mapsmessaging.dto.rest.auth.UserDTO;
-import io.mapsmessaging.rest.responses.BaseResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.UserListResponse;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.selector.ParseException;
@@ -83,15 +83,16 @@ public class UserManagementApi extends BaseAuthRestApi {
   public UserDTO getUser(@PathParam("username") String username) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    List<UserDetails> users = authManager.getUsers();
-    for (UserDetails user : users) {
-      if (user.getIdentityEntry().getUsername().equals(username)) {
-        return buildUser(user, authManager);
-      }
-    }
-    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    return null;
+    return authManager.getUsers().stream()
+        .filter(user -> user.getIdentityEntry().getUsername().equals(username))
+        .findFirst()
+        .map(user -> buildUser(user, authManager))
+        .orElseGet(() -> {
+          response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+          return null;
+        });
   }
+
 
   @POST
   @Path("/auth/users")
@@ -100,18 +101,16 @@ public class UserManagementApi extends BaseAuthRestApi {
       summary = "Add a new user",
       description = "Adds a new user to the system. Requires authentication if enabled in the configuration."
   )
-  public BaseResponse addUser(NewUserDTO newUser) {
+  public StatusResponse addUser(NewUserDTO newUser) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     SessionPrivileges sessionPrivileges = new SessionPrivileges(newUser.getUsername());
-    if (authManager.addUser(
-        newUser.getUsername(),
-        newUser.getPassword().toCharArray(),
-        sessionPrivileges,
-        new String[0])) {
-      return new BaseResponse();
+    if (authManager.addUser(newUser.getUsername(), newUser.getPassword().toCharArray(), sessionPrivileges, new String[0])) {
+      response.setStatus(HttpServletResponse.SC_CREATED);
+      return new StatusResponse("User added successfully");
     }
-    return new BaseResponse();
+    response.setStatus(HttpServletResponse.SC_CONFLICT);
+    return new StatusResponse("Username already exists");
   }
 
   @DELETE
@@ -121,16 +120,17 @@ public class UserManagementApi extends BaseAuthRestApi {
       summary = "Delete a user",
       description = "Deletes a user from the system. Requires authentication if enabled in the configuration."
   )
-  public BaseResponse deleteUser(@PathParam("userUuid") String userUuid) {
+  public StatusResponse deleteUser(@PathParam("userUuid") String userUuid) {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
     Identity userIdMap = authManager.getUserIdentity(UUID.fromString(userUuid));
     if (userIdMap != null) {
       authManager.delUser(userIdMap.getUsername());
-      return new BaseResponse();
+      response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+      return new StatusResponse("Success");
     }
-    response.setStatus(500);
-    return new BaseResponse();
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    return new StatusResponse("No such user");
   }
 
   private UserDTO buildUser(UserDetails user, AuthManager authManager) {
