@@ -73,6 +73,13 @@ public class SubscriptionRequestDTO {
   private int maxDepth = 1;
 
   @Schema(
+      title = "Transactional subscription",
+      description = "Flag to indicate the subscription is transactional",
+      example = "true",
+      defaultValue = "false")
+  private boolean transactional = false;
+
+  @Schema(
       title = "Retain Message",
       description =
           "Indicates if messages should be retained on the destination for this subscription, meaning they will be stored and made available to future subscribers.",

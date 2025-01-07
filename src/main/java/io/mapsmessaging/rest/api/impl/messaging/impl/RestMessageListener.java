@@ -46,7 +46,10 @@ public class RestMessageListener implements MessageListener {
 
   @Override
   public synchronized void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if(closed) return;
+    messageEvent.getCompletionTask().run(); // ensure the server knows the event has been handled
+    if (closed) {
+      return;
+    }
     String destination = messageEvent.getDestinationName();
     List<Message> destinationMessages = messages.computeIfAbsent(destination, k -> new ArrayList<>());
     destinationMessages.add(messageEvent.getMessage());

@@ -78,14 +78,14 @@ public class MessagingApi extends BaseRestApi {
     hasAccess(RESOURCE);
     Session session = getAuthenticatedSession();
     String destinationName = subscriptionRequest.getDestinationName();
+    QualityOfService qos = subscriptionRequest.isTransactional() ? QualityOfService.AT_LEAST_ONCE : QualityOfService.AT_MOST_ONCE;
     SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.AUTO)
-        .setReceiveMaximum(10)
-        .setQos(QualityOfService.AT_MOST_ONCE)
+        .setReceiveMaximum(subscriptionRequest.getMaxDepth())
+        .setQos(qos)
         .setSelector(subscriptionRequest.getFilter())
         .setRetainHandler(RetainHandler.SEND_IF_NEW)
         .setNoLocalMessages(true);
     session.addSubscription(contextBuilder.build());
-
     return new StatusResponse("Successfully subscribed to "+destinationName);
   }
 
