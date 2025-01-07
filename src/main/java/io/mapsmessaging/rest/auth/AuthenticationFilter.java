@@ -18,10 +18,8 @@
 
 package io.mapsmessaging.rest.auth;
 
-import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.SubjectHelper;
-import io.mapsmessaging.security.uuid.UuidGenerator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -29,10 +27,7 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.security.Principal;
 import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
 import javax.security.auth.Subject;
 
 @Provider
@@ -48,12 +43,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     if (containerRequest.getUriInfo().getRequestUri().getPath().contains("openapi.json")) {
       return;
     }
-    if (!AuthManager.getInstance().isAuthenticationEnabled()) {
-      HttpSession session = httpRequest.getSession(true);
-      constructAnonymousSession(session);
-    } else {
-      processAuthentication(containerRequest);
-    }
+    processAuthentication(containerRequest);
   }
 
   private void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
@@ -90,21 +80,5 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
     if (session != null) session.invalidate();
-  }
-
-
-  public static void constructAnonymousSession(HttpSession session) {
-    Subject subject = (Subject) session.getAttribute("subject");
-    if (subject != null &&
-        session.getAttribute(USERNAME) != null &&
-        session.getAttribute(USERNAME).equals("anonymous")) {
-      return; // all ok
-    }
-    session.setAttribute(USERNAME, "anonymous");
-    Set<Principal> principals = new HashSet<>();
-    principals.add(new UserPrincipal("anonymous"));
-    subject = new Subject(true, principals, new HashSet<>(), new HashSet<>());
-    session.setAttribute("subject", subject);
-    session.setAttribute("uuid", UuidGenerator.getInstance().generate());
   }
 }

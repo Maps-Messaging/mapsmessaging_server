@@ -33,6 +33,7 @@ import io.mapsmessaging.rest.api.Constants;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.AuthenticationFilter;
+import io.mapsmessaging.rest.auth.NoAuthenticationFilter;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.rest.cache.impl.NoCache;
 import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
@@ -181,6 +182,9 @@ public class RestApiServerManager implements Agent {
       if (config.isEnableAuthentication() && AuthManager.getInstance().isAuthenticationEnabled()) {
         resourceConfig.register(new AuthenticationFilter());
         AuthenticationContext.getInstance().setAccessControl(new RestAccessControl());
+      }
+      else{
+        resourceConfig.register(new NoAuthenticationFilter());
       }
       resourceConfig.register(DebugMapper.class );
       resourceConfig.register(LoggingFilter.class);
