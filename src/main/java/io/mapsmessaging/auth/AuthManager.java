@@ -38,6 +38,7 @@ import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
 import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -93,6 +94,19 @@ public class AuthManager implements Agent {
   @Override
   public void start() {
     if (authenticationEnabled) {
+      String jaasConfig =  SystemProperties.getInstance().getProperty("java.security.auth.login.config");
+      boolean exists = false;
+      String msg ="Authentication enabled but login config file does not exist Configured:"+ jaasConfig+", please configure -Djava.security.auth.login.config=<valid path to jaas.config>";
+      if (jaasConfig != null) {
+        File loginConfig = new File(jaasConfig);
+        exists = loginConfig.exists();
+      }
+      else{
+        msg = "Authentication enabled but login config not configured, please configure -Djava.security.auth.login.config=<valid path to jaas.config>";
+      }
+      if(!exists || jaasConfig.isEmpty() ) {
+        throw new NoLoginContextConfigException(msg);
+      }
       try {
         authenticationStorage = new AuthenticationStorage(new ConfigurationProperties(config.getAuthConfig()));
         if (authenticationStorage.isFirstBoot()) {
@@ -156,8 +170,14 @@ public class AuthManager implements Agent {
   private AuthManager() {
     logger = LoggerFactory.getLogger(AuthManager.class);
     config = ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
-    authenticationEnabled = config.isAuthenticationEnabled();
-    authorisationEnabled  = config.isAuthorisationEnabled();
+    if (config != null) {
+      authenticationEnabled = config.isAuthenticationEnabled();
+      authorisationEnabled = config.isAuthorisationEnabled();
+    }
+    else{
+      authenticationEnabled = false;
+      authorisationEnabled = false;
+    }
   }
 
   private void createInitialUsers(String path) throws IOException {
@@ -268,4 +288,10 @@ public class AuthManager implements Agent {
     return status;
   }
 
+  private static class NoLoginContextConfigException extends RuntimeException {
+
+    public NoLoginContextConfigException(String s) {
+      super(s);
+    }
+  }
 }
