@@ -28,6 +28,7 @@ import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.rest.api.impl.destination.BaseDestinationApi;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.handler.SessionTracker;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -75,11 +76,11 @@ public class ConnectionManagementApi extends BaseDestinationApi {
     List<EndPointSummaryDTO> endPointDetails =
         endPointManagers.stream()
             .flatMap(endPointManager -> endPointManager.getEndPointServer().getActiveEndPoints().stream()
-                .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
+                        .map(endPoint -> EndPointHelper.buildSummaryDTO(endPointManager.getName(), endPoint))
             )
             .filter(endPointDetail -> parser == null || parser.evaluate(endPointDetail))
             .collect(Collectors.toList());
-
+    endPointDetails.addAll(SessionTracker.getConnections());
     EndPointDetailResponse response = new EndPointDetailResponse(endPointDetails);
     putToCache(key, response);
     return response;
@@ -111,6 +112,11 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           return dto;
         }
       }
+    }
+    EndPointDetailsDTO dto = SessionTracker.getConnection(connectionId);
+    if (dto != null) {
+      putToCache(key, dto);
+      return dto;
     }
     throw new WebApplicationException("Connection not found", Response.Status.NOT_FOUND);
   }

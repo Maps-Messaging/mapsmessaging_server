@@ -23,7 +23,6 @@ import io.mapsmessaging.security.uuid.UuidGenerator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
 import java.io.IOException;
 import java.security.Principal;
@@ -31,27 +30,19 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.security.auth.Subject;
 
-public class NoAuthenticationFilter implements ContainerRequestFilter {
-
-  private static final String USERNAME = "username";
+public class NoAuthenticationFilter extends BaseAuthenticationFilter {
 
   @Context
   private HttpServletRequest httpRequest;
 
   @Override
-  public void filter(ContainerRequestContext containerRequest) throws IOException {
+  public void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
     HttpSession session = httpRequest.getSession(true);
-    Subject subject = (Subject) session.getAttribute("subject");
-    if (subject != null &&
-        session.getAttribute(USERNAME) != null &&
-        session.getAttribute(USERNAME).equals("anonymous")) {
-      return; // all ok
+    if (session.isNew()) {
+      Set<Principal> principals = new HashSet<>();
+      principals.add(new UserPrincipal("anonymous"));
+      Subject subject = new Subject(true, principals, new HashSet<>(), new HashSet<>());
+      setupSession(httpRequest, "anonymous", UuidGenerator.getInstance().generate(), subject);
     }
-    session.setAttribute(USERNAME, "anonymous");
-    Set<Principal> principals = new HashSet<>();
-    principals.add(new UserPrincipal("anonymous"));
-    subject = new Subject(true, principals, new HashSet<>(), new HashSet<>());
-    session.setAttribute("subject", subject);
-    session.setAttribute("uuid", UuidGenerator.getInstance().generate());
   }
 }

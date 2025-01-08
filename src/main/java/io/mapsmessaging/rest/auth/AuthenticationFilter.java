@@ -23,30 +23,24 @@ import io.mapsmessaging.security.SubjectHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.UUID;
 import javax.security.auth.Subject;
 
 @Provider
-public class AuthenticationFilter implements ContainerRequestFilter {
+public class AuthenticationFilter extends BaseAuthenticationFilter {
 
-  private static final String USERNAME = "username";
+
 
   @Context
   private HttpServletRequest httpRequest;
 
-  @Override
-  public void filter(ContainerRequestContext containerRequest) throws IOException {
-    if (containerRequest.getUriInfo().getRequestUri().getPath().contains("openapi.json")) {
-      return;
-    }
-    processAuthentication(containerRequest);
-  }
 
-  private void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
+
+  protected void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
     // Get the authentication passed in HTTP headers parameters
     String auth = containerRequest.getHeaderString("authorization");
     if (auth == null) {
@@ -72,13 +66,12 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       }
     }
     if (AuthManager.getInstance().validate(username, password)) {
-      session = httpRequest.getSession(true);
       Subject subject = AuthManager.getInstance().getUserSubject(username);
-      session.setAttribute(USERNAME, username);
-      session.setAttribute("subject", subject);
-      session.setAttribute("uuid", SubjectHelper.getUniqueId(subject));
-      return;
+      UUID uuid = SubjectHelper.getUniqueId(subject);
+      setupSession(httpRequest,username, uuid, subject);
     }
-    if (session != null) session.invalidate();
+    else if (session != null) {
+      session.invalidate();
+    }
   }
 }

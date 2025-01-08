@@ -261,6 +261,8 @@ public enum ServerLogMessages implements LogMessage {
   SESSION_MANAGER_CREATE_SECURITY_CONTEXT(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created Security Context"),
   SESSION_MANAGER_FOUND_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Found and closed existing session that matched {}"),
   SESSION_MANAGER_KEEP_ALIVE_TASK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Created new Keep Alive scheduler task"),
+  SESSION_ERROR_DURING_CREATION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Unexpected exception raised during session creation"),
+
   SESSION_MANAGER_WILL_TASK(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Build WillTask for {} WillTask:{}"),
   SESSION_MANAGER_LOADED_SUBSCRIPTION(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Loaded Subscription Manager {}, containing {}"),
   SESSION_MANAGER_NO_EXISTING(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "No existing Subscription manager found for {}"),

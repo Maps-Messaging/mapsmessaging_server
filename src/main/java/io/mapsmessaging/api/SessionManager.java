@@ -18,10 +18,14 @@
 
 package io.mapsmessaging.api;
 
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_ERROR_DURING_CREATION;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.*;
 import javax.security.auth.login.LoginException;
@@ -45,6 +49,7 @@ public class SessionManager {
 
   private final ExecutorService publisherScheduler;
 
+  private final Logger logger = LoggerFactory.getLogger(SessionManager.class);
 
   /**
    * Creates a new Session using the supplied context and the message listener to deliver events that match any future subscriptions
@@ -68,6 +73,7 @@ public class SessionManager {
         sessionImpl = MessageDaemon.getInstance().getSubSystemManager().getSessionManager().create(sessionContext);
         completableFuture.complete(new Session(sessionImpl, listener));
       } catch (LoginException e) {
+        logger.log(SESSION_ERROR_DURING_CREATION, e);
         completableFuture.completeExceptionally(e);
       }
       return sessionImpl;

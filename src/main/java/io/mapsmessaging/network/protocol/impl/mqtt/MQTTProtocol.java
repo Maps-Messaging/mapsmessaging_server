@@ -109,7 +109,10 @@ public class MQTTProtocol extends Protocol {
 
   @Override
   public Subject getSubject() {
-    return session.getSecurityContext().getSubject();
+    if(session != null) {
+      return session.getSecurityContext().getSubject();
+    }
+    return new Subject();
   }
 
   @Override
