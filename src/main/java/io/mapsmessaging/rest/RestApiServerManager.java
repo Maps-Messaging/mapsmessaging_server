@@ -60,6 +60,7 @@ import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpContainer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.uri.UriComponent;
 
@@ -175,6 +176,8 @@ public class RestApiServerManager implements Agent {
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
       resourceConfig.packages(false, endpoints.toArray(new String[0]));
+      resourceConfig.property(ServerProperties.WADL_FEATURE_DISABLE, !config.isEnableWadlEndPoint());
+
       // Register Gson providers
       resourceConfig.register(GsonMessageBodyReader.class);
       resourceConfig.register(GsonMessageBodyWriter.class);

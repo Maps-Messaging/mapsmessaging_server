@@ -59,6 +59,7 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     this.cacheLifetime = properties.getLongProperty("cacheLifetime", 10000L);
     this.cacheCleanup = properties.getLongProperty("cacheCleanup", 5000L);
     this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
+    this.enableWadlEndPoint = properties.getBooleanProperty("enableWadlEndPoint", false);
 
     if (properties.containsKey("tls")) {
       this.tlsConfig = new TlsConfig((ConfigurationProperties) properties.get("tls"));
@@ -112,6 +113,10 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
       this.enableSwaggerUI = newConfig.isEnableSwaggerUI();
       hasChanged = true;
     }
+    if (this.enableWadlEndPoint != newConfig.isEnableWadlEndPoint()) {
+      this.enableWadlEndPoint = newConfig.isEnableWadlEndPoint();
+      hasChanged = true;
+    }
     if (this.enableUserManagement != newConfig.isEnableUserManagement()) {
       this.enableUserManagement = newConfig.isEnableUserManagement();
       hasChanged = true;
@@ -136,7 +141,10 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
       this.staticConfig = newConfig.getStaticConfig();
       hasChanged = true;
     }
-
+    if(!corsHeaders.equals(newConfig.getCorsHeaders())) {
+      corsHeaders = newConfig.getCorsHeaders();
+      hasChanged = true;
+    }
     return hasChanged;
   }
 

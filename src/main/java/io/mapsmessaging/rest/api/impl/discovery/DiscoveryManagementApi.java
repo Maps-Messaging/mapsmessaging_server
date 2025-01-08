@@ -30,10 +30,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,7 +39,7 @@ import java.util.stream.Collectors;
 @Path(URI_PATH)
 public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
 
-  @GET
+  @PUT
   @Path("/server/discovery/start")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
@@ -55,7 +52,7 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
     return true;
   }
 
-  @GET
+  @PUT
   @Path("/server/discovery/stop")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(

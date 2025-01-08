@@ -28,7 +28,6 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
-import io.mapsmessaging.rest.responses.StringResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
@@ -41,10 +40,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import javax.security.auth.Subject;
@@ -163,8 +159,8 @@ public class MapsRestServerApi extends BaseRestApi {
       summary = "Retrieve the server's unique name",
       description = "Returns the unique identifier of the server instance."
   )
-  public StringResponse getName() {
-    return new StringResponse(MessageDaemon.getInstance().getId());
+  public StatusResponse getName() {
+    return new StatusResponse(MessageDaemon.getInstance().getId());
   }
 
   @GET
@@ -180,7 +176,7 @@ public class MapsRestServerApi extends BaseRestApi {
   }
 
 
-  @GET
+  @POST
   @Path("/login")
   @Produces({MediaType.APPLICATION_JSON})
   @Consumes({MediaType.APPLICATION_JSON})
@@ -199,7 +195,7 @@ public class MapsRestServerApi extends BaseRestApi {
     return new LoginResponse("No Authentication Required");
   }
 
-  @GET
+  @POST
   @Path("/logout")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(

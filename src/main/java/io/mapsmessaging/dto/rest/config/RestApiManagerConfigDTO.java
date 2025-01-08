@@ -68,6 +68,9 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Cache element cleanup time in ms", example = "5000")
   protected long cacheCleanup;
 
+  @Schema(description = "If set, enables the /application.wadl end point", example = "false")
+  protected boolean enableWadlEndPoint;
+
   @Schema(description = "Enables Swagger documentation", example = "true")
   protected boolean enableSwagger;
 

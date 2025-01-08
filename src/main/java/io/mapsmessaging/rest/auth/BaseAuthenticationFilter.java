@@ -29,11 +29,14 @@ import javax.security.auth.Subject;
 public abstract class BaseAuthenticationFilter implements ContainerRequestFilter {
 
   protected static final String USERNAME = "username";
+  private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping"};
 
   @Override
   public void filter(ContainerRequestContext containerRequest) throws IOException {
-    if (containerRequest.getUriInfo().getRequestUri().getPath().contains("openapi.json")) {
-      return;
+    for(String path : OPEN_PATHS) {
+      if (containerRequest.getUriInfo().getRequestUri().getPath().endsWith(path)) {
+        return;
+      }
     }
     processAuthentication(containerRequest);
   }
