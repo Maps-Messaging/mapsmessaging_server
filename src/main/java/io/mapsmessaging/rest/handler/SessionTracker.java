@@ -22,6 +22,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.dto.rest.endpoint.EndPointDetailsDTO;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.RestProtocolInformation;
+import io.mapsmessaging.rest.auth.BaseAuthenticationFilter;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
@@ -46,6 +47,15 @@ public class SessionTracker implements HttpSessionListener {
     sessions.remove(se.getSession().getId());
   }
 
+  public static void scan(){
+    long start = System.currentTimeMillis() - BaseAuthenticationFilter.getMaxInactiveInterval();
+    for(HttpSession session : sessions.values()){
+      if(session.getLastAccessedTime() < start){
+        session.invalidate();
+      }
+    }
+  }
+
   public static List<EndPointSummaryDTO> getConnections(){
     List<EndPointSummaryDTO> connections = new ArrayList<>();
     for(HttpSession session : sessions.values()){
@@ -64,7 +74,7 @@ public class SessionTracker implements HttpSessionListener {
 
 
     RestProtocolInformation protocolInformation = new RestProtocolInformation();
-    protocolInformation.setTimeout(180_000);
+    protocolInformation.setTimeout(BaseAuthenticationFilter.getMaxInactiveInterval());
     protocolInformation.setMessageTransformationName("");
     protocolInformation.setSelectorMapping(new LinkedHashMap<>());
     protocolInformation.setDestinationTransformationMapping(new LinkedHashMap<>());

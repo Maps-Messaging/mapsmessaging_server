@@ -68,6 +68,9 @@ public class RestApiManagerConfigDTO extends BaseConfigDTO {
   @Schema(description = "Cache element cleanup time in ms", example = "5000")
   protected long cacheCleanup;
 
+  @Schema(description = "Session inactive timeout in ms", example = "180000")
+  protected int inactiveTimeout;
+
   @Schema(description = "If set, enables the /application.wadl end point", example = "false")
   protected boolean enableWadlEndPoint;
 

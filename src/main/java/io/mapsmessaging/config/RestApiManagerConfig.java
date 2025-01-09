@@ -60,6 +60,7 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     this.cacheCleanup = properties.getLongProperty("cacheCleanup", 5000L);
     this.enableDestinationManagement = properties.getBooleanProperty("enableDestinationManagement", true);
     this.enableWadlEndPoint = properties.getBooleanProperty("enableWadlEndPoint", false);
+    this.inactiveTimeout = properties.getIntProperty("inactiveTimeout", 180000);
 
     if (properties.containsKey("tls")) {
       this.tlsConfig = new TlsConfig((ConfigurationProperties) properties.get("tls"));
@@ -103,6 +104,10 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     }
     if (this.port != newConfig.getPort()) {
       this.port = newConfig.getPort();
+      hasChanged = true;
+    }
+    if (this.inactiveTimeout != newConfig.getInactiveTimeout()) {
+      this.inactiveTimeout = newConfig.getInactiveTimeout();
       hasChanged = true;
     }
     if (this.enableSwagger != newConfig.isEnableSwagger()) {
@@ -160,6 +165,9 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
     properties.put("enableSchemaManagement", this.enableSchemaManagement);
     properties.put("enableInterfaceManagement", this.enableInterfaceManagement);
     properties.put("enableDestinationManagement", this.enableDestinationManagement);
+    properties.put("inactiveTimeout", this.inactiveTimeout);
+    properties.put("enableWadlEndPoint", this.enableWadlEndPoint);
+    properties.put("maxEventsPerDestination", this.maxEventsPerDestination);
 
     if (this.tlsConfig != null) {
       properties.put("tls", this.tlsConfig.toConfigurationProperties());

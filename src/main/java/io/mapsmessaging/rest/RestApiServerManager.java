@@ -31,10 +31,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.rest.api.Constants;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
-import io.mapsmessaging.rest.auth.AuthenticationContext;
-import io.mapsmessaging.rest.auth.AuthenticationFilter;
-import io.mapsmessaging.rest.auth.NoAuthenticationFilter;
-import io.mapsmessaging.rest.auth.RestAccessControl;
+import io.mapsmessaging.rest.auth.*;
 import io.mapsmessaging.rest.cache.impl.NoCache;
 import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
 import io.mapsmessaging.rest.handler.CorsEnabledStaticHttpHandler;
@@ -42,12 +39,15 @@ import io.mapsmessaging.rest.handler.CorsFilter;
 import io.mapsmessaging.rest.handler.SessionTracker;
 import io.mapsmessaging.rest.translation.*;
 import io.mapsmessaging.utilities.Agent;
+import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import jakarta.servlet.Servlet;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import javax.jmdns.ServiceInfo;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
@@ -72,6 +72,7 @@ public class RestApiServerManager implements Agent {
   private boolean isSecure;
   private ServiceInfo[] serviceInfos;
   private HttpServer httpServer;
+  private ScheduledFuture cleanupSchedule;
 
   public RestApiServerManager() {
     config = RestApiManagerConfig.getInstance();
@@ -128,6 +129,9 @@ public class RestApiServerManager implements Agent {
   }
 
   public void stop() {
+    if(cleanupSchedule != null) {
+      cleanupSchedule.cancel(true);
+    }
     if(serviceInfos != null) {
       for (ServiceInfo serviceInfo : serviceInfos) {
         httpServer.shutdown();
@@ -138,6 +142,11 @@ public class RestApiServerManager implements Agent {
 
   public void startServer() {
     RestMessageListener.setMaxSubscribedMessages(config.getMaxEventsPerDestination());
+    int inactiveTimeout = config.getInactiveTimeout();
+    if(inactiveTimeout < 10000) {
+      inactiveTimeout = 180000;
+    }
+    BaseAuthenticationFilter.setMaxInactiveInterval(inactiveTimeout);
     if(config.isEnableCache()){
       long entryLifeTime = config.getCacheLifetime();
       long cleanupTime = config.getCacheCleanup();
@@ -202,6 +211,12 @@ public class RestApiServerManager implements Agent {
 
       httpServer = startHttpService(URI.create(baseUri), sc, sslConfig);
       httpServer.start();
+      cleanupSchedule = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(
+          SessionTracker::scan,
+          inactiveTimeout,
+          10_000,
+          TimeUnit.MILLISECONDS
+      );
     } catch (IOException e) {
       logger.log(REST_API_FAILURE, e);
     }
@@ -237,6 +252,7 @@ public class RestApiServerManager implements Agent {
 
     context.deploy(server);
     loadStatic(server);
+    server.getServerConfiguration().setSessionTimeoutSeconds(BaseAuthenticationFilter.getMaxInactiveInterval()/1000);
     return server;
   }
 

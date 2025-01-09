@@ -25,9 +25,14 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 import javax.security.auth.Subject;
+import lombok.Getter;
+import lombok.Setter;
 
 public abstract class BaseAuthenticationFilter implements ContainerRequestFilter {
 
+  @Getter
+  @Setter
+  private static int maxInactiveInterval = 180_000;
   protected static final String USERNAME = "username";
   private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping"};
 
@@ -48,7 +53,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
 
     HttpSession session = httpRequest.getSession(true);
     session.setAttribute("name", name);
-    session.setMaxInactiveInterval(180_000);
+    session.setMaxInactiveInterval(maxInactiveInterval);
     session.setAttribute(USERNAME, username);
     session.setAttribute("subject", subject);
     session.setAttribute("uuid", uuid);
