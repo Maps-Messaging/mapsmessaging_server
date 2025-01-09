@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.responses.ServerHealthStateResponse;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -101,6 +102,40 @@ public class ServerDetailsApi extends ServerBaseRestApi {
     List<SubSystemStatusDTO> response = MessageDaemon.getInstance().getSubSystemStatus();
     putToCache(key, response);
     return response;
+  }
+
+  @GET
+  @Path("/server/health")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get server subsystem status summary",
+      description = "Returns a simple summary of the server status."
+  )
+  public ServerHealthStateResponse getServerHealthSummary() {
+    String state = "";
+    int issueCount = 0;
+    for(SubSystemStatusDTO status : MessageDaemon.getInstance().getSubSystemManager().getSubSystemStatus()){
+      switch(status.getStatus()){
+        case ERROR:
+          state = "Error";
+          issueCount++;
+          break;
+
+        case WARN:
+          if(state.isEmpty()){
+            state = "Warning";
+            issueCount++;
+          }
+          break;
+
+        default:
+          break;
+      }
+    }
+    if(state.isEmpty()){
+      state = "Ok";
+    }
+    return new ServerHealthStateResponse(state, issueCount);
   }
 
   @PUT

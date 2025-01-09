@@ -109,8 +109,8 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     status.setName(getName());
     status.setComment("");
     if(endPointConnectionList.isEmpty()){
-      status.setStatus(Status.WARN);
-      status.setComment("No configured connections");
+      status.setStatus(Status.OK);
+      status.setComment("No connections configured");
       return status;
     }
     status.setStatus(Status.OK);
