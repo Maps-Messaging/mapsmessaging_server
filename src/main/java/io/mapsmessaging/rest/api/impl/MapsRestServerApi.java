@@ -107,6 +107,10 @@ import javax.security.auth.Subject;
         @Tag(
             name = "LoRa Device Management",
             description = "Offers APIs for managing LoRa devices, including adding, updating, retrieving configurations, monitoring device statistics, and managing endpoint connections."
+        ),
+        @Tag(
+            name = "Logging Monitor",
+            description = "Offers simple API to retrieve server logs or to stream server logs via SSE"
         )
     },
 

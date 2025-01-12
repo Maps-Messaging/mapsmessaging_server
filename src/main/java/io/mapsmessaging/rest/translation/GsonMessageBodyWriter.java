@@ -41,7 +41,7 @@ public class GsonMessageBodyWriter implements MessageBodyWriter<Object> {
 
   @Override
   public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, jakarta.ws.rs.core.MediaType mediaType) {
-    return mediaType.equals(MediaType.APPLICATION_JSON_TYPE);
+    return mediaType.equals(MediaType.APPLICATION_JSON_TYPE) || MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(mediaType);
   }
 
   @Override

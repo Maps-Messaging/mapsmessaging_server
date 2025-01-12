@@ -35,6 +35,7 @@ import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.location.LocationManager;
+import io.mapsmessaging.logging.LogMonitor;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -107,6 +108,9 @@ public class MessageDaemon {
   private static final String MAPS_HOME = "MAPS_HOME";
   private static final String MAPS_DATA = "MAPS_DATA";
 
+  @Getter
+  private final LogMonitor logMonitor;
+
   /**
    * The constructor of the MessageDaemon class.
    * It initializes the instance by setting up various configurations and properties.
@@ -116,6 +120,7 @@ public class MessageDaemon {
    * It then initializes the Consul Manager and the ConfigurationManager with the server ID.
    */
   public MessageDaemon() throws IOException {
+    logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, "{{MAPS_HOME}}/data", true));
@@ -212,6 +217,7 @@ public class MessageDaemon {
    * @throws IOException if an I/O error occurs during the initialization steps
    */
   public Integer start(String[] strings) throws IOException {
+    logMonitor.register();
     isStarted.set(true);
     loadConstants();
     subSystemManager = new SubSystemManager(uniqueId, enableSystemTopics, enableDeviceIntegration, messageDaemonConfig.getSessionPipeLines());

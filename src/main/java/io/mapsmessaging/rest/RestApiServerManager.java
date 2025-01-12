@@ -59,6 +59,7 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpContainer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -182,11 +183,12 @@ public class RestApiServerManager implements Agent {
     }
     endpoints.add("io.mapsmessaging.rest.api.impl.hardware");
     endpoints.add("io.mapsmessaging.rest.api.impl.server");
+    endpoints.add("io.mapsmessaging.rest.api.impl.logging");
     try {
       final ResourceConfig resourceConfig = new ResourceConfig();
       resourceConfig.packages(false, endpoints.toArray(new String[0]));
       resourceConfig.property(ServerProperties.WADL_FEATURE_DISABLE, !config.isEnableWadlEndPoint());
-
+      resourceConfig.register(SseFeature.class);
       // Register Gson providers
       resourceConfig.register(GsonMessageBodyReader.class);
       resourceConfig.register(GsonMessageBodyWriter.class);
