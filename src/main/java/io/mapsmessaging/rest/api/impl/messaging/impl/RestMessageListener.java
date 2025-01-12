@@ -24,13 +24,13 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
-
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 import org.jetbrains.annotations.NotNull;
 
 public class RestMessageListener implements MessageListener, Serializable {
@@ -41,13 +41,27 @@ public class RestMessageListener implements MessageListener, Serializable {
 
   private final Map<String, List<MessageEvent>> messages;
   private final Map<String, SubscribedEventManager> subscribedEventManagerMap;
+  private final Map<String, SseInfo> eventSinkMap;
+
 
   private boolean closed = false;
 
   public RestMessageListener() {
     messages = new ConcurrentHashMap<>();
     subscribedEventManagerMap = new ConcurrentHashMap<>();
+    eventSinkMap = new ConcurrentHashMap<>();
   }
+
+  public void registerEventManager(String topic, SubscribedEventManager subscribedEventManager) {
+    subscribedEventManagerMap.put(topic, subscribedEventManager);
+  }
+
+  public void registerEventManager(String topic, Sse sse, SseEventSink eventSink, SubscribedEventManager subscribedEventManager) {
+    SseInfo sseInfo = new SseInfo(sse, eventSink);
+    eventSinkMap.put(topic, sseInfo);
+    subscribedEventManagerMap.put(topic, subscribedEventManager);
+  }
+
 
   @Override
   public synchronized void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
@@ -57,9 +71,31 @@ public class RestMessageListener implements MessageListener, Serializable {
       return;
     }
     String destination = messageEvent.getDestinationName();
-    List<MessageEvent> destinationMessages = messages.computeIfAbsent(destination, k -> new ArrayList<>());
+    if(eventSinkMap.containsKey(destination)) {
+      handleAsyncDelivery(destination, messageEvent);
+    }
+    else{
+      handleSyncDelivery(destination, messageEvent);
+    }
+  }
+
+  private void handleAsyncDelivery(String destination,MessageEvent messageEvent) {
+    SseInfo sseInfo = eventSinkMap.get(destination);
+    if(sseInfo != null) {
+      OutboundSseEvent event = sseInfo.sse.newEventBuilder()
+          .name(messageEvent.getDestinationName())
+          .data(convertToDTO(messageEvent))
+          .build();
+      sseInfo.eventSink.send(event);
+      messageEvent.getCompletionTask().run();
+    }
+  }
+
+  private void handleSyncDelivery(String destination, MessageEvent messageEvent) {
+    List<MessageEvent> destinationMessages =
+        messages.computeIfAbsent(destination, k -> new ArrayList<>());
     destinationMessages.add(messageEvent);
-    if(destinationMessages.size() > maxSubscribedMessages){
+    if (destinationMessages.size() > maxSubscribedMessages) {
       destinationMessages.remove(0);
     }
   }
@@ -123,28 +159,42 @@ public class RestMessageListener implements MessageListener, Serializable {
 
     List<MessageDTO> messageList = new ArrayList<>();
     for (MessageEvent message : subMessages) {
-      MessageDTO messageDTO = new MessageDTO();
-      Message msg = message.getMessage();
-      messageDTO.setPriority(msg.getPriority().getValue());
-      messageDTO.setPayload(Base64.getEncoder().encodeToString(msg.getOpaqueData()));
-      messageDTO.setExpiry(msg.getExpiry());
-
-      messageDTO.setCorrelationData(msg.getCorrelationData());
-      messageDTO.setContentType(msg.getContentType());
-      messageDTO.setQualityOfService(msg.getQualityOfService().getLevel());
-      Map<String, Object> map =new LinkedHashMap<>();
-      for (Map.Entry<String, TypedData> entry : msg.getDataMap().entrySet()) {
-        map.put(entry.getKey(), entry.getValue().getData());
-      }
-      messageDTO.setDataMap(map);
+      MessageDTO messageDTO = convertToDTO(message);
       messageList.add(messageDTO);
       message.getCompletionTask().run();
     }
     return messageList;
   }
 
+  private MessageDTO convertToDTO(MessageEvent message) {
+    MessageDTO messageDTO = new MessageDTO();
+    Message msg = message.getMessage();
+    messageDTO.setPriority(msg.getPriority().getValue());
+    messageDTO.setPayload(Base64.getEncoder().encodeToString(msg.getOpaqueData()));
+    messageDTO.setExpiry(msg.getExpiry());
+
+    messageDTO.setCorrelationData(msg.getCorrelationData());
+    messageDTO.setContentType(msg.getContentType());
+    messageDTO.setQualityOfService(msg.getQualityOfService().getLevel());
+    Map<String, Object> map =new LinkedHashMap<>();
+    for (Map.Entry<String, TypedData> entry : msg.getDataMap().entrySet()) {
+      map.put(entry.getKey(), entry.getValue().getData());
+    }
+    messageDTO.setDataMap(map);
+    return messageDTO;
+  }
+
   public synchronized void close() {
     closed = false;
     messages.clear();
+    eventSinkMap.clear();
+    subscribedEventManagerMap.clear();
+  }
+
+  @Data
+  @AllArgsConstructor
+  private static final class SseInfo{
+    private final Sse sse;
+    private final SseEventSink eventSink;
   }
 }

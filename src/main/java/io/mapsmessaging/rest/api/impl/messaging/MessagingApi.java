@@ -38,8 +38,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +74,20 @@ public class MessagingApi extends BaseRestApi {
     return new StatusResponse("Message published successfully");
   }
 
+
+  @Path("/unsubscribe")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Unsubscribe from a topic", description = "Unsubscribes from a specified topic")
+  @POST
+  public StatusResponse unsubscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
+    hasAccess(RESOURCE);
+    Session session = getAuthenticatedSession();
+    String destinationName = subscriptionRequest.getDestinationName();
+    session.removeSubscription(destinationName);
+    return new StatusResponse("Successfully subscribed to "+destinationName);
+  }
+
   @Path("/subscribe")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
@@ -78,6 +96,44 @@ public class MessagingApi extends BaseRestApi {
   public StatusResponse subscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
     Session session = getAuthenticatedSession();
+    SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);
+    HttpSession httpSession = getSession();
+    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
+    restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), eventManager);
+    return new StatusResponse("Successfully subscribed to "+subscriptionRequest.getDestinationName());
+  }
+
+  @GET
+  @Path("/sse")
+  @Produces(MediaType.SERVER_SENT_EVENTS)
+  public void subscribeSSE(
+      @Context SseEventSink eventSink,
+      @Context Sse sse,
+      @QueryParam("destinationName") String destinationName,
+      @QueryParam("transactional")boolean transactional,
+      @QueryParam("filter") String filter
+  ) throws LoginException, IOException {
+    hasAccess(RESOURCE);
+    Session session = getAuthenticatedSession();
+    SubscriptionRequestDTO req = new SubscriptionRequestDTO();
+    req.setDestinationName(destinationName);
+    req.setNamedSubscription(destinationName);
+    req.setTransactional(transactional);
+    req.setFilter(filter);
+    SubscribedEventManager eventManager = subscribeToTopic(session, req);
+    HttpSession httpSession = getSession();
+    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
+    restMessageListener.registerEventManager(destinationName, sse, eventSink, eventManager);
+    OutboundSseEvent event = sse.newEventBuilder()
+        .name("init")
+        .data("SSE connection established for " + destinationName)
+        .build();
+    eventSink.send(event);
+
+    // Don't close the sink here; keep it open for ongoing pushes.
+  }
+
+  private SubscribedEventManager subscribeToTopic(Session session,  SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
     String destinationName = subscriptionRequest.getDestinationName();
     QualityOfService qos = subscriptionRequest.isTransactional() ? QualityOfService.AT_LEAST_ONCE : QualityOfService.AT_MOST_ONCE;
     SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.AUTO)
@@ -86,8 +142,7 @@ public class MessagingApi extends BaseRestApi {
         .setSelector(subscriptionRequest.getFilter())
         .setRetainHandler(RetainHandler.SEND_IF_NEW)
         .setNoLocalMessages(true);
-    session.addSubscription(contextBuilder.build());
-    return new StatusResponse("Successfully subscribed to "+destinationName);
+    return session.addSubscription(contextBuilder.build());
   }
 
   @Path("/commit")
