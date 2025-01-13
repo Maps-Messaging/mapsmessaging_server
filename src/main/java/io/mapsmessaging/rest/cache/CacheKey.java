@@ -47,7 +47,7 @@ public class CacheKey {
   public String toString() {
     return "CacheKey{" +
         "endpoint='" + endpoint + '\'' +
-        ", role='" + role + '\'' +
+        ", key='" + role + '\'' +
         '}';
   }
 }
