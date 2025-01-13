@@ -73,11 +73,7 @@ public class LogMonitor extends AppenderBase<ILoggingEvent> {
     String formattedMessage = eventObject.getFormattedMessage();
 
     // Build the formatted message string
-    String message = String.format("[%s] %-5s %s (%s)",
-        timestamp,  // Date and time
-        level,      // Log level
-        formattedMessage, // Log message
-        loggerName); // Logger name
+    String message = String.format("[%s] %-5s %s (%s)", timestamp, level, formattedMessage, loggerName);
     LogEntry logEntry = new LogEntry(counter.incrementAndGet(), eventObject.getLevel().levelInt, message);
     logHistory.add( logEntry);
     while(logHistory.size() > 20){
