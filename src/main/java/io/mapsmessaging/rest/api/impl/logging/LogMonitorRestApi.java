@@ -110,7 +110,6 @@ public class LogMonitorRestApi extends BaseRestApi {
         eventSink.send(event);
       }
     } catch (Exception e) {
-      e.printStackTrace();
       eventSink.close();
       return;
     }

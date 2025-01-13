@@ -41,7 +41,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import java.io.IOException;
@@ -109,7 +108,7 @@ public class MessagingApi extends BaseRestApi {
   public void subscribeSSE(
       @Context SseEventSink eventSink,
       @Context Sse sse,
-      @QueryParam("destinationName") String destinationName,
+      @QueryParam("destination") String destinationName,
       @QueryParam("transactional")boolean transactional,
       @QueryParam("filter") String filter
   ) throws LoginException, IOException {
@@ -119,21 +118,16 @@ public class MessagingApi extends BaseRestApi {
     req.setDestinationName(destinationName);
     req.setNamedSubscription(destinationName);
     req.setTransactional(transactional);
-    req.setFilter(filter);
+    req.setFilter(filter != null? filter : "");
     SubscribedEventManager eventManager = subscribeToTopic(session, req);
     HttpSession httpSession = getSession();
     RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
     restMessageListener.registerEventManager(destinationName, sse, eventSink, eventManager);
-    OutboundSseEvent event = sse.newEventBuilder()
-        .name("init")
-        .data("SSE connection established for " + destinationName)
-        .build();
-    eventSink.send(event);
 
-    // Don't close the sink here; keep it open for ongoing pushes.
   }
 
   private SubscribedEventManager subscribeToTopic(Session session,  SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
+    try{
     String destinationName = subscriptionRequest.getDestinationName();
     QualityOfService qos = subscriptionRequest.isTransactional() ? QualityOfService.AT_LEAST_ONCE : QualityOfService.AT_MOST_ONCE;
     SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.AUTO)
@@ -143,6 +137,11 @@ public class MessagingApi extends BaseRestApi {
         .setRetainHandler(RetainHandler.SEND_IF_NEW)
         .setNoLocalMessages(true);
     return session.addSubscription(contextBuilder.build());
+    }
+    catch(Throwable e){
+      e.printStackTrace();
+      throw e;
+    }
   }
 
   @Path("/commit")

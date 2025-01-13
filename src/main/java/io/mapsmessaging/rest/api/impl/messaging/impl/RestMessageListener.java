@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.rest.api.impl.messaging.impl;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.SubscribedEventManager;
@@ -82,9 +84,11 @@ public class RestMessageListener implements MessageListener, Serializable {
   private void handleAsyncDelivery(String destination,MessageEvent messageEvent) {
     SseInfo sseInfo = eventSinkMap.get(destination);
     if(sseInfo != null) {
+      Gson gson = new GsonBuilder().setPrettyPrinting().create();
+      String json = gson.toJson(convertToDTO(messageEvent));
       OutboundSseEvent event = sseInfo.sse.newEventBuilder()
           .name(messageEvent.getDestinationName())
-          .data(convertToDTO(messageEvent))
+          .data(String.class, json)
           .build();
       sseInfo.eventSink.send(event);
       messageEvent.getCompletionTask().run();
