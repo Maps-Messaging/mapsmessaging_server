@@ -129,6 +129,22 @@ public class RestApiServerManager implements Agent {
     return null;
   }
 
+  private boolean isClientCertRequired() {
+    TlsConfig sslConfig = config.getTlsConfig();
+    if (sslConfig != null) {
+      return sslConfig.getSslConfig().isClientCertificateRequired();
+    }
+    return false;
+  }
+
+  private boolean isClientCertWanted() {
+    TlsConfig sslConfig = config.getTlsConfig();
+    if (sslConfig != null) {
+      return sslConfig.getSslConfig().isClientCertificateWanted();
+    }
+    return false;
+  }
+
   public void stop() {
     if(cleanupSchedule != null) {
       cleanupSchedule.cancel(true);
@@ -237,7 +253,7 @@ public class RestApiServerManager implements Agent {
     registration.addMapping("/*");
     HttpServer server;
     if (sslConfig != null) {
-      SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, false, false);
+      SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(sslConfig, false, isClientCertRequired(), isClientCertWanted());
       server = GrizzlyHttpServerFactory.createHttpServer(uri, ((GrizzlyHttpContainer) null), true, sslEngineConfigurator, false);
     } else {
       server = GrizzlyHttpServerFactory.createHttpServer(uri, false);
