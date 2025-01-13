@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
@@ -46,7 +47,8 @@ public class RestMessageListener implements MessageListener, Serializable {
   private static int maxSubscribedMessages = 10;
 
   private final Map<String, List<MessageEvent>> messages;
-  private final Map<String, SubscribedEventManager> subscribedEventManagerMap;
+
+  private final Map<String, SessionSubscriptionMap> sessionSubscriptionsMap;
   private final Map<String, SseInfo> eventSinkMap;
 
 
@@ -54,20 +56,28 @@ public class RestMessageListener implements MessageListener, Serializable {
 
   public RestMessageListener() {
     messages = new ConcurrentHashMap<>();
-    subscribedEventManagerMap = new ConcurrentHashMap<>();
+    sessionSubscriptionsMap = new ConcurrentHashMap<>();
     eventSinkMap = new ConcurrentHashMap<>();
   }
 
-  public void registerEventManager(String topic, SubscribedEventManager subscribedEventManager) {
-    subscribedEventManagerMap.put(topic, subscribedEventManager);
+  public void registerEventManager(String topic, Session session, SubscribedEventManager subscribedEventManager) {
+    sessionSubscriptionsMap.put(topic, new SessionSubscriptionMap(session,  subscribedEventManager));
   }
 
-  public void registerEventManager(String topic, Sse sse, SseEventSink eventSink, SubscribedEventManager subscribedEventManager) {
+  public void registerEventManager(String topic, Sse sse, SseEventSink eventSink, Session session, SubscribedEventManager subscribedEventManager) {
     SseInfo sseInfo = new SseInfo(sse, eventSink);
     eventSinkMap.put(topic, sseInfo);
-    subscribedEventManagerMap.put(topic, subscribedEventManager);
+    sessionSubscriptionsMap.put(topic, new SessionSubscriptionMap(session,  subscribedEventManager));
   }
 
+  public void deregisterEventManager(String topic) {
+    messages.remove(topic);
+    clearSubscription(topic);
+    SseInfo sseInfo =  eventSinkMap.remove(topic);
+    if (sseInfo != null) {
+      sseInfo.close();
+    }
+  }
 
   @Override
   public synchronized void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
@@ -87,7 +97,11 @@ public class RestMessageListener implements MessageListener, Serializable {
 
   private void handleAsyncDelivery(String destination,MessageEvent messageEvent) {
     SseInfo sseInfo = eventSinkMap.get(destination);
-    if(sseInfo != null) {
+    if(sseInfo != null){
+       if(sseInfo.eventSink.isClosed()){
+         clearSubscription(destination);
+         return;
+       }
       Gson gson = new GsonBuilder()
           .setPrettyPrinting()
           .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
@@ -103,28 +117,33 @@ public class RestMessageListener implements MessageListener, Serializable {
   }
 
   private void handleSyncDelivery(String destination, MessageEvent messageEvent) {
-    List<MessageEvent> destinationMessages =
-        messages.computeIfAbsent(destination, k -> new ArrayList<>());
+    List<MessageEvent> destinationMessages = messages.computeIfAbsent(destination, k -> new ArrayList<>());
     destinationMessages.add(messageEvent);
     if (destinationMessages.size() > maxSubscribedMessages) {
       destinationMessages.remove(0);
     }
   }
 
+  private void clearSubscription(String destinationName) {
+    SessionSubscriptionMap subscriptionMap = sessionSubscriptionsMap.remove(destinationName);
+    subscriptionMap.getSession().removeSubscription(destinationName);
+    sessionSubscriptionsMap.remove(destinationName);
+  }
+
   public void ackReceived(String destination, List<Long> messageId) {
-    SubscribedEventManager subscribedEventManager = subscribedEventManagerMap.get(destination);
+    SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
     if (subscribedEventManager != null) {
       for (long id : messageId) {
-        subscribedEventManager.ackReceived(id);
+        subscribedEventManager.getSubscribedEventManager().ackReceived(id);
       }
     }
   }
 
   public void nakReceived(String destination, List<Long> messageId) {
-    SubscribedEventManager subscribedEventManager = subscribedEventManagerMap.get(destination);
+    SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
     if (subscribedEventManager != null) {
       for (long id : messageId) {
-        subscribedEventManager.rollbackReceived(id);
+        subscribedEventManager.getSubscribedEventManager().rollbackReceived(id);
       }
     }
   }
@@ -187,7 +206,7 @@ public class RestMessageListener implements MessageListener, Serializable {
     messageDTO.setCorrelationData(msg.getCorrelationData());
     messageDTO.setContentType(msg.getContentType());
     messageDTO.setQualityOfService(msg.getQualityOfService().getLevel());
-
+    messageDTO.setMetaData(msg.getMeta() == null ? new HashMap<>() : new LinkedHashMap<>(msg.getMeta()));
     long creation = Long.parseLong( msg.getMeta().get("time_ms"));
     messageDTO.setCreation(Instant.ofEpochMilli(creation)
         .atZone(ZoneId.systemDefault())
@@ -205,7 +224,7 @@ public class RestMessageListener implements MessageListener, Serializable {
     closed = false;
     messages.clear();
     eventSinkMap.clear();
-    subscribedEventManagerMap.clear();
+    sessionSubscriptionsMap.clear();
   }
 
   @Data
@@ -213,5 +232,9 @@ public class RestMessageListener implements MessageListener, Serializable {
   private static final class SseInfo{
     private final Sse sse;
     private final SseEventSink eventSink;
+
+    public void close(){
+      eventSink.close();
+    }
   }
 }

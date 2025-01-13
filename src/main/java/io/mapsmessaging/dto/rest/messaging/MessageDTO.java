@@ -62,12 +62,6 @@ public class MessageDTO {
   private byte[] correlationData;
 
   @Schema(
-      title = "Message Parameters",
-      description = "A map containing optional key-value pairs associated with the message.",
-      example = "{\"key1\": \"value1\", \"key2\": 42}")
-  private Map<String, Object> dataMap;
-
-  @Schema(
       title = "Expiry Time",
       description =
           "The expiry time for the message in milliseconds. Default is -1, indicating no expiry.",
@@ -95,5 +89,17 @@ public class MessageDTO {
       title = "Creation Date/Time",
       description = "The time the server received this event")
   private LocalDateTime creation;
+
+  @Schema(
+      title = "Message Parameters",
+      description = "A map containing optional key-value pairs associated with the message.",
+      example = "{\"key1\": \"value1\", \"key2\": 42}")
+  private Map<String, Object> dataMap;
+
+  @Schema(
+      title = "Event Meta Data",
+      description = "A map of string, string values that the server has added to the event as it was processed",
+      example = "{\"key1\": \"value1\", \"key2\": 42}")
+  private Map<String, String> metaData;
 
 }

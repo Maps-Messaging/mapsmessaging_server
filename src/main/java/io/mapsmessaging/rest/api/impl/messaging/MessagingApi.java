@@ -81,10 +81,11 @@ public class MessagingApi extends BaseRestApi {
   @POST
   public StatusResponse unsubscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
     hasAccess(RESOURCE);
-    Session session = getAuthenticatedSession();
     String destinationName = subscriptionRequest.getDestinationName();
-    session.removeSubscription(destinationName);
-    return new StatusResponse("Successfully subscribed to "+destinationName);
+    HttpSession httpSession = getSession();
+    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
+    restMessageListener.deregisterEventManager(destinationName);
+    return new StatusResponse("Successfully unsubscribed to "+destinationName);
   }
 
   @Path("/subscribe")
@@ -98,7 +99,7 @@ public class MessagingApi extends BaseRestApi {
     SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);
     HttpSession httpSession = getSession();
     RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
-    restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), eventManager);
+    restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), session, eventManager);
     return new StatusResponse("Successfully subscribed to "+subscriptionRequest.getDestinationName());
   }
 
@@ -122,8 +123,7 @@ public class MessagingApi extends BaseRestApi {
     SubscribedEventManager eventManager = subscribeToTopic(session, req);
     HttpSession httpSession = getSession();
     RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
-    restMessageListener.registerEventManager(destinationName, sse, eventSink, eventManager);
-
+    restMessageListener.registerEventManager(destinationName, sse, eventSink, session, eventManager);
   }
 
   private SubscribedEventManager subscribeToTopic(Session session,  SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
@@ -225,16 +225,25 @@ public class MessagingApi extends BaseRestApi {
     HttpSession httpSession = getSession();
     Object lookup = httpSession.getAttribute("authenticatedSession");
     if (lookup == null) {
+      boolean persistentSession = false;
+      Object obj  = httpSession.getAttribute("persistentSession");
+      if(obj instanceof Boolean) {
+        persistentSession = (Boolean) obj;
+      }
       RestClientConnection restClientConnection = new RestClientConnection(httpSession);
+
+      Object id = httpSession.getAttribute("sessionId");
+      String sessionId = id == null ? restClientConnection.getName() : id.toString();
       String username = (String) httpSession.getAttribute("username");
       if(username == null) {
         username = httpSession.getId();
         httpSession.setAttribute("username", username);
       }
-      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(restClientConnection.getName(), restClientConnection)
-        .isAuthorized(true)
-        .setUsername(username)
-        .setPersistentSession(false);
+      SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId, restClientConnection)
+          .setPersistentSession(persistentSession)
+          .isAuthorized(true)
+          .setUsername(username);
+
       SessionContext sessionContext = sessionContextBuilder.build();
       RestMessageListener restMessageListener = new RestMessageListener();
       Session session = SessionManager.getInstance().create(sessionContext, restMessageListener );

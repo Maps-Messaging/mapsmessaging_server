@@ -16,17 +16,18 @@
  *
  */
 
-package io.mapsmessaging.api;
+package io.mapsmessaging.rest.api.impl.messaging.impl;
 
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SubscribedEventManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class MessageEvent {
-  private final String destinationName;
-  private final SubscribedEventManager subscription;
-  private final Message message;
-  private final Runnable completionTask;
+public class SessionSubscriptionMap {
+
+  private Session session;
+  private SubscribedEventManager subscribedEventManager;
+
 }

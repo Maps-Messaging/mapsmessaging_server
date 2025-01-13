@@ -188,9 +188,18 @@ public class MapsRestServerApi extends BaseRestApi {
       summary = "User login",
       description = "Allows a user to log in and obtain an authentication token. This endpoint does not require authentication and overrides global security settings."
   )
-  public LoginResponse login() {
+  public LoginResponse login(
+      @QueryParam("sessionId") String sessionId,
+      @QueryParam("persistent") boolean persistentSession
+  ) {
     HttpSession session = request.getSession(true);
     if (session != null) {
+      if(persistentSession) {
+        session.setAttribute("persistentSession", true);
+      }
+      if(sessionId != null && !sessionId.isEmpty()) {
+        session.setAttribute("sessionId", sessionId);
+      }
       hasAccess("root");
       Subject subject = (Subject) getSession().getAttribute("subject");
       String username = (String) getSession().getAttribute("username");
