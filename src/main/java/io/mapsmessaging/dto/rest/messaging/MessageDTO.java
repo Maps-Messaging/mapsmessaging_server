@@ -22,6 +22,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,6 +36,10 @@ import lombok.NoArgsConstructor;
     description =
         "Represents a messaging entity with configurable quality, priority, and metadata attributes.")
 public class MessageDTO {
+  @Schema(
+      title = "Message Identifier",
+      description = "The event identifier")
+  private long identifier;
 
   @NotNull
   @Schema(
@@ -85,4 +90,10 @@ public class MessageDTO {
       example = "1",
       defaultValue = "0")
   private int qualityOfService = QualityOfService.AT_MOST_ONCE.getLevel();
+
+  @Schema(
+      title = "Creation Date/Time",
+      description = "The time the server received this event")
+  private LocalDateTime creation;
+
 }

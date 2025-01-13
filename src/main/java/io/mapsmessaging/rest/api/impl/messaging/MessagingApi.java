@@ -127,7 +127,6 @@ public class MessagingApi extends BaseRestApi {
   }
 
   private SubscribedEventManager subscribeToTopic(Session session,  SubscriptionRequestDTO subscriptionRequest) throws LoginException, IOException {
-    try{
     String destinationName = subscriptionRequest.getDestinationName();
     QualityOfService qos = subscriptionRequest.isTransactional() ? QualityOfService.AT_LEAST_ONCE : QualityOfService.AT_MOST_ONCE;
     SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, ClientAcknowledgement.AUTO)
@@ -137,11 +136,6 @@ public class MessagingApi extends BaseRestApi {
         .setRetainHandler(RetainHandler.SEND_IF_NEW)
         .setNoLocalMessages(true);
     return session.addSubscription(contextBuilder.build());
-    }
-    catch(Throwable e){
-      e.printStackTrace();
-      throw e;
-    }
   }
 
   @Path("/commit")

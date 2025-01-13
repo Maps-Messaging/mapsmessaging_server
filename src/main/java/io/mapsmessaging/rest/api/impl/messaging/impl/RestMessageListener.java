@@ -26,10 +26,14 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
+import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.*;
@@ -84,7 +88,10 @@ public class RestMessageListener implements MessageListener, Serializable {
   private void handleAsyncDelivery(String destination,MessageEvent messageEvent) {
     SseInfo sseInfo = eventSinkMap.get(destination);
     if(sseInfo != null) {
-      Gson gson = new GsonBuilder().setPrettyPrinting().create();
+      Gson gson = new GsonBuilder()
+          .setPrettyPrinting()
+          .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
+          .create();
       String json = gson.toJson(convertToDTO(messageEvent));
       OutboundSseEvent event = sseInfo.sse.newEventBuilder()
           .name(messageEvent.getDestinationName())
@@ -173,13 +180,19 @@ public class RestMessageListener implements MessageListener, Serializable {
   private MessageDTO convertToDTO(MessageEvent message) {
     MessageDTO messageDTO = new MessageDTO();
     Message msg = message.getMessage();
+    messageDTO.setIdentifier(msg.getIdentifier());
     messageDTO.setPriority(msg.getPriority().getValue());
     messageDTO.setPayload(Base64.getEncoder().encodeToString(msg.getOpaqueData()));
     messageDTO.setExpiry(msg.getExpiry());
-
     messageDTO.setCorrelationData(msg.getCorrelationData());
     messageDTO.setContentType(msg.getContentType());
     messageDTO.setQualityOfService(msg.getQualityOfService().getLevel());
+
+    long creation = Long.parseLong( msg.getMeta().get("time_ms"));
+    messageDTO.setCreation(Instant.ofEpochMilli(creation)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDateTime());
+
     Map<String, Object> map =new LinkedHashMap<>();
     for (Map.Entry<String, TypedData> entry : msg.getDataMap().entrySet()) {
       map.put(entry.getKey(), entry.getValue().getData());
