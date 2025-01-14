@@ -71,9 +71,18 @@ public class BaseTestConfig extends BaseTest {
   @BeforeAll
   public static void beforeAll() throws IOException {
     if(md == null) {
-      File file = new File("~");
+      File file = new File(".");
       System.out.println(file.getAbsolutePath());
+      File jaasConf = new File(file, "conf");
 
+      setIfNot(
+          "java.security.auth.login.config",
+          "src"
+              + File.separator
+              + "test"
+              + File.separator
+              + "resources"
+              +File.separator+"jaasAuth.config");
       //
       // Setup Certificate
       //
@@ -83,7 +92,6 @@ public class BaseTestConfig extends BaseTest {
       setIfNot("javax.net.ssl.trustStorePassword","password");
       setIfNot("javax.net.debug", "none");
 
-      setIfNot("java.security.auth.login.config", "=src/test/resources/jaasAuth.config");
       setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
       md = MessageDaemon.getInstance();
       Runnable runnable = () -> {
