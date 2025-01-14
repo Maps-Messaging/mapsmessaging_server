@@ -221,6 +221,9 @@ public class RestMessageListener implements MessageListener, Serializable {
   }
 
   public synchronized void close() {
+    for(String key : sessionSubscriptionsMap.keySet()) {
+      deregisterEventManager(key);
+    }
     closed = false;
     messages.clear();
     eventSinkMap.clear();

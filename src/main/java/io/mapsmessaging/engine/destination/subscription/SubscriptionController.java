@@ -181,6 +181,7 @@ public class SubscriptionController implements DestinationManagerListener {
     for(SubscriptionModeManager managers: subscriptionModeManager.values()){
       if(managers.delSubscription(id, subscriptions, this)){
         found = true;
+        contextMap.remove(managers.getMode().getNamespace()+id);
       }
     }
     return found;

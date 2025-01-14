@@ -19,14 +19,17 @@
 package io.mapsmessaging.rest.handler;
 
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.dto.rest.endpoint.EndPointDetailsDTO;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.RestProtocolInformation;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.auth.BaseAuthenticationFilter;
 import jakarta.servlet.annotation.WebListener;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +47,21 @@ public class SessionTracker implements HttpSessionListener {
 
   @Override
   public void sessionDestroyed(HttpSessionEvent se) {
+    HttpSession httpSession = se.getSession();
+    Session session = (Session) httpSession.getAttribute("authenticatedSession");
+    RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
+    if(restMessageListener != null) {
+      httpSession.removeAttribute("restListener");
+      restMessageListener.close();
+    }
+    if(session != null) {
+      httpSession.removeAttribute("authenticatedSession");
+      try {
+        SessionManager.getInstance().close(session, false);
+      } catch (IOException e) {
+        // ignore
+      }
+    }
     sessions.remove(se.getSession().getId());
   }
 

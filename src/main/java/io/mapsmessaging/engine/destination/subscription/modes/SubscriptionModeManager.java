@@ -43,9 +43,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.Getter;
 
 public abstract class SubscriptionModeManager {
 
+  @Getter
   protected final DestinationMode mode;
   protected final Map<DestinationImpl, Subscription> activeSubscriptions;
 
