@@ -7,7 +7,7 @@ Release versions can be found on maven central, development snapshots can be fou
         <repository>
           <id>maps_snapshots</id>
           <name>maps_snapshot_repository</name>
-          <url>https://repository.mapsmessaging.io:8081/repository/maps_snapshots/</url>
+          <url>https://repository.mapsmessaging.io/repository/maps_snapshots/</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
