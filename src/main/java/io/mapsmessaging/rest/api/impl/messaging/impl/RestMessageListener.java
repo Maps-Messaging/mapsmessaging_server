@@ -26,31 +26,44 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.dto.rest.messaging.AsyncMessageDTO;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
-import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.*;
 import org.jetbrains.annotations.NotNull;
 
-public class RestMessageListener implements MessageListener, Serializable {
+/**
+ * This class handles message delivery for web clients. This could be either sync or async via SSE.
+ *
+ * If Sync, then the messages are stored as
+ *
+ * Map:
+ * Key: Subscription namespace : could be a singe destination or a wild card subscription
+ * Value : Map<String, List<Messages> where String is the physical destination name and the list is events from that destination
+ *
+ *
+ * If Async, then the messages are forwarded with the name of the destination and NOT the subscription name
+ */
+public class RestMessageListener implements MessageListener {
 
   @Getter
   @Setter
   private static int maxSubscribedMessages = 10;
 
-  private final Map<String, List<MessageEvent>> messages;
+  private final Map<String, Map<String,List<MessageEvent>>> messages;
 
   private final Map<String, SessionSubscriptionMap> sessionSubscriptionsMap;
   private final Map<String, SseInfo> eventSinkMap;
-
+  private final Gson gson;
 
   private boolean closed = false;
 
@@ -58,16 +71,19 @@ public class RestMessageListener implements MessageListener, Serializable {
     messages = new ConcurrentHashMap<>();
     sessionSubscriptionsMap = new ConcurrentHashMap<>();
     eventSinkMap = new ConcurrentHashMap<>();
+    gson = new GsonBuilder()
+        .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
+        .create();
   }
 
-  public void registerEventManager(String topic, Session session, SubscribedEventManager subscribedEventManager) {
-    sessionSubscriptionsMap.put(topic, new SessionSubscriptionMap(session,  subscribedEventManager));
+  public void registerEventManager(String namespacePath, Session session, SubscribedEventManager subscribedEventManager) {
+    sessionSubscriptionsMap.put(namespacePath, new SessionSubscriptionMap(session,  subscribedEventManager));
   }
 
-  public void registerEventManager(String topic, Sse sse, SseEventSink eventSink, Session session, SubscribedEventManager subscribedEventManager) {
+  public void registerEventManager(String namespacePath, Sse sse, SseEventSink eventSink, Session session, SubscribedEventManager subscribedEventManager) {
     SseInfo sseInfo = new SseInfo(sse, eventSink);
-    eventSinkMap.put(topic, sseInfo);
-    sessionSubscriptionsMap.put(topic, new SessionSubscriptionMap(session,  subscribedEventManager));
+    eventSinkMap.put(namespacePath, sseInfo);
+    sessionSubscriptionsMap.put(namespacePath, new SessionSubscriptionMap(session,  subscribedEventManager));
   }
 
   public void deregisterEventManager(String topic) {
@@ -86,29 +102,26 @@ public class RestMessageListener implements MessageListener, Serializable {
       messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
       return;
     }
-    String destination = messageEvent.getDestinationName();
-    if(eventSinkMap.containsKey(destination)) {
-      handleAsyncDelivery(destination, messageEvent);
+    String namespacePath = messageEvent.getSubscription().getContext().getDestinationName();
+    if(eventSinkMap.containsKey(namespacePath)) {
+      handleAsyncDelivery(namespacePath, messageEvent);
     }
     else{
-      handleSyncDelivery(destination, messageEvent);
+      handleSyncDelivery(namespacePath, messageEvent);
     }
   }
 
-  private void handleAsyncDelivery(String destination,MessageEvent messageEvent) {
-    SseInfo sseInfo = eventSinkMap.get(destination);
+  private void handleAsyncDelivery(String namespacePath,MessageEvent messageEvent) {
+    SseInfo sseInfo = eventSinkMap.get(namespacePath);
     if(sseInfo != null){
        if(sseInfo.eventSink.isClosed()){
-         clearSubscription(destination);
+         clearSubscription(namespacePath);
          return;
        }
-      Gson gson = new GsonBuilder()
-          .setPrettyPrinting()
-          .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
-          .create();
-      String json = gson.toJson(convertToDTO(messageEvent));
+
+      String json = gson.toJson(convertToAsyncDTO(messageEvent));
       OutboundSseEvent event = sseInfo.sse.newEventBuilder()
-          .name(messageEvent.getDestinationName())
+          .name(namespacePath)
           .data(String.class, json)
           .build();
       sseInfo.eventSink.send(event);
@@ -116,18 +129,19 @@ public class RestMessageListener implements MessageListener, Serializable {
     }
   }
 
-  private void handleSyncDelivery(String destination, MessageEvent messageEvent) {
-    List<MessageEvent> destinationMessages = messages.computeIfAbsent(destination, k -> new ArrayList<>());
+  private void handleSyncDelivery(String namespacePath, MessageEvent messageEvent) {
+    Map<String,List<MessageEvent>> subscriptionMessages = messages.computeIfAbsent(namespacePath, k -> new LinkedHashMap<>());
+    List<MessageEvent> destinationMessages = subscriptionMessages.computeIfAbsent(messageEvent.getDestinationName(), k -> new ArrayList<>());
     destinationMessages.add(messageEvent);
     if (destinationMessages.size() > maxSubscribedMessages) {
       destinationMessages.remove(0);
     }
   }
 
-  private void clearSubscription(String destinationName) {
-    SessionSubscriptionMap subscriptionMap = sessionSubscriptionsMap.remove(destinationName);
-    subscriptionMap.getSession().removeSubscription(destinationName);
-    sessionSubscriptionsMap.remove(destinationName);
+  private void clearSubscription(String namespacePath) {
+    SessionSubscriptionMap subscriptionMap = sessionSubscriptionsMap.remove(namespacePath);
+    subscriptionMap.getSession().removeSubscription(namespacePath);
+    sessionSubscriptionsMap.remove(namespacePath);
   }
 
   public void ackReceived(String destination, List<Long> messageId) {
@@ -148,56 +162,59 @@ public class RestMessageListener implements MessageListener, Serializable {
     }
   }
 
-  public int subscriptionDepth(String destination) {
-    List<MessageEvent> destinationMessages = messages.get(destination);
+  public int subscriptionDepth(String namespacePath) {
+    Map<String,List<MessageEvent>> destinationMessages = messages.get(namespacePath);
     if(destinationMessages == null){
       return 0;
     }
-    return destinationMessages.size();
+    return destinationMessages.values().stream().mapToInt(List::size).sum();
   }
 
   public Map<String, Integer> subscriptionDepth() {
-    Map<String, Integer> result = new LinkedHashMap<>();
-    for (Map.Entry<String, List<MessageEvent>> entry : messages.entrySet()) {
-      result.put(entry.getKey(), subscriptionDepth(entry.getKey()));
-    }
-    return result;
+    return messages
+        .entrySet()
+        .stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, entry -> subscriptionDepth(entry.getKey()), (a, b) -> b, LinkedHashMap::new));
   }
 
   public List<String> getKnownDestinations() {
-    return new ArrayList<>(messages.keySet());
+    return messages.entrySet().stream().flatMap(entry -> entry.getValue().keySet().stream()).collect(Collectors.toList());
   }
 
-  public List<MessageDTO> getMessages(String destinationName, int max) {
-    if (max <= 0) max = 10;
-    if(max > 1000) max = 1000;
-    List<MessageEvent> destinationMessages = messages.get(destinationName);
-    if(destinationMessages == null){
-      destinationMessages = new ArrayList<>();
-    }
-    List<MessageEvent> subMessages;
-    if(destinationMessages.size() > max){
-      subMessages = destinationMessages.subList(0, max);
-      destinationMessages = destinationMessages.subList(max, destinationMessages.size());
-      messages.remove(destinationName);
-      messages.put(destinationName, destinationMessages);
-    }
-    else{
-      subMessages = new ArrayList<>(destinationMessages);
-      destinationMessages.clear();
-    }
+  public Map<String, List<MessageDTO>> getMessages(String namespace, int max) {
+    int count = max;
+    if (count <= 0) count = 10;
+    if(count > 1000) count = 1000;
+    Map<String,List<MessageEvent>> destinationMessages = messages.get(namespace);
+    Map<String, List<MessageDTO>> response = new LinkedHashMap<>();
 
-    List<MessageDTO> messageList = new ArrayList<>();
-    for (MessageEvent message : subMessages) {
-      MessageDTO messageDTO = convertToDTO(message);
-      messageList.add(messageDTO);
-      message.getCompletionTask().run();
+    boolean hasEvents = true;
+    while (hasEvents && count !=0) {
+      hasEvents = false;
+      for(Map.Entry<String, List<MessageEvent>> entry : destinationMessages.entrySet()) {
+        if(!entry.getValue().isEmpty()){
+          List<MessageDTO> returnEvents = response.computeIfAbsent(entry.getKey(), key -> new ArrayList<>());
+          MessageEvent msg = entry.getValue().remove(0);
+          returnEvents.add(convertToDTO(msg));
+          msg.getCompletionTask().run();
+          hasEvents = true;
+          count--;
+        }
+      }
     }
-    return messageList;
+    return response;
+  }
+  private MessageDTO convertToAsyncDTO(MessageEvent message) {
+    AsyncMessageDTO messageDTO = new AsyncMessageDTO();
+    messageDTO.setDestinationName(message.getDestinationName());
+    return convert(messageDTO, message);
   }
 
   private MessageDTO convertToDTO(MessageEvent message) {
     MessageDTO messageDTO = new MessageDTO();
+    return convert(messageDTO, message);
+  }
+  private MessageDTO convert(MessageDTO messageDTO, MessageEvent message) {
     Message msg = message.getMessage();
     messageDTO.setIdentifier(msg.getIdentifier());
     messageDTO.setPriority(msg.getPriority().getValue());

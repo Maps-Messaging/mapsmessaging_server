@@ -20,6 +20,7 @@ package io.mapsmessaging.dto.rest.messaging;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,43 +34,41 @@ import lombok.NoArgsConstructor;
         "Represents a request to create a subscription to a specific destination, with optional filtering and message retention.")
 public class SubscriptionRequestDTO {
 
-  @NotNull
-  @Schema(
-      title = "Subscription Name",
-      description = "A unique name for the subscription.",
-      example = "sensorUpdates",
-      nullable = false)
-  private String name;
-
+  @QueryParam("destinationName")
   @NotNull
   @Schema(
       title = "Destination Name",
-      description =
-          "The name of the destination (e.g., topic or queue) to which the subscription is bound.",
-      example = "sensor/data",
+      description = "The name of the destination (e.g., topic or queue) to which the subscription is bound.Supports MQTT style wild card subscription",
+      example = "sensor/data or /sensor/# ",
       nullable = false)
   private String destinationName;
 
+  @QueryParam("namedSubscription")
   @Schema(
       title = "Named Subscription",
       description =
           "An optional name for a named subscription, allowing clients to re-use existing subscriptions if provided.",
-      example = "temperatureAlerts")
+      example = "temperatureAlerts",
+      nullable = true)
   private String namedSubscription;
 
+  @QueryParam("filter")
   @Schema(
       title = "Filter Expression",
       description =
           "An optional filter expression written in JMS selector syntax to filter messages received by the subscription.",
-      example = "temperature > 25")
+      example = "temperature > 25",
+    nullable = true)
   private String filter;
 
+  @QueryParam("maxDepth")
   @Schema(
       title = "Maximum Queue Depth",
       description =
           "The maximum number of messages that can be queued for the subscription before new messages are dropped.",
       example = "10",
-      defaultValue = "1")
+      defaultValue = "1",
+      nullable = true)
   private int maxDepth = 1;
 
   @Schema(
@@ -79,11 +78,13 @@ public class SubscriptionRequestDTO {
       defaultValue = "false")
   private boolean transactional = false;
 
+  @QueryParam("retainMessage")
   @Schema(
       title = "Retain Message",
       description =
           "Indicates if messages should be retained on the destination for this subscription, meaning they will be stored and made available to future subscribers.",
       example = "false",
-      defaultValue = "false")
+      defaultValue = "false",
+      nullable = true)
   private boolean retainMessage = false;
 }

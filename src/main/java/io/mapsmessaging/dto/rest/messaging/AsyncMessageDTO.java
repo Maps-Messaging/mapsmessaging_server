@@ -16,19 +16,21 @@
  *
  */
 
-package io.mapsmessaging.rest.responses;
+package io.mapsmessaging.dto.rest.messaging;
 
-import io.mapsmessaging.dto.rest.messaging.MessageDTO;
-import java.util.List;
-import java.util.Map;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Schema(description = "AsyncMessageDTO represents messages delivered via SSE.")
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class ConsumedMessages {
-  private String destination;
-  private Map<String, List<MessageDTO>> messages;
+@AllArgsConstructor
+public class AsyncMessageDTO extends MessageDTO {
+  @Schema(
+      title = "Destination Name",
+      description = "The complete path for the destination that the event is part of",
+      example = "/folder/topic")
+  private String destinationName;
 }

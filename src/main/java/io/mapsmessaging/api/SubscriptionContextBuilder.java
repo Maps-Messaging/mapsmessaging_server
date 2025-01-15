@@ -83,7 +83,7 @@ public class SubscriptionContextBuilder {
   }
 
   public SubscriptionContextBuilder setSharedName(@NonNull @NotNull String sharedName) {
-    this.sharedName = sharedName;
+    this.sharedName = (sharedName.isEmpty()) ? null : sharedName;
     return this;
   }
 
