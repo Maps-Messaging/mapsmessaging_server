@@ -266,7 +266,7 @@ public class MessagingApi extends BaseRestApi {
     SubscriptionContextBuilder contextBuilder = new SubscriptionContextBuilder(destinationName, clientAcknowledgement)
         .setReceiveMaximum(subscriptionRequest.getMaxDepth())
         .setQos(qos)
-        .setRetainHandler(RetainHandler.SEND_IF_NEW)
+        .setRetainHandler(RetainHandler.SEND_ALWAYS)
         .setNoLocalMessages(true);
     String sharedName = subscriptionRequest.getNamedSubscription();
     if(sharedName != null && !sharedName.isEmpty()) {

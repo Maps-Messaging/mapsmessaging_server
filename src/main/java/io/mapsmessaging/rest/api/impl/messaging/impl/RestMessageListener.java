@@ -113,18 +113,17 @@ public class RestMessageListener implements MessageListener {
 
   private void handleAsyncDelivery(String namespacePath,MessageEvent messageEvent) {
     SseInfo sseInfo = eventSinkMap.get(namespacePath);
-    if(sseInfo != null){
-       if(sseInfo.eventSink.isClosed()){
-         clearSubscription(namespacePath);
-         return;
-       }
-
-      String json = gson.toJson(convertToAsyncDTO(messageEvent));
-      OutboundSseEvent event = sseInfo.sse.newEventBuilder()
-          .name(namespacePath)
-          .data(String.class, json)
-          .build();
-      sseInfo.eventSink.send(event);
+    try {
+      if(sseInfo != null){
+         if(sseInfo.eventSink.isClosed()){
+           clearSubscription(namespacePath);
+        } else {
+          String json = gson.toJson(convertToAsyncDTO(messageEvent));
+          OutboundSseEvent event = sseInfo.sse.newEventBuilder().name(namespacePath).data(String.class, json).build();
+          sseInfo.eventSink.send(event);
+        }
+      }
+    } finally {
       messageEvent.getCompletionTask().run();
     }
   }
