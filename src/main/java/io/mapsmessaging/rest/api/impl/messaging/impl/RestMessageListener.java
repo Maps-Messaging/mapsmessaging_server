@@ -48,7 +48,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * Map:
  * Key: Subscription namespace : could be a singe destination or a wild card subscription
- * Value : Map<String, List<Messages> where String is the physical destination name and the list is events from that destination
+ * Value : Map : key: String,  Value List of Messages where String is the physical destination name and the list is events from that destination
  *
  *
  * If Async, then the messages are forwarded with the name of the destination and NOT the subscription name
