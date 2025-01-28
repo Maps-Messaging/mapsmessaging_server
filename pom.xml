@@ -831,8 +831,10 @@
         <version>12.0.1</version>
         <configuration>
           <nvdApiKey>${nvd.api.key}</nvdApiKey>
-          <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+          <failBuildOnCVSS>10</failBuildOnCVSS>
           <failOnError>false</failOnError>
+          <skipArtifactType>test-jar</skipArtifactType>
+          <skipTestScope>true</skipTestScope>
         </configuration>
         <executions>
           <execution>
@@ -842,6 +844,7 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
   </build>
 
