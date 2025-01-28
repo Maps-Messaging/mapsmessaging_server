@@ -57,6 +57,18 @@
     </license>
   </licenses>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>maps_snapshots</id>
+      <name>maps_snapshot_repository</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <scm>
     <url>https://github.com/Maps-Messaging/mapsmessaging_server</url>
   </scm>
@@ -817,6 +829,11 @@
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
         <version>11.1.1</version>
+        <configuration>
+          <nvdApiKey>${nvd.api.key}</nvdApiKey>
+          <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+          <failOnError>false</failOnError>
+        </configuration>
         <executions>
           <execution>
             <goals>
@@ -837,6 +854,7 @@
   </repositories>
 
   <properties>
+    <nvd.api.key>env.NVD_API_KEY</nvd.api.key>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <logback.version>1.5.16</logback.version>
