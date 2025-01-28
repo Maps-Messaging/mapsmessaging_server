@@ -854,7 +854,7 @@
   </repositories>
 
   <properties>
-    <nvd.api.key>env.NVD_API_KEY</nvd.api.key>
+    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <logback.version>1.5.16</logback.version>
