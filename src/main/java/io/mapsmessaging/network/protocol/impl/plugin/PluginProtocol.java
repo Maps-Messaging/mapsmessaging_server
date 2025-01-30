@@ -20,13 +20,12 @@ package io.mapsmessaging.network.protocol.impl.plugin;
 
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
-import io.mapsmessaging.logging.Logger;
-import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -36,6 +35,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
@@ -43,16 +43,14 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class PluginProtocol extends Protocol implements ClientConnection {
 
-  private final Logger logger;
   private Session session;
   private boolean closed;
-  private String sessionId;
-  private final EndPointURL endPointURL;
+  protected String sessionId;
+  protected final EndPointURL endPointURL;
 
   public PluginProtocol(@NonNull @NotNull EndPoint endPoint) {
     super(endPoint);
     endPointURL = new EndPointURL(endPoint.getConfig().getUrl());
-    logger = LoggerFactory.getLogger(PluginProtocol.class);
     closed = false;
   }
 
@@ -71,6 +69,23 @@ public abstract class PluginProtocol extends Protocol implements ClientConnectio
   }
 
   public abstract void forwardMessage(String destinationName, byte[] data, Map<String, Object> map);
+
+  protected void saveMessage(String destinationName, byte[] data, Map<String, Object> map) throws IOException, ExecutionException, InterruptedException {
+    Map<String, TypedData> dataMap = new LinkedHashMap<>();
+    for(Map.Entry<String, Object> entry:map.entrySet()) {
+      dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
+    }
+
+    // Create a MapsMessage
+    MessageBuilder mb = new MessageBuilder();
+    mb.setOpaqueData(data)
+        .setDataMap(dataMap)
+        .setCreation(System.currentTimeMillis());
+    Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).get();
+    if (destination != null) {
+      destination.storeMessage(mb.build());
+    }
+  }
 
   @Override
   public void sendMessage(@org.jetbrains.annotations.NotNull @NonNull MessageEvent messageEvent) {
