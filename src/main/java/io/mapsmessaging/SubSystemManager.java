@@ -208,8 +208,13 @@ public class SubSystemManager {
     logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
     ServiceLoader<ProtocolImplFactory> protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
     List<Service> service = new ArrayList<>();
-    for (ProtocolImplFactory parser : protocolServiceLoader) {
-      service.add(parser);
+    for (Iterator<ProtocolImplFactory> iterator = protocolServiceLoader.iterator(); iterator.hasNext(); ) {
+      try {
+        ProtocolImplFactory parser = iterator.next();
+        service.add(parser);
+      } catch (ServiceConfigurationError e) {
+        logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
+      }
     }
     logServices(service.listIterator());
     logServices(TransformationManager.getInstance().getServices());
