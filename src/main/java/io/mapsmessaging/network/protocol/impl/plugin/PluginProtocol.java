@@ -18,10 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.plugin;
 
-import io.mapsmessaging.api.*;
-import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.features.DestinationType;
-import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -30,61 +29,59 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.plugin.api.DestinationContext;
+import io.mapsmessaging.network.protocol.impl.plugin.api.ServerApi;
+import io.mapsmessaging.network.protocol.impl.plugin.api.SessionContext;
+import io.mapsmessaging.selector.operators.ParserExecutor;
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginException;
-import lombok.NonNull;
-import org.jetbrains.annotations.Nullable;
+import java.util.concurrent.TimeoutException;
 
-public abstract class PluginProtocol extends Protocol implements ClientConnection {
+public class PluginProtocol extends Protocol implements MessageListener, ClientConnection {
+  private final Map<String, String> nameMapping;
+  private final Map<String, ParserExecutor> parsers;
 
-  private Session session;
-  private boolean closed;
-  protected String sessionId;
+  private final ServerApi serverApi;
   protected final EndPointURL endPointURL;
+  private final Plugin plugin;
+  private SessionContext session;
+  private String sessionId;
 
-  public PluginProtocol(@NonNull @NotNull EndPoint endPoint) {
+  public PluginProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull Plugin plugin) {
     super(endPoint);
     endPointURL = new EndPointURL(endPoint.getConfig().getUrl());
-    closed = false;
+    this.plugin = plugin;
+    serverApi = new ServerApi();
+    nameMapping = new ConcurrentHashMap<>();
+    parsers = new ConcurrentHashMap<>();
+    plugin.setPluginProtocol(this);
+  }
+
+  public void connect(String sessionId, String username, String password) throws IOException {
+    session = serverApi.createSession(this, sessionId, username, password);
+    this.sessionId = sessionId;
   }
 
   @Override
   public Subject getSubject() {
-    return (session != null) ? session.getSecurityContext().getSubject() : null;
+    if(session == null) {
+      return null;
+    }
+    return session.getSubject();
   }
 
   @Override
   public void close() throws IOException {
-    if (!closed) {
-      closed = true;
-      SessionManager.getInstance().close(session, true);
-      super.close();
-    }
-  }
-
-  public abstract void forwardMessage(String destinationName, byte[] data, Map<String, Object> map);
-
-  protected void saveMessage(String destinationName, byte[] data, Map<String, Object> map) throws IOException, ExecutionException, InterruptedException {
-    Map<String, TypedData> dataMap = new LinkedHashMap<>();
-    for(Map.Entry<String, Object> entry:map.entrySet()) {
-      dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
-    }
-
-    // Create a MapsMessage
-    MessageBuilder mb = new MessageBuilder();
-    mb.setOpaqueData(data)
-        .setDataMap(dataMap)
-        .setCreation(System.currentTimeMillis());
-    Destination destination = session.findDestination(destinationName, DestinationType.TOPIC).get();
-    if (destination != null) {
-      destination.storeMessage(mb.build());
-    }
+    plugin.close();
   }
 
   @Override
@@ -93,36 +90,43 @@ public abstract class PluginProtocol extends Protocol implements ClientConnectio
     for(Map.Entry<String, TypedData> entry: messageEvent.getMessage().getDataMap().entrySet()) {
       map.put(entry.getKey(), entry.getValue().getData());
     }
-    forwardMessage(messageEvent.getDestinationName(), messageEvent.getMessage().getOpaqueData(),map);
-  }
-
-  protected void doConnect(String sessionId, String username, String password) throws IOException, LoginException {
-    SessionContextBuilder scb = new SessionContextBuilder(sessionId, this);
-    scb.setUsername(username);
-    scb.setPassword(password.toCharArray());
-    scb.setPersistentSession(true);
-    session = SessionManager.getInstance().create(scb.build(), this);
-    setConnected(true);
-    this.sessionId = sessionId;
+    String lookup = nameMapping.get(messageEvent.getDestinationName());
+    if(lookup != null) {
+      plugin.outbound(lookup, messageEvent.getMessage().getOpaqueData(), map);
+    }
+    messageEvent.getCompletionTask().run();
   }
 
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
+    nameMapping.put(resource, mappedResource);
+    plugin.registerLocalLink(resource);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
-    SubscriptionContextBuilder scb = new SubscriptionContextBuilder(resource, ClientAcknowledgement.AUTO);
-    scb.setAlias(resource);
-    ClientAcknowledgement ackManger = QualityOfService.AT_MOST_ONCE.getClientAcknowledgement();
-    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(resource, ackManger);
-    builder.setQos(QualityOfService.AT_MOST_ONCE);
-    builder.setAllowOverlap(true);
-    builder.setReceiveMaximum(1024);
-    if(selector != null && !selector.isEmpty()) {
-      builder.setSelector(selector);
+    session.subscribe(resource, selector);
+  }
+
+  @Override
+  public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) throws IOException {
+    nameMapping.put(resource, mappedResource);
+    if(!plugin.supportsRemoteFiltering()){
+      parsers.put(resource, parser);
     }
-    session.addSubscription(builder.build());
-    session.resumeState();
+    plugin.registerRemoteLink(resource, plugin.supportsRemoteFiltering()? parser.toString(): null );
+  }
+
+  protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull byte[] payload, @Nullable Map<String, Object> map) throws ExecutionException, InterruptedException, TimeoutException, IOException {
+    String lookup = nameMapping.get(destinationName);
+    if(lookup != null) {
+      DestinationContext destination = session.getDestination(lookup, DestinationType.TOPIC);
+      if (destination != null) {
+        ParserExecutor parser = parsers.get(destinationName);
+
+        return destination.writeEvent(payload, map != null?map:new LinkedHashMap<>(), parser);
+      }
+    }
+    return 0;
   }
 
   @Override
@@ -130,8 +134,8 @@ public abstract class PluginProtocol extends Protocol implements ClientConnectio
     ProtocolInformationDTO dto = new ProtocolInformationDTO();
     dto.setSessionId(sessionId);
     dto.setMessageTransformationName("");
-    dto.setType("pulsar");
-    return null;
+    dto.setType(plugin.getName());
+    return dto;
   }
 
   @Override
@@ -151,12 +155,12 @@ public abstract class PluginProtocol extends Protocol implements ClientConnectio
 
   @Override
   public String getVersion() {
-    return "1.0";
+    return plugin.getVersion();
   }
 
   @Override
   public Principal getPrincipal() {
-    return null;
+    return session.getSubject().getPrincipals().iterator().next();
   }
 
   @Override
