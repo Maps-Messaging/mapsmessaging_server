@@ -18,10 +18,11 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PULL_ACK;
+import lombok.ToString;
 
 import java.net.SocketAddress;
-import lombok.ToString;
+
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PULL_ACK;
 
 /**
  * ### 5.3. PULL_ACK packet ###

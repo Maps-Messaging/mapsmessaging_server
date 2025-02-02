@@ -33,13 +33,14 @@ import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import lombok.SneakyThrows;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import lombok.SneakyThrows;
 
 public class PublishListener extends PacketListener {
 

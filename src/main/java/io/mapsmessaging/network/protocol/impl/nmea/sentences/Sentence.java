@@ -19,9 +19,10 @@
 package io.mapsmessaging.network.protocol.impl.nmea.sentences;
 
 import io.mapsmessaging.network.protocol.impl.nmea.types.Type;
+import org.json.JSONObject;
+
 import java.util.List;
 import java.util.Map;
-import org.json.JSONObject;
 
 public class Sentence {
 

@@ -21,9 +21,10 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
-import java.nio.charset.StandardCharsets;
 import lombok.Getter;
 import lombok.ToString;
+
+import java.nio.charset.StandardCharsets;
 
 @ToString
 public class ConnAck extends MQTT_SN_2_Packet {

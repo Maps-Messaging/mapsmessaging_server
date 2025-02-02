@@ -23,6 +23,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
+
 import java.io.IOException;
 
 public class MQTTProtocolFactory extends ProtocolImplFactory {

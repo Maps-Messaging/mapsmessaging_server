@@ -18,9 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.coap;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
-
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -45,6 +42,12 @@ import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.SubscriptionState;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.TransactionState;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import lombok.Getter;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.List;
@@ -52,11 +55,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.security.auth.Subject;
-import javax.security.auth.login.LoginException;
-import lombok.Getter;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
 public class CoapProtocol extends Protocol {
 

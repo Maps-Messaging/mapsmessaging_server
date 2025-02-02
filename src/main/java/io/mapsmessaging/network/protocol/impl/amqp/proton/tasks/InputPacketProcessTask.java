@@ -24,12 +24,13 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.SaslManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.listeners.EventListenerFactory;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.TransportResult;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class InputPacketProcessTask extends PacketTask {
 

@@ -23,8 +23,9 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPublishPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.DefaultConstants;
-import java.nio.ByteBuffer;
 import lombok.Getter;
+
+import java.nio.ByteBuffer;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718037

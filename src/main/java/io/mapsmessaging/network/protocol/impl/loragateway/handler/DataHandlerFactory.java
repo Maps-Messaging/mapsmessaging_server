@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.loragateway.handler;
 
 import io.mapsmessaging.network.protocol.impl.loragateway.Constants;
+
 import java.util.TreeMap;
 
 public class DataHandlerFactory {

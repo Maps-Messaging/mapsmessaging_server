@@ -21,10 +21,11 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.impl.enc
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.message.TypedData.TYPE;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class ApplicationMapEncoder {
 

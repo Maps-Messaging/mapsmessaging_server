@@ -35,12 +35,13 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.PingRequestV2;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Publish;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.state.InitialConnectionState;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
-import java.io.IOException;
-import java.net.SocketAddress;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.net.SocketAddress;
 
 // The protocol is MQTT_SN, so it makes sense, ignoring the Camel Case rule in class names
 @SuppressWarnings("squid:S00101")

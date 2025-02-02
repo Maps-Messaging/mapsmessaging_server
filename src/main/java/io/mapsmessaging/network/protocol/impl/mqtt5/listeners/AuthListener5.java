@@ -30,6 +30,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.Authentica
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationMethod;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 

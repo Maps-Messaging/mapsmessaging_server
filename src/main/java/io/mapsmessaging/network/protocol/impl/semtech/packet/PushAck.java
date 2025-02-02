@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PUSH_ACK;
-
 import java.net.SocketAddress;
+
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PUSH_ACK;
 
 /**
  * ### 3.3. PUSH_ACK packet ###

@@ -32,8 +32,6 @@ import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.SessionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.selector.TokenMgrException;
-import java.io.IOException;
-import javax.security.auth.login.LoginException;
 import lombok.SneakyThrows;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Source;
@@ -41,6 +39,9 @@ import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Sender;
+
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
 
 public class SenderLinkLocalOpenEventListener extends LinkLocalOpenEventListener {
 

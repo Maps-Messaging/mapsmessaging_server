@@ -20,10 +20,11 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.EventType;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class EventListenerFactory {
 

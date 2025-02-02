@@ -22,12 +22,13 @@ import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.AuthenticationMethod;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.security.sasl.Sasl;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.security.sasl.Sasl;
-import lombok.Getter;
-import lombok.Setter;
 
 public class AuthenticationContext {
 

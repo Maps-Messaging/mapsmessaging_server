@@ -43,15 +43,16 @@ import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListenerFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.*;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
 public class MQTTProtocol extends Protocol {

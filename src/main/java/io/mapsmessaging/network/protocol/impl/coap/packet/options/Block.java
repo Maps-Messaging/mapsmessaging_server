@@ -18,10 +18,11 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 
-import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.io.IOException;
 
 @ToString
 public class Block extends Option {

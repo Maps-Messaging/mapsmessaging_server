@@ -18,10 +18,11 @@
 
 package io.mapsmessaging.network.protocol.impl.nmea.types;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class EnumTypeFactory {
 

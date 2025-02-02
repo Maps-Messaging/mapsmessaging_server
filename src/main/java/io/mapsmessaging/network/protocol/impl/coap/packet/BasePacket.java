@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
-import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.EMPTY;
-
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.ListOption;
@@ -27,13 +25,16 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.PathOption;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.Queue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.Queue;
+
+import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.EMPTY;
 
 @ToString
 public class BasePacket implements ServerPacket {

@@ -21,11 +21,12 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
+import lombok.Getter;
+import org.apache.qpid.proton.engine.Sasl;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
-import org.apache.qpid.proton.engine.Sasl;
 
 public class SaslManager {
 

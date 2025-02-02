@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
-
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
@@ -29,8 +27,11 @@ import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.*;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 import io.mapsmessaging.network.protocol.impl.coap.subscriptions.Context;
-import java.io.IOException;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
 
 public class GetListener extends Listener {
 

@@ -23,6 +23,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.websockets.frames.AcceptFrame;
 import io.mapsmessaging.network.protocol.impl.websockets.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.websockets.frames.GetFrame;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

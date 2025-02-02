@@ -18,14 +18,15 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.*;
-
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
-import java.util.Arrays;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
+
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.*;
 
 public class PacketHandler {
 

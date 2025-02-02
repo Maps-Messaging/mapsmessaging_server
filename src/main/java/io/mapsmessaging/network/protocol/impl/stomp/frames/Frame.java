@@ -23,12 +23,13 @@ import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.listener.FrameListener;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import lombok.Getter;
-import lombok.Setter;
 
 public abstract class Frame implements ServerPacket {
 

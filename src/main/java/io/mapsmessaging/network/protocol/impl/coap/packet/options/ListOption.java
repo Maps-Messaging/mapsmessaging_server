@@ -18,9 +18,10 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
 
 public class ListOption extends Option{
 

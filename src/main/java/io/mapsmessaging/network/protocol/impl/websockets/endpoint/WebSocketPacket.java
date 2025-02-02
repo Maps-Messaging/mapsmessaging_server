@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 
 import io.mapsmessaging.network.io.Packet;
+
 import java.io.IOException;
 
 public class WebSocketPacket extends Packet {

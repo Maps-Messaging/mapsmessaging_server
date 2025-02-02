@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
-import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.IPATCH;
-
 import io.mapsmessaging.network.io.Packet;
+
+import static io.mapsmessaging.network.protocol.impl.coap.packet.PacketFactory.IPATCH;
 
 public class IPatch extends BasePacket {
 

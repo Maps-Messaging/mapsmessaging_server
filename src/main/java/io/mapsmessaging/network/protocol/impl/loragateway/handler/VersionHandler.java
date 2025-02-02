@@ -18,12 +18,13 @@
 
 package io.mapsmessaging.network.protocol.impl.loragateway.handler;
 
-import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.CONFIG;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
+
 import java.io.IOException;
+
+import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.CONFIG;
 
 public class VersionHandler implements PacketHandler {
 

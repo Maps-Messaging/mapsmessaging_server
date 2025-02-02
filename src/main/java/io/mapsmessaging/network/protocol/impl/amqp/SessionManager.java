@@ -19,9 +19,10 @@
 package io.mapsmessaging.network.protocol.impl.amqp;
 
 import io.mapsmessaging.api.Session;
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 public class SessionManager {
 

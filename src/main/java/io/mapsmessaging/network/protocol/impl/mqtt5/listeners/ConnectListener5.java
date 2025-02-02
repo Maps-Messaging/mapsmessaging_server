@@ -39,8 +39,9 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.*;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-import java.io.IOException;
+
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
 
 public class ConnectListener5 extends PacketListener5 {
 

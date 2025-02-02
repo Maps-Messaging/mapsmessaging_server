@@ -19,13 +19,14 @@
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
 
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PUSH_DATA;
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
-
 import io.mapsmessaging.network.io.Packet;
+import lombok.Getter;
+
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
-import lombok.Getter;
+
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PUSH_DATA;
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
 
 /**
  * ### 3.2. PUSH_DATA packet ###

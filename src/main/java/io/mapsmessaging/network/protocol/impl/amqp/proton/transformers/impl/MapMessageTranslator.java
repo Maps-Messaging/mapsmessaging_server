@@ -22,14 +22,15 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.message.TypedData.TYPE;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTypes;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class MapMessageTranslator extends BaseMessageTranslator {
 

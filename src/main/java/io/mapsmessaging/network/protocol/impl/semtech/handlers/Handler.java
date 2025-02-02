@@ -24,13 +24,14 @@ import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PullResponse;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
-import java.net.SocketAddress;
-import java.security.SecureRandom;
-import java.util.Random;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.net.SocketAddress;
+import java.security.SecureRandom;
+import java.util.Random;
 
 public abstract class Handler {
 

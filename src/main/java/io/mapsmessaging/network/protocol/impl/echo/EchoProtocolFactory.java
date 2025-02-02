@@ -22,6 +22,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.detection.ScanningByteArrayDetection;
+
 import java.io.IOException;
 
 public class EchoProtocolFactory extends io.mapsmessaging.network.protocol.ProtocolImplFactory {

@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
-
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
@@ -27,12 +25,15 @@ import io.mapsmessaging.network.protocol.impl.semtech.GatewayManager;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.TxAcknowledge;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
 
 public class TxAckHandler extends Handler {
 

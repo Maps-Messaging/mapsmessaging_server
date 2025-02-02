@@ -25,13 +25,14 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.io.impl.udp.UDPFacadeEndPoint;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
+import lombok.Getter;
+
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import javax.security.auth.login.LoginException;
-import lombok.Getter;
 
 public class CoapInterfaceManager implements SelectorCallback {
 

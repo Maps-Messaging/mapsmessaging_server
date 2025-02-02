@@ -22,9 +22,10 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-import java.io.ByteArrayOutputStream;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.io.ByteArrayOutputStream;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718028

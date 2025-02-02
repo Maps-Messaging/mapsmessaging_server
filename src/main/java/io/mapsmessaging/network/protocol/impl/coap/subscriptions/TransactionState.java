@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.coap.subscriptions;
 
 import io.mapsmessaging.api.SubscribedEventManager;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 

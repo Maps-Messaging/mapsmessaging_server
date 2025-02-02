@@ -18,13 +18,14 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PULL_DATA;
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
-
 import io.mapsmessaging.network.io.Packet;
-import java.net.SocketAddress;
 import lombok.Getter;
 import lombok.ToString;
+
+import java.net.SocketAddress;
+
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.PULL_DATA;
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
 
 /**
  * ### 5.2. PULL_DATA packet ###

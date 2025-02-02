@@ -20,10 +20,11 @@ package io.mapsmessaging.network.protocol.impl.websockets.endpoint;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
-import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.io.IOException;
 
 @ToString
 public class WebSocketHeader {

@@ -18,9 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
-import static io.mapsmessaging.network.protocol.impl.coap.packet.Clazz.*;
-
 import lombok.Getter;
+
+import static io.mapsmessaging.network.protocol.impl.coap.packet.Clazz.*;
 
 /*
             +------+------------------------------+-----------+

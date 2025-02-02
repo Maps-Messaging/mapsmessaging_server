@@ -18,12 +18,13 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /*
   | No. | C | U | N | R | Name           | Format | Length | Default  |

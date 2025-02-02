@@ -21,8 +21,9 @@ package io.mapsmessaging.network.protocol.impl.mqtt.packet;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
-import java.util.StringTokenizer;
 import lombok.Getter;
+
+import java.util.StringTokenizer;
 
 public class SubscriptionInfo {
 

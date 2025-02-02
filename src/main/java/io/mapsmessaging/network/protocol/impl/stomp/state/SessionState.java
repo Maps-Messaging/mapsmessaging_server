@@ -31,13 +31,14 @@ import io.mapsmessaging.network.protocol.impl.stomp.StompProtocol;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.CompletionHandler;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import lombok.Getter;
 
 public class SessionState implements CloseHandler, CompletionHandler {
 

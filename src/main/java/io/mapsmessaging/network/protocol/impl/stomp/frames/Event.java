@@ -24,10 +24,11 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
+import lombok.Getter;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
-import lombok.Getter;
 
 public abstract class Event extends Frame {
 

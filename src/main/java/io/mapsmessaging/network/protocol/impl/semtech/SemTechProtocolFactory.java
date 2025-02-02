@@ -23,6 +23,7 @@ import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+
 import java.io.IOException;
 
 public class SemTechProtocolFactory extends ProtocolImplFactory {

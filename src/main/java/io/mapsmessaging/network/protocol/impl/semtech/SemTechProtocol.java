@@ -37,13 +37,14 @@ import io.mapsmessaging.network.protocol.impl.semtech.handlers.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
-import java.util.concurrent.ExecutionException;
-import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.util.concurrent.ExecutionException;
 
 public class SemTechProtocol extends Protocol {
 

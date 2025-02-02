@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.loragateway.handler;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
+
 import java.io.IOException;
 
 public class DataHandler implements PacketHandler {

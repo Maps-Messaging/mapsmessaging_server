@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
-import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
-
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
@@ -27,14 +25,17 @@ import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushAck;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushData;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static io.mapsmessaging.network.protocol.impl.semtech.packet.PacketFactory.VERSION;
 
 public class PushDataHandler extends Handler {
 

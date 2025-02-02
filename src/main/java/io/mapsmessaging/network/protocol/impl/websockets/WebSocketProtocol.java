@@ -25,10 +25,11 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketEndPoint;
-import java.io.IOException;
-import javax.security.auth.Subject;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
 
 public class WebSocketProtocol extends Protocol {
 

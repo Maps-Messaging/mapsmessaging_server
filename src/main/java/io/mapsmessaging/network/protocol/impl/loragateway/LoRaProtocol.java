@@ -18,9 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.loragateway;
 
-import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.DATA;
-import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
-
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -40,6 +37,12 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -52,11 +55,9 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.security.auth.Subject;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.DATA;
+import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.VERSION;
 
 public class LoRaProtocol extends Protocol {
 

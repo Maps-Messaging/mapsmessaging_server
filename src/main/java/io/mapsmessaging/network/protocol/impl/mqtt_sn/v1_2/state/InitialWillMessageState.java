@@ -30,10 +30,11 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillMessage;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class InitialWillMessageState implements State {
 

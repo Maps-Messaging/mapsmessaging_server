@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp;
 
-import static java.nio.channels.SelectionKey.OP_READ;
-
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -42,12 +40,15 @@ import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
 import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import io.mapsmessaging.selector.operators.ParserExecutor;
-import java.io.IOException;
-import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
+
+import static java.nio.channels.SelectionKey.OP_READ;
 
 public class StompProtocol extends Protocol {
 

@@ -19,10 +19,11 @@
 package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
 import io.mapsmessaging.api.MessageEvent;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MessageStateContext {
 

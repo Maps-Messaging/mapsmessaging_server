@@ -19,8 +19,9 @@
 package io.mapsmessaging.network.protocol.impl.semtech.packet;
 
 import io.mapsmessaging.network.io.ServerPacket;
-import java.net.SocketAddress;
 import lombok.Getter;
+
+import java.net.SocketAddress;
 
 public abstract class SemTechPacket implements ServerPacket {
 

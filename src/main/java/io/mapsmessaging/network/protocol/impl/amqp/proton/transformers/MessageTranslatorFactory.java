@@ -19,12 +19,13 @@
 package io.mapsmessaging.network.protocol.impl.amqp.proton.transformers;
 
 import io.mapsmessaging.api.message.Message;
-import java.util.Map;
 import lombok.NonNull;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 public class MessageTranslatorFactory {
 

@@ -18,16 +18,17 @@
 
 package io.mapsmessaging.network.protocol.impl.loragateway;
 
-import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.*;
-
 import com.fazecast.jSerialComm.SerialPortTimeoutException;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.StreamHandler;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.*;
 
 public class LoRaStreamHandler implements StreamHandler {
 

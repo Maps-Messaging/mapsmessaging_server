@@ -19,9 +19,6 @@
 package io.mapsmessaging.network.protocol.impl.coap.listeners;
 
 
-import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
-
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.DestinationType;
@@ -34,11 +31,15 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import static io.mapsmessaging.logging.ServerLogMessages.COAP_FAILED_TO_PROCESS;
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.*;
 
 public abstract class PublishListener extends  Listener {
 

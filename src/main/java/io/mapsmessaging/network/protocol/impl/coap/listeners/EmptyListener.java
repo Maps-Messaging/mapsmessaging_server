@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.coap.listeners;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Empty;
+
 import java.io.IOException;
 
 public class EmptyListener extends Listener {

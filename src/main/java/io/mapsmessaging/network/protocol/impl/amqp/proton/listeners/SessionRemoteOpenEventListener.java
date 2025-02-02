@@ -20,14 +20,15 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
-import java.io.IOException;
-import javax.security.auth.login.LoginException;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.EventType;
 import org.apache.qpid.proton.engine.Session;
+
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
 
 public class SessionRemoteOpenEventListener extends BaseEventListener {
 

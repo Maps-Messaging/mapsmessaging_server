@@ -22,10 +22,11 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
-import java.util.concurrent.TimeUnit;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Header;
+
+import java.util.concurrent.TimeUnit;
 
 public class HeaderEncoder {
 

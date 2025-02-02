@@ -18,11 +18,12 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
+import org.apache.qpid.proton.engine.Event;
+import org.apache.qpid.proton.engine.EventType;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.qpid.proton.engine.Event;
-import org.apache.qpid.proton.engine.EventType;
 
 public class LinkedEventListener implements EventListener {
 

@@ -23,6 +23,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.NoOpDetection;
+
 import java.io.IOException;
 
 public class LocalLoopProtocolFactory extends ProtocolImplFactory {

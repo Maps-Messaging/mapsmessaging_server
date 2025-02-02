@@ -19,9 +19,10 @@
 package io.mapsmessaging.network.protocol.impl.amqp.proton;
 
 import io.mapsmessaging.api.Session;
+import org.apache.qpid.proton.engine.Sender;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.apache.qpid.proton.engine.Sender;
 
 public class SubscriptionManager {
 

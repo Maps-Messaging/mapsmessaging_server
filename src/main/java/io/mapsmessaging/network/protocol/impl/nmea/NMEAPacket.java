@@ -20,12 +20,13 @@ package io.mapsmessaging.network.protocol.impl.nmea;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import lombok.Getter;
 
 public class NMEAPacket {
 

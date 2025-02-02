@@ -18,9 +18,10 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 
-import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.io.IOException;
 
 public class BinaryOption extends Option {
 

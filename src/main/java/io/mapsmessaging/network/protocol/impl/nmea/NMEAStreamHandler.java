@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.nmea;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.StreamHandler;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

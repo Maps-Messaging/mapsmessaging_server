@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.coap;
 
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
+
 import java.util.ArrayList;
 import java.util.List;
 

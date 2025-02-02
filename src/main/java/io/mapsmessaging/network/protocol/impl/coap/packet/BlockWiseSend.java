@@ -18,12 +18,12 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet;
 
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
-
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.SendController;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Block;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
+
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.BLOCK2;
 
 public class BlockWiseSend extends BasePacket {
 

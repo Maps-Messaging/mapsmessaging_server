@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;

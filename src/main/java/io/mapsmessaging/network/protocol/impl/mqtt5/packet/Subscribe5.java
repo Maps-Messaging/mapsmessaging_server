@@ -28,6 +28,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.SubscriptionInfo;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
+
 import java.util.ArrayList;
 import java.util.List;
 

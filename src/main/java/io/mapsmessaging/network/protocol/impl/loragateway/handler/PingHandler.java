@@ -18,13 +18,14 @@
 
 package io.mapsmessaging.network.protocol.impl.loragateway.handler;
 
-import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.*;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
+
 import java.io.IOException;
+
+import static io.mapsmessaging.network.protocol.impl.loragateway.Constants.*;
 
 public class PingHandler implements PacketHandler {
 

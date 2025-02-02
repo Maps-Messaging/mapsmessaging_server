@@ -18,9 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_ADVERTISER_SENT_PACKET;
-import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_ADVERTISE_PACKET_EXCEPTION;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.EndPoint;
@@ -28,12 +25,16 @@ import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Advertise;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_ADVERTISER_SENT_PACKET;
+import static io.mapsmessaging.logging.ServerLogMessages.MQTT_SN_ADVERTISE_PACKET_EXCEPTION;
 
 public class AdvertiserTask implements Runnable {
 

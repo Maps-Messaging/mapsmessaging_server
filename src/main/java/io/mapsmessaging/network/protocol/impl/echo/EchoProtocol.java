@@ -28,14 +28,15 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.Protocol;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import javax.security.auth.Subject;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 public class EchoProtocol extends Protocol implements Selectable {
 

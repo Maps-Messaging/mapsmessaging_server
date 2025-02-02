@@ -18,16 +18,17 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.subscriptions;
 
-import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE;
-
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Observe;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Option;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.OptionSet;
-import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import static io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants.OBSERVE;
 
 public class Context {
 

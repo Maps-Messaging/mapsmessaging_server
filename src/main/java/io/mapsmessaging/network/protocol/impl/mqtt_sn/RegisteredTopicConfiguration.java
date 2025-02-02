@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 
 import io.mapsmessaging.config.protocol.PredefinedTopics;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.*;

@@ -25,11 +25,12 @@ import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.SubscriptionManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslatorFactory;
-import java.io.IOException;
 import org.apache.qpid.proton.codec.DroppingWritableBuffer;
 import org.apache.qpid.proton.codec.WritableBuffer;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
+
+import java.io.IOException;
 
 public class SendMessageTask extends PacketTask {
 
