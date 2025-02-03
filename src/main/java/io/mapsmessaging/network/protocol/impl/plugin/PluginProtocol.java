@@ -69,6 +69,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
   public void connect(String sessionId, String username, String password) throws IOException {
     session = serverApi.createSession(this, sessionId, username, password);
     this.sessionId = sessionId;
+    plugin.initializePlugin();
   }
 
   @Override
