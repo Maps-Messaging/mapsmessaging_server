@@ -1372,11 +1372,6 @@
       <version>3.13.0</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.ibm.mq</groupId>
-      <artifactId>com.ibm.mq.allclient</artifactId>
-      <version>9.4.1.1</version>
-    </dependency>
   </dependencies>
 
 </project>
