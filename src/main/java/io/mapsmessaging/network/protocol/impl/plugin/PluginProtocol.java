@@ -104,7 +104,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
     nameMapping.put(resource, mappedResource);
-    plugin.registerLocalLink(resource);
+    plugin.registerLocalLink(mappedResource);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -114,7 +114,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
   @Override
   public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) throws IOException {
     nameMapping.put(resource, mappedResource);
-    if(!plugin.supportsRemoteFiltering()){
+    if(!plugin.supportsRemoteFiltering() && parser != null){
       parsers.put(resource, parser);
     }
     plugin.registerRemoteLink(resource, plugin.supportsRemoteFiltering()? parser.toString(): null );

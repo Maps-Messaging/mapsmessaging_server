@@ -10,5 +10,5 @@ import java.util.Map;
 public class PluginConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Map of config entries")
-  protected Map<String, String> config;
+  protected Map<String, Object> config;
 }

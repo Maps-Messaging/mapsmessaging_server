@@ -10,15 +10,13 @@ import java.util.Map;
 
 public class PluginConfig extends PluginConfigDTO implements Config {
 
-  public PluginConfig(ConfigurationProperties config) {
-    setType(config.getProperty("protocol"));
-    ProtocolConfigFactory.unpack(config, this);
-    Object obj =  config.get("config");
+  public PluginConfig(ConfigurationProperties configuration) {
+    setType(configuration.getProperty("protocol"));
+    ProtocolConfigFactory.unpack(configuration, this);
+    Object obj =  configuration.get("config");
     if(obj instanceof ConfigurationProperties){
-      super.config = new LinkedHashMap<String, String>();
-      for(Map.Entry<String, Object> entry : ((ConfigurationProperties)obj).entrySet()){
-        super.config.put(entry.getKey(), String.valueOf(entry.getValue()));
-      }
+      config = new LinkedHashMap<>();
+      config.putAll(((ConfigurationProperties)obj).getMap());
     }
   }
 

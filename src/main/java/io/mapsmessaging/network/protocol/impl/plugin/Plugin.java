@@ -19,7 +19,7 @@ public abstract class Plugin {
   protected Plugin() {
   }
 
-  public final void initializePlugin() {
+  public final void initializePlugin() throws IOException {
     if (!initialized) {
       initialise();
       initialized = true;
@@ -41,7 +41,7 @@ public abstract class Plugin {
     return pluginProtocol.getSessionId();
   }
 
-  public abstract void initialise();
+  public abstract void initialise() throws IOException;
 
   public abstract @NonNull @NotNull String getName();
 

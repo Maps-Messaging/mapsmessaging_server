@@ -18,6 +18,7 @@ public class PluginEndPointConnectionFactory implements EndPointConnectionFactor
                           List<String> jmxPath) throws IOException {
     EndPoint endPoint = new PluginEndPoint(generateID(), endPointServerStatus);
     connectedCallback.connected(endPoint);
+    endPoint.getServer().handleNewEndPoint(endPoint);
     return endPoint;
   }
 
