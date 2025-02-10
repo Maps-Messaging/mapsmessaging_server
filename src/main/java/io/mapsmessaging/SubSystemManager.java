@@ -39,6 +39,7 @@ import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.network.discovery.ServerConnectionManager;
 import io.mapsmessaging.network.monitor.NetworkInterfaceMonitor;
+import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.rest.RestApiServerManager;
@@ -50,6 +51,7 @@ import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SubSystemManager {
   private final Logger logger = LoggerFactory.getLogger(SubSystemManager.class);
@@ -69,6 +71,7 @@ public class SubSystemManager {
   }
 
   public void start() throws IOException{
+    loadProtocolImplementations();
     createAgentStartStopList();
     List<AgentOrder> startList = new ArrayList<>(agentMap.values());
     startList.sort(Comparator.comparingInt(AgentOrder::getStartOrder));
@@ -79,6 +82,21 @@ public class SubSystemManager {
       logger.log(MESSAGE_DAEMON_AGENT_STARTED, agent.getAgent().getName(), (System.currentTimeMillis() - start));
     }
     logServiceManagers();
+  }
+
+  private void loadProtocolImplementations() {
+    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
+    ServiceLoader<ProtocolImplFactory> protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
+    List<ProtocolImplFactory> service = new CopyOnWriteArrayList<>();
+    for (Iterator<ProtocolImplFactory> iterator = protocolServiceLoader.iterator(); iterator.hasNext(); ) {
+      try {
+        ProtocolImplFactory parser = iterator.next();
+        service.add(parser);
+      } catch (ServiceConfigurationError e) {
+        logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
+      }
+    }
+    ProtocolFactory.setProtocolServiceList(service);
   }
 
   public void stop(){
@@ -204,21 +222,10 @@ public class SubSystemManager {
         logServices(((ServiceManager) agentEntry.getValue().getAgent()).getServices());
       }
     }
-
-    logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE_LOADED, "Protocol Manager");
-    ServiceLoader<ProtocolImplFactory> protocolServiceLoader = ServiceLoader.load(ProtocolImplFactory.class);
-    List<Service> service = new ArrayList<>();
-    for (Iterator<ProtocolImplFactory> iterator = protocolServiceLoader.iterator(); iterator.hasNext(); ) {
-      try {
-        ProtocolImplFactory parser = iterator.next();
-        service.add(parser);
-      } catch (ServiceConfigurationError e) {
-        logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
-      }
-    }
-    logServices(service.listIterator());
+    logServices(ProtocolFactory.getProtocolServiceList().stream().map(p -> (Service) p).iterator());
     logServices(TransformationManager.getInstance().getServices());
     logServices(io.mapsmessaging.engine.transformers.TransformerManager.getInstance().getServices());
+
   }
 
   private void logServices(Iterator<Service> services) {
@@ -227,6 +234,7 @@ public class SubSystemManager {
       logger.log(ServerLogMessages.MESSAGE_DAEMON_SERVICE, service.getName(), service.getDescription());
     }
   }
+
 
   public List<SubSystemStatusDTO> getSubSystemStatus() {
     List<SubSystemStatusDTO> list = new ArrayList<>();

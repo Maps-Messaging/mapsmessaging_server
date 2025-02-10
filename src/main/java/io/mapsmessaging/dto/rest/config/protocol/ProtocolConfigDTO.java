@@ -39,7 +39,8 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = NmeaConfigDTO.class, name = "nmea"),
     @JsonSubTypes.Type(value = SemtechConfigDTO.class, name = "semtech"),
     @JsonSubTypes.Type(value = StompConfigDTO.class, name = "stomp"),
-    @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "websocket")
+    @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "websocket"),
+    @JsonSubTypes.Type(value = PluginConfigDTO.class, name = "plugin")
 })
 @Schema(
     description = "Abstract base class for all protocol configurations",
@@ -54,7 +55,9 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "nmea", schema = NmeaConfigDTO.class),
         @DiscriminatorMapping(value = "semtech", schema = SemtechConfigDTO.class),
         @DiscriminatorMapping(value = "stomp", schema = StompConfigDTO.class),
-        @DiscriminatorMapping(value = "websocket", schema = WebSocketConfigDTO.class)
+        @DiscriminatorMapping(value = "websocket", schema = WebSocketConfigDTO.class),
+        @DiscriminatorMapping(value = "plugin", schema = PluginConfigDTO.class)
+
     },
     requiredProperties = {"type"}
 )
@@ -64,7 +67,7 @@ import lombok.NoArgsConstructor;
 public abstract class ProtocolConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the protocol configuration", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "nmea", "semtech", "stomp", "websocket"
+      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "nmea", "semtech", "stomp", "websocket", "plugin"
   })
   protected String type;
 

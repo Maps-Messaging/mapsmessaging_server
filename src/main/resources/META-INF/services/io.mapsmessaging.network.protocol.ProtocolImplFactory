@@ -59,3 +59,4 @@ io.mapsmessaging.network.protocol.impl.websockets.WebSocketProtocolFactory
 # Known Plugins
 #
 io.mapsmessaging.network.protocol.impl.apache_pulsar.PulsarProtocolFactory
+io.mapsmessaging.network.protocol.impl.ibm_mq.MqProtocolFactory

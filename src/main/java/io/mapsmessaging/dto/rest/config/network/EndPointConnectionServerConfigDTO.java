@@ -40,4 +40,7 @@ public class EndPointConnectionServerConfigDTO extends EndPointServerConfigDTO {
 
   @Schema(description = "List of link configurations")
   protected List<LinkConfigDTO> linkConfigs;
+
+  @Schema(description = "Is this a 3rd party plugin connection")
+  protected boolean pluginConnection;
 }

@@ -35,6 +35,7 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
     EndPointConfigFactory.unpack(props, this);
     this.authConfig = new AuthConfig(props);
     this.linkTransformation = props.getProperty("transformation", "");
+    this.pluginConnection = props.getBooleanProperty("plugin", false);
 
     linkConfigs = new ArrayList<>();
     Object obj = props.get("links");
@@ -52,6 +53,7 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
     ConfigurationProperties config = new ConfigurationProperties();
     EndPointConfigFactory.pack(config, this);
     config.put("transformation", linkTransformation);
+    config.put("plugin", pluginConnection);
     List<ConfigurationProperties> linkProperties = new ArrayList<>();
     for (LinkConfigDTO linkConfig : linkConfigs) {
       linkProperties.add(((Config)linkConfig).toConfigurationProperties());
@@ -77,6 +79,11 @@ public class EndPointConnectionServerConfig extends EndPointConnectionServerConf
         }
 
         if (!this.authConfig.update(config.getAuthConfig())) {
+          hasChanged = true;
+        }
+
+        if (this.pluginConnection != config.pluginConnection) {
+          pluginConnection = config.pluginConnection;
           hasChanged = true;
         }
 

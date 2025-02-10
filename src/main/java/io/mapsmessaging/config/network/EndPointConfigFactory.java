@@ -190,7 +190,7 @@ public class EndPointConfigFactory {
         protocol.equalsIgnoreCase("wss")){
       return new WebSocketConfig(config);
     }
-    return null;
+    return new PluginConfig(config);
   }
 
   private EndPointConfigFactory() {}

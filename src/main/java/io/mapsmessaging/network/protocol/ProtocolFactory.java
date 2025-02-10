@@ -21,6 +21,9 @@ package io.mapsmessaging.network.protocol;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,13 +33,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ProtocolFactory implements ServiceManager {
 
-  private final List<ProtocolImplFactory> protocolServiceList;
+  @Getter
+  @Setter
+  private static List<ProtocolImplFactory> protocolServiceList;
   private final String protocols;
 
   public ProtocolFactory(String protocols) {
-    ServiceLoader<ProtocolImplFactory> protocolServiceLoad = ServiceLoader.load(ProtocolImplFactory.class);
-    protocolServiceList = new CopyOnWriteArrayList<>();
-    protocolServiceLoad.forEach(protocolServiceList::add);
     this.protocols = protocols;
   }
 

@@ -32,6 +32,7 @@ import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
+import io.mapsmessaging.network.protocol.impl.plugin.PluginEndPointConnectionFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -62,7 +63,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
     endPointLoad.forEach(endPointConnections::add);
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
     int poolSize = 1;
-    if(!config.getEndPointServerConfigList().isEmpty()){
+    if(!config.getEndPointServerConfigList().isEmpty() && config.getEndPointServerConfigList().get(0).getEndPointConfig() != null){
       poolSize = config.getEndPointServerConfigList().get(0).getEndPointConfig().getSelectorThreadCount();
     }
     selectorLoadManager = new SelectorLoadManager(poolSize, "Network Interconnection" );
@@ -90,14 +91,25 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
   }
 
   private void processEndPoint(EndPointURL endPointURL, EndPointConnectionServerConfig properties){
-    for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
-      if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
-        EndPointConnectionHostJMX hostJMXBean = null;
-        List<String> jmxList = MessageDaemon.getInstance().getTypePath();
-        if (!jmxList.isEmpty()) {
-          hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
+    if(properties.isPluginConnection()){
+      EndPointConnectionHostJMX hostJMXBean = null;
+      List<String> jmxList = MessageDaemon.getInstance().getTypePath();
+      if (!jmxList.isEmpty()) {
+        hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
+      }
+      PluginEndPointConnectionFactory pluginEndPointConnectionFactory = new PluginEndPointConnectionFactory();
+      endPointConnectionList.add(new EndPointConnection(endPointURL, properties, pluginEndPointConnectionFactory, selectorLoadManager, hostJMXBean));
+    }
+    else {
+      for (EndPointConnectionFactory endPointConnectionFactory : endPointConnections) {
+        if (endPointConnectionFactory.getName().equals(endPointURL.getProtocol())) {
+          EndPointConnectionHostJMX hostJMXBean = null;
+          List<String> jmxList = MessageDaemon.getInstance().getTypePath();
+          if (!jmxList.isEmpty()) {
+            hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
+          }
+          endPointConnectionList.add(new EndPointConnection(endPointURL, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
         }
-        endPointConnectionList.add(new EndPointConnection(endPointURL, properties, endPointConnectionFactory, selectorLoadManager, hostJMXBean));
       }
     }
   }

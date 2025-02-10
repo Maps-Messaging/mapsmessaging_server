@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.network.protocol.impl.plugin;
 
+import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.features.DestinationType;
@@ -50,6 +51,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
   private final Map<String, String> nameMapping;
   private final Map<String, ParserExecutor> parsers;
 
+  private Principal principal;
   private final ServerApi serverApi;
   protected final EndPointURL endPointURL;
   private final Plugin plugin;
@@ -67,6 +69,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
   }
 
   public void connect(String sessionId, String username, String password) throws IOException {
+    principal = new UserPrincipal(username);
     session = serverApi.createSession(this, sessionId, username, password);
     this.sessionId = sessionId;
     plugin.initializePlugin();
@@ -161,7 +164,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
 
   @Override
   public Principal getPrincipal() {
-    return session.getSubject().getPrincipals().iterator().next();
+    return principal;
   }
 
   @Override

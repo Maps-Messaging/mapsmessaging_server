@@ -45,6 +45,9 @@ public class ProtocolJMX implements HealthMonitor {
   //<editor-fold desc="Life cycle functions">
   public ProtocolJMX(List<String> parent, Protocol protocol) {
     this.protocol = protocol;
+    if(parent == null || parent.isEmpty()){
+      parent = new ArrayList<>();
+    }
     List<String> list = new ArrayList<>(parent);
     list.add("Protocol=" + protocol.getName());
     mbean = JMXManager.getInstance().register(this, list);
