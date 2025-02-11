@@ -1,12 +1,12 @@
 package io.mapsmessaging.network.protocol.impl.plugin;
 
+import io.mapsmessaging.api.message.Message;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -49,14 +49,14 @@ public abstract class Plugin {
 
   public abstract boolean supportsRemoteFiltering();
 
-  public abstract void outbound(@NonNull @NotNull String destinationName, @NonNull @NotNull byte[] payload, @Nullable Map<String, Object> map);
+  public abstract void outbound(@NonNull @NotNull String destinationName, @NonNull @NotNull Message message);
 
-  protected void inbound(@NonNull @NotNull String destinationName, @NonNull @NotNull byte[] payload, @Nullable Map<String, Object> map) throws IOException {
+  protected void inbound(@NonNull @NotNull String destinationName,  @NonNull @NotNull Message message) throws IOException {
     if (pluginProtocol == null) {
       throw new IllegalStateException("PluginProtocol is not set");
     }
     try {
-      pluginProtocol.saveMessage(destinationName, payload, map);
+      pluginProtocol.saveMessage(destinationName, message);
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       throw new IOException("Error processing inbound message", e);
     }

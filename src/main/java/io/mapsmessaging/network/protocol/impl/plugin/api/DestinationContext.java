@@ -1,14 +1,11 @@
 package io.mapsmessaging.network.protocol.impl.plugin.api;
 
 import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class DestinationContext {
 
@@ -18,19 +15,9 @@ public class DestinationContext {
     this.destination = destination;
   }
 
-  public int writeEvent(byte[] payload, Map<String, Object> map, ParserExecutor parser) throws IOException {
-    Map<String, TypedData> dataMap = new LinkedHashMap<>();
-    for(Map.Entry<String, Object> entry:map.entrySet()) {
-      dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
-    }
-
-    MessageBuilder mb = new MessageBuilder();
-    mb.setOpaqueData(payload)
-        .setDataMap(dataMap)
-        .setCreation(System.currentTimeMillis());
-    Message msg = mb.build();
+  public int writeEvent(@NotNull Message msg, ParserExecutor parser) throws IOException {
     if(parser == null || parser.evaluate(msg)) {
-      return destination.storeMessage(mb.build());
+      return destination.storeMessage(msg);
     }
     return 0;
   }

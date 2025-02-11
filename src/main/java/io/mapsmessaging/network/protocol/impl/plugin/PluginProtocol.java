@@ -19,9 +19,11 @@
 package io.mapsmessaging.network.protocol.impl.plugin;
 
 import com.sun.security.auth.UserPrincipal;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -33,6 +35,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.plugin.api.DestinationContext;
 import io.mapsmessaging.network.protocol.impl.plugin.api.ServerApi;
 import io.mapsmessaging.network.protocol.impl.plugin.api.SessionContext;
+import io.mapsmessaging.network.protocol.transformation.internal.MetaRouteHandler;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
@@ -96,7 +99,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
     }
     String lookup = nameMapping.get(messageEvent.getDestinationName());
     if(lookup != null) {
-      plugin.outbound(lookup, messageEvent.getMessage().getOpaqueData(), map);
+      plugin.outbound(lookup, messageEvent.getMessage());
     }
     messageEvent.getCompletionTask().run();
   }
@@ -120,14 +123,19 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
     plugin.registerRemoteLink(resource, plugin.supportsRemoteFiltering()? parser.toString(): null );
   }
 
-  protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull byte[] payload, @Nullable Map<String, Object> map) throws ExecutionException, InterruptedException, TimeoutException, IOException {
+  protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull Message message) throws ExecutionException, InterruptedException, TimeoutException, IOException {
     String lookup = nameMapping.get(destinationName);
     if(lookup != null) {
       DestinationContext destination = session.getDestination(lookup, DestinationType.TOPIC);
       if (destination != null) {
         ParserExecutor parser = parsers.get(destinationName);
-
-        return destination.writeEvent(payload, map != null?map:new LinkedHashMap<>(), parser);
+        Map<String, String> meta = message.getMeta() != null ? message.getMeta() : new LinkedHashMap<>();
+        String host = plugin.getPluginProtocol().endPointURL.getHost();
+        String id = plugin.getName();
+        meta = MetaRouteHandler.updateRoute(host, id, meta, System.currentTimeMillis());
+        MessageBuilder messageBuilder = new MessageBuilder(message);
+        messageBuilder.setMeta(meta);
+        return destination.writeEvent(messageBuilder.build(), parser);
       }
     }
     return 0;

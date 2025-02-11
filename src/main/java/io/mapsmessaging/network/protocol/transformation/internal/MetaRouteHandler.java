@@ -25,6 +25,10 @@ import java.util.Map;
 public class MetaRouteHandler {
 
   public static Map<String, String> updateRoute(Map<String, String> meta, long creationTime){
+    return updateRoute(MessageDaemon.getInstance().getHostname(), MessageDaemon.getInstance().getId(), meta, creationTime);
+  }
+
+  public static Map<String, String> updateRoute( String remoteHost, String remoteId,  Map<String, String> meta,long creationTime){
     if(meta == null){
       meta = new LinkedHashMap<>();
     }
@@ -33,11 +37,11 @@ public class MetaRouteHandler {
     if(route == null){
       route = "[]";
     }
-    tmp.put("route", updateRoute(route, creationTime));
+    tmp.put("route", updateRoute(remoteHost, remoteId, route, creationTime));
     return tmp;
   }
 
-  private static String updateRoute(String route, long creation){
+  private static String updateRoute( String hostname, String server, String route, long creation){
     if(route.startsWith("[")){
       route = route.substring(1, route.length()-1);
     }
@@ -49,8 +53,6 @@ public class MetaRouteHandler {
     int newLength = route.replace("{", "").length();
     int count = (originalLength - newLength)+1;
 
-    String server = MessageDaemon.getInstance().getId();
-    String hostname = MessageDaemon.getInstance().getHostname();
     long age = System.currentTimeMillis() - creation;
 
     String entry =
