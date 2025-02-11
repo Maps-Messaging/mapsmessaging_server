@@ -93,10 +93,6 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
 
   @Override
   public void sendMessage(@org.jetbrains.annotations.NotNull @NonNull MessageEvent messageEvent) {
-    Map<String, Object> map = new LinkedHashMap<>();
-    for(Map.Entry<String, TypedData> entry: messageEvent.getMessage().getDataMap().entrySet()) {
-      map.put(entry.getKey(), entry.getValue().getData());
-    }
     String lookup = nameMapping.get(messageEvent.getDestinationName());
     if(lookup != null) {
       plugin.outbound(lookup, messageEvent.getMessage());
