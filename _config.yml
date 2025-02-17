@@ -4,5 +4,5 @@ theme: jekyll-theme-cayman
 analytics:
   provider          : "google-gtag"
   google:
-    measurement_id       : "G-V96WCNQ4DV"
+    measurement_id       : "GTM-WW5J7QK7"
     anonymize_ip         : true
