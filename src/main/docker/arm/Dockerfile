@@ -22,7 +22,7 @@
 # Get Alpine linux image and add the Zulu JDK 13, as per
 # https://github.com/zulu-openjdk/zulu-openjdk/blob/master/alpine/13.0.1-13.28/Dockerfile
 #----------------------------------------------------------------------------------------------
-FROM arm64v8/alpine:latest
+FROM arm64v8/alpine:3.21.3
 
 #----------------------------------------------------------------------------------------------
 # setup env variables
