@@ -6,11 +6,10 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.PluginConfigDTO;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
-public class PluginConfig extends PluginConfigDTO implements Config {
+public class ExtensionConfig extends PluginConfigDTO implements Config {
 
-  public PluginConfig(ConfigurationProperties configuration) {
+  public ExtensionConfig(ConfigurationProperties configuration) {
     setType(configuration.getProperty("protocol"));
     ProtocolConfigFactory.unpack(configuration, this);
     Object obj =  configuration.get("config");
@@ -24,8 +23,8 @@ public class PluginConfig extends PluginConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof PluginConfig) {
-      PluginConfig newConfig = (PluginConfig) config;
+    if (config instanceof ExtensionConfig) {
+      ExtensionConfig newConfig = (ExtensionConfig) config;
       if (ProtocolConfigFactory.update(this, newConfig)) {
         hasChanged = true;
       }
@@ -41,5 +40,5 @@ public class PluginConfig extends PluginConfigDTO implements Config {
     return config;
   }
 
-  public PluginConfig(){}
+  public ExtensionConfig(){}
 }
