@@ -1,4 +1,4 @@
-package io.mapsmessaging.network.protocol.impl.plugin.api;
+package io.mapsmessaging.network.protocol.impl.extension.api;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
@@ -7,7 +7,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
-import io.mapsmessaging.network.protocol.impl.plugin.PluginProtocol;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionProtocol;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,12 +26,12 @@ public class SessionContext {
   private final Session session;
   private final Map<String, DestinationContext> destinations;
 
-  protected SessionContext(@NonNull @NotNull PluginProtocol pluginProtocol, @NonNull @NotNull String sessionId, @Nullable String username, @Nullable String password) throws LoginException, IOException {
-    SessionContextBuilder scb = new SessionContextBuilder(sessionId, pluginProtocol);
+  protected SessionContext(@NonNull @NotNull ExtensionProtocol extensionProtocol, @NonNull @NotNull String sessionId, @Nullable String username, @Nullable String password) throws LoginException, IOException {
+    SessionContextBuilder scb = new SessionContextBuilder(sessionId, extensionProtocol);
     scb.setUsername(username != null ? username : "");
     scb.setPassword(password != null ? password.toCharArray() : new char[0]);
     scb.setPersistentSession(true);
-    session = SessionManager.getInstance().create(scb.build(), pluginProtocol);
+    session = SessionManager.getInstance().create(scb.build(), extensionProtocol);
     destinations = new ConcurrentHashMap<>();
   }
 

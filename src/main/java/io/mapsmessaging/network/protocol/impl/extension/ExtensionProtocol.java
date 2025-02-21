@@ -16,7 +16,7 @@
  *
  */
 
-package io.mapsmessaging.network.protocol.impl.plugin;
+package io.mapsmessaging.network.protocol.impl.extension;
 
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.api.MessageBuilder;
@@ -24,7 +24,6 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
@@ -32,9 +31,9 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.plugin.api.DestinationContext;
-import io.mapsmessaging.network.protocol.impl.plugin.api.ServerApi;
-import io.mapsmessaging.network.protocol.impl.plugin.api.SessionContext;
+import io.mapsmessaging.network.protocol.impl.extension.api.DestinationContext;
+import io.mapsmessaging.network.protocol.impl.extension.api.ServerApi;
+import io.mapsmessaging.network.protocol.impl.extension.api.SessionContext;
 import io.mapsmessaging.network.protocol.transformation.internal.MetaRouteHandler;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import jakarta.annotation.Nullable;
@@ -50,32 +49,32 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-public class PluginProtocol extends Protocol implements MessageListener, ClientConnection {
+public class ExtensionProtocol extends Protocol implements MessageListener, ClientConnection {
   private final Map<String, String> nameMapping;
   private final Map<String, ParserExecutor> parsers;
 
   private Principal principal;
   private final ServerApi serverApi;
   protected final EndPointURL endPointURL;
-  private final Plugin plugin;
+  private final Extension extension;
   private SessionContext session;
   private String sessionId;
 
-  public PluginProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull Plugin plugin) {
+  public ExtensionProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull Extension extension) {
     super(endPoint);
     endPointURL = new EndPointURL(endPoint.getConfig().getUrl());
-    this.plugin = plugin;
+    this.extension = extension;
     serverApi = new ServerApi();
     nameMapping = new ConcurrentHashMap<>();
     parsers = new ConcurrentHashMap<>();
-    plugin.setPluginProtocol(this);
+    extension.setExtensionProtocol(this);
   }
 
   public void connect(String sessionId, String username, String password) throws IOException {
     principal = new UserPrincipal(username);
     session = serverApi.createSession(this, sessionId, username, password);
     this.sessionId = sessionId;
-    plugin.initializePlugin();
+    extension.initializeExtension();
   }
 
   @Override
@@ -88,14 +87,14 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
 
   @Override
   public void close() throws IOException {
-    plugin.close();
+    extension.close();
   }
 
   @Override
   public void sendMessage(@org.jetbrains.annotations.NotNull @NonNull MessageEvent messageEvent) {
     String lookup = nameMapping.get(messageEvent.getDestinationName());
     if(lookup != null) {
-      plugin.outbound(lookup, messageEvent.getMessage());
+      extension.outbound(lookup, messageEvent.getMessage());
     }
     messageEvent.getCompletionTask().run();
   }
@@ -103,7 +102,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
   @Override
   public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, String selector, @Nullable Transformer transformer) throws IOException {
     nameMapping.put(resource, mappedResource);
-    plugin.registerLocalLink(mappedResource);
+    extension.registerLocalLink(mappedResource);
     if(transformer != null) {
       destinationTransformerMap.put(resource, transformer);
     }
@@ -113,10 +112,10 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
   @Override
   public void subscribeRemote(@NonNull @org.jetbrains.annotations.NotNull String resource, @NonNull @org.jetbrains.annotations.NotNull String mappedResource, @Nullable ParserExecutor parser, @Nullable Transformer transformer) throws IOException {
     nameMapping.put(resource, mappedResource);
-    if(!plugin.supportsRemoteFiltering() && parser != null){
+    if(!extension.supportsRemoteFiltering() && parser != null){
       parsers.put(resource, parser);
     }
-    plugin.registerRemoteLink(resource, plugin.supportsRemoteFiltering()? parser.toString(): null );
+    extension.registerRemoteLink(resource, extension.supportsRemoteFiltering()? parser.toString(): null );
   }
 
   protected int saveMessage(@NonNull @NotNull String destinationName, @NotNull Message message) throws ExecutionException, InterruptedException, TimeoutException, IOException {
@@ -126,8 +125,8 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
       if (destination != null) {
         ParserExecutor parser = parsers.get(destinationName);
         Map<String, String> meta = message.getMeta() != null ? message.getMeta() : new LinkedHashMap<>();
-        String host = plugin.getPluginProtocol().endPointURL.getHost();
-        String id = plugin.getName();
+        String host = extension.getExtensionProtocol().endPointURL.getHost();
+        String id = extension.getName();
         meta = MetaRouteHandler.updateRoute(host, id, meta, System.currentTimeMillis());
         MessageBuilder messageBuilder = new MessageBuilder(message);
         messageBuilder.setMeta(meta);
@@ -142,7 +141,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
     ProtocolInformationDTO dto = new ProtocolInformationDTO();
     dto.setSessionId(sessionId);
     dto.setMessageTransformationName("");
-    dto.setType(plugin.getName());
+    dto.setType(extension.getName());
     return dto;
   }
 
@@ -163,7 +162,7 @@ public class PluginProtocol extends Protocol implements MessageListener, ClientC
 
   @Override
   public String getVersion() {
-    return plugin.getVersion();
+    return extension.getVersion();
   }
 
   @Override

@@ -1,4 +1,4 @@
-package io.mapsmessaging.network.protocol.impl.plugin;
+package io.mapsmessaging.network.protocol.impl.extension;
 
 import io.mapsmessaging.api.message.Message;
 import jakarta.validation.constraints.NotNull;
@@ -11,34 +11,34 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 @Getter
-public abstract class Plugin {
+public abstract class Extension {
 
-  private PluginProtocol pluginProtocol;
+  private ExtensionProtocol extensionProtocol;
   private boolean initialized = false;
 
-  protected Plugin() {
+  protected Extension() {
   }
 
-  public final void initializePlugin() throws IOException {
+  public final void initializeExtension() throws IOException {
     if (!initialized) {
       initialise();
       initialized = true;
     } else {
-      throw new IllegalStateException("Plugin is already initialized");
+      throw new IllegalStateException("Extension is already initialized");
     }
   }
 
   public void close() throws IOException {
-    if (pluginProtocol != null) {
-      pluginProtocol.close();
+    if (extensionProtocol != null) {
+      extensionProtocol.close();
     }
   }
 
   public String getSessionId() {
-    if (pluginProtocol == null) {
-      throw new IllegalStateException("PluginProtocol is not set");
+    if (extensionProtocol == null) {
+      throw new IllegalStateException("ExtensionProtocol is not set");
     }
-    return pluginProtocol.getSessionId();
+    return extensionProtocol.getSessionId();
   }
 
   public abstract void initialise() throws IOException;
@@ -52,11 +52,11 @@ public abstract class Plugin {
   public abstract void outbound(@NonNull @NotNull String destinationName, @NonNull @NotNull Message message);
 
   protected void inbound(@NonNull @NotNull String destinationName,  @NonNull @NotNull Message message) throws IOException {
-    if (pluginProtocol == null) {
-      throw new IllegalStateException("PluginProtocol is not set");
+    if (extensionProtocol == null) {
+      throw new IllegalStateException("ExtensionProtocol is not set");
     }
     try {
-      pluginProtocol.saveMessage(destinationName, message);
+      extensionProtocol.saveMessage(destinationName, message);
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       throw new IOException("Error processing inbound message", e);
     }
@@ -66,10 +66,10 @@ public abstract class Plugin {
 
   public abstract void registerLocalLink(@NonNull @NotNull String destination) throws IOException;
 
-  protected final void setPluginProtocol(@NonNull PluginProtocol protocol) {
-    if (this.pluginProtocol != null) {
-      throw new IllegalStateException("PluginProtocol is already set");
+  protected final void setExtensionProtocol(@NonNull ExtensionProtocol protocol) {
+    if (this.extensionProtocol != null) {
+      throw new IllegalStateException("ExtensionProtocol is already set");
     }
-    this.pluginProtocol = protocol;
+    this.extensionProtocol = protocol;
   }
 }

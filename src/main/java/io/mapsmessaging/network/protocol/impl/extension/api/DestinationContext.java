@@ -1,4 +1,4 @@
-package io.mapsmessaging.network.protocol.impl.plugin.api;
+package io.mapsmessaging.network.protocol.impl.extension.api;
 
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.message.Message;

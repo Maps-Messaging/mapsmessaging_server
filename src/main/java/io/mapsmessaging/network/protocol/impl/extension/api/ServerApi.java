@@ -1,6 +1,6 @@
-package io.mapsmessaging.network.protocol.impl.plugin.api;
+package io.mapsmessaging.network.protocol.impl.extension.api;
 
-import io.mapsmessaging.network.protocol.impl.plugin.PluginProtocol;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionProtocol;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,12 +41,12 @@ public class ServerApi {
     session.close();
   }
 
-  public SessionContext createSession(@NonNull @NotNull PluginProtocol plugin, @NonNull @NotNull String sessionId, @Nullable String username, @Nullable String password) throws IOException {
+  public SessionContext createSession(@NonNull @NotNull ExtensionProtocol extension, @NonNull @NotNull String sessionId, @Nullable String username, @Nullable String password) throws IOException {
     try {
       if(sessions.containsKey(sessionId)) {
         return sessions.get(sessionId);
       }
-      SessionContext session = new SessionContext(plugin, sessionId, username, password);
+      SessionContext session = new SessionContext(extension, sessionId, username, password);
       sessions.put(sessionId, session);
       return session;
     } catch (LoginException e) {
