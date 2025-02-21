@@ -7,7 +7,7 @@ import lombok.Getter;
 import java.util.Map;
 
 @Getter
-public class PluginConfigDTO extends ProtocolConfigDTO {
+public class ExtensionConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Map of config entries")
   protected Map<String, Object> config;

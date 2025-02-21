@@ -3,11 +3,11 @@ package io.mapsmessaging.config.protocol.impl;
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.PluginConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.ExtensionConfigDTO;
 
 import java.util.LinkedHashMap;
 
-public class ExtensionConfig extends PluginConfigDTO implements Config {
+public class ExtensionConfig extends ExtensionConfigDTO implements Config {
 
   public ExtensionConfig(ConfigurationProperties configuration) {
     setType(configuration.getProperty("protocol"));

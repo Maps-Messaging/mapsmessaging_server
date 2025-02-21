@@ -40,7 +40,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = SemtechConfigDTO.class, name = "semtech"),
     @JsonSubTypes.Type(value = StompConfigDTO.class, name = "stomp"),
     @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "websocket"),
-    @JsonSubTypes.Type(value = PluginConfigDTO.class, name = "plugin")
+    @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "plugin")
 })
 @Schema(
     description = "Abstract base class for all protocol configurations",
@@ -56,7 +56,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "semtech", schema = SemtechConfigDTO.class),
         @DiscriminatorMapping(value = "stomp", schema = StompConfigDTO.class),
         @DiscriminatorMapping(value = "websocket", schema = WebSocketConfigDTO.class),
-        @DiscriminatorMapping(value = "plugin", schema = PluginConfigDTO.class)
+        @DiscriminatorMapping(value = "plugin", schema = ExtensionConfigDTO.class)
 
     },
     requiredProperties = {"type"}
