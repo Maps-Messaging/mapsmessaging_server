@@ -32,7 +32,7 @@ import io.mapsmessaging.network.admin.EndPointConnectionHostJMX;
 import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-import io.mapsmessaging.network.protocol.impl.plugin.PluginEndPointConnectionFactory;
+import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPointConnectionFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
@@ -97,7 +97,7 @@ public class NetworkConnectionManager implements ServiceManager, Agent {
       if (!jmxList.isEmpty()) {
         hostJMXBean = hostMapping.computeIfAbsent(endPointURL.host, k -> new EndPointConnectionHostJMX(jmxList, endPointURL.host));
       }
-      PluginEndPointConnectionFactory pluginEndPointConnectionFactory = new PluginEndPointConnectionFactory();
+      ExtensionEndPointConnectionFactory pluginEndPointConnectionFactory = new ExtensionEndPointConnectionFactory();
       endPointConnectionList.add(new EndPointConnection(endPointURL, properties, pluginEndPointConnectionFactory, selectorLoadManager, hostJMXBean));
     }
     else {
