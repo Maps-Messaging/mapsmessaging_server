@@ -25,6 +25,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.helpers.IntegrationInfoHelper;
 import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.IntegrationDetailResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -58,6 +59,12 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
       @QueryParam("filter") String filter
   ) throws ParseException {
     hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), filter == null?"":filter);
+    IntegrationDetailResponse cachedResponse = getFromCache(key, IntegrationDetailResponse.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
     List<EndPointConnection> endPointManagers =
         MessageDaemon.getInstance()
@@ -70,7 +77,9 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
             .map(IntegrationInfoHelper::fromEndPointConnection)
             .filter(info -> parser == null || parser.evaluate(info))
             .collect(Collectors.toList());
-    return new IntegrationDetailResponse(protocols, global);
+    IntegrationDetailResponse res = new IntegrationDetailResponse(protocols, global);
+    putToCache(key, res);
+    return res;
   }
 
   @PUT

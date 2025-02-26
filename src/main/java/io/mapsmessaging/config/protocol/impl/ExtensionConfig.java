@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 public class ExtensionConfig extends ExtensionConfigDTO implements Config {
 
   public ExtensionConfig(ConfigurationProperties configuration) {
-    setType(configuration.getProperty("protocol"));
+    setType("extension");
     ProtocolConfigFactory.unpack(configuration, this);
     Object obj =  configuration.get("config");
     if(obj instanceof ConfigurationProperties){

@@ -19,6 +19,7 @@
 package io.mapsmessaging.dto.rest.integration;
 
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
@@ -37,7 +38,7 @@ public class IntegrationInfoDTO implements Serializable {
       title = "Connection Configuration",
       description = "Configuration details for the integration connection.",
       nullable = false)
-  private EndPointConnectionServerConfig config;
+  private EndPointConnectionServerConfigDTO config;
 
   private String state;
 }
