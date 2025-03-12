@@ -70,7 +70,7 @@
   </distributionManagement>
 
   <scm>
-    <url>https://github.com/Maps-Messaging/mapsmessaging_server</url>
+    <url>https://github.com/Maps-Messaging/license_manager</url>
   </scm>
 
   <!--
@@ -266,6 +266,12 @@
             <enabled>true</enabled>
           </snapshots>
         </repository>
+
+          <repository>
+            <id>maps_license_store</id>
+            <name>maps_license_store</name>
+            <url>https://repository.mapsmessaging.io/repository/maps_license_store/</url>
+          </repository>
       </repositories>
     </profile>
     <profile>
@@ -1200,6 +1206,13 @@
       <groupId>com.googlecode.lanterna</groupId>
       <artifactId>lanterna</artifactId>
       <version>3.1.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>license_manager-keymgr</artifactId>
+      <version>3.3.7</version>
+      <classifier>standalone</classifier>
     </dependency>
 
 

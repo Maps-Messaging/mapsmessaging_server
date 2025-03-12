@@ -34,6 +34,7 @@ import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
 import io.mapsmessaging.hardware.DeviceManager;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.logging.LogMonitor;
 import io.mapsmessaging.logging.Logger;
@@ -105,6 +106,9 @@ public class MessageDaemon {
   @Getter
   private final String hostname;
 
+  @Getter
+  private final FeatureManager featureManager;
+
   private static final String MAPS_HOME = "MAPS_HOME";
   private static final String MAPS_DATA = "MAPS_DATA";
 
@@ -120,6 +124,7 @@ public class MessageDaemon {
    * It then initializes the Consul Manager and the ConfigurationManager with the server ID.
    */
   public MessageDaemon() throws IOException {
+    featureManager = ServerRunner.getFeatureManager();
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
