@@ -10,6 +10,9 @@ import io.mapsmessaging.keymgr.LicenseManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.license.features.Features;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 
 import java.util.List;
 
@@ -23,20 +26,22 @@ import java.util.Map;
 
 public class LicenseController {
 
-  private static final String LICENSE_SERVER_URL = "http://localhost:8080/api/v1/licenses/retrieveLicense";
+  private static final String LICENSE_SERVER_URL = "https://license.mapsmessaging.io/api/v1/license";
 
   private final List<Features> licenses;
+  private final Logger logger = LoggerFactory.getLogger(LicenseController.class);
 
   public LicenseController(String licensePath) {
     File licenseDir = new File(licensePath);
     if (!licenseDir.exists() || !licenseDir.isDirectory()) {
       throw new IllegalArgumentException("Invalid license path: " + licensePath);
     }
-
     installLicenses(licenseDir);
     licenses = loadInstalledLicenses(licenseDir);
     if(licenses.isEmpty()) {
       fetchLicenseFromServer(licenseDir, "", "");
+      installLicenses(licenseDir);
+      licenses.addAll(loadInstalledLicenses(licenseDir));
     }
   }
 
@@ -60,13 +65,11 @@ public class LicenseController {
       if (!installedFile.exists()) {
         try {
           LicenseManager manager = getLicenseManager(edition);
-          System.err.println("Installing License: " + edition);
+          logger.log(ServerLogMessages.LICENSE_INSTALLING, edition);
           manager.install(manager.parameters().encryption().source(BIOS.file(licenseFile)));
           licenseFile.renameTo(installedFile);
-        } catch (IllegalArgumentException e) {
-          System.err.println("Unknown license edition: " + edition);
-        } catch (LicenseManagementException e) {
-            e.printStackTrace();
+        } catch (IllegalArgumentException | LicenseManagementException e) {
+          logger.log(ServerLogMessages.LICENSE_FAILED_INSTALLING, edition);
         }
       }
     }
@@ -97,17 +100,15 @@ public class LicenseController {
 
       try {
         LicenseManager manager = getLicenseManager(edition.toUpperCase());
-        System.err.println("Loading License: " + edition);
+        logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition);
         License license = manager.load();
         Gson gson = new Gson();
         Map<String, Object> extraData = (Map<String, Object>)license.getExtra();
         String json = gson.toJson(extraData);
         Features features = gson.fromJson(json, Features.class);
         licenseList.add(features);
-      } catch (IllegalArgumentException e) {
-        System.err.println("Unknown license edition: " + edition);
-      } catch (LicenseManagementException e) {
-        e.printStackTrace();
+      } catch (IllegalArgumentException | LicenseManagementException e) {
+        logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition);
       }
     }
     return licenseList;
@@ -122,7 +123,7 @@ public class LicenseController {
 
       // Build form-encoded request body
       String formData = "customerName=" + encode(customerName) + "&customerKey=" + encode(customerKey);
-
+      logger.log(ServerLogMessages.LICENSE_CONTACTING_SERVER, customerName);
       try (OutputStream os = connection.getOutputStream()) {
         os.write(formData.getBytes(StandardCharsets.UTF_8));
       }
@@ -151,10 +152,10 @@ public class LicenseController {
           }
         }
       } else {
-        System.err.println("Failed to retrieve license. Server responded with: " + responseCode);
+        logger.log(ServerLogMessages.LICENSE_ERROR_CONTACTING_SERVER, responseCode);
       }
     } catch (IOException e) {
-      System.err.println("Error contacting license server: " + e.getMessage());
+      logger.log(ServerLogMessages.LICENSE_FAILED_CONTACTING_SERVER, e);
     }
   }
 
@@ -169,7 +170,6 @@ public class LicenseController {
       ObjectMapper objectMapper = new ObjectMapper();
       return objectMapper.readValue(response, new TypeReference<List<Map<String, String>>>() {});
     } catch (Exception e) {
-      System.err.println("Failed to parse license response: " + e.getMessage());
       return List.of();
     }
   }
@@ -186,31 +186,13 @@ public class LicenseController {
    * Saves the retrieved license file to disk.
    */
   private void saveLicenseFile(File licenseDir, String edition, byte[] licenseContent) {
-    System.err.println("Sink Content Length: " + licenseContent.length);
-    System.err.println("Sink Content (Hex Preview): " + bytesToHex(licenseContent, licenseContent.length));
-
     File licenseFile = new File(licenseDir, "license_" + edition + ".lic");
     try (FileOutputStream fos = new FileOutputStream(licenseFile)) {
       fos.write(licenseContent);
-      System.err.println("License file saved: " + licenseFile.getAbsolutePath());
+      logger.log(ServerLogMessages.LICENSE_SAVED_TO_FILE, licenseFile.getAbsolutePath());
     } catch (IOException e) {
-      System.err.println("Failed to save license file: " + e.getMessage());
+      logger.log(ServerLogMessages.LICENSE_FAILED_SAVED_TO_FILE, licenseFile.getAbsolutePath(), e);
     }
-  }
-
-
-  private String bytesToHex(byte[] bytes, int limit) {
-    StringBuilder sb = new StringBuilder();
-    int count = Math.min(bytes.length, limit);
-    int br = 0;
-    for (int i = 0; i < count; i++) {
-      sb.append(String.format("%02X ", bytes[i]));
-      if(br++ == 60){
-        br = 0;
-        sb.append("\n");
-      }
-    }
-    return sb.toString();
   }
 
   /**
@@ -224,7 +206,4 @@ public class LicenseController {
     return filename.replace("license_", "").replace(".lic", "").replace("_installed", "");
   }
 
-  public static void main(String[] args) throws Exception {
-    LicenseController licenseController = new LicenseController(".");
-  }
 }
