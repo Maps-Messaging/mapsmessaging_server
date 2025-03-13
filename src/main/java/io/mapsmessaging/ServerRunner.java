@@ -20,21 +20,14 @@ package io.mapsmessaging;
 
 import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE;
 
-import global.namespace.truelicense.api.License;
-import global.namespace.truelicense.api.LicenseManagementException;
-import io.mapsmessaging.keymgr.LicenseManager;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.license.LicenseController;
-import io.mapsmessaging.license.MessagingServerLicense;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.PidFileManager;
 import io.mapsmessaging.utilities.SystemProperties;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 
 import lombok.Getter;
 import org.tanukisoftware.wrapper.WrapperListener;

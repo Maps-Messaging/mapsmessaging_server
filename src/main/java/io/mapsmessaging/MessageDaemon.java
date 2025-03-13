@@ -41,6 +41,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import io.mapsmessaging.stats.StatsReporter;
 import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
@@ -115,6 +116,13 @@ public class MessageDaemon {
   @Getter
   private final LogMonitor logMonitor;
 
+  @Getter
+  private final String customerName;
+  @Getter
+  private final String customerKey;
+
+  private StatsReporter statsReporter;
+
   /**
    * The constructor of the MessageDaemon class.
    * It initializes the instance by setting up various configurations and properties.
@@ -125,6 +133,9 @@ public class MessageDaemon {
    */
   public MessageDaemon() throws IOException {
     featureManager = ServerRunner.getFeatureManager();
+    customerKey = SystemProperties.getInstance().getProperty("CustomerKey", "");
+    customerName = SystemProperties.getInstance().getProperty("CustomerName", "");
+
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
@@ -231,6 +242,7 @@ public class MessageDaemon {
     if (ConsulManagerFactory.getInstance().isStarted()) {
       ConsulManagerFactory.getInstance().getManager().register(buildMetaData());
     }
+    statsReporter = new StatsReporter();
     return null;
   }
 
@@ -258,6 +270,7 @@ public class MessageDaemon {
    * @return The integer value passed as parameter.
    */
   public int stop(int i) {
+    statsReporter.close();
     isStarted.set(false);
     ConsulManagerFactory.getInstance().stop();
     subSystemManager.stop();

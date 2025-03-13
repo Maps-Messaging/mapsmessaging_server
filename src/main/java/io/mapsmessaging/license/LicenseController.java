@@ -13,6 +13,7 @@ import io.mapsmessaging.license.features.Features;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.SystemProperties;
 
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class LicenseController {
     installLicenses(licenseDir);
     licenses = loadInstalledLicenses(licenseDir);
     if(licenses.isEmpty()) {
-      fetchLicenseFromServer(licenseDir, "", "");
+      fetchLicenseFromServer(licenseDir);
       installLicenses(licenseDir);
       licenses.addAll(loadInstalledLicenses(licenseDir));
     }
@@ -114,8 +115,11 @@ public class LicenseController {
     return licenseList;
   }
 
-  private void fetchLicenseFromServer(File licenseDir, String customerName, String customerKey) {
+  private void fetchLicenseFromServer(File licenseDir) {
     try {
+      String customerKey = SystemProperties.getInstance().getProperty("CustomerKey", "");
+      String customerName = SystemProperties.getInstance().getProperty("CustomerName", "");
+
       HttpURLConnection connection = (HttpURLConnection) new URL(LICENSE_SERVER_URL).openConnection();
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);
