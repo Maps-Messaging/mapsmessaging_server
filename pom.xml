@@ -406,6 +406,12 @@
             <enabled>true</enabled>
           </snapshots>
         </repository>
+        <repository>
+          <id>maps_license_store</id>
+          <name>maps_license_store</name>
+          <url>https://repository.mapsmessaging.io/repository/maps_license_store/</url>
+        </repository>
+
       </repositories>
     </profile>
 
