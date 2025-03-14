@@ -117,9 +117,9 @@ public class MessageDaemon {
   private final LogMonitor logMonitor;
 
   @Getter
-  private final String customerName;
+  private final String clientName;
   @Getter
-  private final String customerKey;
+  private final String clientSecret;
 
   private StatsReporter statsReporter;
 
@@ -133,8 +133,8 @@ public class MessageDaemon {
    */
   public MessageDaemon() throws IOException {
     featureManager = ServerRunner.getFeatureManager();
-    customerKey = SystemProperties.getInstance().getProperty("CustomerKey", "");
-    customerName = SystemProperties.getInstance().getProperty("CustomerName", "");
+    clientName = SystemProperties.getInstance().getProperty("ClientName", "");
+    clientSecret  = SystemProperties.getInstance().getProperty("ClientSecret", "");
 
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);

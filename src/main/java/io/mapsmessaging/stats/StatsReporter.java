@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class StatsReporter {
 
-  private static final String reportingUrl = "https://stats.mapsmessaging.io/api/v1/report";
+  private static final String REPORTING_URL ="https://stats.mapsmessaging.io/api/v1/report";
 
   private int minuteInterval;
   private ScheduledFuture<?> task;
@@ -44,15 +44,15 @@ public class StatsReporter {
     Map<String, String> map = new LinkedHashMap<>();
     Gson gson = new Gson();
     map.put("serverId", MessageDaemon.getInstance().getId());
-    map.put("customerName", MessageDaemon.getInstance().getCustomerName());
-    map.put("customerSecret", MessageDaemon.getInstance().getCustomerKey());
+    map.put("name", MessageDaemon.getInstance().getClientName());
+    map.put("secret", MessageDaemon.getInstance().getClientSecret());
     map.put("serverstats", gson.toJson(ServerStatisticsHelper.create()));
     return map;
   }
 
   private void sendStats(Map<String, String> map) {
     try {
-      HttpURLConnection connection = (HttpURLConnection) new URL(reportingUrl).openConnection();
+      HttpURLConnection connection = (HttpURLConnection) new URL(REPORTING_URL).openConnection();
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");  // Fix: Use JSON instead of form-data

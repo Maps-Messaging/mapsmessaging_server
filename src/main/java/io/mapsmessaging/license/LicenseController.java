@@ -117,8 +117,8 @@ public class LicenseController {
 
   private void fetchLicenseFromServer(File licenseDir) {
     try {
-      String customerKey = SystemProperties.getInstance().getProperty("CustomerKey", "");
-      String customerName = SystemProperties.getInstance().getProperty("CustomerName", "");
+      String customerKey = SystemProperties.getInstance().getProperty("ClientSecret", "");
+      String customerName = SystemProperties.getInstance().getProperty("ClientName", "");
 
       HttpURLConnection connection = (HttpURLConnection) new URL(LICENSE_SERVER_URL).openConnection();
       connection.setRequestMethod("POST");

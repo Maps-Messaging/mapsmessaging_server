@@ -68,7 +68,7 @@ public class ServerRunner implements WrapperListener {
    * @throws IOException If an I/O error occurs while deleting or creating the PID file.
    */
   public static void main(String[] args) throws IOException, InterruptedException {
-    String directoryPath = SystemProperties.getInstance().locateProperty("MAPS_HOME", "");
+    String directoryPath = SystemProperties.getInstance().locateProperty("MAPS_HOME", ".");
     if (!directoryPath.isEmpty()) {
       PID_FILE = directoryPath + File.separator + PID_FILE;
       PID_FILE = PID_FILE.replace("//", "/");
@@ -93,7 +93,7 @@ public class ServerRunner implements WrapperListener {
     }
     pidFileManager.writeNewFile();
 
-    String licensePath = directoryPath + File.separator + "license";
+    String licensePath = directoryPath + File.separator + "licenses";
     File licenseDir = new File(licensePath);
     licenseDir.mkdirs();
     LicenseController licenseController = new LicenseController(licensePath);
