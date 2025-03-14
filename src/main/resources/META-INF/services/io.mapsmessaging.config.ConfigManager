@@ -29,3 +29,4 @@ io.mapsmessaging.config.RestApiManagerConfig
 io.mapsmessaging.config.RoutingManagerConfig
 io.mapsmessaging.config.TenantManagementConfig
 io.mapsmessaging.config.SecurityManagerConfig
+io.mapsmessaging.config.LicenseConfig

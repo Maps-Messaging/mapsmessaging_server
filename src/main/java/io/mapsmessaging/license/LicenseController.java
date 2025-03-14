@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import global.namespace.fun.io.bios.BIOS;
 import global.namespace.truelicense.api.License;
 import global.namespace.truelicense.api.LicenseManagementException;
+import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.keymgr.LicenseManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -117,8 +118,10 @@ public class LicenseController {
 
   private void fetchLicenseFromServer(File licenseDir) {
     try {
-      String customerKey = SystemProperties.getInstance().getProperty("ClientSecret", "");
-      String customerName = SystemProperties.getInstance().getProperty("ClientName", "");
+      LicenseConfig licenseConfig = LicenseConfig.getInstance();
+
+      String clientSecret = licenseConfig.getClientSecret();
+      String clientName = licenseConfig.getClientName();
 
       HttpURLConnection connection = (HttpURLConnection) new URL(LICENSE_SERVER_URL).openConnection();
       connection.setRequestMethod("POST");
@@ -126,8 +129,8 @@ public class LicenseController {
       connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
       // Build form-encoded request body
-      String formData = "customerName=" + encode(customerName) + "&customerKey=" + encode(customerKey);
-      logger.log(ServerLogMessages.LICENSE_CONTACTING_SERVER, customerName);
+      String formData = "customerName=" + encode(clientName) + "&customerKey=" + encode(clientSecret);
+      logger.log(ServerLogMessages.LICENSE_CONTACTING_SERVER, clientName);
       try (OutputStream os = connection.getOutputStream()) {
         os.write(formData.getBytes(StandardCharsets.UTF_8));
       }

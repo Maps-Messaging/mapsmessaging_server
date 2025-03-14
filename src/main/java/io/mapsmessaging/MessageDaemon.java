@@ -22,9 +22,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
-import io.mapsmessaging.config.DeviceManagerConfig;
-import io.mapsmessaging.config.MessageDaemonConfig;
-import io.mapsmessaging.config.NetworkManagerConfig;
+import io.mapsmessaging.config.*;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.configuration.EnvironmentPathLookup;
 import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
@@ -116,11 +114,6 @@ public class MessageDaemon {
   @Getter
   private final LogMonitor logMonitor;
 
-  @Getter
-  private final String clientName;
-  @Getter
-  private final String clientSecret;
-
   private StatsReporter statsReporter;
 
   /**
@@ -133,8 +126,6 @@ public class MessageDaemon {
    */
   public MessageDaemon() throws IOException {
     featureManager = ServerRunner.getFeatureManager();
-    clientName = SystemProperties.getInstance().getProperty("ClientName", "");
-    clientSecret  = SystemProperties.getInstance().getProperty("ClientSecret", "");
 
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);

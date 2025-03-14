@@ -2,6 +2,7 @@ package io.mapsmessaging.stats;
 
 import com.google.gson.Gson;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
@@ -41,11 +42,12 @@ public class StatsReporter {
   }
 
   private Map<String, String> buildBody(){
+    LicenseConfig config = LicenseConfig.getInstance();
     Map<String, String> map = new LinkedHashMap<>();
     Gson gson = new Gson();
     map.put("serverId", MessageDaemon.getInstance().getId());
-    map.put("name", MessageDaemon.getInstance().getClientName());
-    map.put("secret", MessageDaemon.getInstance().getClientSecret());
+    map.put("name", config.getClientName());
+    map.put("secret", config.getClientSecret());
     map.put("serverstats", gson.toJson(ServerStatisticsHelper.create()));
     return map;
   }
