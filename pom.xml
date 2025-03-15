@@ -1189,7 +1189,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-cognitoidp</artifactId>
-      <version>1.12.780</version>
+      <version>1.12.782</version>
       <scope>test</scope>
     </dependency>
 
