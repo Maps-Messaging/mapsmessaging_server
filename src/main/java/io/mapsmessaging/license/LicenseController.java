@@ -85,7 +85,7 @@ public class LicenseController {
         logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
       }
     } catch (IllegalArgumentException | LicenseManagementException e) {
-      logger.log(ServerLogMessages.LICENSE_FAILED_INSTALLING, edition);
+      logger.log(ServerLogMessages.LICENSE_FAILED_INSTALLING, edition, e);
     }
   }
 
@@ -127,7 +127,7 @@ public class LicenseController {
           logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
         }
       } catch (IllegalArgumentException | LicenseManagementException e) {
-        logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition);
+        logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition, e);
       }
     }
     return licenseList;
