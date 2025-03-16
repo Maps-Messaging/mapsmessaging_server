@@ -1218,8 +1218,27 @@
       <groupId>io.mapsmessaging</groupId>
       <artifactId>license_manager-keymgr</artifactId>
       <version>3.3.7</version>
-      <classifier>standalone</classifier>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/global.namespace.truelicense/truelicense-core -->
+    <dependency>
+      <groupId>global.namespace.truelicense</groupId>
+      <artifactId>truelicense-core</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/global.namespace.truelicense/truelicense-v4 -->
+    <dependency>
+      <groupId>global.namespace.truelicense</groupId>
+      <artifactId>truelicense-v4</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/global.namespace.truelicense/truelicense-spi -->
+    <dependency>
+      <groupId>global.namespace.truelicense</groupId>
+      <artifactId>truelicense-spi</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+
 
 
     <!-- *********************** -->

@@ -14,7 +14,6 @@ import io.mapsmessaging.license.features.Features;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.utilities.SystemProperties;
 
 import java.util.List;
 
@@ -29,6 +28,8 @@ import java.util.Map;
 public class LicenseController {
 
   private static final String LICENSE_SERVER_URL = "https://license.mapsmessaging.io/api/v1/license";
+
+  private static final String LICENSE_KEY="license_";
 
   private final List<Features> licenses;
   private final Logger logger = LoggerFactory.getLogger(LicenseController.class);
@@ -57,23 +58,34 @@ public class LicenseController {
    * @param licenseDir Directory containing license files.
    */
   private void installLicenses(File licenseDir) {
-    File[] files = licenseDir.listFiles((dir, name) -> name.startsWith("license_") && name.endsWith(".lic"));
+    File[] files = licenseDir.listFiles((dir, name) -> name.startsWith(LICENSE_KEY) && name.endsWith(".lic"));
     if (files == null) return;
 
     for (File licenseFile : files) {
       String edition = extractEdition(licenseFile.getName());
-      File installedFile = new File(licenseDir, "license_" + edition + ".lic_installed");
+      File installedFile = new File(licenseDir, LICENSE_KEY + edition + ".lic_installed");
 
       if (!installedFile.exists()) {
-        try {
-          LicenseManager manager = getLicenseManager(edition);
-          logger.log(ServerLogMessages.LICENSE_INSTALLING, edition);
-          manager.install(manager.parameters().encryption().source(BIOS.file(licenseFile)));
-          licenseFile.renameTo(installedFile);
-        } catch (IllegalArgumentException | LicenseManagementException e) {
-          logger.log(ServerLogMessages.LICENSE_FAILED_INSTALLING, edition);
+        processLicenseFile(licenseFile, edition, installedFile);
+      }
+    }
+  }
+
+  private void processLicenseFile(File licenseFile, String edition,  File installedFile) {
+    try {
+      LicenseManager manager = getLicenseManager(edition);
+      if(manager != null) {
+        logger.log(ServerLogMessages.LICENSE_INSTALLING, edition);
+        manager.install(manager.parameters().encryption().source(BIOS.file(licenseFile)));
+        if(!licenseFile.renameTo(installedFile)){
+          logger.log(ServerLogMessages.LICENSE_FILE_RENAME_FAILED, licenseFile.getAbsolutePath(), installedFile.getAbsolutePath());
         }
       }
+      else{
+        logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
+      }
+    } catch (IllegalArgumentException | LicenseManagementException e) {
+      logger.log(ServerLogMessages.LICENSE_FAILED_INSTALLING, edition);
     }
   }
 
@@ -92,7 +104,7 @@ public class LicenseController {
    * @param licenseDir Directory containing installed license files.
    */
   private  List<Features> loadInstalledLicenses(File licenseDir) {
-    File[] files = licenseDir.listFiles((dir, name) -> name.startsWith("license_") && name.endsWith(".lic_installed"));
+    File[] files = licenseDir.listFiles((dir, name) -> name.startsWith(LICENSE_KEY) && name.endsWith(".lic_installed"));
     if (files == null) return new ArrayList<>();
 
     List<Features> licenseList = new ArrayList<>();
@@ -102,13 +114,18 @@ public class LicenseController {
 
       try {
         LicenseManager manager = getLicenseManager(edition.toUpperCase());
-        logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition);
-        License license = manager.load();
-        Gson gson = new Gson();
-        Map<String, Object> extraData = (Map<String, Object>)license.getExtra();
-        String json = gson.toJson(extraData);
-        Features features = gson.fromJson(json, Features.class);
-        licenseList.add(features);
+        if(manager != null) {
+          logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition);
+          License license = manager.load();
+          Gson gson = new Gson();
+          Map<String, Object> extraData = (Map<String, Object>)license.getExtra();
+          String json = gson.toJson(extraData);
+          Features features = gson.fromJson(json, Features.class);
+          licenseList.add(features);
+        }
+        else{
+          logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
+        }
       } catch (IllegalArgumentException | LicenseManagementException e) {
         logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition);
       }
@@ -122,7 +139,6 @@ public class LicenseController {
 
       String clientSecret = licenseConfig.getClientSecret();
       String clientName = licenseConfig.getClientName();
-
       HttpURLConnection connection = (HttpURLConnection) new URL(LICENSE_SERVER_URL).openConnection();
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);
@@ -148,8 +164,8 @@ public class LicenseController {
           }
 
           // Parse response
-          List<Map<String, String>> licenses = parseLicenseResponse(response.toString());
-          for (Map<String, String> licenseData : licenses) {
+          List<Map<String, String>> mapList = parseLicenseResponse(response.toString());
+          for (Map<String, String> licenseData : mapList) {
             String type = licenseData.get("type");
             Base64.Decoder decoder = Base64.getDecoder();
             byte[] license = decoder.decode (licenseData.get("license"));
@@ -193,7 +209,7 @@ public class LicenseController {
    * Saves the retrieved license file to disk.
    */
   private void saveLicenseFile(File licenseDir, String edition, byte[] licenseContent) {
-    File licenseFile = new File(licenseDir, "license_" + edition + ".lic");
+    File licenseFile = new File(licenseDir, LICENSE_KEY + edition + ".lic");
     try (FileOutputStream fos = new FileOutputStream(licenseFile)) {
       fos.write(licenseContent);
       logger.log(ServerLogMessages.LICENSE_SAVED_TO_FILE, licenseFile.getAbsolutePath());
@@ -210,7 +226,7 @@ public class LicenseController {
    * @return Extracted edition.
    */
   private String extractEdition(String filename) {
-    return filename.replace("license_", "").replace(".lic", "").replace("_installed", "");
+    return filename.replace(LICENSE_KEY, "").replace(".lic", "").replace("_installed", "");
   }
 
 }

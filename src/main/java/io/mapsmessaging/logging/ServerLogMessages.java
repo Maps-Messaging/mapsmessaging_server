@@ -709,14 +709,17 @@ public enum ServerLogMessages implements LogMessage {
   MESSAGE_TRANSFORMATION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.TRANSFORMATION, "Exception raised during transformation"),
 
   LICENSE_INSTALLING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Installing license edition {}"),
-  LICENSE_FAILED_INSTALLING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to install license edition {}"),
+  LICENSE_FAILED_INSTALLING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to install license edition {}"),
+  LICENSE_MANAGER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to locate license manager for edition {}"),
+  LICENSE_FILE_RENAME_FAILED(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to rename license file from {} to {}"),
+
   LICENSE_LOADING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Loading license edition {}"),
-  LICENSE_FAILED_LOADING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to load license edition {}"),
+  LICENSE_FAILED_LOADING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to load license edition {}"),
   LICENSE_CONTACTING_SERVER(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Contacting licensing server for configured license using Client:{}"),
-  LICENSE_ERROR_CONTACTING_SERVER(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Error response contacting licensing server"),
+  LICENSE_ERROR_CONTACTING_SERVER(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Error response contacting licensing server"),
   LICENSE_FAILED_CONTACTING_SERVER(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to contact licensing server"),
   LICENSE_SAVED_TO_FILE(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Saved license file to {}"),
-  LICENSE_FAILED_SAVED_TO_FILE(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to save license file to {}"),
+  LICENSE_FAILED_SAVED_TO_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to save license file to {}"),
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
