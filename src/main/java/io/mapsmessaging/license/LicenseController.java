@@ -1,6 +1,6 @@
 package io.mapsmessaging.license;
 
-import java.util.Base64;
+import java.util.*;
 
 import com.google.gson.Gson;
 import global.namespace.fun.io.bios.BIOS;
@@ -15,26 +15,22 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 
-import java.util.List;
-
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Map;
 
 public class LicenseController {
 
-  private static final String LICENSE_SERVER_URL = "https://license.mapsmessaging.io/api/v1/license";
+  private static final String LICENSE_SERVER_URL = "http://localhost:8080/api/v1/licenses/retrieveLicense";//"https://license.mapsmessaging.io/api/v1/license";
 
   private static final String LICENSE_KEY="license_";
 
   private final List<Features> licenses;
   private final Logger logger = LoggerFactory.getLogger(LicenseController.class);
 
-  public LicenseController(String licensePath) {
+  public LicenseController(String licensePath, String uniqueId, UUID serverUUID) {
     File licenseDir = new File(licensePath);
     if (!licenseDir.exists() || !licenseDir.isDirectory()) {
       throw new IllegalArgumentException("Invalid license path: " + licensePath);
@@ -42,7 +38,7 @@ public class LicenseController {
     installLicenses(licenseDir);
     licenses = loadInstalledLicenses(licenseDir);
     if(licenses.isEmpty()) {
-      fetchLicenseFromServer(licenseDir);
+      fetchLicenseFromServer(licenseDir, uniqueId, serverUUID);
       installLicenses(licenseDir);
       licenses.addAll(loadInstalledLicenses(licenseDir));
     }
@@ -59,7 +55,9 @@ public class LicenseController {
    */
   private void installLicenses(File licenseDir) {
     File[] files = licenseDir.listFiles((dir, name) -> name.startsWith(LICENSE_KEY) && name.endsWith(".lic"));
-    if (files == null) return;
+    if (files == null || files.length == 0) {
+      return;
+    }
 
     for (File licenseFile : files) {
       String edition = extractEdition(licenseFile.getName());
@@ -70,6 +68,7 @@ public class LicenseController {
       }
     }
   }
+
 
   private void processLicenseFile(File licenseFile, String edition,  File installedFile) {
     try {
@@ -133,7 +132,7 @@ public class LicenseController {
     return licenseList;
   }
 
-  private void fetchLicenseFromServer(File licenseDir) {
+  private void fetchLicenseFromServer(File licenseDir, String uniqueId, UUID serverUUID) {
     try {
       LicenseConfig licenseConfig = LicenseConfig.getInstance();
 
@@ -142,13 +141,16 @@ public class LicenseController {
       HttpURLConnection connection = (HttpURLConnection) new URL(LICENSE_SERVER_URL).openConnection();
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);
-      connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+      connection.setRequestProperty("Content-Type", "application/json");
 
-      // Build form-encoded request body
-      String formData = "customerName=" + encode(clientName) + "&customerKey=" + encode(clientSecret);
+// Build JSON request body
+      String jsonBody = String.format(
+          "{\"clientName\":\"%s\",\"clientSecret\":\"%s\",\"uniqueServerId\":\"%s\",\"serverUUID\":\"%s\"}",
+          clientName, clientSecret, uniqueId, serverUUID.toString()
+      );
       logger.log(ServerLogMessages.LICENSE_CONTACTING_SERVER, clientName);
       try (OutputStream os = connection.getOutputStream()) {
-        os.write(formData.getBytes(StandardCharsets.UTF_8));
+        os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
       }
 
       // Read response

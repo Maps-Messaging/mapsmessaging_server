@@ -33,6 +33,7 @@ import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.license.FeatureManager;
+import io.mapsmessaging.license.LicenseController;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.logging.LogMonitor;
 import io.mapsmessaging.logging.Logger;
@@ -44,6 +45,8 @@ import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -125,11 +128,10 @@ public class MessageDaemon {
    * It then initializes the Consul Manager and the ConfigurationManager with the server ID.
    */
   public MessageDaemon() throws IOException {
-    featureManager = ServerRunner.getFeatureManager();
-
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
+    EnvironmentPathLookup mapsHome = new EnvironmentPathLookup(MAPS_HOME, ".", false);
+    EnvironmentConfig.getInstance().registerPath(mapsHome);
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, "{{MAPS_HOME}}/data", true));
     InstanceConfig instanceConfig = new InstanceConfig(EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA));
     instanceConfig.loadState();
@@ -145,6 +147,13 @@ public class MessageDaemon {
     uuid = instanceConfig.getUuid();
     hostname = InetAddress.getLocalHost().getHostName();
     // </editor-fold>
+
+    String licensePath = mapsHome.getName() + File.separator + "licenses";
+    File licenseDir = new File(licensePath);
+    licenseDir.mkdirs();
+    LicenseController licenseController = new LicenseController(licensePath, uniqueId, uuid);
+    featureManager = licenseController.getFeatureManager();
+
 
     //<editor-fold desc="Now see if we can start the Consul Manager">
     // May block till a consul connection is made, depending on config

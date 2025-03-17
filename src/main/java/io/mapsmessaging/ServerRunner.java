@@ -45,8 +45,6 @@ public class ServerRunner implements WrapperListener {
   private static String PID_FILE = "pid";
   @Getter
   private static ExitRunner exitRunner;
-  @Getter
-  private static FeatureManager featureManager;
   private static ServerRunner serverRunner;
 
   /**
@@ -92,12 +90,6 @@ public class ServerRunner implements WrapperListener {
       }
     }
     pidFileManager.writeNewFile();
-
-    String licensePath = directoryPath + File.separator + "licenses";
-    File licenseDir = new File(licensePath);
-    licenseDir.mkdirs();
-    LicenseController licenseController = new LicenseController(licensePath);
-    featureManager = licenseController.getFeatureManager();
     serverRunner  = new ServerRunner(args);
     exitRunner = new ExitRunner(pidFileManager);
   }
