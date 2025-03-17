@@ -132,8 +132,7 @@ public class MessageDaemon {
   public MessageDaemon() throws IOException {
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
-    EnvironmentPathLookup mapsHome = new EnvironmentPathLookup(MAPS_HOME, ".", false);
-    EnvironmentConfig.getInstance().registerPath(mapsHome);
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, "{{MAPS_HOME}}/data", true));
     InstanceConfig instanceConfig = new InstanceConfig(EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA));
     instanceConfig.loadState();
@@ -155,7 +154,8 @@ public class MessageDaemon {
 
     //</editor-fold>
     ConfigurationManager.getInstance().initialise(uniqueId);
-    licenseHome =mapsHome.getName()+File.separator+"licenses";
+    String mapsHome = SystemProperties.getInstance().getProperty(MAPS_HOME, ".");
+    licenseHome =mapsHome+File.separator+"licenses";
   }
 
   /**
