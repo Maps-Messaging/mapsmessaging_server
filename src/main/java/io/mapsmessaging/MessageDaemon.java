@@ -109,13 +109,15 @@ public class MessageDaemon {
   private final String hostname;
 
   @Getter
-  private final FeatureManager featureManager;
+  private final String licenseHome;
+  private FeatureManager featureManager;
 
   private static final String MAPS_HOME = "MAPS_HOME";
   private static final String MAPS_DATA = "MAPS_DATA";
 
   @Getter
   private final LogMonitor logMonitor;
+
 
   private StatsReporter statsReporter;
 
@@ -147,20 +149,13 @@ public class MessageDaemon {
     uuid = instanceConfig.getUuid();
     hostname = InetAddress.getLocalHost().getHostName();
     // </editor-fold>
-
-    String licensePath = mapsHome.getName() + File.separator + "licenses";
-    File licenseDir = new File(licensePath);
-    licenseDir.mkdirs();
-    LicenseController licenseController = new LicenseController(licensePath, uniqueId, uuid);
-    featureManager = licenseController.getFeatureManager();
-
-
     //<editor-fold desc="Now see if we can start the Consul Manager">
     // May block till a consul connection is made, depending on config
     ConsulManagerFactory.getInstance().start(uniqueId);
 
     //</editor-fold>
     ConfigurationManager.getInstance().initialise(uniqueId);
+    licenseHome =mapsHome.getName()+File.separator+"licenses";
   }
 
   /**
@@ -233,9 +228,17 @@ public class MessageDaemon {
    * @throws IOException if an I/O error occurs during the initialization steps
    */
   public Integer start(String[] strings) throws IOException {
+
+    // Load the license
+    File licenseDir = new File(licenseHome);
+    licenseDir.mkdirs();
+    LicenseController licenseController = new LicenseController(licenseHome, uniqueId, uuid);
+    featureManager = licenseController.getFeatureManager();
+
     logMonitor.register();
     isStarted.set(true);
     loadConstants();
+
     subSystemManager = new SubSystemManager(uniqueId, enableSystemTopics, enableDeviceIntegration, messageDaemonConfig.getSessionPipeLines());
     subSystemManager.start();
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
