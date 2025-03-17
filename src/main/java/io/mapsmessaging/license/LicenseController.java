@@ -3,6 +3,7 @@ package io.mapsmessaging.license;
 import java.util.*;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import global.namespace.fun.io.bios.BIOS;
 import global.namespace.truelicense.api.License;
 import global.namespace.truelicense.api.LicenseManagementException;
@@ -42,6 +43,12 @@ public class LicenseController {
       installLicenses(licenseDir);
       licenses.addAll(loadInstalledLicenses(licenseDir));
     }
+    Gson gson = new GsonBuilder()
+        .setPrettyPrinting()
+        .create();
+    for(Features feature : licenses) {
+      logger.log(ServerLogMessages.LICENSE_FEATURES_AVAILABLE, gson.toJson(feature));
+    }
   }
 
   public FeatureManager getFeatureManager() {
@@ -55,7 +62,7 @@ public class LicenseController {
    */
   private void installLicenses(File licenseDir) {
     File[] files = licenseDir.listFiles((dir, name) -> name.startsWith(LICENSE_KEY) && name.endsWith(".lic"));
-    if (files == null || files.length == 0) {
+    if (files == null) {
       return;
     }
 

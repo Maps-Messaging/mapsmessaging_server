@@ -712,6 +712,7 @@ public enum ServerLogMessages implements LogMessage {
   LICENSE_FAILED_INSTALLING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to install license edition {}"),
   LICENSE_MANAGER_NOT_FOUND(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to locate license manager for edition {}"),
   LICENSE_FILE_RENAME_FAILED(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to rename license file from {} to {}"),
+  LICENSE_FEATURES_AVAILABLE(LEVEL.WARN, SERVER_CATEGORY.LICENSE, "Loaded the following license {}"),
 
   LICENSE_LOADING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Loading license edition {}"),
   LICENSE_FAILED_LOADING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to load license edition {}"),
