@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class StatsReporter {
 
-  private static final String REPORTING_URL ="https://stats.mapsmessaging.io/api/v1/report";
+  private static final String REPORTING_URL = "https://stats.mapsmessaging.io/api/v1/report";
 
   private int minuteInterval;
   private ScheduledFuture<?> task;
@@ -45,7 +45,8 @@ public class StatsReporter {
     LicenseConfig config = LicenseConfig.getInstance();
     Map<String, String> map = new LinkedHashMap<>();
     Gson gson = new Gson();
-    map.put("serverId", MessageDaemon.getInstance().getId());
+    map.put("serverUUID", MessageDaemon.getInstance().getUuid().toString());
+    map.put("serverName", MessageDaemon.getInstance().getId());
     map.put("name", config.getClientName());
     map.put("secret", config.getClientSecret());
     map.put("serverstats", gson.toJson(ServerStatisticsHelper.create()));

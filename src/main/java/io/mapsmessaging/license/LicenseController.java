@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 
 public class LicenseController {
 
-  private static final String LICENSE_SERVER_URL = "http://localhost:8080/api/v1/licenses/retrieveLicense";//"https://license.mapsmessaging.io/api/v1/license";
+  private static final String LICENSE_SERVER_URL = "https://license.mapsmessaging.io/api/v1/license";
 
   private static final String LICENSE_KEY="license_";
 
@@ -204,14 +204,6 @@ public class LicenseController {
     } catch (Exception e) {
       return List.of();
     }
-  }
-
-
-  /**
-   * Encodes form parameters to avoid issues with special characters.
-   */
-  private String encode(String value) {
-    return value == null ? "" : URLEncoder.encode(value, StandardCharsets.UTF_8);
   }
 
   /**
