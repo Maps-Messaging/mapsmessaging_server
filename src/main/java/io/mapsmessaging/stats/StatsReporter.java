@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
+import io.mapsmessaging.dto.helpers.StatusMessageHelper;
+import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.*;
@@ -45,11 +47,14 @@ public class StatsReporter {
     LicenseConfig config = LicenseConfig.getInstance();
     Map<String, String> map = new LinkedHashMap<>();
     Gson gson = new Gson();
+    Map<String, String> stats = new LinkedHashMap<>();
+    stats.put("stats", gson.toJson(ServerStatisticsHelper.create()));
+    stats.put("info", gson.toJson(StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance())));
     map.put("serverUUID", MessageDaemon.getInstance().getUuid().toString());
     map.put("serverName", MessageDaemon.getInstance().getId());
     map.put("name", config.getClientName());
     map.put("secret", config.getClientSecret());
-    map.put("serverstats", gson.toJson(ServerStatisticsHelper.create()));
+    map.put("serverstats", gson.toJson(stats));
     return map;
   }
 
