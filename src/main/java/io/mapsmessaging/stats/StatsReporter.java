@@ -5,7 +5,6 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
-import io.mapsmessaging.dto.rest.ServerInfoDTO;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.*;
