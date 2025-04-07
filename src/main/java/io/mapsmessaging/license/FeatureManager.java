@@ -40,6 +40,7 @@ public class FeatureManager {
       for (String part : parts) {
         if (obj == null) return null;
         Field field = obj.getClass().getDeclaredField(part);
+        field.setAccessible(true);
         obj = field.get(obj);
       }
       return obj;

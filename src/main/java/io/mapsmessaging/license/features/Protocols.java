@@ -13,4 +13,6 @@ public class Protocols {
   private boolean extensions;
   private boolean stomp;
   private boolean restApi;
+  private boolean ws;
+  private boolean wss;
 }

@@ -22,11 +22,13 @@ import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
+import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
@@ -44,14 +46,19 @@ public class NetworkManager implements ServiceManager, Agent {
   private final NetworkManagerJMX bean;
   private final NetworkManagerConfig config;
 
-  public NetworkManager() {
+  public NetworkManager(FeatureManager featureManager) {
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP);
     endPointManagers = new LinkedHashMap<>();
     config = NetworkManagerConfig.getInstance();
     logger.log(ServerLogMessages.NETWORK_MANAGER_LOAD_PROPERTIES);
     ServiceLoader<EndPointServerFactory> endPointServerLoad = ServiceLoader.load(EndPointServerFactory.class);
     endPointServers = new CopyOnWriteArrayList<>();
-    endPointServerLoad.forEach(endPointServers::add);
+    for(EndPointServerFactory endPointConnectionFactory:endPointServerLoad){
+      String name = endPointConnectionFactory.getName();
+      if(featureManager.isEnabled("network."+name)){
+        endPointServers.add(endPointConnectionFactory);
+      }
+    }
     logger.log(ServerLogMessages.NETWORK_MANAGER_STARTUP_COMPLETE);
 
     System.setProperty("java.net.preferIPv6Addresses", ""+config.isPreferIpV6Addresses());

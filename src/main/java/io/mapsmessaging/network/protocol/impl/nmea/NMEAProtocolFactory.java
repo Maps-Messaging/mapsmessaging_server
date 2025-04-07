@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 public class NMEAProtocolFactory extends ProtocolImplFactory {
 
   public NMEAProtocolFactory() {
-    super("NMEA", "NMEA Gateway as per https://en.wikipedia.org/wiki/NMEA_0183", new NMEAProtocolDetection());
+    super("NMEA-0183", "NMEA Gateway as per https://en.wikipedia.org/wiki/NMEA_0183", new NMEAProtocolDetection());
   }
 
   @Override

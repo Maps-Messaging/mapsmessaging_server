@@ -31,6 +31,7 @@ import io.mapsmessaging.engine.session.SecurityManager;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
 import io.mapsmessaging.hardware.DeviceManager;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -61,13 +62,15 @@ public class SubSystemManager {
   private final boolean enableDeviceIntegration;
   private final String uniqueId;
   private final int sessionPipeLines;
+  private final FeatureManager featureManager;
 
-  public SubSystemManager(String uniqueId, boolean enableSystemTopics, boolean enableDeviceIntegration, int sessionPipeLines) {
+  public SubSystemManager(String uniqueId, boolean enableSystemTopics, boolean enableDeviceIntegration, int sessionPipeLines, FeatureManager featureManager) {
     agentMap = new LinkedHashMap<>();
     this.uniqueId = uniqueId;
     this.enableDeviceIntegration = enableDeviceIntegration;
     this.enableSystemTopics = enableSystemTopics;
     this.sessionPipeLines = sessionPipeLines;
+    this.featureManager = featureManager;
   }
 
   public void start() throws IOException{
@@ -91,7 +94,9 @@ public class SubSystemManager {
     for (Iterator<ProtocolImplFactory> iterator = protocolServiceLoader.iterator(); iterator.hasNext(); ) {
       try {
         ProtocolImplFactory parser = iterator.next();
-        service.add(parser);
+        if(featureManager.isEnabled("protocols."+parser.getName().toLowerCase().replace("-", "_"))) {
+          service.add(parser);
+        }
       } catch (ServiceConfigurationError e) {
         logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
       }
@@ -185,18 +190,30 @@ public class SubSystemManager {
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
-    addToMap(700, 150, new NetworkManager());
+    addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
-    addToMap(1200, 400, new RestApiServerManager());
-    addToMap(2000, 30, new ServerConnectionManager());
+    if(featureManager.isEnabled("protocols.restApi")) {
+      addToMap(1200, 400, new RestApiServerManager());
+    }
+    if(featureManager.isEnabled("interConnections.pushSupport") ||
+        featureManager.isEnabled("interConnections.pullSupport")) {
+      addToMap(2000, 30, new ServerConnectionManager());
+    }
     addToMap(2100, 10, new RoutingManager());
-    addToMap(1000, 250, new JolokaManager());
+
+    if(featureManager.isEnabled("management.jolokia")) {
+      addToMap(1000, 250, new JolokaManager());
+    }
 
     // Optional modules that if not enabled do not load
-    if (enableSystemTopics) {
+    if (enableSystemTopics && featureManager.isEnabled("management.sysTopics")) {
       addToMap(800, 50, new SystemTopicManager(destinationManager));
     }
-    if (enableDeviceIntegration) {
+
+    boolean licensed = featureManager.isEnabled("hardware.i2cSupported") ||
+        featureManager.isEnabled("hardware.spiSupported") ||
+        featureManager.isEnabled("hardware.oneWireSupported");
+    if (enableDeviceIntegration && licensed) {
       addToMap(2200, 70, new DeviceManager());
     }
   }

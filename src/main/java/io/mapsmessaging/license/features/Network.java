@@ -8,8 +8,8 @@ public class Network {
   private boolean hmac;
   private boolean tcp;
   private boolean ssl;
-  private boolean ws;
-  private boolean wss;
+  private boolean dtls;
+  private boolean lora;
   private boolean serial;
   private int maxConnections;
 }

@@ -110,6 +110,7 @@ public class MessageDaemon {
 
   @Getter
   private final String licenseHome;
+  @Getter
   private FeatureManager featureManager;
 
   private static final String MAPS_HOME = "MAPS_HOME";
@@ -239,7 +240,7 @@ public class MessageDaemon {
     isStarted.set(true);
     loadConstants();
 
-    subSystemManager = new SubSystemManager(uniqueId, enableSystemTopics, enableDeviceIntegration, messageDaemonConfig.getSessionPipeLines());
+    subSystemManager = new SubSystemManager(uniqueId, enableSystemTopics, enableDeviceIntegration, messageDaemonConfig.getSessionPipeLines(), featureManager);
     subSystemManager.start();
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
