@@ -24,10 +24,14 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.logging.LogEntry;
 import io.mapsmessaging.logging.LogEntryListener;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
+import io.mapsmessaging.rest.responses.LogEntries;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -60,16 +64,26 @@ public class LogMonitorRestApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get last stored log entries",
-      description = "Retrieve the last configured number of log entries from the server"
+      description = "Retrieve the last configured number of log entries from the server",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LogEntries.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public List<LogEntry> getLogEntries(@QueryParam("filter") String filter) throws ParseException {
+  public LogEntries getLogEntries(@QueryParam("filter") String filter) throws ParseException {
     hasAccess(RESOURCE);
     List<LogEntry> initialLogs = MessageDaemon.getInstance().getLogMonitor().getLogHistory();
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
 
-    return initialLogs.stream()
+    return new LogEntries(initialLogs.stream()
         .filter(logEntry -> parser == null || parser.evaluate(logEntry))
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()));
   }
 
 
@@ -78,7 +92,17 @@ public class LogMonitorRestApi extends BaseRestApi {
   @Produces(MediaType.SERVER_SENT_EVENTS)
   @Operation(
       summary = "Stream live log entries",
-      description = "Subscribe to dynamic log events using Server-Sent Events"
+      description = "Subscribe to dynamic log events using Server-Sent Events",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "SSE stream of LogEntry events",
+              content = @Content(mediaType = "text/event-stream", schema = @Schema(implementation = LogEntry.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
+      }
   )
   public void streamLogs(
       @Context SseEventSink eventSink,

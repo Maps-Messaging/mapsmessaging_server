@@ -25,7 +25,6 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.DestinationDetailsResponse;
 import io.mapsmessaging.rest.responses.DestinationResponse;
-import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;

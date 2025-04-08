@@ -24,16 +24,18 @@ import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,7 +51,17 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all end point details",
-      description = "get all end point configuration details, filtered with the optional filter."
+      description = "get all end point configuration details, filtered with the optional filter.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceDetailResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public InterfaceDetailResponse getAllInterfaces(
       @Parameter(
@@ -85,47 +97,87 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
   @Path("/server/interfaces/stopAll")
   @Operation(
       summary = "Stop all end points",
-      description = "Stops all running endpoints."
+      description = "Stops all running endpoints.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response stopAllInterfaces() {
+  public StatusResponse stopAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().stopAll();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/interfaces/startAll")
   @Operation(
       summary = "Start all end points",
-      description = "Starts all stopped endpoints."
+      description = "Starts all stopped endpoints.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response startAllInterfaces() {
+  public StatusResponse startAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().startAll();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/interfaces/pauseAll")
   @Operation(
       summary = "Pause all end points",
-      description = "Pauses all running endpoints and stops new incoming connections."
+      description = "Pauses all running endpoints and stops new incoming connections.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response pauseAllInterfaces() {
+  public StatusResponse pauseAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().pauseAll();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/interfaces/resumeAll")
   @Operation(
       summary = "Resume all end points",
-      description = "Resumes all paused endpoints and allows new incoming connections."
+      description = "Resumes all paused endpoints and allows new incoming connections.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response resumeAllInterfaces() {
+  public StatusResponse resumeAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().resumeAll();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 }

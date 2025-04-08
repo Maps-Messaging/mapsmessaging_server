@@ -20,9 +20,10 @@ package io.mapsmessaging.rest.responses;
 
 
 import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
-import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor

@@ -25,10 +25,11 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.UUID;
-import javax.security.auth.Subject;
 
 @Provider
 public class AuthenticationFilter extends BaseAuthenticationFilter {

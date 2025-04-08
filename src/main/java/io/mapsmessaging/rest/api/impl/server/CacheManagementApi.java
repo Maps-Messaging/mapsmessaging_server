@@ -21,6 +21,9 @@ package io.mapsmessaging.rest.api.impl.server;
 import io.mapsmessaging.dto.rest.cache.CacheInfo;
 import io.mapsmessaging.rest.api.Constants;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
@@ -39,7 +42,17 @@ public class CacheManagementApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve cache information",
-      description = "Fetches detailed information about the server's central cache, including size, usage statistics, and entries."
+      description = "Fetches detailed information about the server's central cache, including size, usage statistics, and entries.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = CacheInfo.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public CacheInfo getCacheInformation() {
     hasAccess(RESOURCE);
@@ -51,7 +64,16 @@ public class CacheManagementApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Clear cache",
-      description = "Clears all entries in the server's central cache to free up memory and ensure data consistency."
+      description = "Clears all entries in the server's central cache to free up memory and ensure data consistency.",
+      responses = {
+          @ApiResponse(
+              responseCode = "204",
+              description = "Cache cleared successfully (no content)"
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
+      }
   )
   public void clearCacheInformation() {
     hasAccess(RESOURCE);

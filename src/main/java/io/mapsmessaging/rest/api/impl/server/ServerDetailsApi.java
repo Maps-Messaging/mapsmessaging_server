@@ -28,15 +28,17 @@ import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.ServerHealthStateResponse;
 import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
+import io.mapsmessaging.rest.responses.SubSystemStatusList;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
-import java.util.List;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -49,7 +51,17 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get server build information",
-      description = "Retrieves detailed information about the server build, such as version and configuration details. Uses caching for improved performance."
+      description = "Retrieves detailed information about the server build, such as version and configuration details. Uses caching for improved performance.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerInfoDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public ServerInfoDTO getBuildInfo() {
     hasAccess(RESOURCE);
@@ -70,7 +82,17 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get server statistics",
-      description = "Retrieves server usage statistics, including metrics such as CPU usage, memory usage, and active connections. Uses caching for improved performance."
+      description = "Retrieves server usage statistics, including metrics such as CPU usage, memory usage, and active connections. Uses caching for improved performance.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerStatisticsResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public ServerStatisticsResponse getStats() {
     hasAccess(RESOURCE);
@@ -92,18 +114,28 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get server subsystem status",
-      description = "Retrieves the current status of all server subsystems, including their operational state (e.g., OK, Warning, or Error). Uses caching for improved performance."
+      description = "Retrieves the current status of all server subsystems, including their operational state (e.g., OK, Warning, or Error). Uses caching for improved performance.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = SubSystemStatusList.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public List<SubSystemStatusDTO> getServerStatus() {
+  public SubSystemStatusList getServerStatus() {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), "serverStats");
-    List<SubSystemStatusDTO> cachedResponse = getFromCache(key, List.class);
+    SubSystemStatusList cachedResponse = getFromCache(key, SubSystemStatusList.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
 
     // Fetch and cache response
-    List<SubSystemStatusDTO> response = MessageDaemon.getInstance().getSubSystemStatus();
+    SubSystemStatusList response = new SubSystemStatusList( MessageDaemon.getInstance().getSubSystemStatus());
     putToCache(key, response);
     return response;
   }
@@ -113,7 +145,17 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get server subsystem status summary",
-      description = "Returns a simple summary of the server status."
+      description = "Returns a simple summary of the server status.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = ServerHealthStateResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public ServerHealthStateResponse getServerHealthSummary() {
     String state = "";
@@ -147,7 +189,17 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Restart the server",
-      description = "Restarts the server gracefully, preserving any necessary state before the restart operation begins."
+      description = "Restarts the server gracefully, preserving any necessary state before the restart operation begins.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public StatusResponse restartServer() {
     hasAccess(RESOURCE);
@@ -160,7 +212,17 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Shut down the server",
-      description = "Shuts down the server gracefully. Any necessary cleanup or state preservation is performed before shutting down."
+      description = "Shuts down the server gracefully. Any necessary cleanup or state preservation is performed before shutting down.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public StatusResponse shutdownServer() {
     hasAccess(RESOURCE);

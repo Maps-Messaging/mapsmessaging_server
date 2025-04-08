@@ -27,11 +27,12 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
+import org.jolokia.jvmagent.JolokiaServer;
+import org.jolokia.jvmagent.JolokiaServerConfig;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import org.jolokia.jvmagent.JolokiaServer;
-import org.jolokia.jvmagent.JolokiaServerConfig;
 
 public class JolokaManager implements Agent {
 

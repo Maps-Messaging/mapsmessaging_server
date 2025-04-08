@@ -18,8 +18,9 @@
 
 package io.mapsmessaging.rest.responses;
 
-import java.util.List;
 import lombok.Getter;
+
+import java.util.List;
 
 public class StringListResponse extends BaseResponse {
 

@@ -18,10 +18,10 @@
 
 package io.mapsmessaging.rest.jolokia;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class JolokiaLogHandler implements org.jolokia.util.LogHandler {
   private final Logger logger = LoggerFactory.getLogger(JolokiaLogHandler.class);

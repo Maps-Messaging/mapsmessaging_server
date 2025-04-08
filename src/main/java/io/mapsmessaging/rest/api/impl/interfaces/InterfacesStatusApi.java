@@ -29,7 +29,9 @@ import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -49,7 +51,17 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get end point status",
-      description = "Get the current status and metrics for the specified end point."
+      description = "Get the current status and metrics for the specified end point.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceStatusDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public InterfaceStatusDTO getInterfaceStatus(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
@@ -75,7 +87,17 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all end point status",
-      description = "Get all end point statuses and metrics, fitlered with the optional filter."
+      description = "Get all end point statuses and metrics, fitlered with the optional filter.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceStatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
 
   public InterfaceStatusResponse getAllInterfaceStatus(

@@ -19,8 +19,9 @@
 package io.mapsmessaging.rest.responses;
 
 
-import java.io.Serializable;
 import lombok.Data;
+
+import java.io.Serializable;
 
 @Data
 public class BaseResponse implements Serializable {

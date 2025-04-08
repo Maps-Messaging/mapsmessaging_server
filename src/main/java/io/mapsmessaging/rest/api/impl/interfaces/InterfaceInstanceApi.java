@@ -29,7 +29,11 @@ import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.EndPointDetailResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
@@ -51,7 +55,18 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get end point configurations",
-      description = "Get the end point configuration specifed by the name. Requires authentication if enabled in the configuration."
+      description = "Get the end point configuration specifed by the name. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceInfoDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Endpoint not found"),
+      }
   )
   public InterfaceInfoDTO getEndPoint(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
@@ -79,7 +94,17 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get end point connections",
-      description = "Get current connections on this endpoint. Requires authentication if enabled in the configuration."
+      description = "Get current connections on this endpoint. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointDetailResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public EndPointDetailResponse getEndPointConnections(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
@@ -110,76 +135,115 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update end point configuration",
-      description = "Update the configuration supplied for the named endpoint."
+      description = "Update the configuration supplied for the named endpoint.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Endpoint not found"),
+      }
   )
-  public boolean updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) throws IOException {
+  public StatusResponse updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) throws IOException {
     hasAccess(RESOURCE);
     if (endpointName.equals(config.getName()) && NetworkManagerConfig.getInstance().update(config)) {
       NetworkManagerConfig.getInstance().save();
-      return true;
+      return new StatusResponse("Success");
     }
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    return false;
+    return new StatusResponse("Failed");
   }
 
   @PUT
   @Path("/server/interface/{endpoint}/stop")
   @Operation(
       summary = "Stop the end point",
-      description = "Stops the specified end point from accepting new connections and closes connections."
+      description = "Stops the specified end point from accepting new connections and closes connections.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response stopInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse stopInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.STOPPED);
-    if (response != null) {
-      return response;
-    }
-    return Response.noContent().build();
+    return new StatusResponse(response == null?"Failed":"Stopped");
   }
 
   @PUT
   @Path("/server/interface/{endpoint}/start")
   @Operation(
       summary = "Start the end point",
-      description = "Starts the specified end point accepting new connections."
+      description = "Starts the specified end point accepting new connections.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response startInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse startInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.START);
-    if (response != null) {
-      return response;
-    }
-    return Response.noContent().build();
+    return new StatusResponse(response == null?"Failed":"Started");
   }
 
   @PUT
   @Path("/server/interface/{endpoint}/resume")
   @Operation(
       summary = "Resume the end point",
-      description = "Resume the specified end point accepting new connections."
+      description = "Resume the specified end point accepting new connections.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response resumeInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse resumeInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.RESUME);
-    if (response != null) {
-      return response;
-    }
-    return Response.noContent().build();
+    return new StatusResponse(response == null?"Failed":"Resumed");
   }
 
   @PUT
   @Path("/server/interface/{endpoint}/pause")
   @Operation(
       summary = "Pause the end point",
-      description = "Pauses the specified end point from accepting new connections."
+      description = "Pauses the specified end point from accepting new connections.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response pauseInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse pauseInterface(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.PAUSED);
-    if (response != null) {
-      return response;
-    }
-    return Response.noContent().build();
+    return new StatusResponse(response == null?"Failed":"Paused");
   }
 
   private Response lookup(String endpointName, STATE state) {

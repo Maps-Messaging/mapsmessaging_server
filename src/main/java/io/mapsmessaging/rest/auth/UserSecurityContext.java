@@ -21,10 +21,11 @@ package io.mapsmessaging.rest.auth;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.security.SubjectHelper;
 import jakarta.ws.rs.core.SecurityContext;
+import lombok.Getter;
+
+import javax.security.auth.Subject;
 import java.security.Principal;
 import java.util.UUID;
-import javax.security.auth.Subject;
-import lombok.Getter;
 
 public class UserSecurityContext implements SecurityContext {
 

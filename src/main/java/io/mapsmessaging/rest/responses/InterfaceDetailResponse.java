@@ -19,8 +19,9 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
-import java.util.List;
 import lombok.Getter;
+
+import java.util.List;
 
 public class InterfaceDetailResponse extends BaseResponse {
 

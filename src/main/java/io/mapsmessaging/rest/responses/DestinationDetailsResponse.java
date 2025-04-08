@@ -20,9 +20,10 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper=false)

@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest;
 
-import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.RestApiManagerConfig;
@@ -37,18 +35,12 @@ import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
 import io.mapsmessaging.rest.handler.CorsEnabledStaticHttpHandler;
 import io.mapsmessaging.rest.handler.CorsFilter;
 import io.mapsmessaging.rest.handler.SessionTracker;
-import io.mapsmessaging.rest.translation.*;
+import io.mapsmessaging.rest.translation.DebugMapper;
+import io.mapsmessaging.rest.translation.GsonMessageBodyReader;
+import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import jakarta.servlet.Servlet;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import javax.jmdns.ServiceInfo;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -64,6 +56,17 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.uri.UriComponent;
+
+import javax.jmdns.ServiceInfo;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import static io.mapsmessaging.logging.ServerLogMessages.REST_API_FAILURE;
 
 public class RestApiServerManager implements Agent {
 

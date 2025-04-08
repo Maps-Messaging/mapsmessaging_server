@@ -19,11 +19,12 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
-import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor

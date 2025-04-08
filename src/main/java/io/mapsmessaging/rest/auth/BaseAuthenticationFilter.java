@@ -22,11 +22,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
-import java.io.IOException;
-import java.util.UUID;
-import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.Setter;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
+import java.util.UUID;
 
 public abstract class BaseAuthenticationFilter implements ContainerRequestFilter {
 

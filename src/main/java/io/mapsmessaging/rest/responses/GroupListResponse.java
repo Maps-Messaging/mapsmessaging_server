@@ -20,8 +20,9 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.auth.GroupDTO;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
 import lombok.Getter;
+
+import java.util.List;
 
 public class GroupListResponse extends BaseResponse {
 

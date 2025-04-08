@@ -17,12 +17,14 @@
  */
 
 package io.mapsmessaging.rest.translation;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;

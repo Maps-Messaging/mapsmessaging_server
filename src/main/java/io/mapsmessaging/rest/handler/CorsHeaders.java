@@ -19,10 +19,11 @@
 package io.mapsmessaging.rest.handler;
 
 import jakarta.ws.rs.container.ContainerResponseContext;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.Data;
 import org.glassfish.grizzly.http.server.Response;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Data
 public class CorsHeaders {

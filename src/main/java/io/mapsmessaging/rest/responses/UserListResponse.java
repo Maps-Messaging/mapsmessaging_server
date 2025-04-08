@@ -19,9 +19,10 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.auth.UserDTO;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data

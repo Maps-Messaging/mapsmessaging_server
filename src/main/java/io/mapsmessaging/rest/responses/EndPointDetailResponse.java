@@ -19,9 +19,10 @@
 package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
 
 public class EndPointDetailResponse extends BaseResponse {
 

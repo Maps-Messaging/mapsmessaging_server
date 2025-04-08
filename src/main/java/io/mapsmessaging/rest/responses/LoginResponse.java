@@ -22,13 +22,14 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.rest.auth.AuthenticationContext;
 import io.mapsmessaging.rest.auth.RestAccessControl;
 import io.mapsmessaging.security.access.Identity;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import javax.security.auth.Subject;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import javax.security.auth.Subject;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @Getter
 @Setter

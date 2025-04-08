@@ -20,9 +20,10 @@ package io.mapsmessaging.rest.responses;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
+import lombok.Getter;
+
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
 
 public class IntegrationDetailResponse extends BaseResponse {
 

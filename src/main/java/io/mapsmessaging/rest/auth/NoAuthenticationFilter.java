@@ -24,11 +24,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
-import javax.security.auth.Subject;
 
 public class NoAuthenticationFilter extends BaseAuthenticationFilter {
 
