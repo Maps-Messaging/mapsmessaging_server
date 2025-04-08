@@ -94,7 +94,10 @@ public class SubSystemManager {
     for (Iterator<ProtocolImplFactory> iterator = protocolServiceLoader.iterator(); iterator.hasNext(); ) {
       try {
         ProtocolImplFactory parser = iterator.next();
-        if(featureManager.isEnabled("protocols."+parser.getName().toLowerCase().replace("-", "_"))) {
+        String name = parser.getName().toLowerCase();
+        name = name.replaceAll("-", "_");
+        name = name.replaceAll(" ", "_");
+        if(name.equals("loop") || featureManager.isEnabled("protocols."+name) ) {
           service.add(parser);
         }
       } catch (ServiceConfigurationError e) {
@@ -214,7 +217,7 @@ public class SubSystemManager {
         featureManager.isEnabled("hardware.spiSupported") ||
         featureManager.isEnabled("hardware.oneWireSupported");
     if (enableDeviceIntegration && licensed) {
-      addToMap(2200, 70, new DeviceManager());
+      addToMap(2200, 70, new DeviceManager(featureManager));
     }
   }
 

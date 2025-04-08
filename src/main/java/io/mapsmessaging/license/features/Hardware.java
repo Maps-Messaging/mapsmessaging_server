@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class Hardware {
-  private boolean i2cSupported;
-  private boolean spiSupported;
-  private boolean oneWireSupported;
+  private boolean i2c;
+  private boolean spi;
+  private boolean oneWire;
 }

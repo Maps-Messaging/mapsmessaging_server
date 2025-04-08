@@ -34,6 +34,7 @@ import io.mapsmessaging.hardware.device.handler.i2c.I2CBusHandler;
 import io.mapsmessaging.hardware.device.handler.onewire.OneWireBusHandler;
 import io.mapsmessaging.hardware.trigger.PeriodicTrigger;
 import io.mapsmessaging.hardware.trigger.Trigger;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -46,17 +47,24 @@ import java.util.*;
 public class DeviceManager implements ServiceManager, Agent {
 
   private static final String DEFAULT = "default";
-
   private final boolean enabled;
   private final Logger logger = LoggerFactory.getLogger(DeviceManager.class);
   private final List<BusHandler> busHandlers;
   private final List<Trigger> triggers;
   private final Map<String, Trigger> configuredTriggers;
+  private final boolean enableI2C;
+  private final boolean enableOneWire;
+  private final boolean enableSpi;
+
 
   private final DeviceBusManager deviceBusManager;
   private String errorMessage;
 
-  public DeviceManager() {
+  public DeviceManager(FeatureManager featureManager) {
+    enableSpi = featureManager.isEnabled("device.spi");
+    enableI2C = featureManager.isEnabled("device.i2c");
+    enableOneWire = featureManager.isEnabled("device.oneWire");
+
     triggers = new ArrayList<>();
     configuredTriggers = new LinkedHashMap<>();
     busHandlers = new ArrayList<>();
@@ -101,10 +109,16 @@ public class DeviceManager implements ServiceManager, Agent {
 
   public List<DeviceController> getActiveDevices(){
     List<DeviceController> devices = new ArrayList<>();
-    devices.addAll(deviceBusManager.getI2cBusManager()[0].getActive().values());
-    devices.addAll(deviceBusManager.getI2cBusManager()[1].getActive().values());
-    devices.addAll(deviceBusManager.getOneWireBusManager().getActive().values());
-    devices.addAll(deviceBusManager.getSpiBusManager().getActive().values());
+    if(enableI2C) {
+      devices.addAll(deviceBusManager.getI2cBusManager()[0].getActive().values());
+      devices.addAll(deviceBusManager.getI2cBusManager()[1].getActive().values());
+    }
+    if(enableOneWire) {
+      devices.addAll(deviceBusManager.getOneWireBusManager().getActive().values());
+    }
+    if(enableSpi) {
+      devices.addAll(deviceBusManager.getSpiBusManager().getActive().values());
+    }
     return devices;
   }
 
@@ -116,8 +130,10 @@ public class DeviceManager implements ServiceManager, Agent {
     if(deviceManagerConfig.isEnabled()){
       loadTriggers(deviceManagerConfig.getTriggers());
       logger.log(ServerLogMessages.DEVICE_MANAGER_LOAD_PROPERTIES);
-      loadI2CConfig(manager, deviceManagerConfig.getI2cBuses());
-      if(deviceManagerConfig.getOneWireBus() != null){
+      if(enableI2C) {
+        loadI2CConfig(manager, deviceManagerConfig.getI2cBuses());
+      }
+      if(deviceManagerConfig.getOneWireBus() != null && enableOneWire) {
         OneWireBusConfigDTO oneWireBusConfig = deviceManagerConfig.getOneWireBus();
         Trigger trigger = locateNamedTrigger(oneWireBusConfig.getTrigger());
         busHandlers.add(new OneWireBusHandler(manager.getOneWireBusManager(), oneWireBusConfig, trigger));
@@ -141,9 +157,7 @@ public class DeviceManager implements ServiceManager, Agent {
         }
       }
     }
-    if(!configuredTriggers.containsKey(DEFAULT)){
-      configuredTriggers.put(DEFAULT, new PeriodicTrigger(60000));
-    }
+    configuredTriggers.computeIfAbsent(DEFAULT, k -> new PeriodicTrigger(60000));
   }
 
   private void loadI2CConfig(DeviceBusManager manager, List<I2CBusConfigDTO> deviceBusConfigs) {

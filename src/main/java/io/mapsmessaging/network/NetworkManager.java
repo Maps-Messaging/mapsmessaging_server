@@ -54,8 +54,8 @@ public class NetworkManager implements ServiceManager, Agent {
     ServiceLoader<EndPointServerFactory> endPointServerLoad = ServiceLoader.load(EndPointServerFactory.class);
     endPointServers = new CopyOnWriteArrayList<>();
     for(EndPointServerFactory endPointConnectionFactory:endPointServerLoad){
-      String name = endPointConnectionFactory.getName();
-      if(featureManager.isEnabled("network."+name)){
+      String name = endPointConnectionFactory.getName().toLowerCase();
+      if(name.equals("noop") || featureManager.isEnabled("network."+name)){
         endPointServers.add(endPointConnectionFactory);
       }
     }

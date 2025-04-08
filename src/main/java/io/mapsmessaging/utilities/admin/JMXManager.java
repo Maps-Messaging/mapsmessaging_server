@@ -55,7 +55,10 @@ public class JMXManager {
   }
 
   public ObjectInstance register(Object obj, List<String> nameList) {
-    if(!enableJMX) return null;
+
+    if(!enableJMX) {
+      return null;
+    }
     String objectId = JMXHelper.buildObjectName(Constants.JMX_DOMAIN, nameList);
     logger.log(ServerLogMessages.JMX_MANAGER_REGISTER, objectId);
     try {

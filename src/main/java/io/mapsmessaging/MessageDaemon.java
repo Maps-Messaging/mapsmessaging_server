@@ -179,7 +179,8 @@ public class MessageDaemon {
     TransactionManager.setExpiryTime(transactionExpiry);
     enableSystemTopics = messageDaemonConfig.isEnableSystemTopics();
     boolean enableAdvancedSystemTopics = messageDaemonConfig.isEnableSystemStatusTopics();
-    if (messageDaemonConfig.isEnableJMX()) {
+
+    if (messageDaemonConfig.isEnableJMX() && featureManager.isEnabled("management.jmx")) {
       JMXManager.setEnableJMX(true);
       mBean = new MessageDaemonJMX(this);
       new SimpleTaskSchedulerJMX(mBean.getTypePath());
