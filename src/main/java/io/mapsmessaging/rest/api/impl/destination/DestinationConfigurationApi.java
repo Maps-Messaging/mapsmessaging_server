@@ -18,12 +18,13 @@
 
 package io.mapsmessaging.rest.api.impl.destination;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Path;
 
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
 @Tag(name = "Destination Management")
 @Path(URI_PATH)
-public class DestinationConfigurationApi extends BaseRestApi {}
+public class DestinationConfigurationApi extends BaseRestApi {
+}

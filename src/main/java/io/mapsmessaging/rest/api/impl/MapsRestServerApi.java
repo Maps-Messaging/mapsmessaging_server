@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Session;
@@ -36,29 +34,40 @@ import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import java.io.IOException;
+
 import javax.security.auth.Subject;
+import java.io.IOException;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @OpenAPIDefinition(
     info =
-        @Info(
-            description =
-                "Maps Messaging Server Rest API, provides simple Rest API to manage and interact with the server",
-            version = BuildInfo.BUILD_VERSION,
-            title = "Maps Messaging Rest Server",
-            contact =
-                @Contact(
-                    name = "Matthew Buckton",
-                    email = "info@mapsmessaging.io",
-                    url = "http://mapsmessaging.io"),
-            license =
-                @License(name = "Apache 2.0", url = "http://www.apache.org/licenses/LICENSE-2.0")),
+    @Info(
+        description =
+            "Maps Messaging Server Rest API, provides simple Rest API to manage and interact with the server",
+        version = BuildInfo.BUILD_VERSION,
+        title = "Maps Messaging Rest Server",
+        contact =
+        @Contact(
+            name = "Matthew Buckton",
+            email = "info@mapsmessaging.io",
+            url = "http://mapsmessaging.io"),
+        license = @License(name = "Apache 2.0", url = "http://www.apache.org/licenses/LICENSE-2.0")),
+    servers = {
+        @io.swagger.v3.oas.annotations.servers.Server(
+            description = "Default Server",
+            url = "http://localhost:8080"
+        )
+    },
     tags = {
         @Tag(
             name = "Authentication and Authorisation Management",
@@ -93,6 +102,10 @@ import javax.security.auth.Subject;
             description = "Manages the server's integrations with other messaging brokers, enabling interoperability and seamless data exchange across distributed systems."
         ),
         @Tag(
+            name = "Server Integration Status",
+            description = "Retrieves the current status of the server to server integration."
+        ),
+        @Tag(
             name = "Connection Management",
             description = "Handles client connections to the server, offering endpoints for monitoring, managing, and troubleshooting active connections and session details."
         ),
@@ -115,9 +128,9 @@ import javax.security.auth.Subject;
     },
 
     externalDocs =
-        @ExternalDocumentation(
-            description = "Maps Messaging",
-            url = "https://www.mapsmessaging.io/"),
+    @ExternalDocumentation(
+        description = "Maps Messaging",
+        url = "https://www.mapsmessaging.io/"),
     security = {
         @SecurityRequirement(name = "basicAuth"),
         @SecurityRequirement(name = "authScheme")
@@ -138,8 +151,6 @@ import javax.security.auth.Subject;
 )
 
 
-
-
 @Tag(name = "Server Health")
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
@@ -150,7 +161,11 @@ public class MapsRestServerApi extends BaseRestApi {
   @Operation(
       summary = "Ping the server",
       description = "A simple endpoint to verify that the server is operational and responsive.",
-      security = {} // Overrides global security to make this endpoint accessible without authentication
+      security = {}, // Overrides global security to make this endpoint accessible without authentication
+      responses = {
+          @ApiResponse(responseCode = "200", description = "Server is operational"),
+          @ApiResponse(responseCode = "400", description = "Bad request")
+      }
   )
   public StatusResponse getPing() {
     return new StatusResponse("Success");
@@ -161,7 +176,17 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve the server's unique name",
-      description = "Returns the unique identifier of the server instance."
+      description = "Returns the unique identifier of the server instance.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get server name was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public StatusResponse getName() {
     return new StatusResponse(MessageDaemon.getInstance().getId());
@@ -172,7 +197,18 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Check for configuration updates",
-      description = "Provides information about any changes in the server's configuration update counts."
+      description = "Provides information about any changes in the server's configuration update counts.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Returns if there have been updates",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = UpdateCheckResponse.class)
+              )
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request")
+      }
   )
   public UpdateCheckResponse checkForUpdates() {
     long schema = SchemaManager.getInstance().getUpdateCount();
@@ -186,7 +222,16 @@ public class MapsRestServerApi extends BaseRestApi {
   @Consumes({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "User login",
-      description = "Allows a user to log in and obtain an authentication token. This endpoint does not require authentication and overrides global security settings."
+      description = "Allows a user to log in and obtain an authentication token. This endpoint does not require authentication and overrides global security settings.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Login successful or not required",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
+      }
   )
   public LoginResponse login(
       @QueryParam("sessionId") String sessionId,
@@ -194,10 +239,10 @@ public class MapsRestServerApi extends BaseRestApi {
   ) {
     HttpSession session = request.getSession(true);
     if (session != null) {
-      if(persistentSession) {
+      if (persistentSession) {
         session.setAttribute("persistentSession", true);
       }
-      if(sessionId != null && !sessionId.isEmpty()) {
+      if (sessionId != null && !sessionId.isEmpty()) {
         session.setAttribute("sessionId", sessionId);
       }
       hasAccess("root");
@@ -213,8 +258,13 @@ public class MapsRestServerApi extends BaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "User logout",
-      description = "Logs out the currently authenticated user by invalidating their session."
-  )  public StatusResponse logout() {
+      description = "Logs out the currently authenticated user by invalidating their session.",
+      responses = {
+          @ApiResponse(responseCode = "200", description = "Logout successful"),
+          @ApiResponse(responseCode = "400", description = "Bad request or invalid session state")
+      }
+  )
+  public StatusResponse logout() {
     HttpSession session = request.getSession(false);
     String response = "Success";
     if (session != null) {
@@ -223,7 +273,7 @@ public class MapsRestServerApi extends BaseRestApi {
         try {
           SessionManager.getInstance().close(msgSession, true);
         } catch (IOException e) {
-          response = "Failure : "+e.getMessage();
+          response = "Failure : " + e.getMessage();
         }
         msgSession.removeSubscription("authenticatedSession");
       }

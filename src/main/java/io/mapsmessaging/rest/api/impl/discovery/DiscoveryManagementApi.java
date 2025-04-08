@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.discovery;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
@@ -32,8 +30,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Discovery Management")
 @Path(URI_PATH)
@@ -71,10 +72,11 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
   @Operation(
       summary = "Get discovered servers",
       description = "Retrieve a list of all currently discovered servers, can be filtered with the optional filter. Requires authentication if enabled in the configuration."
-  )  public List<DiscoveredServersDTO> getAllDiscoveredServers(
+  )
+  public List<DiscoveredServersDTO> getAllDiscoveredServers(
       @Parameter(
           description = "Optional filter string ",
-          schema = @Schema(type= "String", example = "schemaSupport = TRUE OR systemTopicPrefix IS NOT NULL")
+          schema = @Schema(type = "String", example = "schemaSupport = TRUE OR systemTopicPrefix IS NOT NULL")
       )
       @QueryParam("filter") String filter
   ) throws ParseException {

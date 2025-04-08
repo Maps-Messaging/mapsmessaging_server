@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.logging;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.mapsmessaging.MessageDaemon;
@@ -40,22 +38,22 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+import lombok.AllArgsConstructor;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Logging Monitor")
 @Path(URI_PATH)
 public class LogMonitorRestApi extends BaseRestApi {
   private static final String RESOURCE = "logging";
-
+  private final Map<SseEventSink, LogEntryListener> activeSinks = new ConcurrentHashMap<>();
   @Context
   private Sse sse;
-
-  private final Map<SseEventSink, LogEntryListener> activeSinks = new ConcurrentHashMap<>();
-
 
   @GET
   @Path("/server/log")
@@ -97,7 +95,7 @@ public class LogMonitorRestApi extends BaseRestApi {
         if (eventSink.isClosed()) {
           return; // Stop if the sink is closed
         }
-        if(parser != null && !parser.evaluate(logEntry)) {
+        if (parser != null && !parser.evaluate(logEntry)) {
           continue;
         }
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -135,7 +133,7 @@ public class LogMonitorRestApi extends BaseRestApi {
     public void receive(LogEntry logEntry) {
       if (!eventSink.isClosed()) { // Check if the sink is still open
         try {
-          if(parser != null && !parser.evaluate(logEntry)) {
+          if (parser != null && !parser.evaluate(logEntry)) {
             return;
           }
           Gson gson = new GsonBuilder().setPrettyPrinting().create();

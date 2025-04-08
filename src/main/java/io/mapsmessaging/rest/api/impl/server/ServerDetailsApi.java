@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.server;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.ServerRunner;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
@@ -32,9 +30,15 @@ import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
 import java.util.List;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Management")
 @Path(URI_PATH)
@@ -114,15 +118,15 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   public ServerHealthStateResponse getServerHealthSummary() {
     String state = "";
     int issueCount = 0;
-    for(SubSystemStatusDTO status : MessageDaemon.getInstance().getSubSystemManager().getSubSystemStatus()){
-      switch(status.getStatus()){
+    for (SubSystemStatusDTO status : MessageDaemon.getInstance().getSubSystemManager().getSubSystemStatus()) {
+      switch (status.getStatus()) {
         case ERROR:
           state = "Error";
           issueCount++;
           break;
 
         case WARN:
-          if(state.isEmpty()){
+          if (state.isEmpty()) {
             state = "Warning";
             issueCount++;
           }
@@ -132,7 +136,7 @@ public class ServerDetailsApi extends ServerBaseRestApi {
           break;
       }
     }
-    if(state.isEmpty()){
+    if (state.isEmpty()) {
       state = "Ok";
     }
     return new ServerHealthStateResponse(state, issueCount);

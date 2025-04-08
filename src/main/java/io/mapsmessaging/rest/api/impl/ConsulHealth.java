@@ -21,6 +21,7 @@ package io.mapsmessaging.rest.api.impl;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -36,18 +37,22 @@ public class ConsulHealth extends BaseRestApi {
   @Operation(
       summary = "Check server health",
       description = "Checks the health of all subsystems and returns their overall status. Possible values are 'Ok', 'Warning', or 'Error'.",
-      security = {} // Overrides global security to make this endpoint accessible without authentication
+      security = {}, // Overrides global security
+      responses = {
+          @ApiResponse(responseCode = "200", description = "Health status returned"),
+          @ApiResponse(responseCode = "400", description = "Bad request")
+      }
   )
   public String getHealth() {
     String state = "";
-    for(SubSystemStatusDTO status : MessageDaemon.getInstance().getSubSystemManager().getSubSystemStatus()){
-      switch(status.getStatus()){
+    for (SubSystemStatusDTO status : MessageDaemon.getInstance().getSubSystemManager().getSubSystemStatus()) {
+      switch (status.getStatus()) {
         case ERROR:
           state = "Error";
           break;
 
         case WARN:
-          if(state.isEmpty()){
+          if (state.isEmpty()) {
             state = "Warning";
           }
           break;
@@ -56,7 +61,7 @@ public class ConsulHealth extends BaseRestApi {
           break;
       }
     }
-    if(state.isEmpty()){
+    if (state.isEmpty()) {
       state = "Ok";
     }
     return state;

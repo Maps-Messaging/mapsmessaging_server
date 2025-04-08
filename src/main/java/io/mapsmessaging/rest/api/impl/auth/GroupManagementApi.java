@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.auth;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.registry.GroupDetails;
 import io.mapsmessaging.auth.registry.UserDetails;
@@ -32,15 +30,20 @@ import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Authentication and Authorisation Management")
 @Path(URI_PATH)
@@ -51,12 +54,23 @@ public class GroupManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all groups",
-      description = "Retrieves all currently known groups. Requires authentication if enabled in the configuration."
+      description = "Retrieves all currently known groups. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get all groups was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = GroupListResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public GroupListResponse getAllGroups(
       @Parameter(
           description = "Optional filter string ",
-          schema = @Schema(type= "String", example = "name = 'admin'")
+          schema = @Schema(type = "String", example = "name = 'admin'")
       )
       @QueryParam("filter") String filter) throws ParseException {
     hasAccess(RESOURCE);
@@ -89,7 +103,18 @@ public class GroupManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get group by UUID",
-      description = "Retrieve the group using the UUID of the specific group. Requires authentication if enabled in the configuration."
+      description = "Retrieve the group using the UUID of the specific group. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get groupby id was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = GroupDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public GroupDTO getGroupById(@PathParam("groupUuid") String groupUuid) {
     hasAccess(RESOURCE);
@@ -115,12 +140,23 @@ public class GroupManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add new group",
-      description = "Adds a new group to the group list. Requires authentication if enabled in the configuration."
+      description = "Adds a new group to the group list. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Add group was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public StatusResponse addGroup(String groupName) throws IOException {
     hasAccess(RESOURCE);
     AuthManager authManager = AuthManager.getInstance();
-    if(authManager.getGroupIdentity(groupName) == null) {
+    if (authManager.getGroupIdentity(groupName) == null) {
       authManager.addGroup(groupName);
       response.setStatus(HttpServletResponse.SC_CREATED);
       return new StatusResponse("Successfully added group " + groupName);
@@ -134,7 +170,18 @@ public class GroupManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Add user to group",
-      description = "Adds a user to a group using the UUID of the user and UUID of the group . Requires authentication if enabled in the configuration."
+      description = "Adds a user to a group using the UUID of the user and UUID of the group . Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Add group to user was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public StatusResponse addUserToGroup(
       @PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid)
@@ -156,12 +203,12 @@ public class GroupManagementApi extends BaseAuthRestApi {
             .filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid))
             .findFirst()
             .orElse(null);
-    if(userDetails == null) {
+    if (userDetails == null) {
       response.setStatus(HttpServletResponse.SC_NOT_FOUND);
       return new StatusResponse("User " + userUuid + " does not exist");
     }
     authManager.addUserToGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
-    return new StatusResponse("Successfully added user " + userDetails.getIdentityEntry().getUsername()+" to group "+groupDetails.getName());
+    return new StatusResponse("Successfully added user " + userDetails.getIdentityEntry().getUsername() + " to group " + groupDetails.getName());
   }
 
   @DELETE
@@ -169,7 +216,18 @@ public class GroupManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Removes a user from group",
-      description = "Removes a user from a group using the users UUID and the groups UUID . Requires authentication if enabled in the configuration."
+      description = "Removes a user from a group using the users UUID and the groups UUID . Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Remove user from group was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public StatusResponse removeUserFromGroup(
       @PathParam("groupUuid") String groupUuid, @PathParam("userUuid") String userUuid)
@@ -190,12 +248,12 @@ public class GroupManagementApi extends BaseAuthRestApi {
             .filter(u -> u.getIdentityEntry().getId().toString().equals(userUuid))
             .findFirst()
             .orElse(null);
-    if(userDetails == null) {
+    if (userDetails == null) {
       response.setStatus(HttpServletResponse.SC_NOT_FOUND);
       return new StatusResponse("User " + userUuid + " does not exist");
     }
     authManager.removeUserFromGroup(userDetails.getIdentityEntry().getUsername(), groupDetails.getName());
-    return new StatusResponse("User " + userDetails.getIdentityEntry().getUsername() + " removed from group "+groupDetails.getName());
+    return new StatusResponse("User " + userDetails.getIdentityEntry().getUsername() + " removed from group " + groupDetails.getName());
   }
 
   @DELETE
@@ -203,7 +261,18 @@ public class GroupManagementApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Delete a group",
-      description = "Deletes a group from the list and removes all user memberships. Requires authentication if enabled in the configuration."
+      description = "Deletes a group from the list and removes all user memberships. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Delete group was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public StatusResponse deleteGroup(@PathParam("groupUuid") String groupUuid) throws IOException {
     hasAccess(RESOURCE);

@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.destination;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.DestinationStatusHelper;
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
@@ -37,10 +35,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Destination Management")
 @Path(URI_PATH)

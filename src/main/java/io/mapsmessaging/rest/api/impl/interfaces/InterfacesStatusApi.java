@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.interfaces;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
@@ -36,8 +34,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Interface Management")
 @Path(URI_PATH)
@@ -80,7 +81,7 @@ public class InterfacesStatusApi extends BaseInterfaceApi {
   public InterfaceStatusResponse getAllInterfaceStatus(
       @Parameter(
           description = "Optional filter string ",
-          schema = @Schema(type= "String", example = "state = 'started'")
+          schema = @Schema(type = "String", example = "state = 'started'")
       )
       @QueryParam("filter") String filter
   ) throws ParseException {

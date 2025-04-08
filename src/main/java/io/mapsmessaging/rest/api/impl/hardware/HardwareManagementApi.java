@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.hardware;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.dto.rest.devices.DeviceInfoDTO;
@@ -30,9 +28,12 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Hardware Management")
 @Path(URI_PATH)

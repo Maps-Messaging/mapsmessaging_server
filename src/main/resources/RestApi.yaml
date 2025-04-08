@@ -30,6 +30,7 @@ RestApi:
   enableCache: true
   cacheLifetime: 30000
   cacheCleanup: 10000
+  enableWadlEndPoint: false
 
 
 #    tls:

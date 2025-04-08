@@ -87,7 +87,7 @@ MessageDaemon:
     # Enable or Disable the construction of JMX Beans for server management / monitoring
     #
     # Default: true
-    EnableJMX: false
+    EnableJMX: true
 
 
     #

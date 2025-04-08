@@ -18,9 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl;
 
-import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
-import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
-
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -37,16 +34,20 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+
 import javax.security.auth.Subject;
 
+import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
+import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
+
 public class BaseRestApi {
-  @Context protected HttpServletRequest request;
-
-  @Context protected HttpServletResponse response;
-
-  @Context protected UriInfo uriInfo;
-
   private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
+  @Context
+  protected HttpServletRequest request;
+  @Context
+  protected HttpServletResponse response;
+  @Context
+  protected UriInfo uriInfo;
 
   protected HttpSession getSession() {
     HttpSession session = request.getSession(false);
@@ -81,7 +82,7 @@ public class BaseRestApi {
         access = (userIdMap != null && accessControl.hasAccess(resource, subject, computeAccess(method)));
       }
     }
-    if(!access) {
+    if (!access) {
       throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
     }
   }

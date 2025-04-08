@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.interfaces;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.dto.helpers.EndPointHelper;
@@ -37,9 +35,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Server Interface Management")
 @Path(URI_PATH)
@@ -113,7 +114,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
   )
   public boolean updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) throws IOException {
     hasAccess(RESOURCE);
-    if(endpointName.equals(config.getName()) && NetworkManagerConfig.getInstance().update(config)){
+    if (endpointName.equals(config.getName()) && NetworkManagerConfig.getInstance().update(config)) {
       NetworkManagerConfig.getInstance().save();
       return true;
     }
@@ -200,7 +201,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
         return Response.ok().build();
       } else if (newState == STATE.STOPPED
           && (endPointManager.getState() == STATE.START
-              || endPointManager.getState() == STATE.PAUSED)) {
+          || endPointManager.getState() == STATE.PAUSED)) {
         endPointManager.close();
         return Response.ok().build();
       } else if (newState == STATE.RESUME && endPointManager.getState() == STATE.PAUSED) {

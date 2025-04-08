@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.messaging;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -47,11 +45,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.security.auth.login.LoginException;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Messaging Interface")
 @Path(URI_PATH + "/messaging")
@@ -83,13 +84,13 @@ public class MessagingApi extends BaseRestApi {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Unsubscribe from a topic", description = "Unsubscribes from a specified topic")
   @POST
-  public StatusResponse unsubscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest)  {
+  public StatusResponse unsubscribeToTopic(@Valid SubscriptionRequestDTO subscriptionRequest) {
     hasAccess(RESOURCE);
     String destinationName = subscriptionRequest.getDestinationName();
     HttpSession httpSession = getSession();
     RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
     restMessageListener.deregisterEventManager(destinationName);
-    return new StatusResponse("Successfully unsubscribed to "+destinationName);
+    return new StatusResponse("Successfully unsubscribed to " + destinationName);
   }
 
   @Path("/subscribe")
@@ -104,20 +105,20 @@ public class MessagingApi extends BaseRestApi {
     SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);
     RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
     restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), session, eventManager);
-    return new StatusResponse("Successfully subscribed to "+subscriptionRequest.getDestinationName());
+    return new StatusResponse("Successfully subscribed to " + subscriptionRequest.getDestinationName());
   }
 
   @Operation(summary = "Expose AsyncMessageDTO in OpenAPI",
       description = "Delivers messages via Server Side Events, supports MQTT wild card plus JMS style filtering",
       responses = {
-        @ApiResponse(
-            description = "AsyncMessageDTO schema",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = AsyncMessageDTO.class)
+          @ApiResponse(
+              description = "AsyncMessageDTO schema",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = AsyncMessageDTO.class)
               )
-        )
-  })
+          )
+      })
   @GET
   @Path("/sse")
   @Produces(MediaType.SERVER_SENT_EVENTS)
@@ -133,7 +134,6 @@ public class MessagingApi extends BaseRestApi {
     RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
     restMessageListener.registerEventManager(subscriptionRequest.getDestinationName(), sse, eventSink, session, eventManager);
   }
-
 
 
   @Path("/commit")
@@ -179,14 +179,13 @@ public class MessagingApi extends BaseRestApi {
   ) {
     hasAccess(RESOURCE);
     RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    if(consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
+    if (consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
       List<ConsumedMessages> messages = new ArrayList<>();
-      for(String destination : messageListener.getKnownDestinations()){
+      for (String destination : messageListener.getKnownDestinations()) {
         messages.add(new ConsumedMessages(destination, messageListener.getMessages(destination, consumeRequestDTO.getDepth())));
       }
       return new ConsumedResponse(messages);
-    }
-    else{
+    } else {
       ConsumedMessages messages = new ConsumedMessages(consumeRequestDTO.getDestination(), messageListener.getMessages(consumeRequestDTO.getDestination(), consumeRequestDTO.getDepth()));
       return new ConsumedResponse(List.of(messages));
     }
@@ -203,15 +202,14 @@ public class MessagingApi extends BaseRestApi {
   public SubscriptionDepthResponse getSubscriptionDepth(@Valid ConsumeRequestDTO consumeRequestDTO) {
     hasAccess(RESOURCE);
     RestMessageListener messageListener = (RestMessageListener) getSession().getAttribute("restListener");
-    if(consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
+    if (consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
       Map<String, Integer> depth = messageListener.subscriptionDepth();
       List<SubscriptionDepth> depths = new ArrayList<>();
-      for(Map.Entry<String, Integer> entry : depth.entrySet()) {
+      for (Map.Entry<String, Integer> entry : depth.entrySet()) {
         depths.add(new SubscriptionDepth(entry.getValue(), entry.getKey()));
       }
       return new SubscriptionDepthResponse(depths);
-    }
-    else{
+    } else {
 
       int depth = messageListener.subscriptionDepth(consumeRequestDTO.getDestination());
       SubscriptionDepth subscriptionDepth = new SubscriptionDepth(depth, consumeRequestDTO.getDestination());
@@ -224,8 +222,8 @@ public class MessagingApi extends BaseRestApi {
     Object lookup = httpSession.getAttribute("authenticatedSession");
     if (lookup == null) {
       boolean persistentSession = false;
-      Object obj  = httpSession.getAttribute("persistentSession");
-      if(obj instanceof Boolean) {
+      Object obj = httpSession.getAttribute("persistentSession");
+      if (obj instanceof Boolean) {
         persistentSession = (Boolean) obj;
       }
       RestClientConnection restClientConnection = new RestClientConnection(httpSession);
@@ -233,7 +231,7 @@ public class MessagingApi extends BaseRestApi {
       Object id = httpSession.getAttribute("sessionId");
       String sessionId = id == null ? restClientConnection.getName() : id.toString();
       String username = (String) httpSession.getAttribute("username");
-      if(username == null) {
+      if (username == null) {
         username = httpSession.getId();
         httpSession.setAttribute("username", username);
       }
@@ -244,22 +242,22 @@ public class MessagingApi extends BaseRestApi {
 
       SessionContext sessionContext = sessionContextBuilder.build();
       RestMessageListener restMessageListener = new RestMessageListener();
-      Session session = SessionManager.getInstance().create(sessionContext, restMessageListener );
+      Session session = SessionManager.getInstance().create(sessionContext, restMessageListener);
       httpSession.setAttribute("authenticatedSession", session);
       httpSession.setAttribute("restListener", restMessageListener);
       return session;
     }
-    if(lookup instanceof Session) {
+    if (lookup instanceof Session) {
       return (Session) lookup;
     }
     throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
   }
 
-  private SubscribedEventManager subscribeToTopic(Session session,  SubscriptionRequestDTO subscriptionRequest) throws IOException {
+  private SubscribedEventManager subscribeToTopic(Session session, SubscriptionRequestDTO subscriptionRequest) throws IOException {
     return session.addSubscription(buildContext(subscriptionRequest).build());
   }
 
-  private SubscriptionContextBuilder buildContext( SubscriptionRequestDTO subscriptionRequest){
+  private SubscriptionContextBuilder buildContext(SubscriptionRequestDTO subscriptionRequest) {
     String destinationName = subscriptionRequest.getDestinationName();
     QualityOfService qos = subscriptionRequest.isTransactional() ? QualityOfService.AT_LEAST_ONCE : QualityOfService.AT_MOST_ONCE;
     ClientAcknowledgement clientAcknowledgement = subscriptionRequest.isTransactional() ? ClientAcknowledgement.INDIVIDUAL : ClientAcknowledgement.AUTO;
@@ -269,11 +267,11 @@ public class MessagingApi extends BaseRestApi {
         .setRetainHandler(RetainHandler.SEND_ALWAYS)
         .setNoLocalMessages(true);
     String sharedName = subscriptionRequest.getNamedSubscription();
-    if(sharedName != null && !sharedName.isEmpty()) {
+    if (sharedName != null && !sharedName.isEmpty()) {
       contextBuilder.setSharedName(sharedName);
     }
     String filter = subscriptionRequest.getFilter();
-    if(filter != null && !filter.trim().isEmpty()) {
+    if (filter != null && !filter.trim().isEmpty()) {
       contextBuilder.setSelector(filter);
     }
     return contextBuilder;

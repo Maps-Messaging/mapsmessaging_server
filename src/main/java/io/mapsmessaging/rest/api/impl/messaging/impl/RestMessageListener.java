@@ -32,25 +32,26 @@ import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+import lombok.*;
+import org.jetbrains.annotations.NotNull;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import lombok.*;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class handles message delivery for web clients. This could be either sync or async via SSE.
- *
+ * <p>
  * If Sync, then the messages are stored as
- *
+ * <p>
  * Map:
  * Key: Subscription namespace : could be a singe destination or a wild card subscription
  * Value : Map : key: String,  Value List of Messages where String is the physical destination name and the list is events from that destination
- *
- *
+ * <p>
+ * <p>
  * If Async, then the messages are forwarded with the name of the destination and NOT the subscription name
  */
 public class RestMessageListener implements MessageListener {
@@ -59,7 +60,7 @@ public class RestMessageListener implements MessageListener {
   @Setter
   private static int maxSubscribedMessages = 10;
 
-  private final Map<String, Map<String,List<MessageEvent>>> messages;
+  private final Map<String, Map<String, List<MessageEvent>>> messages;
 
   private final Map<String, SessionSubscriptionMap> sessionSubscriptionsMap;
   private final Map<String, SseInfo> eventSinkMap;
@@ -77,19 +78,19 @@ public class RestMessageListener implements MessageListener {
   }
 
   public void registerEventManager(String namespacePath, Session session, SubscribedEventManager subscribedEventManager) {
-    sessionSubscriptionsMap.put(namespacePath, new SessionSubscriptionMap(session,  subscribedEventManager));
+    sessionSubscriptionsMap.put(namespacePath, new SessionSubscriptionMap(session, subscribedEventManager));
   }
 
   public void registerEventManager(String namespacePath, Sse sse, SseEventSink eventSink, Session session, SubscribedEventManager subscribedEventManager) {
     SseInfo sseInfo = new SseInfo(sse, eventSink);
     eventSinkMap.put(namespacePath, sseInfo);
-    sessionSubscriptionsMap.put(namespacePath, new SessionSubscriptionMap(session,  subscribedEventManager));
+    sessionSubscriptionsMap.put(namespacePath, new SessionSubscriptionMap(session, subscribedEventManager));
   }
 
   public void deregisterEventManager(String topic) {
     messages.remove(topic);
     clearSubscription(topic);
-    SseInfo sseInfo =  eventSinkMap.remove(topic);
+    SseInfo sseInfo = eventSinkMap.remove(topic);
     if (sseInfo != null) {
       sseInfo.close();
     }
@@ -103,20 +104,19 @@ public class RestMessageListener implements MessageListener {
       return;
     }
     String namespacePath = messageEvent.getSubscription().getContext().getDestinationName();
-    if(eventSinkMap.containsKey(namespacePath)) {
+    if (eventSinkMap.containsKey(namespacePath)) {
       handleAsyncDelivery(namespacePath, messageEvent);
-    }
-    else{
+    } else {
       handleSyncDelivery(namespacePath, messageEvent);
     }
   }
 
-  private void handleAsyncDelivery(String namespacePath,MessageEvent messageEvent) {
+  private void handleAsyncDelivery(String namespacePath, MessageEvent messageEvent) {
     SseInfo sseInfo = eventSinkMap.get(namespacePath);
     try {
-      if(sseInfo != null){
-         if(sseInfo.eventSink.isClosed()){
-           clearSubscription(namespacePath);
+      if (sseInfo != null) {
+        if (sseInfo.eventSink.isClosed()) {
+          clearSubscription(namespacePath);
         } else {
           String json = gson.toJson(convertToAsyncDTO(messageEvent));
           OutboundSseEvent event = sseInfo.sse.newEventBuilder().name(namespacePath).data(String.class, json).build();
@@ -129,7 +129,7 @@ public class RestMessageListener implements MessageListener {
   }
 
   private void handleSyncDelivery(String namespacePath, MessageEvent messageEvent) {
-    Map<String,List<MessageEvent>> subscriptionMessages = messages.computeIfAbsent(namespacePath, k -> new LinkedHashMap<>());
+    Map<String, List<MessageEvent>> subscriptionMessages = messages.computeIfAbsent(namespacePath, k -> new LinkedHashMap<>());
     List<MessageEvent> destinationMessages = subscriptionMessages.computeIfAbsent(messageEvent.getDestinationName(), k -> new ArrayList<>());
     destinationMessages.add(messageEvent);
     if (destinationMessages.size() > maxSubscribedMessages) {
@@ -162,8 +162,8 @@ public class RestMessageListener implements MessageListener {
   }
 
   public int subscriptionDepth(String namespacePath) {
-    Map<String,List<MessageEvent>> destinationMessages = messages.get(namespacePath);
-    if(destinationMessages == null){
+    Map<String, List<MessageEvent>> destinationMessages = messages.get(namespacePath);
+    if (destinationMessages == null) {
       return 0;
     }
     return destinationMessages.values().stream().mapToInt(List::size).sum();
@@ -183,15 +183,15 @@ public class RestMessageListener implements MessageListener {
   public Map<String, List<MessageDTO>> getMessages(String namespace, int max) {
     int count = max;
     if (count <= 0) count = 10;
-    if(count > 1000) count = 1000;
-    Map<String,List<MessageEvent>> destinationMessages = messages.get(namespace);
+    if (count > 1000) count = 1000;
+    Map<String, List<MessageEvent>> destinationMessages = messages.get(namespace);
     Map<String, List<MessageDTO>> response = new LinkedHashMap<>();
 
     boolean hasEvents = true;
-    while (hasEvents && count !=0) {
+    while (hasEvents && count != 0) {
       hasEvents = false;
-      for(Map.Entry<String, List<MessageEvent>> entry : destinationMessages.entrySet()) {
-        if(!entry.getValue().isEmpty()){
+      for (Map.Entry<String, List<MessageEvent>> entry : destinationMessages.entrySet()) {
+        if (!entry.getValue().isEmpty()) {
           List<MessageDTO> returnEvents = response.computeIfAbsent(entry.getKey(), key -> new ArrayList<>());
           MessageEvent msg = entry.getValue().remove(0);
           returnEvents.add(convertToDTO(msg));
@@ -203,6 +203,7 @@ public class RestMessageListener implements MessageListener {
     }
     return response;
   }
+
   private MessageDTO convertToAsyncDTO(MessageEvent message) {
     AsyncMessageDTO messageDTO = new AsyncMessageDTO();
     messageDTO.setDestinationName(message.getDestinationName());
@@ -213,6 +214,7 @@ public class RestMessageListener implements MessageListener {
     MessageDTO messageDTO = new MessageDTO();
     return convert(messageDTO, message);
   }
+
   private MessageDTO convert(MessageDTO messageDTO, MessageEvent message) {
     Message msg = message.getMessage();
     messageDTO.setIdentifier(msg.getIdentifier());
@@ -223,12 +225,12 @@ public class RestMessageListener implements MessageListener {
     messageDTO.setContentType(msg.getContentType());
     messageDTO.setQualityOfService(msg.getQualityOfService().getLevel());
     messageDTO.setMetaData(msg.getMeta() == null ? new HashMap<>() : new LinkedHashMap<>(msg.getMeta()));
-    long creation = Long.parseLong( msg.getMeta().get("time_ms"));
+    long creation = Long.parseLong(msg.getMeta().get("time_ms"));
     messageDTO.setCreation(Instant.ofEpochMilli(creation)
         .atZone(ZoneId.systemDefault())
         .toLocalDateTime());
 
-    Map<String, Object> map =new LinkedHashMap<>();
+    Map<String, Object> map = new LinkedHashMap<>();
     for (Map.Entry<String, TypedData> entry : msg.getDataMap().entrySet()) {
       map.put(entry.getKey(), entry.getValue().getData());
     }
@@ -237,7 +239,7 @@ public class RestMessageListener implements MessageListener {
   }
 
   public synchronized void close() {
-    for(String key : sessionSubscriptionsMap.keySet()) {
+    for (String key : sessionSubscriptionsMap.keySet()) {
       deregisterEventManager(key);
     }
     closed = false;
@@ -248,11 +250,11 @@ public class RestMessageListener implements MessageListener {
 
   @Data
   @AllArgsConstructor
-  private static final class SseInfo{
+  private static final class SseInfo {
     private final Sse sse;
     private final SseEventSink eventSink;
 
-    public void close(){
+    public void close() {
       eventSink.close();
     }
   }

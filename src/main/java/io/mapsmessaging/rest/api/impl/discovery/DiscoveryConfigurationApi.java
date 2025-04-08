@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.discovery;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.config.DiscoveryManagerConfig;
 import io.mapsmessaging.dto.rest.config.DiscoveryManagerConfigDTO;
 import io.mapsmessaging.rest.responses.StatusResponse;
@@ -29,7 +27,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+
 import java.io.IOException;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Discovery Management")
 @Path(URI_PATH)
@@ -55,7 +56,7 @@ public class DiscoveryConfigurationApi extends DiscoveryBaseRestApi {
   @Operation(
       summary = "Update the discovery agents configuration",
       description = "Updates the configuration used to control the discovery agent. Requires authentication if enabled in the configuration.",
-      security = {@SecurityRequirement(name ="basicAuth")}
+      security = {@SecurityRequirement(name = "basicAuth")}
   )
   public StatusResponse updateDiscoveryAgentConfiguration(DiscoveryManagerConfigDTO update) throws IOException {
     hasAccess(RESOURCE);

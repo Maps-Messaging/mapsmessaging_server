@@ -18,8 +18,6 @@
 
 package io.mapsmessaging.rest.api.impl.integration;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.integration.IntegrationStatusDTO;
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
@@ -34,14 +32,51 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Tag(name = "Server Integration Management")
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+
+@Tag(name = "Server Integration Status")
 @Path(URI_PATH)
 public class IntergrationStatusApi extends IntegrationBaseRestApi {
+
+  public static IntegrationStatusDTO fromConnection(EndPointConnection connection) {
+    IntegrationStatusDTO dto = new IntegrationStatusDTO();
+    dto.setState(connection.getState().getName());
+    dto.setInterfaceName(connection.getConfigName());
+    dto.setBytesSent(connection.getTotalBytesSent());
+    dto.setBytesReceived(connection.getTotalBytesRead());
+    dto.setMessagesSent(connection.getTotalPacketsSent());
+    dto.setMessagesReceived(connection.getTotalPacketsRead());
+    dto.setErrors(connection.getTotalErrors());
+
+    // Initialize statistics and timestamps if connection details are available
+    Map<String, LinkedMovingAverageRecordDTO> stats = new LinkedHashMap<>();
+    if (connection.getConnection() != null && connection.getConnection().getEndPoint() != null) {
+      dto.setLastReadTime(connection.getConnection().getEndPoint().getLastRead());
+      dto.setLastWriteTime(connection.getConnection().getEndPoint().getLastWrite());
+    }
+
+    // Populate statistics
+    addToMap(stats, connection.getAverageBytesRead());
+    addToMap(stats, connection.getAverageBytesSent());
+    addToMap(stats, connection.getAveragePacketsRead());
+    addToMap(stats, connection.getAveragePacketsSent());
+    dto.setStatistics(stats);
+
+    return dto;
+  }
+
+  private static void addToMap(
+      Map<String, LinkedMovingAverageRecordDTO> stats, LinkedMovingAverageRecordDTO average) {
+    if (average != null) {
+      stats.put(average.getName(), average);
+    }
+  }
 
   @GET
   @Path("/server/integration/{endpoint}/status")
@@ -85,7 +120,7 @@ public class IntergrationStatusApi extends IntegrationBaseRestApi {
   public List<IntegrationStatusDTO> getAllIntegrationStatus(
       @Parameter(
           description = "Optional filter string ",
-          schema = @Schema(type= "String", example = "state = PAUSED")
+          schema = @Schema(type = "String", example = "state = PAUSED")
       )
       @QueryParam("filter") String filter
   ) throws ParseException {
@@ -112,39 +147,5 @@ public class IntergrationStatusApi extends IntegrationBaseRestApi {
 
     putToCache(key, response);
     return response;
-  }
-
-  public static IntegrationStatusDTO fromConnection(EndPointConnection connection) {
-    IntegrationStatusDTO dto = new IntegrationStatusDTO();
-    dto.setState(connection.getState().getName());
-    dto.setInterfaceName(connection.getConfigName());
-    dto.setBytesSent(connection.getTotalBytesSent());
-    dto.setBytesReceived(connection.getTotalBytesRead());
-    dto.setMessagesSent(connection.getTotalPacketsSent());
-    dto.setMessagesReceived(connection.getTotalPacketsRead());
-    dto.setErrors(connection.getTotalErrors());
-
-    // Initialize statistics and timestamps if connection details are available
-    Map<String, LinkedMovingAverageRecordDTO> stats = new LinkedHashMap<>();
-    if (connection.getConnection() != null && connection.getConnection().getEndPoint() != null) {
-      dto.setLastReadTime(connection.getConnection().getEndPoint().getLastRead());
-      dto.setLastWriteTime(connection.getConnection().getEndPoint().getLastWrite());
-    }
-
-    // Populate statistics
-    addToMap(stats, connection.getAverageBytesRead());
-    addToMap(stats, connection.getAverageBytesSent());
-    addToMap(stats, connection.getAveragePacketsRead());
-    addToMap(stats, connection.getAveragePacketsSent());
-    dto.setStatistics(stats);
-
-    return dto;
-  }
-
-  private static void addToMap(
-      Map<String, LinkedMovingAverageRecordDTO> stats, LinkedMovingAverageRecordDTO average) {
-    if (average != null) {
-      stats.put(average.getName(), average);
-    }
   }
 }

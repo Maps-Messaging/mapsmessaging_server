@@ -21,8 +21,9 @@ package io.mapsmessaging.rest.api.impl.messaging.impl;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.rest.auth.AuthenticatedUserPrincipal;
 import jakarta.servlet.http.HttpSession;
-import java.security.Principal;
 import lombok.Getter;
+
+import java.security.Principal;
 
 public class RestClientConnection implements ClientConnection {
 
@@ -37,7 +38,7 @@ public class RestClientConnection implements ClientConnection {
   public RestClientConnection(HttpSession httpSession) {
     name = httpSession.getId();
     uniqueName = "RestClientConnection_" + name;
-    String tmp =(String) httpSession.getAttribute("username");
+    String tmp = (String) httpSession.getAttribute("username");
     username = tmp != null ? tmp : name;
   }
 

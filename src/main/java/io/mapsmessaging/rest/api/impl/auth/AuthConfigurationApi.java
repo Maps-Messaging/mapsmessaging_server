@@ -18,18 +18,22 @@
 
 package io.mapsmessaging.rest.api.impl.auth;
 
-import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+
 import java.io.IOException;
+
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 @Tag(name = "Authentication and Authorisation Management")
 @Path(URI_PATH)
@@ -40,7 +44,18 @@ public class AuthConfigurationApi extends BaseAuthRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get the auth configuration",
-      description = "Retrieves the configuration used to setup the authentication and authorisation. Requires authentication if enabled in the configuration."
+      description = "Retrieves the configuration used to setup the authentication and authorisation. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get auth configuration was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthManagerConfigDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public AuthManagerConfigDTO getAuthConfiguration() {
     hasAccess(RESOURCE);
@@ -54,7 +69,19 @@ public class AuthConfigurationApi extends BaseAuthRestApi {
   @Operation(
       summary = "Update the auth configuration",
       description = "Updates the configuration used to setup the authentication and authorisation. Requires authentication if enabled in the configuration.",
-      security = {@SecurityRequirement(name ="basicAuth")}
+      security = {@SecurityRequirement(name = "basicAuth")},
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Update authetication was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "304", description = "No change detected"),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+
+      }
   )
   public StatusResponse updateAuthConfiguration(AuthManagerConfigDTO update) throws IOException {
     hasAccess(RESOURCE);
