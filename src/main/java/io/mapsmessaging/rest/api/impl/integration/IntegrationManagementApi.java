@@ -27,12 +27,15 @@ import io.mapsmessaging.dto.rest.integration.IntegrationInfoDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.IntegrationDetailResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -51,8 +54,18 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
   @Path("/server/integration")
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
-      summary = "get all inter-server connections",
-      description = "Retrieves a list of all inter-server configurations. Requires authentication if enabled in the configuration."
+      summary = "Get all inter-server connections",
+      description = "Retrieves a list of all inter-server configurations. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = IntegrationDetailResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public IntegrationDetailResponse getAllIntegrations(
       @Parameter(
@@ -89,48 +102,88 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
   @Path("/server/integration/stopAll")
   @Operation(
       summary = "Stop all inter-server connections",
-      description = "Stops all currently running inter-server connections. Requires authentication if enabled in the configuration."
+      description = "Stops all currently running inter-server connections. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response stopAllInterfaces() {
+  public StatusResponse stopAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().stop();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/integration/startAll")
   @Operation(
       summary = "Start all inter-server connections",
-      description = "Starts all currently stopped inter-server connections. Requires authentication if enabled in the configuration."
+      description = "Starts all currently stopped inter-server connections. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response startAllInterfaces() {
+  public StatusResponse startAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().start();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/integration/pauseAll")
   @Operation(
       summary = "Pause all inter-server connections",
-      description = "Pauses all currently running inter-server connections. Requires authentication if enabled in the configuration."
+      description = "Pauses all currently running inter-server connections. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response pauseAllInterfaces() {
+  public StatusResponse pauseAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().pause();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/integration/resumeAll")
   @Operation(
       summary = "Resume all inter-server connections",
-      description = "Resumes all currently paused inter-server connections. Requires authentication if enabled in the configuration."
+      description = "Resumes all currently paused inter-server connections. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public Response resumeAllInterfaces() {
+  public StatusResponse resumeAllInterfaces() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkConnectionManager().resume();
-    return Response.ok().build();
+    return new StatusResponse("Success");
   }
 
 
@@ -139,7 +192,18 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get integration by name",
-      description = "Retrieves the configuration on the inter-server integration connection. Requires authentication if enabled in the configuration."
+      description = "Retrieves the configuration on the inter-server integration connection. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = IntegrationInfoDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Integration name was not found"),
+      }
   )
   public IntegrationInfoDTO getByNameIntegration(@PathParam("name") String name) {
     hasAccess(RESOURCE);
@@ -165,7 +229,18 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get integration status by name",
-      description = "Retrieves the current status on the inter-server integration connection. Requires authentication if enabled in the configuration."
+      description = "Retrieves the current status on the inter-server integration connection. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = EndPointSummaryDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Integration name was not found")
+      }
   )
   public EndPointSummaryDTO getIntegrationConnection(@PathParam("name") String name) {
     hasAccess(RESOURCE);
@@ -192,9 +267,21 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
   @Path("/server/integration/{name}/stop")
   @Operation(
       summary = "Stop integration by name",
-      description = "Stops the inter-server connection specified by the name, if started else nothing changes. Requires authentication if enabled in the configuration."
+      description = "Stops the inter-server connection specified by the name, if started else nothing changes. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Integration name was not found")
+
+      }
   )
-  public Response stopIntegration(@PathParam("name") String name) {
+  public StatusResponse stopIntegration(@PathParam("name") String name) {
     hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
@@ -202,16 +289,27 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
       return null;
     }
     endPointConnection.stop();
-    return Response.noContent().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/integration/{name}/start")
   @Operation(
       summary = "Start integration by name",
-      description = "Starts the inter-server connection specified by the name, if stopped else nothing changes. Requires authentication if enabled in the configuration."
+      description = "Starts the inter-server connection specified by the name, if stopped else nothing changes. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Integration name was not found")
+      }
   )
-  public Response startIntegration(@PathParam("name") String name) {
+  public StatusResponse startIntegration(@PathParam("name") String name) {
     hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
@@ -219,16 +317,27 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
       return null;
     }
     endPointConnection.start();
-    return Response.noContent().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/integration/{name}/resume")
   @Operation(
       summary = "Resume integration by name",
-      description = "Resumes the inter-server connection specified by the name, if paused else nothing changes. Requires authentication if enabled in the configuration."
+      description = "Resumes the inter-server connection specified by the name, if paused else nothing changes. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Integration name was not found")
+      }
   )
-  public Response resumeIntegration(@PathParam("name") String name) {
+  public StatusResponse resumeIntegration(@PathParam("name") String name) {
     hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
@@ -236,16 +345,27 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
       return null;
     }
     endPointConnection.resume();
-    return Response.noContent().build();
+    return new StatusResponse("Success");
   }
 
   @PUT
   @Path("/server/integration/{name}/pause")
   @Operation(
       summary = "Pause integration by name",
-      description = "Pauses the inter-server connection specified by the name, if started else nothing changes. Requires authentication if enabled in the configuration."
+      description = "Pauses the inter-server connection specified by the name, if started else nothing changes. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Integration name was not found")
+      }
   )
-  public Response pauseIntegration(@PathParam("name") String name) {
+  public StatusResponse pauseIntegration(@PathParam("name") String name) {
     hasAccess(RESOURCE);
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
@@ -253,7 +373,7 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
       return null;
     }
     endPointConnection.pause();
-    return Response.noContent().build();
+    return new StatusResponse("Success");
   }
 
   private EndPointConnection locateInstance(String name) {

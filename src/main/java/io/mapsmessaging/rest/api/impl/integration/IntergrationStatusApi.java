@@ -23,12 +23,15 @@ import io.mapsmessaging.dto.rest.integration.IntegrationStatusDTO;
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.responses.IntegrationListStatus;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -83,7 +86,17 @@ public class IntergrationStatusApi extends IntegrationBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get inter-server status",
-      description = "Retrieve the current status for the inter-server specified by name. Requires authentication if enabled in the configuration."
+      description = "Retrieve the current status for the inter-server specified by name. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = IntegrationStatusDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public IntegrationStatusDTO getIntegrationStatus(@PathParam("endpoint") String endpointName) {
     hasAccess(RESOURCE);
@@ -115,9 +128,19 @@ public class IntergrationStatusApi extends IntegrationBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get all inter-server status",
-      description = "Retrieve all current statuses for the inter-server. Requires authentication if enabled in the configuration."
+      description = "Retrieve all current statuses for the inter-server. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = IntegrationListStatus.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public List<IntegrationStatusDTO> getAllIntegrationStatus(
+  public IntegrationListStatus getAllIntegrationStatus(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "state = PAUSED")
@@ -126,7 +149,7 @@ public class IntergrationStatusApi extends IntegrationBaseRestApi {
   ) throws ParseException {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
-    List<IntegrationStatusDTO> cachedResponse = getFromCache(key, List.class);
+    IntegrationListStatus cachedResponse = getFromCache(key, IntegrationListStatus.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -144,8 +167,8 @@ public class IntergrationStatusApi extends IntegrationBaseRestApi {
             .map(IntergrationStatusApi::fromConnection)
             .filter(status -> parser == null || parser.evaluate(status))
             .collect(Collectors.toList());
-
-    putToCache(key, response);
-    return response;
+    IntegrationListStatus status = new IntegrationListStatus(response);
+    putToCache(key, status);
+    return status;
   }
 }
