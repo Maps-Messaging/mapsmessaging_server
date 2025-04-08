@@ -20,7 +20,11 @@ package io.mapsmessaging.rest.api.impl.hardware;
 
 import io.mapsmessaging.config.DeviceManagerConfig;
 import io.mapsmessaging.dto.rest.config.DeviceManagerConfigDTO;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.GET;
@@ -42,9 +46,19 @@ public class HardwareConfigurationApi extends HardwareBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get hardware configuration",
-      description = "Retrieve the configuration for the hardware sub-system. Requires authentication if enabled in the configuration."
+      description = "Retrieve the configuration for the hardware sub-system. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get hardware config was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceManagerConfigDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public DeviceManagerConfigDTO getConfig() {
+  public DeviceManagerConfigDTO getDeviceConfig() {
     hasAccess(RESOURCE);
     return DeviceManagerConfig.getInstance();
   }
@@ -54,15 +68,26 @@ public class HardwareConfigurationApi extends HardwareBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Update hardware configuration",
-      description = "Update the configuration for the hardware sub-system. Requires authentication if enabled in the configuration."
+      description = "Update the configuration for the hardware sub-system. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Update device config was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "304", description = "No changes made"),
+      }
   )
-  public boolean updateConfig(DeviceManagerConfigDTO update) throws IOException {
+  public StatusResponse updateDeviceConfig(DeviceManagerConfigDTO update) throws IOException {
     hasAccess(RESOURCE);
     if (DeviceManagerConfig.getInstance().update(update)) {
       DeviceManagerConfig.getInstance().save();
-      return true;
+      return new StatusResponse("Successfully updated");
     }
     response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-    return false;
+    return new StatusResponse("Failed to update");
   }
 }

@@ -22,6 +22,9 @@ import io.mapsmessaging.config.DiscoveryManagerConfig;
 import io.mapsmessaging.dto.rest.config.DiscoveryManagerConfigDTO;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,7 +45,17 @@ public class DiscoveryConfigurationApi extends DiscoveryBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get the discovery agents configuration",
-      description = "Retrieves the configuration used to the discovery agent. Requires authentication if enabled in the configuration."
+      description = "Retrieves the configuration used to the discovery agent. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get discobvery config was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DiscoveryManagerConfigDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public DiscoveryManagerConfigDTO getDiscoveryAgentConfiguration() {
     hasAccess(RESOURCE);
@@ -56,7 +69,18 @@ public class DiscoveryConfigurationApi extends DiscoveryBaseRestApi {
   @Operation(
       summary = "Update the discovery agents configuration",
       description = "Updates the configuration used to control the discovery agent. Requires authentication if enabled in the configuration.",
-      security = {@SecurityRequirement(name = "basicAuth")}
+      security = {@SecurityRequirement(name = "basicAuth")},
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Update discovery configuration was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "304", description = "No changes made"),
+      }
   )
   public StatusResponse updateDiscoveryAgentConfiguration(DiscoveryManagerConfigDTO update) throws IOException {
     hasAccess(RESOURCE);

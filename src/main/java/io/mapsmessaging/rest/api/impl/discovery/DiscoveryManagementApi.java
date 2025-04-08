@@ -21,15 +21,21 @@ package io.mapsmessaging.rest.api.impl.discovery;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
 import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,12 +51,23 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Start Discovery agent",
-      description = "Starts the mDNS discovery sub-system. Requires authentication if enabled in the configuration."
+      description = "Starts the mDNS discovery sub-system. Requires authentication if enabled in the configuration.",
+      security = {@SecurityRequirement(name = "basicAuth")},
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Start server discovery was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public boolean startDiscovery() {
+  public StatusResponse startDiscovery() {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getDiscoveryManager().start();
-    return true;
+    return new StatusResponse("success");
   }
 
   @PUT
@@ -58,7 +75,18 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Stop Discovery daemon",
-      description = "Stops the mDNS discovery sub-system. Requires authentication if enabled in the configuration."
+      description = "Stops the mDNS discovery sub-system. Requires authentication if enabled in the configuration.",
+      security = {@SecurityRequirement(name = "basicAuth")},
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Stop server discovery was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public boolean stopDiscovery() {
     hasAccess(RESOURCE);
@@ -71,9 +99,20 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get discovered servers",
-      description = "Retrieve a list of all currently discovered servers, can be filtered with the optional filter. Requires authentication if enabled in the configuration."
+      description = "Retrieve a list of all currently discovered servers, can be filtered with the optional filter. Requires authentication if enabled in the configuration.",
+      security = {@SecurityRequirement(name = "basicAuth")},
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Update discovery configuration was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DiscoveredServers.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public List<DiscoveredServersDTO> getAllDiscoveredServers(
+  public DiscoveredServers getAllDiscoveredServers(
       @Parameter(
           description = "Optional filter string ",
           schema = @Schema(type = "String", example = "schemaSupport = TRUE OR systemTopicPrefix IS NOT NULL")
@@ -83,8 +122,7 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
     hasAccess(RESOURCE);
     CacheKey key = new CacheKey(uriInfo.getPath(), ((filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : ""));
 
-    @SuppressWarnings("unchecked")
-    List<DiscoveredServersDTO> cachedResponse = getFromCache(key, List.class);
+    DiscoveredServers cachedResponse = getFromCache(key, DiscoveredServers.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
@@ -97,7 +135,15 @@ public class DiscoveryManagementApi extends DiscoveryBaseRestApi {
             .stream()
             .filter(parser::evaluate)
             .collect(Collectors.toList());
-    putToCache(key, result);
-    return result;
+    DiscoveredServers discoveredServers = new DiscoveredServers();
+    discoveredServers.setList(result);
+    putToCache(key, discoveredServers);
+    return discoveredServers;
+  }
+
+  @Data
+  @NoArgsConstructor
+  private static class DiscoveredServers{
+    private List<DiscoveredServersDTO> list;
   }
 }

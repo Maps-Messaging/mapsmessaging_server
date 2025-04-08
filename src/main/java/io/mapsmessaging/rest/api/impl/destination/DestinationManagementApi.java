@@ -25,12 +25,15 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.DestinationDetailsResponse;
 import io.mapsmessaging.rest.responses.DestinationResponse;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -52,7 +55,18 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve detailed information about a destination",
-      description = "Fetch detailed information for a specific destination identified by its name. Authentication is required if the server configuration mandates it. Cached results are returned if available to enhance performance."
+      description = "Fetch detailed information for a specific destination identified by its name. Authentication is required if the server configuration mandates it. Cached results are returned if available to enhance performance.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get destination details was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DestinationDetailsResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+          @ApiResponse(responseCode = "404", description = "Destination not found"),
+      }
   )
   public DestinationDetailsResponse getDestinationDetails(
       @Parameter(
@@ -85,7 +99,17 @@ public class DestinationManagementApi extends BaseDestinationApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Retrieve a list of all destinations with optional filtering and sorting",
-      description = "Fetch a paginated list of all known destinations. You can filter the list using a selector string, limit the number of returned entries using the 'size' parameter, and sort the results by attributes such as Name, Published Messages, or Stored Messages. Cached results are returned if available to enhance performance. Authentication is required if the server configuration mandates it."
+      description = "Fetch a paginated list of all known destinations. You can filter the list using a selector string, limit the number of returned entries using the 'size' parameter, and sort the results by attributes such as Name, Published Messages, or Stored Messages. Cached results are returned if available to enhance performance. Authentication is required if the server configuration mandates it.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get all destinations was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DestinationResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
   public DestinationResponse getAllDestinations(
       @Parameter(

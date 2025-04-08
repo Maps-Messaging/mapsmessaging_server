@@ -22,12 +22,23 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.dto.rest.devices.DeviceInfoDTO;
 import io.mapsmessaging.hardware.DeviceManager;
+import io.mapsmessaging.rest.api.impl.discovery.DiscoveryManagementApi;
+import io.mapsmessaging.rest.cache.CacheKey;
+import io.mapsmessaging.rest.responses.DeviceList;
+import io.mapsmessaging.rest.responses.DeviceScanList;
+import io.mapsmessaging.rest.responses.StatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,11 +55,28 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Scan for new hardware",
-      description = "Requests a scan to detect new hardware on I2C bus or configured devices. Requires authentication if enabled in the configuration."
+      description = "Requests a scan to detect new hardware on I2C bus or configured devices. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Scan for devices was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceScanList.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public List<String> scanForDevices() throws InterruptedException {
+  public DeviceScanList scanForDevices() throws InterruptedException {
     hasAccess(RESOURCE);
-    return MessageDaemon.getInstance().getSubSystemManager().getDeviceManager().scan();
+    CacheKey key = new CacheKey(uriInfo.getPath(), "");
+    DeviceScanList cachedResponse = getFromCache(key, DeviceScanList.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+    DeviceScanList deviceScanList = new DeviceScanList(MessageDaemon.getInstance().getSubSystemManager().getDeviceManager().scan());
+    putToCache(key, deviceScanList);
+    return deviceScanList;
   }
 
   @GET
@@ -56,10 +84,25 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
   @Produces({MediaType.APPLICATION_JSON})
   @Operation(
       summary = "Get known devices",
-      description = "Retreive a list of all detected devices currently online. Requires authentication if enabled in the configuration."
+      description = "Retreive a list of all detected devices currently online. Requires authentication if enabled in the configuration.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Get all discovered devices was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceList.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
   )
-  public List<DeviceInfoDTO> getAllDiscoveredDevices() throws IOException {
+  public DeviceList getAllDiscoveredDevices() throws IOException {
     hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), "");
+    DeviceList cachedResponse = getFromCache(key, DeviceList.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
     List<DeviceInfoDTO> devices = new ArrayList<>();
     DeviceManager deviceManager =
         MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
@@ -72,6 +115,9 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
       deviceInfo.setState(new String(device.getDeviceState()));
       devices.add(deviceInfo);
     }
-    return devices;
+    DeviceList dl = new DeviceList(devices);
+    putToCache(key, dl);
+    return dl;
   }
+
 }
