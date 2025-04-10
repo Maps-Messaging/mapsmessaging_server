@@ -20,10 +20,13 @@ package io.mapsmessaging.rest.api.impl.interfaces;
 
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
+import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.rest.cache.CacheKey;
 import io.mapsmessaging.rest.responses.InterfaceDetailResponse;
+import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
@@ -179,5 +182,52 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     hasAccess(RESOURCE);
     MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().resumeAll();
     return new StatusResponse("Success");
+  }
+
+  @GET
+  @Path("/server/interfaces/status")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get all end point status",
+      description = "Get all end point statuses and metrics, fitlered with the optional filter.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceStatusResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
+  )
+
+  public InterfaceStatusResponse getAllInterfaceStatus(
+      @Parameter(
+          description = "Optional filter string ",
+          schema = @Schema(type = "String", example = "state = 'started'")
+      )
+      @QueryParam("filter") String filter
+  ) throws ParseException {
+    hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), (filter != null && !filter.isEmpty()) ? "" + filter.hashCode() : "");
+    InterfaceStatusResponse cachedResponse = getFromCache(key, InterfaceStatusResponse.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
+    // Fetch and cache response
+    ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+
+    List<InterfaceStatusDTO> list =
+        endPointManagers.stream()
+            .map(endPointManager -> InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer()))
+            .filter(status -> parser == null || parser.evaluate(status))
+            .collect(Collectors.toList());
+
+    InterfaceStatusResponse response = new InterfaceStatusResponse(list);
+    putToCache(key, response);
+    return response;
   }
 }

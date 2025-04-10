@@ -145,6 +145,11 @@ public class MessagingApi extends BaseRestApi {
   @Operation(summary = "Expose AsyncMessageDTO in OpenAPI",
       description = "Delivers messages via Server Side Events, supports MQTT wild card plus JMS style filtering",
       responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = AsyncMessageDTO.class))
+          ),
           @ApiResponse(responseCode = "400", description = "Bad request"),
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")

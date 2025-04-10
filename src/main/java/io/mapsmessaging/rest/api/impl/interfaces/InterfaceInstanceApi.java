@@ -22,9 +22,11 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.dto.helpers.EndPointHelper;
 import io.mapsmessaging.dto.helpers.InterfaceInfoHelper;
+import io.mapsmessaging.dto.helpers.InterfaceStatusHelper;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.dto.rest.interfaces.InterfaceInfoDTO;
+import io.mapsmessaging.dto.rest.interfaces.InterfaceStatusDTO;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.rest.cache.CacheKey;
@@ -244,6 +246,42 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     hasAccess(RESOURCE);
     Response response = lookup(endpointName, STATE.PAUSED);
     return new StatusResponse(response == null?"Failed":"Paused");
+  }
+
+  @GET
+  @Path("/server/interface/{endpoint}/status")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Get end point status",
+      description = "Get the current status and metrics for the specified end point.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Operation was successful",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = InterfaceStatusDTO.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
+      }
+  )
+  public InterfaceStatusDTO getInterfaceStatus(@PathParam("endpoint") String endpointName) {
+    hasAccess(RESOURCE);
+    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+    InterfaceStatusDTO cachedResponse = getFromCache(key, InterfaceStatusDTO.class);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+    List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
+    for (EndPointManager endPointManager : endPointManagers) {
+      if (isMatch(endpointName, endPointManager)) {
+        InterfaceStatusDTO response = InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer());
+        putToCache(key, response);
+        return response;
+      }
+    }
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    return null;
   }
 
   private Response lookup(String endpointName, STATE state) {
