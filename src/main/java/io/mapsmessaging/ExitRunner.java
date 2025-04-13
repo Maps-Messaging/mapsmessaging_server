@@ -21,7 +21,6 @@ package io.mapsmessaging;
 import io.mapsmessaging.utilities.PidFileManager;
 import java.io.IOException;
 import java.nio.file.*;
-import org.tanukisoftware.wrapper.WrapperManager;
 
 /**
  * This class extends the Thread class and is used to monitor a specified file for deletion events.
@@ -63,7 +62,7 @@ public class ExitRunner extends Thread {
 
   /**
    * The method is responsible for continuously monitoring a specified file for deletion events using a WatchService.
-   * If a deletion event occurs and the deleted file matches the specified file, the WrapperManager.stop(1) method is
+   * If a deletion event occurs and the deleted file matches the specified file, the System.exit(1) method is
    * called to stop the application.
    * The method also handles InterruptedException and restores the interrupted status of the thread.
    * The method uses a loop to continuously check for deletion events and resets the WatchKey if it becomes invalid.
@@ -73,7 +72,7 @@ public class ExitRunner extends Thread {
     while (!Thread.interrupted()) {
       WatchKey key;
       if(!pidFileManager.exists()){
-        WrapperManager.stop(exitCode);
+        System.exit(exitCode);
         return;
       }
       try {
@@ -91,7 +90,7 @@ public class ExitRunner extends Thread {
 
         fileName = fileName.toAbsolutePath();
         if (kind == StandardWatchEventKinds.ENTRY_DELETE && fileName.equals(pidFilePath)) {
-          WrapperManager.stop(exitCode);
+          System.exit(exitCode);
           return;
         }
       }

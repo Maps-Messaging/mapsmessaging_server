@@ -41,6 +41,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.stats.StatsReporter;
+import io.mapsmessaging.utilities.PidFileManager;
 import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
@@ -66,19 +67,12 @@ import lombok.Getter;
  * The main method is used to start the daemon.
  */
 public class MessageDaemon {
+  private static String PID_FILE = "pid";
+  @Getter
+  private static ExitRunner exitRunner;
 
   @Getter
-  private static final MessageDaemon instance;
-
-  static {
-    MessageDaemon tmp;
-    try {
-      tmp = new MessageDaemon();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    instance = tmp;
-  }
+  private static MessageDaemon instance;
 
   private final String uniqueId;
   @Getter
@@ -225,11 +219,10 @@ public class MessageDaemon {
    * and logs a message indicating that the agent has started along with the time taken for the start operation.
    * After starting all the agents, the method calls the 'logServiceManagers' method to log the loaded service managers.
    *
-   * @param strings an array of strings (not used in the method)
    * @return null
    * @throws IOException if an I/O error occurs during the initialization steps
    */
-  public Integer start(String[] strings) throws IOException {
+  public Integer start() throws IOException {
 
     // Load the license
     File licenseDir = new File(licenseHome);
@@ -325,6 +318,32 @@ public class MessageDaemon {
   }
 
   public static void main(String[] args) throws IOException, InterruptedException {
-    ServerRunner.main(args);
+    String directoryPath = SystemProperties.getInstance().locateProperty("MAPS_HOME", ".");
+    if (!directoryPath.isEmpty()) {
+      PID_FILE = directoryPath + File.separator + PID_FILE;
+      PID_FILE = PID_FILE.replace("//", "/");
+    }
+    PidFileManager pidFileManager = new PidFileManager( new File(PID_FILE));
+
+    if (pidFileManager.exists()) {
+      long pid = pidFileManager.readPidFromFile();
+      pidFileManager.deletePidFile();
+      int count = 0;
+      Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
+
+      while(pidFileManager.isProcessRunning(pid) && count < 30){
+        logger.log(MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE, "Waiting for previous instance to exit");
+        count++;
+        Thread.sleep(1000);
+      }
+      if(count == 30){
+        logger.log(MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE, "Previous process not stopping, unable to start");
+        return;
+      }
+    }
+    pidFileManager.writeNewFile();
+    exitRunner = new ExitRunner(pidFileManager);
+    instance = new MessageDaemon();
+    instance.start();
   }
 }

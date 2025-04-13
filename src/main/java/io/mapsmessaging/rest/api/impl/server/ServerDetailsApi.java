@@ -19,7 +19,6 @@
 package io.mapsmessaging.rest.api.impl.server;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.ServerRunner;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
@@ -231,6 +230,6 @@ public class ServerDetailsApi extends ServerBaseRestApi {
   }
 
   private void shutdown(int exitCode) {
-    ServerRunner.getExitRunner().deletePidFile(exitCode);
+    MessageDaemon.getExitRunner().deletePidFile(exitCode);
   }
 }
