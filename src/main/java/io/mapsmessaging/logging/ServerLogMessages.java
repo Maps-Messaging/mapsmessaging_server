@@ -715,12 +715,17 @@ public enum ServerLogMessages implements LogMessage {
   LICENSE_FEATURES_AVAILABLE(LEVEL.WARN, SERVER_CATEGORY.LICENSE, "Loaded the following license {}"),
 
   LICENSE_LOADING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Loading license edition {}"),
+  LICENSE_EXPIRED(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "License {} has expired Not Before {} and Not After {}"),
+  LICENSE_UNINSTALLING(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "License {} is being uninstalled"),
+
   LICENSE_FAILED_LOADING(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to load license edition {}"),
   LICENSE_CONTACTING_SERVER(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Contacting licensing server for configured license using Client:{}"),
   LICENSE_ERROR_CONTACTING_SERVER(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Error response contacting licensing server"),
   LICENSE_FAILED_CONTACTING_SERVER(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Failed to contact licensing server"),
   LICENSE_SAVED_TO_FILE(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Saved license file to {}"),
   LICENSE_FAILED_SAVED_TO_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to save license file to {}"),
+  LICENSE_FAILED_DELETE_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to delete license file {}"),
+  LICENSE_LOADED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Loaded license for {} by {}, created {}, valid after {} and till {} with features {}"),
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");

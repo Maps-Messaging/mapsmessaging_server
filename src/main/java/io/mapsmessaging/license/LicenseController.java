@@ -7,7 +7,6 @@ import com.google.gson.GsonBuilder;
 import global.namespace.fun.io.bios.BIOS;
 import global.namespace.truelicense.api.License;
 import global.namespace.truelicense.api.LicenseManagementException;
-import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.keymgr.LicenseManager;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -118,17 +117,17 @@ public class LicenseController {
 
     for (File installedFile : files) {
       String edition = extractEdition(installedFile.getName());
-
       try {
         LicenseManager manager = getLicenseManager(edition.toUpperCase());
         if(manager != null) {
-          logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition);
-          License license = manager.load();
-          Gson gson = new Gson();
-          Map<String, Object> extraData = (Map<String, Object>)license.getExtra();
-          String json = gson.toJson(extraData);
-          Features features = gson.fromJson(json, Features.class);
-          licenseList.add(features);
+          logger.log(ServerLogMessages.LICENSE_LOADING, edition);
+          if(!processLicense( manager.load(), licenseList)){
+            logger.log(ServerLogMessages.LICENSE_UNINSTALLING, edition);
+            if(!installedFile.delete()){
+              logger.log(ServerLogMessages.LICENSE_FAILED_DELETE_FILE, installedFile.getAbsolutePath());
+            }
+            manager.uninstall();
+          }
         }
         else{
           logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
@@ -138,6 +137,30 @@ public class LicenseController {
       }
     }
     return licenseList;
+  }
+
+  private boolean processLicense(License license,List<Features> licenseList) {
+    long now = System.currentTimeMillis();
+    if(license != null) {
+      if (license.getNotBefore().getTime() < now && license.getNotAfter().getTime() > now) {
+        Gson gson = new Gson();
+        Map<String, Object> extraData = (Map<String, Object>) license.getExtra();
+        String json = gson.toJson(extraData);
+        Features features = gson.fromJson(json, Features.class);
+        licenseList.add(features);
+        Date after = license.getNotAfter();
+        Date before = license.getNotBefore();
+        Date issued = license.getIssued();
+        String info = license.getInfo();
+        String who = license.getIssuer().getName();
+        logger.log(ServerLogMessages.LICENSE_LOADED, info, who, issued, after, before,  gson.toJson(extraData));
+        return true;
+      } else {
+        logger.log(ServerLogMessages.LICENSE_EXPIRED, license.getInfo(), license.getNotBefore(), license.getNotAfter());
+        return (license.getNotAfter().getTime() > now); // Do NOT delete the license if it is still valid but can not yet be used
+      }
+    }
+    return false;
   }
 
   private void fetchLicenseFromServer(File licenseDir, String uniqueId, UUID serverUUID) {
