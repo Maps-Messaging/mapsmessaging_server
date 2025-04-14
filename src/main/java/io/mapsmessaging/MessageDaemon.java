@@ -125,6 +125,7 @@ public class MessageDaemon {
    * It then initializes the Consul Manager and the ConfigurationManager with the server ID.
    */
   public MessageDaemon() throws IOException {
+    instance = this;
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
@@ -151,6 +152,11 @@ public class MessageDaemon {
     ConfigurationManager.getInstance().initialise(uniqueId);
     String mapsHome = SystemProperties.getInstance().getProperty(MAPS_HOME, ".");
     licenseHome =mapsHome+File.separator+"licenses";
+  }
+
+  public  MessageDaemon(FeatureManager featureManager) throws IOException {
+    this();
+    this.featureManager = featureManager;
   }
 
   /**
@@ -225,10 +231,12 @@ public class MessageDaemon {
   public Integer start() throws IOException {
 
     // Load the license
-    File licenseDir = new File(licenseHome);
-    licenseDir.mkdirs();
-    LicenseController licenseController = new LicenseController(licenseHome, uniqueId, uuid);
-    featureManager = licenseController.getFeatureManager();
+    if(featureManager == null) {
+      File licenseDir = new File(licenseHome);
+      licenseDir.mkdirs();
+      LicenseController licenseController = new LicenseController(licenseHome, uniqueId, uuid);
+      featureManager = licenseController.getFeatureManager();
+    }
 
     logMonitor.register();
     isStarted.set(true);

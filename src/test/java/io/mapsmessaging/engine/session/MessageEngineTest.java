@@ -31,7 +31,7 @@ public abstract class MessageEngineTest extends BaseTestConfig {
   @BeforeEach
   public void setupTest() throws IOException {
     if(!BaseTestConfig.md.isStarted()){
-      BaseTestConfig.md.start(null);
+      BaseTestConfig.md.start();
     }
     manager = BaseTestConfig.md.getSubSystemManager().getSessionManager();
     previous = manager.getSecurityManager();

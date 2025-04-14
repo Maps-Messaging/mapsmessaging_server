@@ -55,7 +55,7 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @AfterEach
-  public void clear(){
+  void clear(){
     Map<String, DestinationImpl> destinations = md.getDestinationManager().get(null);
     List<DestinationImpl> toDelete = new ArrayList<>();
     for(DestinationImpl destination:destinations.values()){
@@ -69,7 +69,7 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @BeforeAll
-  public static void beforeAll() throws IOException {
+  static void beforeAll() throws IOException {
     if(md == null) {
       File file = new File(".");
       System.out.println(file.getAbsolutePath());
@@ -93,10 +93,10 @@ public class BaseTestConfig extends BaseTest {
       setIfNot("javax.net.debug", "none");
 
       setIfNot("org.slf4j.simpleLogger.defaultLogLevel", "debug");
-      md = MessageDaemon.getInstance();
+      md = new MessageDaemon(new TestFeatureManager(new ArrayList<>()));
       Runnable runnable = () -> {
         try {
-          md.start(null);
+          md.start();
         } catch (IOException e) {
           throw new RuntimeException(e);
         }

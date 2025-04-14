@@ -38,7 +38,7 @@ public class MessageAPITest extends BaseTestConfig {
   @BeforeEach
   public void setupTest() throws IOException {
     if(!BaseTestConfig.md.isStarted()){
-      BaseTestConfig.md.start(null);
+      BaseTestConfig.md.start();
     }
     engineManager = new EngineManager(BaseTestConfig.md);
     engineManager.setup();
