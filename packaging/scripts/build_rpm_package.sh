@@ -20,6 +20,7 @@
 
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 
+
 if [[ $POM_VERSION == ml-* ]]; then
   export PACKAGE_NAME="maps-ml"
 else
@@ -32,20 +33,34 @@ export USER=$1
 export PASSWORD=$2
 
 # Variables
-export VERSION_NAME=3.3.7-SNAPSHOT
+export VERSION_NAME=$POM_VERSION
 
+DATE_SUFFIX=$(date +%Y%m%d.%H%M)
 
+if [[ "$POM_VERSION" == *-SNAPSHOT ]]; then
+  BASE_VERSION="${POM_VERSION/-SNAPSHOT/}"
+  export PACKAGE_VERSION="${BASE_VERSION}.${DATE_SUFFIX}"
+else
+  export PACKAGE_VERSION="${POM_VERSION}"
+fi
 
 export NEXUS_URL="https://repository.mapsmessaging.io"
 export REPO_NAME="maps_yum_snapshot"
-export PACKAGE_VERSION=$POM_VERSION
-export PACKAGE_FILE="${PACKAGE_NAME}-3.3.7-1.noarch.rpm"
+
+export PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.noarch.rpm"
 export TAR_FILE="target/${PACKAGE_NAME}-${VERSION_NAME}-install.tar.gz"
 export SOURCE_DIR="packaging/rpmbuild/SOURCES"
 export SPEC_DIR="packaging/rpmbuild/SPECS"
 export BUILD_ROOT=${PWD}/packaging/rpmbuild
 
+# Apply sed updates to the correct spec file
+SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}.spec"
 
+# Update spec values
+sed -i "s/^Version:.*/Version:        ${PACKAGE_VERSION}/" "$SPEC_FILE"
+sed -i "s/^Release:.*/Release:        1%{?dist}/" "$SPEC_FILE"
+sed -i "s|^Source0:.*|Source0:        ${PACKAGE_NAME}-${VERSION_NAME}-install.tar.gz|" "$SPEC_FILE"
+sed -i "s|^%setup -q -n .*|%setup -q -n ${PACKAGE_NAME}-${VERSION_NAME}|" "$SPEC_FILE"
 
 echo "Validating files"
 

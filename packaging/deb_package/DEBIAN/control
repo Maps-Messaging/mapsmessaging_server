@@ -1,5 +1,5 @@
-Package: maps
-Version: 3.3.7
+Package: %%PACKAGE_NAME%%
+Version: %%PACKAGE_VERSION%%
 Section: java
 Priority: optional
 Architecture: all
@@ -7,3 +7,4 @@ Depends: openjdk-17-jre
 Maintainer: Matthew Buckton <matthew.buckton@mapsmessaging.io>
 Description: A multi adapter and protocol server
  A multi adapter and protocol server for handling messaging protocols.
+

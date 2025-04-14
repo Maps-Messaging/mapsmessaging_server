@@ -1,11 +1,11 @@
 Name:           maps
-Version:        3.3.7
+Version:        %%VERSION%%
 Release:        1%{?dist}
-Summary:        A multi adapter and protocol server with machine learning
+Summary:        A multi adapter and protocol server
 
 License:        Apache License 2.0
-URL:            http://www.mapsmessaging.io
-Source0:        maps-3.3.7-SNAPSHOT-install.tar.gz
+URL:            https://www.mapsmessaging.io
+Source0:        %%SOURCE_FILE%%
 
 BuildArch:      noarch
 Requires:       java-17-openjdk
@@ -14,7 +14,7 @@ Requires:       java-17-openjdk
 A multi adapter and protocol server for handling messaging protocols.
 
 %prep
-%setup -q -n  maps-3.3.7-SNAPSHOT
+%setup -q -n %%SETUP_DIR%%
 
 %build
 
@@ -37,7 +37,7 @@ chmod +x $RPM_BUILD_ROOT/opt/maps/bin/maps
 # Copy the etc files
 cp $RPM_BUILD_ROOT/opt/maps/etc/maps.env $RPM_BUILD_ROOT/etc/maps/maps.env
 cp $RPM_BUILD_ROOT/opt/maps/etc/maps.service $RPM_BUILD_ROOT/usr/lib/systemd/system/maps.service
-rm $RPM_BUILD_ROOT/opt/maps/lib/libLoRaDevice.so
+rm -f $RPM_BUILD_ROOT/opt/maps/lib/libLoRaDevice.so
 
 # Create symlinks
 ln -s /opt/maps/bin/maps $RPM_BUILD_ROOT/usr/local/bin/maps
@@ -97,5 +97,5 @@ systemctl daemon-reload
 %config(noreplace) /etc/maps/maps.env
 
 %changelog
-* Tue Jun 11 2024 Matthew Buckton <matthew.buckton@mapsmessaging.io> 3.3.7-1
+* Tue Apr 14 2025 Matthew Buckton <matthew.buckton@mapsmessaging.io> %%VERSION%%-1
 - Initial RPM release.
