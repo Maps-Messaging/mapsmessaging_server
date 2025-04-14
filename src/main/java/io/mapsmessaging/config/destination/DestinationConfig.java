@@ -22,17 +22,31 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
+/*
 
+public class Storage {
+  private boolean s3Archive;
+  private boolean compressionArchive;
+  private boolean migrationArchive;
+
+  private boolean fileSupport;
+  private boolean cacheSupport;
+}
+ */
 public class DestinationConfig extends DestinationConfigDTO implements Config {
 
   private static final String OPTIONAL_PATH = "{folder}";
 
-  public DestinationConfig(ConfigurationProperties properties) {
+  public DestinationConfig(ConfigurationProperties properties, FeatureManager featureManager) {
     this.debug = properties.getBooleanProperty("debug", false);
     this.name = properties.getProperty("name", "");
     this.directory = properties.getProperty("directory", "");
     this.namespace = properties.getProperty("namespace", "");
     this.type = properties.getProperty("type", "");
+    if(!featureManager.isEnabled("storage.fileSupport") && type.equalsIgnoreCase("file")) {
+      type = "memory"; // File is not supported
+    }
     this.sync = properties.getProperty("sync", "disable").equalsIgnoreCase("enable");
     this.itemCount = properties.getIntProperty("itemCount", 100);
     this.maxPartitionSize = properties.getLongProperty("maxPartitionSize", 4096L);
@@ -42,11 +56,19 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     if (properties.containsKey("format")) {
       this.format = new FormatConfig((ConfigurationProperties) properties.get("format"));
     }
-    if (properties.containsKey("cache")) {
+    if (properties.containsKey("cache") && featureManager.isEnabled("storage.cacheSupport")) {
       this.cache = new CacheConfig((ConfigurationProperties) properties.get("cache"));
+    }
+    else{
+      this.cache = null;
     }
     if (properties.containsKey("archive")) {
       this.archive = new ArchiveConfig((ConfigurationProperties) properties.get("archive"));
+      if(archive.getName().equalsIgnoreCase("s3") && !featureManager.isEnabled("storage.s3Archive") ||
+          archive.getName().equalsIgnoreCase("compress") && !featureManager.isEnabled("storage.compressionArchive")
+      ) {
+        this.archive = null; // Disabled
+      }
     }
     String propertyNamespace = this.namespace;
     this.remap =

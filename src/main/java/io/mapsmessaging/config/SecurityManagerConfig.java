@@ -21,6 +21,7 @@ package io.mapsmessaging.config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +42,7 @@ public class SecurityManagerConfig extends SecurityManagerDTO implements Config,
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new SecurityManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

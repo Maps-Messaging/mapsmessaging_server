@@ -1,6 +1,7 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +25,7 @@ public class LicenseConfig implements ConfigManager {
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new LicenseConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

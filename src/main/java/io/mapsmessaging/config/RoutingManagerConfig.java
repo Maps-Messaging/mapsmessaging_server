@@ -22,6 +22,7 @@ import io.mapsmessaging.config.routing.PredefinedServerConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.RoutingManagerConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -98,7 +99,7 @@ public class RoutingManagerConfig extends RoutingManagerConfigDTO implements Con
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new RoutingManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

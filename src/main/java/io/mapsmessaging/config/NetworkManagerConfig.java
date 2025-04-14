@@ -23,6 +23,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.NetworkManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -123,7 +124,7 @@ public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Con
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new NetworkManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

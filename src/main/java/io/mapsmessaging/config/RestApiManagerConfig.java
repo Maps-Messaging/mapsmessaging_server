@@ -23,6 +23,7 @@ import io.mapsmessaging.config.rest.StaticConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.RestApiManagerConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.rest.handler.CorsHeaderManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
@@ -182,7 +183,7 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new RestApiManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

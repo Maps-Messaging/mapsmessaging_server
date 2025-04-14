@@ -18,11 +18,13 @@
 
 package io.mapsmessaging.config;
 
+import io.mapsmessaging.license.FeatureManager;
+
 import java.io.IOException;
 
 public interface ConfigManager {
 
-  ConfigManager load();
+  ConfigManager load(FeatureManager featureManager);
 
   void save() throws IOException;
 

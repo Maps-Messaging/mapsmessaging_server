@@ -56,7 +56,7 @@ public class ResourceFactory {
     if (resourceName.toLowerCase().startsWith("$sys")) {
       return new ResourceImpl();
     } else {
-      ResourceProperties props = createMetaData(pathManager, resourceName, uuid, destinationType, config);
+      ResourceProperties props = createMetaData(pathManager.getDirectory() , resourceName, uuid, destinationType, config);
       return new ResourceImpl(messageExpiryHandler, pathManager, fullyQualifiedPath, props);
     }
   }
@@ -94,8 +94,8 @@ public class ResourceFactory {
     return null;
   }
 
-  private ResourceProperties createMetaData(DestinationConfigDTO path, String resourceName, UUID uuid, DestinationType destinationType, SchemaConfig config) throws IOException {
-    File directoryPath = new File(path.getDirectory() + File.separator + uuid.toString() + File.separator);
+  private ResourceProperties createMetaData(String path, String resourceName, UUID uuid, DestinationType destinationType, SchemaConfig config) throws IOException {
+    File directoryPath = new File(path + File.separator + uuid.toString() + File.separator);
     if (!directoryPath.exists()) {
       if (!directoryPath.mkdirs()) {
         throw new IOException("Unable to construct directory path " + directoryPath);

@@ -21,6 +21,7 @@ package io.mapsmessaging.config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.AuthManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.IOException;
@@ -71,7 +72,7 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new AuthManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

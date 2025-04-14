@@ -23,6 +23,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.TenantManagementConfigDTO;
 import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class TenantManagementConfig extends TenantManagementConfigDTO implements
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new TenantManagementConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

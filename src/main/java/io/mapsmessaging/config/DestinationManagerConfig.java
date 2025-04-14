@@ -23,6 +23,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.DestinationManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,15 +33,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DestinationManagerConfig extends DestinationManagerConfigDTO implements Config, ConfigManager {
 
-  private DestinationManagerConfig(ConfigurationProperties properties) {
+  private DestinationManagerConfig(ConfigurationProperties properties, FeatureManager featureManager) {
     this.data = new ArrayList<>();
     Object configEntry = properties.get("data");
     if (configEntry instanceof List) {
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
-        this.data.add(new DestinationConfig(entry));
+        this.data.add(new DestinationConfig(entry, featureManager));
       }
     } else if (configEntry instanceof ConfigurationProperties) {
-      this.data.add(new DestinationConfig((ConfigurationProperties) configEntry));
+      this.data.add(new DestinationConfig((ConfigurationProperties) configEntry, featureManager));
     }
   }
 
@@ -86,8 +87,8 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
 
 
   @Override
-  public ConfigManager load() {
-    return new DestinationManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  public ConfigManager load(FeatureManager featureManager) {
+    return new DestinationManagerConfig(ConfigurationManager.getInstance().getProperties(getName()), featureManager);
   }
 
   @Override

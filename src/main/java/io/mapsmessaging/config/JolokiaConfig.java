@@ -21,6 +21,7 @@ package io.mapsmessaging.config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.JolokiaConfigDTO;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import lombok.NoArgsConstructor;
@@ -65,7 +66,7 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
   }
 
   @Override
-  public ConfigManager load() {
+  public ConfigManager load(FeatureManager featureManager) {
     return new JolokiaConfig(ConfigurationManager.getInstance().getProperties(getName()));
   }
 

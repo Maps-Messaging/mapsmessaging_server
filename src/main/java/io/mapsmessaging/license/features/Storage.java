@@ -6,8 +6,6 @@ import lombok.Data;
 public class Storage {
   private boolean s3Archive;
   private boolean compressionArchive;
-  private boolean migrationArchive;
-
   private boolean fileSupport;
   private boolean cacheSupport;
 }

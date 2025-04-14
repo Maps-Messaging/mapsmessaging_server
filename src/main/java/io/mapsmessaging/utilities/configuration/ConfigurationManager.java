@@ -27,6 +27,7 @@ import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
 import io.mapsmessaging.configuration.consul.ConsulPropertyManager;
 import io.mapsmessaging.configuration.file.FileYamlPropertyManager;
 import io.mapsmessaging.configuration.yaml.YamlPropertyManager;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -40,6 +41,8 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {
+
+
   private static class Holder {
     static final ConfigurationManager INSTANCE = new ConfigurationManager();
   }
@@ -53,6 +56,7 @@ public class ConfigurationManager {
   private final List<PropertyManager> propertyManagers;
   private final Map<String, ConfigManager> managerMap;
   private PropertyManager authoritative;
+  private FeatureManager featureManager;
 
   private ConfigurationManager() {
     logger.log(ServerLogMessages.PROPERTY_MANAGER_START);
@@ -65,8 +69,8 @@ public class ConfigurationManager {
     // nothing to do here
   }
 
-  public void initialise(@NonNull @NotNull String serverId) {
-
+  public void initialise(@NonNull @NotNull String serverId, FeatureManager featureManager) {
+    this.featureManager = featureManager;
     PropertyManager defaultManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
       defaultManager = processConsulConfig(serverId);
@@ -165,7 +169,7 @@ public class ConfigurationManager {
   private void loadAll(){
     ServiceLoader<ConfigManager> configManagers = ServiceLoader.load(ConfigManager.class);
     for(ConfigManager manager : configManagers){
-      ConfigManager loaded = manager.load();
+      ConfigManager loaded = manager.load(featureManager);
       managerMap.put(loaded.getClass().getSimpleName(), loaded);
     }
   }

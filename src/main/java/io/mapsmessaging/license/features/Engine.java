@@ -7,7 +7,6 @@ public class Engine {
   private boolean queueSupport;
   private boolean topicSupport;
   private boolean namedSubscriptionSupport;
-  private boolean peristSupport;
   private boolean filteringSupport;
   private boolean schemaSupport;
   private int maxTopics;

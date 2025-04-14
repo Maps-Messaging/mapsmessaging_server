@@ -149,7 +149,6 @@ public class MessageDaemon {
     ConsulManagerFactory.getInstance().start(uniqueId);
 
     //</editor-fold>
-    ConfigurationManager.getInstance().initialise(uniqueId);
     String mapsHome = SystemProperties.getInstance().getProperty(MAPS_HOME, ".");
     licenseHome =mapsHome+File.separator+"licenses";
   }
@@ -237,7 +236,7 @@ public class MessageDaemon {
       LicenseController licenseController = new LicenseController(licenseHome, uniqueId, uuid);
       featureManager = licenseController.getFeatureManager();
     }
-
+    ConfigurationManager.getInstance().initialise(uniqueId, featureManager);
     logMonitor.register();
     isStarted.set(true);
     loadConstants();
