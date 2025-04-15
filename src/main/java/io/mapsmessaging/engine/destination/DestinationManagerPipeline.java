@@ -265,4 +265,23 @@ public class DestinationManagerPipeline {
     }
     return size;
   }
+
+  public synchronized CompletableFuture<Integer> count(DestinationType type)  {
+    CompletableFuture<Integer> future = new CompletableFuture<>();
+    Callable<Void> task = () -> {
+      int count =0;
+      for(DestinationImpl destinationImpl : destinationList.values()) {
+        if(destinationImpl.getResourceType().equals(type) &&
+            !destinationImpl.getFullyQualifiedNamespace().contains("$SYS") &&
+            !destinationImpl.getFullyQualifiedNamespace().contains("$SCHEMA") ) {
+          count++;
+        }
+      }
+      future.complete(count);
+      return null;
+    };
+    taskScheduler.submit(task);
+    return future;
+  }
+
 }

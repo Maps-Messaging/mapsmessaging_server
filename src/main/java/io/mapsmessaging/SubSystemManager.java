@@ -182,7 +182,7 @@ public class SubSystemManager {
   private void createAgentStartStopList() throws IOException {
     // Start the Schema manager to it has the defaults and has loaded the required classes
     io.mapsmessaging.engine.session.SecurityManager securityManager = new SecurityManager();
-    DestinationManager destinationManager = new DestinationManager();
+    DestinationManager destinationManager = new DestinationManager(featureManager);
     TransformationManager.getInstance();
 
     addToMap(10, 2000, AuthManager.getInstance());

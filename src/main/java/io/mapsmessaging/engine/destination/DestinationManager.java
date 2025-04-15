@@ -29,6 +29,7 @@ import io.mapsmessaging.engine.resources.ResourceFactory;
 import io.mapsmessaging.engine.resources.ResourceProperties;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.engine.utils.FilePathHelper;
+import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -55,8 +56,23 @@ public class DestinationManager implements DestinationFactory, Agent {
   private final DestinationConfigDTO rootPath;
   private final DestinationManagerPipeline[] creatorPipelines;
 
-  public DestinationManager() {
+  private final boolean topicsSupported;
+  private final boolean queuesSupported;
+  private final boolean schemaSupported;
+  private final boolean tempTopicsSupported;
+  private final boolean tempQueuesSupported;
+  private final int maxQueues;
+  private final int maxTopics;
+
+  public DestinationManager(FeatureManager featureManager) {
     logger = LoggerFactory.getLogger(DestinationManager.class);
+    topicsSupported = featureManager.isEnabled("engine.topicSupport");
+    queuesSupported = featureManager.isEnabled("engine.queueSupport");
+    tempTopicsSupported = featureManager.isEnabled("engine.tempTopicSupport");
+    tempQueuesSupported = featureManager.isEnabled("engine.tempQueueSupport");
+    schemaSupported = featureManager.isEnabled("engine.schemaSupport");
+    maxQueues = featureManager.getMaxValue("engine.maxQueues");
+    maxTopics = featureManager.getMaxValue("engine.maxTopics");
     properties = new LinkedHashMap<>();
     DestinationManagerConfig config = DestinationManagerConfig.getInstance();
     DestinationConfigDTO rootPathLookup = null;
@@ -112,6 +128,21 @@ public class DestinationManager implements DestinationFactory, Agent {
       logger.log(ServerLogMessages.DESTINATION_MANAGER_USER_SYSTEM_TOPIC, name);
       return null;
     }
+    if(destinationType == DestinationType.TOPIC && !topicsSupported ||
+        destinationType == DestinationType.QUEUE && !queuesSupported ||
+        destinationType == DestinationType.TEMPORARY_QUEUE && !tempQueuesSupported ||
+        destinationType == DestinationType.TEMPORARY_TOPIC && !tempTopicsSupported ||
+        destinationType == DestinationType.SCHEMA && !schemaSupported
+    ){
+      logger.log(ServerLogMessages.DESTINATION_MANAGER_NOT_LICESNSED, destinationType.getName());
+      return null;
+    }
+    int max = (destinationType == DestinationType.TOPIC || destinationType == DestinationType.TEMPORARY_TOPIC )? maxTopics : maxQueues;
+    int existing = count(destinationType);
+    if(max > 0 && existing > max) {
+      logger.log(ServerLogMessages.DESTINATION_MANAGER_EXCEEDED_LICESNSE, destinationType.getName(), existing, max);
+      return null;
+    }
     return creatorPipelines[getIndex(name)].create(name, destinationType);
   }
 
@@ -141,6 +172,16 @@ public class DestinationManager implements DestinationFactory, Agent {
     }
     return size;
   }
+
+  @SneakyThrows
+  public int count(DestinationType type) {
+    int size = 0;
+    for (DestinationManagerPipeline pipeline : creatorPipelines) {
+      size += pipeline.count(type).get();
+    }
+    return size;
+  }
+
 
   public void initialise() {
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);

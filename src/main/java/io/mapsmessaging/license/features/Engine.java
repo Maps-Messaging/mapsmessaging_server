@@ -6,6 +6,8 @@ import lombok.Data;
 public class Engine {
   private boolean queueSupport;
   private boolean topicSupport;
+  private boolean tempQueueSupport;
+  private boolean tempTopicSupport;
   private boolean namedSubscriptionSupport;
   private boolean filteringSupport;
   private boolean schemaSupport;

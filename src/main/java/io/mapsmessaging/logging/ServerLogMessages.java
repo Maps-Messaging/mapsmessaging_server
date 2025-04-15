@@ -464,6 +464,8 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Destination Manager log messages">
   DESTINATION_MANAGER_ADD_SYSTEM_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Added new topic {}"),
+  DESTINATION_MANAGER_NOT_LICESNSED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Not license usage for {}"),
+  DESTINATION_MANAGER_EXCEEDED_LICESNSE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Exceeded license usage for {}, has {} limit is {}"),
   DESTINATION_MANAGER_USER_SYSTEM_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "User attempted to create a system topic, {}, this is prohibited"),
   DESTINATION_MANAGER_CREATED_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "New topic created {}"),
   DESTINATION_MANAGER_DELETED_TOPIC(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Topic, {}, has been deleted"),
