@@ -20,7 +20,6 @@
 
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 
-
 export PACKAGE_NAME="maps"
 
 
@@ -34,11 +33,12 @@ export VERSION_NAME=$POM_VERSION
 
 DATE_SUFFIX=$(date +%Y%m%d.%H%M)
 
+BASE_VERSION="${POM_VERSION/-SNAPSHOT/}"
+
 if [[ "$POM_VERSION" == *-SNAPSHOT ]]; then
-  BASE_VERSION="${POM_VERSION/-SNAPSHOT/}"
   export PACKAGE_VERSION="${BASE_VERSION}.${DATE_SUFFIX}"
 else
-  export PACKAGE_VERSION="${POM_VERSION}"
+  export PACKAGE_VERSION="${BASE_VERSION}"
 fi
 
 export NEXUS_URL="https://repository.mapsmessaging.io"
@@ -51,7 +51,11 @@ export SPEC_DIR="packaging/rpmbuild/SPECS"
 export BUILD_ROOT=${PWD}/packaging/rpmbuild
 
 # Apply sed updates to the correct spec file
-SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}.spec"
+if [[ "$POM_VERSION" == ml-* ]]; then
+  export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}-ml.spec"
+else
+  export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}.spec"
+fi
 
 # Update spec values
 sed -i "s/^Version:.*/Version:        ${PACKAGE_VERSION}/" "$SPEC_FILE"
