@@ -45,7 +45,6 @@ fi
 export NEXUS_URL="https://repository.mapsmessaging.io"
 export REPO_NAME="maps_yum_snapshot"
 
-export PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.noarch.rpm"
 export TAR_FILE="target/${PACKAGE_NAME}-${VERSION_NAME}-install.tar.gz"
 export SOURCE_DIR="packaging/rpmbuild/SOURCES"
 export SPEC_DIR="packaging/rpmbuild/SPECS"
@@ -53,13 +52,15 @@ export BUILD_ROOT=${PWD}/packaging/rpmbuild
 
 # Apply sed updates to the correct spec file
 if [[ "$POM_VERSION" == ml-* ]]; then
+  export PACKAGE_FILE="${PACKAGE_NAME}-ml-${PACKAGE_VERSION}-1.noarch.rpm"
   export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}-ml.spec"
 else
+  export PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.noarch.rpm"
   export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}.spec"
 fi
 
 # Update spec values
-sed -i "s/^Version:.*/Version:        ${PACKAGE_VERSION}/" "$SPEC_FILE"
+sed -i "s|%%VERSION%%|${PACKAGE_VERSION}|g" "$SPEC_FILE"
 sed -i "s/^Release:.*/Release:        1%{?dist}/" "$SPEC_FILE"
 sed -i "s|^Source0:.*|Source0:        ${PACKAGE_NAME}-${VERSION_NAME}-install.tar.gz|" "$SPEC_FILE"
 sed -i "s|^%setup -q -n .*|%setup -q -n ${PACKAGE_NAME}-${VERSION_NAME}|" "$SPEC_FILE"
@@ -118,6 +119,8 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
+  echo ${PACKAGE_FILE}
+  ls -lsa ${PACKAGE_FILE}
   cd packaging/rpmbuild/RPMS/noarch || exit
   curl -v  \
    -u $USER:$PASSWORD  \
