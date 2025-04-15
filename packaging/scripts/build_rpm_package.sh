@@ -21,11 +21,8 @@
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 
 
-if [[ $POM_VERSION == ml-* ]]; then
-  export PACKAGE_NAME="maps-ml"
-else
-  export PACKAGE_NAME="maps"
-fi
+export PACKAGE_NAME="maps"
+
 
 echo "Defining environment variables"
 
