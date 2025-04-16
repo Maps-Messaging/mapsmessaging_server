@@ -12,7 +12,7 @@ echo "deb [arch=all] https://repo.mapsmessaging.io/repository/maps-snapshot/ sna
 Next you need to install the public key from the repo
 
 ```shell
-sudo curl -fsSL https://repo.mapsmessaging.io/repository/public_key/keys/maps-pgp-key.gpg -o /etc/apt/trusted.gpg.d/maps-pgp-key.gpg
+sudo curl -fsSL https://repository.mapsmessaging.io/repository/public_key/keys/maps-pgp-key.gpg -o /etc/apt/trusted.gpg.d/maps-pgp-key.gpg
 ```
 
 This will enable apt to update and install the message daemon.
@@ -21,13 +21,13 @@ To Install the server then
 
 ```shell
 sudo apt-get update
-sudo apt-get install maps-server
+sudo apt-get install maps
 ```
 
 or
 
 ```shell
 sudo apt-get update
-sudo apt-get install maps-ml-server
+sudo apt-get install maps-ml
 ```
 
