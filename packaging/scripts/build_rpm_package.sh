@@ -54,9 +54,11 @@ export BUILD_ROOT=${PWD}/packaging/rpmbuild
 if [[ "$POM_VERSION" == ml-* ]]; then
   export PACKAGE_FILE="${PACKAGE_NAME}-ml-${PACKAGE_VERSION}-1.noarch.rpm"
   export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}-ml.spec"
+  export ML = "-ml"
 else
   export PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.noarch.rpm"
   export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}.spec"
+  export ML = ""
 fi
 
 # Update spec values
@@ -86,22 +88,18 @@ fi
 
 # Build the RPM package
 echo "Building the rpm files"
-if [[ $POM_VERSION == ml-* ]]; then
-  rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/maps-ml.spec
-else
-  rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_DIR}/maps.spec
-fi
-echo "rpm files built"
+rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_FILE}
 
+echo "rpm files built
 # Function to delete the old package
 delete_old_package() {
   # URL to the package in the repository
-  DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}&version=${PACKAGE_VERSION}"
+  DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}${ML}&version=${PACKAGE_VERSION}"
 
-  DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}&version=${PACKAGE_VERSION}"
+  DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}${ML}&version=${PACKAGE_VERSION}"
 
   # Fetch the list of items
-  ITEMS=$(curl -u ${USER}:${PASSWORD} -s "${DELETE_URL}" | jq '.items[] | select(.name == "'${PACKAGE_NAME}'")')
+  ITEMS=$(curl -u ${USER}:${PASSWORD} -s "${DELETE_URL}" | jq '.items[] | select(.name == "'${PACKAGE_NAME}${ML}'")')
 
   # Extract the first matching component ID for the given package name
   COMPONENT_ID=$(echo "$ITEMS" | jq -r '.id')
@@ -119,9 +117,9 @@ delete_old_package() {
 
 # Function to upload the new package
 upload_new_package() {
+  cd packaging/rpmbuild/RPMS/noarch || exit
   echo ${PACKAGE_FILE}
   ls -lsa ${PACKAGE_FILE}
-  cd packaging/rpmbuild/RPMS/noarch || exit
   curl -v  \
    -u $USER:$PASSWORD  \
    -F "yum.asset=@${PACKAGE_FILE}" \
