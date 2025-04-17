@@ -54,11 +54,11 @@ export BUILD_ROOT=${PWD}/packaging/rpmbuild
 if [[ "$POM_VERSION" == ml-* ]]; then
   export PACKAGE_FILE="${PACKAGE_NAME}-ml-${PACKAGE_VERSION}-1.noarch.rpm"
   export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}-ml.spec"
-  export ML = "-ml"
+  export ML="-ml"
 else
   export PACKAGE_FILE="${PACKAGE_NAME}-${PACKAGE_VERSION}-1.noarch.rpm"
   export SPEC_FILE="${SPEC_DIR}/${PACKAGE_NAME}.spec"
-  export ML = ""
+  export ML=""
 fi
 
 # Update spec values
@@ -91,28 +91,25 @@ echo "Building the rpm files"
 rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_FILE}
 
 echo rpm files built
+
 # Function to delete the old package
 delete_old_package() {
-  # URL to the package in the repository
-  DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}${ML}&version=${PACKAGE_VERSION}"
+  echo "Deleting all ${PACKAGE_NAME}${ML} packages with base version ${BASE_VERSION}"
 
-  DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}${ML}&version=${PACKAGE_VERSION}"
+  SEARCH_URL="${NEXUS_URL}/service/rest/v1/search?repository=${REPO_NAME}&name=${PACKAGE_NAME}${ML}"
+  ITEMS=$(curl -u ${USER}:${PASSWORD} -s "${SEARCH_URL}")
 
-  # Fetch the list of items
-  ITEMS=$(curl -u ${USER}:${PASSWORD} -s "${DELETE_URL}" | jq '.items[] | select(.name == "'${PACKAGE_NAME}${ML}'")')
+  echo "$ITEMS" | jq -c '.items[]' | while read -r item; do
+    VERSION=$(echo "$item" | jq -r '.version')
+    COMPONENT_ID=$(echo "$item" | jq -r '.id')
 
-  # Extract the first matching component ID for the given package name
-  COMPONENT_ID=$(echo "$ITEMS" | jq -r '.id')
-
-  echo "Checking for existing package at ${DELETE_URL} found component with name ${PACKAGE_NAME} and ID ${COMPONENT_ID}"
-  # Check if the component ID exists and delete the old package
-  if [ -n "${COMPONENT_ID}" ]; then
-    DELETE_COMPONENT_URL="${NEXUS_URL}/service/rest/v1/components/${COMPONENT_ID}"
-    curl -u ${USER}:${PASSWORD} -X DELETE "${DELETE_COMPONENT_URL}"
-    echo "Deleted old package with component ID: ${COMPONENT_ID}"
-  else
-    echo "No old package found to delete"
-  fi
+    # Check if version starts with BASE_VERSION
+    if [[ $VERSION == ${BASE_VERSION}* ]]; then
+      DELETE_COMPONENT_URL="${NEXUS_URL}/service/rest/v1/components/${COMPONENT_ID}"
+      echo "Deleting version ${VERSION} with component ID ${COMPONENT_ID}"
+      curl -u ${USER}:${PASSWORD} -X DELETE "${DELETE_COMPONENT_URL}"
+    fi
+  done
 }
 
 # Function to upload the new package
