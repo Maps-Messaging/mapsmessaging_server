@@ -90,7 +90,7 @@ fi
 echo "Building the rpm files"
 rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_FILE}
 
-echo "rpm files built
+echo rpm files built
 # Function to delete the old package
 delete_old_package() {
   # URL to the package in the repository
