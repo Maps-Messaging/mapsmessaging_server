@@ -115,24 +115,43 @@ delete_old_package() {
 }
 
 
-# Function to upload the new package
-upload_new_package() {
- # Absolute path for the package file
-  FULL_PATH=$(realpath ${PACKAGE_FILE})
-  RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin --headers POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${FULL_PATH} -v)
-  if [[ $RESPONSE == *"201 Created"* ]]; then
-    echo "Package upload successful"
-  else
-    echo "Package upload failed: $RESPONSE"
-  fi
-}
+generate_and_upload_metadata() {
+  echo "Generating Packages.gz and Release files..."
 
+  # Create temporary directory structure for metadata
+  META_DIR="apt_metadata"
+  BIN_DIR="${META_DIR}/dists/snapshot/main/binary-all"
+  mkdir -p "${BIN_DIR}"
+
+  cp "${PACKAGE_FILE}" "${BIN_DIR}/"
+
+  # Generate Packages.gz and Release
+  dpkg-scanpackages "${BIN_DIR}" /dev/null | gzip -9c > "${BIN_DIR}/Packages.gz"
+  apt-ftparchive release "${META_DIR}/dists/snapshot" > "${META_DIR}/dists/snapshot/Release"
+
+  # Upload metadata files to Nexus
+  echo "Uploading metadata to Nexus..."
+  RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin --headers POST \
+    "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
+    deb.asset1=@"${BIN_DIR}/Packages.gz" \
+    deb.asset1.filename="dists/snapshot/main/binary-all/Packages.gz" \
+    deb.asset2=@"${META_DIR}/dists/snapshot/Release" \
+    deb.asset2.filename="dists/snapshot/Release" -v)
+
+  if [[ $RESPONSE == *"201 Created"* ]]; then
+    echo "Metadata upload successful"
+  else
+    echo "Metadata upload failed: $RESPONSE"
+  fi
+
+  rm -rf "${META_DIR}"
+}
 
 # Main script
 echo "Starting package replacement process..."
 
 build_package
 delete_old_package
-upload_new_package
+generate_and_upload_metadata
 
 echo "Package replacement process completed."
