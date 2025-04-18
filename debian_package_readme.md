@@ -5,14 +5,18 @@ Create a file called  /etc/apt/sources.list.d/mapsmessaging.list and add this in
 
 
 ```shell
-echo "deb [arch=all] https://repository.mapsmessaging.io/repository/maps_apt_snapshot/ snapshot main" | sudo tee /etc/apt/sources.list.d/mapsmessaging.list
+echo "deb [arch=all] https://repository.mapsmessaging.io/repository/maps_apt_daily/ daily main" | sudo tee /etc/apt/sources.list.d/mapsmessaging.list
 ```
 
 
 Next you need to install the public key from the repo
 
 ```shell
-sudo curl -fsSL https://repository.mapsmessaging.io/repository/public_key/keys/public.gpg.key -o /etc/apt/trusted.gpg.d/maps-pgp-key.gpg
+sudo curl -fsSL https://repository.mapsmessaging.io/public_key/daily/apt_daily_key.gpg \
+  | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/maps-daily-key.gpg > /dev/null
+
+sudo apt update
+
 ```
 
 This will enable apt to update and install the message daemon.
