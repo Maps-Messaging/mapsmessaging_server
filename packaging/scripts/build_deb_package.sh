@@ -125,6 +125,10 @@ upload_new_package() {
    --headers POST \
    "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
    deb.asset@${FULL_PATH} \
+   apt.asset.filename="${FILE_NAME}" \
+   apt.distribution="development" \
+   apt.component="main" \
+   apt.architecture="all" \
    -v)
   if [[ $RESPONSE == *"201 Created"* ]]; then
     echo "Package upload successful"
@@ -132,6 +136,7 @@ upload_new_package() {
     echo "Package upload failed: $RESPONSE"
   fi
 }
+
 
 
 # Main script
