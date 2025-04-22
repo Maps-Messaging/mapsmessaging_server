@@ -20,26 +20,23 @@
 
 export USER=$1
 export PASSWORD=$2
-export REPO_NAME=maps_apt_daily
+export REPO_NAME=$3
 
-# Extract POM version from pom.xml
+# Extract POM version
 POM_VERSION=$(grep -m 1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
+BASE_VERSION=${POM_VERSION#ml-}
+BASE_VERSION=${BASE_VERSION/-SNAPSHOT/}
 
-# Set the package name
-if [[ $POM_VERSION == ml-* ]]; then
-  export PACKAGE_NAME="maps-ml"
-  BASE_VERSION=${POM_VERSION#ml-}
-else
-  export PACKAGE_NAME="maps"
-  BASE_VERSION=$POM_VERSION
-fi
+# Set artifact name
+PACKAGE_NAME="maps"
+[[ $POM_VERSION == ml-* ]] && PACKAGE_NAME="maps-ml"
 
-# Add the date/time to the version
-if [[ "$BASE_VERSION" == *-SNAPSHOT ]]; then
+# Add date if it's a snapshot
+if [[ "$POM_VERSION" == *-SNAPSHOT ]]; then
   DATE_SUFFIX=$(date +%Y%m%d.%H%M)
-  export PACKAGE_VERSION="${BASE_VERSION}~${DATE_SUFFIX}"
+  PACKAGE_VERSION="${BASE_VERSION}~${DATE_SUFFIX}"
 else
-  export PACKAGE_VERSION=$BASE_VERSION
+  PACKAGE_VERSION="$BASE_VERSION"
 fi
 
 export NEXUS_URL="https://repository.mapsmessaging.io"
@@ -55,30 +52,31 @@ export TARGET_DIR="packaging/deb_package"
 export INSTALL_DIR="${TARGET_DIR}/opt/maps"
 export ETC_DIR="${INSTALL_DIR}/etc"
 
+build_package(){
 # Update control file dynamically with the correct package name and version
-sed -i "s/^Package:.*/Package: ${PACKAGE_NAME}/" ${TARGET_DIR}/DEBIAN/control
-sed -i "s/^Version:.*/Version: ${PACKAGE_VERSION}/" ${TARGET_DIR}/DEBIAN/control
+  sed -i "s/^Package:.*/Package: ${PACKAGE_NAME}/" ${TARGET_DIR}/DEBIAN/control
+  sed -i "s/^Version:.*/Version: ${PACKAGE_VERSION}/" ${TARGET_DIR}/DEBIAN/control
 
 
 # Create necessary directories
-mkdir -p ${INSTALL_DIR}
-mkdir -p ${ETC_DIR}
+  mkdir -p ${INSTALL_DIR}
+  mkdir -p ${ETC_DIR}
 
 # Extract the tar.gz file into the install directory
-tar -xzf ${TAR_FILE} --strip-components=1 -C ${INSTALL_DIR}
+  tar -xzf ${TAR_FILE} --strip-components=1 -C ${INSTALL_DIR}
 
 # Set necessary permissions
-chmod +x ${INSTALL_DIR}/bin/start.sh
-chmod +x ${INSTALL_DIR}/bin/maps
+  chmod +x ${INSTALL_DIR}/bin/start.sh
+  chmod +x ${INSTALL_DIR}/bin/maps
 
 # Ensure postinst and prerm scripts are executable
-chmod +x ${TARGET_DIR}/DEBIAN/postinst
-chmod +x ${TARGET_DIR}/DEBIAN/prerm
-chmod +x ${TARGET_DIR}/DEBIAN/preinst
+  chmod +x ${TARGET_DIR}/DEBIAN/postinst
+  chmod +x ${TARGET_DIR}/DEBIAN/prerm
+  chmod +x ${TARGET_DIR}/DEBIAN/preinst
 
-echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
+  echo "Preparation complete. You can now create the Debian package using dpkg-deb --build ${TARGET_DIR}"
 
-build_package(){
+
   # Build the Debian package
   echo "Building Debian package..."
   dpkg-deb --build ${TARGET_DIR}
@@ -119,17 +117,7 @@ delete_old_package() {
 upload_new_package() {
  # Absolute path for the package file
   FULL_PATH=$(realpath ${PACKAGE_FILE})
-  RESPONSE=$(http --auth $USER:$PASSWORD \
-   --multipart \
-   --ignore-stdin \
-   --headers POST \
-   "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" \
-   deb.asset@${FULL_PATH} \
-   apt.asset.filename="${FILE_NAME}" \
-   apt.distribution="development" \
-   apt.component="main" \
-   apt.architecture="all" \
-   -v)
+  RESPONSE=$(http --auth $USER:$PASSWORD --multipart --ignore-stdin --headers POST "${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}" deb.asset@${FULL_PATH} -v)
   if [[ $RESPONSE == *"201 Created"* ]]; then
     echo "Package upload successful"
   else
