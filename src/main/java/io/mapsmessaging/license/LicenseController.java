@@ -165,7 +165,8 @@ public class LicenseController {
 
   private void fetchLicenseFromServer(File licenseDir, String uniqueId, UUID serverUUID) {
     try {
-      LicenseConfig licenseConfig = ConfigurationManager.getInstance().getConfiguration(LicenseConfig.class);
+      LicenseConfig licenseConfig = new LicenseConfig();
+      licenseConfig = (LicenseConfig) licenseConfig.load(null);
 
       String clientSecret = licenseConfig.getClientSecret();
       String clientName = licenseConfig.getClientName();
@@ -195,7 +196,6 @@ public class LicenseController {
           while ((line = reader.readLine()) != null) {
             response.append(line);
           }
-
           // Parse response
           List<Map<String, String>> mapList = parseLicenseResponse(response.toString());
           for (Map<String, String> licenseData : mapList) {
