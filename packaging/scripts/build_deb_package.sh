@@ -79,7 +79,7 @@ build_package(){
 
   # Build the Debian package
   echo "Building Debian package..."
-  dpkg-deb --build ${TARGET_DIR}
+  dpkg-deb  -Zgzip -z9 --build ${TARGET_DIR}
 
   # Check if the generated .deb file exists in the parent directory of TARGET_DIR
   if [ -f "packaging/deb_package.deb" ]; then
