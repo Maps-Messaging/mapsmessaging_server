@@ -2,9 +2,12 @@ package io.mapsmessaging.stats;
 
 import com.google.gson.Gson;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.config.LicenseConfig;
+import io.mapsmessaging.config.MessageDaemonConfig;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.*;
@@ -59,6 +62,9 @@ public class StatsReporter {
 
   private void sendStats(Map<String, String> map) {
     try {
+      if(!ConfigurationManager.getInstance().getConfiguration(MessageDaemonConfig.class).isSendAnonymousStatusUpdates()){
+        return;
+      }
       HttpURLConnection connection = (HttpURLConnection) new URL(REPORTING_URL).openConnection();
       connection.setRequestMethod("POST");
       connection.setDoOutput(true);

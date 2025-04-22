@@ -229,6 +229,7 @@ public class MessageDaemon {
    */
   public Integer start() throws IOException {
 
+    ConfigurationManager.getInstance().initialise(uniqueId);
     // Load the license
     if(featureManager == null) {
       File licenseDir = new File(licenseHome);
@@ -236,10 +237,11 @@ public class MessageDaemon {
       LicenseController licenseController = new LicenseController(licenseHome, uniqueId, uuid);
       featureManager = licenseController.getFeatureManager();
     }
-    ConfigurationManager.getInstance().initialise(uniqueId, featureManager);
+    ConfigurationManager.getInstance().setFeatureManager(featureManager);
     logMonitor.register();
     isStarted.set(true);
     loadConstants();
+
 
     subSystemManager = new SubSystemManager(uniqueId, enableSystemTopics, enableDeviceIntegration, messageDaemonConfig.getSessionPipeLines(), featureManager);
     subSystemManager.start();

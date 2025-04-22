@@ -35,7 +35,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,6 +59,8 @@ public class ConfigurationManager {
   private final List<PropertyManager> propertyManagers;
   private final Map<String, ConfigManager> managerMap;
   private PropertyManager authoritative;
+  @Setter
+  @Getter
   private FeatureManager featureManager;
 
   private ConfigurationManager() {
@@ -69,8 +74,7 @@ public class ConfigurationManager {
     // nothing to do here
   }
 
-  public void initialise(@NonNull @NotNull String serverId, FeatureManager featureManager) {
-    this.featureManager = featureManager;
+  public void initialise(@NonNull @NotNull String serverId) {
     PropertyManager defaultManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
       defaultManager = processConsulConfig(serverId);

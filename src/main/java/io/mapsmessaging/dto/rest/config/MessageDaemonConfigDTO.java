@@ -73,4 +73,8 @@ public class MessageDaemonConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Longitude for the daemon location", example = "0.0")
   protected double longitude;
+
+  @Schema(description = "Send anonymous server usage statistics to Maps Messaging", example = "false")
+  protected boolean sendAnonymousStatusUpdates;
+
 }

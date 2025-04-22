@@ -45,6 +45,7 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     this.tagMetaData = config.getBooleanProperty("tagMetaData", false);
     this.latitude = config.getDoubleProperty("latitude", 0.0);
     this.longitude = config.getDoubleProperty("longitude", 0.0);
+    this.sendAnonymousStatusUpdates = config.getBooleanProperty("SendAnonymousStatusUpdates", true);
   }
 
   public static MessageDaemonConfig getInstance() {
@@ -82,6 +83,10 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     }
     if (this.compressMessageMinSize != newConfig.getCompressMessageMinSize()) {
       this.compressMessageMinSize = newConfig.getCompressMessageMinSize();
+      hasChanged = true;
+    }
+    if (this.sendAnonymousStatusUpdates != newConfig.isSendAnonymousStatusUpdates()) {
+      this.sendAnonymousStatusUpdates = newConfig.isSendAnonymousStatusUpdates();
       hasChanged = true;
     }
     if (this.enableResourceStatistics != newConfig.isEnableResourceStatistics()) {
