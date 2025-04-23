@@ -32,7 +32,7 @@ sed -i "s/dd-mmm-yyyy HH:MM:SS/${TIMESTAMP}/g" $BUILD_INFO_FILE
 sed -i "s/00.00.00-SNAPSHOT/${POM_VERSION}/g" $BUILD_INFO_FILE
 
 # Step c: Replace %%MAPS_VERSION%% with $POM_VERSION in ./src/**
-find ./src/ -type f -exec sed -i "s/%%MAPS_VERSION%%/${POM_VERSION}/g" {} +
+find ./src/ -type f -exec sed -i "s|%%MAPS_VERSION%%|${POM_VERSION}|g" {} +
 
 
 if [[ $POM_VERSION == ml-* ]]; then
