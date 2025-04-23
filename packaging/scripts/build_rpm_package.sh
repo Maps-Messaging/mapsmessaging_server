@@ -129,6 +129,7 @@ upload_new_package() {
        "${NEXUS_URL}/service/rest/v1/components?repository=maps_yum_snapshot"
   echo "Uploaded new package: ${PACKAGE_FILE}"
   cd ../../../..
+  rm -rf "/tmp/rpmdb-${DATE_SUFFIX}"
 }
 
 # Main script
