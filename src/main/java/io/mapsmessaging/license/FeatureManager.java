@@ -25,7 +25,7 @@ public class FeatureManager {
         return true;
       }
       else{
-        logger.log(ServerLogMessages.LICENSE_UNKNOWN_FEATURE_KEY, featurePath);
+        logger.log(ServerLogMessages.LICENSE_DISABLED_FEATURE_KEY, featurePath);
       }
     }
     return false;
@@ -46,13 +46,17 @@ public class FeatureManager {
     try {
       String[] parts = featurePath.split("\\.");
       for (String part : parts) {
-        if (obj == null) return null;
+        if (obj == null) {
+          logger.log(ServerLogMessages.LICENSE_UNKNOWN_FEATURE_KEY, featurePath);
+          return null;
+        }
         Field field = obj.getClass().getDeclaredField(part);
         field.setAccessible(true);
         obj = field.get(obj);
       }
       return obj;
     } catch (NoSuchFieldException | IllegalAccessException e) {
+      logger.log(ServerLogMessages.LICENSE_UNKNOWN_FEATURE_KEY, featurePath);
       return null;
     }
   }

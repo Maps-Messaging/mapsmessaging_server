@@ -213,9 +213,9 @@ public class SubSystemManager {
       addToMap(800, 50, new SystemTopicManager(destinationManager));
     }
 
-    boolean licensed = featureManager.isEnabled("hardware.i2cSupported") ||
-        featureManager.isEnabled("hardware.spiSupported") ||
-        featureManager.isEnabled("hardware.oneWireSupported");
+    boolean licensed = featureManager.isEnabled("hardware.i2c") ||
+        featureManager.isEnabled("hardware.spi") ||
+        featureManager.isEnabled("hardware.oneWire");
     if (enableDeviceIntegration && licensed) {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
