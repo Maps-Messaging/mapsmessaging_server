@@ -728,6 +728,8 @@ public enum ServerLogMessages implements LogMessage {
   LICENSE_FAILED_SAVED_TO_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to save license file to {}"),
   LICENSE_FAILED_DELETE_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to delete license file {}"),
   LICENSE_LOADED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Loaded license for {} by {}, created {}, valid after {} and till {} with features {}"),
+  LICENSE_UNKNOWN_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Unknown feature name requested {}"),
+
 
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");

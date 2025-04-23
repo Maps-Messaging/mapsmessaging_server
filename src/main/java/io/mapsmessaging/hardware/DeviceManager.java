@@ -61,9 +61,9 @@ public class DeviceManager implements ServiceManager, Agent {
   private String errorMessage;
 
   public DeviceManager(FeatureManager featureManager) {
-    enableSpi = featureManager.isEnabled("device.spi");
-    enableI2C = featureManager.isEnabled("device.i2c");
-    enableOneWire = featureManager.isEnabled("device.oneWire");
+    enableSpi = featureManager.isEnabled("hardware.spi");
+    enableI2C = featureManager.isEnabled("hardware.i2c");
+    enableOneWire = featureManager.isEnabled("hardware.oneWire");
 
     triggers = new ArrayList<>();
     configuredTriggers = new LinkedHashMap<>();

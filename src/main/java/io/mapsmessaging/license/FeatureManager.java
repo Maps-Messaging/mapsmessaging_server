@@ -1,12 +1,17 @@
 package io.mapsmessaging.license;
 
 import io.mapsmessaging.license.features.Features;
+import io.mapsmessaging.logging.LogMessages;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
 public class FeatureManager {
 
+  private final Logger logger = LoggerFactory.getLogger(FeatureManager.class);
   private final List<Features> featuresList;
 
   public FeatureManager(List<Features> featuresList) {
@@ -18,6 +23,9 @@ public class FeatureManager {
       Object value = getFieldValue(features, featurePath);
       if (value instanceof Boolean && ((boolean) value)) {
         return true;
+      }
+      else{
+        logger.log(ServerLogMessages.LICENSE_UNKNOWN_FEATURE_KEY, featurePath);
       }
     }
     return false;
