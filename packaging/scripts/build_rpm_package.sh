@@ -86,8 +86,13 @@ if [[ ! -f ${SOURCE_DIR}/$(basename ${TAR_FILE}) ]]; then
 fi
 
 
+
 # Build the RPM package
 echo "Building the rpm files"
+RPM_DBPATH="/tmp/rpmdb-${DATE_SUFFIX}"
+mkdir -p "$RPM_DBPATH"
+rpm --dbpath "$RPM_DBPATH" --rebuilddb
+export RPM_DBPATH
 rpmbuild --define "_topdir ${BUILD_ROOT}" -ba ${SPEC_FILE}
 
 echo rpm files built
