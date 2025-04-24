@@ -89,7 +89,7 @@ fi
 
 # Build the RPM package
 echo "Building the rpm files"
-RPM_DBPATH="/tmp/rpmdb-${DATE_SUFFIX}"
+RPM_DBPATH="/var/lib/buildkite-agent/builds/rpmdb-${DATE_SUFFIX}"
 mkdir -p "$RPM_DBPATH"
 rpm --dbpath "$RPM_DBPATH" --rebuilddb
 export RPM_DBPATH
@@ -129,7 +129,7 @@ upload_new_package() {
        "${NEXUS_URL}/service/rest/v1/components?repository=maps_yum_snapshot"
   echo "Uploaded new package: ${PACKAGE_FILE}"
   cd ../../../..
-  rm -rf "/tmp/rpmdb-${DATE_SUFFIX}"
+  rm -rf "/var/lib/buildkite-agent/builds/rpmdb-${DATE_SUFFIX}"
 }
 
 # Main script
