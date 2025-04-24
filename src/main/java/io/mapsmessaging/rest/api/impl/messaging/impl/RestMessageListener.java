@@ -225,11 +225,13 @@ public class RestMessageListener implements MessageListener {
     messageDTO.setContentType(msg.getContentType());
     messageDTO.setQualityOfService(msg.getQualityOfService().getLevel());
     messageDTO.setMetaData(msg.getMeta() == null ? new HashMap<>() : new LinkedHashMap<>(msg.getMeta()));
-    long creation = Long.parseLong(msg.getMeta().get("time_ms"));
-    messageDTO.setCreation(Instant.ofEpochMilli(creation)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDateTime());
-
+    String cr = msg.getMeta() != null ? msg.getMeta().get("time_ms") : null;
+    if(cr != null) {
+      long creation = Long.parseLong(cr);
+      messageDTO.setCreation(Instant.ofEpochMilli(creation)
+          .atZone(ZoneId.systemDefault())
+          .toLocalDateTime());
+    }
     Map<String, Object> map = new LinkedHashMap<>();
     for (Map.Entry<String, TypedData> entry : msg.getDataMap().entrySet()) {
       map.put(entry.getKey(), entry.getValue().getData());
