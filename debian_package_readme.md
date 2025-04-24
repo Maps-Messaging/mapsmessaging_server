@@ -14,7 +14,7 @@ Next you need to install the public key from the repo
 ```shell
 sudo curl -fsSL https://repository.mapsmessaging.io/repository/public_key/daily/apt_daily_key.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/mapsmessaging-apt-daily.gpg
 
-sudo apt update
+sudo apt-get update
 
 ```
 
