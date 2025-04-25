@@ -27,7 +27,7 @@ public class StatsReporter {
   private ScheduledFuture<?> task;
 
   public StatsReporter() {
-    minuteInterval = 1;
+    minuteInterval = 15;
     queueTask();
   }
 
