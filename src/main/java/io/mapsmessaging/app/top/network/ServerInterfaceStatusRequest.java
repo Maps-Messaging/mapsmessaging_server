@@ -21,13 +21,20 @@ package io.mapsmessaging.app.top.network;
 import com.google.gson.*;
 import io.mapsmessaging.rest.responses.InterfaceStatusResponse;
 
+import java.io.IOException;
+
 public class ServerInterfaceStatusRequest extends RestApiConnection {
 
   public ServerInterfaceStatusRequest(String url, String username, String password) {
-    super(url, "/api/v1/server/interface/status", username, password);
+    super(url, "/api/v1/server/interfaces/status", username, password);
   }
 
   @Override
+  public Object getData() throws IOException {
+    return super.getData();
+  }
+  @Override
+
   public Object parse(JsonElement jsonElement) {
     return gson.fromJson(jsonElement, InterfaceStatusResponse.class);
   }
