@@ -127,11 +127,7 @@ public class LoRaDevice {
 
   public synchronized long read(byte[] buffer, int length) {
     if (radioHandle >= 0) {
-      long read = read(radioHandle, buffer, length);
-      if(read > 0){
-        bytesReceived.add(read);
-      }
-      return read;
+      return read(radioHandle, buffer, length);
     }
     return -1;
   }
@@ -148,6 +144,10 @@ public class LoRaDevice {
       return getPacketSize(radioHandle);
     }
     return 0;
+  }
+
+  public void updateBytesReceived(int bytes) {
+    bytesReceived.add(bytes);
   }
 
   //

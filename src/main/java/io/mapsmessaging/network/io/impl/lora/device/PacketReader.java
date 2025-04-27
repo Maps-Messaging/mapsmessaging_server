@@ -67,6 +67,7 @@ public class PacketReader implements Runnable {
               LoRaDatagram datagram = new LoRaDatagram(to, from, rssi, buffer, id);
               device.handleIncomingPacket(datagram);
               lastReported = System.currentTimeMillis() + LOG_DELAY;
+              device.updateBytesReceived(len);
             }
           } else {
             if (lastReported < System.currentTimeMillis()) {
