@@ -54,7 +54,7 @@ public class RestRequestManager implements Runnable {
           if(result != null){
             queue.add(result);
           }
-        } catch (IOException e) {
+        } catch (Throwable e) {
           connected.set(false);
           test = false;
           // Ignore

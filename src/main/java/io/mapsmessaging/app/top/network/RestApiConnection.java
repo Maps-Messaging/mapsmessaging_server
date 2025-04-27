@@ -40,8 +40,7 @@ public abstract class RestApiConnection {
   public abstract Object parse(JsonElement jsonElement) throws JsonParseException;
 
   public Object getData() throws IOException {
-    Client client = ClientBuilder.newClient();
-    try {
+    try (Client client = ClientBuilder.newClient()) {
       WebTarget target = client.target(url).path(endpoint);
       Response response = target.request(MediaType.APPLICATION_JSON).get();
 
@@ -63,8 +62,6 @@ public abstract class RestApiConnection {
       } else {
         throw new IOException("Unexpected error: " + response.getStatus());
       }
-    } finally {
-      client.close();
     }
   }
 }
