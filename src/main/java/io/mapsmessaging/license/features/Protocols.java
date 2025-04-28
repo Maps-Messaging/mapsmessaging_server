@@ -6,6 +6,7 @@ import lombok.Data;
 public class Protocols {
   private boolean mqtt;
   private boolean amqp;
+  private boolean nats;
   private boolean mqtt_sn;
   private boolean coap;
   private boolean nmea_0183;

@@ -1,0 +1,96 @@
+package io.mapsmessaging.network.protocol.impl.nats.frames;
+
+import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.EndOfBufferException;
+import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
+import io.mapsmessaging.network.protocol.impl.nats.listener.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class FrameFactory {
+
+  private final List<FrameLookup> frames;
+  private final byte[] workingBuffer;
+
+  public FrameFactory(int maxBufferSize, boolean isClient) {
+    frames = new ArrayList<>();
+    // In NATS server mode (you are the server)
+    frames.add(new FrameLookup("CONNECT".getBytes(), new ConnectFrame(), new ConnectListener()));
+    frames.add(new FrameLookup("PING".getBytes(), new PingFrame(), new PingListener()));
+    frames.add(new FrameLookup("PONG".getBytes(), new PongFrame(), new PongListener()));
+    frames.add(new FrameLookup("SUB".getBytes(), new SubFrame(), new SubListener()));
+    frames.add(new FrameLookup("UNSUB".getBytes(), new UnsubFrame(), new UnsubListener()));
+    frames.add(new FrameLookup("PUB".getBytes(), new PubFrame(maxBufferSize), new PubListener()));
+    frames.add(new FrameLookup("MSG".getBytes(), new MsgFrame(maxBufferSize), new MsgListener()));
+    frames.add(new FrameLookup("INFO".getBytes(), new InfoFrame(), new InfoListener()));
+    frames.add(new FrameLookup("+OK".getBytes(), new OkFrame(), new OkListener()));
+    frames.add(new FrameLookup("-ERR".getBytes(), new ErrFrame(), new ErrListener()));
+
+    int len = 0;
+    for (FrameLookup lookup : frames) {
+      len = Math.max(len, lookup.getCommand().length);
+    }
+    workingBuffer = new byte[len + 1];
+  }
+
+  public NatsFrame parseFrame(Packet packet) throws NatsProtocolException, EndOfBufferException {
+    FrameLookup clientFrameLookup = createFrame(packet);
+    if (clientFrameLookup == null) {
+      throw new NatsProtocolException("Unexpected NATS frame received");
+    }
+    return clientFrameLookup.getFrame().instance();
+  }
+
+  private FrameLookup createFrame(Packet packet) throws NatsProtocolException, EndOfBufferException {
+    int pos = packet.position();
+    int idx = parseForVerb(packet, pos);
+
+    if (idx == workingBuffer.length) {
+      packet.position(pos);
+      throw new NatsProtocolException("No known NATS frame found::" + new String(workingBuffer));
+    }
+
+    if (idx == -1) {
+      packet.position(pos);
+      throw new EndOfBufferException();
+    }
+
+    for (FrameLookup lookup : frames) {
+      byte[] command = lookup.getCommand();
+      if (command.length == idx) {
+        boolean found = true;
+        for (int x = 0; x < command.length; x++) {
+          if (command[x] != workingBuffer[x]) {
+            found = false;
+            break;
+          }
+        }
+        if (found) {
+          return lookup;
+        }
+      }
+    }
+    packet.position(pos);
+    return null;
+  }
+
+  private int parseForVerb(Packet packet, int start) {
+    int pos = start;
+    int idx = 0;
+    int end = packet.limit();
+    while (pos < end && idx < workingBuffer.length) {
+      workingBuffer[idx] = packet.get();
+      pos++;
+      if (workingBuffer[idx] == ' ') { // NATS separates command with SPACE
+        return idx;
+      } else {
+        idx++;
+      }
+    }
+    if (idx == workingBuffer.length) {
+      return idx;
+    }
+    return -1;
+  }
+}

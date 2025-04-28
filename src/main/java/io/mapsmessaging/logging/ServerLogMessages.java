@@ -345,6 +345,20 @@ public enum ServerLogMessages implements LogMessage {
   STOMP_FRAME_HANDLE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised during frame {} processing"),
   // </editor-fold>
 
+  // <editor-fold desc="Nats Protocol log messages">
+  NATS_STATE_ENGINE_FAILED_COMPLETION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed on frame completion callback"),
+  NATS_STARTING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Starting Nats Protocol Implementation on {}"),
+  NATS_CLOSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Closing Nats Implementation {}"),
+  NATS_PUSHED_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Frame for write, {}"),
+  NATS_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  NATS_FAILED_CLOSE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed in close"),
+  NATS_PROCESSING_FRAME(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Processing frame {}"),
+  NATS_PROCESSING_FRAME_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Processing frame raised exception, closing session"),
+  NATS_INVALID_FRAME(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Invalid NATS frame received.. Unable to process::{}"),
+  NATS_FRAME_HANDLE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception raised during frame {} processing"),
+  // </editor-fold>
+
+
   // <editor-fold desc="MQTT 3.1.1 log messages">
   MQTT_CONNECT_LISTENER_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "[MQTT-3.2.2-5] Connection failed with return code, {}, closing connection"),
   MQTT_CONNECT_LISTENER_SECOND_CONNECT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "[MQTT-3.1.0-2] Received a second CONNECT packet"),

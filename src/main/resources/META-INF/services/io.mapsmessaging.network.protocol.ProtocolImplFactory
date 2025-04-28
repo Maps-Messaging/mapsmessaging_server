@@ -32,6 +32,7 @@ io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocolFactory
 io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5ProtocolFactory
 io.mapsmessaging.network.protocol.impl.stomp.StompProtocolFactory
+io.mapsmessaging.network.protocol.impl.nats.NatsProtocolFactory
 
 #
 # TCP/Serial based protocols
