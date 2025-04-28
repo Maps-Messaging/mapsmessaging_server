@@ -13,21 +13,15 @@ import java.nio.charset.StandardCharsets;
 public abstract class PayloadFrame extends NatsFrame {
 
   protected int maxBufferSize;
-
   private String subject;
   private String subscriptionId;
   private String replyTo;
   private int payloadSize;
   private byte[] payload;
 
-  public PayloadFrame(int maxBufferSize) {
+  protected PayloadFrame(int maxBufferSize) {
     super();
     this.maxBufferSize = maxBufferSize;
-  }
-
-  @Override
-  public byte[] getCommand() {
-    return "MSG".getBytes(StandardCharsets.US_ASCII);
   }
 
   public void parseFrame(Packet packet) throws IOException {
@@ -106,11 +100,6 @@ public abstract class PayloadFrame extends NatsFrame {
   @Override
   public boolean isValid() {
     return subject != null && subscriptionId != null;
-  }
-
-  @Override
-  public NatsFrame instance() {
-    return new MsgFrame(maxBufferSize);
   }
 
   @Override

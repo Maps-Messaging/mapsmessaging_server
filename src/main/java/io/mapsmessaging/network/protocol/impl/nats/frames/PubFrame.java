@@ -24,9 +24,4 @@ public class PubFrame extends PayloadFrame {
   public NatsFrame instance() {
     return new PubFrame(maxBufferSize);
   }
-
-  @Override
-  public SocketAddress getFromAddress() {
-    return null;
-  }
 }

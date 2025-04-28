@@ -25,8 +25,4 @@ public class MsgFrame extends PayloadFrame {
     return new MsgFrame(maxBufferSize);
   }
 
-  @Override
-  public SocketAddress getFromAddress() {
-    return null;
-  }
 }

@@ -100,6 +100,11 @@ NetworkManager:
 
     data:
 
+      - name: "NATS TCP Test anon Interface for raw buffer writes"
+        url: "tcp://0.0.0.0:4222/"
+        protocol: nats
+        auth: anon
+
       - name: "MQTT TCP Test anon Interface for raw buffer writes"
         url: "tcp://0.0.0.0:1888/"
         protocol: mqtt, ws
