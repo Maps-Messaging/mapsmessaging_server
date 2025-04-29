@@ -35,6 +35,10 @@ public abstract class NatsFrame implements ServerPacket {
 
 
   public void parseFrame(Packet packet) throws IOException {
+    parseLine(extractLine(packet));
+  }
+
+  protected String extractLine(Packet packet) throws IOException {
     int start = packet.position();
     while (packet.hasRemaining()) {
       byte b = packet.get();
@@ -51,9 +55,8 @@ public abstract class NatsFrame implements ServerPacket {
           packet.position(start);
           packet.get(jsonBytes);
           String line = new String(jsonBytes, StandardCharsets.US_ASCII);
-          parseLine(line);
           packet.position(end);
-          return;
+          return line;
         } else {
           throw new IOException("Invalid NATS frame: CR not followed by LF");
         }

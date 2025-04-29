@@ -4,20 +4,25 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
-@Data
+@Getter
+@Setter
+@ToString
 public abstract class PayloadFrame extends NatsFrame {
 
   protected int maxBufferSize;
-  private String subject;
-  private String subscriptionId;
-  private String replyTo;
-  private int payloadSize;
-  private byte[] payload;
+  protected String subject;
+  protected String subscriptionId;
+  protected String replyTo;
+  protected int payloadSize;
+  protected byte[] payload;
 
   protected PayloadFrame(int maxBufferSize) {
     super();

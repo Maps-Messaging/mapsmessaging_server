@@ -5,6 +5,7 @@ import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,34 +14,29 @@ import java.util.Map;
 
 @Getter
 @Setter
-public abstract class HPayloadFrame extends NatsFrame {
+@ToString
+public abstract class HPayloadFrame extends PayloadFrame {
 
-  protected int maxBufferSize;
-  private String subject;
-  private String replyTo;
-  private String subscriptionId;
   private int headerSize;
-
   private Map<String, String> header;
-  private int payloadSize;
-  private byte[] payload;
   private byte[] headerBytes;
 
   protected HPayloadFrame(int maxBufferSize) {
-    super();
-    this.maxBufferSize = maxBufferSize;
+    super(maxBufferSize);
   }
 
+  @Override
   public void parseFrame(Packet packet) throws IOException {
-    super.parseFrame(packet);
+
+    parseLine(extractLine(packet));
 
     if (packet.available() < payloadSize + 2) { // plus \r\n
       throw new EndOfBufferException("Incomplete payload for MSG frame");
     }
 
     payload = new byte[payloadSize - headerSize];
-    byte[] header = new byte[headerSize];
-    packet.get(header);
+    headerBytes = new byte[headerSize];
+    packet.get(headerBytes);
     packet.get(payload);
 
     // Consume the trailing CRLF after payload
@@ -49,7 +45,7 @@ public abstract class HPayloadFrame extends NatsFrame {
     if (cr != '\r' || lf != '\n') {
       throw new IOException("Invalid MSG frame ending");
     }
-    String headerLine = new String(header, StandardCharsets.US_ASCII);
+    String headerLine = new String(headerBytes, StandardCharsets.US_ASCII);
     parseHeaders(headerLine);
   }
 
@@ -150,12 +146,6 @@ public abstract class HPayloadFrame extends NatsFrame {
     packet.put("\r\n".getBytes(StandardCharsets.US_ASCII));
 
     return packet.position() - start;
-  }
-
-
-  @Override
-  public boolean isValid() {
-    return subject != null;
   }
 
 }

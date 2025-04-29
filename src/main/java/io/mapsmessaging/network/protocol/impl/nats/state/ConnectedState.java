@@ -54,48 +54,28 @@ public class ConnectedState implements State {
 
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    NatsFrame msg;
+    PayloadFrame msg;
     if (engine.isHeaders() && !message.getDataMap().isEmpty()) {
-      msg = buildHMsgFrame(engine, destinationName, context, message);
+      msg = new HMsgFrame(engine.getMaxBufferSize());
+      StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
+      for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
+        sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
+      }
+      sb.append("\r\n");
+      ((HMsgFrame)msg).setHeaderBytes(sb.toString().getBytes());
     } else {
-      msg = buildMsgFrame(engine, destinationName, context, message);
+      msg =  new MsgFrame(engine.getMaxBufferSize());
     }
+    byte[] payloadData = message.getOpaqueData();
+    msg.setSubject(mapMqttTopicToNatsSubject(destinationName));
+    msg.setSubscriptionId(context.getAlias());
+    if (message.getCorrelationData() != null) {
+      msg.setReplyTo(new String(message.getCorrelationData()));
+    }
+    msg.setPayloadSize(payloadData.length);
+    msg.setPayload(payloadData);
     return engine.send(msg);
   }
-
-  private NatsFrame buildMsgFrame(SessionState engine, String destinationName, SubscriptionContext context, Message message) {
-    byte[] payloadData = message.getOpaqueData();
-    MsgFrame msgFrame = new MsgFrame(engine.getMaxBufferSize());
-    msgFrame.setSubject(mapMqttTopicToNatsSubject(destinationName));
-    msgFrame.setSubscriptionId(context.getAlias());
-    if (message.getCorrelationData() != null) {
-      msgFrame.setReplyTo(new String(message.getCorrelationData()));
-    }
-    msgFrame.setPayloadSize(payloadData.length);
-    msgFrame.setPayload(payloadData);
-    return msgFrame;
-  }
-
-  private NatsFrame buildHMsgFrame(SessionState engine, String destinationName, SubscriptionContext context, Message message) {
-    byte[] payloadData = message.getOpaqueData();
-    HMsgFrame msgFrame = new HMsgFrame(engine.getMaxBufferSize());
-    msgFrame.setSubject(mapMqttTopicToNatsSubject(destinationName));
-    msgFrame.setSubscriptionId(context.getAlias());
-    if (message.getCorrelationData() != null) {
-      msgFrame.setReplyTo(new String(message.getCorrelationData()));
-    }
-    StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
-    for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
-      sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
-    }
-    sb.append("\r\n");
-    byte[] header = sb.toString().getBytes();
-    msgFrame.setHeaderBytes(header);
-    msgFrame.setPayloadSize(payloadData.length);
-    msgFrame.setPayload(payloadData);
-    return msgFrame;
-  }
-
 
   private String mapMqttTopicToNatsSubject(String mqttTopic) {
     return mqttTopic
