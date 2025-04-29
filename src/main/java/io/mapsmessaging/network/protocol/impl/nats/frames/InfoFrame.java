@@ -19,12 +19,16 @@ public class InfoFrame extends NatsFrame {
   private String serverId;
   private String version;
   private String host;
+  private int port;
+  private int maxPayloadLength;
   private boolean tlsRequired = false;
   private boolean authRequired = false;
   private boolean headers = true;
 
-  public InfoFrame() {
+
+  public InfoFrame(int maxPayloadLength) {
     super();
+    this.maxPayloadLength = maxPayloadLength;
   }
 
   @Override
@@ -69,6 +73,8 @@ public class InfoFrame extends NatsFrame {
       if (!first) jsonBuilder.append(',');
       jsonBuilder.append("\"host\":\"").append(host).append('\"');
       first = false;
+      jsonBuilder.append(',');
+      jsonBuilder.append("\"port\":").append(""+port);
     }
 
     if (!first) jsonBuilder.append(',');
@@ -77,6 +83,11 @@ public class InfoFrame extends NatsFrame {
     jsonBuilder.append("\"headers\":").append(headers);
     jsonBuilder.append(',');
     jsonBuilder.append("\"auth_required\":").append(authRequired);
+    jsonBuilder.append(',');
+    jsonBuilder.append("\"max_payload\":").append(maxPayloadLength);
+
+    jsonBuilder.append(',');
+    jsonBuilder.append("\"proto\":").append("1");
 
     jsonBuilder.append('}');
 
@@ -97,7 +108,7 @@ public class InfoFrame extends NatsFrame {
 
   @Override
   public NatsFrame instance() {
-    return new InfoFrame();
+    return new InfoFrame(maxPayloadLength);
   }
 
   @Override

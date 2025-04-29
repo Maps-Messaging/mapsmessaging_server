@@ -26,7 +26,7 @@ public class FrameFactory {
     frames.add(new FrameLookup("HPUB".getBytes(), new HPubFrame(maxBufferSize), new HPubListener()));
     frames.add(new FrameLookup("MSG".getBytes(), new MsgFrame(maxBufferSize), new MsgListener()));
     frames.add(new FrameLookup("HMSG".getBytes(), new HMsgFrame(maxBufferSize), new MsgListener()));
-    frames.add(new FrameLookup("INFO".getBytes(), new InfoFrame(), new InfoListener()));
+    frames.add(new FrameLookup("INFO".getBytes(), new InfoFrame(maxBufferSize), new InfoListener()));
     frames.add(new FrameLookup("+OK".getBytes(), new OkFrame(), new OkListener()));
     frames.add(new FrameLookup("-ERR".getBytes(), new ErrFrame(), new ErrListener()));
 
