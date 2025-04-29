@@ -81,15 +81,17 @@ public abstract class PayloadFrame extends NatsFrame {
     packet.put(subject.getBytes(StandardCharsets.US_ASCII));
     packet.put((byte) ' ');
 
-    if (replyTo != null && !replyTo.isEmpty()) {
-      packet.put(replyTo.getBytes(StandardCharsets.US_ASCII));
-      packet.put((byte) ' ');
-    }
 
     if (subscriptionId != null && !subscriptionId.isEmpty()) {
       packet.put(subscriptionId.getBytes(StandardCharsets.US_ASCII));
       packet.put((byte) ' ');
     }
+
+    if (replyTo != null && !replyTo.isEmpty()) {
+      packet.put(replyTo.getBytes(StandardCharsets.US_ASCII));
+      packet.put((byte) ' ');
+    }
+
     packet.put(Integer.toString(payload != null ? payload.length : 0).getBytes(StandardCharsets.US_ASCII));
     packet.put("\r\n".getBytes(StandardCharsets.US_ASCII));
 
