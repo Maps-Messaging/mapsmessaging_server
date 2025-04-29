@@ -1,11 +1,16 @@
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
+import io.mapsmessaging.network.io.Packet;
+import lombok.ToString;
+
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Parses the incoming NATS PING frame from client or server.
  */
+@ToString
 public class PingFrame extends NatsFrame {
 
   public PingFrame() {
@@ -13,13 +18,11 @@ public class PingFrame extends NatsFrame {
   }
 
   @Override
-  public byte[] getCommand() {
-    return "PING".getBytes(StandardCharsets.US_ASCII);
-  }
+  public void parseFrame(Packet packet) throws IOException{}
 
   @Override
-  protected void parseLine(String json) {
-    // No JSON content in PING frames
+  public byte[] getCommand() {
+    return "PING".getBytes(StandardCharsets.US_ASCII);
   }
 
   @Override

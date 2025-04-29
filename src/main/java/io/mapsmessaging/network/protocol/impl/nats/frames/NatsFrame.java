@@ -25,7 +25,8 @@ public abstract class NatsFrame implements ServerPacket {
 
   public abstract byte[] getCommand();
 
-  protected abstract void parseLine(String line) throws NatsProtocolException;
+  protected void parseLine(String line) throws NatsProtocolException {
+  }
 
   public abstract boolean isValid();
 
@@ -46,9 +47,12 @@ public abstract class NatsFrame implements ServerPacket {
           int end = packet.position();
           int length = end - start - 2; // exclude CRLF
           byte[] jsonBytes = new byte[length];
+          packet.position(start);
           packet.get(jsonBytes);
           String line = new String(jsonBytes, StandardCharsets.US_ASCII);
           parseLine(line);
+          packet.position(end);
+          return;
         } else {
           throw new IOException("Invalid CONNECT frame: CR not followed by LF");
         }

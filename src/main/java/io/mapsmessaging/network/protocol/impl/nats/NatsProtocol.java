@@ -56,8 +56,13 @@ public class NatsProtocol extends Protocol {
 
   public NatsProtocol(EndPoint endPoint, Packet packet) throws IOException {
     this(endPoint);
-    processPacket(packet);
-    selectorTask.getReadTask().pushOutstandingData(packet);
+    if(packet != null) {
+      processPacket(packet);
+      selectorTask.getReadTask().pushOutstandingData(packet);
+    }
+    else{
+      registerRead();
+    }
   }
 
   @Override

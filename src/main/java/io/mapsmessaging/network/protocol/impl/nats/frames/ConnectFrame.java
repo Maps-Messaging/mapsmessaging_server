@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import io.mapsmessaging.network.io.Packet;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +13,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Getter
 @Setter
+@ToString
 public class ConnectFrame extends NatsFrame {
 
   private String user;
@@ -30,7 +32,6 @@ public class ConnectFrame extends NatsFrame {
   }
 
   protected void parseLine(String line) {
-    // Very simple parsing (manual), no external dependencies
     this.verbose = extractBoolean(line, "\"verbose\":");
     this.pedantic = extractBoolean(line, "\"pedantic\":");
     this.tlsRequired = extractBoolean(line, "\"tls_required\":");

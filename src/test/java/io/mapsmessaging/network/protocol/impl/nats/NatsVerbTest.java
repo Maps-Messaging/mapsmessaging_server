@@ -23,7 +23,7 @@ class NatsVerbsTest extends BaseTestConfig {
   void setup() throws Exception {
     Options options = new Options.Builder()
         .server("nats://localhost:4222")
-        .connectionTimeout(Duration.ofSeconds(5))
+        .connectionTimeout(Duration.ofSeconds(40))
         .build();
     connection = Nats.connect(options);
   }

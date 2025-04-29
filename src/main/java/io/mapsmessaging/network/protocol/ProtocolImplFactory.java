@@ -21,16 +21,16 @@ package io.mapsmessaging.network.protocol;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.detection.Detection;
 import io.mapsmessaging.utilities.service.Service;
 import java.io.IOException;
 import lombok.Getter;
 
+@Getter
 public abstract class ProtocolImplFactory implements Service {
 
-  @Getter
   private final String name;
-  @Getter
   private final String description;
   private final Detection detection;
 
@@ -38,6 +38,10 @@ public abstract class ProtocolImplFactory implements Service {
     this.name = name;
     this.description = description;
     this.detection = detection;
+  }
+
+  public ServerPacket getInitialPacket() {
+    return null;
   }
 
   public abstract Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException;

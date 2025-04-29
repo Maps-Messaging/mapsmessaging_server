@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +13,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Getter
 @Setter
+@ToString
 public class SubFrame extends NatsFrame {
 
   private String subject;
@@ -28,13 +30,12 @@ public class SubFrame extends NatsFrame {
 
   @Override
   protected void parseLine(String line) throws NatsProtocolException {
-
     String[] parts = line.trim().split(" ");
-    if (parts.length != 3) {
+    if (parts.length != 2) {
       throw new NatsProtocolException("Invalid SUB frame header: " + line);
     }
-    subject = parts[1];
-    subscriptionId = parts[2];
+    subject = parts[0];
+    subscriptionId = parts[1];
   }
 
   @Override

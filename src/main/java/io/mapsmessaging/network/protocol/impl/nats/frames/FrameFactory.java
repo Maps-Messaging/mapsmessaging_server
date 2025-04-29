@@ -6,6 +6,7 @@ import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import io.mapsmessaging.network.protocol.impl.nats.listener.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class FrameFactory {
@@ -39,7 +40,10 @@ public class FrameFactory {
     if (clientFrameLookup == null) {
       throw new NatsProtocolException("Unexpected NATS frame received");
     }
-    return clientFrameLookup.getFrame().instance();
+    NatsFrame frame = clientFrameLookup.getFrame().instance();
+    frame.setListener(clientFrameLookup.getFrameListener());
+    System.err.println("Received Frame: " + frame);
+    return frame;
   }
 
   private FrameLookup createFrame(Packet packet) throws NatsProtocolException, EndOfBufferException {
@@ -79,13 +83,26 @@ public class FrameFactory {
     int pos = start;
     int idx = 0;
     int end = packet.limit();
+    Arrays.fill(workingBuffer, (byte) 0);
     while (pos < end && idx < workingBuffer.length) {
-      workingBuffer[idx] = packet.get();
+      byte b = packet.get();
+      workingBuffer[idx++] = b;
       pos++;
-      if (workingBuffer[idx] == ' ') { // NATS separates command with SPACE
-        return idx;
-      } else {
-        idx++;
+
+      if (b == ' ') {
+        return idx - 1; // Position of the last letter before space
+      } else if (b == '\r') {
+        if (pos < end) {
+          byte next = packet.get();
+          if (next == '\n') {
+            return idx - 1; // Position up to \r
+          } else {
+            throw new IllegalStateException("Invalid frame: \\r not followed by \\n");
+          }
+        } else {
+          // Not enough data yet
+          return -1;
+        }
       }
     }
     if (idx == workingBuffer.length) {

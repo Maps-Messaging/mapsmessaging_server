@@ -45,19 +45,23 @@ public abstract class PayloadFrame extends NatsFrame {
   @Override
   public void parseLine(String line) throws NatsProtocolException {
     String[] parts = line.trim().split(" ");
-    if (parts.length < 4) {
-      throw new NatsProtocolException("Invalid MSG frame header: " + line);
+
+    if (parts.length < 2) {
+      throw new NatsProtocolException("Invalid PUB frame header: " + line);
     }
 
-    subject = parts[1];
-    subscriptionId = parts[2];
+    subject = parts[0];
 
-    if (parts.length == 5) {
-      replyTo = parts[3];
-      payloadSize = Integer.parseInt(parts[4]);
-    } else {
+    if (parts.length == 2) {
+      // No reply-to
       replyTo = null;
-      payloadSize = Integer.parseInt(parts[3]);
+      payloadSize = Integer.parseInt(parts[1]);
+    } else if (parts.length == 3) {
+      // reply-to present
+      replyTo = parts[1];
+      payloadSize = Integer.parseInt(parts[2]);
+    } else {
+      throw new NatsProtocolException("Invalid PUB frame header: " + line);
     }
 
     if (payloadSize > maxBufferSize) {
@@ -99,7 +103,7 @@ public abstract class PayloadFrame extends NatsFrame {
 
   @Override
   public boolean isValid() {
-    return subject != null && subscriptionId != null;
+    return subject != null;
   }
 
   @Override

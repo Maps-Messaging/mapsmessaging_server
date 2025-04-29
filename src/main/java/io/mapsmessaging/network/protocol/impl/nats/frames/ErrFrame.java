@@ -3,12 +3,14 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import io.mapsmessaging.network.io.Packet;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 @Getter
 @Setter
+@ToString
 public class ErrFrame extends NatsFrame {
 
   private String error;

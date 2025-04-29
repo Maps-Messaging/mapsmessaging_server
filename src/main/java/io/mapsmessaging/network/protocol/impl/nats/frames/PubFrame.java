@@ -1,14 +1,15 @@
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
 import lombok.Getter;
+import lombok.ToString;
 
-import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Parses the incoming NATS PUB frame from client.
  */
 @Getter
+@ToString
 public class PubFrame extends PayloadFrame {
 
   public PubFrame(int maxBufferSize) {

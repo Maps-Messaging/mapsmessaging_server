@@ -2,6 +2,7 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +11,7 @@ import java.nio.charset.StandardCharsets;
  * Parses the incoming NATS UNSUB frame from client.
  */
 @Getter
+@ToString
 public class UnsubFrame extends NatsFrame {
 
   private String subscriptionId;

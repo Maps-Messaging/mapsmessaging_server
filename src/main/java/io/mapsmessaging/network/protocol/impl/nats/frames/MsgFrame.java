@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
 import lombok.Getter;
+import lombok.ToString;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +10,7 @@ import java.nio.charset.StandardCharsets;
  * Parses the incoming NATS MSG frame from server.
  */
 @Getter
+@ToString
 public class MsgFrame extends PayloadFrame {
 
   public MsgFrame(int maxBufferSize) {

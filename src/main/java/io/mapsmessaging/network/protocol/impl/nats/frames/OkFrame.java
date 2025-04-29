@@ -1,11 +1,14 @@
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
+import lombok.ToString;
+
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Parses the incoming NATS +OK frame from server.
  */
+@ToString
 public class OkFrame extends NatsFrame {
 
   public OkFrame() {
@@ -15,11 +18,6 @@ public class OkFrame extends NatsFrame {
   @Override
   public byte[] getCommand() {
     return "+OK".getBytes(StandardCharsets.US_ASCII);
-  }
-
-  @Override
-  protected void parseLine(String json) {
-    // No JSON content in +OK frames
   }
 
   @Override

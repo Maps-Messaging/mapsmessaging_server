@@ -1,11 +1,16 @@
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
+import io.mapsmessaging.network.io.Packet;
+import lombok.ToString;
+
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Parses the incoming NATS PONG frame from client or server.
  */
+@ToString
 public class PongFrame extends NatsFrame {
 
   public PongFrame() {
@@ -13,13 +18,11 @@ public class PongFrame extends NatsFrame {
   }
 
   @Override
-  public byte[] getCommand() {
-    return "PONG".getBytes(StandardCharsets.US_ASCII);
-  }
+  public void parseFrame(Packet packet) throws IOException {}
 
   @Override
-  protected void parseLine(String json) {
-    // No JSON content in PONG frames
+  public byte[] getCommand() {
+    return "PONG".getBytes(StandardCharsets.US_ASCII);
   }
 
   @Override

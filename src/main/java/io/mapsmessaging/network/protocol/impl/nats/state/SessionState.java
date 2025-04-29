@@ -12,6 +12,7 @@ import io.mapsmessaging.network.io.CloseHandler;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocol;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
@@ -23,20 +24,23 @@ import java.util.concurrent.ExecutionException;
 
 public class SessionState implements CloseHandler, CompletionHandler {
 
-  private final Logger logger;
-  private final NatsProtocol protocolImpl;
-  private final Map<String, SubscribedEventManager> activeSubscriptions;
-  private final Map<String, String> destinationMap;
   @Getter
-  private final Session session;
-  private final State currentState;
+  private final NatsProtocol protocol;
+  @Getter
+  @Setter
+  private Session session;
   @Getter
   private final int maxBufferSize;
+
+  private final Logger logger;
+  private final Map<String, SubscribedEventManager> activeSubscriptions;
+  private final Map<String, String> destinationMap;
   private boolean isValid;
   private long requestCounter;
+  private State currentState;
 
   public SessionState(NatsProtocol protocolImpl) {
-    this.protocolImpl = protocolImpl;
+    this.protocol = protocolImpl;
     destinationMap = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
     activeSubscriptions = new LinkedHashMap<>();
@@ -49,14 +53,14 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public synchronized void handleFrame(NatsFrame frame, boolean endOfBuffer) {
     try {
-      protocolImpl.receivedMessage();
+      protocol.receivedMessage();
       frame.setCallback(this);
       requestCounter++;
       currentState.handleFrame(this, frame, endOfBuffer);
     } catch (IOException e) {
       logger.log(ServerLogMessages.STOMP_FRAME_HANDLE_EXCEPTION, e, frame);
       try {
-        protocolImpl.getEndPoint().close();
+        protocol.getEndPoint().close();
       } catch (IOException ioException) {
         // Ignore, we have logged the cause and now we are just tidying up
       }
@@ -84,7 +88,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean send(NatsFrame frame) {
-    protocolImpl.writeFrame(frame);
+    System.err.println("Sending frame: " + frame);
+    protocol.writeFrame(frame);
     return true;
   }
 
@@ -105,7 +110,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public void shutdown() {
-    protocolImpl.close();
+    protocol.close();
   }
 
   public Subject getSubject() {
@@ -149,8 +154,11 @@ public class SessionState implements CloseHandler, CompletionHandler {
   public synchronized void frameComplete() throws IOException {
     requestCounter--;
     if (requestCounter == 0 && isValid) {
-      protocolImpl.registerRead();
+      protocol.registerRead();
     }
   }
 
+  public void changeState(State state) {
+    currentState = state;
+  }
 }
