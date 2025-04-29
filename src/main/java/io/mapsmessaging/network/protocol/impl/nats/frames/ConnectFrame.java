@@ -86,8 +86,4 @@ public class ConnectFrame extends NatsFrame {
     return new ConnectFrame();
   }
 
-  @Override
-  public SocketAddress getFromAddress() {
-    return null;
-  }
 }

@@ -5,6 +5,7 @@ import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
 import io.nats.client.Nats;
 import io.nats.client.Options;
+import io.nats.client.impl.Headers;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -92,5 +93,43 @@ class NatsVerbsTest extends BaseTestConfig {
     assertThrows(IllegalArgumentException.class, () -> {
       connection.publish("", "bad".getBytes());
     });
+  }
+
+  @Test
+  @Order(6)
+  void testPubSubWithHeaders() throws Exception {
+    String subject = "test.headers";
+    String headerKey = "test-key";
+    String headerValue = "test-value";
+    String messageBody = "Hello with Headers";
+
+    CompletableFuture<String> payloadFuture = new CompletableFuture<>();
+    CompletableFuture<String> headerFuture = new CompletableFuture<>();
+
+    Dispatcher dispatcher = connection.createDispatcher(msg -> {
+      if (msg.hasHeaders()) {
+        String val = msg.getHeaders().getFirst(headerKey);
+        headerFuture.complete(val);
+      } else {
+        headerFuture.complete(null);
+      }
+      payloadFuture.complete(new String(msg.getData()));
+    });
+    dispatcher.subscribe(subject);
+
+    // Manually create headers
+    Headers headers = new Headers();
+    headers.add(headerKey, headerValue);
+
+    // Publish with headers
+    connection.publish(subject, null, headers, messageBody.getBytes());
+    connection.flush(Duration.ofSeconds(10));
+
+    // Validate
+    String receivedPayload = payloadFuture.get(6, TimeUnit.SECONDS);
+    String receivedHeader = headerFuture.get(6, TimeUnit.SECONDS);
+
+    assertEquals(messageBody, receivedPayload, "Hello with Headers");
+    assertEquals(headerValue, receivedHeader, "Header value should match");
   }
 }

@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 @Setter
@@ -54,11 +55,11 @@ public abstract class NatsFrame implements ServerPacket {
           packet.position(end);
           return;
         } else {
-          throw new IOException("Invalid CONNECT frame: CR not followed by LF");
+          throw new IOException("Invalid NATS frame: CR not followed by LF");
         }
       }
     }
-    throw new EndOfBufferException("Incomplete CONNECT frame");
+    throw new EndOfBufferException("Incomplete NATS frame");
   }
 
   public CompletionHandler getCallback() {
@@ -118,6 +119,10 @@ public abstract class NatsFrame implements ServerPacket {
     return null;
   }
 
+  @Override
+  public SocketAddress getFromAddress() {
+    return null;
+  }
 }
 
 
