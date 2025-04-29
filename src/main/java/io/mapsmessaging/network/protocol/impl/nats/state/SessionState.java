@@ -25,28 +25,24 @@ import java.util.concurrent.ExecutionException;
 public class SessionState implements CloseHandler, CompletionHandler {
 
   @Getter
-  @Setter
-  private boolean isVerbose;
-
-  @Getter
-  @Setter
-  private boolean echoEvents;
-
-  @Getter
-  @Setter
-  private boolean headers;
-
-  @Getter
   private final NatsProtocol protocol;
   @Getter
-  @Setter
-  private Session session;
-  @Getter
   private final int maxBufferSize;
-
   private final Logger logger;
   private final Map<String, SubscribedEventManager> activeSubscriptions;
   private final Map<String, String> destinationMap;
+  @Getter
+  @Setter
+  private boolean isVerbose;
+  @Getter
+  @Setter
+  private boolean echoEvents;
+  @Getter
+  @Setter
+  private boolean headers;
+  @Getter
+  @Setter
+  private Session session;
   private boolean isValid;
   private long requestCounter;
   private State currentState;
@@ -159,7 +155,6 @@ public class SessionState implements CloseHandler, CompletionHandler {
   public Map<String, String> getMap() {
     return destinationMap;
   }
-
 
   public void run() {
     try {

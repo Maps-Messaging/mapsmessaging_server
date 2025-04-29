@@ -25,7 +25,7 @@ public class SubListener implements FrameListener {
     builder.setReceiveMaximum(engine.getProtocol().getMaxReceiveSize());
     builder.setNoLocalMessages(!engine.isEchoEvents());
     if (selector != null) builder.setSelector(selector);
-    if(subscribe.getShareName() != null ) builder.setSharedName(subscribe.getShareName());
+    if (subscribe.getShareName() != null) builder.setSharedName(subscribe.getShareName());
 
     try {
       engine.createSubscription(builder.build());

@@ -36,11 +36,10 @@ public class SubFrame extends NatsFrame {
       throw new NatsProtocolException("Invalid SUB frame header: " + line);
     }
     subject = parts[0];
-    if(parts.length == 2) {
+    if (parts.length == 2) {
       subscriptionId = parts[1];
       shareName = null;
-    }
-    else {
+    } else {
       shareName = parts[1];
       subscriptionId = parts[2];
     }

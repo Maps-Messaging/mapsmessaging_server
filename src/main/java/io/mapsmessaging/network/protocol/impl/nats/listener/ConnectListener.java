@@ -70,7 +70,7 @@ public class ConnectListener implements FrameListener {
     }
     scb.setPersistentSession(false);
     scb.setKeepAlive(120);
-    int inFlight =  (engine.getProtocol().getMaxReceiveSize());
+    int inFlight = (engine.getProtocol().getMaxReceiveSize());
     scb.setReceiveMaximum(inFlight);
     scb.setSessionExpiry(0);
     return SessionManager.getInstance().createAsync(scb.build(), engine.getProtocol());

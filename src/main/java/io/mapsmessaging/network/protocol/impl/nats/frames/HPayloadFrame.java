@@ -38,7 +38,7 @@ public abstract class HPayloadFrame extends NatsFrame {
       throw new EndOfBufferException("Incomplete payload for MSG frame");
     }
 
-    payload = new byte[payloadSize-headerSize];
+    payload = new byte[payloadSize - headerSize];
     byte[] header = new byte[headerSize];
     packet.get(header);
     packet.get(payload);
@@ -119,7 +119,7 @@ public abstract class HPayloadFrame extends NatsFrame {
     packet.put(subject.getBytes(StandardCharsets.US_ASCII));
     packet.put((byte) ' ');
 
-    if(subscriptionId != null && !subscriptionId.isEmpty()) {
+    if (subscriptionId != null && !subscriptionId.isEmpty()) {
       packet.put(subscriptionId.getBytes(StandardCharsets.US_ASCII));
       packet.put((byte) ' ');
     }
@@ -129,8 +129,8 @@ public abstract class HPayloadFrame extends NatsFrame {
       packet.put((byte) ' ');
     }
 
-    if(payload == null)payload = new byte[0];
-    if(headerBytes == null)headerBytes = new byte[0];
+    if (payload == null) payload = new byte[0];
+    if (headerBytes == null) headerBytes = new byte[0];
 
     int length = headerBytes.length + payload.length;
     packet.put(Integer.toString(headerBytes.length).getBytes(StandardCharsets.US_ASCII));
@@ -138,7 +138,7 @@ public abstract class HPayloadFrame extends NatsFrame {
     packet.put(Integer.toString(length).getBytes(StandardCharsets.US_ASCII));
     packet.put("\r\n".getBytes(StandardCharsets.US_ASCII));
 
-    if(headerBytes.length > 0) {
+    if (headerBytes.length > 0) {
       packet.put(headerBytes);
     }
     // Write payload (if present)

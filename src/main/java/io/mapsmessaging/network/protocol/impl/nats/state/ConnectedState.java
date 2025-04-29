@@ -25,7 +25,6 @@ import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
@@ -56,10 +55,9 @@ public class ConnectedState implements State {
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
     NatsFrame msg;
-    if(engine.isHeaders() && !message.getDataMap().isEmpty()){
+    if (engine.isHeaders() && !message.getDataMap().isEmpty()) {
       msg = buildHMsgFrame(engine, destinationName, context, message);
-    }
-    else{
+    } else {
       msg = buildMsgFrame(engine, destinationName, context, message);
     }
     return engine.send(msg);
@@ -70,7 +68,7 @@ public class ConnectedState implements State {
     MsgFrame msgFrame = new MsgFrame(engine.getMaxBufferSize());
     msgFrame.setSubject(mapMqttTopicToNatsSubject(destinationName));
     msgFrame.setSubscriptionId(context.getAlias());
-    if(message.getCorrelationData() != null){
+    if (message.getCorrelationData() != null) {
       msgFrame.setReplyTo(new String(message.getCorrelationData()));
     }
     msgFrame.setPayloadSize(payloadData.length);
@@ -83,12 +81,12 @@ public class ConnectedState implements State {
     HMsgFrame msgFrame = new HMsgFrame(engine.getMaxBufferSize());
     msgFrame.setSubject(mapMqttTopicToNatsSubject(destinationName));
     msgFrame.setSubscriptionId(context.getAlias());
-    if(message.getCorrelationData() != null){
+    if (message.getCorrelationData() != null) {
       msgFrame.setReplyTo(new String(message.getCorrelationData()));
     }
     StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
-    for(Map.Entry<String, TypedData> entry: message.getDataMap().entrySet()){
-      sb.append(entry.getKey().replace(" ", "_")).append(": ").append(""+entry.getValue().getData()).append("\r\n");
+    for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
+      sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
     }
     sb.append("\r\n");
     byte[] header = sb.toString().getBytes();

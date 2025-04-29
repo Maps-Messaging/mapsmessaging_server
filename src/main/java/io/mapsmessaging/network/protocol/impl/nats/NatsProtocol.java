@@ -56,11 +56,10 @@ public class NatsProtocol extends Protocol {
 
   public NatsProtocol(EndPoint endPoint, Packet packet) throws IOException {
     this(endPoint);
-    if(packet != null) {
+    if (packet != null) {
       processPacket(packet);
       selectorTask.getReadTask().pushOutstandingData(packet);
-    }
-    else{
+    } else {
       registerRead();
     }
   }

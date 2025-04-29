@@ -18,7 +18,8 @@ public class PingFrame extends NatsFrame {
   }
 
   @Override
-  public void parseFrame(Packet packet) throws IOException{}
+  public void parseFrame(Packet packet) throws IOException {
+  }
 
   @Override
   public byte[] getCommand() {

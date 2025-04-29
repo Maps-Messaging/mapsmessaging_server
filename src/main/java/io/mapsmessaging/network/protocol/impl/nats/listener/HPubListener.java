@@ -6,7 +6,10 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.network.protocol.impl.nats.frames.*;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.HPubFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.OkFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -17,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 public class HPubListener implements FrameListener {
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
-    HPubFrame msgFrame = (HPubFrame)frame;
+    HPubFrame msgFrame = (HPubFrame) frame;
     String destName = convertSubject(msgFrame.getSubject());
     String lookup = engine.getMapping(destName);
     CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
@@ -26,9 +29,8 @@ public class HPubListener implements FrameListener {
         try {
           if (destination != null) {
             handleMessageStoreToDestination(destination, engine, msgFrame);
-            if(engine.isVerbose()) engine.send(new OkFrame());
-          }
-          else{
+            if (engine.isVerbose()) engine.send(new OkFrame());
+          } else {
             ErrFrame errFrame = new ErrFrame();
             errFrame.setError("No such destination");
             engine.send(errFrame);
@@ -63,7 +65,7 @@ public class HPubListener implements FrameListener {
 
       Map<String, String> headers = msgFrame.getHeader();
       Map<String, TypedData> map = message.getDataMap();
-      if(headers != null) {
+      if (headers != null) {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
           map.put(entry.getKey(), new TypedData(convert(entry.getValue())));
         }
@@ -71,7 +73,8 @@ public class HPubListener implements FrameListener {
       destination.storeMessage(message);
     }
   }
-  private Object convert(String value){
+
+  private Object convert(String value) {
     try {
       long t = Long.parseLong(value.trim());
       return t;

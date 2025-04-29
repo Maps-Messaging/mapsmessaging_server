@@ -6,7 +6,10 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.network.protocol.impl.nats.frames.*;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.OkFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.PubFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -17,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 public class PubListener implements FrameListener {
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
-    PubFrame msgFrame = (PubFrame)frame;
+    PubFrame msgFrame = (PubFrame) frame;
     String destName = convertSubject(msgFrame.getSubject());
     String lookup = engine.getMapping(destName);
     CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
@@ -26,9 +29,8 @@ public class PubListener implements FrameListener {
         try {
           if (destination != null) {
             handleMessageStoreToDestination(destination, engine, msgFrame);
-            if(engine.isVerbose()) engine.send(new OkFrame());
-          }
-          else{
+            if (engine.isVerbose()) engine.send(new OkFrame());
+          } else {
             ErrFrame errFrame = new ErrFrame();
             errFrame.setError("No such destination");
             engine.send(errFrame);

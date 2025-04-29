@@ -33,7 +33,7 @@ public class UnsubFrame extends NatsFrame {
       throw new NatsProtocolException("Invalid UNSUB frame header: " + line);
     }
     subscriptionId = parts[0];
-    if (parts.length == 2 ) {
+    if (parts.length == 2) {
       maxMessages = Integer.parseInt(parts[1]);
     } else {
       maxMessages = null;
