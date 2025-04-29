@@ -3,7 +3,6 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**

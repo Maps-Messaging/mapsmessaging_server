@@ -21,6 +21,7 @@ public class InfoFrame extends NatsFrame {
   private String host;
   private boolean tlsRequired = false;
   private boolean authRequired = false;
+  private boolean headers = true;
 
   public InfoFrame() {
     super();
@@ -38,6 +39,7 @@ public class InfoFrame extends NatsFrame {
     this.host = extractString(json, "\"host\":");
     this.tlsRequired = extractBoolean(json, "\"tls_required\":");
     this.authRequired = extractBoolean(json, "\"auth_required\":");
+    this.headers = extractBoolean(json, "\"headers\":");
   }
 
   @Override
@@ -71,6 +73,8 @@ public class InfoFrame extends NatsFrame {
 
     if (!first) jsonBuilder.append(',');
     jsonBuilder.append("\"tls_required\":").append(tlsRequired);
+    jsonBuilder.append(',');
+    jsonBuilder.append("\"headers\":").append(headers);
     jsonBuilder.append(',');
     jsonBuilder.append("\"auth_required\":").append(authRequired);
 

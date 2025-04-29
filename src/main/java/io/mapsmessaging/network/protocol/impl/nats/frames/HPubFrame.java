@@ -3,23 +3,31 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-@Data
-public abstract class PayloadFrame extends NatsFrame {
+@Getter
+@Setter
+@ToString
+public class HPubFrame extends NatsFrame {
 
   protected int maxBufferSize;
   private String subject;
-  private String subscriptionId;
   private String replyTo;
+  private int headerSize;
+
+  private Map<String, String> header;
   private int payloadSize;
   private byte[] payload;
 
-  protected PayloadFrame(int maxBufferSize) {
+  protected HPubFrame(int maxBufferSize) {
     super();
     this.maxBufferSize = maxBufferSize;
   }
@@ -32,6 +40,8 @@ public abstract class PayloadFrame extends NatsFrame {
     }
 
     payload = new byte[payloadSize];
+    byte[] header = new byte[headerSize];
+    packet.get(header);
     packet.get(payload);
 
     // Consume the trailing CRLF after payload
@@ -40,32 +50,69 @@ public abstract class PayloadFrame extends NatsFrame {
     if (cr != '\r' || lf != '\n') {
       throw new IOException("Invalid MSG frame ending");
     }
+    String headerLine = new String(header, StandardCharsets.US_ASCII);
+    parseHeaders(headerLine);
+  }
+
+  private void parseHeaders(String headersBlock) throws NatsProtocolException {
+    String[] lines = headersBlock.split("\r\n");
+    if (!lines[0].equals("NATS/1.0")) {
+      throw new NatsProtocolException("Invalid headers block start");
+    }
+    header = new LinkedHashMap<>();
+    for (int i = 1; i < lines.length; i++) {
+      String line = lines[i];
+      if (line.isEmpty()) {
+        break; // End of headers
+      }
+      int colonIdx = line.indexOf(':');
+      if (colonIdx <= 0) {
+        throw new NatsProtocolException("Invalid header line: " + line);
+      }
+      String key = line.substring(0, colonIdx).trim();
+      String value = line.substring(colonIdx + 1).trim();
+
+      // Store header key/value (Maps style)
+      header.put(key, value);
+    }
+  }
+
+
+  @Override
+  public byte[] getCommand() {
+    return "HPUB".getBytes(StandardCharsets.US_ASCII);
   }
 
   @Override
   public void parseLine(String line) throws NatsProtocolException {
     String[] parts = line.trim().split(" ");
 
-    if (parts.length < 2) {
-      throw new NatsProtocolException("Invalid PUB frame header: " + line);
+    if (parts.length < 4 && parts.length != 4) {
+      throw new NatsProtocolException("Invalid HPUB frame header: " + line);
     }
 
     subject = parts[0];
 
-    if (parts.length == 2) {
+    if (parts.length == 4) {
       // No reply-to
       replyTo = null;
-      payloadSize = Integer.parseInt(parts[1]);
-    } else if (parts.length == 3) {
+      headerSize = Integer.parseInt(parts[1]);
+      payloadSize = Integer.parseInt(parts[2]);
+    } else if (parts.length == 5) {
       // reply-to present
       replyTo = parts[1];
-      payloadSize = Integer.parseInt(parts[2]);
+      headerSize = Integer.parseInt(parts[2]);
+      payloadSize = Integer.parseInt(parts[3]);
     } else {
-      throw new NatsProtocolException("Invalid PUB frame header: " + line);
+      throw new NatsProtocolException("Invalid HPUB frame header: " + line);
     }
 
     if (payloadSize > maxBufferSize) {
       throw new NatsProtocolException("Payload size exceeds max buffer size");
+    }
+
+    if (headerSize > payloadSize) {
+      throw new NatsProtocolException("Header size larger than total payload size");
     }
   }
 
@@ -86,10 +133,6 @@ public abstract class PayloadFrame extends NatsFrame {
       packet.put((byte) ' ');
     }
 
-    if(subscriptionId != null && !subscriptionId.isEmpty()) {
-      packet.put(subscriptionId.getBytes(StandardCharsets.US_ASCII));
-      packet.put((byte) ' ');
-    }
     packet.put(Integer.toString(payload != null ? payload.length : 0).getBytes(StandardCharsets.US_ASCII));
     packet.put("\r\n".getBytes(StandardCharsets.US_ASCII));
 
@@ -108,6 +151,11 @@ public abstract class PayloadFrame extends NatsFrame {
   @Override
   public boolean isValid() {
     return subject != null;
+  }
+
+  @Override
+  public NatsFrame instance() {
+    return new HPubFrame(maxBufferSize);
   }
 
   @Override

@@ -36,7 +36,10 @@ public class ConnectListener implements FrameListener {
 
         );
         engine.getProtocol().setTransformation(transformation);
+        engine.setVerbose(connect.isVerbose());
         engine.changeState(new ConnectedState());
+        engine.setEchoEvents(connect.isEcho());
+        engine.setHeaders(connect.isHeaders());
         session.resumeState();
         return session;
       } catch (Exception failedAuth) {

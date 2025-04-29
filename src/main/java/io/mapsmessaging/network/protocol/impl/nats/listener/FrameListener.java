@@ -14,4 +14,11 @@ public interface FrameListener {
     frame.complete();
   }
 
+
+  default String convertSubject(String subject) {
+    return subject
+        .replace('.', '/')
+        .replace('*', '+')
+        .replace('>', '#');
+  }
 }

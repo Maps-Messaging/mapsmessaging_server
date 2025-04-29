@@ -25,6 +25,18 @@ import java.util.concurrent.ExecutionException;
 public class SessionState implements CloseHandler, CompletionHandler {
 
   @Getter
+  @Setter
+  private boolean isVerbose;
+
+  @Getter
+  @Setter
+  private boolean echoEvents;
+
+  @Getter
+  @Setter
+  private boolean headers;
+
+  @Getter
   private final NatsProtocol protocol;
   @Getter
   @Setter
@@ -88,7 +100,6 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean send(NatsFrame frame) {
-    System.err.println("Sending frame: " + frame);
     protocol.writeFrame(frame);
     return true;
   }
@@ -132,6 +143,13 @@ public class SessionState implements CloseHandler, CompletionHandler {
     SubscribedEventManager subscription = getSession().addSubscription(context);
     activeSubscriptions.put(context.getAlias(), subscription);
     return subscription;
+  }
+
+  public void removeSubscription(String subscriptionId) {
+    SubscribedEventManager subscription = activeSubscriptions.remove(subscriptionId);
+    if (subscription != null) {
+      session.removeSubscription(subscriptionId);
+    }
   }
 
   public String getSessionId() {

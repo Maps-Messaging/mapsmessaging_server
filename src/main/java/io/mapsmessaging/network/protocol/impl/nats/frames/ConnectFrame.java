@@ -21,6 +21,8 @@ public class ConnectFrame extends NatsFrame {
   private boolean tlsRequired = false;
   private boolean verbose = false;
   private boolean pedantic = false;
+  private boolean echo = false;
+  private boolean headers = false;
 
   public ConnectFrame() {
     super();
@@ -32,6 +34,8 @@ public class ConnectFrame extends NatsFrame {
   }
 
   protected void parseLine(String line) {
+    this.echo = extractBoolean(line, "\"echo\":");
+    this.headers = extractBoolean(line, "\"headers\":");
     this.verbose = extractBoolean(line, "\"verbose\":");
     this.pedantic = extractBoolean(line, "\"pedantic\":");
     this.tlsRequired = extractBoolean(line, "\"tls_required\":");

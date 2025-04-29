@@ -23,6 +23,7 @@ public class FrameFactory {
     frames.add(new FrameLookup("SUB".getBytes(), new SubFrame(), new SubListener()));
     frames.add(new FrameLookup("UNSUB".getBytes(), new UnsubFrame(), new UnsubListener()));
     frames.add(new FrameLookup("PUB".getBytes(), new PubFrame(maxBufferSize), new PubListener()));
+    frames.add(new FrameLookup("HPUB".getBytes(), new HPubFrame(maxBufferSize), new HPubListener()));
     frames.add(new FrameLookup("MSG".getBytes(), new MsgFrame(maxBufferSize), new MsgListener()));
     frames.add(new FrameLookup("INFO".getBytes(), new InfoFrame(), new InfoListener()));
     frames.add(new FrameLookup("+OK".getBytes(), new OkFrame(), new OkListener()));
@@ -42,7 +43,6 @@ public class FrameFactory {
     }
     NatsFrame frame = clientFrameLookup.getFrame().instance();
     frame.setListener(clientFrameLookup.getFrameListener());
-    System.err.println("Received Frame: " + frame);
     return frame;
   }
 

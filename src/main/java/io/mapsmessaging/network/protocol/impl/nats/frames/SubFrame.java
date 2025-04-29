@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 public class SubFrame extends NatsFrame {
 
   private String subject;
+  private String shareName;
   private String subscriptionId;
 
   public SubFrame() {
@@ -31,11 +32,18 @@ public class SubFrame extends NatsFrame {
   @Override
   protected void parseLine(String line) throws NatsProtocolException {
     String[] parts = line.trim().split(" ");
-    if (parts.length != 2) {
+    if (parts.length != 2 && parts.length != 3) {
       throw new NatsProtocolException("Invalid SUB frame header: " + line);
     }
     subject = parts[0];
-    subscriptionId = parts[1];
+    if(parts.length == 2) {
+      subscriptionId = parts[1];
+      shareName = null;
+    }
+    else {
+      shareName = parts[1];
+      subscriptionId = parts[2];
+    }
   }
 
   @Override

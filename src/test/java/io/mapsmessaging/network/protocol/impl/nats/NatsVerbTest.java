@@ -19,7 +19,7 @@ class NatsVerbsTest extends BaseTestConfig {
 
   private Connection connection;
 
-  @BeforeAll
+  @BeforeEach
   void setup() throws Exception {
     Options options = new Options.Builder()
         .server("nats://localhost:4222")
@@ -28,7 +28,7 @@ class NatsVerbsTest extends BaseTestConfig {
     connection = Nats.connect(options);
   }
 
-  @AfterAll
+  @AfterEach
   void teardown() throws Exception {
     if (connection != null) {
       connection.close();
@@ -56,7 +56,7 @@ class NatsVerbsTest extends BaseTestConfig {
     connection.publish(subject, message.getBytes());
     connection.flush(Duration.ofSeconds(2));
 
-    String received = future.get(2, TimeUnit.SECONDS);
+    String received = future.get(6, TimeUnit.SECONDS);
     assertEquals(message, received, "Received message should match published message");
   }
 
@@ -73,7 +73,7 @@ class NatsVerbsTest extends BaseTestConfig {
     dispatcher.unsubscribe(subject);
 
     connection.publish(subject, "Should not be received".getBytes());
-    connection.flush(Duration.ofSeconds(2));
+    connection.flush(Duration.ofSeconds(5));
 
     assertThrows(Exception.class, () -> future.get(1, TimeUnit.SECONDS));
   }

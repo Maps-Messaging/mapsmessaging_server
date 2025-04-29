@@ -14,10 +14,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class PubListener implements FrameListener {
+public class HPubListener implements FrameListener {
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
-    PubFrame msgFrame = (PubFrame)frame;
+    HPubFrame msgFrame = (HPubFrame)frame;
     String destName = convertSubject(msgFrame.getSubject());
     String lookup = engine.getMapping(destName);
     CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
@@ -45,14 +45,13 @@ public class PubListener implements FrameListener {
     }
   }
 
-  protected void handleMessageStoreToDestination(Destination destination, SessionState engine, PubFrame msgFrame) throws IOException {
+  protected void handleMessageStoreToDestination(Destination destination, SessionState engine, HPubFrame msgFrame) throws IOException {
     if (destination != null) {
       Map<String, TypedData> dataMap = new HashMap<>();
       Map<String, String> metaData = new HashMap<>();
       metaData.put("protocol", "NATS");
       metaData.put("version", engine.getProtocol().getVersion());
       metaData.put("sessionId", engine.getSession().getName());
-
       MessageBuilder mb = new MessageBuilder();
       Message message = mb.setDataMap(dataMap)
           .setOpaqueData(msgFrame.getPayload())
@@ -61,7 +60,28 @@ public class PubListener implements FrameListener {
           .setQoS(QualityOfService.AT_LEAST_ONCE)
           .setTransformation(engine.getProtocol().getTransformation())
           .build();
+
+      Map<String, String> headers = msgFrame.getHeader();
+      Map<String, TypedData> map = message.getDataMap();
+      if(headers != null) {
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+          map.put(entry.getKey(), new TypedData(convert(entry.getValue())));
+        }
+      }
       destination.storeMessage(message);
     }
+  }
+  private Object convert(String value){
+    try {
+      long t = Long.parseLong(value.trim());
+      return t;
+    } catch (NumberFormatException e) {
+    }
+    try {
+      double t = Double.parseDouble(value.trim());
+      return t;
+    } catch (NumberFormatException e) {
+    }
+    return value;
   }
 }

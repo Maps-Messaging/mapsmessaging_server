@@ -19,15 +19,15 @@
 package io.mapsmessaging.network.protocol.impl.nats.state;
 
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
-import io.mapsmessaging.network.protocol.impl.nats.frames.CompletionHandler;
-import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
-import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
-import io.mapsmessaging.network.protocol.impl.nats.frames.PubFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 
 public class ConnectedState implements State {
@@ -56,14 +56,40 @@ public class ConnectedState implements State {
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
     byte[] payloadData = message.getOpaqueData();
-
-    PubFrame pubFrame = new PubFrame(engine.getMaxBufferSize());
-    pubFrame.setSubject(destinationName);
-    pubFrame.setPayloadSize(payloadData.length);
-    pubFrame.setPayload(payloadData);
-
-    return engine.send(pubFrame);
+    MsgFrame msgFrame = new MsgFrame(engine.getMaxBufferSize());
+    msgFrame.setSubject(mapMqttTopicToNatsSubject(destinationName));
+    msgFrame.setSubscriptionId(context.getAlias());
+    if(message.getCorrelationData() != null){
+      msgFrame.setReplyTo(new String(message.getCorrelationData()));
+    }
+    if(engine.isHeaders() && !message.getDataMap().isEmpty()){
+      StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
+      for(Map.Entry<String, TypedData> entry: message.getDataMap().entrySet()){
+        sb.append(entry.getKey().replace(" ", "_")).append(": ").append(entry.getValue()).append("\r\n");
+      }
+      sb.append("\r\n");
+      byte[] header = sb.toString().getBytes();
+      int len = header.length + payloadData.length;
+      byte[] total = new byte[len];
+      System.arraycopy(header, 0, total, 0, header.length);
+      System.arraycopy(payloadData, 0, total, header.length, payloadData.length);
+      msgFrame.setPayloadSize(total.length);
+      msgFrame.setPayload(total);
+    }
+    else {
+      msgFrame.setPayloadSize(payloadData.length);
+    }
+    msgFrame.setPayload(payloadData);
+    return engine.send(msgFrame);
   }
+
+  private String mapMqttTopicToNatsSubject(String mqttTopic) {
+    return mqttTopic
+        .replace('/', '.')
+        .replace('+', '*')
+        .replace('#', '>');
+  }
+
 
   static class MessageCompletionHandler implements CompletionHandler {
 

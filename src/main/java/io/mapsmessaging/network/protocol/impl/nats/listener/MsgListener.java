@@ -11,4 +11,5 @@ public class MsgListener implements FrameListener {
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
 
   }
+
 }
