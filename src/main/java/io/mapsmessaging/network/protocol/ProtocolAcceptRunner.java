@@ -90,7 +90,6 @@ public class ProtocolAcceptRunner implements Selectable {
       if (read > 0) {
         packet.flip();
         packet.position(0);
-        System.err.println(packet.toString());
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
         ProtocolImplFactory protocolImplFactory = protocolFactory.detect(packet);
         if (protocolImplFactory != null) {
