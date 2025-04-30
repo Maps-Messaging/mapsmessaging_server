@@ -25,10 +25,25 @@ public class JetStreamRequestManager {
     String[] request = subject.split("\\.");
     switch(request[0]){
       case "$JS":
+        if(!sessionState.getProtocol().getNatsConfig().isEnableStreams()){
+          ErrFrame errFrame = new ErrFrame();
+          errFrame.setError("Streams are disabled");
+          return errFrame;
+        }
         break;
       case "$KV":
+        if(!sessionState.getProtocol().getNatsConfig().isEnableKeyValues()){
+          ErrFrame errFrame = new ErrFrame();
+          errFrame.setError("Key Values are disabled");
+          return errFrame;
+        }
         break;
       case "$O":
+        if(!sessionState.getProtocol().getNatsConfig().isEnableObjectStore()){
+          ErrFrame errFrame = new ErrFrame();
+          errFrame.setError("Object store is disabled");
+          return errFrame;
+        }
         break;
 
       default:

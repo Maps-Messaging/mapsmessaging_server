@@ -17,4 +17,14 @@ public class NatsConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Maximum receive limit for NATS", example = "1000")
   protected int maxReceive = 1000;
+
+  @Schema(description = "Enable NATS Streams via jetstream", example = "true")
+  protected boolean enableStreams = false;
+
+  @Schema(description = "Enable NATS Key values via jetstream", example = "true")
+  protected boolean enableKeyValues = false;
+
+  @Schema(description = "Enable NATS object store via jetstream", example = "true")
+  protected boolean enableObjectStore = false;
+
 }

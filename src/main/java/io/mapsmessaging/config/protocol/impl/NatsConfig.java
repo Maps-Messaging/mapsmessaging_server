@@ -14,6 +14,9 @@ public class NatsConfig extends NatsConfigDTO implements Config {
     // Initialize Stomp-specific fields from config
     this.maxBufferSize = config.getIntProperty("maximumBufferSize", maxBufferSize);
     this.maxReceive = config.getIntProperty("maximumReceive", maxReceive);
+    this.enableStreams = config.getBooleanProperty("enableStreams", enableStreams);
+    this.enableObjectStore = config.getBooleanProperty("enableObjectStore", enableObjectStore);
+    this.enableKeyValues = config.getBooleanProperty("enableKeyValues", enableKeyValues);
   }
 
   @Override
@@ -29,6 +32,18 @@ public class NatsConfig extends NatsConfigDTO implements Config {
       }
       if (this.maxReceive != newConfig.getMaxReceive()) {
         this.maxReceive = newConfig.getMaxReceive();
+        hasChanged = true;
+      }
+      if(this.enableStreams != newConfig.isEnableStreams()){
+        this.enableStreams = newConfig.isEnableStreams();
+        hasChanged = true;
+      }
+      if(this.enableKeyValues != newConfig.isEnableKeyValues()){
+        this.enableKeyValues = newConfig.isEnableKeyValues();
+        hasChanged = true;
+      }
+      if(this.enableObjectStore != newConfig.isEnableObjectStore()){
+        this.enableObjectStore = newConfig.isEnableObjectStore();
         hasChanged = true;
       }
 

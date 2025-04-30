@@ -5,6 +5,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.NatsConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.NatsProtocolInformation;
@@ -42,13 +43,16 @@ public class NatsProtocol extends Protocol {
   private final int maxReceiveSize;
   private final SessionState sessionState;
   private NatsFrame activeFrame;
+  @Getter
+  private NatsConfigDTO natsConfig;
 
   public NatsProtocol(EndPoint endPoint) {
     super(endPoint);
     logger = LoggerFactory.getLogger("NATS Protocol on " + endPoint.getName());
     logger.log(ServerLogMessages.NATS_STARTING, endPoint.toString());
-    int maxBufferSize = ((NatsConfigDTO) endPoint.getConfig().getProtocolConfig("nats")).getMaxBufferSize();
-    maxReceiveSize = ((NatsConfigDTO) endPoint.getConfig().getProtocolConfig("nats")).getMaxReceive();
+    natsConfig = (NatsConfigDTO) endPoint.getConfig().getProtocolConfig("nats");
+    int maxBufferSize = natsConfig.getMaxBufferSize();
+    maxReceiveSize = natsConfig.getMaxReceive();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     factory = new FrameFactory(maxBufferSize, false);
     sessionState = new SessionState(this);
