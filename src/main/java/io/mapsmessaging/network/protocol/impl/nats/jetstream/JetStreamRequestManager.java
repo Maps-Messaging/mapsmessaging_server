@@ -16,7 +16,7 @@ public class JetStreamRequestManager {
     String subject = frame.getSubject();
     return (subject != null && (
         subject.startsWith("$JS") // Stream Requests
-    || subject.startsWith("$KV")  // Key Value Requesus
+    || subject.startsWith("$KV")  // Key Value Requests
     || subject.startsWith("$O"))); // Object stores
   }
 
