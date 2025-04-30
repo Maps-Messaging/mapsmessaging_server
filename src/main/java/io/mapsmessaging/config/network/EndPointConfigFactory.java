@@ -121,6 +121,7 @@ public class EndPointConfigFactory {
             protocolList.add("amqp");
             protocolList.add("mqtt");
             protocolList.add("stomp");
+            protocolList.add("nats");
             protocolList.add("ws");
           }
         } else {
@@ -173,6 +174,8 @@ public class EndPointConfigFactory {
       return new AmqpConfig(config);
     } else if (protocol.equalsIgnoreCase("stomp")) {
       return new StompConfig(config);
+    } else if (protocol.equalsIgnoreCase("nats")) {
+      return new NatsConfig(config);
     } else if (protocol.equalsIgnoreCase("semtech")) {
       return new SemtechConfig(config);
     } else if (protocol.equalsIgnoreCase("mqtt-sn")) {

@@ -115,6 +115,7 @@ public class TCPEndPointServer extends EndPointServer {
           this,
           managerMBean));
     } catch (IOException e) {
+      e.printStackTrace();
       logger.log(ServerLogMessages.TCP_SERVER_ENDPOINT_ACCEPT);
     }
   }
