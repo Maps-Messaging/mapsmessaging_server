@@ -6,10 +6,8 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
-import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
-import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
-import io.mapsmessaging.network.protocol.impl.nats.frames.OkFrame;
-import io.mapsmessaging.network.protocol.impl.nats.frames.PubFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.*;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -18,9 +16,19 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class PubListener implements FrameListener {
+
+  private JetStreamRequestManager requestManager = new JetStreamRequestManager();
+
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
-    PubFrame msgFrame = (PubFrame) frame;
+    PayloadFrame msgFrame = (PayloadFrame) frame;
+    if(requestManager.isJetStreamRequest(msgFrame)) {
+      ErrFrame errFrame = new ErrFrame();
+      errFrame.setError("Jetstream is not currently supported");
+      errFrame.setCallback(() -> engine.getProtocol().close());
+      engine.send(errFrame);
+      return;
+    }
     String destName = convertSubject(msgFrame.getSubject());
     String lookup = engine.getMapping(destName);
     CompletableFuture<Destination> future = engine.getSession().findDestination(lookup, DestinationType.TOPIC);
@@ -40,14 +48,13 @@ public class PubListener implements FrameListener {
           errFrame.setError(e.getMessage());
           engine.send(errFrame);
           future.completeExceptionally(e);
-          throw new RuntimeException(e);
         }
         return destination;
       });
     }
   }
 
-  protected void handleMessageStoreToDestination(Destination destination, SessionState engine, PubFrame msgFrame) throws IOException {
+  protected void handleMessageStoreToDestination(Destination destination, SessionState engine, PayloadFrame msgFrame) throws IOException {
     if (destination != null) {
       Map<String, TypedData> dataMap = new HashMap<>();
       Map<String, String> metaData = new HashMap<>();
@@ -63,7 +70,34 @@ public class PubListener implements FrameListener {
           .setQoS(QualityOfService.AT_LEAST_ONCE)
           .setTransformation(engine.getProtocol().getTransformation())
           .build();
+      if(msgFrame instanceof HPayloadFrame){
+        Map<String, String> headers = ((HPayloadFrame) msgFrame).getHeader();
+        Map<String, TypedData> map = message.getDataMap();
+        if (headers != null) {
+          for (Map.Entry<String, String> entry : headers.entrySet()) {
+            map.put(entry.getKey(), new TypedData(convert(entry.getValue())));
+          }
+        }
+      }
       destination.storeMessage(message);
+    }
+  }
+
+  private Object convert(String value) {
+    Number n = tryParseNumber(value);
+    return n != null ? n : value;
+  }
+
+  private Number tryParseNumber(String value) {
+    String trimmed = value.trim();
+    try {
+      return Long.parseLong(trimmed);
+    } catch (NumberFormatException e1) {
+      try {
+        return Double.parseDouble(trimmed);
+      } catch (NumberFormatException e2) {
+        return null;
+      }
     }
   }
 }
