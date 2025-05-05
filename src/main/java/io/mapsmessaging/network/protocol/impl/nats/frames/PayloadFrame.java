@@ -3,7 +3,6 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

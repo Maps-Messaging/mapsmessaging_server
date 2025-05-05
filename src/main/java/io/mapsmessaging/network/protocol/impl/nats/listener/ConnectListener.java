@@ -42,7 +42,7 @@ public class ConnectListener implements FrameListener {
         engine.setEchoEvents(connect.isEcho());
         engine.setHeaders(connect.isHeaders());
         session.resumeState();
-        if(connect.isVerbose()) engine.send(new OkFrame());
+        if (connect.isVerbose()) engine.send(new OkFrame());
         return session;
       } catch (Exception failedAuth) {
         ErrFrame errFrame = new ErrFrame();

@@ -12,7 +12,7 @@ public class JetStreamApiManager {
   private final Manager[] managers;
 
   public JetStreamApiManager() {
-    this.managers = new Manager[] {
+    this.managers = new Manager[]{
         new StreamManager(),
         new ConsumerManager(),
         new InfoManager()
@@ -21,8 +21,8 @@ public class JetStreamApiManager {
   }
 
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
-    for(Manager manager : managers) {
-      if(subject.startsWith(manager.getType())) {
+    for (Manager manager : managers) {
+      if (subject.startsWith(manager.getType())) {
         return manager.process(subject, frame, sessionState);
       }
     }

@@ -43,7 +43,7 @@ public class NatsProtocol extends Protocol {
   private final SessionState sessionState;
   private NatsFrame activeFrame;
   @Getter
-  private NatsConfigDTO natsConfig;
+  private final NatsConfigDTO natsConfig;
 
   public NatsProtocol(EndPoint endPoint) {
     super(endPoint);

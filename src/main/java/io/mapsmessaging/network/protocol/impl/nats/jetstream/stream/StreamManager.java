@@ -1,8 +1,8 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
-import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class StreamManager implements Manager {
 
-  private final JetStreamHandler[] handlers = new JetStreamHandler[] {
+  private final JetStreamHandler[] handlers = new JetStreamHandler[]{
       new StreamCreateHandler(),
       new StreamInfoHandler(),
       new StreamDeleteHandler(),

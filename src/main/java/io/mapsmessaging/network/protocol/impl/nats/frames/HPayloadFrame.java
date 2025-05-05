@@ -26,7 +26,7 @@ public abstract class HPayloadFrame extends PayloadFrame {
   }
 
   protected PayloadFrame copy(PayloadFrame frame) {
-    HPayloadFrame  hframe  = (HPayloadFrame) super.copy(frame);
+    HPayloadFrame hframe = (HPayloadFrame) super.copy(frame);
     hframe.header = header;
     hframe.headerBytes = headerBytes;
     hframe.headerSize = headerSize;

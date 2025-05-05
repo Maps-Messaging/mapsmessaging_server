@@ -8,5 +8,6 @@ import java.io.IOException;
 
 public interface JetStreamHandler {
   String getName();
+
   NatsFrame handle(PayloadFrame frame, SessionState sessionState) throws IOException;
 }

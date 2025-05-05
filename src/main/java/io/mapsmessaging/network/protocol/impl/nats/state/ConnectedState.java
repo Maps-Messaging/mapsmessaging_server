@@ -64,9 +64,9 @@ public class ConnectedState implements State {
         sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
       }
       sb.append("\r\n");
-      ((HMsgFrame)msg).setHeaderBytes(sb.toString().getBytes());
+      ((HMsgFrame) msg).setHeaderBytes(sb.toString().getBytes());
     } else {
-      msg =  new MsgFrame(engine.getMaxBufferSize());
+      msg = new MsgFrame(engine.getMaxBufferSize());
     }
     byte[] payloadData = message.getOpaqueData();
     msg.setSubject(mapMqttTopicToNatsSubject(destinationName));
@@ -79,13 +79,13 @@ public class ConnectedState implements State {
     // This handles non-wildcard subscriptions
     List<SubscriptionContext> subscriptions = engine.getSubscriptions().get(destinationName);
     PayloadFrame duplicate = msg;
-    if(subscriptions != null) {
+    if (subscriptions != null) {
       duplicate = sendToList(duplicate, subscriptions, engine);
     }
 
     // Now handle wildcard subscriptions
-    for(String destinationKey : engine.getSubscriptions().keySet()){
-      if((destinationKey.contains("#") || destinationKey.contains("+")) && DestinationSet.matches(destinationKey, destinationName)){
+    for (String destinationKey : engine.getSubscriptions().keySet()) {
+      if ((destinationKey.contains("#") || destinationKey.contains("+")) && DestinationSet.matches(destinationKey, destinationName)) {
         List<SubscriptionContext> subContext = engine.getSubscriptions().get(destinationKey);
         duplicate = sendToList(duplicate, subContext, engine);
       }
@@ -94,12 +94,12 @@ public class ConnectedState implements State {
     return true;
   }
 
-  private PayloadFrame sendToList(PayloadFrame duplicate, List<SubscriptionContext> subscriptions, SessionState engine){
+  private PayloadFrame sendToList(PayloadFrame duplicate, List<SubscriptionContext> subscriptions, SessionState engine) {
     boolean multiple = subscriptions.size() > 1;
-    for(SubscriptionContext duplicates: subscriptions){
+    for (SubscriptionContext duplicates : subscriptions) {
       duplicate.setSubscriptionId(duplicates.getAlias());
       engine.send(duplicate);
-      if(multiple) duplicate = duplicate.duplicate();
+      if (multiple) duplicate = duplicate.duplicate();
       duplicate.setCallback(null);
     }
     return duplicate;

@@ -53,7 +53,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private long requestCounter;
   private State currentState;
 
-  private AtomicInteger outstandingPing = new AtomicInteger(0);
+  private final AtomicInteger outstandingPing = new AtomicInteger(0);
 
   public SessionState(NatsProtocol protocolImpl) {
     this.protocol = protocolImpl;
@@ -110,17 +110,16 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public void sendPing() {
-    if(outstandingPing.incrementAndGet() > 2){
+    if (outstandingPing.incrementAndGet() > 2) {
       ErrFrame errFrame = new ErrFrame("Ping timed out");
       errFrame.setCompletionHandler(new CompletionHandler() {
-        public void run(){
+        public void run() {
           System.out.println("Ping timed out");
           protocol.close();
         }
       });
       send(errFrame);
-    }
-    else {
+    } else {
       PingFrame pingFrame = new PingFrame();
       send(pingFrame);
     }
@@ -159,7 +158,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
     List<SubscriptionContext> existing = subscriptions.get(context.getDestinationName());
-    if(existing != null){
+    if (existing != null) {
       existing.add(context);
       return;
     }
@@ -206,7 +205,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public void receivedPong() {
-    if(outstandingPing.decrementAndGet() < 0){
+    if (outstandingPing.decrementAndGet() < 0) {
       outstandingPing.set(0);
     }
   }

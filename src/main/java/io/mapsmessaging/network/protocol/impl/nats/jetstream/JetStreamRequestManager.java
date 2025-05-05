@@ -9,7 +9,7 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import java.io.IOException;
 
 public class JetStreamRequestManager {
-  private JetStreamApiManager jetStreamApiManager;
+  private final JetStreamApiManager jetStreamApiManager;
 
   public JetStreamRequestManager() {
     jetStreamApiManager = new JetStreamApiManager();
@@ -19,8 +19,8 @@ public class JetStreamRequestManager {
     String subject = frame.getSubject();
     return (subject != null && (
         subject.startsWith("$JS")
-    || subject.startsWith("$KV")
-    || subject.startsWith("$O")));
+            || subject.startsWith("$KV")
+            || subject.startsWith("$O")));
   }
 
   public NatsFrame process(PayloadFrame frame, SessionState sessionState) throws IOException {

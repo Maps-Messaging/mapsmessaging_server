@@ -30,7 +30,7 @@ public class SubListener implements FrameListener {
 
     try {
       engine.createSubscription(builder.build());
-      if(engine.isVerbose()) engine.send(new OkFrame());
+      if (engine.isVerbose()) engine.send(new OkFrame());
     } catch (IOException ioe) {
       ErrFrame error = new ErrFrame();
       error.setError("Unable to find subject");
