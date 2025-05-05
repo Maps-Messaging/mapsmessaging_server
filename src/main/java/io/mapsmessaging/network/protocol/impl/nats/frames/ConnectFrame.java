@@ -20,7 +20,7 @@ public class ConnectFrame extends NatsFrame {
   private boolean tlsRequired = false;
   private boolean verbose = false;
   private boolean pedantic = false;
-  private boolean echo = false;
+  private boolean echo = true;
   private boolean headers = false;
 
   public ConnectFrame() {

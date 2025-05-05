@@ -122,6 +122,17 @@ NetworkManager:
 
     data:
 
+      - name: "NATS"
+        url: "tcp://0.0.0.0:4222/"
+        protocol: nats
+        auth: anon
+
+      - name: "NATS"
+        url: "tcp://0.0.0.0:9972/"
+        protocol: nats
+        keepAlive: 50
+        auth: anon
+
       - name: "AMQP Interface"
         url: tcp://:::5672/
         protocol: amqp

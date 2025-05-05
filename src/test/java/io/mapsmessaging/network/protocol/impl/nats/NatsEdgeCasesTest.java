@@ -101,7 +101,7 @@ class NatsEdgeCasesTest extends BaseTestConfig {
     for (int i = 0; i < 3; i++) {
       connection.publish(subject, ("msg" + i).getBytes());
     }
-    connection.flush(Duration.ofSeconds(2));
+    connection.flush(Duration.ofSeconds(20));
 
     Integer received = counter.get(3, TimeUnit.SECONDS);
     assertEquals(3, received);

@@ -29,6 +29,19 @@ public abstract class PayloadFrame extends NatsFrame {
     this.maxBufferSize = maxBufferSize;
   }
 
+
+  public abstract PayloadFrame duplicate();
+
+  protected PayloadFrame copy(PayloadFrame frame) {
+    frame.setSubject(subject);
+    frame.setSubscriptionId(subscriptionId);
+    frame.setReplyTo(replyTo);
+    frame.setPayloadSize(payloadSize);
+    frame.setPayload(payload);
+    frame.setMaxBufferSize(maxBufferSize);
+    return frame;
+  }
+
   public void parseFrame(Packet packet) throws IOException {
     super.parseFrame(packet);
 
@@ -121,4 +134,5 @@ public abstract class PayloadFrame extends NatsFrame {
   public SocketAddress getFromAddress() {
     return null;
   }
+
 }

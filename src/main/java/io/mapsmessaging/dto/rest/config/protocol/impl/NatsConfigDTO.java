@@ -27,4 +27,6 @@ public class NatsConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Enable NATS object store via jetstream", example = "true")
   protected boolean enableObjectStore = false;
 
+  @Schema(description = "Ping timeout in milliseconds", example = "60000")
+  protected int keepAlive = 60_000;
 }

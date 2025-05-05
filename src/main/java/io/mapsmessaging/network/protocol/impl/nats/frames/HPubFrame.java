@@ -15,6 +15,10 @@ public class HPubFrame extends HPayloadFrame {
     super(maxBufferSize);
   }
 
+  @Override
+  public PayloadFrame duplicate() {
+    return copy(new HPubFrame(maxBufferSize));
+  }
 
   @Override
   public byte[] getCommand() {

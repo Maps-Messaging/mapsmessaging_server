@@ -53,6 +53,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   private static final String ALL_HOSTS = "::";
+  private static final String ALL_HOSTS_V4 = "0.0.0.0";
 
   private final Logger logger;
   private final String serverName;
@@ -173,7 +174,9 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
 
       ServiceInfo serviceInfo = ServiceInfo.create(service, serverName, restApiServerManager.getPort(), 0, 0, map);
       String host = restApiServerManager.getHost();
-      if (host.equals(ALL_HOSTS) || host.equals(manager.getAdapter())) {
+      if (host.equals(ALL_HOSTS) ||
+          host.equals(ALL_HOSTS_V4) ||
+          host.equals(manager.getAdapter())) {
         try {
           manager.register(serviceInfo);
         } catch (IOException e) {
@@ -197,7 +200,9 @@ public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
     List<String> protocolList = createProtocolList(protocolConfig, transport);
     String endPointHostName = endPointServer.getUrl().getHost();
     for(AdapterManager manager:boundedNetworks){
-      if (endPointHostName.equals(ALL_HOSTS) || endPointHostName.equals(manager.getAdapter())) {
+      if (endPointHostName.equals(ALL_HOSTS) ||
+          endPointHostName.equals(ALL_HOSTS_V4) ||
+          endPointHostName.equals(manager.getAdapter())) {
         manager.register(endPointServer, transport, protocolList);
       }
     }

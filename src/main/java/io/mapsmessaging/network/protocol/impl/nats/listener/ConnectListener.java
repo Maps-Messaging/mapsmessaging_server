@@ -8,6 +8,7 @@ import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ConnectFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.OkFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.ConnectedState;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
@@ -41,6 +42,7 @@ public class ConnectListener implements FrameListener {
         engine.setEchoEvents(connect.isEcho());
         engine.setHeaders(connect.isHeaders());
         session.resumeState();
+        if(connect.isVerbose()) engine.send(new OkFrame());
         return session;
       } catch (Exception failedAuth) {
         ErrFrame errFrame = new ErrFrame();
@@ -69,7 +71,6 @@ public class ConnectListener implements FrameListener {
       scb.setUsername(username).setPassword(connect.getPass().toCharArray());
     }
     scb.setPersistentSession(false);
-    scb.setKeepAlive(120);
     int inFlight = (engine.getProtocol().getMaxReceiveSize());
     scb.setReceiveMaximum(inFlight);
     scb.setSessionExpiry(0);

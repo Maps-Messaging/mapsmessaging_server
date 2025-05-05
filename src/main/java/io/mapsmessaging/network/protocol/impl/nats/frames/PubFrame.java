@@ -17,6 +17,11 @@ public class PubFrame extends PayloadFrame {
   }
 
   @Override
+  public PayloadFrame duplicate() {
+    return copy(new PubFrame(maxBufferSize));
+  }
+
+  @Override
   public byte[] getCommand() {
     return "PUB".getBytes(StandardCharsets.US_ASCII);
   }

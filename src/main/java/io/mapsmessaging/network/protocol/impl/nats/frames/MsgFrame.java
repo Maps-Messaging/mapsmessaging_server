@@ -17,6 +17,11 @@ public class MsgFrame extends PayloadFrame {
   }
 
   @Override
+  public PayloadFrame duplicate() {
+    return copy(new MsgFrame(maxBufferSize));
+  }
+
+  @Override
   public byte[] getCommand() {
     return "MSG".getBytes(StandardCharsets.US_ASCII);
   }

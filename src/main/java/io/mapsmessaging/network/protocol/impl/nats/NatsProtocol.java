@@ -5,7 +5,6 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
-import io.mapsmessaging.dto.rest.config.protocol.impl.MqttConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.NatsConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.NatsProtocolInformation;
@@ -56,6 +55,7 @@ public class NatsProtocol extends Protocol {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     factory = new FrameFactory(maxBufferSize, false);
     sessionState = new SessionState(this);
+    keepAlive = natsConfig.getKeepAlive();
   }
 
   public NatsProtocol(EndPoint endPoint, Packet packet) throws IOException {
@@ -73,7 +73,6 @@ public class NatsProtocol extends Protocol {
     logger.log(ServerLogMessages.NATS_CLOSING, endPoint.toString());
     try {
       super.close();
-      endPoint.close();
     } catch (IOException e) {
       logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }

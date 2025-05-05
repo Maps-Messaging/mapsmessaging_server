@@ -1,0 +1,59 @@
+package io.mapsmessaging.network.protocol.impl.nats.conv;
+
+import io.mapsmessaging.test.BaseTestConfig;
+import org.junit.jupiter.api.*;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class NatsProtocolBasicsTest extends BaseTestConfig {
+
+  private static final int PORT = 4222;
+  private NatsTestHelpers helper;
+
+  private static final Pattern pongRe = Pattern.compile("PONG");
+  private static final Pattern msgRe = Pattern.compile("^MSG\\s+(.+)$");
+
+  @BeforeEach
+  void connect() throws Exception {
+    helper = new NatsTestHelpers("127.0.0.1", PORT);
+  }
+
+  @AfterEach
+  void disconnect() throws Exception {
+    helper.close();
+  }
+
+  @Test
+  @Order(1)
+  void testPing() throws Exception {
+    helper.send("PING\r\n");
+    String response = helper.expect(pongRe, 1000);
+    assertEquals("PONG", response.trim());
+  }
+
+  @Test
+  @Order(2)
+  void testSingleMsg() throws Exception {
+    helper.send("SUB foo 1\r\n");
+    helper.send("PUB foo 5\r\nhello\r\n");
+    List<String> msgs = helper.expectMsgs(1, 1000);
+    assertTrue(msgs.get(0).contains("MSG foo 1"));
+  }
+
+  @Test
+  @Order(3)
+  void testMultipleMsgs() throws Exception {
+    helper.send("SUB * 2\r\n");
+    helper.send("PUB foo 2\r\nok\r\n");
+    List<String> msgs = helper.expectAllMsgs(2, 1000);
+    assertEquals(2, msgs.size());
+    boolean found = false;
+    for (String msg : msgs) {
+      found = found || msg.contains("foo");
+    }
+    assertTrue(found);
+  }
+}
