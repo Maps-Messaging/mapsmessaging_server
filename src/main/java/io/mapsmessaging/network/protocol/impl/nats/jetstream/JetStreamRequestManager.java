@@ -5,11 +5,21 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamApiManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.IOException;
 
 public class JetStreamRequestManager {
   private final JetStreamApiManager jetStreamApiManager;
+
+  @Getter
+  @Setter
+  private String subscriptionId;
+
+  @Getter
+  @Setter
+  private String jetSubject;
 
   public JetStreamRequestManager() {
     jetStreamApiManager = new JetStreamApiManager();

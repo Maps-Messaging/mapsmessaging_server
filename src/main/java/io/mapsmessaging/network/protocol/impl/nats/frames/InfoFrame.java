@@ -24,6 +24,7 @@ public class InfoFrame extends NatsFrame {
   private boolean tlsRequired = false;
   private boolean authRequired = false;
   private boolean headers = true;
+  private boolean jetStream = true;
 
 
   public InfoFrame(int maxPayloadLength) {
@@ -44,6 +45,7 @@ public class InfoFrame extends NatsFrame {
     this.tlsRequired = extractBoolean(json, "\"tls_required\":");
     this.authRequired = extractBoolean(json, "\"auth_required\":");
     this.headers = extractBoolean(json, "\"headers\":");
+    this.jetStream = extractBoolean(json, "\"jetStream\":");
   }
 
   @Override
@@ -82,6 +84,8 @@ public class InfoFrame extends NatsFrame {
     jsonBuilder.append(',');
     jsonBuilder.append("\"headers\":").append(headers);
     jsonBuilder.append(',');
+    jsonBuilder.append("\"jetStream\":").append(jetStream);
+    jsonBuilder.append(',');
     jsonBuilder.append("\"auth_required\":").append(authRequired);
     jsonBuilder.append(',');
     jsonBuilder.append("\"max_payload\":").append(maxPayloadLength);
@@ -111,8 +115,4 @@ public class InfoFrame extends NatsFrame {
     return new InfoFrame(maxPayloadLength);
   }
 
-  @Override
-  public SocketAddress getFromAddress() {
-    return null;
-  }
 }

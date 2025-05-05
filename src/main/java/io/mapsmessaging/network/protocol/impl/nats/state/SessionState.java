@@ -11,6 +11,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.CloseHandler;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocol;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -52,6 +53,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private boolean isValid;
   private long requestCounter;
   private State currentState;
+  @Getter
+  private JetStreamRequestManager jetStreamRequestManager;
 
   private final AtomicInteger outstandingPing = new AtomicInteger(0);
 
@@ -66,6 +69,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
     currentState = new InitialServerState();
     maxBufferSize = protocolImpl.getMaxReceiveSize();
     protocolImpl.getEndPoint().setCloseHandler(this);
+    jetStreamRequestManager = new JetStreamRequestManager();
   }
 
   public synchronized void handleFrame(NatsFrame frame, boolean endOfBuffer) {

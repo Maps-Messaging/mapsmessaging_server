@@ -16,6 +16,12 @@ public class SubListener implements FrameListener {
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     ClientAcknowledgement ackManger;
     SubFrame subscribe = (SubFrame) frame;
+    if(subscribe.getSubject().startsWith("_INBOX.") && subscribe.getSubscriptionId() != null){
+      engine.getJetStreamRequestManager().setJetSubject(subscribe.getSubject());
+      engine.getJetStreamRequestManager().setSubscriptionId(subscribe.getSubscriptionId());
+      if(engine.isVerbose())engine.send(new OkFrame());
+      return;
+    }
     ackManger = ClientAcknowledgement.AUTO;
     String subject = subscribe.getSubject();
     String[] split = subject.split("&");

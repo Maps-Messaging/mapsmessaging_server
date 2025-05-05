@@ -26,7 +26,8 @@ public class InfoManager implements Manager {
     }
 
     MsgFrame msg = new MsgFrame(0);
-    msg.setReplyTo(replyTo);
+    msg.setSubject(replyTo);
+    msg.setSubscriptionId(sessionState.getJetStreamRequestManager().getSubscriptionId());
     msg.setPayload(buildInfo(sessionState).getBytes());
     return msg;
   }
