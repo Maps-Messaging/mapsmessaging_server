@@ -10,10 +10,14 @@ import org.junit.jupiter.api.BeforeEach;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class JetStreamBaseTest extends BaseTestConfig {
 
   protected Connection natsConnection;
   protected JetStream jetStream;
+  protected JetStreamManagement jetStreamManagement;
 
   @BeforeEach
   void setupJetStream() throws Exception {
@@ -25,6 +29,12 @@ class JetStreamBaseTest extends BaseTestConfig {
 
     natsConnection = Nats.connect(options);
     jetStream = natsConnection.jetStream();
+    jetStreamManagement = natsConnection.jetStreamManagement();
+
+    assertNotNull(natsConnection);
+    assertNotNull(jetStream);
+    assertNotNull(jetStreamManagement);
+    assertTrue(natsConnection.getStatus() == Connection.Status.CONNECTED);
   }
 
   @AfterEach

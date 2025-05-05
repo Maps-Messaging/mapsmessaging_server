@@ -17,6 +17,8 @@ public class StreamCreateHandler implements JetStreamHandler {
 
   @Override
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
+    System.err.println(json.toString());
+
     return null;
   }
 }

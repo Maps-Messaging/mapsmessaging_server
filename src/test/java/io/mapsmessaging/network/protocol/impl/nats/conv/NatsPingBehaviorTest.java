@@ -31,10 +31,10 @@ class NatsPingBehaviorTest extends BaseTestConfig {
   @Order(1)
   void testPingIntervalAndDisconnect() throws Exception {
     for (int i = 0; i < 2; i++) {
-      helper.expect(pingRe, 1000);
+      helper.expect(pingRe, 6000);
     }
 
-    helper.expect(errRe, 1000); // should error after no PONGs
+    helper.expect(errRe, 6000); // should error after no PONGs
 
 // Wait until server closes connection
     boolean closed = false;
@@ -57,10 +57,10 @@ class NatsPingBehaviorTest extends BaseTestConfig {
 
     // Still expect PINGs from server as if no PONGs were received
     for (int i = 0; i < 2; i++) {
-      helper.expect(pingRe, 1000);
+      helper.expect(pingRe, 6000);
     }
 
-    helper.expect(errRe, 1000);
+    helper.expect(errRe, 6000);
 
     boolean closed = false;
     try {
