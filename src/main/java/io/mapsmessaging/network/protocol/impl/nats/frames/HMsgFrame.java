@@ -8,6 +8,11 @@ public class HMsgFrame extends HPayloadFrame {
     super(maxBufferSize);
   }
 
+  @Override
+  public PayloadFrame duplicate() {
+    return copy(new HMsgFrame(maxBufferSize));
+  }
+
 
   @Override
   public byte[] getCommand() {

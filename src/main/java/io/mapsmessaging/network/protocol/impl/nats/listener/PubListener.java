@@ -17,12 +17,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class PubListener implements FrameListener {
 
-  private JetStreamRequestManager requestManager = new JetStreamRequestManager();
+  private final JetStreamRequestManager requestManager = new JetStreamRequestManager();
 
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     PayloadFrame msgFrame = (PayloadFrame) frame;
-    if(requestManager.isJetStreamRequest(msgFrame)) {
+    if (requestManager.isJetStreamRequest(msgFrame)) {
       ErrFrame errFrame = new ErrFrame();
       errFrame.setError("Jetstream is not currently supported");
       errFrame.setCallback(() -> engine.getProtocol().close());
@@ -44,6 +44,7 @@ public class PubListener implements FrameListener {
             engine.send(errFrame);
           }
         } catch (IOException e) {
+          e.printStackTrace();
           ErrFrame errFrame = new ErrFrame();
           errFrame.setError(e.getMessage());
           engine.send(errFrame);
@@ -70,7 +71,7 @@ public class PubListener implements FrameListener {
           .setQoS(QualityOfService.AT_LEAST_ONCE)
           .setTransformation(engine.getProtocol().getTransformation())
           .build();
-      if(msgFrame instanceof HPayloadFrame){
+      if (msgFrame instanceof HPayloadFrame) {
         Map<String, String> headers = ((HPayloadFrame) msgFrame).getHeader();
         Map<String, TypedData> map = message.getDataMap();
         if (headers != null) {

@@ -17,6 +17,7 @@ public class NatsConfig extends NatsConfigDTO implements Config {
     this.enableStreams = config.getBooleanProperty("enableStreams", enableStreams);
     this.enableObjectStore = config.getBooleanProperty("enableObjectStore", enableObjectStore);
     this.enableKeyValues = config.getBooleanProperty("enableKeyValues", enableKeyValues);
+    this.keepAlive = config.getIntProperty("keepAlive", keepAlive);
   }
 
   @Override
@@ -25,7 +26,10 @@ public class NatsConfig extends NatsConfigDTO implements Config {
     if (config instanceof NatsConfigDTO) {
       NatsConfigDTO newConfig = (NatsConfigDTO) config;
 
-      // Check each field and update if necessary
+      if (this.keepAlive != newConfig.getKeepAlive()) {
+        this.keepAlive = newConfig.getKeepAlive();
+        hasChanged = true;
+      }
       if (this.maxBufferSize != newConfig.getMaxBufferSize()) {
         this.maxBufferSize = newConfig.getMaxBufferSize();
         hasChanged = true;
@@ -61,6 +65,10 @@ public class NatsConfig extends NatsConfigDTO implements Config {
     ProtocolConfigFactory.pack(properties, this);
     properties.put("maximumBufferSize", this.maxBufferSize);
     properties.put("maximumReceive", this.maxReceive);
+    properties.put("enableStreams", this.enableStreams);
+    properties.put("enableKeyValues", this.enableKeyValues);
+    properties.put("enableObjectStore", this.enableObjectStore);
+    properties.put("keepAlive", this.keepAlive);
     return properties;
   }
 }

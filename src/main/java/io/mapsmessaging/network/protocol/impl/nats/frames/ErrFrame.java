@@ -19,6 +19,12 @@ public class ErrFrame extends NatsFrame {
     super();
   }
 
+  public ErrFrame(String error) {
+    super();
+    this.error = error;
+  }
+
+
   @Override
   public byte[] getCommand() {
     return "-ERR".getBytes(StandardCharsets.US_ASCII);

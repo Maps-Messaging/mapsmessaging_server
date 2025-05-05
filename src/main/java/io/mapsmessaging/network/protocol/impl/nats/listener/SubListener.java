@@ -4,6 +4,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.OkFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.SubFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
@@ -29,6 +30,7 @@ public class SubListener implements FrameListener {
 
     try {
       engine.createSubscription(builder.build());
+      if (engine.isVerbose()) engine.send(new OkFrame());
     } catch (IOException ioe) {
       ErrFrame error = new ErrFrame();
       error.setError("Unable to find subject");

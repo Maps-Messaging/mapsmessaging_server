@@ -3,7 +3,6 @@ package io.mapsmessaging.network.protocol.impl.nats.frames;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -27,6 +26,19 @@ public abstract class PayloadFrame extends NatsFrame {
   protected PayloadFrame(int maxBufferSize) {
     super();
     this.maxBufferSize = maxBufferSize;
+  }
+
+
+  public abstract PayloadFrame duplicate();
+
+  protected PayloadFrame copy(PayloadFrame frame) {
+    frame.setSubject(subject);
+    frame.setSubscriptionId(subscriptionId);
+    frame.setReplyTo(replyTo);
+    frame.setPayloadSize(payloadSize);
+    frame.setPayload(payload);
+    frame.setMaxBufferSize(maxBufferSize);
+    return frame;
   }
 
   public void parseFrame(Packet packet) throws IOException {
@@ -121,4 +133,5 @@ public abstract class PayloadFrame extends NatsFrame {
   public SocketAddress getFromAddress() {
     return null;
   }
+
 }

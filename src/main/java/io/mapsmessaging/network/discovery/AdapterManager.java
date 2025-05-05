@@ -87,6 +87,9 @@ public class AdapterManager {
             map.put("version 1.2", "true");
             break;
 
+          case "nats":
+            map.put("version 1.0", "true");
+            break;
           case "coap":
             map.put("RFC7252, RFC7641, RFC7959", "true");
             break;

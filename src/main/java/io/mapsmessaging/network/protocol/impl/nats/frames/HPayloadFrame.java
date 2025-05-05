@@ -25,6 +25,14 @@ public abstract class HPayloadFrame extends PayloadFrame {
     super(maxBufferSize);
   }
 
+  protected PayloadFrame copy(PayloadFrame frame) {
+    HPayloadFrame hframe = (HPayloadFrame) super.copy(frame);
+    hframe.header = header;
+    hframe.headerBytes = headerBytes;
+    hframe.headerSize = headerSize;
+    return frame;
+  }
+
   @Override
   public void parseFrame(Packet packet) throws IOException {
 

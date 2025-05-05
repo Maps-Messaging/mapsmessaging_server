@@ -9,6 +9,6 @@ public class PongListener implements FrameListener {
 
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
-
+    engine.receivedPong();
   }
 }

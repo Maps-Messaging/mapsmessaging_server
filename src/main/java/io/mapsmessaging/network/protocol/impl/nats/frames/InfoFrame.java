@@ -74,7 +74,7 @@ public class InfoFrame extends NatsFrame {
       jsonBuilder.append("\"host\":\"").append(host).append('\"');
       first = false;
       jsonBuilder.append(',');
-      jsonBuilder.append("\"port\":").append(""+port);
+      jsonBuilder.append("\"port\":").append("" + port);
     }
 
     if (!first) jsonBuilder.append(',');

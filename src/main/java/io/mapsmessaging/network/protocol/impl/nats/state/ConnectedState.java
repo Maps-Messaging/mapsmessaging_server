@@ -21,11 +21,13 @@ package io.mapsmessaging.network.protocol.impl.nats.state;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 
@@ -62,19 +64,45 @@ public class ConnectedState implements State {
         sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
       }
       sb.append("\r\n");
-      ((HMsgFrame)msg).setHeaderBytes(sb.toString().getBytes());
+      ((HMsgFrame) msg).setHeaderBytes(sb.toString().getBytes());
     } else {
-      msg =  new MsgFrame(engine.getMaxBufferSize());
+      msg = new MsgFrame(engine.getMaxBufferSize());
     }
     byte[] payloadData = message.getOpaqueData();
     msg.setSubject(mapMqttTopicToNatsSubject(destinationName));
-    msg.setSubscriptionId(context.getAlias());
     if (message.getCorrelationData() != null) {
       msg.setReplyTo(new String(message.getCorrelationData()));
     }
     msg.setPayloadSize(payloadData.length);
     msg.setPayload(payloadData);
-    return engine.send(msg);
+
+    // This handles non-wildcard subscriptions
+    List<SubscriptionContext> subscriptions = engine.getSubscriptions().get(destinationName);
+    PayloadFrame duplicate = msg;
+    if (subscriptions != null) {
+      duplicate = sendToList(duplicate, subscriptions, engine);
+    }
+
+    // Now handle wildcard subscriptions
+    for (String destinationKey : engine.getSubscriptions().keySet()) {
+      if ((destinationKey.contains("#") || destinationKey.contains("+")) && DestinationSet.matches(destinationKey, destinationName)) {
+        List<SubscriptionContext> subContext = engine.getSubscriptions().get(destinationKey);
+        duplicate = sendToList(duplicate, subContext, engine);
+      }
+    }
+    completionTask.run();
+    return true;
+  }
+
+  private PayloadFrame sendToList(PayloadFrame duplicate, List<SubscriptionContext> subscriptions, SessionState engine) {
+    boolean multiple = subscriptions.size() > 1;
+    for (SubscriptionContext duplicates : subscriptions) {
+      duplicate.setSubscriptionId(duplicates.getAlias());
+      engine.send(duplicate);
+      if (multiple) duplicate = duplicate.duplicate();
+      duplicate.setCallback(null);
+    }
+    return duplicate;
   }
 
   private String mapMqttTopicToNatsSubject(String mqttTopic) {

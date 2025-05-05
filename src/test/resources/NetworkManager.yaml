@@ -105,6 +105,14 @@ NetworkManager:
         protocol: nats
         auth: anon
 
+
+      - name: "NATS TCP Test small keep alive"
+        url: "tcp://0.0.0.0:5222/"
+        protocol: nats
+        keepAlive: 50
+        auth: anon
+
+
       - name: "MQTT TCP Test anon Interface for raw buffer writes"
         url: "tcp://0.0.0.0:1888/"
         protocol: mqtt, ws

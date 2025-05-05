@@ -16,11 +16,14 @@ import lombok.Setter;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SessionState implements CloseHandler, CompletionHandler {
 
@@ -31,6 +34,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private final Logger logger;
   private final Map<String, SubscribedEventManager> activeSubscriptions;
   private final Map<String, String> destinationMap;
+  @Getter
+  private final Map<String, List<SubscriptionContext>> subscriptions;
+
   @Getter
   @Setter
   private boolean isVerbose;
@@ -47,9 +53,12 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private long requestCounter;
   private State currentState;
 
+  private final AtomicInteger outstandingPing = new AtomicInteger(0);
+
   public SessionState(NatsProtocol protocolImpl) {
     this.protocol = protocolImpl;
     destinationMap = new ConcurrentHashMap<>();
+    subscriptions = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
     activeSubscriptions = new LinkedHashMap<>();
     session = null;
@@ -101,8 +110,20 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public void sendPing() {
-    PingFrame pingFrame = new PingFrame();
-    send(pingFrame);
+    if (outstandingPing.incrementAndGet() > 2) {
+      ErrFrame errFrame = new ErrFrame("Ping timed out");
+      errFrame.setCompletionHandler(new CompletionHandler() {
+        public void run() {
+          System.out.println("Ping timed out");
+          protocol.close();
+        }
+      });
+      send(errFrame);
+    } else {
+      PingFrame pingFrame = new PingFrame();
+      send(pingFrame);
+    }
+
   }
 
   public void close() throws IOException {
@@ -132,13 +153,21 @@ public class SessionState implements CloseHandler, CompletionHandler {
     return destinationMap.getOrDefault(destinationName, destinationName);
   }
 
-  public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
+  public void createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
+    List<SubscriptionContext> existing = subscriptions.get(context.getDestinationName());
+    if (existing != null) {
+      existing.add(context);
+      return;
+    }
+    existing = new ArrayList<>();
+    existing.add(context);
+    subscriptions.put(context.getDestinationName(), existing);
     SubscribedEventManager subscription = getSession().addSubscription(context);
     activeSubscriptions.put(context.getAlias(), subscription);
-    return subscription;
+    session.resumeState();
   }
 
   public void removeSubscription(String subscriptionId) {
@@ -173,5 +202,11 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public void changeState(State state) {
     currentState = state;
+  }
+
+  public void receivedPong() {
+    if (outstandingPing.decrementAndGet() < 0) {
+      outstandingPing.set(0);
+    }
   }
 }
