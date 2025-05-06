@@ -30,7 +30,7 @@ public class StreamManager extends Manager {
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
     String action = subject.substring("$JS.API.STREAM.".length());
     byte[] data = frame.getPayload();
-    JsonObject json = data != null ? JsonParser.parseString(new String(data)).getAsJsonObject() : null;
+    JsonObject json = (data != null && data.length > 0) ? JsonParser.parseString(new String(data)).getAsJsonObject() : null;
 
     for (JetStreamHandler handler : handlers) {
       if (action.startsWith(handler.getName())) {

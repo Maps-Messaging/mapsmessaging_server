@@ -19,6 +19,7 @@ public class NatsConfig extends NatsConfigDTO implements Config {
     this.enableKeyValues = config.getBooleanProperty("enableKeyValues", enableKeyValues);
     this.keepAlive = config.getIntProperty("keepAlive", keepAlive);
     this.namespaceRoot = config.getProperty("namespaceRoot", namespaceRoot);
+    this.enableStreamDelete = config.getBooleanProperty("enableStreamDelete", enableStreamDelete);
   }
 
   @Override
@@ -51,6 +52,10 @@ public class NatsConfig extends NatsConfigDTO implements Config {
         this.enableObjectStore = newConfig.isEnableObjectStore();
         hasChanged = true;
       }
+      if(this.enableStreamDelete != newConfig.isEnableStreamDelete()){
+        this.enableStreamDelete = newConfig.isEnableStreamDelete();
+        hasChanged = true;
+      }
       if(!namespaceRoot.equals(newConfig.getNamespaceRoot())){
         namespaceRoot = newConfig.getNamespaceRoot();
         hasChanged = true;
@@ -74,6 +79,7 @@ public class NatsConfig extends NatsConfigDTO implements Config {
     properties.put("enableObjectStore", this.enableObjectStore);
     properties.put("keepAlive", this.keepAlive);
     properties.put("namespaceRoot", this.namespaceRoot);
+    properties.put("enableStreamDelete", this.enableStreamDelete);
     return properties;
   }
 }

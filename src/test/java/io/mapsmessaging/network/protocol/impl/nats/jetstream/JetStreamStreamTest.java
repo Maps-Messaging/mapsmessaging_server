@@ -48,4 +48,25 @@ class JetStreamStreamTest extends JetStreamBaseTest {
     Assertions.assertFalse(f.isEmpty());
 
   }
+
+  @Test
+  void testJetStreamDelete() throws Exception {
+    StreamConfiguration streamConfiguration = StreamConfiguration.builder()
+        .name("nats_test")
+        .addSubjects("topic1", "topic2", "folder1.topic1")
+        .denyDelete(false)
+        .denyPurge(false)
+        .description("test stream")
+        .allowMessageTtl(true)
+        .discardPolicy(DiscardPolicy.Old)
+        .build();
+    jetStreamManagement.addStream(streamConfiguration);
+    StreamInfo streamInfo = jetStreamManagement.getStreamInfo("nats_test");
+    Assertions.assertNotNull(streamInfo);
+    Assertions.assertEquals("nats_test", streamInfo.getConfig().getName());
+    Assertions.assertTrue(jetStreamManagement.deleteStream("nats_test"));
+    List<StreamInfo> f = jetStreamManagement.getStreams();
+    Assertions.assertNotNull(f);
+    Assertions.assertTrue(f.isEmpty());
+  }
 }

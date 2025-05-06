@@ -32,4 +32,8 @@ public class NatsConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Root for the NATS streams", example = "/nats", defaultValue = "")
   protected String namespaceRoot = "";
+
+  @Schema(description = "Enable or disable stream deletion", example = "true")
+  protected boolean enableStreamDelete = true;
+
 }
