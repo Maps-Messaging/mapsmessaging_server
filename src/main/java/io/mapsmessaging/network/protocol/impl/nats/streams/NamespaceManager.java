@@ -31,6 +31,7 @@ public class NamespaceManager implements DestinationManagerListener {
   @Override
   public void created(DestinationImpl destination) {
     String namespace = destination.getFullyQualifiedNamespace();
+    if(namespace.startsWith("$")) return;
     if (namespace.contains("/")) {
       String trimmed = namespace.startsWith("/") ? namespace.substring(1) : namespace;
       int firstSlash = trimmed.indexOf('/');
@@ -83,6 +84,7 @@ public class NamespaceManager implements DestinationManagerListener {
           isFile = isFile || destination.isPersistent();
           subjects.add(info.getSubject());
         }
+        streamConfig.setName(entry.getKey());
         streamConfig.setSubjects(subjects);
         streamConfig.setStorage(isFile?"file":"memory");
         StreamEntry streamEntry = new StreamEntry();

@@ -53,7 +53,6 @@ public class StreamListHandler extends JetStreamHandler {
     streamListResponse.setOffset(offset);
     streamListResponse.setLimit(limit);
     streamListResponse.setTotal(entries.size());
-    Gson gson = new Gson();
     return gson.toJson(streamListResponse);
   }
 }

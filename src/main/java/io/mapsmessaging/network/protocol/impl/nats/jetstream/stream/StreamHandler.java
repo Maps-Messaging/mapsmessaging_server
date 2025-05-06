@@ -1,12 +1,24 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
+import java.time.Instant;
+
 public class StreamHandler {
+
+  protected final Gson gson;
+
+  public StreamHandler() {
+    gson = new GsonBuilder()
+        .registerTypeAdapter(Instant.class, new InstantAdapter())
+        .create();
+  }
 
   protected NatsFrame buildResponse(String subject, PayloadFrame payloadFrame, SessionState sessionState){
     String replyTo = payloadFrame.getReplyTo();

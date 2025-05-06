@@ -9,4 +9,5 @@ public class StreamConfig {
   private String name;
   private List<String> subjects;
   private String storage;
+  private boolean allowDirect = false;
 }

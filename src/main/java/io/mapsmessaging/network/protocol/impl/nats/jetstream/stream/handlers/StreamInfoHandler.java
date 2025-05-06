@@ -33,18 +33,22 @@ public class StreamInfoHandler extends JetStreamHandler {
     if(response instanceof ErrFrame) {
       return response;
     }
-    ((PayloadFrame)response).setPayload(buildInfo(frame).getBytes());
+    int idx = frame.getSubject().indexOf("INFO.");
+    if(idx < 0){
+      return new ErrFrame("No stream name supplied");
+    }
+    String streamName = frame.getSubject().substring(idx+"INFO.".length());
+    ((PayloadFrame)response).setPayload(buildInfo(streamName).getBytes());
     return response;
   }
 
-  private String buildInfo(PayloadFrame frame) {
-    StreamInfoList streamInfoList = NamespaceManager.getInstance().getStream(frame.getSubject());
+  private String buildInfo(String subject) {
+    StreamInfoList streamInfoList = NamespaceManager.getInstance().getStream(subject);
     if(streamInfoList == null) {
       return noStreamsError();
     }
     StreamInfoResponse streamInfoResponse = new StreamInfoResponse();
     packResponse(streamInfoResponse, streamInfoList);
-    Gson gson = new Gson();
     return gson.toJson(streamInfoResponse);
   }
 
