@@ -11,4 +11,15 @@ public abstract class JetStreamHandler extends StreamHandler{
   public abstract String getName();
 
   public abstract NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException;
+
+  protected String streamNotFound(String type) {
+    return "{\n" +
+        "  \"type\": \"" + type + "\",\n" +
+        "  \"error\": {\n" +
+        "    \"code\": 404,\n" +
+        "    \"description\": \"stream not found\"\n" +
+        "  }\n" +
+        "}";
+  }
+
 }

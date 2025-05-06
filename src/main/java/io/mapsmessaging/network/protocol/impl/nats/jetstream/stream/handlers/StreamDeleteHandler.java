@@ -46,7 +46,7 @@ public class StreamDeleteHandler extends JetStreamHandler {
     String streamName = parts[4];
     StreamInfoList info = NamespaceManager.getInstance().getStream(streamName);
     if(info == null){
-      result.setPayload(streamNotFound().getBytes());
+      result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_delete_response").getBytes());
       return result;
     }
 
@@ -74,16 +74,6 @@ public class StreamDeleteHandler extends JetStreamHandler {
         "  \"type\": \"io.nats.jetstream.api.v1.stream_delete_response\",\n" +
         "  \"success\": true\n" +
         "}";
-  }
-
-  private String streamNotFound(){
-    return "{\n" +
-        "  \"type\": \"io.nats.jetstream.api.v1.stream_delete_response\",\n" +
-        "  \"error\": {\n" +
-        "    \"code\": 404,\n" +
-        "    \"description\": \"stream not found\"\n" +
-        "  }\n" +
-        "}\n";
   }
 
   private String deletionDisabledMessage(){

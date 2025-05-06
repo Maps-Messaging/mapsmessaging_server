@@ -1,12 +1,32 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 public class StreamUpdateHandler extends JetStreamHandler {
 
@@ -17,6 +37,83 @@ public class StreamUpdateHandler extends JetStreamHandler {
 
   @Override
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
-    return null;
+    String subject = frame.getSubject();
+    NatsFrame msg = buildResponse(subject, frame, sessionState);
+    if(msg instanceof ErrFrame) {
+      return msg;
+    }
+
+    String[] parts = subject.split("\\.");
+    if (parts.length < 5) {
+      return new ErrFrame("Invalid stream create subject");
+    }
+    String streamName = parts[4];
+
+    // Process subjects
+    if (!json.has("subjects") || !json.get("subjects").isJsonArray()) {
+      return new ErrFrame("Missing or invalid 'subjects' array");
+    }
+    PayloadFrame result = (PayloadFrame) msg;
+    StreamInfoList info = NamespaceManager.getInstance().getStream(streamName);
+    if(info == null){
+      result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_delete_response").getBytes());
+      return result;
+    }
+    JsonArray subjectsArray = json.getAsJsonArray("subjects");
+
+    Set<String> newSubjects = new HashSet<>();
+    subjectsArray.forEach(e -> newSubjects.add(e.getAsString()));
+
+    Set<String> currentSubjects = info.getSubjects().stream()
+        .map(s -> s.getDestination().getFullyQualifiedNamespace())
+        .collect(Collectors.toSet());
+
+// Subjects to add
+    Set<String> toAdd = new HashSet<>(newSubjects);
+    toAdd.removeAll(currentSubjects);
+
+// Subjects to remove
+    Set<String> toRemove = new HashSet<>(currentSubjects);
+    toRemove.removeAll(newSubjects);
+
+    List<CompletableFuture<Destination>> futures = new ArrayList<>();
+
+    for (String subjectName : toAdd) {
+      futures.add(constructDestinationFromSubject(streamName, subjectName, sessionState));
+    }
+
+    List<CompletableFuture<Void>> deletes = new ArrayList<>();
+    if(sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
+      for (String subjectName : toRemove) {
+        info.getSubjects().stream()
+            .filter(s -> s.getDestination().getFullyQualifiedNamespace().equals(subjectName))
+            .findFirst()
+            .ifPresent(s -> deletes.add(sessionState.getSession().deleteDestinationImpl(s.getDestination())));
+      }
+    }
+    try {
+      List<CompletableFuture<?>> futureList = new ArrayList<>();
+      futureList.addAll(deletes);
+      futureList.addAll(futures);
+      CompletableFuture<?> all = CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]));
+      all.get(20, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      return new ErrFrame("Timed out waiting for destination creation");
+    } catch (ExecutionException | InterruptedException e) {
+      return new ErrFrame("Failed to create one or more destinations");
+    }
+
+    PayloadFrame payloadFrame = (PayloadFrame) msg;
+    JsonObject responseJson = new JsonObject();
+    responseJson.addProperty("type", "io.nats.jetstream.api.v1.stream_create_response");
+    responseJson.add("config", json.deepCopy());
+    responseJson.addProperty("created", Instant.now().toString());
+    payloadFrame.setPayload(new Gson().toJson(responseJson).getBytes(StandardCharsets.UTF_8));
+    return msg;
+  }
+
+  private CompletableFuture<Destination> constructDestinationFromSubject(String streamName, String subject, SessionState sessionState) {
+    String destinationName = (streamName + "." + subject).replace('.', '/');
+    return sessionState.getSession().findDestination(destinationName, DestinationType.TOPIC);
   }
 }
