@@ -30,11 +30,11 @@ public class StreamListHandler extends JetStreamHandler {
     if(response instanceof ErrFrame) {
       return response;
     }
-    ((PayloadFrame)response).setPayload(buildInfo(frame, json).getBytes());
+    ((PayloadFrame)response).setPayload(buildInfo(json).getBytes());
     return response;
   }
 
-  private String buildInfo(PayloadFrame frame, JsonObject json) {
+  private String buildInfo(JsonObject json) {
     List<StreamEntry> entries = NamespaceManager.getInstance().getStreamEntries();
 
     // Extract pagination values
