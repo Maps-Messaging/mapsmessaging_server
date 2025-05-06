@@ -31,7 +31,7 @@ public class StreamInfoList {
     subjects.remove(subject);
   }
 
-  public int size(){
+  public int size() {
     return subjects.size();
   }
 }

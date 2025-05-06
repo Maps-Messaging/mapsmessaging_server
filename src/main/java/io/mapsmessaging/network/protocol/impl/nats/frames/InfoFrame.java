@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**

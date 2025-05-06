@@ -10,17 +10,17 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.time.Instant;
 
-public class StreamHandler {
+public class BaseStreamApiHandler {
 
   protected final Gson gson;
 
-  public StreamHandler() {
+  public BaseStreamApiHandler() {
     gson = new GsonBuilder()
         .registerTypeAdapter(Instant.class, new InstantAdapter())
         .create();
   }
 
-  protected NatsFrame buildResponse(String subject, PayloadFrame payloadFrame, SessionState sessionState){
+  protected NatsFrame buildResponse(String subject, PayloadFrame payloadFrame, SessionState sessionState) {
     String replyTo = payloadFrame.getReplyTo();
     if (replyTo == null || replyTo.isEmpty()) {
       return new ErrFrame("Missing reply subject");

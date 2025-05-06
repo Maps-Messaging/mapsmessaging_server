@@ -6,10 +6,10 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public abstract class Manager extends StreamHandler {
+public abstract class RequestHandler extends BaseStreamApiHandler {
 
   public abstract String getType();
 
-  public abstract  NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException;
+  public abstract NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException;
 
 }

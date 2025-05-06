@@ -1,18 +1,16 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
 
-import com.google.gson.Gson;
+
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
-import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
 
 import java.io.IOException;
@@ -28,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-public class StreamUpdateHandler extends JetStreamHandler {
+public class StreamUpdateHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
@@ -39,7 +37,7 @@ public class StreamUpdateHandler extends JetStreamHandler {
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
     NatsFrame msg = buildResponse(subject, frame, sessionState);
-    if(msg instanceof ErrFrame) {
+    if (msg instanceof ErrFrame) {
       return msg;
     }
 
@@ -55,7 +53,7 @@ public class StreamUpdateHandler extends JetStreamHandler {
     }
     PayloadFrame result = (PayloadFrame) msg;
     StreamInfoList info = NamespaceManager.getInstance().getStream(streamName);
-    if(info == null){
+    if (info == null) {
       result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_delete_response").getBytes());
       return result;
     }
@@ -83,7 +81,7 @@ public class StreamUpdateHandler extends JetStreamHandler {
     }
 
     List<CompletableFuture<Void>> deletes = new ArrayList<>();
-    if(sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
+    if (sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
       for (String subjectName : toRemove) {
         info.getSubjects().stream()
             .filter(s -> s.getDestination().getFullyQualifiedNamespace().equals(subjectName))
@@ -108,7 +106,7 @@ public class StreamUpdateHandler extends JetStreamHandler {
     responseJson.addProperty("type", "io.nats.jetstream.api.v1.stream_create_response");
     responseJson.add("config", json.deepCopy());
     responseJson.addProperty("created", Instant.now().toString());
-    payloadFrame.setPayload(new Gson().toJson(responseJson).getBytes(StandardCharsets.UTF_8));
+    payloadFrame.setPayload(gson.toJson(responseJson).getBytes(StandardCharsets.UTF_8));
     return msg;
   }
 

@@ -1,18 +1,18 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.info;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
-import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.RequestHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class InfoManager extends Manager {
+public class InfoManager extends RequestHandler {
   @Override
   public String getType() {
     return "$JS.API.INFO";
@@ -21,10 +21,10 @@ public class InfoManager extends Manager {
   @Override
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
     NatsFrame response = super.buildResponse(subject, frame, sessionState);
-    if(response instanceof ErrFrame) {
+    if (response instanceof ErrFrame) {
       return response;
     }
-    ((PayloadFrame)response).setPayload(buildInfo(sessionState).getBytes());
+    ((PayloadFrame) response).setPayload(buildInfo(sessionState).getBytes());
     return response;
   }
 

@@ -1,10 +1,10 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class StreamDeleteHandler extends JetStreamHandler {
+public class StreamDeleteHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
@@ -29,7 +29,7 @@ public class StreamDeleteHandler extends JetStreamHandler {
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
     NatsFrame msg = buildResponse(subject, frame, sessionState);
-    if(msg instanceof ErrFrame) {
+    if (msg instanceof ErrFrame) {
       return msg;
     }
 
@@ -38,14 +38,14 @@ public class StreamDeleteHandler extends JetStreamHandler {
       return new ErrFrame("Invalid stream delete subject");
     }
     PayloadFrame result = (PayloadFrame) msg;
-    if(!sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()){
+    if (!sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
       result.setPayload(deletionDisabledMessage().getBytes());
       return result;
     }
 
     String streamName = parts[4];
     StreamInfoList info = NamespaceManager.getInstance().getStream(streamName);
-    if(info == null){
+    if (info == null) {
       result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_delete_response").getBytes());
       return result;
     }
@@ -69,14 +69,14 @@ public class StreamDeleteHandler extends JetStreamHandler {
     return result;
   }
 
-  private String success(){
+  private String success() {
     return "{\n" +
         "  \"type\": \"io.nats.jetstream.api.v1.stream_delete_response\",\n" +
         "  \"success\": true\n" +
         "}";
   }
 
-  private String deletionDisabledMessage(){
+  private String deletionDisabledMessage() {
     return "{\n" +
         "  \"type\": \"io.nats.jetstream.api.v1.stream_delete_response\",\n" +
         "  \"error\": {\n" +

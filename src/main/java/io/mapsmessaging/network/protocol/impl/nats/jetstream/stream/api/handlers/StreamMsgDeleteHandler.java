@@ -1,17 +1,18 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
+
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class StreamMsgGetHandler extends JetStreamHandler {
+public class StreamMsgDeleteHandler extends JetStreamFrameHandler {
   @Override
   public String getName() {
-    return "MSG.GET";
+    return "MSG.DELETE";
   }
 
   @Override

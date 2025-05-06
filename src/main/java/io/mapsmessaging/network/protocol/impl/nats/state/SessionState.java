@@ -37,7 +37,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private final Map<String, String> destinationMap;
   @Getter
   private final Map<String, List<SubscriptionContext>> subscriptions;
-
+  private final AtomicInteger outstandingPing = new AtomicInteger(0);
   @Getter
   @Setter
   private boolean isVerbose;
@@ -54,9 +54,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private long requestCounter;
   private State currentState;
   @Getter
-  private JetStreamRequestManager jetStreamRequestManager;
-
-  private final AtomicInteger outstandingPing = new AtomicInteger(0);
+  private final JetStreamRequestManager jetStreamRequestManager;
 
   public SessionState(NatsProtocol protocolImpl) {
     this.protocol = protocolImpl;

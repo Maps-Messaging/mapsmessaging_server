@@ -1,12 +1,13 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer;
 
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.RequestHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class ConsumerManager extends Manager {
+public class ConsumerManager extends RequestHandler {
 
   @Override
   public String getType() {

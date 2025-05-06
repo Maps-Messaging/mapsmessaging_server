@@ -1,4 +1,4 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -9,7 +9,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class StreamCreateHandler extends JetStreamHandler {
+public class StreamCreateHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
@@ -33,7 +33,7 @@ public class StreamCreateHandler extends JetStreamHandler {
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
     NatsFrame msg = buildResponse(subject, frame, sessionState);
-    if(msg instanceof ErrFrame) {
+    if (msg instanceof ErrFrame) {
       return msg;
     }
 

@@ -1,4 +1,5 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers.data;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data;
+
 import lombok.Data;
 
 import java.time.Instant;

@@ -7,7 +7,6 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -22,7 +21,7 @@ public class PubListener implements FrameListener {
     PayloadFrame msgFrame = (PayloadFrame) frame;
     if (engine.getJetStreamRequestManager().isJetStreamRequest(msgFrame)) {
       NatsFrame response = engine.getJetStreamRequestManager().process(msgFrame, engine);
-      if(response != null) {
+      if (response != null) {
         engine.send(response);
       }
       return;

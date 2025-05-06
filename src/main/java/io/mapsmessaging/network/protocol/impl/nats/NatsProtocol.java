@@ -41,9 +41,9 @@ public class NatsProtocol extends Protocol {
   @Getter
   private final int maxReceiveSize;
   private final SessionState sessionState;
-  private NatsFrame activeFrame;
   @Getter
   private final NatsConfigDTO natsConfig;
+  private NatsFrame activeFrame;
 
   public NatsProtocol(EndPoint endPoint) {
     super(endPoint);

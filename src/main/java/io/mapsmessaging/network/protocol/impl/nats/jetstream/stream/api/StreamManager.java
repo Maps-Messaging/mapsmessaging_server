@@ -1,21 +1,21 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers.*;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.RequestHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class StreamManager extends Manager {
+public class StreamManager extends RequestHandler {
 
-  private final JetStreamHandler[] handlers = new JetStreamHandler[]{
+  private final JetStreamFrameHandler[] handlers = new JetStreamFrameHandler[]{
       new StreamCreateHandler(),
       new StreamInfoHandler(),
       new StreamDeleteHandler(),
@@ -32,7 +32,7 @@ public class StreamManager extends Manager {
     byte[] data = frame.getPayload();
     JsonObject json = (data != null && data.length > 0) ? JsonParser.parseString(new String(data)).getAsJsonObject() : null;
 
-    for (JetStreamHandler handler : handlers) {
+    for (JetStreamFrameHandler handler : handlers) {
       if (action.startsWith(handler.getName())) {
         return handler.handle(frame, json, sessionState);
       }
@@ -55,7 +55,7 @@ public class StreamManager extends Manager {
     error.addProperty("description", errorMsg);
 
     root.add("error", error);
-    errorFrame.setPayload(new Gson().toJson(root).getBytes());
+    errorFrame.setPayload(gson.toJson(root).getBytes());
     return errorFrame;
   }
 

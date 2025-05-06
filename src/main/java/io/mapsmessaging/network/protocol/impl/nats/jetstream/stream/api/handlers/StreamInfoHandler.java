@@ -1,14 +1,15 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationStats;
-import io.mapsmessaging.network.protocol.impl.nats.frames.*;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamHandler;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers.data.StreamConfig;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers.data.StreamInfoResponse;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.handlers.data.StreamState;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data.StreamConfig;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data.StreamInfoResponse;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data.StreamState;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class StreamInfoHandler extends JetStreamHandler {
+public class StreamInfoHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
@@ -30,21 +31,21 @@ public class StreamInfoHandler extends JetStreamHandler {
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
     NatsFrame response = buildResponse(subject, frame, sessionState);
-    if(response instanceof ErrFrame) {
+    if (response instanceof ErrFrame) {
       return response;
     }
     int idx = frame.getSubject().indexOf("INFO.");
-    if(idx < 0){
+    if (idx < 0) {
       return new ErrFrame("No stream name supplied");
     }
-    String streamName = frame.getSubject().substring(idx+"INFO.".length());
-    ((PayloadFrame)response).setPayload(buildInfo(streamName).getBytes());
+    String streamName = frame.getSubject().substring(idx + "INFO.".length());
+    ((PayloadFrame) response).setPayload(buildInfo(streamName).getBytes());
     return response;
   }
 
   private String buildInfo(String subject) {
     StreamInfoList streamInfoList = NamespaceManager.getInstance().getStream(subject);
-    if(streamInfoList == null) {
+    if (streamInfoList == null) {
       return noStreamsError();
     }
     StreamInfoResponse streamInfoResponse = new StreamInfoResponse();
@@ -52,7 +53,7 @@ public class StreamInfoHandler extends JetStreamHandler {
     return gson.toJson(streamInfoResponse);
   }
 
-  private void packResponse(StreamInfoResponse response,StreamInfoList streamInfoList) {
+  private void packResponse(StreamInfoResponse response, StreamInfoList streamInfoList) {
     buildState(response, streamInfoList);
     response.setConfig(buildConfig(streamInfoList));
   }
@@ -61,7 +62,7 @@ public class StreamInfoHandler extends JetStreamHandler {
     StreamConfig streamConfig = new StreamConfig();
     streamConfig.setName(streamInfoList.getName());
     List<String> subjects = new ArrayList<>();
-    for(StreamInfo info: streamInfoList.getSubjects()){
+    for (StreamInfo info : streamInfoList.getSubjects()) {
       subjects.add(info.getSubject());
     }
     streamConfig.setSubjects(subjects);
@@ -69,7 +70,7 @@ public class StreamInfoHandler extends JetStreamHandler {
     return streamConfig;
   }
 
-  private StreamState buildState(StreamInfoResponse response,StreamInfoList list){
+  private StreamState buildState(StreamInfoResponse response, StreamInfoList list) {
     StreamState aggregateState = new StreamState();
 
     long totalMessages = 0;
@@ -84,7 +85,7 @@ public class StreamInfoHandler extends JetStreamHandler {
       totalMessages += stats.getStoredMessages();
       totalConsumers += destination.getSubscriptionStates().size();
       Date destDate = destination.getResourceProperties().getDate();
-      if(destDate != null && destDate.before(created)) {
+      if (destDate != null && destDate.before(created)) {
         created = destDate;
       }
     }
@@ -108,7 +109,6 @@ public class StreamInfoHandler extends JetStreamHandler {
         "  }\n" +
         "}\n";
   }
-
 
 
 }

@@ -7,7 +7,7 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public abstract class JetStreamHandler extends StreamHandler{
+public abstract class JetStreamFrameHandler extends BaseStreamApiHandler {
   public abstract String getName();
 
   public abstract NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException;
