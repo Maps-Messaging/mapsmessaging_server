@@ -13,7 +13,7 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class StreamManager implements Manager {
+public class StreamManager extends Manager {
 
   private final JetStreamHandler[] handlers = new JetStreamHandler[]{
       new StreamCreateHandler(),

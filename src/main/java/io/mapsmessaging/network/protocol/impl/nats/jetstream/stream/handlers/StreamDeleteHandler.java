@@ -8,7 +8,7 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class StreamDeleteHandler implements JetStreamHandler {
+public class StreamDeleteHandler extends JetStreamHandler {
 
   @Override
   public String getName() {

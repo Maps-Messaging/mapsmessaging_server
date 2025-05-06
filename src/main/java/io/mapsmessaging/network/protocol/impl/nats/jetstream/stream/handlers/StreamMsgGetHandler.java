@@ -8,7 +8,7 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class StreamMsgGetHandler implements JetStreamHandler {
+public class StreamMsgGetHandler extends JetStreamHandler {
   @Override
   public String getName() {
     return "MSG.GET";

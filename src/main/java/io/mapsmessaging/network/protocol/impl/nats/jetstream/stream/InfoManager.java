@@ -12,7 +12,7 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class InfoManager implements Manager {
+public class InfoManager extends Manager {
   @Override
   public String getType() {
     return "$JS.API.INFO";
@@ -20,16 +20,12 @@ public class InfoManager implements Manager {
 
   @Override
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
-    String replyTo = frame.getReplyTo();
-    if (replyTo == null || replyTo.isEmpty()) {
-      return new ErrFrame("Missing reply subject");
+    NatsFrame response = super.buildResponse(subject, frame, sessionState);
+    if(response instanceof ErrFrame) {
+      return response;
     }
-
-    MsgFrame msg = new MsgFrame(0);
-    msg.setSubject(replyTo);
-    msg.setSubscriptionId(sessionState.getJetStreamRequestManager().getSubscriptionId());
-    msg.setPayload(buildInfo(sessionState).getBytes());
-    return msg;
+    ((PayloadFrame)response).setPayload(buildInfo(sessionState).getBytes());
+    return response;
   }
 
   private String buildInfo(SessionState sessionState) {

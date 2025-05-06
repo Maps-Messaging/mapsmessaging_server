@@ -29,4 +29,7 @@ public class NatsConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Ping timeout in milliseconds", example = "60000")
   protected int keepAlive = 60_000;
+
+  @Schema(description = "Root for the NATS streams", example = "/nats", defaultValue = "")
+  protected String namespaceRoot = "";
 }

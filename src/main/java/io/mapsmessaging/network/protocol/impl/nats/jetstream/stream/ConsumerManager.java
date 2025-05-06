@@ -6,7 +6,7 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class ConsumerManager implements Manager {
+public class ConsumerManager extends Manager {
 
   @Override
   public String getType() {

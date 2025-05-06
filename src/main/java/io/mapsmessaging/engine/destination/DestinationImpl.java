@@ -275,6 +275,10 @@ public class DestinationImpl implements BaseDestination {
     }
   }
 
+  public ResourceProperties getResourceProperties() {
+    return resource.getResourceProperties();
+  }
+
   private ScheduledFuture<?> queueReaper() {
     return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 5, 5, TimeUnit.SECONDS);
   }
