@@ -1,4 +1,4 @@
-package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
@@ -8,14 +8,16 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
-public class StreamMsgGetHandler extends JetStreamFrameHandler {
+public class DeleteHandler  extends JetStreamFrameHandler {
+
   @Override
   public String getName() {
-    return "MSG.GET";
+    return "DELETE";
   }
 
   @Override
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     return null;
   }
+
 }
