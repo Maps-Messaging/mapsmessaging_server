@@ -17,7 +17,7 @@ public class StreamListHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "LIST";
+    return "STREAM.LIST";
   }
 
   @Override

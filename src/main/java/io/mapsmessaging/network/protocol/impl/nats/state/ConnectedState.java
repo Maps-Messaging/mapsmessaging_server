@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
 import java.io.IOException;
@@ -90,9 +91,15 @@ public class ConnectedState implements State {
         duplicate = sendToList(duplicate, subContext, engine);
       }
     }
+
+    NamedConsumer named =  engine.getNamedConsumers().get(context.getAlias());
+    if(named != null) {
+      named.receive(message, completionTask);
+    }
     completionTask.run();
     return true;
   }
+
 
   private PayloadFrame sendToList(PayloadFrame duplicate, List<SubscriptionContext> subscriptions, SessionState engine) {
     boolean multiple = subscriptions.size() > 1;

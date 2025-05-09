@@ -22,7 +22,7 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "DELETE";
+    return "STREAM.DELETE";
   }
 
   @Override

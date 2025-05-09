@@ -10,6 +10,7 @@ public class ConsumerManager extends RequestHandler {
     super(new JetStreamFrameHandler[]{
         new CreateHandler(),
         new DeleteHandler(),
+        new DurableCreateHandler(),
         new InfoHandler(),
         new ListHandler(),
         new MessageHandler(),

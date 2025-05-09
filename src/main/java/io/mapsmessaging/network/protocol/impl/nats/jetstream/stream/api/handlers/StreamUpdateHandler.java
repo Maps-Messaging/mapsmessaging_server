@@ -30,7 +30,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "UPDATE";
+    return "STREAM.UPDATE";
   }
 
   @Override

@@ -14,5 +14,4 @@ public class InfoManager extends RequestHandler {
     return "$JS.API.INFO";
   }
 
-
 }

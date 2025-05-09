@@ -1,6 +1,5 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 public class StreamNamesHandler extends JetStreamFrameHandler {
   @Override
   public String getName() {
-    return "NAMES";
+    return "STREAM.NAMES";
   }
 
 
@@ -52,6 +51,6 @@ public class StreamNamesHandler extends JetStreamFrameHandler {
     response.setOffset(offset);
     response.setLimit(limit);
 
-    return new Gson().toJson(response);
+    return gson.toJson(response);
   }
 }

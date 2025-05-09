@@ -1,6 +1,5 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,7 +25,7 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "CREATE";
+    return "STREAM.CREATE";
   }
 
   @Override
@@ -71,7 +70,7 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
     response.addProperty("created", Instant.now().toString());
 
     PayloadFrame payloadFrame = (PayloadFrame) msg;
-    payloadFrame.setPayload(new Gson().toJson(response).getBytes(StandardCharsets.UTF_8));
+    payloadFrame.setPayload(gson.toJson(response).getBytes(StandardCharsets.UTF_8));
     return msg;
   }
 

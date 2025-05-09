@@ -1,6 +1,5 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.info.handler;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
@@ -16,7 +15,7 @@ public class InfoHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "";
+    return "INFO";
   }
 
   @Override
@@ -40,7 +39,7 @@ public class InfoHandler extends JetStreamFrameHandler {
     JsonObject config = new JsonObject();
     config.addProperty("api_prefix", "$JS.API");
     root.add("config", config);
-    return new Gson().toJson(root);
+    return gson.toJson(root);
   }
 
 }

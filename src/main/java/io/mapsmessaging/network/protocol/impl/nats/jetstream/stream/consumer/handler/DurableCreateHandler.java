@@ -12,7 +12,7 @@ public class DurableCreateHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "DURABLE.CREATE";
+    return "CONSUMER.DURABLE.CREATE";
   }
 
   @Override

@@ -3,6 +3,8 @@ package io.mapsmessaging.network.protocol.impl.nats.state;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
@@ -12,6 +14,7 @@ import io.mapsmessaging.network.io.CloseHandler;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocol;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -56,6 +59,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
   @Getter
   private final JetStreamRequestManager jetStreamRequestManager;
 
+  @Getter
+  private final Map<String, NamedConsumer> namedConsumers;
+
   public SessionState(NatsProtocol protocolImpl) {
     this.protocol = protocolImpl;
     destinationMap = new ConcurrentHashMap<>();
@@ -68,6 +74,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
     maxBufferSize = protocolImpl.getMaxReceiveSize();
     protocolImpl.getEndPoint().setCloseHandler(this);
     jetStreamRequestManager = new JetStreamRequestManager();
+    namedConsumers = new ConcurrentHashMap<>();
   }
 
   public synchronized void handleFrame(NatsFrame frame, boolean endOfBuffer) {
@@ -84,6 +91,20 @@ public class SessionState implements CloseHandler, CompletionHandler {
         // Ignore, we have logged the cause and now we are just tidying up
       }
     }
+  }
+
+  private String convertSubject(String subject) {
+    return subject
+        .replace('.', '/')
+        .replace('*', '+')
+        .replace('>', '#');
+  }
+  public boolean addNamedConsumer(NamedConsumer namedConsumer) {
+    if(!namedConsumers.containsKey(namedConsumer.getName())) {
+      namedConsumers.put(namedConsumer.getName(), namedConsumer);
+      return true;
+    }
+    return false;
   }
 
   public void sendConnect(String username, String password) {
@@ -116,7 +137,6 @@ public class SessionState implements CloseHandler, CompletionHandler {
       ErrFrame errFrame = new ErrFrame("Ping timed out");
       errFrame.setCompletionHandler(new CompletionHandler() {
         public void run() {
-          System.out.println("Ping timed out");
           protocol.close();
         }
       });
@@ -153,6 +173,28 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public String getMapping(String destinationName) {
     return destinationMap.getOrDefault(destinationName, destinationName);
+  }
+
+
+  public void subscribe(String subject, String alias, String shareName, ClientAcknowledgement ackManger, int maxReceive){
+    String[] split = subject.split("&");
+    String destination = convertSubject(split[0]);
+    String selector = split.length > 1 ? split[1] : null;
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(destination, ackManger);
+    builder.setAlias(alias);
+    builder.setReceiveMaximum(maxReceive <= 0? protocol.getMaxReceiveSize(): maxReceive);
+    builder.setNoLocalMessages(!isEchoEvents());
+    if (selector != null) builder.setSelector(selector);
+    if (shareName != null) builder.setSharedName(shareName);
+
+    try {
+      createSubscription(builder.build());
+      if (isVerbose()) send(new OkFrame());
+    } catch (IOException ioe) {
+      ErrFrame error = new ErrFrame();
+      error.setError("Error encounted subscribing to " + destination+", "+ioe.getMessage());
+      send(error);
+    }
   }
 
   public void createSubscription(SubscriptionContext context) throws IOException {

@@ -12,7 +12,7 @@ public class MessageHandler  extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "MSG.NEXT";
+    return "CONSUMER.MSG.NEXT";
   }
 
   @Override

@@ -24,7 +24,7 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
 
   @Override
   public String getName() {
-    return "INFO";
+    return "STREAM.INFO";
   }
 
   @Override

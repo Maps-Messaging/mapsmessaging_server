@@ -18,7 +18,7 @@ public abstract class RequestHandler extends BaseStreamApiHandler {
   }
 
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
-    String action = subject.substring("$JS.API.STREAM.".length());
+    String action = subject.substring("$JS.API.".length());
     byte[] data = frame.getPayload();
     JsonObject json = (data != null && data.length > 0) ? JsonParser.parseString(new String(data)).getAsJsonObject() : null;
 

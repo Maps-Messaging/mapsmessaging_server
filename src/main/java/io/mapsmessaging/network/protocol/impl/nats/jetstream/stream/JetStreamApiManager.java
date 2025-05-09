@@ -16,9 +16,9 @@ public class JetStreamApiManager {
 
   public JetStreamApiManager() {
     this.managers = new RequestHandler[]{
+        new InfoManager(),
         new StreamManager(),
-        new ConsumerManager(),
-        new InfoManager()
+        new ConsumerManager()
     };
 
   }

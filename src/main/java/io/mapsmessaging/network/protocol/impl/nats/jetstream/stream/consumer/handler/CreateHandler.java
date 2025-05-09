@@ -1,23 +1,134 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerConfig;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerCreateResponse;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class CreateHandler extends JetStreamFrameHandler {
-
+  private static final String TYPE = "io.nats.jetstream.api.v1.consumer_create_response";
   @Override
   public String getName() {
-    return "CREATE";
+    return "CONSUMER.CREATE";
   }
 
   @Override
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
-    return null;
+    String replyTo = frame.getReplyTo();
+    if (replyTo == null || replyTo.isEmpty()) {
+      return buildError(TYPE,"Missing reply subject", replyTo, sessionState);
+    }
+
+    String subject = frame.getSubject();
+    NatsFrame msg = buildResponse(subject, frame, sessionState);
+    if (msg instanceof ErrFrame) {
+      return msg;
+    }
+
+    String[] parts = subject.split("\\.");
+    if (parts.length < 5) {
+      return buildError(TYPE,"Invalid consume create subject", replyTo, sessionState);
+    }
+
+    String stream = parts[4];
+    StreamInfoList streamInfoList = NamespaceManager.getInstance().getStream(stream);
+    if (streamInfoList == null) {
+      return buildError(TYPE,"Stream '" + stream + "' not found", replyTo, sessionState);
+    }
+
+    ConsumerConfig config = gson.fromJson(json, ConsumerConfig.class);
+    List<StreamInfo> subjectList = streamInfoList.getSubjects();
+    if (config.getFilterSubject() != null) {
+      subjectList = filterSubjects(config.getFilterSubject(), subjectList);
+      if (subjectList.isEmpty()) {
+        return buildError(TYPE,"Invalid filter", replyTo, sessionState);
+      }
+    }
+    String name = "_Ephemeral-" + UUID.randomUUID();
+    // Register with the session state
+    NamedConsumer namedConsumer = new NamedConsumer(name, stream, config, subjectList);
+    if(!sessionState.addNamedConsumer(namedConsumer)) {
+      return buildError(TYPE,"Duplicate consumer name", replyTo, sessionState);
+    }
+
+    // Add the specific subscriptions
+    for(StreamInfo streamInfo : subjectList) {
+      ClientAcknowledgement acknowledgement = getClientAcknowledgement(config);
+      sessionState.subscribe(streamInfo.getSubject(), name, null, acknowledgement, 1); // only allow 1 event at a time here
+    }
+    ConsumerCreateResponse createResponse = new ConsumerCreateResponse();
+    createResponse.setName(name);
+    createResponse.setStream_name(stream);
+    createResponse.setCreated(namedConsumer.getCreated());
+    createResponse.setConfig(config);
+
+    PayloadFrame payloadFrame = (PayloadFrame) msg;
+    payloadFrame.setPayload(gson.toJson(createResponse).getBytes(StandardCharsets.UTF_8));
+    return msg;
+  }
+
+  private ClientAcknowledgement getClientAcknowledgement(ConsumerConfig config) {
+    if(config.getAckPolicy() == null) return ClientAcknowledgement.AUTO;
+    switch (config.getAckPolicy()){
+      case NONE:
+        return ClientAcknowledgement.AUTO;
+
+      case ALL:
+        return ClientAcknowledgement.BLOCK;
+
+      case EXPLICIT:
+        return ClientAcknowledgement.INDIVIDUAL;
+
+      default:
+        return ClientAcknowledgement.AUTO;
+    }
+  }
+
+  private List<StreamInfo> filterSubjects(String filter, List<StreamInfo> subjectList) {
+    return subjectList.stream().filter(streamInfo -> matchesFilter(streamInfo.getSubject(), filter)).collect(Collectors.toList());
+  }
+
+  private boolean matchesFilter(String subject, String filter) {
+    if (filter == null) return true; // No filter means match all
+
+    String[] subjectParts = subject.split("\\.");
+    String[] filterParts = filter.split("\\.");
+
+    int i = 0;
+    while (i < filterParts.length) {
+      String f = filterParts[i];
+
+      if (f.equals(">")) {
+        return true; // matches rest
+      }
+
+      if (i >= subjectParts.length) {
+        return false;
+      }
+
+      if (!f.equals("*") && !f.equals(subjectParts[i])) {
+        return false;
+      }
+
+      i++;
+    }
+
+    return i == subjectParts.length;
   }
 
 }
