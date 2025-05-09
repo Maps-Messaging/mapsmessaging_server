@@ -19,7 +19,11 @@
 package io.mapsmessaging.api;
 
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.tasks.Response;
+
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * This interface represents a class that a user of the messaging engine can use to signal completion of event delivery for a subscription. It contains the ability to interegate
@@ -79,4 +83,6 @@ public interface SubscribedEventManager {
   int getDepth();
 
   int getPending();
+
+  Future<Response> getNext() throws IOException;
 }

@@ -99,6 +99,11 @@ public class SessionState implements CloseHandler, CompletionHandler {
         .replace('*', '+')
         .replace('>', '#');
   }
+
+  public boolean contains(String name){
+    return namedConsumers.containsKey(name);
+  }
+
   public boolean addNamedConsumer(NamedConsumer namedConsumer) {
     if(!namedConsumers.containsKey(namedConsumer.getName())) {
       namedConsumers.put(namedConsumer.getName(), namedConsumer);
@@ -176,35 +181,38 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
 
-  public void subscribe(String subject, String alias, String shareName, ClientAcknowledgement ackManger, int maxReceive){
+  public SubscribedEventManager subscribe(String subject, String alias, String shareName, ClientAcknowledgement ackManger, int maxReceive, boolean sync){
     String[] split = subject.split("&");
     String destination = convertSubject(split[0]);
     String selector = split.length > 1 ? split[1] : null;
     SubscriptionContextBuilder builder = new SubscriptionContextBuilder(destination, ackManger);
     builder.setAlias(alias);
+    builder.setSync(sync);
     builder.setReceiveMaximum(maxReceive <= 0? protocol.getMaxReceiveSize(): maxReceive);
     builder.setNoLocalMessages(!isEchoEvents());
     if (selector != null) builder.setSelector(selector);
     if (shareName != null) builder.setSharedName(shareName);
 
     try {
-      createSubscription(builder.build());
+      SubscribedEventManager manager = createSubscription(builder.build());
       if (isVerbose()) send(new OkFrame());
+      return manager;
     } catch (IOException ioe) {
       ErrFrame error = new ErrFrame();
       error.setError("Error encounted subscribing to " + destination+", "+ioe.getMessage());
       send(error);
     }
+    return null;
   }
 
-  public void createSubscription(SubscriptionContext context) throws IOException {
+  public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
     List<SubscriptionContext> existing = subscriptions.get(context.getDestinationName());
     if (existing != null) {
       existing.add(context);
-      return;
+      return activeSubscriptions.get(context.getAlias());
     }
     existing = new ArrayList<>();
     existing.add(context);
@@ -212,6 +220,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
     SubscribedEventManager subscription = getSession().addSubscription(context);
     activeSubscriptions.put(context.getAlias(), subscription);
     session.resumeState();
+    return subscription;
   }
 
   public void removeSubscription(String subscriptionId) {

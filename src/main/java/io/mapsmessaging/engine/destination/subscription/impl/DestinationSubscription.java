@@ -27,9 +27,11 @@ import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.state.MessageStateManager;
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
+import io.mapsmessaging.engine.destination.tasks.NextMessageTask;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -39,11 +41,16 @@ import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.Future;
+
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * Note: This is a complex class that maintains the state of events for a specific subscription to a specific destination.
  */
+@ToString
 public class DestinationSubscription extends Subscription {
 
   @Getter
@@ -62,7 +69,13 @@ public class DestinationSubscription extends Subscription {
 
   protected DestinationSubscription activeSubscription;
   protected ClientSubscribedEventManager eventStateManager;
+  // <editor-fold desc="Subscription pause/resume functions">
+  @Getter
   private boolean isPaused;
+
+  @Getter
+  @Setter
+  private boolean sync;
 
   protected long messagesIgnored;
   protected long messagesRegistered;
@@ -94,6 +107,7 @@ public class DestinationSubscription extends Subscription {
     messagesIgnored = 0;
     messagesExpired = 0;
     isPaused = false;
+    sync = context.isSync();
     mbean = new SubscriptionJMX(destinationImpl.getTypePath(), this);
     completionTask = new MessageDeliveryCompletionTask(this, acknowledgementController);
     destinationImpl.addSubscription(this);
@@ -199,6 +213,7 @@ public class DestinationSubscription extends Subscription {
     subscriptionStateDTO.setMessagesExpired(messagesExpired);
     subscriptionStateDTO.setMessagesRegistered(messagesRegistered);
     subscriptionStateDTO.setMessagesRolledBack(messagesRolledBack);
+    subscriptionStateDTO.setSync(sync);
 
     subscriptionStateDTO.setPending(messageStateManager.pending());
     subscriptionStateDTO.setSize(messageStateManager.size());
@@ -285,6 +300,40 @@ public class DestinationSubscription extends Subscription {
     ThreadContext.put("protocol", name);
     ThreadContext.put("endpoint", endpoint);
     ThreadContext.put("version", version);
+    callback.sendMessage(destinationImpl, eventStateManager, prepareMessage(message), completionTask);
+    logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
+    ThreadContext.clear();
+  }
+
+  public Future<Response> getNext()  {
+    return destinationImpl.submit( new NextMessageTask(this));
+  }
+
+  public Message rawGetNext() throws IOException {
+    Message message = retrieveNextMessage();
+    if (message != null) {
+      prepareMessage(message);
+    }
+    return message;
+  }
+
+  protected Message retrieveNextMessage() throws IOException {
+    long nextMessageId = messageStateManager.nextMessageId();
+    if (nextMessageId >= 0) {
+      Message message = destinationImpl.getMessage(nextMessageId);
+      if (message != null) {
+        messageStateManager.allocate(message);
+        messagesSent++;
+      } else {
+        messageStateManager.expired(nextMessageId);
+        messagesExpired++;
+      }
+      return message;
+    }
+    return null;
+  }
+
+  private Message prepareMessage(Message message) {
     //
     // Update state in an atomic fashion and then send the message
     //
@@ -293,9 +342,7 @@ public class DestinationSubscription extends Subscription {
     }
     acknowledgementController.sent(message);
     eventStateManager.setSubscription(activeSubscription);
-    callback.sendMessage(destinationImpl, eventStateManager, message, completionTask);
-    logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_SEND, destinationImpl.getFullyQualifiedNamespace(), sessionId, message.getIdentifier());
-    ThreadContext.clear();
+    return message;
   }
 
   @Override
@@ -386,21 +433,10 @@ public class DestinationSubscription extends Subscription {
   public void run() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
     try {
-      //
-      // Now check to see if we can send any more events
-      //
       while (isReady()) {
-        long nextMessageId = messageStateManager.nextMessageId();
-        if (nextMessageId >= 0) {
-          Message message = destinationImpl.getMessage(nextMessageId);
-          if (message != null) {
-            messageStateManager.allocate(message);
-            sendMessage(message);
-            messagesSent++;
-          } else {
-            messageStateManager.expired(nextMessageId);
-            messagesExpired++;
-          }
+        Message message = retrieveNextMessage();
+        if(message != null) {
+          sendMessage(message);
         } else {
           break;
         }
@@ -427,6 +463,7 @@ public class DestinationSubscription extends Subscription {
 
   protected boolean isReady() {
     return (!isPaused &&
+        !sync &&
         !hibernating &&
         messageStateManager.hasAtRestMessages() &&
         !isContextEmpty() &&
@@ -434,11 +471,6 @@ public class DestinationSubscription extends Subscription {
   }
 
   // </editor-fold>
-
-  // <editor-fold desc="Subscription pause/resume functions">
-  public boolean isPaused() {
-    return isPaused;
-  }
 
   @Override
   public void pause() {
@@ -451,18 +483,4 @@ public class DestinationSubscription extends Subscription {
     schedule();
   }
   // </editor-fold>
-
-  @Override
-  public String toString() {
-    return "SessionID:" + sessionId
-        + " Ack Controller:" + acknowledgementController.toString()
-        + " Destination:" + destinationImpl.getFullyQualifiedNamespace()
-        + " MessageState:" + messageStateManager.toString()
-        + " Paused:" + isPaused
-        + " Sent:" + messagesSent
-        + " Acked:" + messagesAcked
-        + " Rolled:" + messagesRolledBack
-        + " Hibernating:" + hibernating
-        + super.toString();
-  }
 }

@@ -20,7 +20,7 @@ public class SubListener implements FrameListener {
       if (engine.isVerbose()) engine.send(new OkFrame());
       return;
     }
-    engine.subscribe(subscribe.getSubject(), subscribe.getSubscriptionId(), subscribe.getShareName(), ClientAcknowledgement.AUTO, 0 );
+    engine.subscribe(subscribe.getSubject(), subscribe.getSubscriptionId(), subscribe.getShareName(), ClientAcknowledgement.AUTO, 0, false );
   }
 }
 

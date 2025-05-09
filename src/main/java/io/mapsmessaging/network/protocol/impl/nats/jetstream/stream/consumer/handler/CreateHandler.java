@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
@@ -13,9 +14,11 @@ import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -61,16 +64,19 @@ public class CreateHandler extends JetStreamFrameHandler {
     }
     String name = "_Ephemeral-" + UUID.randomUUID();
     // Register with the session state
-    NamedConsumer namedConsumer = new NamedConsumer(name, stream, config, subjectList);
-    if(!sessionState.addNamedConsumer(namedConsumer)) {
+    if(sessionState.contains(name)) {
       return buildError(TYPE,"Duplicate consumer name", replyTo, sessionState);
     }
-
+    List<StreamSubscriptionInfo> subscriptionInfoList = new ArrayList<>();
     // Add the specific subscriptions
     for(StreamInfo streamInfo : subjectList) {
       ClientAcknowledgement acknowledgement = getClientAcknowledgement(config);
-      sessionState.subscribe(streamInfo.getSubject(), name, null, acknowledgement, 1); // only allow 1 event at a time here
+      SubscribedEventManager eventManager = sessionState.subscribe(streamInfo.getSubject(), name, null, acknowledgement, 1, true); // only allow 1 event at a time here
+      StreamSubscriptionInfo streamSubscriptionInfo = new StreamSubscriptionInfo(eventManager, streamInfo);
+      subscriptionInfoList.add(streamSubscriptionInfo);
     }
+    NamedConsumer namedConsumer = new NamedConsumer(name, stream, config, subscriptionInfoList);
+
     ConsumerCreateResponse createResponse = new ConsumerCreateResponse();
     createResponse.setName(name);
     createResponse.setStream_name(stream);

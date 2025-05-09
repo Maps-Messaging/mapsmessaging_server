@@ -30,6 +30,7 @@ public class SubscriptionStateDTO {
   private boolean hibernating;
   private int size;
   private int pending;
+  private boolean sync;
 
   private boolean hasMessagesInFlight;
   private boolean hasAtRestMessages;

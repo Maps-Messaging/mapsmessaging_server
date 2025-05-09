@@ -20,7 +20,11 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.tasks.Response;
+
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 
 public class SchemaSubscribedEventManager implements SubscribedEventManager {
 
@@ -63,6 +67,11 @@ public class SchemaSubscribedEventManager implements SubscribedEventManager {
   @Override
   public int getPending() {
     return 0;
+  }
+
+  @Override
+  public Future<Response> getNext() throws IOException {
+    return subscription.getNext();
   }
 
 

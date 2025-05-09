@@ -23,11 +23,17 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.tasks.CreditUpdateTask;
 import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTransactionTask;
+import io.mapsmessaging.engine.tasks.Response;
+import lombok.Setter;
+
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 
 public class ClientSubscribedEventManager implements SubscribedEventManager {
 
   private final DestinationImpl destination;
+  @Setter
   private SubscribedEventManager subscription;
 
   public ClientSubscribedEventManager(DestinationImpl destination, SubscribedEventManager subscription) {
@@ -71,12 +77,13 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
   }
 
   @Override
-  public int getDepth() {
-    return subscription.getDepth();
+  public Future<Response> getNext() throws IOException {
+    return subscription.getNext();
   }
 
-  public void setSubscription(SubscribedEventManager subscription) {
-    this.subscription = subscription;
+  @Override
+  public int getDepth() {
+    return subscription.getDepth();
   }
 
 }

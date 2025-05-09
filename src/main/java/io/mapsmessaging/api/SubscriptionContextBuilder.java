@@ -26,38 +26,26 @@ import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 
 @ToString
+@Getter
 public class SubscriptionContextBuilder {
 
-  @Getter
   private final String name;
-  @Getter
   private final ClientAcknowledgement acknowledgementController;
-  @Getter
   private RetainHandler retainHandler;
-  @Getter
   private CreditHandler creditHandler;
-  @Getter
   private boolean noLocalMessages;
-  @Getter
   private String sharedName;
-  @Getter
   private String alias;
-  @Getter
   private String selector;
-  @Getter
   private QualityOfService qos;
-  @Getter
   private boolean retainAsPublish;
-  @Getter
   private boolean allowOverlap;
-  @Getter
   private boolean isBrowser;
-  @Getter
+  private boolean sync;
   private long subscriptionId;
-  @Getter
   private int receiveMaximum;
-  @Getter
   private DestinationMode mode;
+
 
   public SubscriptionContextBuilder(@NonNull @NotNull String name, @NonNull @NotNull ClientAcknowledgement acknowledgementController) {
     this.name = name;
@@ -72,6 +60,7 @@ public class SubscriptionContextBuilder {
     allowOverlap = false;
     retainAsPublish = false;
     isBrowser = false;
+    sync = false;
     subscriptionId = 0;
     receiveMaximum = 1;
     mode = DestinationMode.NORMAL;
@@ -142,6 +131,11 @@ public class SubscriptionContextBuilder {
     return this;
   }
 
+  public SubscriptionContextBuilder setSync(boolean sync) {
+    this.sync = sync;
+    return this;
+  }
+
   public SubscriptionContext build() {
     SubscriptionContext context = new SubscriptionContext(name);
     context.setAcknowledgementController(acknowledgementController);
@@ -156,6 +150,7 @@ public class SubscriptionContextBuilder {
     context.setReceiveMaximum(receiveMaximum);
     context.setAlias(alias);
     context.setCreditHandler(creditHandler);
+    context.setSync(sync);
     context.setBrowserFlag(isBrowser);
     return context;
   }
