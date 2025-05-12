@@ -1,11 +1,16 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream;
 
+import io.nats.client.*;
 import io.nats.client.api.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -75,7 +80,9 @@ class JetStreamConsumerTest extends JetStreamBaseTest {
         .allowMessageTtl(true)
         .discardPolicy(DiscardPolicy.Old)
         .build();
-    jetStreamManagement.addStream(streamConfiguration);
+    StreamInfo  streamInfo = jetStreamManagement.addStream(streamConfiguration);
+    Assertions.assertNotNull(streamInfo);
+    Assertions.assertEquals(3, streamInfo.getConfig().getSubjects().size());
 
     ConsumerConfiguration.Builder configBuilder = ConsumerConfiguration.builder();
     configBuilder.ackPolicy(AckPolicy.None)
@@ -86,6 +93,7 @@ class JetStreamConsumerTest extends JetStreamBaseTest {
     Pattern pattern = Pattern.compile("^_Ephemeral-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
     assertTrue(pattern.matcher(consumerInfo.getName()).matches(), "Invalid ephemeral consumer name format");
     String consumerName = consumerInfo.getName();
+
     consumerInfo = jetStreamManagement.getConsumerInfo("nats_test", consumerInfo.getName());
     Assertions.assertNotNull(consumerInfo);
     Assertions.assertEquals("nats_test", consumerInfo.getStreamName());
@@ -101,5 +109,64 @@ class JetStreamConsumerTest extends JetStreamBaseTest {
     Assertions.assertTrue(names.isEmpty());
 
   }
+
+
+  @Test
+  void testMapsStyleEphemeralPullConsumer() throws Exception {
+    // Create the stream
+    StreamConfiguration streamConfiguration = StreamConfiguration.builder()
+        .name("nats_test")
+        .addSubjects("topic1", "topic2", "folder1.topic1")
+        .description("test stream")
+        .discardPolicy(DiscardPolicy.Old)
+        .allowMessageTtl(true)
+        .build();
+    jetStreamManagement.addStream(streamConfiguration);
+
+    // Create ephemeral pull consumer (by subscribing BEFORE publishing)
+    PullSubscribeOptions pullOpts = PullSubscribeOptions.builder()
+        .stream("nats_test")
+        .build();
+
+    JetStreamSubscription sub = jetStream.subscribe(null, pullOpts);
+
+    // Now publish 10 messages — they'll be retained because the consumer exists
+    for (int x = 0; x < 10; x++) {
+      natsConnection.publish("folder1.topic1", ("payload_" + x).getBytes());
+    }
+
+    // Pull and fetch messages
+    sub.pull(PullRequestOptions.builder(10).expiresIn(Duration.ofSeconds(2)).build());
+    List<Message> msgs = sub.fetch(10, Duration.ofSeconds(2));
+    Assertions.assertNotNull(msgs);
+    Assertions.assertEquals(10, msgs.size());
+
+    Set<String> payloads = msgs.stream()
+        .map(m -> new String(m.getData()))
+        .collect(Collectors.toSet());
+
+    for (Message msg : msgs) {
+      msg.ack();
+    }
+
+    for (int x = 0; x < 10; x++) {
+      Assertions.assertTrue(payloads.contains("payload_" + x), "Missing payload_" + x);
+    }
+
+    // Cleanup: find and delete ephemeral consumer
+    List<String> consumers = jetStreamManagement.getConsumerNames("nats_test");
+    Optional<String> ephemeralName = consumers.stream()
+        .filter(n -> n.startsWith("_Ephemeral-"))
+        .findFirst();
+
+    Assertions.assertTrue(ephemeralName.isPresent(), "Ephemeral consumer not found");
+
+    boolean deleted = jetStreamManagement.deleteConsumer("nats_test", ephemeralName.get());
+    Assertions.assertTrue(deleted);
+
+    Assertions.assertThrowsExactly(JetStreamApiException.class,
+        () -> jetStreamManagement.getConsumerInfo("nats_test", ephemeralName.get()));
+  }
+
 
 }

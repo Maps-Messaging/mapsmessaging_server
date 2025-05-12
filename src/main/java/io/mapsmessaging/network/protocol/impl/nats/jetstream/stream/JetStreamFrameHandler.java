@@ -36,7 +36,7 @@ public abstract class JetStreamFrameHandler extends BaseStreamApiHandler {
 
     PayloadFrame frame = new MsgFrame(0);
     frame.setSubject(replyTo);
-    frame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSubscriptionId());
+    frame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
     frame.setPayload(gson.toJson(root).getBytes(StandardCharsets.UTF_8));
     return frame;
   }

@@ -7,6 +7,7 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -262,4 +263,35 @@ public class SessionState implements CloseHandler, CompletionHandler {
       outstandingPing.set(0);
     }
   }
+
+  public PayloadFrame buildPayloadFrame(Message message, String destinationName) {
+    PayloadFrame msg;
+    if (isHeaders() && !message.getDataMap().isEmpty()) {
+      msg = new HMsgFrame(getMaxBufferSize());
+      StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
+      for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
+        sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
+      }
+      sb.append("\r\n");
+      ((HMsgFrame) msg).setHeaderBytes(sb.toString().getBytes());
+    } else {
+      msg = new MsgFrame(getMaxBufferSize());
+    }
+    byte[] payloadData = message.getOpaqueData();
+    msg.setSubject(mapMqttTopicToNatsSubject(destinationName));
+    if (message.getCorrelationData() != null) {
+      msg.setReplyTo(new String(message.getCorrelationData()));
+    }
+    msg.setPayloadSize(payloadData.length);
+    msg.setPayload(payloadData);
+    return msg;
+  }
+
+  private String mapMqttTopicToNatsSubject(String mqttTopic) {
+    return mqttTopic
+        .replace('/', '.')
+        .replace('+', '*')
+        .replace('#', '>');
+  }
+
 }

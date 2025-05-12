@@ -24,6 +24,8 @@ class JetStreamBaseTest extends BaseTestConfig {
     Options options = new Options.Builder()
         .server("nats://localhost:4222")
         .connectionName("JetStreamTest")
+        .requestCleanupInterval(Duration.ofSeconds(10))
+        .connectionTimeout(Duration.ofSeconds(5))
         .noNoResponders()
         .build();
 
@@ -39,7 +41,7 @@ class JetStreamBaseTest extends BaseTestConfig {
 
   @AfterEach
   void teardownJetStream() throws Exception {
-    if (natsConnection != null) {
+    if (natsConnection != null && natsConnection.getStatus() != Connection.Status.CLOSED) {
       natsConnection.close();
     }
   }

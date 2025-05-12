@@ -6,11 +6,20 @@ import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
 public class InstantAdapter extends TypeAdapter<Instant> {
+  private static final DateTimeFormatter formatter =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.nnnnnnnX")
+          .withZone(java.time.ZoneOffset.UTC);
+
   @Override
   public void write(JsonWriter out, Instant value) throws IOException {
-    out.value(value.toString()); // ISO-8601
+    if (value == null) {
+      out.nullValue();
+    } else {
+      out.value(formatter.format(value));
+    }
   }
 
   @Override

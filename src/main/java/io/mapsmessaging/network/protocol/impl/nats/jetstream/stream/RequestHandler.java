@@ -28,7 +28,7 @@ public abstract class RequestHandler extends BaseStreamApiHandler {
       }
     }
     return createError(sessionState.getJetStreamRequestManager().getJetSubject(),
-        sessionState.getJetStreamRequestManager().getSubscriptionId(),
+        sessionState.getJetStreamRequestManager().getSid(frame.getReplyTo()),
         "Function not implemented: " + subject);
   }
 

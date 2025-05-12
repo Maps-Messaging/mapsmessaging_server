@@ -1,7 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer;
 
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.MessageResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerConfig;
@@ -36,8 +36,8 @@ public class NamedConsumer {
     index = 0;
   }
 
-  public synchronized void receive(Message event, Runnable callback) {
-    events.add(new Event(event, callback));
+  public synchronized void receive(Message event, String destinationName,  Runnable callback) {
+    events.add(new Event(event, destinationName, callback));
   }
 
   public synchronized Event poll() {
@@ -52,14 +52,14 @@ public class NamedConsumer {
     return events.isEmpty();
   }
 
-  public synchronized Message getNextMessage() throws IOException {
+  public synchronized MessageEvent getNextMessage() throws IOException {
     for(int x=0;x<streams.size();x++) {
       Future<Response> response = streams.get(index).getSubscribedEventManager().getNext();
       try {
         Response  val = response.get(100, TimeUnit.MILLISECONDS);
         if(val instanceof MessageResponse){
           MessageResponse messageResponse = (MessageResponse)val;
-          Message msg = messageResponse.getResponse();
+          MessageEvent msg = messageResponse.getResponse();
           if(msg != null){
             return msg;
           }

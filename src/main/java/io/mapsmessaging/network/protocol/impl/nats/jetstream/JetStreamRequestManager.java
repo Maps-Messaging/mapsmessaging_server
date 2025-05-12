@@ -9,13 +9,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JetStreamRequestManager {
   private final JetStreamApiManager jetStreamApiManager;
 
-  @Getter
-  @Setter
-  private String subscriptionId;
+  private Map<String, String> subscriptionId = new ConcurrentHashMap<String, String>();
 
   @Getter
   @Setter
@@ -23,6 +23,20 @@ public class JetStreamRequestManager {
 
   public JetStreamRequestManager() {
     jetStreamApiManager = new JetStreamApiManager();
+  }
+
+
+  public void registerSid(String key, String sid){
+    subscriptionId.put(key, sid);
+  }
+
+  public String getSid(String reply){
+    for(Map.Entry<String, String> entry : subscriptionId.entrySet()){
+      if(reply.startsWith(entry.getKey())){
+        return entry.getValue();
+      }
+    }
+    return "";
   }
 
   public boolean isJetStreamRequest(PayloadFrame frame) {

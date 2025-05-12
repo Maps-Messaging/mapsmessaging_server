@@ -57,26 +57,7 @@ public class ConnectedState implements State {
 
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    PayloadFrame msg;
-    if (engine.isHeaders() && !message.getDataMap().isEmpty()) {
-      msg = new HMsgFrame(engine.getMaxBufferSize());
-      StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
-      for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
-        sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
-      }
-      sb.append("\r\n");
-      ((HMsgFrame) msg).setHeaderBytes(sb.toString().getBytes());
-    } else {
-      msg = new MsgFrame(engine.getMaxBufferSize());
-    }
-    byte[] payloadData = message.getOpaqueData();
-    msg.setSubject(mapMqttTopicToNatsSubject(destinationName));
-    if (message.getCorrelationData() != null) {
-      msg.setReplyTo(new String(message.getCorrelationData()));
-    }
-    msg.setPayloadSize(payloadData.length);
-    msg.setPayload(payloadData);
-
+    PayloadFrame msg = engine.buildPayloadFrame(message, destinationName);
     // This handles non-wildcard subscriptions
     List<SubscriptionContext> subscriptions = engine.getSubscriptions().get(destinationName);
     PayloadFrame duplicate = msg;
@@ -94,7 +75,7 @@ public class ConnectedState implements State {
 
     NamedConsumer named =  engine.getNamedConsumers().get(context.getAlias());
     if(named != null) {
-      named.receive(message, completionTask);
+      named.receive(message, destinationName, completionTask);
     }
     completionTask.run();
     return true;
@@ -111,14 +92,6 @@ public class ConnectedState implements State {
     }
     return duplicate;
   }
-
-  private String mapMqttTopicToNatsSubject(String mqttTopic) {
-    return mqttTopic
-        .replace('/', '.')
-        .replace('+', '*')
-        .replace('#', '>');
-  }
-
 
   static class MessageCompletionHandler implements CompletionHandler {
 

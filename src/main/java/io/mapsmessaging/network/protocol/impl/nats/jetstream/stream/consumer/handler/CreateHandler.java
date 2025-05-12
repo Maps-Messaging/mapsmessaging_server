@@ -8,8 +8,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerConfig;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerCreateResponse;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
@@ -19,6 +18,7 @@ import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInf
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -54,6 +54,14 @@ public class CreateHandler extends JetStreamFrameHandler {
       return buildError(TYPE,"Stream '" + stream + "' not found", replyTo, sessionState);
     }
 
+    String name = "";
+    if(parts.length == 6){
+      name = parts[5];
+    }
+    else{
+      name = "_Ephemeral-" + UUID.randomUUID();
+    }
+
     ConsumerConfig config = gson.fromJson(json, ConsumerConfig.class);
     List<StreamInfo> subjectList = streamInfoList.getSubjects();
     if (config.getFilterSubject() != null) {
@@ -62,7 +70,6 @@ public class CreateHandler extends JetStreamFrameHandler {
         return buildError(TYPE,"Invalid filter", replyTo, sessionState);
       }
     }
-    String name = "_Ephemeral-" + UUID.randomUUID();
     // Register with the session state
     if(sessionState.contains(name)) {
       return buildError(TYPE,"Duplicate consumer name", replyTo, sessionState);
@@ -76,15 +83,25 @@ public class CreateHandler extends JetStreamFrameHandler {
       subscriptionInfoList.add(streamSubscriptionInfo);
     }
     NamedConsumer namedConsumer = new NamedConsumer(name, stream, config, subscriptionInfoList);
-
+    config.setAckPolicy(AckPolicy.EXPLICIT);
+    config.setReplayPolicy(ReplayPolicy.INSTANT);
+    config.setDeliverPolicy(DeliverPolicy.ALL);
+    config.setMaxDeliver(-1);
+    config.setMaxAckPending(1000);
+    sessionState.getNamedConsumers().put(name, namedConsumer);
     ConsumerCreateResponse createResponse = new ConsumerCreateResponse();
     createResponse.setName(name);
     createResponse.setStream_name(stream);
+    createResponse.setDelivered(new ConsumerCreateResponse.DeliveryInfo(0, 0));
+    createResponse.setAck_floor(new ConsumerCreateResponse.AckFloor(0, 0));
+
     createResponse.setCreated(namedConsumer.getCreated());
+    createResponse.setTs(new Date(System.currentTimeMillis()).toInstant());
+    config.setName(name);
     createResponse.setConfig(config);
 
     PayloadFrame payloadFrame = (PayloadFrame) msg;
-    payloadFrame.setPayload(gson.toJson(createResponse).getBytes(StandardCharsets.UTF_8));
+    payloadFrame.setPayload((gson.toJson(createResponse)).getBytes(StandardCharsets.UTF_8));
     return msg;
   }
 

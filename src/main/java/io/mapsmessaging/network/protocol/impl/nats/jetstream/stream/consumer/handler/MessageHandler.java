@@ -1,7 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
@@ -33,8 +33,8 @@ public class MessageHandler  extends JetStreamFrameHandler {
       return buildError(TYPE,"Invalid MSG.NEXT subject", replyTo, sessionState);
     }
 
-    String stream = parts[4];
-    String consumerName = parts[5];
+    String stream = parts[5];
+    String consumerName = parts[6];
 
     NamedConsumer consumer = sessionState.getNamedConsumers().get(consumerName);
     if (consumer == null) {
@@ -46,19 +46,18 @@ public class MessageHandler  extends JetStreamFrameHandler {
     NextRequest request = gson.fromJson(json, NextRequest.class);
 
     for (int i = 0; i < request.getBatch(); i++) {
-      Message msg = consumer.getNextMessage();
-      // Send message to the consumer
-
+      MessageEvent msg = consumer.getNextMessage();
       if (msg != null) {
-        // pack up the MsgFrame to send
-
+        PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), msg.getDestinationName());
+        String replyToName = "ack."+consumer.getStreamName()+"."+consumer.getName()+"."+msg.getDestinationName()+"."+msg.getMessage().getIdentifier();
+        payloadFrame.setReplyTo(replyToName);
+        payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
+        sessionState.send(payloadFrame);
       } else if (!request.isNo_wait()) {
-        // TODO: enqueue expiration/delivery wait logic if needed
-
         break;
       }
     }
 
-    return null; // already wrote frames directly
+    return null;
   }
 }

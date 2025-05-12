@@ -28,7 +28,7 @@ public class BaseStreamApiHandler {
 
     MsgFrame msg = new MsgFrame(0);
     msg.setSubject(replyTo);
-    msg.setSubscriptionId(sessionState.getJetStreamRequestManager().getSubscriptionId());
+    msg.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
     return msg;
   }
 }

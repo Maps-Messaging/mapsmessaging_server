@@ -1,16 +1,16 @@
 package io.mapsmessaging.engine.tasks;
 
-import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.MessageEvent;
 
 public class MessageResponse implements Response {
 
-  private final Message response;
+  private final MessageEvent response;
 
-  public MessageResponse(Message value) {
+  public MessageResponse(MessageEvent value) {
     response = value;
   }
 
-  public Message getResponse() {
+  public MessageEvent getResponse() {
     return response;
   }
 

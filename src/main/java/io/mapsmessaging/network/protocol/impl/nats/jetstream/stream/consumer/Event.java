@@ -9,5 +9,6 @@ import lombok.Data;
 @Data
 public class Event{
   private final Message message;
+  private final String destinationName;
   private final Runnable completionTask;
 }

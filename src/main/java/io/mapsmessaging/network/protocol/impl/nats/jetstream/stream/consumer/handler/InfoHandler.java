@@ -54,7 +54,7 @@ public class InfoHandler extends JetStreamFrameHandler {
 
     PayloadFrame success = new MsgFrame(0);
     success.setSubject(replyTo);
-    success.setSubscriptionId(sessionState.getJetStreamRequestManager().getSubscriptionId());
+    success.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
     success.setPayload(gson.toJson(response).getBytes(StandardCharsets.UTF_8));
     return success;
   }
