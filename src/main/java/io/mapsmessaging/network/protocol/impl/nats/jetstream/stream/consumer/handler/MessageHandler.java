@@ -49,7 +49,7 @@ public class MessageHandler  extends JetStreamFrameHandler {
       MessageEvent msg = consumer.getNextMessage();
       if (msg != null) {
         PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), msg.getDestinationName());
-        String replyToName = "ack."+consumer.getStreamName()+"."+consumer.getName()+"."+msg.getDestinationName()+"."+msg.getMessage().getIdentifier();
+        String replyToName = " $JS.ACK."+consumer.getStreamName()+"."+consumer.getName()+"."+msg.getDestinationName()+"."+msg.getMessage().getIdentifier();
         payloadFrame.setReplyTo(replyToName);
         payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
         sessionState.send(payloadFrame);

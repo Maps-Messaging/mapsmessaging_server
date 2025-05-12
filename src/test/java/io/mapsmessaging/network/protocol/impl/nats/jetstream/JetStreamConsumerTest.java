@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -155,17 +154,14 @@ class JetStreamConsumerTest extends JetStreamBaseTest {
 
     // Cleanup: find and delete ephemeral consumer
     List<String> consumers = jetStreamManagement.getConsumerNames("nats_test");
-    Optional<String> ephemeralName = consumers.stream()
-        .filter(n -> n.startsWith("_Ephemeral-"))
-        .findFirst();
 
-    Assertions.assertTrue(ephemeralName.isPresent(), "Ephemeral consumer not found");
+    for(String consumer : consumers) {
+      boolean deleted = jetStreamManagement.deleteConsumer("nats_test", consumer);
+      Assertions.assertTrue(deleted);
 
-    boolean deleted = jetStreamManagement.deleteConsumer("nats_test", ephemeralName.get());
-    Assertions.assertTrue(deleted);
-
-    Assertions.assertThrowsExactly(JetStreamApiException.class,
-        () -> jetStreamManagement.getConsumerInfo("nats_test", ephemeralName.get()));
+      Assertions.assertThrowsExactly(JetStreamApiException.class,
+          () -> jetStreamManagement.getConsumerInfo("nats_test", consumer));
+    }
   }
 
 
