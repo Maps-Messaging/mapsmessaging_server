@@ -3,14 +3,19 @@ package io.mapsmessaging.network.protocol.impl.nats.state;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.CloseHandler;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocol;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,7 +41,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private final Map<String, String> destinationMap;
   @Getter
   private final Map<String, List<SubscriptionContext>> subscriptions;
-
+  private final AtomicInteger outstandingPing = new AtomicInteger(0);
   @Getter
   @Setter
   private boolean isVerbose;
@@ -52,8 +57,11 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private boolean isValid;
   private long requestCounter;
   private State currentState;
+  @Getter
+  private final JetStreamRequestManager jetStreamRequestManager;
 
-  private final AtomicInteger outstandingPing = new AtomicInteger(0);
+  @Getter
+  private final Map<String, NamedConsumer> namedConsumers;
 
   public SessionState(NatsProtocol protocolImpl) {
     this.protocol = protocolImpl;
@@ -66,6 +74,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
     currentState = new InitialServerState();
     maxBufferSize = protocolImpl.getMaxReceiveSize();
     protocolImpl.getEndPoint().setCloseHandler(this);
+    jetStreamRequestManager = new JetStreamRequestManager();
+    namedConsumers = new ConcurrentHashMap<>();
   }
 
   public synchronized void handleFrame(NatsFrame frame, boolean endOfBuffer) {
@@ -82,6 +92,25 @@ public class SessionState implements CloseHandler, CompletionHandler {
         // Ignore, we have logged the cause and now we are just tidying up
       }
     }
+  }
+
+  private String convertSubject(String subject) {
+    return subject
+        .replace('.', '/')
+        .replace('*', '+')
+        .replace('>', '#');
+  }
+
+  public boolean contains(String name){
+    return namedConsumers.containsKey(name);
+  }
+
+  public boolean addNamedConsumer(NamedConsumer namedConsumer) {
+    if(!namedConsumers.containsKey(namedConsumer.getName())) {
+      namedConsumers.put(namedConsumer.getName(), namedConsumer);
+      return true;
+    }
+    return false;
   }
 
   public void sendConnect(String username, String password) {
@@ -114,7 +143,6 @@ public class SessionState implements CloseHandler, CompletionHandler {
       ErrFrame errFrame = new ErrFrame("Ping timed out");
       errFrame.setCompletionHandler(new CompletionHandler() {
         public void run() {
-          System.out.println("Ping timed out");
           protocol.close();
         }
       });
@@ -130,6 +158,10 @@ public class SessionState implements CloseHandler, CompletionHandler {
     isValid = false;
     CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
     try {
+      activeSubscriptions.clear();
+      namedConsumers.clear();
+      jetStreamRequestManager.close();
+      subscriptions.clear();
       future.get();
     } catch (InterruptedException | ExecutionException e) {
       Thread.currentThread().interrupt();
@@ -153,14 +185,39 @@ public class SessionState implements CloseHandler, CompletionHandler {
     return destinationMap.getOrDefault(destinationName, destinationName);
   }
 
-  public void createSubscription(SubscriptionContext context) throws IOException {
+
+  public SubscribedEventManager subscribe(String subject, String alias, String shareName, ClientAcknowledgement ackManger, int maxReceive, boolean sync){
+    String[] split = subject.split("&");
+    String destination = convertSubject(split[0]);
+    String selector = split.length > 1 ? split[1] : null;
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(destination, ackManger);
+    builder.setAlias(alias);
+    builder.setSync(sync);
+    builder.setReceiveMaximum(maxReceive <= 0? protocol.getMaxReceiveSize(): maxReceive);
+    builder.setNoLocalMessages(!isEchoEvents());
+    if (selector != null) builder.setSelector(selector);
+    if (shareName != null) builder.setSharedName(shareName);
+
+    try {
+      SubscribedEventManager manager = createSubscription(builder.build());
+      if (isVerbose()) send(new OkFrame());
+      return manager;
+    } catch (IOException ioe) {
+      ErrFrame error = new ErrFrame();
+      error.setError("Error encounted subscribing to " + destination+", "+ioe.getMessage());
+      send(error);
+    }
+    return null;
+  }
+
+  public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
     List<SubscriptionContext> existing = subscriptions.get(context.getDestinationName());
     if (existing != null) {
       existing.add(context);
-      return;
+      return activeSubscriptions.get(context.getAlias());
     }
     existing = new ArrayList<>();
     existing.add(context);
@@ -168,6 +225,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
     SubscribedEventManager subscription = getSession().addSubscription(context);
     activeSubscriptions.put(context.getAlias(), subscription);
     session.resumeState();
+    return subscription;
   }
 
   public void removeSubscription(String subscriptionId) {
@@ -209,4 +267,35 @@ public class SessionState implements CloseHandler, CompletionHandler {
       outstandingPing.set(0);
     }
   }
+
+  public PayloadFrame buildPayloadFrame(Message message, String destinationName) {
+    PayloadFrame msg;
+    if (isHeaders() && !message.getDataMap().isEmpty()) {
+      msg = new HMsgFrame(getMaxBufferSize());
+      StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
+      for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
+        sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
+      }
+      sb.append("\r\n");
+      ((HMsgFrame) msg).setHeaderBytes(sb.toString().getBytes());
+    } else {
+      msg = new MsgFrame(getMaxBufferSize());
+    }
+    byte[] payloadData = message.getOpaqueData();
+    msg.setSubject(mapMqttTopicToNatsSubject(destinationName));
+    if (message.getCorrelationData() != null) {
+      msg.setReplyTo(new String(message.getCorrelationData()));
+    }
+    msg.setPayloadSize(payloadData.length);
+    msg.setPayload(payloadData);
+    return msg;
+  }
+
+  private String mapMqttTopicToNatsSubject(String mqttTopic) {
+    return mqttTopic
+        .replace('/', '.')
+        .replace('+', '*')
+        .replace('#', '>');
+  }
+
 }

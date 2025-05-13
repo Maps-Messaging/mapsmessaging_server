@@ -90,7 +90,7 @@ class NatsJetStreamLikeTest extends BaseTestConfig {
   @Order(3)
   void testMsgWithInboxReplyRouting() throws Exception {
     String subject = "js.inbox.reply";
-    String replyTo = "_INBOX." + UUID.randomUUID();
+    String replyTo = "INBOX." + UUID.randomUUID();
 
     CompletableFuture<String> inboxResponder = new CompletableFuture<>();
 

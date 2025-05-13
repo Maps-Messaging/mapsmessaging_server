@@ -154,8 +154,12 @@ public class Session {
   }
 
   public CompletableFuture<Void> deleteDestination(Destination destination) {
+    return deleteDestinationImpl(destination.destinationImpl);
+  }
+
+  public CompletableFuture<Void> deleteDestinationImpl(DestinationImpl destination) {
     CompletableFuture<Void> result = new CompletableFuture<>();
-    CompletableFuture<DestinationImpl> future = sessionImpl.deleteDestination(destination.destinationImpl);
+    CompletableFuture<DestinationImpl> future = sessionImpl.deleteDestination(destination);
     future.thenApply(deleted -> {
       if (deleted != null) {
         destinations.remove(deleted.getFullyQualifiedNamespace());

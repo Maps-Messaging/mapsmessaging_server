@@ -5,14 +5,41 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamApiManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JetStreamRequestManager {
   private final JetStreamApiManager jetStreamApiManager;
 
+  private Map<String, String> subscriptionId = new ConcurrentHashMap<>();
+
+  @Getter
+  @Setter
+  private String jetSubject;
+
   public JetStreamRequestManager() {
     jetStreamApiManager = new JetStreamApiManager();
+  }
+
+  public void close(){
+    subscriptionId.clear();
+  }
+
+  public void registerSid(String key, String sid){
+    subscriptionId.put(key, sid);
+  }
+
+  public String getSid(String reply){
+    for(Map.Entry<String, String> entry : subscriptionId.entrySet()){
+      if(reply.startsWith(entry.getKey())){
+        return entry.getValue();
+      }
+    }
+    return "";
   }
 
   public boolean isJetStreamRequest(PayloadFrame frame) {
@@ -26,7 +53,7 @@ public class JetStreamRequestManager {
   public NatsFrame process(PayloadFrame frame, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
 
-    if (subject.startsWith("$JS.API.")) {
+    if (subject.startsWith("$JS.")) {
       if (!sessionState.getProtocol().getNatsConfig().isEnableStreams()) {
         return new ErrFrame("Streams are disabled");
       }

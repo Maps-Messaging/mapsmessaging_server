@@ -25,6 +25,9 @@ import io.mapsmessaging.engine.session.SessionImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
+
+import io.mapsmessaging.engine.tasks.Response;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,6 +97,8 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
   public abstract String getSessionId();
 
   public abstract void sendMessage(Message message);
+
+  public abstract Future<Response> getNext() throws IOException;
 
   public abstract String getAcknowledgementType();
 

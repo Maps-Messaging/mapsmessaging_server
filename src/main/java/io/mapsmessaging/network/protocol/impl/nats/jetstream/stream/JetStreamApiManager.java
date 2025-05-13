@@ -3,25 +3,30 @@ package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.StreamManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.ConsumerManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.info.InfoManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.transactions.TransactionManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
 
 public class JetStreamApiManager {
 
-  private final Manager[] managers;
+  private final RequestHandler[] managers;
 
   public JetStreamApiManager() {
-    this.managers = new Manager[]{
+    this.managers = new RequestHandler[]{
+        new InfoManager(),
         new StreamManager(),
         new ConsumerManager(),
-        new InfoManager()
+        new TransactionManager()
     };
 
   }
 
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
-    for (Manager manager : managers) {
+    for (RequestHandler manager : managers) {
       if (subject.startsWith(manager.getType())) {
         return manager.process(subject, frame, sessionState);
       }

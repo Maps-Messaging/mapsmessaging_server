@@ -45,5 +45,6 @@ public class SubscriptionContextDTO {
   private boolean retainAsPublish;
   private boolean allowOverlap;
   private boolean browser;
+  private boolean sync;
 
 }

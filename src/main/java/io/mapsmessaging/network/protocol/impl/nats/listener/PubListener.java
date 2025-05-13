@@ -7,7 +7,6 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.JetStreamRequestManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -17,16 +16,14 @@ import java.util.concurrent.CompletableFuture;
 
 public class PubListener implements FrameListener {
 
-  private final JetStreamRequestManager requestManager = new JetStreamRequestManager();
-
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     PayloadFrame msgFrame = (PayloadFrame) frame;
-    if (requestManager.isJetStreamRequest(msgFrame)) {
-      ErrFrame errFrame = new ErrFrame();
-      errFrame.setError("Jetstream is not currently supported");
-      errFrame.setCallback(() -> engine.getProtocol().close());
-      engine.send(errFrame);
+    if (engine.getJetStreamRequestManager().isJetStreamRequest(msgFrame)) {
+      NatsFrame response = engine.getJetStreamRequestManager().process(msgFrame, engine);
+      if (response != null) {
+        engine.send(response);
+      }
       return;
     }
     String destName = convertSubject(msgFrame.getSubject());

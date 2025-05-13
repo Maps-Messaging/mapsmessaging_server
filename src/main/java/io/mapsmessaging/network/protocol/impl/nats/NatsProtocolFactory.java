@@ -22,13 +22,7 @@ public class NatsProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public ServerPacket getInitialPacket() {
-    InfoFrame infoFrame = new InfoFrame(1024 * 1024);
-    infoFrame.setVersion("2.0");
-    infoFrame.setServerId(MessageDaemon.getInstance().getUuid().toString());
-    infoFrame.setHost(MessageDaemon.getInstance().getHostname());
-    infoFrame.setAuthRequired(false);//(AuthManager.getInstance().isAuthenticationEnabled());
-    infoFrame.setTlsRequired(false);
-    return infoFrame;
+    return new InfoFrame(1024 * 1024);
   }
 
   @Override

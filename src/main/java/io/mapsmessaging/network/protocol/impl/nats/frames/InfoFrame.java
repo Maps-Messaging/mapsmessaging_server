@@ -1,34 +1,40 @@
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
+import com.google.gson.Gson;
+import io.mapsmessaging.BuildInfo;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.Packet;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Parses the incoming NATS INFO frame from server.
- */
 @Getter
 @Setter
 @ToString
 public class InfoFrame extends NatsFrame {
 
-  private String serverId;
-  private String version;
-  private String host;
-  private int port;
-  private int maxPayloadLength;
-  private boolean tlsRequired = false;
-  private boolean authRequired = false;
-  private boolean headers = true;
+  private static final AtomicLong counter = new AtomicLong();
+  private static final Gson gson = new Gson();
 
+  private InfoData infoData;
 
   public InfoFrame(int maxPayloadLength) {
     super();
-    this.maxPayloadLength = maxPayloadLength;
+    this.infoData = new InfoData();
+    this.infoData.setClientId(counter.incrementAndGet());
+    this.infoData.setMaxPayloadLength(maxPayloadLength);
+    infoData.setVersion("2.11.3");
+    infoData.setProto(1);
+    infoData.setHost("localhost");
+    infoData.setPort(4222);
+    infoData.setHeaders(true);
+    infoData.setClientIp("127.0.0.1");
+    infoData.setServerId(MessageDaemon.getInstance().getUuid().toString());
+    infoData.setServerName(MessageDaemon.getInstance().getId());
+    infoData.setJava(System.getProperty("java.version"));
   }
 
   @Override
@@ -38,68 +44,19 @@ public class InfoFrame extends NatsFrame {
 
   @Override
   protected void parseLine(String json) {
-    this.serverId = extractString(json, "\"server_id\":");
-    this.version = extractString(json, "\"version\":");
-    this.host = extractString(json, "\"host\":");
-    this.tlsRequired = extractBoolean(json, "\"tls_required\":");
-    this.authRequired = extractBoolean(json, "\"auth_required\":");
-    this.headers = extractBoolean(json, "\"headers\":");
+    this.infoData = gson.fromJson(json, InfoData.class);
   }
 
   @Override
   public int packFrame(Packet packet) {
     int start = packet.position();
-
-    // Write "INFO "
     packet.put(getCommand());
     packet.put((byte) ' ');
-
-    // Build JSON manually (simple string builder)
-    StringBuilder jsonBuilder = new StringBuilder();
-    jsonBuilder.append('{');
-
-    boolean first = true;
-
-    if (serverId != null) {
-      jsonBuilder.append("\"server_id\":\"").append(serverId).append('\"');
-      first = false;
-    }
-    if (version != null) {
-      if (!first) jsonBuilder.append(',');
-      jsonBuilder.append("\"version\":\"").append(version).append('\"');
-      first = false;
-    }
-    if (host != null) {
-      if (!first) jsonBuilder.append(',');
-      jsonBuilder.append("\"host\":\"").append(host).append('\"');
-      first = false;
-      jsonBuilder.append(',');
-      jsonBuilder.append("\"port\":").append("" + port);
-    }
-
-    if (!first) jsonBuilder.append(',');
-    jsonBuilder.append("\"tls_required\":").append(tlsRequired);
-    jsonBuilder.append(',');
-    jsonBuilder.append("\"headers\":").append(headers);
-    jsonBuilder.append(',');
-    jsonBuilder.append("\"auth_required\":").append(authRequired);
-    jsonBuilder.append(',');
-    jsonBuilder.append("\"max_payload\":").append(maxPayloadLength);
-
-    jsonBuilder.append(',');
-    jsonBuilder.append("\"proto\":").append("1");
-
-    jsonBuilder.append('}');
-
-    // Write the JSON
-    packet.put(jsonBuilder.toString().getBytes(StandardCharsets.US_ASCII));
-
-    // Write final CRLF
+    String json = gson.toJson(infoData);
+    packet.put(json.getBytes(StandardCharsets.US_ASCII));
     packet.put("\r\n".getBytes(StandardCharsets.US_ASCII));
-
     return packet.position() - start;
   }
-
 
   @Override
   public boolean isValid() {
@@ -108,11 +65,7 @@ public class InfoFrame extends NatsFrame {
 
   @Override
   public NatsFrame instance() {
-    return new InfoFrame(maxPayloadLength);
-  }
-
-  @Override
-  public SocketAddress getFromAddress() {
-    return null;
+    return new InfoFrame(infoData.getMaxPayloadLength());
   }
 }
+

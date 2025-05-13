@@ -39,6 +39,8 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   private static final int RETAIN_AS_PUBLISH = 1;
   private static final int ALLOW_OVERLAP = 2;
   private static final int BROWSER_FLAG = 3;
+  private static final int SYNC_FLAG = 4;
+
 
   private String destinationName;
 
@@ -179,9 +181,22 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
   }
 
+  public String getFilter() {
+    return getCorrectedPath();
+  }
+
   public void setAlias(String alias) {
     this.alias = Objects.requireNonNullElseGet(alias, this::getCorrectedPath);
   }
+
+  public boolean isSharedSubscription() {
+    return (sharedName != null && !sharedName.isEmpty());
+  }
+
+  public boolean containsWildcard() {
+    return destinationName.contains("#") || destinationName.contains("+");
+  }
+
 
   public void setNoLocalMessages(boolean noLocalMessages) {
     flags.set(NO_LOCAL_MESSAGES, noLocalMessages);
@@ -195,26 +210,13 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     flags.set(BROWSER_FLAG, isBrowser);
   }
 
-  public boolean isSharedSubscription() {
-    return (sharedName != null && !sharedName.isEmpty());
-  }
-
-  public boolean containsWildcard() {
-    return destinationName.contains("#") || destinationName.contains("+");
-  }
-
-  public String getFilter() {
-    return getCorrectedPath();
-  }
-
-  public boolean isRetainAsPublish() {
-    return flags.get(RETAIN_AS_PUBLISH);
-  }
-
   public void setRetainAsPublish(boolean flag) {
     setFlag(RETAIN_AS_PUBLISH, flag);
   }
 
+  public void setSync(boolean flag) {
+    setFlag(SYNC_FLAG, flag);
+  }
 
   public boolean noLocalMessages() {
     return flags.get(NO_LOCAL_MESSAGES);
@@ -227,6 +229,12 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   public boolean isBrowser() {
     return flags.get(BROWSER_FLAG);
   }
+
+  public boolean isRetainAsPublish() {
+    return flags.get(RETAIN_AS_PUBLISH);
+  }
+
+  public boolean isSync() {return flags.get(SYNC_FLAG);}
 
   @Override
   public int compareTo(SubscriptionContext lhs) {
@@ -282,6 +290,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
 
     dto.setNoLocalMessages(noLocalMessages());
     dto.setAllowOverlap(allowOverlap());
+    dto.setSync(isSync());
     dto.setBrowser(isBrowser());
     dto.setRetainAsPublish(isRetainAsPublish());
     return dto;

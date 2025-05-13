@@ -41,9 +41,9 @@ public class NatsProtocol extends Protocol {
   @Getter
   private final int maxReceiveSize;
   private final SessionState sessionState;
-  private NatsFrame activeFrame;
   @Getter
   private final NatsConfigDTO natsConfig;
+  private NatsFrame activeFrame;
 
   public NatsProtocol(EndPoint endPoint) {
     super(endPoint);
@@ -73,6 +73,7 @@ public class NatsProtocol extends Protocol {
     logger.log(ServerLogMessages.NATS_CLOSING, endPoint.toString());
     try {
       super.close();
+      sessionState.close();
     } catch (IOException e) {
       logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }

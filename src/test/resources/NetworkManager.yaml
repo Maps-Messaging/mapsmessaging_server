@@ -103,12 +103,14 @@ NetworkManager:
       - name: "NATS TCP Test anon Interface for raw buffer writes"
         url: "tcp://0.0.0.0:4222/"
         protocol: nats
+        enableStreams: true
         auth: anon
 
 
       - name: "NATS TCP Test small keep alive"
         url: "tcp://0.0.0.0:5222/"
         protocol: nats
+        enableStreams: true
         keepAlive: 50
         auth: anon
 

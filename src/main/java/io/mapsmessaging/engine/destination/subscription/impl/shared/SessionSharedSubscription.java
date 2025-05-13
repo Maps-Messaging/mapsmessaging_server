@@ -28,11 +28,13 @@ import io.mapsmessaging.engine.destination.subscription.tasks.SharedSubscription
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.logging.ThreadContext;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.Future;
 
 public class SessionSharedSubscription extends Subscription {
 
@@ -211,6 +213,11 @@ public class SessionSharedSubscription extends Subscription {
     }
     sessionImpl.getMessageCallback().sendMessage(sharedSubscription.getDestinationImpl(), this, message, completionTask);
     ThreadContext.clearMap();
+  }
+
+  @Override
+  public Future<Response> getNext() throws IOException {
+    return sharedSubscription.getNext();
   }
 
   @Override
