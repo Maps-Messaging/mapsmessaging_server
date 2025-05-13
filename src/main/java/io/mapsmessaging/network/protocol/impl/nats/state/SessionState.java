@@ -158,6 +158,10 @@ public class SessionState implements CloseHandler, CompletionHandler {
     isValid = false;
     CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
     try {
+      activeSubscriptions.clear();
+      namedConsumers.clear();
+      jetStreamRequestManager.close();
+      subscriptions.clear();
       future.get();
     } catch (InterruptedException | ExecutionException e) {
       Thread.currentThread().interrupt();

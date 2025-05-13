@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JetStreamRequestManager {
   private final JetStreamApiManager jetStreamApiManager;
 
-  private Map<String, String> subscriptionId = new ConcurrentHashMap<String, String>();
+  private Map<String, String> subscriptionId = new ConcurrentHashMap<>();
 
   @Getter
   @Setter
@@ -25,6 +25,9 @@ public class JetStreamRequestManager {
     jetStreamApiManager = new JetStreamApiManager();
   }
 
+  public void close(){
+    subscriptionId.clear();
+  }
 
   public void registerSid(String key, String sid){
     subscriptionId.put(key, sid);

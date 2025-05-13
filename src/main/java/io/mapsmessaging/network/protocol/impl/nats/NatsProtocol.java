@@ -73,6 +73,7 @@ public class NatsProtocol extends Protocol {
     logger.log(ServerLogMessages.NATS_CLOSING, endPoint.toString());
     try {
       super.close();
+      sessionState.close();
     } catch (IOException e) {
       logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
     }

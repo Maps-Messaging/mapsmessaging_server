@@ -6,7 +6,7 @@ import lombok.ToString;
 
 @Data
 @ToString
-class InfoData {
+public class InfoData {
 
   @SerializedName("client_id")
   private long clientId;
