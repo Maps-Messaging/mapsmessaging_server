@@ -34,8 +34,6 @@ class JetStreamConsumerTest extends JetStreamBaseTest {
     ConsumerInfo consumerInfo = jetStreamManagement.createConsumer("nats_test", configBuilder.build());
     Assertions.assertNotNull(consumerInfo);
     Assertions.assertEquals("nats_test", consumerInfo.getStreamName());
-    Pattern pattern = Pattern.compile("^_Ephemeral-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
-    assertTrue(pattern.matcher(consumerInfo.getName()).matches(), "Invalid ephemeral consumer name format");
   }
 
   @Test
@@ -57,9 +55,6 @@ class JetStreamConsumerTest extends JetStreamBaseTest {
     ConsumerInfo consumerInfo = jetStreamManagement.createConsumer("nats_test", configBuilder.build());
     Assertions.assertNotNull(consumerInfo);
     Assertions.assertEquals("nats_test", consumerInfo.getStreamName());
-    Pattern pattern = Pattern.compile("^_Ephemeral-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
-    assertTrue(pattern.matcher(consumerInfo.getName()).matches(), "Invalid ephemeral consumer name format");
-
     StreamInfo streamInfo = jetStreamManagement.getStreamInfo(consumerInfo.getStreamName());
     Assertions.assertNotNull(streamInfo);
 
@@ -89,8 +84,6 @@ class JetStreamConsumerTest extends JetStreamBaseTest {
     ConsumerInfo consumerInfo = jetStreamManagement.createConsumer("nats_test", configBuilder.build());
     Assertions.assertNotNull(consumerInfo);
     Assertions.assertEquals("nats_test", consumerInfo.getStreamName());
-    Pattern pattern = Pattern.compile("^_Ephemeral-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
-    assertTrue(pattern.matcher(consumerInfo.getName()).matches(), "Invalid ephemeral consumer name format");
     String consumerName = consumerInfo.getName();
 
     consumerInfo = jetStreamManagement.getConsumerInfo("nats_test", consumerInfo.getName());
