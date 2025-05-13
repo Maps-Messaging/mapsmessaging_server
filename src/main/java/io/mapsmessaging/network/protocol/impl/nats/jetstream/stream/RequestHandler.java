@@ -11,9 +11,9 @@ import java.io.IOException;
 
 public abstract class RequestHandler extends BaseStreamApiHandler {
 
-  private final JetStreamFrameHandler[] handlers;
+  protected final JetStreamFrameHandler[] handlers;
 
-  public RequestHandler(JetStreamFrameHandler[] handlers){
+  protected RequestHandler(JetStreamFrameHandler[] handlers){
     this.handlers = handlers;
   }
 
@@ -21,7 +21,6 @@ public abstract class RequestHandler extends BaseStreamApiHandler {
     String action = subject.substring("$JS.API.".length());
     byte[] data = frame.getPayload();
     JsonObject json = (data != null && data.length > 0) ? JsonParser.parseString(new String(data)).getAsJsonObject() : null;
-
     for (JetStreamFrameHandler handler : handlers) {
       if (action.startsWith(handler.getName())) {
         return handler.handle(frame, json, sessionState);
@@ -37,7 +36,7 @@ public abstract class RequestHandler extends BaseStreamApiHandler {
 
 
 
-  private NatsFrame createError(String subject, String subscriptionId, String errorMsg) {
+  protected NatsFrame createError(String subject, String subscriptionId, String errorMsg) {
     MsgFrame errorFrame = new MsgFrame(0);
     errorFrame.setSubject(subject);
     errorFrame.setSubscriptionId(subscriptionId);

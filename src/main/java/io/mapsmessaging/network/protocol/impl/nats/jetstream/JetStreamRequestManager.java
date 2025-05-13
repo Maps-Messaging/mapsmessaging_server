@@ -50,7 +50,7 @@ public class JetStreamRequestManager {
   public NatsFrame process(PayloadFrame frame, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
 
-    if (subject.startsWith("$JS.API.")) {
+    if (subject.startsWith("$JS.")) {
       if (!sessionState.getProtocol().getNatsConfig().isEnableStreams()) {
         return new ErrFrame("Streams are disabled");
       }

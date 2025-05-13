@@ -5,9 +5,11 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.TransactionSubject;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.NextRequest;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
 
 import java.io.IOException;
 
@@ -49,15 +51,15 @@ public class MessageHandler  extends JetStreamFrameHandler {
       MessageEvent msg = consumer.getNextMessage();
       if (msg != null) {
         PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), msg.getDestinationName());
-        String replyToName = " $JS.ACK."+consumer.getStreamName()+"."+consumer.getName()+"."+msg.getDestinationName()+"."+msg.getMessage().getIdentifier();
-        payloadFrame.setReplyTo(replyToName);
+        TransactionSubject replyToSubject = new TransactionSubject(consumer, msg.getDestinationName(), msg.getMessage().getIdentifier());
+
+        payloadFrame.setReplyTo(replyToSubject.toSubject());
         payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
         sessionState.send(payloadFrame);
       } else if (!request.isNo_wait()) {
         break;
       }
     }
-
     return null;
   }
 }

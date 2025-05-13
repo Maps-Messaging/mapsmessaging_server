@@ -6,6 +6,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.StreamManager;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.ConsumerManager;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.info.InfoManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.transactions.TransactionManager;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -18,7 +19,8 @@ public class JetStreamApiManager {
     this.managers = new RequestHandler[]{
         new InfoManager(),
         new StreamManager(),
-        new ConsumerManager()
+        new ConsumerManager(),
+        new TransactionManager()
     };
 
   }

@@ -45,7 +45,6 @@ public class NamespaceManager implements DestinationManagerListener {
         StreamSubjectPair pair = new StreamSubjectPair(trimmed.substring(0, firstSlash), trimmed.substring(firstSlash + 1));
         StreamInfoList streamInfo = streams.computeIfAbsent(pair.getStream(), k -> new StreamInfoList(pair.getStream()));
         streamInfo.addSubject(pair.getSubject(), destination);
-        System.err.println("Adding stream " + pair.getStream() + " to namespace " + namespace);
         streamEntryManager.set(null);
       }
     }
@@ -63,7 +62,6 @@ public class NamespaceManager implements DestinationManagerListener {
         if (streamInfo != null) {
           streamInfo.removeSubject(pair.getSubject());
           if (streamInfo.size() == 0) {
-            System.err.println("Removing stream " + pair.getStream() + " from namespace " + namespace);
             streams.remove(pair.getStream());
           }
         }
