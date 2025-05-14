@@ -163,6 +163,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     meta.put("device", device.getName());
     meta.put("sessionId", session.getName());
     MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.setSchemaId(device.getSchemaId().toString());
     messageBuilder.setOpaqueData(payload);
     messageBuilder.setTransformation(transformation);
     messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);

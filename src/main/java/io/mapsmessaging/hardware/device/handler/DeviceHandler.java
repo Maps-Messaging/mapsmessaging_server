@@ -23,6 +23,8 @@ import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import java.io.IOException;
+import java.util.UUID;
+
 import lombok.Data;
 
 @Data
@@ -73,6 +75,10 @@ public abstract class DeviceHandler {
       template = template.replace("//", "/");
     }
     return template;
+  }
+
+  public UUID getSchemaId() {
+    return controller.getSchemaId();
   }
 
   public String getName(){
