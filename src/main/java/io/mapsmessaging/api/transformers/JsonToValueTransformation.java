@@ -18,12 +18,15 @@
 
 package io.mapsmessaging.api.transformers;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.extensions.JsonParserExtension;
+
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.json.JSONObject;
 
 public class JsonToValueTransformation implements Transformer {
 
@@ -63,7 +66,7 @@ public class JsonToValueTransformation implements Transformer {
 
   private byte[] convert(byte[] data) {
     try{
-      JSONObject temp = new JSONObject(new String(data));
+      JsonObject temp = JsonParser.parseString(new String(data, StandardCharsets.UTF_8)).getAsJsonObject();
       if(jsonParser != null){
         Object v = jsonParser.locateObject(temp);
         if (v != null) {

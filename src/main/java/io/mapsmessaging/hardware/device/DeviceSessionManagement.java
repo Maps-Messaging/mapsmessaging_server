@@ -55,6 +55,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private final DataFilter filter;
   private final BusHandler busHandler;
   private final ParserExecutor parser;
+  private final String schemaId;
 
   private Session session;
   private Destination destination;
@@ -72,6 +73,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     this.filter = filter;
     this.busHandler = busHandler;
     previousPayload = null;
+    schemaId = device.getSchemaId().toString();
     device.getController().setRaiseExceptionOnError(true);
     ParserExecutor executor = null;
     if(selector != null && !selector.isBlank()){
@@ -163,7 +165,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     meta.put("device", device.getName());
     meta.put("sessionId", session.getName());
     MessageBuilder messageBuilder = new MessageBuilder();
-    messageBuilder.setSchemaId(device.getSchemaId().toString());
+    messageBuilder.setSchemaId(schemaId);
     messageBuilder.setOpaqueData(payload);
     messageBuilder.setTransformation(transformation);
     messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
