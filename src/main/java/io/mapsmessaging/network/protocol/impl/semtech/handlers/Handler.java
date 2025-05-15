@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
@@ -26,10 +29,9 @@ import io.mapsmessaging.network.protocol.impl.semtech.packet.PullResponse;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -47,15 +49,16 @@ public abstract class Handler {
         raw = protocol.getTransformation().outgoing(messageEvent.getMessage(), messageEvent.getDestinationName());
       }
       try {
-        JSONObject jsonObject = new JSONObject(new String(raw));
+        JsonObject jsonObject = JsonParser.parseString(new String(raw, StandardCharsets.UTF_8)).getAsJsonObject();
         int token = nextToken();
         PacketHandler.getInstance().getMessageStateContext().push(token, messageEvent);
         PullResponse pullResponse = new PullResponse(token, raw, socketAddress);
         protocol.sendPacket(pullResponse);
         protocol.getLogger().log(ServerLogMessages.SEMTECH_SENDING_PACKET, messageEvent.getMessage());
-      } catch (JSONException e) {
+      } catch (JsonParseException e) {
         messageEvent.getCompletionTask().run();
       }
+
     }
   }
 

@@ -18,6 +18,8 @@
 
 package io.mapsmessaging.routing;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.routing.manager.SchemaMonitor;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
@@ -26,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.json.JSONObject;
 
 public class RemoteServerManager implements Runnable{
 
@@ -70,8 +71,10 @@ public class RemoteServerManager implements Runnable{
     try (Response response = client.newCall(request).execute()) {
       if (response.isSuccessful() && response.body() != null) {
         String responseBody = response.body().string();
-        JSONObject json = new JSONObject(responseBody);
-        if(schemaManager != null) schemaManager.scanForUpdates(json.getLong("schemaUpdate"));
+        JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
+        if (schemaManager != null && json.has("schemaUpdate")) {
+          schemaManager.scanForUpdates(json.get("schemaUpdate").getAsLong());
+        }
       } else {
         throw new RuntimeException("Request failed: " + response.code() + " " + response.message());
       }

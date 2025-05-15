@@ -18,6 +18,9 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
@@ -27,8 +30,6 @@ import io.mapsmessaging.network.protocol.impl.semtech.packet.PushData;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.SemTechPacket;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -46,27 +47,28 @@ public class PushDataHandler extends Handler {
       protocol.sendPacket(new PushAck(pushData.getToken(), packet.getFromAddress()));
       if (pushData.getJsonObject() != null && !pushData.getJsonObject().isEmpty()) {
         try {
-          JSONObject jsonObject = new JSONObject(pushData.getJsonObject());
+          JsonObject jsonObject = JsonParser.parseString(pushData.getJsonObject()).getAsJsonObject();
           boolean status = jsonObject.has("stat");
-          // At this point we know it is a valid packet with a valid JSON payload, so now lets process it
+
           Map<String, String> meta = new LinkedHashMap<>();
           meta.put("protocol", "SemTech");
-          meta.put("version", "" + VERSION);
+          meta.put("version", String.valueOf(VERSION));
+
           MessageBuilder builder = new MessageBuilder();
           builder.setOpaqueData(pushData.getJsonObject().getBytes(StandardCharsets.UTF_8));
           builder.setMeta(meta);
           Message message = builder.build();
+
           GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier());
           if (info != null) {
-            if(status){
+            if (status) {
               info.getStatus().storeMessage(message);
-            }
-            else {
+            } else {
               info.getInbound().storeMessage(message);
             }
           }
-        } catch (JSONException | IOException jsonParseException) {
-          // Catch & ignore
+        } catch (JsonParseException | IOException e) {
+
         }
       }
     }

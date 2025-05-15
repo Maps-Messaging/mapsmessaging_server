@@ -20,6 +20,10 @@ package io.mapsmessaging.hardware.device;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -39,16 +43,19 @@ import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
 
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {
+  private static final Gson gson = new Gson();
+
   private static Logger logger = LoggerFactory.getLogger(DeviceSessionManagement.class);
   private final DeviceHandler device;
   private final String topicNameTemplate;
@@ -182,8 +189,9 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       boolean send = false;
       if (filter.send(previousPayload, payload)) {
         if (parser != null) {
-          JSONObject jsonObject = new JSONObject(new String(payload));
-          Map<String, Object> map = jsonObject.toMap();
+          JsonObject jsonObject = JsonParser.parseString(new String(payload, StandardCharsets.UTF_8)).getAsJsonObject();
+          Type type = new TypeToken<Map<String, Object>>() {}.getType();
+          Map<String, Object> map = gson.fromJson(jsonObject, type);
           if (parser.evaluate(map)) {
             send = true;
           }

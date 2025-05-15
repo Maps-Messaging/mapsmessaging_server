@@ -18,33 +18,39 @@
 
 package io.mapsmessaging.network.protocol.impl.nmea.types;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@SuppressWarnings("java:S6548") // yes it is a singleton
 public class EnumTypeFactory {
 
-  private static final EnumTypeFactory instance = new EnumTypeFactory();
+  private static class Holder {
+    static final EnumTypeFactory INSTANCE = new EnumTypeFactory();
+  }
+  public static EnumTypeFactory getInstance() {
+    return Holder.INSTANCE;
+  }
 
   private final Map<String, Map<String, String>> configuration;
 
-  public static EnumTypeFactory getInstance() {
-    return instance;
-  }
-
   public synchronized void register(String name, String jsonObjectOptions) {
-    JSONArray jsonArray = new JSONArray(jsonObjectOptions);
+    JsonArray jsonArray = JsonParser.parseString(jsonObjectOptions).getAsJsonArray();
     Map<String, String> map = new LinkedHashMap<>();
-    for (int x = 0; x < jsonArray.length(); x++) {
-      JSONObject jsonObject = jsonArray.getJSONObject(x);
-      for (String key : jsonObject.keySet()) {
-        map.put(key, jsonObject.get(key).toString());
+
+    for (JsonElement element : jsonArray) {
+      JsonObject jsonObject = element.getAsJsonObject();
+      for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+        map.put(entry.getKey(), entry.getValue().getAsString());
       }
     }
     configuration.put(name, map);
   }
+
 
   public synchronized EnumType getEnum(String name, String id) {
     Map<String, String> map = configuration.get(name);
@@ -54,7 +60,6 @@ public class EnumTypeFactory {
     }
     return null;
   }
-
 
   private EnumTypeFactory() {
     configuration = new LinkedHashMap<>();

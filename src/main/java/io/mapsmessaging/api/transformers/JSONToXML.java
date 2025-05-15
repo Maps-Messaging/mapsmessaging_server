@@ -18,18 +18,42 @@
 
 package io.mapsmessaging.api.transformers;
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import org.json.JSONObject;
-import org.json.XML;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import static io.mapsmessaging.schemas.logging.SchemaLogMessages.FORMATTER_UNEXPECTED_OBJECT;
 
 @SuppressWarnings("java:S2129") // We convert a Byte[] into a String for json to parse
 public class JSONToXML implements Transformer {
-
+  private static final Logger logger = LoggerFactory.getLogger(JSONToXML.class);
   @Override
   public void transform(MessageBuilder messageBuilder) {
-    JSONObject jsonObject = new JSONObject(new String(messageBuilder.getOpaqueData()));
-    messageBuilder.setOpaqueData(XML.toString(jsonObject).getBytes());
+    try {
+      JsonObject jsonObject = JsonParser.parseString(
+          new String(messageBuilder.getOpaqueData(), StandardCharsets.UTF_8)
+      ).getAsJsonObject();
+
+      // Convert JsonObject to Map for XmlMapper
+      Type type = new TypeToken<Map<String, Object>>() {}.getType();
+      Map<String, Object> map = gson.fromJson(jsonObject, type);
+
+      XmlMapper xmlMapper = new XmlMapper();
+      String xml = xmlMapper.writeValueAsString(map);
+
+      messageBuilder.setOpaqueData(xml.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
+    }
   }
 
   @Override

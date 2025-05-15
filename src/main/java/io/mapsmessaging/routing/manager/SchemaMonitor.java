@@ -18,6 +18,10 @@
 
 package io.mapsmessaging.routing.manager;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
@@ -25,8 +29,6 @@ import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class SchemaMonitor implements Runnable {
 
@@ -53,12 +55,13 @@ public class SchemaMonitor implements Runnable {
     try (Response response = client.newCall(request).execute()) {
       if (response.isSuccessful() && response.body() != null) {
         String responseBody = response.body().string();
-        JSONObject json = new JSONObject(responseBody);
-        JSONArray jsonArray = json.getJSONArray("data");
-        if(jsonArray != null && !jsonArray.isEmpty()){
-          for(int x=0;x<jsonArray.length();x++) {
-            SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(jsonArray.get(x).toString());
-            if(SchemaManager.getInstance().getSchema(config.getUniqueId()) == null){
+        JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
+        JsonArray jsonArray = json.getAsJsonArray("data");
+
+        if (jsonArray != null && !jsonArray.isEmpty()) {
+          for (JsonElement element : jsonArray) {
+            SchemaConfig config = SchemaConfigFactory.getInstance().constructConfig(element.toString());
+            if (SchemaManager.getInstance().getSchema(config.getUniqueId()) == null) {
               SchemaManager.getInstance().addSchema(" ", config);
             }
           }

@@ -18,17 +18,34 @@
 
 package io.mapsmessaging.api.transformers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.gson.JsonObject;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import org.json.JSONObject;
-import org.json.XML;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import static io.mapsmessaging.schemas.logging.SchemaLogMessages.FORMATTER_UNEXPECTED_OBJECT;
 
 public class XMLToJSON implements Transformer {
 
+  private static final Logger logger = LoggerFactory.getLogger(XMLToJSON.class);
+
   @Override
   public void transform(MessageBuilder messageBuilder) {
-    JSONObject xmlJSONObj = XML.toJSONObject(new String(messageBuilder.getOpaqueData()));
-    messageBuilder.setOpaqueData(xmlJSONObj.toString(2).getBytes());
+    try {
+      XmlMapper xmlMapper = new XmlMapper();
+      Map<String, Object> map = xmlMapper.readValue(messageBuilder.getOpaqueData(), new TypeReference<>() {});
+      JsonObject jsonObject = gson.toJsonTree(map).getAsJsonObject();
+      String pretty = gson.toJson(jsonObject);
+      messageBuilder.setOpaqueData(pretty.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      logger.log(FORMATTER_UNEXPECTED_OBJECT, getName());
+    }
   }
 
   @Override

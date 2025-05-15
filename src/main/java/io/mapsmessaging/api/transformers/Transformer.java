@@ -18,11 +18,15 @@
 
 package io.mapsmessaging.api.transformers;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.utilities.service.Service;
 
 public interface Transformer extends Service {
+
+  Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
   void transform(MessageBuilder messageBuilder);
 
