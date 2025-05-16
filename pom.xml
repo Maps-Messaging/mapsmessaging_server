@@ -1009,8 +1009,8 @@
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
       <version>6.1.0</version>
-      <scope>provided</scope>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/jakarta.ws.rs/jakarta.ws.rs-api -->
     <dependency>
       <groupId>jakarta.ws.rs</groupId>
@@ -1041,6 +1041,7 @@
       <artifactId>jersey-container-grizzly2-servlet</artifactId>
       <version>${jersey.version}</version>
     </dependency>
+
 
     <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
