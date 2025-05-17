@@ -44,6 +44,10 @@
       <source>LICENSE</source>
       <outputDirectory>/</outputDirectory>
     </file>
+    <file>
+      <source>${project.build.directory}/bom.json</source>
+      <outputDirectory>/</outputDirectory>
+    </file>
   </files>
 
   <fileSets>
