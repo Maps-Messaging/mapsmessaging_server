@@ -35,12 +35,6 @@
     </file>
 
     <file>
-      <source>CommonsClause.txt</source>
-      <outputDirectory>/</outputDirectory>
-      <filtered>true</filtered>
-    </file>
-
-    <file>
       <source>LICENSE</source>
       <outputDirectory>/</outputDirectory>
     </file>
