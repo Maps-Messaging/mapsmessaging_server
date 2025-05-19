@@ -30,31 +30,19 @@ FROM arm64v8/alpine:3.21.3
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-ENV JAVA_HOME=/usr/lib/jvm/zulu-17
+ENV JAVA_HOME=/usr/lib/jvm/zulu-21
 
 #----------------------------------------------------------------------------------------------
 # Setup the repos
 #----------------------------------------------------------------------------------------------
-ENV ZULU_ARCH=zulu17.28.13-ca-jdk17.0.0-linux_musl_aarch64.tar.gz
-
-RUN wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH}
-
-RUN export INSTALL_DIR=$(dirname $JAVA_HOME) && \
-    mkdir -p ${INSTALL_DIR}
-
-RUN export ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
-    export INSTALL_DIR=$(dirname $JAVA_HOME) && \
-    tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
-    mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME}
-
-
-RUN ZULU_ARCH=zulu16.32.15-ca-jdk16.0.2-linux_musl_aarch64.tar.gz && \
+RUN ZULU_ARCH=zulu21.42.19-ca-jdk21.0.7-linux_musl_aarch64.tar.gz && \
     INSTALL_DIR=$( dirname $JAVA_HOME ) && \
     MAN_DIR=/usr/share/man/man1 && \
     ZULU_DIR=$( basename ${ZULU_ARCH} .tar.gz ) && \
     wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
     mkdir -p ${INSTALL_DIR} && \
-    tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && rm -f ${ZULU_ARCH} && \
+    tar -xf ./${ZULU_ARCH} -C ${INSTALL_DIR} && \
+    rm -f ${ZULU_ARCH} && \
     mv ${INSTALL_DIR}/${ZULU_DIR} ${JAVA_HOME}
 
 # Setup the bin directory
@@ -77,6 +65,7 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 # ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
 # Admin       8080        TCP - Native RestAPI
 # Admin       8778        TCP - Jolokia
+# NATS        4222        TCP - NATS
 #
 # SemTech     1700        UDP
 # MQTT-SN     1884        UDP
@@ -86,6 +75,7 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
 EXPOSE 8778/tcp
+EXPOSE 4222/tcp
 
 EXPOSE 1700/udp
 EXPOSE 1884/udp

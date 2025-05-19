@@ -30,7 +30,7 @@ FROM alpine:3.21.3
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-ENV JAVA_HOME=/usr/lib/jvm/zulu-17
+ENV JAVA_HOME=/usr/lib/jvm/zulu-21
 
 #----------------------------------------------------------------------------------------------
 # Install the JDK from Azul
@@ -67,6 +67,7 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 # ALL         9000        TCP - Includes MQTT, AMQP and Stomp and WebSockets
 # Admin       8080        TCP - Native RestAPI
 # Admin       8778        TCP - Jolokia
+# NATS        4222        TCP - NATS
 #
 # SemTech     1700        UDP
 # MQTT-SN     1884        UDP
@@ -76,6 +77,7 @@ RUN  chmod +x ${JAVA_HOME}/bin/* && \
 EXPOSE 9000/tcp
 EXPOSE 8080/tcp
 EXPOSE 8778/tcp
+EXPOSE 4222/TCP
 
 EXPOSE 1700/udp
 EXPOSE 1884/udp
