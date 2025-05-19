@@ -8,7 +8,7 @@ URL:            https://www.mapsmessaging.io
 Source0:        %%SOURCE_FILE%%
 
 BuildArch:      noarch
-Requires:       java-17-openjdk
+Requires:       java-21-openjdk
 
 %description
 A multi adapter and protocol server for handling messaging protocols.
