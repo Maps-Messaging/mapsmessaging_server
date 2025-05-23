@@ -26,6 +26,7 @@ import io.mapsmessaging.logging.LogEntry;
 import io.mapsmessaging.logging.LogEntryListener;
 import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.responses.LogEntries;
+import io.mapsmessaging.rest.token.TokenManager;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -34,10 +35,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.sse.OutboundSseEvent;
@@ -48,6 +48,7 @@ import lombok.AllArgsConstructor;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,31 @@ public class LogMonitorRestApi extends BaseRestApi {
   @Path("/server/log/sse")
   @Produces(MediaType.SERVER_SENT_EVENTS)
   @Operation(
+      summary = "Request a temporary token to access the server side logs",
+      description = "Retrieve a temporary token that allows access to the server side log stream",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "String token to use to access the log SSE",
+              content = @Content(mediaType = "text")
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
+      }
+  )
+  public String requestSseToken() {
+    hasAccess(RESOURCE);
+    return TokenManager.getInstance().generateToken(request.getSession(false));
+  }
+
+
+
+
+  @GET
+  @Path("/server/log/sse/stream/{token}")
+  @Produces(MediaType.SERVER_SENT_EVENTS)
+  @Operation(
       summary = "Stream live log entries",
       description = "Subscribe to dynamic log events using Server-Sent Events",
       responses = {
@@ -107,12 +133,16 @@ public class LogMonitorRestApi extends BaseRestApi {
       }
   )
   public void streamLogs(
+      @PathParam("token") String token,
       @Context SseEventSink eventSink,
       @QueryParam("filter") String filter
   ) throws ParseException {
     hasAccess(RESOURCE);
+    if(!TokenManager.getInstance().useToken(token)){
+      response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      return;
+    }
     ParserExecutor parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
-
     List<LogEntry> initialLogs = MessageDaemon.getInstance().getLogMonitor().getLogHistory();
 
     // Send the initial log history

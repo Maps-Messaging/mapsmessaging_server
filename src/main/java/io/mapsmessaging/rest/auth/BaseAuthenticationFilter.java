@@ -34,9 +34,10 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
 
   @Getter
   @Setter
-  private static int maxInactiveInterval = 180_000;
+  protected static int maxInactiveInterval = 600;
   protected static final String USERNAME = "username";
   private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping"};
+  private static final String[] FULL_PATHS = new String[] { "/api/v1/server/log/sse/stream/" };
 
   @Override
   public void filter(ContainerRequestContext containerRequest) throws IOException {
@@ -45,10 +46,16 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
         return;
       }
     }
+    for(String path : FULL_PATHS) {
+      if (containerRequest.getUriInfo().getRequestUri().getPath().contains(path)) {
+        return;
+      }
+    }
+
     processAuthentication(containerRequest);
   }
 
-  protected void setupSession(HttpServletRequest httpRequest, String username, UUID uuid, Subject subject) {
+  protected void setupSession(HttpServletRequest httpRequest, String username, UUID uuid, Subject subject, String jwtCookie) {
     String scheme = httpRequest.getScheme();
     String remoteIp = httpRequest.getRemoteAddr();
     String name = scheme+"_/"+remoteIp+":"+httpRequest.getRemotePort();
@@ -59,6 +66,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
     session.setAttribute(USERNAME, username);
     session.setAttribute("subject", subject);
     session.setAttribute("uuid", uuid);
+    session.setAttribute("jwtCookie", jwtCookie);
   }
 
   protected abstract void processAuthentication(ContainerRequestContext containerRequest) throws IOException;

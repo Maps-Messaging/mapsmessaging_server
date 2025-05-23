@@ -44,7 +44,7 @@ public class NoAuthenticationFilter extends BaseAuthenticationFilter {
       Set<Principal> principals = new HashSet<>();
       principals.add(new UserPrincipal("anonymous"));
       Subject subject = new Subject(true, principals, new HashSet<>(), new HashSet<>());
-      setupSession(httpRequest, "anonymous", UuidGenerator.getInstance().generate(), subject);
+      setupSession(httpRequest, "anonymous", UuidGenerator.getInstance().generate(), subject, UuidGenerator.getInstance().generate().toString());
     }
   }
 }

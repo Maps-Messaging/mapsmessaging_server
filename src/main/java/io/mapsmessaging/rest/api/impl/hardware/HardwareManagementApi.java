@@ -70,9 +70,13 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
     if (cachedResponse != null) {
       return cachedResponse;
     }
-    DeviceScanList deviceScanList = new DeviceScanList(MessageDaemon.getInstance().getSubSystemManager().getDeviceManager().scan());
-    putToCache(key, deviceScanList);
-    return deviceScanList;
+    DeviceManager deviceManager = MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
+    if (deviceManager != null) {
+      DeviceScanList deviceScanList = new DeviceScanList(deviceManager.scan());
+      putToCache(key, deviceScanList);
+      return deviceScanList;
+    }
+    return new DeviceScanList(new ArrayList<>());
   }
 
   @GET
@@ -100,16 +104,17 @@ public class HardwareManagementApi extends HardwareBaseRestApi {
       return cachedResponse;
     }
     List<DeviceInfoDTO> devices = new ArrayList<>();
-    DeviceManager deviceManager =
-        MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
-    List<DeviceController> activeDevices = deviceManager.getActiveDevices();
-    for (DeviceController device : activeDevices) {
-      DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
-      deviceInfo.setName(device.getName());
-      deviceInfo.setType(device.getType().name());
-      deviceInfo.setDescription(device.getDescription());
-      deviceInfo.setState(new String(device.getDeviceState()));
-      devices.add(deviceInfo);
+    DeviceManager deviceManager = MessageDaemon.getInstance().getSubSystemManager().getDeviceManager();
+    if (deviceManager != null){
+      List<DeviceController> activeDevices = deviceManager.getActiveDevices();
+      for (DeviceController device : activeDevices) {
+        DeviceInfoDTO deviceInfo = new DeviceInfoDTO();
+        deviceInfo.setName(device.getName());
+        deviceInfo.setType(device.getType().name());
+        deviceInfo.setDescription(device.getDescription());
+        deviceInfo.setState(new String(device.getDeviceState()));
+        devices.add(deviceInfo);
+      }
     }
     DeviceList dl = new DeviceList(devices);
     putToCache(key, dl);
