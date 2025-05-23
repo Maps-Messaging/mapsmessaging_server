@@ -394,7 +394,7 @@
         <dependency>
           <groupId>org.mlflow</groupId>
           <artifactId>mlflow-client</artifactId>
-          <version>2.20.2</version>
+          <version>2.22.0</version>
         </dependency>
 
 
@@ -601,7 +601,7 @@
         <dependency>
           <groupId>org.mlflow</groupId>
           <artifactId>mlflow-client</artifactId>
-          <version>2.20.2</version>
+          <version>2.22.0</version>
         </dependency>
 
       </dependencies>
@@ -681,7 +681,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.2</version>
+        <version>3.5.3</version>
         <configuration>
           <argLine>
             @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
@@ -1099,7 +1099,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.18.3</version>
+      <version>2.19.0</version>
     </dependency>
 
     <!-- End RestAPI Support Dependencies -->
@@ -1182,7 +1182,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.31.0</version>
+      <version>2.31.47</version>
     </dependency>
 
 
