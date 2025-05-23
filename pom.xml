@@ -185,6 +185,7 @@
       <id>snapshot</id>
       <properties>
         <branchName>development</branchName>
+        <java.version>13</java.version>
       </properties>
       <dependencies>
         <!-- Consul client API -->
@@ -279,6 +280,7 @@
       <id>snapshot-ml</id>
       <properties>
         <branchName>development</branchName>
+        <java.version>21</java.version>
       </properties>
       <build>
         <plugins>
@@ -420,6 +422,7 @@
       <id>release</id>
       <properties>
         <branchName>main</branchName>
+        <java.version>13</java.version>
       </properties>
 
       <dependencies>
@@ -491,6 +494,7 @@
       <id>release-ml</id>
       <properties>
         <branchName>main</branchName>
+        <java.version>21</java.version>
       </properties>
       <build>
         <plugins>
@@ -614,8 +618,8 @@
         <version>3.14.0</version>
         <configuration>
           <encoding>UTF-8</encoding>
-          <source>21</source>
-          <target>21</target>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
           <compilerArgs>
             <arg>-h</arg>
             <arg>src/main/cpp/</arg>

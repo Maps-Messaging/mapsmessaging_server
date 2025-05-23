@@ -70,7 +70,7 @@ RestApi:
 
   static:
     enabled: true
-    directory: "{{MAPS_HOME}}/www/dist"
+    directory: "{{MAPS_HOME}}/www"
 
   corsHeaders:
     Access-Control-Allow-Origin: "*"
