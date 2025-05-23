@@ -24,5 +24,11 @@ import lombok.Data;
 @Data
 public class TokenDetails {
   private String cookie;
+  private String resource;
   private final long expires = System.currentTimeMillis()+ 60_000;
+
+  public TokenDetails(String cookie, String resource){
+    this.cookie = cookie;
+    this.resource = resource;
+  }
 }

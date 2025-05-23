@@ -112,9 +112,6 @@ public class LogMonitorRestApi extends BaseRestApi {
     return TokenManager.getInstance().generateToken(request.getSession(false));
   }
 
-
-
-
   @GET
   @Path("/server/log/sse/stream/{token}")
   @Produces(MediaType.SERVER_SENT_EVENTS)

@@ -33,11 +33,13 @@ import io.mapsmessaging.rest.api.impl.BaseRestApi;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestClientConnection;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import io.mapsmessaging.rest.responses.*;
+import io.mapsmessaging.rest.token.TokenManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -139,9 +141,31 @@ public class MessagingApi extends BaseRestApi {
     return new StatusResponse("Successfully subscribed to " + subscriptionRequest.getDestinationName());
   }
 
-
   @GET
   @Path("/sse")
+  @Produces(MediaType.SERVER_SENT_EVENTS)
+  @Operation(
+      summary = "Request a temporary token to access the listed destinations events",
+      description = "Retrieve a temporary token that allows access to the destinations event stream",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "String token to use to access the log SSE",
+              content = @Content(mediaType = "text")
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access"),
+          @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
+      }
+  )
+  public String requestSseMessageToken(@QueryParam("destination") String destinationName) {
+    hasAccess(RESOURCE);
+    return TokenManager.getInstance().generateToken(request.getSession(false), destinationName);
+  }
+
+
+  @GET
+  @Path("/sse/stream/{token}")
   @Produces(MediaType.SERVER_SENT_EVENTS)
   @Operation(summary = "Expose AsyncMessageDTO in OpenAPI",
       description = "Delivers messages via Server Side Events, supports MQTT wild card plus JMS style filtering",
@@ -156,11 +180,17 @@ public class MessagingApi extends BaseRestApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource")
       })
   public void subscribeSSE(
+      @PathParam("token") String token,
       @Context SseEventSink eventSink,
       @Context Sse sse,
       @BeanParam SubscriptionRequestDTO subscriptionRequest
   ) throws LoginException, IOException {
     hasAccess(RESOURCE);
+    if(!TokenManager.getInstance().useToken(token, subscriptionRequest.getDestinationName())){
+      response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      return;
+    }
+
     Session session = getAuthenticatedSession();
     HttpSession httpSession = getSession();
     SubscribedEventManager eventManager = subscribeToTopic(session, subscriptionRequest);

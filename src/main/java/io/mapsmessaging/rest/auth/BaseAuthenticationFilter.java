@@ -37,7 +37,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
   protected static int maxInactiveInterval = 600;
   protected static final String USERNAME = "username";
   private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping"};
-  private static final String[] FULL_PATHS = new String[] { "/api/v1/server/log/sse/stream/" };
+  private static final String[] FULL_PATHS = new String[] { "/api/v1/server/log/sse/stream/", "/api/v1/messaging/sse/stream" };
 
   @Override
   public void filter(ContainerRequestContext containerRequest) throws IOException {
