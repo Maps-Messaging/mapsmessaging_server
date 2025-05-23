@@ -289,6 +289,9 @@ public class DestinationManager implements DestinationFactory, Agent {
       throw new IOException("Invalid resource found");
     }
     String name = scannedProperties.getResourceName();
+    if(name.isEmpty()){
+      throw new IOException("Invalid name");
+    }
     String directoryPath = FilePathHelper.cleanPath(directory.toString() + File.separator);
     DestinationType destinationType = DestinationType.TOPIC;
     DestinationImpl response;
