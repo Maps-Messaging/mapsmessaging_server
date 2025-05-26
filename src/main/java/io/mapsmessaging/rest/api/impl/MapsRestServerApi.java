@@ -239,6 +239,40 @@ public class MapsRestServerApi extends BaseRestApi {
   }
 
 
+  @GET
+  @Path("/session")
+  @Produces({MediaType.APPLICATION_JSON})
+  @Operation(
+      summary = "Returns the current authentication session",
+      description = "Returns information about the current user authentication session, can be used to see if the user is logged in",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Returns if there have been updates",
+              content = @Content(
+                  mediaType = "application/json",
+                  schema = @Schema(implementation = UpdateCheckResponse.class)
+              )
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request")
+      }
+  )
+  public LoginResponse getUserSession () {
+
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return new LoginResponse("Auth not enforced");
+    }
+    Subject subject = (Subject) session.getAttribute("subject");
+    if (subject == null) {
+      return new LoginResponse("Auth not enforced");
+    }
+    String username = session.getAttribute(USERNAME).toString();
+    LoginResponse loginResponse = new LoginResponse("Success", subject, username);
+    return loginResponse;
+  }
+
+
   @POST
   @Path("/login")
   @Produces({MediaType.APPLICATION_JSON})
@@ -256,9 +290,7 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
       }
   )
-  public LoginResponse login(LoginRequest loginRequest,
-                             @Context HttpServletRequest httpRequest,
-                             @Context HttpServletResponse httpResponse) throws IOException {
+  public LoginResponse login(LoginRequest loginRequest) throws IOException {
 
     boolean persistentSession = loginRequest.isPersistent();
     String sessionId = loginRequest.getSessionId();
@@ -275,7 +307,7 @@ public class MapsRestServerApi extends BaseRestApi {
     if (AuthManager.getInstance().isAuthenticationEnabled()){
       if (AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray())) {
         Subject subject = AuthManager.getInstance().getUserSubject(loginRequest.getUsername());
-        session = setupCookieAndSession(loginRequest.getUsername(), subject, httpRequest, httpResponse, maxAge);
+        session = setupCookieAndSession(loginRequest.getUsername(), subject, request, response, maxAge);
       }
       else{
         throw new IOException("Invalid username or password");
@@ -287,7 +319,7 @@ public class MapsRestServerApi extends BaseRestApi {
       Subject subject = new Subject();
       subject.getPrincipals().add(new UserPrincipal(loginRequest.getUsername()));
       subject.getPrincipals().add(new UniqueIdentifierPrincipal(UUID.randomUUID()));
-      session = setupCookieAndSession(loginRequest.getUsername(), subject, httpRequest, httpResponse, maxAge);
+      session = setupCookieAndSession(loginRequest.getUsername(), subject, request, response, maxAge);
     }
 
     if (persistentSession) {
