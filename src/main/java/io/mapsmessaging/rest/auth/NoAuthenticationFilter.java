@@ -19,32 +19,10 @@
 
 package io.mapsmessaging.rest.auth;
 
-import com.sun.security.auth.UserPrincipal;
-import io.mapsmessaging.security.uuid.UuidGenerator;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
 
-import javax.security.auth.Subject;
-import java.io.IOException;
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.Set;
+import jakarta.ws.rs.ext.Provider;
 
+@Provider
 public class NoAuthenticationFilter extends BaseAuthenticationFilter {
 
-  @Context
-  private HttpServletRequest httpRequest;
-
-  @Override
-  public void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
-    HttpSession session = httpRequest.getSession(true);
-    if (session.isNew()) {
-      Set<Principal> principals = new HashSet<>();
-      principals.add(new UserPrincipal("anonymous"));
-      Subject subject = new Subject(true, principals, new HashSet<>(), new HashSet<>());
-      setupSession(httpRequest, "anonymous", UuidGenerator.getInstance().generate(), subject, UuidGenerator.getInstance().generate().toString());
-    }
-  }
 }

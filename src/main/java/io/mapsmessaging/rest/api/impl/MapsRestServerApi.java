@@ -19,15 +19,24 @@
 
 package io.mapsmessaging.rest.api.impl;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
+import io.mapsmessaging.rest.auth.BaseAuthenticationFilter;
 import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
+import io.mapsmessaging.security.SubjectHelper;
+import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,12 +50,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.util.Date;
+import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -156,6 +171,13 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
 
+  protected static int maxInactiveInterval = 600;
+  protected static final String USERNAME = "username";
+
+
+  private static final String secret = "very-secret-key-that-should-be-strong";
+  private static final Algorithm algorithm = Algorithm.HMAC256(secret);
+
   @GET
   @Path("/ping")
   @Produces({MediaType.APPLICATION_JSON})
@@ -234,24 +256,50 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
       }
   )
-  public LoginResponse login(
-      @QueryParam("sessionId") String sessionId,
-      @QueryParam("persistent") boolean persistentSession
-  ) {
-    HttpSession session = request.getSession(true);
+  public LoginResponse login(LoginRequest loginRequest,
+                             @Context HttpServletRequest httpRequest,
+                             @Context HttpServletResponse httpResponse) throws IOException {
+
+    boolean persistentSession = loginRequest.isPersistent();
+    String sessionId = loginRequest.getSessionId();
+    HttpSession session = request.getSession(false);
+
     if (session != null) {
-      if (persistentSession) {
-        session.setAttribute("persistentSession", true);
+      Subject subject = (Subject) session.getAttribute("subject");
+      if (subject != null && session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(loginRequest.getUsername())) {
+        return new LoginResponse("Already authenticated");
       }
-      if (sessionId != null && !sessionId.isEmpty()) {
-        session.setAttribute("sessionId", sessionId);
-      }
-      hasAccess("root");
-      Subject subject = (Subject) getSession().getAttribute("subject");
-      String username = (String) getSession().getAttribute("username");
-      return new LoginResponse("Success", subject, username);
     }
-    return new LoginResponse("No Authentication Required");
+    int maxAge = (AuthManager.getInstance().isAuthenticationEnabled() && loginRequest.isLongLived()) ? 7 * 24 * 60 * 60 : 15 * 60;
+
+    if (AuthManager.getInstance().isAuthenticationEnabled()){
+      if (AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray())) {
+        Subject subject = AuthManager.getInstance().getUserSubject(loginRequest.getUsername());
+        session = setupCookieAndSession(loginRequest.getUsername(), subject, httpRequest, httpResponse, maxAge);
+      }
+      else{
+        throw new IOException("Invalid username or password");
+      }
+    }
+    else{
+      loginRequest.setUsername("anonymous");
+      loginRequest.setPassword("");
+      Subject subject = new Subject();
+      subject.getPrincipals().add(new UserPrincipal(loginRequest.getUsername()));
+      subject.getPrincipals().add(new UniqueIdentifierPrincipal(UUID.randomUUID()));
+      session = setupCookieAndSession(loginRequest.getUsername(), subject, httpRequest, httpResponse, maxAge);
+    }
+
+    if (persistentSession) {
+      session.setAttribute("persistentSession", true);
+    }
+    if (sessionId != null && !sessionId.isEmpty()) {
+      session.setAttribute("sessionId", sessionId);
+    }
+    hasAccess("root");
+    Subject subject = (Subject) getSession().getAttribute("subject");
+    String username = (String) getSession().getAttribute(USERNAME);
+    return new LoginResponse("Success", subject, username);
   }
 
   @POST
@@ -265,7 +313,7 @@ public class MapsRestServerApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Bad request or invalid session state")
       }
   )
-  public StatusResponse logout() {
+  public StatusResponse logout(@Context HttpServletResponse httpResponse) throws IOException {
     HttpSession session = request.getSession(false);
     String response = "Success";
     if (session != null) {
@@ -285,7 +333,35 @@ public class MapsRestServerApi extends BaseRestApi {
       }
       session.invalidate();
     }
+    Cookie cookie = new Cookie("access_token", "");
+    cookie.setPath("/");
+    cookie.setHttpOnly(true);
+    cookie.setSecure(true);
+    cookie.setMaxAge(0);
+    httpResponse.addCookie(cookie);
     return new StatusResponse(response);
   }
+
+  private HttpSession setupCookieAndSession(String username, Subject subject, HttpServletRequest httpRequest, HttpServletResponse httpResponse,int maxAge)  {
+    String token = generateToken(username, maxAge);
+    UUID uuid = SubjectHelper.getUniqueId(subject);
+
+    Cookie cookie = new Cookie("access_token", token);
+    cookie.setHttpOnly(true);
+    cookie.setSecure(true);
+    cookie.setPath("/");
+    cookie.setMaxAge(maxAge);
+    httpResponse.addCookie(cookie);
+    return BaseAuthenticationFilter.setupSession(httpRequest, username, uuid, subject);
+  }
+
+  public static String generateToken(String username, int age) {
+    return JWT.create()
+        .withSubject(username)
+        .withIssuedAt(new Date())
+        .withExpiresAt(new Date(System.currentTimeMillis() + (age*1000L)))
+        .sign(algorithm);
+  }
+
 
 }

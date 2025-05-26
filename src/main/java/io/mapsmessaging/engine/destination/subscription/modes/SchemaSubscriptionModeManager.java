@@ -40,7 +40,7 @@ public class SchemaSubscriptionModeManager  extends SubscriptionModeManager {
   }
 
   protected Future<Response> scheduleSubscription(SubscriptionController controller, SubscriptionContext context, DestinationImpl destinationImpl, AtomicLong counter) {
-    return destinationImpl.submit( new SchemaSubscriptionTask(controller, context, destinationImpl, counter));
+     return destinationImpl.submit( new SchemaSubscriptionTask(controller, context, destinationImpl, counter));
   }
 
   @Override

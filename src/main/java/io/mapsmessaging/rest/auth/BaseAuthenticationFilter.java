@@ -19,10 +19,17 @@
 
 package io.mapsmessaging.rest.auth;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.core.Context;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,11 +39,23 @@ import java.util.UUID;
 
 public abstract class BaseAuthenticationFilter implements ContainerRequestFilter {
 
+
+  private static final String secret = "very-secret-key-that-should-be-strong";
+  private static final Algorithm algorithm = Algorithm.HMAC256(secret);
+
+
+  @Context
+  private HttpServletRequest httpRequest;
+
+  @Context
+  private HttpServletResponse httpResponse;
+
+
   @Getter
   @Setter
   protected static int maxInactiveInterval = 600;
   protected static final String USERNAME = "username";
-  private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping"};
+  private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping", "/api/v1/login"};
   private static final String[] FULL_PATHS = new String[] { "/api/v1/server/log/sse/stream/", "/api/v1/messaging/sse/stream" };
 
   @Override
@@ -55,7 +74,52 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
     processAuthentication(containerRequest);
   }
 
-  protected void setupSession(HttpServletRequest httpRequest, String username, UUID uuid, Subject subject, String jwtCookie) {
+
+  protected void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
+    try {
+      Cookie[] cookies = httpRequest.getCookies();
+      String accessToken = null;
+
+      if (cookies != null) {
+        for (Cookie cookie : cookies) {
+          if ("access_token".equals(cookie.getName())) {
+            accessToken = cookie.getValue();
+            break;
+          }
+        }
+      }
+      if (accessToken == null) {
+        httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+      }
+
+      DecodedJWT jwt;
+      try {
+        jwt = JWT.require(algorithm).build().verify(accessToken);
+      } catch (JWTVerificationException ex) {
+        httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+      }
+
+      String usernameFromToken = jwt.getSubject();
+
+      HttpSession session = httpRequest.getSession(false);
+      if (session == null) {
+        httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+      }
+
+      Object sessionUsername = session.getAttribute("username");
+      if (sessionUsername == null || !sessionUsername.equals(usernameFromToken)) {
+        httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      }
+    } catch (Throwable e) {
+      throw e;
+    }
+  }
+
+
+  public static HttpSession setupSession(HttpServletRequest httpRequest, String username, UUID uuid, Subject subject) {
     String scheme = httpRequest.getScheme();
     String remoteIp = httpRequest.getRemoteAddr();
     String name = scheme+"_/"+remoteIp+":"+httpRequest.getRemotePort();
@@ -66,8 +130,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
     session.setAttribute(USERNAME, username);
     session.setAttribute("subject", subject);
     session.setAttribute("uuid", uuid);
-    session.setAttribute("jwtCookie", jwtCookie);
+    return session;
   }
 
-  protected abstract void processAuthentication(ContainerRequestContext containerRequest) throws IOException;
 }

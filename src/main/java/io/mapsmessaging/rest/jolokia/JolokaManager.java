@@ -99,7 +99,11 @@ public class JolokaManager implements Agent {
       HashMap<String, String> map = new HashMap<>();
       ConfigurationProperties properties = config.getJolokiaMapping();
       for (Entry<String, Object> entry : properties.entrySet()) {
-        map.put(entry.getKey(), entry.getValue().toString());
+        String val = entry.getValue().toString();
+        if(val.endsWith(".0")){
+          val = val.substring(0, val.indexOf("."));
+        }
+        map.put(entry.getKey(), val);
       }
       map.put("agentId", MessageDaemon.getInstance().getId());
       map.put("agentDescription", "Maps Messaging Server");
