@@ -291,7 +291,6 @@ public class MapsRestServerApi extends BaseRestApi {
       }
   )
   public LoginResponse login(LoginRequest loginRequest) throws IOException {
-
     boolean persistentSession = loginRequest.isPersistent();
     String sessionId = loginRequest.getSessionId();
     HttpSession session = request.getSession(false);
@@ -383,7 +382,16 @@ public class MapsRestServerApi extends BaseRestApi {
     cookie.setSecure(true);
     cookie.setPath("/");
     cookie.setMaxAge(maxAge);
-    httpResponse.addCookie(cookie);
+    String cookieValue = "access_token=" + token +
+        "; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=" + maxAge;
+    httpResponse.setHeader("Set-Cookie", cookieValue);
+
+    String sessionId = request.getSession().getId();  // Or get it from response if freshly created
+    String jsessionCookie = "JSESSIONID=" + sessionId +
+        "; Path=/; HttpOnly; Secure; SameSite=None";
+    httpResponse.setHeader("Set-Cookie", jsessionCookie);
+
+    //httpResponse.addCookie(cookie);
     return BaseAuthenticationFilter.setupSession(httpRequest, username, uuid, subject);
   }
 
