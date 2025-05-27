@@ -130,7 +130,13 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
 
   public static HttpSession setupSession(HttpServletRequest httpRequest, String username, UUID uuid, Subject subject) {
     String scheme = httpRequest.getScheme();
-    String remoteIp = httpRequest.getRemoteAddr();
+    String remoteIp = httpRequest.getHeader("X-Forwarded-For");
+    if (remoteIp != null && remoteIp.contains(",")) {
+      remoteIp = remoteIp.split(",")[0].trim();
+    }
+    if (remoteIp == null) {
+      remoteIp = httpRequest.getRemoteAddr();
+    }
     String name = scheme+"_/"+remoteIp+":"+httpRequest.getRemotePort();
 
     HttpSession session = httpRequest.getSession(true);
