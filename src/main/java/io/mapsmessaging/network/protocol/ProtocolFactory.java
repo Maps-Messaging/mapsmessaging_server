@@ -20,12 +20,17 @@
 package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocol;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolV1;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolV2;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -38,9 +43,16 @@ public class ProtocolFactory implements ServiceManager {
   @Setter
   private static List<ProtocolImplFactory> protocolServiceList;
   private final String protocols;
+  private final List<ProxyProtocol> proxyProtocols;
+
 
   public ProtocolFactory(String protocols) {
     this.protocols = protocols;
+    proxyProtocols = List.of(
+        new ProxyProtocolV1(),
+        new ProxyProtocolV2()
+    );
+
   }
 
   public ProtocolImplFactory getBoundedProtocol() {
@@ -52,10 +64,11 @@ public class ProtocolFactory implements ServiceManager {
     return null;
   }
 
-  public ProtocolImplFactory detect(Packet packet) throws IOException {
+  public DetectedProtocol detect(Packet packet) throws IOException {
     int potential = 0;
     int failed = 0;
     StringBuilder sb = new StringBuilder();
+    ProxyProtocolInfo proxyProtocolInfo = detectProxy(packet);
     for (ProtocolImplFactory protocol : protocolServiceList) {
       if ((protocols.contains("all") &&
           !protocol.getName().equalsIgnoreCase("echo") &&
@@ -65,7 +78,7 @@ public class ProtocolFactory implements ServiceManager {
         potential++;
         try {
           if (protocol.detect(packet)) {
-            return protocol;
+            return new DetectedProtocol(proxyProtocolInfo, protocol);
           } else {
             failed++;
           }
@@ -76,6 +89,15 @@ public class ProtocolFactory implements ServiceManager {
     }
     if (potential == failed) {
       throw new IOException("No known protocol detected " + packet.toString() + " <" + potential + " != " + failed + "> " + sb.toString());
+    }
+    return null;
+  }
+
+  private ProxyProtocolInfo detectProxy(Packet packet) throws UnknownHostException {
+    for (ProxyProtocol proxyProtocol : proxyProtocols) {
+      if (proxyProtocol.matches(packet)) {
+        return proxyProtocol.parse(packet);
+      }
     }
     return null;
   }

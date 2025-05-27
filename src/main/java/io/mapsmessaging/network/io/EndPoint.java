@@ -22,6 +22,7 @@ package io.mapsmessaging.network.io;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import java.io.Closeable;
 import java.io.IOException;
@@ -49,8 +50,14 @@ public abstract class EndPoint implements Closeable {
 
   private final AtomicLong lastRead = new AtomicLong();
   private final AtomicLong lastWrite = new AtomicLong();
-  private final boolean isClient;
   protected List<String> jmxParentPath;
+
+  @Getter
+  private final boolean isClient;
+
+  @Getter
+  @Setter
+  private ProxyProtocolInfo proxyProtocolInfo;
 
   @Getter
   private boolean isClosed;
@@ -95,10 +102,6 @@ public abstract class EndPoint implements Closeable {
         currentConnections.decrement();
       }
     }
-  }
-
-  public boolean isClient() {
-    return isClient;
   }
 
   public void updateReadBytes(int read) {

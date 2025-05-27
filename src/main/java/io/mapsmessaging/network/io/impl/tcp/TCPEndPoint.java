@@ -62,7 +62,7 @@ public class TCPEndPoint extends EndPoint {
       if (isClient()) {
         name = getProtocol() + "_" + socket.getLocalAddress().toString() + "_" + socket.getLocalPort();
       } else {
-        name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
+        name = getProtocol() + "_" + getRemoteSocketAddress();
       }
       configure((TcpConfigDTO) endPointServerStatus.getConfig().getEndPointConfig());
     } catch (IOException e) {
@@ -87,7 +87,7 @@ public class TCPEndPoint extends EndPoint {
       socketChannel = socket.getChannel();
       selector = select;
       authenticationConfig = authConfig;
-      name = getProtocol() + "_" + socket.getRemoteSocketAddress().toString();
+      name = getProtocol() + "_" + getRemoteSocketAddress();
       configure((TcpConfigDTO) server.getConfig().getEndPointConfig());
     } catch (IOException e) {
       logger.log(ServerLogMessages.TCP_CONNECT_FAILED, e, accepted.toString());
@@ -126,6 +126,14 @@ public class TCPEndPoint extends EndPoint {
       }
     }
   }
+
+  private String getRemoteSocketAddress() {
+    if (getProxyProtocolInfo() == null) {
+      return socket.getRemoteSocketAddress().toString();
+    }
+    return getProxyProtocolInfo().getSource().getAddress().getHostAddress();
+  }
+
 
   public String getProtocol() {
     return "tcp";

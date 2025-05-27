@@ -29,7 +29,6 @@ import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.Selector;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 
 /**
@@ -92,9 +91,10 @@ public class ProtocolAcceptRunner implements Selectable {
         packet.flip();
         packet.position(0);
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
-        ProtocolImplFactory protocolImplFactory = protocolFactory.detect(packet);
-        if (protocolImplFactory != null) {
-          acceptProtocol(protocolImplFactory, pos - packet.position());
+        DetectedProtocol detectedProtocol = protocolFactory.detect(packet);
+        if (detectedProtocol != null) {
+          endPoint.setProxyProtocolInfo(detectedProtocol.getProxyProtocolInfo());
+          acceptProtocol(detectedProtocol, pos - packet.position());
         } else {
           packet.position(pos);
           packet.limit(packet.capacity());
@@ -113,12 +113,12 @@ public class ProtocolAcceptRunner implements Selectable {
     }
   }
 
-  private void acceptProtocol(ProtocolImplFactory protocolImplFactory, int pos) throws IOException {
+  private void acceptProtocol(DetectedProtocol detectedProtocol, int pos) throws IOException {
     endPoint.deregister(SelectionKey.OP_READ);
     packet.position(pos);
     packet.limit(packet.capacity());
     packet.flip();
-    logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CREATED, protocolImplFactory.getName());
-    protocolImplFactory.create(endPoint, packet);
+    logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CREATED, detectedProtocol.getProtocolImplFactory().getName());
+    detectedProtocol.getProtocolImplFactory().create(endPoint, packet);
   }
 }
