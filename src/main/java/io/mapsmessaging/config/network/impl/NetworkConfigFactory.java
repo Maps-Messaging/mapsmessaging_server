@@ -33,6 +33,7 @@ import java.util.List;
 public class NetworkConfigFactory {
 
   public static void pack(ConfigurationProperties config, EndPointConfigDTO endPointConfigDTO){
+    config.put("proxyProtocol", endPointConfigDTO.isProxyProtocol());
     config.put("type", endPointConfigDTO.getType());
     config.put("selectorThreadCount", endPointConfigDTO.getSelectorThreadCount());
     config.put("discoverable", endPointConfigDTO.isDiscoverable());
@@ -65,6 +66,7 @@ public class NetworkConfigFactory {
   }
 
   public static void unpack(ConfigurationProperties config, EndPointConfigDTO endPointConfigDTO){
+    endPointConfigDTO.setProxyProtocol(config.getBooleanProperty("proxyProtocol", false));
     endPointConfigDTO.setSelectorThreadCount(config.getIntProperty("selectorThreadCount", 2));
     endPointConfigDTO.setDiscoverable(config.getBooleanProperty("discoverable", false));
     endPointConfigDTO.setServerReadBufferSize(ConfigHelper.parseBufferSize(config.getProperty("serverReadBufferSize", "10K")));

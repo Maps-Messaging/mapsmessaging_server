@@ -72,6 +72,9 @@ public abstract class ProtocolConfigDTO extends BaseConfigDTO {
   })
   protected String type;
 
+  @Schema(description = "Support Proxy Protocol on the connection")
+  protected boolean proxyProtocol;
+
   @Schema(description = "Remote authentication configuration for the protocol")
   protected ConnectionAuthConfigDTO remoteAuthConfig;
 }

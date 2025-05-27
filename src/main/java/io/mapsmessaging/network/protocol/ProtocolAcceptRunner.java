@@ -91,7 +91,8 @@ public class ProtocolAcceptRunner implements Selectable {
         packet.flip();
         packet.position(0);
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
-        DetectedProtocol detectedProtocol = protocolFactory.detect(packet);
+        boolean proxyProtocol = endPoint.getConfig().getEndPointConfig().isProxyProtocol();
+        DetectedProtocol detectedProtocol = protocolFactory.detect(packet, proxyProtocol);
         if (detectedProtocol != null) {
           endPoint.setProxyProtocolInfo(detectedProtocol.getProxyProtocolInfo());
           acceptProtocol(detectedProtocol, pos - packet.position());

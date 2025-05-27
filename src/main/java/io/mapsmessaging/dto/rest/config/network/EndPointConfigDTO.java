@@ -73,4 +73,8 @@ public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Server write buffer size in bytes", example = "10240")
   protected long serverWriteBufferSize;
+
+  @Schema(description = "Enable Proxy Protocol detection", example = "true")
+  protected boolean proxyProtocol;
+
 }

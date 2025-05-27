@@ -45,14 +45,12 @@ public class ProtocolFactory implements ServiceManager {
   private final String protocols;
   private final List<ProxyProtocol> proxyProtocols;
 
-
   public ProtocolFactory(String protocols) {
     this.protocols = protocols;
     proxyProtocols = List.of(
         new ProxyProtocolV1(),
         new ProxyProtocolV2()
     );
-
   }
 
   public ProtocolImplFactory getBoundedProtocol() {
@@ -64,11 +62,11 @@ public class ProtocolFactory implements ServiceManager {
     return null;
   }
 
-  public DetectedProtocol detect(Packet packet) throws IOException {
+  public DetectedProtocol detect(Packet packet, boolean proxyProtocol) throws IOException {
     int potential = 0;
     int failed = 0;
     StringBuilder sb = new StringBuilder();
-    ProxyProtocolInfo proxyProtocolInfo = detectProxy(packet);
+    ProxyProtocolInfo proxyProtocolInfo = proxyProtocol ? detectProxy(packet) : null;
     for (ProtocolImplFactory protocol : protocolServiceList) {
       if ((protocols.contains("all") &&
           !protocol.getName().equalsIgnoreCase("echo") &&

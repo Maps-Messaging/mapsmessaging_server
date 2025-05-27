@@ -167,6 +167,7 @@ NetworkManager:
         url: tcp://:::1883/
         protocol: mqtt
         auth: usernamePassword
+        proxyProtocol: true
 
       - name: "SSL MQTT Interface"
         url: ssl://:::1884/
