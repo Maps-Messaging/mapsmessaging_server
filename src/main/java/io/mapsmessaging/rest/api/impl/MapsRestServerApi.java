@@ -296,10 +296,7 @@ public class MapsRestServerApi extends BaseRestApi {
     HttpSession session = request.getSession(false);
 
     if (session != null) {
-      Subject subject = (Subject) session.getAttribute("subject");
-      if (subject != null && session.getAttribute(USERNAME) != null && session.getAttribute(USERNAME).equals(loginRequest.getUsername())) {
-        return new LoginResponse("Already authenticated");
-      }
+      session.invalidate();
     }
     int maxAge = (AuthManager.getInstance().isAuthenticationEnabled() && loginRequest.isLongLived()) ? 7 * 24 * 60 * 60 : 15 * 60;
 
