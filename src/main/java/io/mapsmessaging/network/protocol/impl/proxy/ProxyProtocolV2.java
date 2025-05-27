@@ -37,38 +37,40 @@ public class ProxyProtocolV2 extends ProxyProtocol {
       throw new IllegalArgumentException("Not PROXY protocol v2");
     }
 
+    int transport = (protoFam >> 4) & 0x0F;
+    int family = protoFam & 0x0F;
+
     ByteBuffer addrBuf = packet.getRawBuffer().slice();
     addrBuf.limit(len);
     packet.position(packet.position() + len); // Advance past PROXY data
 
     InetSocketAddress source, destination;
-    switch (protoFam & 0x0F) {
-      case 0x1: { // TCP over IPv4
-        byte[] src = new byte[4];
-        byte[] dst = new byte[4];
-        addrBuf.get(src);
-        addrBuf.get(dst);
-        int srcPort = Short.toUnsignedInt(addrBuf.getShort());
-        int dstPort = Short.toUnsignedInt(addrBuf.getShort());
-        source = new InetSocketAddress(InetAddress.getByAddress(src), srcPort);
-        destination = new InetSocketAddress(InetAddress.getByAddress(dst), dstPort);
-        break;
-      }
-      case 0x2: { // TCP over IPv6
-        byte[] src = new byte[16];
-        byte[] dst = new byte[16];
-        addrBuf.get(src);
-        addrBuf.get(dst);
-        int srcPort = Short.toUnsignedInt(addrBuf.getShort());
-        int dstPort = Short.toUnsignedInt(addrBuf.getShort());
-        source = new InetSocketAddress(InetAddress.getByAddress(src), srcPort);
-        destination = new InetSocketAddress(InetAddress.getByAddress(dst), dstPort);
-        break;
-      }
-      default:
-        throw new IllegalArgumentException("Unsupported PROXY v2 address family: " + protoFam);
+
+    if (family == 0x1) { // IPv4
+      byte[] src = new byte[4];
+      byte[] dst = new byte[4];
+      addrBuf.get(src);
+      addrBuf.get(dst);
+      int srcPort = Short.toUnsignedInt(addrBuf.getShort());
+      int dstPort = Short.toUnsignedInt(addrBuf.getShort());
+      source = new InetSocketAddress(InetAddress.getByAddress(src), srcPort);
+      destination = new InetSocketAddress(InetAddress.getByAddress(dst), dstPort);
+    } else if (family == 0x2) { // IPv6
+      byte[] src = new byte[16];
+      byte[] dst = new byte[16];
+      addrBuf.get(src);
+      addrBuf.get(dst);
+      int srcPort = Short.toUnsignedInt(addrBuf.getShort());
+      int dstPort = Short.toUnsignedInt(addrBuf.getShort());
+      source = new InetSocketAddress(InetAddress.getByAddress(src), srcPort);
+      destination = new InetSocketAddress(InetAddress.getByAddress(dst), dstPort);
+    } else {
+      throw new IllegalArgumentException("Unsupported PROXY v2 address family: " + family);
     }
 
-    return new ProxyProtocolInfo(source, destination, "v2");
+    // Optional: you can include the transport string (e.g., "udp4", "tcp6")
+    String version = (transport == 0x2 ? "udp" : "tcp") + (family == 0x1 ? "4" : "6");
+
+    return new ProxyProtocolInfo(source, destination, version);
   }
 }
