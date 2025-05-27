@@ -57,12 +57,8 @@ public class TokenManager {
 
   public String generateToken(HttpSession session, String resource){
     if (session == null) return null;
-
-    String cookie = (String) session.getAttribute("jwtCookie");
-    if (cookie == null) return null;
-
     String token = UuidGenerator.getInstance().generate(RandomVersions.RANDOM).toString();
-    TokenDetails tokenDetails = new TokenDetails(cookie, resource);
+    TokenDetails tokenDetails = new TokenDetails(session.getId(), resource);
     tokens.put(token, tokenDetails);
     return token;
   }

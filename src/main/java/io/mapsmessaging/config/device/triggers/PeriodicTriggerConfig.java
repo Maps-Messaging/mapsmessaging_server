@@ -26,7 +26,7 @@ import io.mapsmessaging.dto.rest.config.device.triggers.PeriodicTriggerConfigDTO
 public class PeriodicTriggerConfig extends PeriodicTriggerConfigDTO implements TriggerConfig {
 
   public PeriodicTriggerConfig(ConfigurationProperties config) {
-    this.type = "interval";
+    this.type = "periodic";
     this.interval = config.getIntProperty("interval", 0);
     this.name = config.getProperty("name", "");
   }

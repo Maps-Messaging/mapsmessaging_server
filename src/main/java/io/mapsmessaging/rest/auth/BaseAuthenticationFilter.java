@@ -23,7 +23,10 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.auth.AuthManager;
+import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -75,7 +78,6 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
     processAuthentication(containerRequest);
   }
 
-
   protected void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
     try {
       if(!AuthManager.getInstance().isAuthenticationEnabled())return;
@@ -92,6 +94,10 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
         }
       }
       if (accessToken == null) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session != null) {
+          session.invalidate();
+        }
         httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         return;
       }
