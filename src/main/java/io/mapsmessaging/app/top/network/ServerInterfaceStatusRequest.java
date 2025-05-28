@@ -35,7 +35,6 @@ public class ServerInterfaceStatusRequest extends RestApiConnection {
     return super.getData();
   }
   @Override
-
   public Object parse(JsonElement jsonElement) {
     return gson.fromJson(jsonElement, InterfaceStatusResponse.class);
   }

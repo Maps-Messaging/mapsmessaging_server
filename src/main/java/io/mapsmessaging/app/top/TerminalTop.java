@@ -54,7 +54,8 @@ public class TerminalTop {
 
   public TerminalTop(String url, String username, String password) throws IOException {
     runFlag = new AtomicBoolean(true);
-    restConnection = new RestRequestManager(url, username, password);
+    restConnection = RestRequestManager.getInstance();
+    restConnection.initialize(url, username, password);
 
     // Setup terminal and screen layers
     Terminal terminal = new DefaultTerminalFactory().createTerminal();

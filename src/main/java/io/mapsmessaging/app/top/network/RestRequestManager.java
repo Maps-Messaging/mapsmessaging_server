@@ -19,31 +19,116 @@
 
 package io.mapsmessaging.app.top.network;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import lombok.Getter;
+
 import java.io.IOException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RestRequestManager implements Runnable {
+  private static final RestRequestManager INSTANCE = new RestRequestManager();
   private final List<Object> queue;
+  @Getter
+  private final Client client;
+  private final CookieManager cookieManager;
+  private final String loginUrl = "/api/v1/login";
+  private final String refreshUrl = "/api/v1/refreshToken";
+  private String serverUrl;
+  private String username;
+  private String password;
+
   private final List<RestApiConnection> requests;
+
+
   private AtomicBoolean running = new AtomicBoolean(true);
   private AtomicBoolean connected = new AtomicBoolean(false);
 
-  public RestRequestManager(String url, String username, String password) {
-    queue = new LinkedList<>();
+
+  private RestRequestManager() {
+    this.cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
+    CookieHandler.setDefault(cookieManager);
+    this.client = ClientBuilder.newClient();
     requests = new LinkedList<>();
-    requests.add(new ServerDestinationStatusRequest(url, username, password));
-    requests.add(new ServerDetailsRequest(url, username, password));
-    requests.add(new ServerInfoRequest(url, username, password));
-    requests.add(new ServerInterfaceStatusRequest(url, username, password));
-    Thread thread = new Thread(this);
-    thread.setDaemon(true);
-    thread.start();
+    queue = new LinkedList<>();
   }
 
-  public void close(){
-    running.set(false);
+  public static RestRequestManager getInstance() {
+    return INSTANCE;
+  }
+
+  public void initialize(String serverUrl, String username, String password) throws IOException {
+    this.serverUrl = serverUrl;
+    this.username = username;
+    this.password = password;
+    requests.add(new ServerDestinationStatusRequest(serverUrl, username, password));
+    requests.add(new ServerDetailsRequest(serverUrl, username, password));
+    requests.add(new ServerInfoRequest(serverUrl, username, password));
+    requests.add(new ServerInterfaceStatusRequest(serverUrl, username, password));
+    login();
+    Thread t = new Thread(this);
+    t.start();
+  }
+
+  public synchronized void ensureValidSession() throws IOException {
+    if (getJwtRemainingSeconds() < 60) {
+      refreshToken();
+    }
+  }
+
+  private void login() throws IOException {
+    JsonObject json = new JsonObject();
+    json.addProperty("username", username);
+    json.addProperty("password", password);
+
+    Response response = client
+        .target(serverUrl + loginUrl)
+        .request(MediaType.APPLICATION_JSON)
+        .post(Entity.json(json.toString()));
+
+    if (response.getStatus() != 200) {
+      throw new IOException("Login failed: " + response.getStatus());
+    }
+    connected.set(true);
+  }
+
+  private void refreshToken() throws IOException {
+    Response response = client
+        .target(serverUrl + refreshUrl)
+        .request(MediaType.APPLICATION_JSON)
+        .get();
+
+    if (response.getStatus() != 200) {
+      throw new IOException("Token refresh failed: " + response.getStatus());
+    }
+  }
+
+  private long getJwtRemainingSeconds() {
+    return cookieManager.getCookieStore().getCookies().stream()
+        .filter(c -> c.getName().equals("access_token"))
+        .findFirst()
+        .map(c -> {
+          String[] parts = c.getValue().split("\\.");
+          if (parts.length < 2) return 0L;
+          String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+          JsonObject obj = JsonParser.parseString(payload).getAsJsonObject();
+          long exp = obj.get("exp").getAsLong();
+          return exp - Instant.now().getEpochSecond();
+        })
+        .orElse(0L);
   }
 
   public void run(){
@@ -81,5 +166,9 @@ public class RestRequestManager implements Runnable {
   public boolean isConnected() {
     return connected.get();
   }
-}
 
+  public void close() {
+    running.set(false);
+    connected.set(false);
+  }
+}

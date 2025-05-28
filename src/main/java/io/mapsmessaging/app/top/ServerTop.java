@@ -34,7 +34,7 @@ public class ServerTop {
       username = args[1];
     }
     if(args.length > 2){
-      username = args[2];
+      password = args[2];
     }
     new TerminalTop(url, username, password);
     System.exit(1);

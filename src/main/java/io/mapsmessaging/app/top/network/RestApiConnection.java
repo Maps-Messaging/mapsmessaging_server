@@ -41,28 +41,30 @@ public abstract class RestApiConnection {
   public abstract Object parse(JsonElement jsonElement) throws JsonParseException;
 
   public Object getData() throws IOException {
-    try (Client client = ClientBuilder.newClient()) {
-      WebTarget target = client.target(url).path(endpoint);
-      Response response = target.request(MediaType.APPLICATION_JSON).get();
+    RestRequestManager manager = RestRequestManager.getInstance();
+    manager.ensureValidSession();
 
-      if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-        String jsonString = response.readEntity(String.class);
-        JsonElement jsonElement;
+    WebTarget target = manager.getClient().target(url).path(endpoint);
+    Response response = target.request(MediaType.APPLICATION_JSON).get();
 
-        if (jsonString.trim().startsWith("[")) {
-          JsonArray jsonArray = JsonParser.parseString(jsonString).getAsJsonArray();
-          JsonObject jsonObject = new JsonObject();
-          jsonObject.add("data", jsonArray);
-          jsonElement = jsonObject;
-        } else {
-          jsonElement = JsonParser.parseString(jsonString);
-        }
-        return parse(jsonElement);
-      } else if (response.getStatus() == Response.Status.FORBIDDEN.getStatusCode()) {
-        throw new IOException("Access denied");
+    if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+      String jsonString = response.readEntity(String.class);
+      JsonElement jsonElement;
+
+      if (jsonString.trim().startsWith("[")) {
+        JsonArray jsonArray = JsonParser.parseString(jsonString).getAsJsonArray();
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("data", jsonArray);
+        jsonElement = jsonObject;
       } else {
-        throw new IOException("Unexpected error: " + response.getStatus());
+        jsonElement = JsonParser.parseString(jsonString);
       }
+      return parse(jsonElement);
+    } else if (response.getStatus() == Response.Status.FORBIDDEN.getStatusCode()) {
+      throw new IOException("Access denied");
+    } else {
+      throw new IOException("Unexpected error: " + response.getStatus());
     }
   }
+
 }
