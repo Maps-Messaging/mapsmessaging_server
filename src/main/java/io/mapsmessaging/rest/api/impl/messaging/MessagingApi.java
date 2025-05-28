@@ -160,7 +160,7 @@ public class MessagingApi extends BaseRestApi {
   )
   public String requestSseMessageToken(@QueryParam("destination") String destinationName) {
     hasAccess(RESOURCE);
-    return TokenManager.getInstance().generateToken(request.getSession(false), destinationName);
+    return TokenManager.getInstance().generateToken(getSession(), destinationName);
   }
 
 
@@ -186,7 +186,8 @@ public class MessagingApi extends BaseRestApi {
       @BeanParam SubscriptionRequestDTO subscriptionRequest
   ) throws LoginException, IOException {
     hasAccess(RESOURCE);
-    if(!TokenManager.getInstance().useToken(token, subscriptionRequest.getDestinationName())){
+
+    if(!TokenManager.getInstance().useToken(getSession(), token, subscriptionRequest.getDestinationName())){
       response.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return;
     }

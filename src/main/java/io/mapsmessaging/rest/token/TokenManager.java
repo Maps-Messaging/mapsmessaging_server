@@ -19,16 +19,13 @@
 
 package io.mapsmessaging.rest.token;
 
-import io.mapsmessaging.engine.session.KeepAliveTask;
 import io.mapsmessaging.security.uuid.RandomVersions;
 import io.mapsmessaging.security.uuid.UuidGenerator;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import jakarta.servlet.http.HttpSession;
 
 import java.util.Map;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class TokenManager {
@@ -43,12 +40,7 @@ public class TokenManager {
   }
 
 
-  private final Map<String, TokenDetails > tokens;
-
   private TokenManager(){
-    tokens = new ConcurrentHashMap<>();
-    SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::clearExpiredTokens, 60, 60, TimeUnit.SECONDS);
-
   }
 
   public String generateToken(HttpSession session) {
@@ -59,23 +51,30 @@ public class TokenManager {
     if (session == null) return null;
     String token = UuidGenerator.getInstance().generate(RandomVersions.RANDOM).toString();
     TokenDetails tokenDetails = new TokenDetails(session.getId(), resource);
+
+    Map<String, TokenDetails > tokens = (Map) session.getAttribute("token");
+    if(tokens == null) {
+      tokens = new ConcurrentHashMap<>();
+      session.setAttribute("token", tokens);
+    }
+    if(tokens.size() > 2){
+      tokens.clear();
+    }
     tokens.put(token, tokenDetails);
     return token;
   }
 
-  public boolean useToken(String token){
-    return useToken(token, null);
+  public boolean useToken(HttpSession session, String token){
+    return useToken(session, token, null);
   }
 
-  public boolean useToken(String token, String resource) {
+  public boolean useToken(HttpSession session, String token, String resource) {
+    Map<String, TokenDetails > tokens = (Map) session.getAttribute("token");
+    if(tokens == null) {
+      return false;
+    }
     TokenDetails details = tokens.remove(token);
     return details != null && (resource == null || resource.equals(details.getResource()));
-  }
-
-
-  public void clearExpiredTokens() {
-    long now = System.currentTimeMillis();
-    tokens.entrySet().removeIf(entry -> entry.getValue().getExpires() < now);
   }
 
 }

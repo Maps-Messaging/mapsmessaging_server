@@ -57,7 +57,7 @@ public abstract class EndPoint implements Closeable {
 
   @Getter
   @Setter
-  private ProxyProtocolInfo proxyProtocolInfo;
+  protected ProxyProtocolInfo proxyProtocolInfo;
 
   @Getter
   private boolean isClosed;
@@ -126,6 +126,10 @@ public abstract class EndPoint implements Closeable {
 
   public void completedConnection() {
 
+  }
+
+  public boolean isProxyAllowed() {
+    return true;
   }
 
   public EndPointServerConfigDTO getConfig() {

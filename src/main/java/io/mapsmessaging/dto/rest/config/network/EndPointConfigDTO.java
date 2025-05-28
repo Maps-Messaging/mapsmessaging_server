@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.*;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolMode;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -74,7 +75,16 @@ public class EndPointConfigDTO extends BaseConfigDTO {
   @Schema(description = "Server write buffer size in bytes", example = "10240")
   protected long serverWriteBufferSize;
 
-  @Schema(description = "Enable Proxy Protocol detection", example = "true")
-  protected boolean proxyProtocol;
+  @Schema(
+      description = "Proxy Protocol support mode. 'ENABLED' allows but doesn't require it, 'REQUIRED' enforces it, 'DISABLED' will NOT check for incoming PROXY requests.",
+      example = "REQUIRED"
+  )
+  protected ProxyProtocolMode proxyProtocolMode;
+
+  @Schema(
+      description = "Comma-separated list of allowed proxy source addresses. Supports hostnames, IPv4/IPv6 addresses, and CIDR blocks (e.g., 192.168.0.0/24, ::1, example.com).",
+      example = "192.168.1.0/24,10.0.0.1,example.com,::1"
+  )
+  protected String allowedProxyHosts;
 
 }

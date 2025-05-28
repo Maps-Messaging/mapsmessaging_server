@@ -20,10 +20,7 @@
 package io.mapsmessaging.network.protocol;
 
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocol;
-import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
-import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolV1;
-import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolV2;
+import io.mapsmessaging.network.protocol.impl.proxy.*;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import lombok.Getter;
@@ -62,11 +59,14 @@ public class ProtocolFactory implements ServiceManager {
     return null;
   }
 
-  public DetectedProtocol detect(Packet packet, boolean proxyProtocol) throws IOException {
+  public DetectedProtocol detect(Packet packet, ProxyProtocolMode proxyProtocol) throws IOException {
     int potential = 0;
     int failed = 0;
     StringBuilder sb = new StringBuilder();
-    ProxyProtocolInfo proxyProtocolInfo = proxyProtocol ? detectProxy(packet) : null;
+    ProxyProtocolInfo proxyProtocolInfo = (proxyProtocol != ProxyProtocolMode.DISABLED) ? detectProxy(packet) : null;
+    if(proxyProtocolInfo == null && proxyProtocol == ProxyProtocolMode.REQUIRED) {
+      throw new IOException("PROXY header not detected in incoming packet but end point is configured to require it");
+    }
     for (ProtocolImplFactory protocol : protocolServiceList) {
       if ((protocols.contains("all") &&
           !protocol.getName().equalsIgnoreCase("echo") &&
@@ -97,6 +97,7 @@ public class ProtocolFactory implements ServiceManager {
         return proxyProtocol.parse(packet);
       }
     }
+    packet.getRawBuffer().reset();
     return null;
   }
 

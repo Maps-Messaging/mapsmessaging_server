@@ -22,6 +22,7 @@ package io.mapsmessaging.rest.api.impl;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.BuildInfo;
@@ -273,6 +274,48 @@ public class MapsRestServerApi extends BaseRestApi {
   }
 
 
+  @GET
+  @Path("/refreshToken")
+  @Operation(
+      summary = "Refreshes the users JWT",
+      description = "Refreshes the current JWT cookie used for auth.",
+      responses = {
+          @ApiResponse(
+              responseCode = "200",
+              description = "Refresh was successful or not required",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
+          ),
+          @ApiResponse(responseCode = "400", description = "Bad request"),
+          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
+      }
+  )
+  public String refreshToken() throws IOException {
+    String accessToken = BaseAuthenticationFilter.getAccessCookie(request);
+    if (accessToken == null) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      return "failed";
+    }
+
+    try {
+      JWT.require(algorithm).build().verify(accessToken);
+      HttpSession session = request.getSession(false);
+      if (session == null || session.getAttribute(USERNAME) == null) {
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return "failed";
+      }
+
+      String username = session.getAttribute(USERNAME).toString();
+      String token = generateToken(username, 15 * 60);
+      buildAccessCookie(token, 15 * 60, response);
+      return "ok";
+
+    } catch (JWTVerificationException ex) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      return "failed";
+    }
+  }
+
+
   @POST
   @Path("/login")
   @Produces({MediaType.APPLICATION_JSON})
@@ -373,7 +416,16 @@ public class MapsRestServerApi extends BaseRestApi {
   private HttpSession setupCookieAndSession(String username, Subject subject, HttpServletRequest httpRequest, HttpServletResponse httpResponse,int maxAge)  {
     String token = generateToken(username, maxAge);
     UUID uuid = SubjectHelper.getUniqueId(subject);
+    buildAccessCookie(token, maxAge, httpResponse);
 
+    String sessionId = request.getSession().getId();  // Or get it from response if freshly created
+    String jsessionCookie = "JSESSIONID=" + sessionId + "; Path=/; HttpOnly; Secure; SameSite=None";
+    httpResponse.addHeader("Set-Cookie", jsessionCookie);
+
+    return BaseAuthenticationFilter.setupSession(httpRequest, username, uuid, subject);
+  }
+
+  private void buildAccessCookie(String token, int maxAge, HttpServletResponse httpResponse) {
     Cookie cookie = new Cookie("access_token", token);
     cookie.setHttpOnly(true);
     cookie.setSecure(true);
@@ -381,12 +433,6 @@ public class MapsRestServerApi extends BaseRestApi {
     cookie.setMaxAge(maxAge);
     String cookieValue = "access_token=" + token + "; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=" + maxAge;
     httpResponse.addHeader("Set-Cookie", cookieValue);
-
-    String sessionId = request.getSession().getId();  // Or get it from response if freshly created
-    String jsessionCookie = "JSESSIONID=" + sessionId + "; Path=/; HttpOnly; Secure; SameSite=None";
-    httpResponse.addHeader("Set-Cookie", jsessionCookie);
-
-    return BaseAuthenticationFilter.setupSession(httpRequest, username, uuid, subject);
   }
 
   public static String generateToken(String username, int age) {

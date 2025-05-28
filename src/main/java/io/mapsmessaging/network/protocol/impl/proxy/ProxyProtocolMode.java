@@ -17,20 +17,10 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.token;
+package io.mapsmessaging.network.protocol.impl.proxy;
 
-import lombok.Data;
-
-import java.io.Serializable;
-
-@Data
-public class TokenDetails implements Serializable {
-  private String cookie;
-  private String resource;
-  private final long expires = System.currentTimeMillis()+ 60_000;
-
-  public TokenDetails(String cookie, String resource){
-    this.cookie = cookie;
-    this.resource = resource;
-  }
+public enum ProxyProtocolMode {
+  ENABLED,
+  DISABLED,
+  REQUIRED
 }

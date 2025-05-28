@@ -27,13 +27,16 @@ import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.HmacConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.UdpConfigDTO;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolMode;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class NetworkConfigFactory {
 
   public static void pack(ConfigurationProperties config, EndPointConfigDTO endPointConfigDTO){
-    config.put("proxyProtocol", endPointConfigDTO.isProxyProtocol());
+    config.put("proxyProtocol", endPointConfigDTO.getProxyProtocolMode().name());
+    config.put("allowedProxyHosts", endPointConfigDTO.getAllowedProxyHosts());
     config.put("type", endPointConfigDTO.getType());
     config.put("selectorThreadCount", endPointConfigDTO.getSelectorThreadCount());
     config.put("discoverable", endPointConfigDTO.isDiscoverable());
@@ -61,12 +64,19 @@ public class NetworkConfigFactory {
         nodeConfigs.add(((Config)hmacConfig).toConfigurationProperties());
       }
       config.put("nodeConfiguration", nodeConfigs);
-
     }
   }
 
   public static void unpack(ConfigurationProperties config, EndPointConfigDTO endPointConfigDTO){
-    endPointConfigDTO.setProxyProtocol(config.getBooleanProperty("proxyProtocol", false));
+    ProxyProtocolMode mode = ProxyProtocolMode.DISABLED;
+    try {
+      mode = ProxyProtocolMode.valueOf(config.getProperty("proxyProtocol", "DISABLED").toUpperCase());
+    } catch (IllegalArgumentException ignored) {
+      // Invalid input; fallback to DISABLED
+    }
+
+    endPointConfigDTO.setProxyProtocolMode(mode);
+    endPointConfigDTO.setAllowedProxyHosts(config.getProperty("allowedProxyHosts", ""));
     endPointConfigDTO.setSelectorThreadCount(config.getIntProperty("selectorThreadCount", 2));
     endPointConfigDTO.setDiscoverable(config.getBooleanProperty("discoverable", false));
     endPointConfigDTO.setServerReadBufferSize(ConfigHelper.parseBufferSize(config.getProperty("serverReadBufferSize", "10K")));

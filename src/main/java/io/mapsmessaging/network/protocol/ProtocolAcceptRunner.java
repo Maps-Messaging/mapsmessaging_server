@@ -27,6 +27,9 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolMode;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -83,21 +86,21 @@ public class ProtocolAcceptRunner implements Selectable {
     try {
       logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRING, packet.position(), packet.limit());
       int read = endPoint.readPacket(packet);
-      int pos = packet.position();
+      int endofPacket = packet.position();
       if (logger.isDebugEnabled()) {
-        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRED, read, pos, packet.limit());
+        logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRED, read, endofPacket, packet.limit());
       }
       if (read > 0) {
         packet.flip();
         packet.position(0);
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
-        boolean proxyProtocol = endPoint.getConfig().getEndPointConfig().isProxyProtocol();
-        DetectedProtocol detectedProtocol = protocolFactory.detect(packet, proxyProtocol);
+        ProxyProtocolMode  mode = endPoint.getConfig().getEndPointConfig().getProxyProtocolMode();
+        DetectedProtocol detectedProtocol = protocolFactory.detect(packet, mode);
         if (detectedProtocol != null) {
           endPoint.setProxyProtocolInfo(detectedProtocol.getProxyProtocolInfo());
-          acceptProtocol(detectedProtocol, pos - packet.position());
+          acceptProtocol(detectedProtocol, endofPacket - packet.position());
         } else {
-          packet.position(pos);
+          packet.position(endofPacket);
           packet.limit(packet.capacity());
         }
       } else if (read < 0) {
@@ -114,12 +117,19 @@ public class ProtocolAcceptRunner implements Selectable {
     }
   }
 
-  private void acceptProtocol(DetectedProtocol detectedProtocol, int pos) throws IOException {
+  private void acceptProtocol(DetectedProtocol detectedProtocol, int packetLength) throws IOException {
     endPoint.deregister(SelectionKey.OP_READ);
-    packet.position(pos);
-    packet.limit(packet.capacity());
+    int start = packet.position();                  // Where the frame starts
+    packet.limit(start + packetLength);            // Limit to just this frame
+    packet.compact();                               // Move frame to beginning
     packet.flip();
     logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CREATED, detectedProtocol.getProtocolImplFactory().getName());
+    //
+
+    ProxyProtocolInfo info = detectedProtocol.getProxyProtocolInfo();
+    if(info != null && !endPoint.isProxyAllowed()) {
+      throw new IOException("Rejected PROXY connection: source IP mismatch or not in allowedProxyHosts list (possible spoof or unconfigured proxy).");
+    }
     detectedProtocol.getProtocolImplFactory().create(endPoint, packet);
   }
 }

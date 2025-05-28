@@ -45,9 +45,9 @@ public class ScanningByteArrayDetection implements Detection {
     if (packet.limit() < checkArray.length) {
       throw new EndOfBufferException();
     }
-
+    int currentPos = packet.position();
     byte[] test = new byte[end - start];
-    packet.position(0);
+    packet.position(currentPos);
     packet.get(test, 0, test.length);
     for (int y = 0; y < test.length - (checkArray.length); y++) {
       boolean found = true;

@@ -23,12 +23,15 @@ import io.mapsmessaging.dto.rest.endpoint.EndPointDetailsDTO;
 import io.mapsmessaging.dto.rest.endpoint.EndPointSummaryDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointStatus;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
 import io.mapsmessaging.security.SubjectHelper;
 
 public class EndPointHelper {
 
   public static EndPointSummaryDTO buildSummaryDTO(String adapterName, EndPoint endPoint) {
     EndPointSummaryDTO summaryDTO = new EndPointSummaryDTO();
+    ProxyProtocolInfo info = endPoint.getProxyProtocolInfo();
+    summaryDTO.setProxyAddress(info != null ? info.getDestination().getHostString() : "");
     summaryDTO.setId(endPoint.getId());
     summaryDTO.setAdapter(adapterName);
     summaryDTO.setName(endPoint.getName());

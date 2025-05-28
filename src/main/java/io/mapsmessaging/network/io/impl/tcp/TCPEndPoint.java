@@ -20,7 +20,9 @@
 package io.mapsmessaging.network.io.impl.tcp;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.io.impl.tcp.NetworkHelper.isInCidr;
 
+import com.google.common.net.InetAddresses;
 import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -29,7 +31,10 @@ import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
+
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -46,9 +51,9 @@ public class TCPEndPoint extends EndPoint {
   protected final SocketChannel socketChannel;
   protected final Selector selector;
   private final String authenticationConfig;
-  private final String name;
   private final EndPointJMX mbean;
   private final AtomicBoolean isClosed;
+  private String name;
 
   public TCPEndPoint(long id, SocketChannel accepted, Selector select, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
     super(id, endPointServerStatus);
@@ -125,6 +130,45 @@ public class TCPEndPoint extends EndPoint {
         }
       }
     }
+  }
+
+  public void setProxyProtocolInfo(ProxyProtocolInfo proxyProtocolInfo){
+    super.setProxyProtocolInfo(proxyProtocolInfo);
+    name = getProtocol() + "_" + getRemoteSocketAddress();
+  }
+
+  public boolean isValidProxySource() {
+    if (socket == null || proxyProtocolInfo == null) return false;
+    InetAddress remoteAddr = socket.getInetAddress();
+    if (remoteAddr == null) return false;
+    String actualRemote = remoteAddr.getHostAddress();
+    String proxySource = proxyProtocolInfo.getDestination().getAddress().getHostAddress();
+    return(actualRemote.equals(proxySource));
+  }
+
+  public boolean isProxyAllowed() {
+    String allowedProxyHosts = getConfig().getEndPointConfig().getAllowedProxyHosts();
+    if (!isValidProxySource()) return false;
+    if (allowedProxyHosts == null || allowedProxyHosts.isBlank()) return true;
+
+    String sourceHost = proxyProtocolInfo.getDestination().getAddress().getHostAddress();
+    String[] entries = allowedProxyHosts.split(",");
+
+    for (String entry : entries) {
+      String trimmed = entry.trim();
+      if (trimmed.isEmpty()) continue;
+
+      try {
+        if (trimmed.contains("/")) {
+          if (isInCidr(trimmed, sourceHost)) return true;
+        } else {
+          InetAddress allowed = InetAddress.getByName(trimmed);
+          if (allowed.getHostAddress().equals(sourceHost)) return true;
+        }
+      } catch (Exception ignored) {
+      }
+    }
+    return false;
   }
 
   private String getRemoteSocketAddress() {

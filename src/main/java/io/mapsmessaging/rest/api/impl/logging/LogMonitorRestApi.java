@@ -109,7 +109,7 @@ public class LogMonitorRestApi extends BaseRestApi {
   )
   public String requestSseToken() {
     hasAccess(RESOURCE);
-    return TokenManager.getInstance().generateToken(request.getSession(false));
+    return TokenManager.getInstance().generateToken(getSession());
   }
 
   @GET
@@ -135,7 +135,7 @@ public class LogMonitorRestApi extends BaseRestApi {
       @QueryParam("filter") String filter
   ) throws ParseException {
     hasAccess(RESOURCE);
-    if(!TokenManager.getInstance().useToken(token)){
+    if(!TokenManager.getInstance().useToken(getSession(), token)){
       response.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return;
     }

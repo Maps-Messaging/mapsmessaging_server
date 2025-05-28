@@ -49,8 +49,9 @@ public class ByteArrayDetection implements Detection {
       throw new EndOfBufferException();
     }
 
+    int currentPos = packet.position();
     byte[] test = new byte[checkArray.length];
-    int originPoint = start;
+    int originPoint = currentPos+start;
     int shifted = 0;
     boolean found = false;
     while (!found) {

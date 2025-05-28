@@ -39,6 +39,7 @@ public class EndPointSummaryDTO {
   private String user;
   private String protocolName;
   private String protocolVersion;
+  private String proxyAddress;
   private long connectedTimeMs;
   private long lastRead;
   private long lastWrite;

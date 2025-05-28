@@ -82,17 +82,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
     try {
       if(!AuthManager.getInstance().isAuthenticationEnabled())return;
 
-      Cookie[] cookies = httpRequest.getCookies();
-      String accessToken = null;
-
-      if (cookies != null) {
-        for (Cookie cookie : cookies) {
-          if ("access_token".equals(cookie.getName())) {
-            accessToken = cookie.getValue();
-            break;
-          }
-        }
-      }
+      String accessToken = getAccessCookie(httpRequest);
       if (accessToken == null) {
         HttpSession session = httpRequest.getSession(false);
         if (session != null) {
@@ -127,6 +117,17 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
     }
   }
 
+  public static String getAccessCookie(HttpServletRequest httpRequest) {
+    Cookie[] cookies = httpRequest.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if ("access_token".equals(cookie.getName())) {
+          return cookie.getValue();
+        }
+      }
+    }
+    return null;
+  }
 
   public static HttpSession setupSession(HttpServletRequest httpRequest, String username, UUID uuid, Subject subject) {
     String scheme = httpRequest.getScheme();
