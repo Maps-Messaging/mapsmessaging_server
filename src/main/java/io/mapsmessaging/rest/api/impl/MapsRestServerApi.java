@@ -65,6 +65,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
+import static io.mapsmessaging.rest.auth.SessionTokenHandler.*;
 
 @OpenAPIDefinition(
     info =
@@ -290,7 +291,7 @@ public class MapsRestServerApi extends BaseRestApi {
       }
   )
   public String refreshToken() throws IOException {
-    String accessToken = BaseAuthenticationFilter.getAccessCookie(request);
+    String accessToken = getAccessCookie(request);
     if (accessToken == null) {
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
       return "failed";
@@ -303,10 +304,7 @@ public class MapsRestServerApi extends BaseRestApi {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         return "failed";
       }
-
-      String username = session.getAttribute(USERNAME).toString();
-      String token = generateToken(username, 15 * 60);
-      buildAccessCookie(token, 15 * 60, response);
+      renewSession(session, response);
       return "ok";
 
     } catch (JWTVerificationException ex) {
@@ -412,36 +410,4 @@ public class MapsRestServerApi extends BaseRestApi {
     httpResponse.addCookie(cookie);
     return new StatusResponse(response);
   }
-
-  private HttpSession setupCookieAndSession(String username, Subject subject, HttpServletRequest httpRequest, HttpServletResponse httpResponse,int maxAge)  {
-    String token = generateToken(username, maxAge);
-    UUID uuid = SubjectHelper.getUniqueId(subject);
-    buildAccessCookie(token, maxAge, httpResponse);
-
-    String sessionId = request.getSession().getId();  // Or get it from response if freshly created
-    String jsessionCookie = "JSESSIONID=" + sessionId + "; Path=/; HttpOnly; Secure; SameSite=None";
-    httpResponse.addHeader("Set-Cookie", jsessionCookie);
-
-    return BaseAuthenticationFilter.setupSession(httpRequest, username, uuid, subject);
-  }
-
-  private void buildAccessCookie(String token, int maxAge, HttpServletResponse httpResponse) {
-    Cookie cookie = new Cookie("access_token", token);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(true);
-    cookie.setPath("/");
-    cookie.setMaxAge(maxAge);
-    String cookieValue = "access_token=" + token + "; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=" + maxAge;
-    httpResponse.addHeader("Set-Cookie", cookieValue);
-  }
-
-  public static String generateToken(String username, int age) {
-    return JWT.create()
-        .withSubject(username)
-        .withIssuedAt(new Date())
-        .withExpiresAt(new Date(System.currentTimeMillis() + (age*1000L)))
-        .sign(algorithm);
-  }
-
-
 }

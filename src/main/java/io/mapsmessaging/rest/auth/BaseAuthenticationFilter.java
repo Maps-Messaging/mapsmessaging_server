@@ -41,12 +41,10 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.UUID;
 
+import static io.mapsmessaging.rest.auth.SessionTokenHandler.getAccessCookie;
+import static io.mapsmessaging.rest.auth.SessionTokenHandler.validateToken;
+
 public abstract class BaseAuthenticationFilter implements ContainerRequestFilter {
-
-
-  private static final String secret = "very-secret-key-that-should-be-strong";
-  private static final Algorithm algorithm = Algorithm.HMAC256(secret);
-
 
   @Context
   private HttpServletRequest httpRequest;
@@ -58,7 +56,6 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
   @Getter
   @Setter
   protected static int maxInactiveInterval = 600;
-  protected static final String USERNAME = "username";
   private static final String[] OPEN_PATHS = new String[] { "openapi.json" , "/health", "/api/v1/ping", "/api/v1/login"};
   private static final String[] FULL_PATHS = new String[] { "/api/v1/server/log/sse/stream/", "/api/v1/messaging/sse/stream" };
 
@@ -74,14 +71,12 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
         return;
       }
     }
-
     processAuthentication(containerRequest);
   }
 
   protected void processAuthentication(ContainerRequestContext containerRequest) throws IOException {
     try {
       if(!AuthManager.getInstance().isAuthenticationEnabled())return;
-
       String accessToken = getAccessCookie(httpRequest);
       if (accessToken == null) {
         HttpSession session = httpRequest.getSession(false);
@@ -92,22 +87,12 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
         return;
       }
 
-      DecodedJWT jwt;
-      try {
-        jwt = JWT.require(algorithm).build().verify(accessToken);
-      } catch (JWTVerificationException ex) {
-        httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-        return;
-      }
-
-      String usernameFromToken = jwt.getSubject();
-
       HttpSession session = httpRequest.getSession(false);
       if (session == null) {
         httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         return;
       }
-
+      String usernameFromToken = validateToken(accessToken, session, httpResponse);
       Object sessionUsername = session.getAttribute("username");
       if (sessionUsername == null || !sessionUsername.equals(usernameFromToken)) {
         httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -116,37 +101,4 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
       throw e;
     }
   }
-
-  public static String getAccessCookie(HttpServletRequest httpRequest) {
-    Cookie[] cookies = httpRequest.getCookies();
-    if (cookies != null) {
-      for (Cookie cookie : cookies) {
-        if ("access_token".equals(cookie.getName())) {
-          return cookie.getValue();
-        }
-      }
-    }
-    return null;
-  }
-
-  public static HttpSession setupSession(HttpServletRequest httpRequest, String username, UUID uuid, Subject subject) {
-    String scheme = httpRequest.getScheme();
-    String remoteIp = httpRequest.getHeader("X-Forwarded-For");
-    if (remoteIp != null && remoteIp.contains(",")) {
-      remoteIp = remoteIp.split(",")[0].trim();
-    }
-    if (remoteIp == null) {
-      remoteIp = httpRequest.getRemoteAddr();
-    }
-    String name = scheme+"_/"+remoteIp+":"+httpRequest.getRemotePort();
-
-    HttpSession session = httpRequest.getSession(true);
-    session.setAttribute("name", name);
-    session.setMaxInactiveInterval(maxInactiveInterval);
-    session.setAttribute(USERNAME, username);
-    session.setAttribute("subject", subject);
-    session.setAttribute("uuid", uuid);
-    return session;
-  }
-
 }
