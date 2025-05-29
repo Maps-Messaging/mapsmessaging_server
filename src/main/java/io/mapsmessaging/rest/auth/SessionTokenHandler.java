@@ -47,21 +47,32 @@ public class SessionTokenHandler {
   public static HttpSession setupCookieAndSession(String username, Subject subject, HttpServletRequest httpRequest, HttpServletResponse httpResponse, int maxAge) {
     String token = generateToken(username, maxAge);
     UUID uuid = SubjectHelper.getUniqueId(subject);
-    buildAccessCookie(token, maxAge, httpResponse);
+    buildAccessCookie(token, maxAge, httpRequest, httpResponse);
     String sessionId = httpRequest.getSession().getId();  // Or get it from response if freshly created
     String jsessionCookie = "JSESSIONID=" + sessionId + "; Path=/; HttpOnly; Secure; SameSite=None";
     httpResponse.addHeader("Set-Cookie", jsessionCookie);
     return setupSession(httpRequest, username, uuid, subject);
   }
 
-  public static void buildAccessCookie(String token, int maxAge, HttpServletResponse httpResponse) {
+  public static void buildAccessCookie(String token, int maxAge,HttpServletRequest request, HttpServletResponse httpResponse) {
+    String scheme = request.getHeader("X-Forwarded-Proto");
+    boolean isSecure = "https".equalsIgnoreCase(scheme) || request.isSecure();
+
     Cookie cookie = new Cookie("access_token", token);
     cookie.setHttpOnly(true);
-    cookie.setSecure(true);
+    cookie.setSecure(isSecure);
     cookie.setPath("/");
     cookie.setMaxAge(maxAge);
-    String cookieValue = "access_token=" + token + "; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=" + maxAge;
-    httpResponse.addHeader("Set-Cookie", cookieValue);
+
+    StringBuilder cookieValue = new StringBuilder("access_token=")
+        .append(token)
+        .append("; Path=/; HttpOnly; SameSite=None; Max-Age=")
+        .append(maxAge);
+
+    if (isSecure) {
+      cookieValue.append("; Secure");
+    }
+    httpResponse.setHeader("Set-Cookie", cookieValue.toString());
   }
 
   public static String generateToken(String username, int age) {
@@ -92,13 +103,13 @@ public class SessionTokenHandler {
     return session;
   }
 
-  public static String validateToken(String accessToken, HttpSession session, HttpServletResponse httpResponse) throws IOException {
+  public static String validateToken(String accessToken, HttpSession session,HttpServletRequest request, HttpServletResponse httpResponse) throws IOException {
     try {
       DecodedJWT jwt = JWT.require(algorithm).build().verify(accessToken);
       Date threshold = new Date(System.currentTimeMillis() + TOKEN_EXPIRATION_THRESHOLD); // if we are 2 minutes to expiry, refresh
       Date expiry = jwt.getExpiresAt();
       if (expiry.before(threshold)) {
-        renewSession(session, httpResponse);
+        renewSession(session, request, httpResponse);
       }
       return jwt.getSubject();
     } catch (JWTVerificationException ex) {
@@ -107,17 +118,20 @@ public class SessionTokenHandler {
     }
   }
 
-  public static void renewSession(HttpSession session, HttpServletResponse response){
+  public static void renewSession(HttpSession session, HttpServletRequest request, HttpServletResponse response){
     String username = session.getAttribute(USERNAME).toString();
     String token = generateToken(username, TOKEN_LIFETIME);
-    buildAccessCookie(token, TOKEN_LIFETIME, response);
+    buildAccessCookie(token, TOKEN_LIFETIME, request, response);
   }
 
-  public static void clearToken(HttpServletResponse httpResponse) {
+  public static void clearToken(HttpServletRequest request, HttpServletResponse httpResponse) {
+    String scheme = request.getHeader("X-Forwarded-Proto");
+    boolean isSecure = "https".equalsIgnoreCase(scheme) || request.isSecure();
+
     Cookie cookie = new Cookie("access_token", "");
     cookie.setPath("/");
     cookie.setHttpOnly(true);
-    cookie.setSecure(true);
+    cookie.setSecure(isSecure);
     cookie.setMaxAge(0);
     httpResponse.addCookie(cookie);
   }

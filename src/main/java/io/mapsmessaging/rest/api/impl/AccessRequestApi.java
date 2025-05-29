@@ -114,8 +114,8 @@ public class AccessRequestApi extends BaseRestApi {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         return "failed";
       }
-      validateToken(accessToken, session, response);
-      renewSession(session, response);
+      validateToken(accessToken, session, request, response);
+      renewSession(session, request, response);
       return "ok";
 
     } catch (JWTVerificationException ex) {
@@ -192,14 +192,14 @@ public class AccessRequestApi extends BaseRestApi {
           @ApiResponse(responseCode = "400", description = "Bad request or invalid session state")
       }
   )
-  public StatusResponse logout(@Context HttpServletResponse httpResponse) throws IOException {
+  public StatusResponse logout() throws IOException {
     HttpSession session = request.getSession(false);
-    String response = "Success";
+    String stringResponse = "Success";
     if (session != null) {
       clearSession(session);
       session.invalidate();
     }
-    clearToken(httpResponse);
-    return new StatusResponse(response);
+    clearToken(request, response);
+    return new StatusResponse(stringResponse);
   }
 }

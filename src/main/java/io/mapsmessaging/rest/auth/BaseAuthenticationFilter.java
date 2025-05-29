@@ -92,7 +92,7 @@ public abstract class BaseAuthenticationFilter implements ContainerRequestFilter
         httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         return;
       }
-      String usernameFromToken = validateToken(accessToken, session, httpResponse);
+      String usernameFromToken = validateToken(accessToken, session,httpRequest, httpResponse);
       Object sessionUsername = session.getAttribute("username");
       if (sessionUsername == null || !sessionUsername.equals(usernameFromToken)) {
         httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
