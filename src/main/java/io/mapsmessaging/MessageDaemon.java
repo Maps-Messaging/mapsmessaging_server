@@ -79,6 +79,8 @@ public class MessageDaemon {
   @Getter
   private final UUID uuid;
   @Getter
+  private final String tokenSecret;
+  @Getter
   private final long startTime = System.currentTimeMillis();
   @Getter
   private boolean tagMetaData;
@@ -144,6 +146,7 @@ public class MessageDaemon {
     }
     uuid = instanceConfig.getUuid();
     hostname = InetAddress.getLocalHost().getHostName();
+    tokenSecret = instanceConfig.getSecureTokenSecret();
     // </editor-fold>
     //<editor-fold desc="Now see if we can start the Consul Manager">
     // May block till a consul connection is made, depending on config

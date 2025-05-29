@@ -55,7 +55,12 @@ public class LoginResponse {
 
       this.username = username;
       uniqueId = userIdMap.getId();
-      accessMap = accessControl.getAccess(subject);
+      if(accessControl == null) {
+        accessMap = new HashMap<>();
+      }
+      else {
+        accessMap = accessControl.getAccess(subject);
+      }
     }
   }
 }

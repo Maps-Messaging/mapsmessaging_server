@@ -49,7 +49,11 @@ public class SessionTracker implements HttpSessionListener {
 
   @Override
   public void sessionDestroyed(HttpSessionEvent se) {
-    HttpSession httpSession = se.getSession();
+    clearSession( se.getSession());
+    sessions.remove(se.getSession().getId());
+  }
+
+  public static void clearSession(HttpSession httpSession) {
     Session session = (Session) httpSession.getAttribute("authenticatedSession");
     RestMessageListener restMessageListener = (RestMessageListener) httpSession.getAttribute("restListener");
     if(restMessageListener != null) {
@@ -64,7 +68,6 @@ public class SessionTracker implements HttpSessionListener {
         // ignore
       }
     }
-    sessions.remove(se.getSession().getId());
   }
 
   public static void scan(){

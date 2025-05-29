@@ -22,6 +22,7 @@ package io.mapsmessaging;
 
 import static io.mapsmessaging.logging.ServerLogMessages.INSTANCE_STATE_ERROR;
 
+import io.mapsmessaging.auth.registry.PasswordGenerator;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.security.uuid.UuidGenerator;
@@ -58,6 +59,11 @@ public class InstanceConfig {
   @Getter
   @Setter
   private String creationDate = LocalDateTime.now().toString();
+
+  @Getter
+  @Setter
+  private String secureTokenSecret;
+
 
   private final String path;
 
@@ -96,13 +102,23 @@ public class InstanceConfig {
       fileInputStream.close();
       serverName = obj.serverName;
       creationDate = obj.creationDate;
+      boolean saveState = false;
       if (obj.uuid == null) {
         uuid = UuidGenerator.getInstance().generate();
-        saveState();
+        saveState = true;
       } else {
         uuid = obj.getUuid();
       }
-
+      if(obj.secureTokenSecret == null){
+        secureTokenSecret = PasswordGenerator.generateRandomPassword(64);
+        saveState = true;
+      }
+      else{
+        secureTokenSecret = obj.secureTokenSecret;
+      }
+      if(saveState){
+        saveState();
+      }
     } catch (IOException e) {
       // if the first run, then lets allocate a new UUID
       uuid = UuidGenerator.getInstance().generate();

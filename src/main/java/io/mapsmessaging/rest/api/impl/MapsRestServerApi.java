@@ -66,6 +66,7 @@ import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import static io.mapsmessaging.rest.auth.SessionTokenHandler.*;
+import static io.mapsmessaging.rest.handler.SessionTracker.clearSession;
 
 @OpenAPIDefinition(
     info =
@@ -142,7 +143,12 @@ import static io.mapsmessaging.rest.auth.SessionTokenHandler.*;
         @Tag(
             name = "Logging Monitor",
             description = "Offers simple API to retrieve server logs or to stream server logs via SSE"
+        ),
+        @Tag(
+            name = "User Authentication",
+            description = "Provides the rest api login, logout and token refresh"
         )
+
     },
 
     externalDocs =
@@ -172,13 +178,6 @@ import static io.mapsmessaging.rest.auth.SessionTokenHandler.*;
 @Tag(name = "Server Health")
 @Path(URI_PATH)
 public class MapsRestServerApi extends BaseRestApi {
-
-  protected static int maxInactiveInterval = 600;
-  protected static final String USERNAME = "username";
-
-
-  private static final String secret = "very-secret-key-that-should-be-strong";
-  private static final Algorithm algorithm = Algorithm.HMAC256(secret);
 
   @GET
   @Path("/ping")
@@ -240,174 +239,4 @@ public class MapsRestServerApi extends BaseRestApi {
     return new UpdateCheckResponse(schema, 0, 0);
   }
 
-
-  @GET
-  @Path("/session")
-  @Produces({MediaType.APPLICATION_JSON})
-  @Operation(
-      summary = "Returns the current authentication session",
-      description = "Returns information about the current user authentication session, can be used to see if the user is logged in",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Returns if there have been updates",
-              content = @Content(
-                  mediaType = "application/json",
-                  schema = @Schema(implementation = UpdateCheckResponse.class)
-              )
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request")
-      }
-  )
-  public LoginResponse getUserSession () {
-
-    HttpSession session = request.getSession(false);
-    if (session == null) {
-      return new LoginResponse("Auth not enforced");
-    }
-    Subject subject = (Subject) session.getAttribute("subject");
-    if (subject == null) {
-      return new LoginResponse("Auth not enforced");
-    }
-    String username = session.getAttribute(USERNAME).toString();
-    LoginResponse loginResponse = new LoginResponse("Success", subject, username);
-    return loginResponse;
-  }
-
-
-  @GET
-  @Path("/refreshToken")
-  @Operation(
-      summary = "Refreshes the users JWT",
-      description = "Refreshes the current JWT cookie used for auth.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Refresh was successful or not required",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
-      }
-  )
-  public String refreshToken() throws IOException {
-    String accessToken = getAccessCookie(request);
-    if (accessToken == null) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-      return "failed";
-    }
-
-    try {
-      JWT.require(algorithm).build().verify(accessToken);
-      HttpSession session = request.getSession(false);
-      if (session == null || session.getAttribute(USERNAME) == null) {
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-        return "failed";
-      }
-      renewSession(session, response);
-      return "ok";
-
-    } catch (JWTVerificationException ex) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-      return "failed";
-    }
-  }
-
-
-  @POST
-  @Path("/login")
-  @Produces({MediaType.APPLICATION_JSON})
-  @Consumes({MediaType.APPLICATION_JSON})
-  @Operation(
-      summary = "User login",
-      description = "Allows a user to log in and obtain an authentication token. This endpoint does not require authentication and overrides global security settings.",
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Login successful or not required",
-              content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class))
-          ),
-          @ApiResponse(responseCode = "400", description = "Bad request"),
-          @ApiResponse(responseCode = "401", description = "Invalid credentials or unauthorized access")
-      }
-  )
-  public LoginResponse login(LoginRequest loginRequest) throws IOException {
-    boolean persistentSession = loginRequest.isPersistent();
-    String sessionId = loginRequest.getSessionId();
-    HttpSession session = request.getSession(false);
-
-    if (session != null) {
-      session.invalidate();
-    }
-    int maxAge = (AuthManager.getInstance().isAuthenticationEnabled() && loginRequest.isLongLived()) ? 7 * 24 * 60 * 60 : 15 * 60;
-
-    if (AuthManager.getInstance().isAuthenticationEnabled()){
-      if (AuthManager.getInstance().validate(loginRequest.getUsername(), loginRequest.getPassword().toCharArray())) {
-        Subject subject = AuthManager.getInstance().getUserSubject(loginRequest.getUsername());
-        session = setupCookieAndSession(loginRequest.getUsername(), subject, request, response, maxAge);
-      }
-      else{
-        throw new IOException("Invalid username or password");
-      }
-    }
-    else{
-      loginRequest.setUsername("anonymous");
-      loginRequest.setPassword("");
-      Subject subject = new Subject();
-      subject.getPrincipals().add(new UserPrincipal(loginRequest.getUsername()));
-      subject.getPrincipals().add(new UniqueIdentifierPrincipal(UUID.randomUUID()));
-      session = setupCookieAndSession(loginRequest.getUsername(), subject, request, response, maxAge);
-    }
-
-    if (persistentSession) {
-      session.setAttribute("persistentSession", true);
-    }
-    if (sessionId != null && !sessionId.isEmpty()) {
-      session.setAttribute("sessionId", sessionId);
-    }
-    hasAccess("root");
-    Subject subject = (Subject) getSession().getAttribute("subject");
-    String username = (String) getSession().getAttribute(USERNAME);
-    return new LoginResponse("Success", subject, username);
-  }
-
-  @POST
-  @Path("/logout")
-  @Produces({MediaType.APPLICATION_JSON})
-  @Operation(
-      summary = "User logout",
-      description = "Logs out the currently authenticated user by invalidating their session.",
-      responses = {
-          @ApiResponse(responseCode = "200", description = "Logout successful"),
-          @ApiResponse(responseCode = "400", description = "Bad request or invalid session state")
-      }
-  )
-  public StatusResponse logout(@Context HttpServletResponse httpResponse) throws IOException {
-    HttpSession session = request.getSession(false);
-    String response = "Success";
-    if (session != null) {
-      Session msgSession = (Session) getSession().getAttribute("authenticatedSession");
-      if (msgSession != null) {
-        try {
-          SessionManager.getInstance().close(msgSession, true);
-        } catch (IOException e) {
-          response = "Failure : " + e.getMessage();
-        }
-        msgSession.removeSubscription("authenticatedSession");
-      }
-      RestMessageListener msgListener = (RestMessageListener) getSession().getAttribute("restListener");
-      if (msgListener != null) {
-        msgListener.close();
-        session.removeAttribute("restListener");
-      }
-      session.invalidate();
-    }
-    Cookie cookie = new Cookie("access_token", "");
-    cookie.setPath("/");
-    cookie.setHttpOnly(true);
-    cookie.setSecure(true);
-    cookie.setMaxAge(0);
-    httpResponse.addCookie(cookie);
-    return new StatusResponse(response);
-  }
 }
