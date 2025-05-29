@@ -32,7 +32,7 @@ public abstract class RestApiConnection {
   protected final String url;
   protected final String endpoint;
 
-  protected RestApiConnection(String url, String endpoint, String username, String password) {
+  protected RestApiConnection(String url, String endpoint) {
     this.url = url;
     this.endpoint = endpoint;
     this.gson = new GsonBuilder().create();

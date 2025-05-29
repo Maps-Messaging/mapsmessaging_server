@@ -26,8 +26,8 @@ import java.io.IOException;
 
 public class ServerInterfaceStatusRequest extends RestApiConnection {
 
-  public ServerInterfaceStatusRequest(String url, String username, String password) {
-    super(url, "/api/v1/server/interfaces/status", username, password);
+  public ServerInterfaceStatusRequest(String url) {
+    super(url, "/api/v1/server/interfaces/status");
   }
 
   @Override

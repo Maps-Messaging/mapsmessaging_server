@@ -24,8 +24,8 @@ import io.mapsmessaging.rest.responses.ServerStatisticsResponse;
 
 public class ServerDetailsRequest extends RestApiConnection {
 
-  public ServerDetailsRequest(String url, String username, String password) {
-    super(url, "/api/v1/server/details/stats", username, password);
+  public ServerDetailsRequest(String url) {
+    super(url, "/api/v1/server/details/stats");
   }
 
   @Override

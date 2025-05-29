@@ -24,8 +24,8 @@ import io.mapsmessaging.rest.responses.DestinationResponse;
 
 public class ServerDestinationStatusRequest extends RestApiConnection {
 
-  public ServerDestinationStatusRequest(String url, String username, String password) {
-    super(url, "/api/v1/server/destinations", username, password);
+  public ServerDestinationStatusRequest(String url) {
+    super(url, "/api/v1/server/destinations");
   }
 
   @Override

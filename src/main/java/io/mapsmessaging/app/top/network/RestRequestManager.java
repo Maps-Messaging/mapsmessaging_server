@@ -74,10 +74,10 @@ public class RestRequestManager implements Runnable {
     this.serverUrl = serverUrl;
     this.username = username;
     this.password = password;
-    requests.add(new ServerDestinationStatusRequest(serverUrl, username, password));
-    requests.add(new ServerDetailsRequest(serverUrl, username, password));
-    requests.add(new ServerInfoRequest(serverUrl, username, password));
-    requests.add(new ServerInterfaceStatusRequest(serverUrl, username, password));
+    requests.add(new ServerDestinationStatusRequest(serverUrl));
+    requests.add(new ServerDetailsRequest(serverUrl));
+    requests.add(new ServerInfoRequest(serverUrl));
+    requests.add(new ServerInterfaceStatusRequest(serverUrl));
     login();
     Thread t = new Thread(this);
     t.start();

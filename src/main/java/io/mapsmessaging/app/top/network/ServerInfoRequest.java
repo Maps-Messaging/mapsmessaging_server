@@ -24,8 +24,8 @@ import io.mapsmessaging.dto.rest.ServerInfoDTO;
 
 public class ServerInfoRequest extends RestApiConnection {
 
-  public ServerInfoRequest(String url, String username, String password) {
-    super(url, "/api/v1/server/details/info", username, password);
+  public ServerInfoRequest(String url) {
+    super(url, "/api/v1/server/details/info");
   }
 
   @Override
