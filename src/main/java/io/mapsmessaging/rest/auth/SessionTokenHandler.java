@@ -38,6 +38,7 @@ import java.util.UUID;
 public class SessionTokenHandler {
 
   private static final Algorithm algorithm = Algorithm.HMAC256(MessageDaemon.getInstance().getTokenSecret());
+  private static final String TOKEN_NAME = "maps_access_token";
   private static final String USERNAME = "username";
   private static final int maxInactiveInterval = 600;
   private static final int TOKEN_LIFETIME = 15 * 60; // 15 minutes
@@ -48,31 +49,34 @@ public class SessionTokenHandler {
     String token = generateToken(username, maxAge);
     UUID uuid = SubjectHelper.getUniqueId(subject);
     buildAccessCookie(token, maxAge, httpRequest, httpResponse);
+
     String sessionId = httpRequest.getSession().getId();  // Or get it from response if freshly created
-    String jsessionCookie = "JSESSIONID=" + sessionId + "; Path=/; HttpOnly; Secure; SameSite=None";
-    httpResponse.addHeader("Set-Cookie", jsessionCookie);
+    StringBuilder jsessionCookie = new StringBuilder("JSESSIONID=")
+        .append(sessionId)
+        .append("; Path=/; HttpOnly");
+    if (isSecure(httpRequest)) {
+      jsessionCookie.append("; SameSite=None; Secure");
+    }
+    httpResponse.addHeader("Set-Cookie", jsessionCookie.toString());
+
     return setupSession(httpRequest, username, uuid, subject);
   }
 
-  public static void buildAccessCookie(String token, int maxAge,HttpServletRequest request, HttpServletResponse httpResponse) {
+  private static boolean isSecure(HttpServletRequest request) {
     String scheme = request.getHeader("X-Forwarded-Proto");
-    boolean isSecure = "https".equalsIgnoreCase(scheme) || request.isSecure();
+    return "https".equalsIgnoreCase(scheme) || request.isSecure();
+  }
 
-    Cookie cookie = new Cookie("access_token", token);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(isSecure);
-    cookie.setPath("/");
-    cookie.setMaxAge(maxAge);
-
-    StringBuilder cookieValue = new StringBuilder("access_token=")
+  public static void buildAccessCookie(String token, int maxAge,HttpServletRequest request, HttpServletResponse response) {
+    StringBuilder cookieValue = new StringBuilder(TOKEN_NAME)
+        .append("=")
         .append(token)
-        .append("; Path=/; HttpOnly; SameSite=None; Max-Age=")
+        .append("; Path=/; HttpOnly; Max-Age=")
         .append(maxAge);
-
-    if (isSecure) {
-      cookieValue.append("; Secure");
+    if (isSecure(request)) {
+      cookieValue.append("; SameSite=None; Secure");
     }
-    httpResponse.setHeader("Set-Cookie", cookieValue.toString());
+    response.addHeader("Set-Cookie", cookieValue.toString());
   }
 
   public static String generateToken(String username, int age) {
@@ -124,23 +128,15 @@ public class SessionTokenHandler {
     buildAccessCookie(token, TOKEN_LIFETIME, request, response);
   }
 
-  public static void clearToken(HttpServletRequest request, HttpServletResponse httpResponse) {
-    String scheme = request.getHeader("X-Forwarded-Proto");
-    boolean isSecure = "https".equalsIgnoreCase(scheme) || request.isSecure();
-
-    Cookie cookie = new Cookie("access_token", "");
-    cookie.setPath("/");
-    cookie.setHttpOnly(true);
-    cookie.setSecure(isSecure);
-    cookie.setMaxAge(0);
-    httpResponse.addCookie(cookie);
+  public static void clearToken(HttpServletRequest request, HttpServletResponse response) {
+    buildAccessCookie("", 0, request, response);
   }
 
   public static String getAccessCookie(HttpServletRequest httpRequest) {
     Cookie[] cookies = httpRequest.getCookies();
     if (cookies != null) {
       for (Cookie cookie : cookies) {
-        if ("access_token".equals(cookie.getName())) {
+        if (TOKEN_NAME.equals(cookie.getName())) {
           return cookie.getValue();
         }
       }
