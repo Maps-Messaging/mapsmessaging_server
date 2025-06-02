@@ -51,10 +51,14 @@
 
   <licenses>
     <license>
-      <name>Apache License 2.0 with Commons Clause</name>
+      <name>Apache License, Version 2.0 with Commons Clause</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>Commons Clause</name>
       <url>https://commonsclause.com/</url>
       <distribution>repo</distribution>
-      <comments>Applied in conjunction with Apache 2.0 to restrict commercial sale</comments>
     </license>
   </licenses>
 
