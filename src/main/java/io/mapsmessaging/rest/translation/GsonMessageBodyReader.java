@@ -22,6 +22,7 @@ package io.mapsmessaging.rest.translation;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.MessageBodyReader;
 import jakarta.ws.rs.ext.Provider;
@@ -30,15 +31,19 @@ import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public class GsonMessageBodyReader implements MessageBodyReader<Object> {
 
   private final Gson gson = new GsonBuilder()
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
+      .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())
+      .registerTypeAdapter(LocalDate.class, new GsonDateTimeDeserialiser())
       .create();
 
   @Override

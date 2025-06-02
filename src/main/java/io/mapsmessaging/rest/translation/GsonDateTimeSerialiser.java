@@ -25,13 +25,14 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class GsonDateTimeSerialiser implements JsonSerializer<Object> {
 
-  private static final DateTimeFormatter FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   @Override
   public JsonElement serialize(Object src, Type typeOfSrc, JsonSerializationContext context) {
@@ -43,6 +44,11 @@ public class GsonDateTimeSerialiser implements JsonSerializer<Object> {
     if (src instanceof LocalDateTime) {
       LocalDateTime localDateTime = (LocalDateTime) src;
       return context.serialize(localDateTime.format(FORMATTER));
+    }
+
+    if (src instanceof LocalDate) {
+      LocalDate localDate = (LocalDate) src;
+      return context.serialize(localDate.format(DATE_FORMATTER));
     }
 
     // Handle other types explicitly if needed

@@ -21,6 +21,7 @@ package io.mapsmessaging.rest.translation;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.MessageBodyWriter;
@@ -34,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 @Provider
+@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class GsonMessageBodyWriter implements MessageBodyWriter<Object> {
 

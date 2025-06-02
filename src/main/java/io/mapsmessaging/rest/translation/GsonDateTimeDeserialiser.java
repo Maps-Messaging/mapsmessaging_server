@@ -24,6 +24,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -41,6 +42,11 @@ public class GsonDateTimeDeserialiser implements JsonDeserializer<Object> {
     if (typeOfT == LocalDateTime.class) {
       return LocalDateTime.parse(json.getAsString(), FORMATTER);
     }
+
+    if (typeOfT == LocalDate.class) {
+      return LocalDate.parse(json.getAsString(), FORMATTER);
+    }
+
 
     // Delegate to Gson for other types
     return context.deserialize(json, typeOfT);
