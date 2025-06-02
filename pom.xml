@@ -1416,7 +1416,7 @@
     <dependency>
       <groupId>org.eclipse.californium</groupId>
       <artifactId>scandium</artifactId>
-      <version>3.13.0</version>
+      <version>3.14.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
