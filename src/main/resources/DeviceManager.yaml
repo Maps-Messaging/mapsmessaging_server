@@ -21,7 +21,8 @@
 
 DeviceManager:
   global:
-    enabled: false    # Enabled hardware interface
+    enabled: true    # Enabled hardware interface
+    demoEnabled: true
     trigger: everyMinute
     scanTime: 30000 # Scan time looking for new hardware
     topicNameTemplate: /device/[bus_name]/[device_name]
@@ -55,25 +56,22 @@ DeviceManager:
           enabled: false
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           autoScan: false
-          devices:
-            -
-              address: 0x23
-              name: BH1750
-              selector: 'lux > 20.0'
-            -
-              address: 0x5d
-              name: LPS25
-              selector: 'temperature > 20.0'
 
         -
           bus: 1
-          enabled: true
+          enabled: false
+          autoScan: false
+          topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
+          trigger: everySecond
+
+        -
+          bus: 2  # Demo bus
+          enabled: false
           autoScan: true
           topicNameTemplate: /device/[device_type]/[bus_name]/[bus_number]/[device_addr]/[device_name]
           trigger: everySecond
-          devices:
-            - address: 0x10
-              name: DebugDevice
+
+
     -
       name: oneWire
       enabled: false  # enable / disable one wire interface

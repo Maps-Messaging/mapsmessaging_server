@@ -35,8 +35,11 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Device Manager Configuration DTO")
 public class DeviceManagerConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Indicates if the device manager is enabled", example = "false")
+  @Schema(description = "Indicates if the device manager is enabled", example = "true")
   protected boolean enabled;
+
+  @Schema(description = "Indicates if the device manager will load the demo devices", example = "false")
+  protected boolean demoEnabled;
 
   @Schema(description = "List of trigger configurations")
   protected List<BaseTriggerConfigDTO> triggers;

@@ -42,6 +42,7 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
 
   private DeviceManagerConfig(ConfigurationProperties config) {
     this.enabled = config.getBooleanProperty("enabled", false);
+    this.demoEnabled = config.getBooleanProperty("demoEnabled", false);
     this.triggers = new ArrayList<>();
     this.i2cBuses = new ArrayList<>();
     processConfig(config);
@@ -62,6 +63,11 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
 
     if (this.enabled != newConfig.isEnabled()) {
       this.enabled = newConfig.isEnabled();
+      hasChanged = true;
+    }
+
+    if (this.demoEnabled != newConfig.isDemoEnabled()) {
+      this.demoEnabled = newConfig.isDemoEnabled();
       hasChanged = true;
     }
 
@@ -109,6 +115,7 @@ public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Confi
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("enabled", this.enabled);
+    config.put("demoEnabled", this.demoEnabled);
 
     List<ConfigurationProperties> triggerConfigs = new ArrayList<>();
     for (BaseTriggerConfigDTO trigger : this.triggers) {

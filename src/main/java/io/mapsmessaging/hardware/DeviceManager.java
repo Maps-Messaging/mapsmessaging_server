@@ -83,7 +83,7 @@ public class DeviceManager implements ServiceManager, Agent {
     DeviceBusManager manager = null;
     try {
       manager = DeviceBusManager.getInstance();
-      if (manager.isAvailable()) {
+      if (manager.isAvailable() ||  deviceManagerConfig.isDemoEnabled()) {
         loadConfig(deviceManagerConfig, manager);
       }
       else{
@@ -113,6 +113,9 @@ public class DeviceManager implements ServiceManager, Agent {
     if(enableI2C) {
       devices.addAll(deviceBusManager.getI2cBusManager()[0].getActive().values());
       devices.addAll(deviceBusManager.getI2cBusManager()[1].getActive().values());
+      if(deviceBusManager.getI2cBusManager().length>2) {
+        devices.addAll(deviceBusManager.getI2cBusManager()[2].getActive().values());
+      }
     }
     if(enableOneWire) {
       devices.addAll(deviceBusManager.getOneWireBusManager().getActive().values());
