@@ -75,7 +75,7 @@
   </distributionManagement>
 
   <scm>
-    <url>https://github.com/Maps-Messaging/license_manager</url>
+    <url>https://github.com/Maps-Messaging/mapsmessaging_server</url>
   </scm>
 
   <!--
