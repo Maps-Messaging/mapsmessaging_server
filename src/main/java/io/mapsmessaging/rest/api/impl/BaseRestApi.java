@@ -38,15 +38,11 @@ import jakarta.ws.rs.core.UriInfo;
 
 import javax.security.auth.Subject;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
 
 public class BaseRestApi {
-  private static final Map<String, Identity> USERNAME_CACHE = new ConcurrentHashMap<>();
-
   private final Logger logger = LoggerFactory.getLogger(BaseRestApi.class);
   @Context
   protected HttpServletRequest request;
@@ -82,12 +78,13 @@ public class BaseRestApi {
     boolean access = true;
 
     if (AuthManager.getInstance().isAuthorisationEnabled()) {
-      String username = (String) getSession().getAttribute("username");
-      Identity userIdMap = USERNAME_CACHE.get(username);
+      HttpSession session = getSession();
+      Identity userIdMap = (Identity) session.getAttribute("userIdMap");
       if(userIdMap == null) {
+        String username = (String) session.getAttribute("username");
         userIdMap = AuthManager.getInstance().getUserIdentity(username);
-        if(userIdMap == null) {
-          USERNAME_CACHE.put(username, userIdMap);
+        if(userIdMap != null) {
+          session.setAttribute("userIdMap", userIdMap);
         }
       }
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
