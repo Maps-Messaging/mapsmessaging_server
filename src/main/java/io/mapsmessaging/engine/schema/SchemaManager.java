@@ -176,10 +176,10 @@ public class SchemaManager implements SchemaRepository, Agent {
     addSchema("$SYS", nativeSchemaConfig);
 
     JsonSchemaConfig jsonSchemaConfig = new JsonSchemaConfig();
-    nativeSchemaConfig.setTitle("Generic JSON");
     jsonSchemaConfig.setUniqueId(DEFAULT_JSON_SCHEMA);
     jsonSchemaConfig.setInterfaceDescription("json");
     jsonSchemaConfig.setResourceType(MONITOR);
+    jsonSchemaConfig.setTitle("Generic JSON");
     addSchema("$SYS", jsonSchemaConfig);
 
     // This ensures the factory is loaded
