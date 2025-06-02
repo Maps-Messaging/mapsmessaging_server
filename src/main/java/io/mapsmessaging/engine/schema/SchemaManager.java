@@ -154,6 +154,7 @@ public class SchemaManager implements SchemaRepository, Agent {
   public void start() {
     SchemaConfig rawConfig = new RawSchemaConfig();
     rawConfig.setUniqueId(DEFAULT_RAW_UUID);
+    rawConfig.setTitle("Raw byte[]");
     rawConfig.setResourceType("unknown");
     rawConfig.setInterfaceDescription("raw");
     addSchema("", rawConfig);
@@ -161,18 +162,21 @@ public class SchemaManager implements SchemaRepository, Agent {
     NativeSchemaConfig nativeSchemaConfig = new NativeSchemaConfig();
     nativeSchemaConfig.setUniqueId(DEFAULT_NUMERIC_STRING_SCHEMA);
     nativeSchemaConfig.setType(TYPE.NUMERIC_STRING);
+    nativeSchemaConfig.setTitle("Numeric String");
     nativeSchemaConfig.setInterfaceDescription("numeric");
     nativeSchemaConfig.setResourceType(MONITOR);
     addSchema("$SYS", nativeSchemaConfig);
 
     nativeSchemaConfig = new NativeSchemaConfig();
     nativeSchemaConfig.setUniqueId(DEFAULT_STRING_SCHEMA);
+    nativeSchemaConfig.setTitle("String");
     nativeSchemaConfig.setType(TYPE.STRING);
     nativeSchemaConfig.setInterfaceDescription("string");
     nativeSchemaConfig.setResourceType(MONITOR);
     addSchema("$SYS", nativeSchemaConfig);
 
     JsonSchemaConfig jsonSchemaConfig = new JsonSchemaConfig();
+    nativeSchemaConfig.setTitle("Generic JSON");
     jsonSchemaConfig.setUniqueId(DEFAULT_JSON_SCHEMA);
     jsonSchemaConfig.setInterfaceDescription("json");
     jsonSchemaConfig.setResourceType(MONITOR);
