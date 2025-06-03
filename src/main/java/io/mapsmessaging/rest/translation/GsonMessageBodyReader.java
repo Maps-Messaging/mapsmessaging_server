@@ -40,6 +40,8 @@ import java.time.LocalDateTime;
 public class GsonMessageBodyReader implements MessageBodyReader<Object> {
 
   private final Gson gson = new GsonBuilder()
+      .serializeNulls()
+      .setPrettyPrinting()
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
       .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())

@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,7 +50,13 @@ public class Transaction {
 
   /**
    * The time that this transaction will expire, in milliseconds
+   * -- GETTER --
+   *  The current time that this transaction will last before it is automatically closed
+   *
+   * @return time in milliseconds that this transaction will expire
+
    */
+  @Getter
   private final long expiryTime;
 
   /**
@@ -149,16 +157,12 @@ public class Transaction {
     if (!list.containsKey(destination.getFullyQualifiedNamespace())) {
       list.put(destination.getFullyQualifiedNamespace(), destination);
     }
-    destination.destinationImpl.storeTransactionalMessage(internalId, message);
-  }
-
-  /**
-   * The current time that this transaction will last before it is automatically closed
-   *
-   * @return time in milliseconds that this transaction will expire
-   */
-  public long getExpiryTime() {
-    return expiryTime;
+    if(destination instanceof Schema){
+      destination.storeMessage(message);
+    }
+    else {
+      destination.destinationImpl.storeTransactionalMessage(internalId, message);
+    }
   }
 
   /**

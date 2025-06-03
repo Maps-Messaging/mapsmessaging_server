@@ -32,6 +32,7 @@ import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Provider
@@ -42,6 +43,8 @@ public class GsonMessageBodyWriter implements MessageBodyWriter<Object> {
   private final Gson gson = new GsonBuilder()
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
       .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeDeserialiser())
+      .registerTypeAdapter(LocalDate.class, new GsonDateTimeSerialiser())
+      .registerTypeAdapter(LocalDate.class, new GsonDateTimeDeserialiser())
       .create();
 
   @Override

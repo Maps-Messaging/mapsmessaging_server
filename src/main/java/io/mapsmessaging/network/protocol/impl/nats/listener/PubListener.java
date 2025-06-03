@@ -60,7 +60,6 @@ public class PubListener implements FrameListener {
             engine.send(errFrame);
           }
         } catch (IOException e) {
-          e.printStackTrace();
           ErrFrame errFrame = new ErrFrame();
           errFrame.setError(e.getMessage());
           engine.send(errFrame);

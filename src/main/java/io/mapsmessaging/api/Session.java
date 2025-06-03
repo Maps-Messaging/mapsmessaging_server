@@ -93,6 +93,9 @@ public class Session {
 
   public CompletableFuture<Destination> findDestination(@NonNull @NotNull String destinationName, @NonNull @NotNull DestinationType type) {
     CompletableFuture<Destination> future = new CompletableFuture<>();
+    if(destinationName.toLowerCase().startsWith("$schema")){
+      destinationName = "$schema" + destinationName.substring("$schema".length());
+    }
     Destination result = destinations.get(destinationName);
     if (result == null) {
       String tmp = destinationName;

@@ -36,7 +36,6 @@ import io.mapsmessaging.rest.cache.impl.RoleBasedCache;
 import io.mapsmessaging.rest.handler.CorsEnabledStaticHttpHandler;
 import io.mapsmessaging.rest.handler.CorsFilter;
 import io.mapsmessaging.rest.handler.SessionTracker;
-import io.mapsmessaging.rest.translation.DebugMapper;
 import io.mapsmessaging.rest.translation.GsonMessageBodyReader;
 import io.mapsmessaging.rest.translation.GsonMessageBodyWriter;
 import io.mapsmessaging.utilities.Agent;
@@ -220,7 +219,6 @@ public class RestApiServerManager implements Agent {
       else{
         resourceConfig.register(new NoAuthenticationFilter());
       }
-      resourceConfig.register(DebugMapper.class );
       resourceConfig.register(LoggingFilter.class);
       resourceConfig.register(CorsFilter.class);
       ServletContainer sc = new ServletContainer(resourceConfig);
