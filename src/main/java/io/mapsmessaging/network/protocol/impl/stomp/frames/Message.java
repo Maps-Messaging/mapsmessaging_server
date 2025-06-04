@@ -28,13 +28,14 @@ public class Message extends Event implements ServerPublishPacket {
 
   private static final byte[] COMMAND = "MESSAGE".getBytes();
 
-  public Message(int maxBufferSize) {
-    super(maxBufferSize);
+
+  public Message(int maxBufferSize, boolean base64Encode) {
+    super(maxBufferSize, base64Encode);
   }
 
   @Override
   public Frame instance() {
-    return new Message(maxBufferSize);
+    return new Message(maxBufferSize, base64Encode);
   }
 
   byte[] getCommand() {

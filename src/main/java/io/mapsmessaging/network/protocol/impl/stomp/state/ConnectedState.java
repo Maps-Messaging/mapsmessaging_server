@@ -54,7 +54,7 @@ public class ConnectedState implements State {
 
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    io.mapsmessaging.network.protocol.impl.stomp.frames.Message msg = new io.mapsmessaging.network.protocol.impl.stomp.frames.Message(1024);
+    io.mapsmessaging.network.protocol.impl.stomp.frames.Message msg = new io.mapsmessaging.network.protocol.impl.stomp.frames.Message(1024, engine.getProtocol().isBase64Encode());
     msg.packMessage(destinationName, context.getAlias(), message);
     msg.setCallback(new MessageCompletionHandler(completionTask));
     return engine.send(msg);

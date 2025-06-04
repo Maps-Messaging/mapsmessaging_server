@@ -66,16 +66,21 @@ public class StompProtocol extends Protocol {
   @Getter
   private String version;
 
+  @Getter
+  private boolean base64Encode;
+
 
   public StompProtocol(EndPoint endPoint) {
     super(endPoint);
     logger = LoggerFactory.getLogger("STOMP Protocol on " + endPoint.getName());
     logger.log(ServerLogMessages.STOMP_STARTING, endPoint.toString());
-    int maxBufferSize = ((StompConfigDTO)endPoint.getConfig().getProtocolConfig("stomp")).getMaxBufferSize();
-    maxReceiveSize = ((StompConfigDTO)endPoint.getConfig().getProtocolConfig("stomp")).getMaxReceive();
+    StompConfigDTO stompConfigDTO = ((StompConfigDTO)endPoint.getConfig().getProtocolConfig("stomp"));
+    int maxBufferSize = stompConfigDTO.getMaxBufferSize();
+    maxReceiveSize = stompConfigDTO.getMaxReceive();
+    base64Encode = stompConfigDTO.isBase64EncodeBinary();
     version = "1.2";
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
-    factory = new FrameFactory(maxBufferSize, endPoint.isClient());
+    factory = new FrameFactory(maxBufferSize, endPoint.isClient(), base64Encode);
     activeFrame = null;
     sessionState = new SessionState(this);
   }

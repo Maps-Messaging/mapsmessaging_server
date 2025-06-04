@@ -36,8 +36,15 @@ public class EndPointHelper {
     summaryDTO.setAdapter(adapterName);
     summaryDTO.setName(endPoint.getName());
     summaryDTO.setConnectedTimeMs(System.currentTimeMillis() - endPoint.getConnected());
-    summaryDTO.setProtocolName(endPoint.getBoundProtocol().getName());
-    summaryDTO.setProtocolVersion(endPoint.getBoundProtocol().getVersion());
+    if(endPoint.getBoundProtocol() != null) {
+      summaryDTO.setProtocolName(endPoint.getBoundProtocol().getName());
+      summaryDTO.setProtocolVersion(endPoint.getBoundProtocol().getVersion());
+    }
+    else{
+      summaryDTO.setProtocolName("Not Detected");
+      summaryDTO.setProtocolVersion("N/A");
+
+    }
     if (endPoint.getEndPointSubject() != null) {
       summaryDTO.setUser(SubjectHelper.getUsername(endPoint.getEndPointSubject()));
     } else {

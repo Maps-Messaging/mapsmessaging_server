@@ -32,12 +32,12 @@ public class FrameFactory {
   private final List<FrameLookup> frames;
   private final byte[] workingBuffer;
 
-  public FrameFactory(int maxBufferSize, boolean isClient) {
+  public FrameFactory(int maxBufferSize, boolean isClient, boolean base64Encode) {
     frames = new ArrayList<>();
     if (isClient) {
       frames.add(new FrameLookup("CONNECTED".getBytes(), new Connected(), new ConnectedListener()));
       frames.add(new FrameLookup("ERROR".getBytes(), new Error(), new ErrorListener()));
-      frames.add(new FrameLookup("MESSAGE".getBytes(), new Message(maxBufferSize), new MessageListener()));
+      frames.add(new FrameLookup("MESSAGE".getBytes(), new Message(maxBufferSize, base64Encode), new MessageListener()));
       frames.add(new FrameLookup("RECEIPT".getBytes(), new Receipt(), new ReceiptListener()));
     } else {
       frames.add(new FrameLookup("".getBytes(), new ClientHeartBeat(), new ClientHeartBeatListener()));
@@ -49,7 +49,7 @@ public class FrameFactory {
       frames.add(new FrameLookup("COMMIT".getBytes(), new Commit(), new CommitListener()));
       frames.add(new FrameLookup("DISCONNECT".getBytes(), new Disconnect(), new DisconnectListener()));
       frames.add(new FrameLookup("NACK".getBytes(), new Nack(), new NackListener()));
-      frames.add(new FrameLookup("SEND".getBytes(), new Send(maxBufferSize), new SendListener()));
+      frames.add(new FrameLookup("SEND".getBytes(), new Send(maxBufferSize, base64Encode), new SendListener()));
       frames.add(new FrameLookup("SUBSCRIBE".getBytes(), new Subscribe(), new SubscribeListener()));
       frames.add(new FrameLookup("UNSUBSCRIBE".getBytes(), new Unsubscribe(), new UnsubscribeListener()));
     }

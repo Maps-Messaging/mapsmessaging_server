@@ -33,6 +33,7 @@ public class StompConfig extends StompConfigDTO implements Config {
     // Initialize Stomp-specific fields from config
     this.maxBufferSize = config.getIntProperty("maximumBufferSize", maxBufferSize);
     this.maxReceive = config.getIntProperty("maximumReceive", maxReceive);
+    this.base64EncodeBinary = config.getBooleanProperty("base64EncodeBinary", base64EncodeBinary);
   }
 
   @Override
@@ -50,6 +51,10 @@ public class StompConfig extends StompConfigDTO implements Config {
         this.maxReceive = newConfig.getMaxReceive();
         hasChanged = true;
       }
+      if(this.base64EncodeBinary != newConfig.isBase64EncodeBinary()){
+        this.base64EncodeBinary = newConfig.isBase64EncodeBinary();
+        hasChanged = true;
+      }
 
       // Update fields from ProtocolConfigFactory if needed
       if (ProtocolConfigFactory.update(this, newConfig)) {
@@ -65,6 +70,7 @@ public class StompConfig extends StompConfigDTO implements Config {
     ProtocolConfigFactory.pack(properties, this);
     properties.put("maximumBufferSize", this.maxBufferSize);
     properties.put("maximumReceive", this.maxReceive);
+    properties.put("base64EncodeBinary", base64EncodeBinary);
     return properties;
   }
 }

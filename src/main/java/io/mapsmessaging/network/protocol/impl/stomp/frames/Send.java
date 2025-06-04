@@ -24,14 +24,14 @@ package io.mapsmessaging.network.protocol.impl.stomp.frames;
  */
 public class Send extends Event {
 
-  public Send(int maxBufferSize) {
-    super(maxBufferSize);
+  public Send(int maxBufferSize, boolean base64Encode) {
+    super(maxBufferSize, base64Encode);
   }
 
 
   @Override
   public Frame instance() {
-    return new Send(maxBufferSize);
+    return new Send(maxBufferSize, base64Encode);
   }
 
   @Override

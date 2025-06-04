@@ -36,4 +36,7 @@ public class StompConfigDTO extends ProtocolConfigDTO {
 
   @Schema(description = "Maximum receive limit for STOMP", example = "1000")
   protected int maxReceive = 1000;
+
+  @Schema(description = "Encode the outgoing buffer as bas64 if binary", example = "true")
+  protected boolean base64EncodeBinary = true;
 }
