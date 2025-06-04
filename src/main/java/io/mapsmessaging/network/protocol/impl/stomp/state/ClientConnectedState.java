@@ -27,7 +27,7 @@ public class ClientConnectedState extends ConnectedState {
 
   @Override
   public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext context, Message message, Runnable completionTask) {
-    Send msg = new Send(1024);
+    Send msg = new Send(1024, engine.getProtocol().isBase64Encode());
     msg.packMessage(destinationName, message);
     msg.setCallback(new MessageCompletionHandler(completionTask));
     return engine.send(msg);
