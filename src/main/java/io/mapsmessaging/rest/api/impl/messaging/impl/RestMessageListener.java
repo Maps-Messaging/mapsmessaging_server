@@ -21,6 +21,7 @@ package io.mapsmessaging.rest.api.impl.messaging.impl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
@@ -29,7 +30,12 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.messaging.AsyncMessageDTO;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
+import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.rest.translation.GsonDateTimeSerialiser;
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import io.mapsmessaging.schemas.formatters.MessageFormatter;
+import io.mapsmessaging.schemas.formatters.MessageFormatterFactory;
+import io.mapsmessaging.schemas.formatters.impl.RawFormatter;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
@@ -75,6 +81,7 @@ public class RestMessageListener implements MessageListener {
     sessionSubscriptionsMap = new ConcurrentHashMap<>();
     eventSinkMap = new ConcurrentHashMap<>();
     gson = new GsonBuilder()
+        .setPrettyPrinting()
         .registerTypeAdapter(LocalDateTime.class, new GsonDateTimeSerialiser())
         .create();
   }
@@ -221,7 +228,24 @@ public class RestMessageListener implements MessageListener {
     Message msg = message.getMessage();
     messageDTO.setIdentifier(msg.getIdentifier());
     messageDTO.setPriority(msg.getPriority().getValue());
-    messageDTO.setPayload(Base64.getEncoder().encodeToString(msg.getOpaqueData()));
+    byte[] payload = msg.getOpaqueData();
+    if(message.getMessage().getSchemaId() != null) {
+      SchemaConfig config = SchemaManager.getInstance().getSchema(message.getMessage().getSchemaId());
+      try {
+        MessageFormatter formatter = MessageFormatterFactory.getInstance().getFormatter(config);
+        if (formatter != null && !(formatter instanceof RawFormatter)) {
+          JsonObject jsonObject = formatter.parseToJson(payload);
+          JsonObject wrapper = new JsonObject();
+          wrapper.add("payload", jsonObject);
+          wrapper.addProperty("schemaId", message.getMessage().getSchemaId());
+          wrapper.addProperty("schemaTitle", config.getTitle());
+          payload = gson.toJson(wrapper).getBytes();
+        }
+      } catch(Throwable e){
+      }
+    }
+
+    messageDTO.setPayload(Base64.getEncoder().encodeToString(payload));
     messageDTO.setExpiry(msg.getExpiry());
     messageDTO.setCorrelationData(msg.getCorrelationData());
     messageDTO.setContentType(msg.getContentType());
