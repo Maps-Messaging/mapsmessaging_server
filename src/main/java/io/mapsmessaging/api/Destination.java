@@ -42,6 +42,10 @@ public class Destination implements BaseDestination {
 
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
+    if(destinationImpl.getSchema() != null) {
+      // Ensure the schema is applied to the incoming message
+      message.setSchemaId(destinationImpl.getSchema().getUniqueId());
+    }
     return destinationImpl.storeMessage(message);
   }
 

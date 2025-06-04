@@ -77,6 +77,7 @@ public class Message implements IdentifierResolver, Storable {
   @Getter
   private final Map<String, TypedData> dataMap;
 
+  @Setter
   @Getter
   private String schemaId;
 

@@ -157,10 +157,15 @@ public class Transaction {
     if (!list.containsKey(destination.getFullyQualifiedNamespace())) {
       list.put(destination.getFullyQualifiedNamespace(), destination);
     }
+
     if(destination instanceof Schema){
       destination.storeMessage(message);
     }
     else {
+      if(destination.destinationImpl.getSchema() != null) {
+        // Ensure the schema is applied to the incoming message
+        message.setSchemaId(destination.destinationImpl.getSchema().getUniqueId());
+      }
       destination.destinationImpl.storeTransactionalMessage(internalId, message);
     }
   }
