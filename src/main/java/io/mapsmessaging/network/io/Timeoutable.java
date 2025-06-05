@@ -20,11 +20,14 @@
 package io.mapsmessaging.network.io;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 public interface Timeoutable extends Closeable {
 
   default long getTimeOut() {
     return 0;
   }
+
+  void close() throws IOException;
 
 }

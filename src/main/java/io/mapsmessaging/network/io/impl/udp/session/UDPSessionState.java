@@ -29,6 +29,8 @@ public class UDPSessionState<T extends Timeoutable> {
   @Setter
   private String clientIdentifier;
 
+  @Setter
+  @Getter
   private T context;
 
   @Getter
@@ -44,12 +46,5 @@ public class UDPSessionState<T extends Timeoutable> {
     getLastAccess = System.currentTimeMillis();
   }
 
-  public T getContext() {
-    return context;
-  }
-
-  public void setContext(T context) {
-    this.context = context;
-  }
 
 }

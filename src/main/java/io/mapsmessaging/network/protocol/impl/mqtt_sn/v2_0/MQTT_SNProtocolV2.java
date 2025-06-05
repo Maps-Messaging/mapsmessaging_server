@@ -89,7 +89,7 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
 
   @Override
   public String getName() {
-    return "MQTT_SN_2.0";
+    return "MQTT_SN";
   }
 
   @Override

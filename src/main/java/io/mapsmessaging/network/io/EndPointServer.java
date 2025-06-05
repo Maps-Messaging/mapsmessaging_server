@@ -72,6 +72,10 @@ public abstract class EndPointServer extends EndPointServerStatus implements Clo
     activeEndPoints.remove(endPoint.getId());
   }
 
+  public void registerNewEndPoint(EndPoint endPoint) {
+    activeEndPoints.put(endPoint.getId(), endPoint);
+  }
+
   public void handleNewEndPoint(EndPoint endPoint) throws IOException {
     activeEndPoints.put(endPoint.getId(), endPoint);
     acceptHandler.accept(endPoint);

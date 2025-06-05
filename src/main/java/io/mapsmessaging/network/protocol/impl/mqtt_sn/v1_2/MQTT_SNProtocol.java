@@ -126,6 +126,7 @@ public class MQTT_SNProtocol extends Protocol {
     }
     factory.close(addressKey);
     packetIdManager.close();
+    endPoint.close();
     monitor.cancel(false);
     if (mbean != null) {
       mbean.close();
@@ -195,7 +196,7 @@ public class MQTT_SNProtocol extends Protocol {
   }
 
   public String getName() {
-    return "MQTT_SN 1.2";
+    return "MQTT_SN";
   }
 
   @Override

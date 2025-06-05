@@ -21,10 +21,8 @@ package io.mapsmessaging.network.io.impl.udp;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.io.EndPointServerStatus;
-import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.*;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -33,15 +31,18 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 
 public class UDPFacadeEndPoint extends EndPoint {
+
+  private static final AtomicInteger counter = new AtomicInteger(0);
 
   private final EndPoint endPoint;
   private final SocketAddress fromAddress;
 
   public UDPFacadeEndPoint(EndPoint endPoint, SocketAddress fromAddress, EndPointServerStatus server) {
-    super(1, server);
+    super(counter.incrementAndGet(), server);
     this.endPoint = endPoint;
     this.fromAddress = fromAddress;
     List<String> end = new ArrayList<>(endPoint.getJMXTypePath());
@@ -52,6 +53,8 @@ public class UDPFacadeEndPoint extends EndPoint {
     String remote = strip("remoteHost=" + getName());
     end.add(remote);
     jmxParentPath = end;
+    EndPointServer endPointServer = (EndPointServer)server;
+    endPointServer.registerNewEndPoint(this);
   }
 
   private String strip(String val) {
@@ -106,6 +109,8 @@ public class UDPFacadeEndPoint extends EndPoint {
   @Override
   public void close() throws IOException {
     endPoint.close();
+    EndPointServer endPointServer = (EndPointServer)endPoint.getServer();
+    endPointServer.handleCloseEndPoint(this);
   }
 
   @Override
