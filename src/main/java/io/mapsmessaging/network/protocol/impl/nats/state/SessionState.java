@@ -160,11 +160,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   public void sendPing() {
     if (outstandingPing.incrementAndGet() > 2) {
       ErrFrame errFrame = new ErrFrame("Ping timed out");
-      errFrame.setCompletionHandler(new CompletionHandler() {
-        public void run() {
-          protocol.close();
-        }
-      });
+      errFrame.setCompletionHandler(() -> protocol.close());
       send(errFrame);
     } else {
       PingFrame pingFrame = new PingFrame();
@@ -175,16 +171,18 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public void close() throws IOException {
     isValid = false;
-    CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
-    try {
-      activeSubscriptions.clear();
-      namedConsumers.clear();
-      jetStreamRequestManager.close();
-      subscriptions.clear();
-      future.get();
-    } catch (InterruptedException | ExecutionException e) {
-      Thread.currentThread().interrupt();
-      throw new IOException(e);
+    if(session != null) {
+      CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
+      try {
+        activeSubscriptions.clear();
+        namedConsumers.clear();
+        jetStreamRequestManager.close();
+        subscriptions.clear();
+        future.get();
+      } catch (InterruptedException | ExecutionException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException(e);
+      }
     }
   }
 

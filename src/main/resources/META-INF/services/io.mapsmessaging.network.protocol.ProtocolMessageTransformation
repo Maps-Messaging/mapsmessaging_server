@@ -22,3 +22,4 @@ io.mapsmessaging.network.protocol.transformation.DefaultMessageTransformation
 io.mapsmessaging.network.protocol.transformation.JMSProtocolMessageTransformation
 io.mapsmessaging.network.protocol.transformation.MessageJsonTransformation
 io.mapsmessaging.network.protocol.transformation.MessageBinaryTransformation
+io.mapsmessaging.network.protocol.transformation.SchemaToJsonTransformation
