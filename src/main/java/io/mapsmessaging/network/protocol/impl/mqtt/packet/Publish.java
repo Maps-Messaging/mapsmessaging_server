@@ -49,7 +49,7 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
 
   public Publish(boolean retain, byte[] payload, QualityOfService qos, int packetId, String destination) {
     super(PUBLISH);
-    this.payload = payload;
+    this.payload = payload != null ? payload : new byte[0];
     this.retain = retain;
     isDup = false;
     this.qos = qos;
@@ -142,7 +142,7 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
     if (qos.isSendPacketId()) {
       remaining += 2;
     }
-    remaining += payload.length;
+    remaining += (payload != null ? payload.length : 0);
 
     writeVariableInt(packet, remaining);
     writeUTF8(packet, destinationName);
