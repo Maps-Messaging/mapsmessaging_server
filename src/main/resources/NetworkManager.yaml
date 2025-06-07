@@ -122,65 +122,26 @@ NetworkManager:
 
     data:
 
-      - name: "NATS"
-        url: "tcp://0.0.0.0:4222/"
-        protocol: nats
-        auth: anon
-
-      - name: "NATS"
-        url: "tcp://0.0.0.0:9972/"
-        protocol: nats
-        keepAlive: 50
-        auth: anon
-
-      - name: "AMQP Interface"
-        url: tcp://:::5672/
-        protocol: amqp
-        sasl:
-          mechanism: "SCRAM-SHA-512"
-          identityProvider: system
-        map: "/{{virtualHostName}}"
-        virtualHost:
-          - name: "hosta"
-            auth: anon
-            map: "/amqp/hosta/"
-
-          - name: "hostb"
-            auth: usernamePassword
-
-
-
-      - name: "AMQPs Interface"
-        url: ssl://:::5671/
-        protocol: amqp
-        auth: default
-        map: "/{{virtualHostName}}"
-        virtualHost:
-          - name: "hosta"
-            auth: anon
-            map: "/amqp/hosta/"
-
-          - name: "hostb"
-            auth: usernamePassword
-
       - name: "TCP MQTT Interface"
         url: tcp://:::1883/
         protocol: mqtt
-        auth: usernamePassword
-        proxyProtocol: true
+        auth: default
 
-      - name: "SSL MQTT Interface"
-        url: ssl://:::1884/
-        protocol: mqtt
-        auth: usernamePassword
-
-      - name: "Stomp Interface"
-        url: tcp://:::61613/
-        protocol: stomp
-        auth: usernamePassword
-
-      - name: "SSL Stomp Interface"
-        url: ssl://:::61614/
-        protocol: stomp
-        auth: usernamePassword
+      - name: LoRa Radio Head RF69
+        protocol: Lora_MQTT-SN
+        auth: anon
+        url: serial://localhost/
+        lora:
+          address: 2
+          power: 22
+        serial:
+          port: cu.usbmodem101
+          baudRate: 115200
+          dataBits: 8
+          stopBits: 1
+          parity: n
+          flowControl: 1
+          serialNo: C934764551504C3750202020FF042337
+        selectorThreadCount: 1
+        registered: "*,12,/sensors/weather/indoor:*,11,/sensors/weather/outdoor:*,8,/sensors/water/garden:*,9,/sensors/water/house"
 

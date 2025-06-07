@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.loragateway;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
+import io.mapsmessaging.dto.rest.config.protocol.impl.LoraGatewayConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.LoraProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -93,10 +94,12 @@ public class LoRaProtocol extends Protocol {
     super(new LoRaProtocolEndPoint(endPoint));
     logger = LoggerFactory.getLogger("LoRa Gateway on " + endPoint.getName());
     dataHandler = new DataHandlerFactory();
+    LoraGatewayConfigDTO lora = (LoraGatewayConfigDTO) endPoint.getConfig().getProtocolConfig("Lora_mqtt-sn");
+
     Map<String, String> parameters = endPoint.getServer().getUrl().getParameters();
-    byte power = loadPower(parameters);
-    address = loadAddress(parameters);
-    byte[] key = loadKey(parameters);
+    byte power = (byte) lora.getPower();
+    address = (byte) lora.getAddress();
+    byte[] key = loadKey(lora.getHexKeyString());
 
     clientStats = new LinkedHashMap<>();
     loraProtocolEndPoint = (LoRaProtocolEndPoint) getEndPoint();
@@ -228,10 +231,9 @@ public class LoRaProtocol extends Protocol {
     return (byte) (tmpAddress & 0xff);
   }
 
-  private byte[] loadKey(Map<String, String> parameters) {
+  private byte[] loadKey(String encodedKey) {
     byte[] key = new byte[16]; // Key size is 16 bytes or 128 bit key
-    String encodedKey = parameters.get("key");
-    if (encodedKey != null) {
+    if (encodedKey != null && !encodedKey.isEmpty()) {
       StringTokenizer st = new StringTokenizer(encodedKey, ","); // Comma separated list
       int index = 0;
       while (index < key.length && st.hasMoreElements()) {
