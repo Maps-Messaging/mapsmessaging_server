@@ -76,4 +76,8 @@ public class SerialConfigDTO extends EndPointConfigDTO {
 
   @Schema(description = "Buffer size in bytes", example = "262144")
   protected int bufferSize;
+
+  @Schema(description = "Serial number for the device, optional", example = "262144")
+  protected String serialNo;
+
 }

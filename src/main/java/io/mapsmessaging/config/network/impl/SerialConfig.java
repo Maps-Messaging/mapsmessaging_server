@@ -33,12 +33,16 @@ public class SerialConfig extends SerialConfigDTO implements Config {
 
   public SerialConfig(ConfigurationProperties config) {
     NetworkConfigFactory.unpack(config, this);
-    this.setPort(config.getProperty("port"));
-    this.setBaudRate(config.getIntProperty("baudRate", 9600));
-    this.setDataBits(config.getIntProperty("dataBits", 8));
-    this.setStopBits(config.getProperty("stopBits", "1"));
-    this.setParity(config.getProperty("parity", "n"));
-    this.setFlowControl(config.getIntProperty("flowControl", 1));
+    if (config.containsKey("serial")) {
+      ConfigurationProperties serial = (ConfigurationProperties) config.get("serial");
+      this.setPort(serial.getProperty("port"));
+      this.setBaudRate(serial.getIntProperty("baudRate", 9600));
+      this.setDataBits(serial.getIntProperty("dataBits", 8));
+      this.setStopBits(serial.getProperty("stopBits", "1"));
+      this.setParity(serial.getProperty("parity", "n"));
+      this.setFlowControl(serial.getIntProperty("flowControl", 1));
+      this.setSerialNo(serial.getProperty("serialNo"));
+    }
 
     this.setReadTimeOut(config.getIntProperty("readTimeOut", 60000));
     this.setWriteTimeOut(config.getIntProperty("writeTimeOut", 60000));
@@ -88,6 +92,10 @@ public class SerialConfig extends SerialConfigDTO implements Config {
         setBufferSize(newConfig.getBufferSize());
         hasChanged = true;
       }
+      if (!getSerialNo().equals(newConfig.getSerialNo())) {
+        setSerialNo(newConfig.getSerialNo());
+        hasChanged = true;
+      }
     }
     return hasChanged;
   }
@@ -105,6 +113,7 @@ public class SerialConfig extends SerialConfigDTO implements Config {
     config.put("readTimeOut", getReadTimeOut());
     config.put("writeTimeOut", getWriteTimeOut());
     config.put("bufferSize", getBufferSize());
+    config.put("serialNo", getSerialNo());
     return config;
   }
 }
