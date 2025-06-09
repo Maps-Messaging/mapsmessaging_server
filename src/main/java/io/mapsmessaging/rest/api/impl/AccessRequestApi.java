@@ -104,14 +104,14 @@ public class AccessRequestApi extends BaseRestApi {
   public String refreshToken() throws IOException {
     String accessToken = getAccessCookie(request);
     if (accessToken == null) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
       return "failed";
     }
 
     try {
       HttpSession session = request.getSession(false);
       if (session == null || session.getAttribute(USERNAME) == null) {
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         return "failed";
       }
       validateToken(accessToken, session, request, response);
@@ -119,7 +119,7 @@ public class AccessRequestApi extends BaseRestApi {
       return "ok";
 
     } catch (JWTVerificationException ex) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
       return "failed";
     }
   }
