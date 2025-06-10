@@ -41,7 +41,7 @@ public class ProtocolFactory implements ServiceManager {
   private final List<ProxyProtocol> proxyProtocols;
 
   public ProtocolFactory(String protocols) {
-    this.protocols = protocols;
+    this.protocols = protocols.toLowerCase();
     proxyProtocols = List.of(
         new ProxyProtocolV1(),
         new ProxyProtocolV2()
