@@ -77,7 +77,7 @@ public class NMEAProtocol extends Protocol {
     if (packet != null) {
       packet.clear();
     }
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("NMEA" + endPoint.getId(), new ProtocolClientConnection(this));
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("NMEA-0183" + endPoint.getId(), new ProtocolClientConnection(this));
     sessionContextBuilder.setSessionExpiry(0);
     sessionContextBuilder.setKeepAlive(0);
     sessionContextBuilder.setPersistentSession(false);
@@ -88,11 +88,11 @@ public class NMEAProtocol extends Protocol {
     ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
-        "NMEA",
+        "NMEA-0183",
         session.getSecurityContext().getUsername()
     );
     setTransformation(transformation);
-    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("nmea");
+    ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("NMEA-0183");
     format = configurationProperties.getProperty("format", "raw");
     boolean setServerLocation = configurationProperties.getBooleanProperty("serverLocation", false);
     if (setServerLocation) {
@@ -174,6 +174,7 @@ public class NMEAProtocol extends Protocol {
   @SneakyThrows
   @java.lang.SuppressWarnings({"java:S3824"})
   private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) {
+    System.err.println("Received :: "+sentence);
     String processed = parseSentence(sentence, sentenceId, gpsWords);
     if (publishRecords) {
       Destination destination = sentenceMap.get(sentenceId);
@@ -216,7 +217,7 @@ public class NMEAProtocol extends Protocol {
 
   @Override
   public String getName() {
-    return "NMEA";
+    return "NMEA-0183";
   }
 
   @Override

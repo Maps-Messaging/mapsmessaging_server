@@ -31,6 +31,6 @@ public class NmeaProtocolInformation extends ProtocolInformationDTO {
   private SessionInformationDTO sessionInfo;
 
   public NmeaProtocolInformation() {
-    type = "nmea";
+    type = "NMEA-0183";
   }
 }

@@ -183,7 +183,7 @@ public class EndPointConfigFactory {
       return new MqttSnConfig(config);
     } else if (protocol.equalsIgnoreCase("coap")) {
       return new CoapConfig(config);
-    } else if (protocol.equalsIgnoreCase("nmea")) {
+    } else if (protocol.equalsIgnoreCase("NMEA-0183")) {
       return new NmeaConfig(config);
     } else if (protocol.equalsIgnoreCase("lora")) {
       return new LoRaProtocolConfig(config);

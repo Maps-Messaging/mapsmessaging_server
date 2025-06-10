@@ -15,7 +15,7 @@
 #   limitations under the License.
 #
 
-nmea:
+NMEA-0183:
   format: json          # Can be JSON or RAW
   publish: true         # Publish to $NMEA topics or not
   serverLocation: true  # Use as location source for the server

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -30,5 +31,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "NMEA Protocol Configuration DTO")
 public class NmeaConfigDTO extends ProtocolConfigDTO {
+
+  @Schema(description = "Serial port configuration")
+  protected SerialConfigDTO serial;
 
 }

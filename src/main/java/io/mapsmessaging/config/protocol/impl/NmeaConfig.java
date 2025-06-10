@@ -20,6 +20,7 @@
 package io.mapsmessaging.config.protocol.impl;
 
 import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.NmeaConfigDTO;
@@ -27,13 +28,19 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.NmeaConfigDTO;
 public class NmeaConfig extends NmeaConfigDTO implements Config {
 
   public NmeaConfig(ConfigurationProperties config) {
-    setType("nmea");
+    setType("NMEA-0183");
     ProtocolConfigFactory.unpack(config, this);
+    serial = new SerialConfig(config);
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
-    return config instanceof NmeaConfigDTO && ProtocolConfigFactory.update(this, (NmeaConfigDTO) config);
+    boolean result = false;
+    if (config instanceof NmeaConfigDTO){
+      result = ProtocolConfigFactory.update(this, (NmeaConfigDTO) config);
+      result = ((SerialConfig)serial).update(config) || result;
+    }
+    return result;
   }
 
   @Override

@@ -37,7 +37,7 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = MqttProtocolInformation.class, name = "mqtt"),
     @JsonSubTypes.Type(value = MqttSnProtocolInformation.class, name = "mqtt-sn"),
     @JsonSubTypes.Type(value = MqttV5ProtocolInformation.class, name = "mqttV5"),
-    @JsonSubTypes.Type(value = NmeaProtocolInformation.class, name = "nmea"),
+    @JsonSubTypes.Type(value = NmeaProtocolInformation.class, name = "NMEA-0183"),
     @JsonSubTypes.Type(value = SemtechProtocolInformation.class, name = "semtech"),
     @JsonSubTypes.Type(value = StompProtocolInformation.class, name = "stomp"),
     @JsonSubTypes.Type(value = RestProtocolInformation.class, name = "rest"),
@@ -54,7 +54,7 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "mqtt", schema = MqttProtocolInformation.class),
         @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnProtocolInformation.class),
         @DiscriminatorMapping(value = "mqttV5", schema = MqttV5ProtocolInformation.class),
-        @DiscriminatorMapping(value = "nmea", schema = NmeaProtocolInformation.class),
+        @DiscriminatorMapping(value = "NMEA-0183", schema = NmeaProtocolInformation.class),
         @DiscriminatorMapping(value = "semtech", schema = SemtechProtocolInformation.class),
         @DiscriminatorMapping(value = "stomp", schema = StompProtocolInformation.class),
         @DiscriminatorMapping(value = "rest", schema = RestProtocolInformation.class),
@@ -69,7 +69,7 @@ import lombok.NoArgsConstructor;
 public class ProtocolInformationDTO {
 
   @Schema(description = "Type of the protocol", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "nmea", "semtech", "stomp", "rest","extension"
+      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest","extension"
   })
   protected String type;
 

@@ -68,7 +68,7 @@ public class ProtocolFactory implements ServiceManager {
     for (ProtocolImplFactory protocol : protocolServiceList) {
       if ((protocols.contains("all") &&
           !protocol.getName().equalsIgnoreCase("echo") &&
-          !protocol.getName().equalsIgnoreCase("nmea")) ||
+          !protocol.getName().equalsIgnoreCase("NMEA-0183")) ||
           protocols.contains(protocol.getName().toLowerCase())) {
         sb.append(protocol.getName()).append(",");
         potential++;

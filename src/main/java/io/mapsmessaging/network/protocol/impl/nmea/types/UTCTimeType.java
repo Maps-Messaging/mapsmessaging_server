@@ -49,6 +49,6 @@ public class UTCTimeType implements Type {
 
   @Override
   public Object jsonPack() {
-    return time;
+    return time.toString();
   }
 }
