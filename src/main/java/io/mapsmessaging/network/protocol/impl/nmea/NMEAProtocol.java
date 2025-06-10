@@ -174,7 +174,6 @@ public class NMEAProtocol extends Protocol {
   @SneakyThrows
   @java.lang.SuppressWarnings({"java:S3824"})
   private void publishMessage(String sentence, String sentenceId, Iterator<String> gpsWords, String destinationName, Transformer transformer) {
-    System.err.println("Received :: "+sentence);
     String processed = parseSentence(sentence, sentenceId, gpsWords);
     if (publishRecords) {
       Destination destination = sentenceMap.get(sentenceId);
