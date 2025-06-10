@@ -108,7 +108,13 @@ public class SerialEndPointServer extends EndPointServer implements SerialPortLi
 
   @Override
   public void start() throws IOException {
-    SerialPort port = SerialPortScanner.getInstance().add(serialConfig.getPort(), this);
+    SerialPort port = null;
+    if(serialConfig.getSerialNo() != null && !serialConfig.getSerialNo().isEmpty()){
+      port = SerialPortScanner.getInstance().addBySerial(serialConfig.getSerialNo(), this);
+    }
+    else if(serialConfig.getPort() != null && !serialConfig.getPort().isEmpty()){
+      port = SerialPortScanner.getInstance().add(serialConfig.getPort(), this);
+    }
     if (port != null) {
       bind(port);
     }
