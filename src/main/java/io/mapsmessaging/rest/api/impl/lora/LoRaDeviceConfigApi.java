@@ -19,10 +19,10 @@
 
 package io.mapsmessaging.rest.api.impl.lora;
 
-import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.dto.rest.lora.LoRaDeviceConfigInfoDTO;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
+import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
+import io.mapsmessaging.network.io.impl.lora.LoRaDeviceManager;
 import io.mapsmessaging.rest.responses.BaseResponse;
 import io.mapsmessaging.rest.responses.LoRaConfigListResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
@@ -176,15 +176,10 @@ public class LoRaDeviceConfigApi extends LoraBaseRestApi {
 
   private LoRaDeviceConfigInfoDTO createInfo(LoRaDevice device) {
     LoRaDeviceConfigInfoDTO deviceInfo = new LoRaDeviceConfigInfoDTO();
-    LoRaDeviceConfig loRaDeviceConfig = device.getConfig();
+    LoRaConfigDTO loRaDeviceConfig = device.getConfig();
     deviceInfo.setName(device.getName());
-    deviceInfo.setCs(loRaDeviceConfig.getCs());
-    deviceInfo.setIrq(loRaDeviceConfig.getIrq());
-    deviceInfo.setCadTimeout(loRaDeviceConfig.getCadTimeout());
     deviceInfo.setPower(loRaDeviceConfig.getPower());
     deviceInfo.setFrequency(loRaDeviceConfig.getFrequency());
-    deviceInfo.setRst(loRaDeviceConfig.getRst());
-    deviceInfo.setRadio(loRaDeviceConfig.getRadio());
     return deviceInfo;
   }
 }

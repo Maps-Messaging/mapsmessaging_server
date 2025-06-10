@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.loragateway;
+package io.mapsmessaging.network.io.impl.lora.serial;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -25,18 +25,24 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.StreamEndPoint;
+import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LoRaProtocolEndPoint extends EndPoint {
 
+  private static AtomicInteger count = new AtomicInteger(0);
   private final EndPoint physicalEndPoint;
+
+  @Setter
   private LoRaProtocol protocol;
 
-  LoRaProtocolEndPoint(EndPoint physical) {
-    super(1, physical.getServer());
+  public LoRaProtocolEndPoint(EndPoint physical) {
+    super(count.incrementAndGet(), physical.getServer());
     physicalEndPoint = physical;
     if (physicalEndPoint instanceof StreamEndPoint) {
       ((StreamEndPoint) physicalEndPoint).setStreamHandler(new LoRaStreamHandler(logger));
@@ -46,20 +52,15 @@ public class LoRaProtocolEndPoint extends EndPoint {
 
   @Override
   public String getProtocol() {
-    return "LoRa MQTT-SN";
-  }
-
-  void setProtocol(LoRaProtocol protocol) {
-    this.protocol = protocol;
+    return "LoRaSerial";
   }
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
-    // Intercept the packet here and add what ever we need to send via the Serial End Point
     return protocol.handlePacket(packet);
   }
 
-  int sendPackedPacket(Packet packet) throws IOException {
+  public int sendPackedPacket(Packet packet) throws IOException {
     return physicalEndPoint.sendPacket(packet);
   }
 
@@ -85,11 +86,12 @@ public class LoRaProtocolEndPoint extends EndPoint {
 
   @Override
   public String getName() {
-    return "LoRa MQTT-SN";
+    return "LoRa Gateway";
   }
 
   @Override
   protected Logger createLogger() {
     return LoggerFactory.getLogger(LoRaProtocolEndPoint.class);
   }
+
 }

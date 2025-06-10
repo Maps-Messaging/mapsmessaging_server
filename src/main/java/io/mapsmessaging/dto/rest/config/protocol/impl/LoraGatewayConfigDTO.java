@@ -1,7 +1,6 @@
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
 
-import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,7 +10,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(description = "LoRa Gateway Configuration DTO")
-public class LoraGatewayConfigDTO extends ProtocolConfigDTO {
+public class LoraGatewayConfigDTO extends MqttSnConfigDTO {
 
   @Schema(description = "Address to use for the gateway", example = "10")
   protected int address = 2;

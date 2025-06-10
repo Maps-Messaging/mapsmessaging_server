@@ -31,10 +31,8 @@ public class Constants {
   public static final byte VERSION = 0x17; // Return the current version of this software
   public static final byte PING = 0x18; // something to say when nothing else to say
   public static final byte LOG = 0x19; // something to say when nothing else to say
-  static final byte START_FRAME = 0x2;
-  static final byte END_FRAME = 0x3;
-  static final byte START_RANGE = 0x12;
-  static final byte END_RANGE = 0x19;
+  public static final byte START_RANGE = 0x12;
+  public static final byte END_RANGE = 0x19;
 
   private Constants() {
     // nothing to do

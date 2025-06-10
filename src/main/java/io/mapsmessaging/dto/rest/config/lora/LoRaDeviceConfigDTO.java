@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.lora;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,24 +35,17 @@ public class LoRaDeviceConfigDTO extends BaseConfigDTO {
   @Schema(description = "Name of the LoRa device", example = "LoRaNode1")
   protected String name;
 
-  @Schema(description = "Radio type of the LoRa device", example = "SX1276")
-  protected String radio;
-
-  @Schema(description = "Chip Select (CS) pin number", example = "10")
-  protected int cs;
-
-  @Schema(description = "IRQ pin number", example = "7")
-  protected int irq;
-
-  @Schema(description = "Reset (RST) pin number", example = "3")
-  protected int rst;
-
   @Schema(description = "Power setting for the device", example = "14")
   protected int power;
 
-  @Schema(description = "CAD timeout setting", example = "500")
-  protected int cadTimeout;
-
   @Schema(description = "Operating frequency of the device in MHz", example = "868.0")
   protected float frequency;
+
+  @Schema(description = "Base address to register for, 1-254", example = "2")
+  protected int address;
+
+  protected LoRaHardwareConfigDTO hardware;
+
+  protected SerialConfigDTO serial;
+
 }

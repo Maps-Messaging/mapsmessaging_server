@@ -29,7 +29,7 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
+import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
@@ -41,23 +41,28 @@ import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
 import java.util.*;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import lombok.Getter;
 
 public class LoRaEndPoint extends EndPoint {
 
-  private volatile boolean isQueued;
-  private final LoRaDevice loRaDevice;
+  private final AtomicBoolean isQueued;
+
   @Getter
   private final int nodeId;
+
+  private int lastRSSI;
+  private Selectable selectable;
+
+  private final LoRaChipDevice loRaDevice;
   private final Queue<LoRaDatagram> incoming;
   private final EndPointJMX mbean;
   private final LinkedHashMap<Integer, LoRaClientStats> clientStats;
-  private Selectable selectable;
-  private int lastRSSI;
 
-  public LoRaEndPoint(LoRaDevice loRaDevice, long id, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
+  public LoRaEndPoint(LoRaChipDevice loRaDevice, long id, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
     super(id, server);
-    isQueued = false;
+    isQueued = new AtomicBoolean(false);
     this.loRaDevice = loRaDevice;
     nodeId = (int) id;
     clientStats = new LinkedHashMap<>();
@@ -187,8 +192,8 @@ public class LoRaEndPoint extends EndPoint {
     synchronized (this) {
       lastRSSI = datagram.getRssi();
       incoming.add(datagram);
-      if (!isQueued && selectable != null) {
-        isQueued = true;
+      if (!isQueued.get() && selectable != null) {
+        isQueued.set(true);
         register(SelectionKey.OP_READ, selectable);
       }
       logger.log(ServerLogMessages.LORA_QUEUED_EVENT, incoming.size(), selectable != null);
@@ -217,7 +222,7 @@ public class LoRaEndPoint extends EndPoint {
           if (!incoming.isEmpty()) {
             register(SelectionKey.OP_READ, selectable);
           } else {
-            isQueued = false;
+            isQueued.set(false);
           }
         }
       }

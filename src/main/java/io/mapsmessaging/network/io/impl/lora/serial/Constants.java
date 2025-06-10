@@ -17,21 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network;
+package io.mapsmessaging.network.io.impl.lora.serial;
 
-public class LoRaEndPointURL extends EndPointURL {
+public class Constants {
 
-  public LoRaEndPointURL(String url) {
-    protocol = parseProtocol(url);
-    host = parseHost(url);
-    String tmp = protocol + "://" + host + "/";
-    if (tmp.length() < url.length()) {
-      port = parsePort(url.substring(tmp.length()));
-    } else {
-      port = 0;
-    }
-    parseParameterMap(url);
-    file = "";
+  static final byte START_FRAME = 0x2;
+  static final byte END_FRAME = 0x3;
+
+  private Constants() {
+    // nothing to do
   }
 
 }

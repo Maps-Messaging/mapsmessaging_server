@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.network.io.impl.lora.device;
 
-import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,32 +33,25 @@ import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 import lombok.Getter;
 
-public class LoRaDevice {
+public class LoRaChipDevice extends LoRaDevice {
 
   @Getter
-  private final LongAdder packetsSent = new LongAdder();
-  @Getter
-  private final LongAdder packetsReceived = new LongAdder();
-  @Getter
-  private final LongAdder bytesReceived = new LongAdder();
-  @Getter
-  private final LongAdder bytesSent = new LongAdder();
-  @Getter
-  private final LoRaDeviceConfig config;
+  private final LoRaChipDeviceConfig config;
 
   final Logger logger;
   private int radioHandle;
 
   private final Map<Integer, LoRaEndPoint> registeredEndPoint;
-  private boolean isInitialised;
   private PacketReader packetReader;
 
-  protected LoRaDevice(LoRaDeviceConfig config) {
-    logger = LoggerFactory.getLogger(LoRaDevice.class);
+  public LoRaChipDevice(LoRaChipDeviceConfig config) {
+    super(config);
+    logger = LoggerFactory.getLogger(LoRaChipDevice.class);
     this.config = config;
     isInitialised = false;
     registeredEndPoint = new LinkedHashMap<>();
   }
+
 
   public synchronized void registerEndPoint(LoRaEndPoint endPoint) throws IOException {
     if (!isInitialised && !init((int) endPoint.getId())) {
@@ -72,12 +66,9 @@ public class LoRaDevice {
     }
   }
 
+  @Override
   public void close() {
     packetReader.close();
-  }
-
-  public String getName() {
-    return config.getName();
   }
 
   private boolean init(int addr) throws IOException {

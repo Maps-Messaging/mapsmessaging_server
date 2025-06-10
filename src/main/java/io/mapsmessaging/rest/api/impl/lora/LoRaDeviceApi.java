@@ -19,13 +19,16 @@
 
 package io.mapsmessaging.rest.api.impl.lora;
 
-import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.dto.rest.lora.LoRaDeviceInfoDTO;
 import io.mapsmessaging.dto.rest.lora.LoRaEndPointConnectionInfoDTO;
 import io.mapsmessaging.dto.rest.lora.LoRaEndPointInfoDTO;
+import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDevice;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
+import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
+import io.mapsmessaging.network.io.impl.lora.LoRaDeviceManager;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.rest.responses.LoRaConnectionStatusList;
 import io.mapsmessaging.rest.responses.LoRaListResponse;
@@ -143,9 +146,11 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
       if (!lookup.isEmpty()) {
         LoRaDevice device = lookup.get(0);
         List<LoRaEndPointConnectionInfoDTO> infoList = new ArrayList<>();
-        LoRaEndPoint loRaEndPoint = device.getEndPoint(parsedInt);
-        for (LoRaClientStats clientStats : loRaEndPoint.getStats()) {
-          infoList.add(createConnectionInfo(clientStats));
+        if (device instanceof LoRaChipDevice) {
+          LoRaEndPoint loRaEndPoint = ((LoRaChipDevice) device).getEndPoint(parsedInt);
+          for (LoRaClientStats clientStats : loRaEndPoint.getStats()) {
+            infoList.add(createConnectionInfo(clientStats));
+          }
         }
         return new LoRaConnectionStatusList( infoList);
       }
@@ -156,16 +161,22 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
 
   private LoRaDeviceInfoDTO createInfo(LoRaDevice device) {
     LoRaDeviceInfoDTO deviceInfo = new LoRaDeviceInfoDTO();
-    LoRaDeviceConfig loRaDeviceConfig = device.getConfig();
+    LoRaConfigDTO loRaDeviceConfig = device.getConfig();
     deviceInfo.setName(device.getName());
-    deviceInfo.setRadio(loRaDeviceConfig.getRadio());
+    if (loRaDeviceConfig instanceof LoRaChipDeviceConfig) {
+      deviceInfo.setRadio(((LoRaChipDeviceConfig) loRaDeviceConfig).getRadio());
+    } else if (loRaDeviceConfig instanceof LoRaSerialDeviceConfig) {
+      deviceInfo.setRadio("Serial");
+    }
     deviceInfo.setBytesReceived(device.getBytesReceived().sum());
     deviceInfo.setBytesSent(device.getBytesSent().sum());
     deviceInfo.setPacketsReceived(device.getPacketsReceived().sum());
     deviceInfo.setPacketsSent(device.getPacketsSent().sum());
     List<LoRaEndPointInfoDTO> endPointInfoList = new ArrayList<>();
-    for (LoRaEndPoint endPoint : device.getEndPoints()) {
-      endPointInfoList.add(createEndPointInfo(endPoint));
+    if (device instanceof LoRaChipDevice) {
+      for (LoRaEndPoint endPoint : ((LoRaChipDevice) device).getEndPoints()) {
+        endPointInfoList.add(createEndPointInfo(endPoint));
+      }
     }
     deviceInfo.setEndPointInfoList(endPointInfoList);
     return deviceInfo;

@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.loragateway;
+package io.mapsmessaging.network.io.impl.lora.serial;
 
 import com.fazecast.jSerialComm.SerialPortTimeoutException;
 import io.mapsmessaging.logging.Logger;

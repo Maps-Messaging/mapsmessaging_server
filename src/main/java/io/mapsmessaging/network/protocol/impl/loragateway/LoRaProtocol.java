@@ -21,16 +21,24 @@ package io.mapsmessaging.network.protocol.impl.loragateway;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
-import io.mapsmessaging.dto.rest.config.protocol.impl.LoraGatewayConfigDTO;
+import io.mapsmessaging.config.protocol.impl.LoraGatewayConfig;
+import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
+import io.mapsmessaging.dto.rest.lora.LoRaDeviceInfoDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.LoraProtocolInformation;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.network.io.impl.SelectorTask;
+import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
+import io.mapsmessaging.network.io.impl.lora.LoRaDeviceManager;
+import io.mapsmessaging.network.io.impl.lora.serial.LoRaProtocolEndPoint;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.DataHandlerFactory;
@@ -52,7 +60,6 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -94,12 +101,12 @@ public class LoRaProtocol extends Protocol {
     super(new LoRaProtocolEndPoint(endPoint));
     logger = LoggerFactory.getLogger("LoRa Gateway on " + endPoint.getName());
     dataHandler = new DataHandlerFactory();
-    LoraGatewayConfigDTO lora = (LoraGatewayConfigDTO) endPoint.getConfig().getProtocolConfig("Lora_mqtt-sn");
-
-    Map<String, String> parameters = endPoint.getServer().getUrl().getParameters();
-    byte power = (byte) lora.getPower();
-    address = (byte) lora.getAddress();
-    byte[] key = loadKey(lora.getHexKeyString());
+    EndPointURL endPointURL = new EndPointURL(endPoint.getConfig().getUrl());
+    LoRaDevice loRaDevice = LoRaDeviceManager.getInstance().getDevice(endPointURL);
+    LoRaConfigDTO loRaConfig = loRaDevice.getConfig();
+    byte power = (byte) loRaConfig.getPower();
+    address = (byte) loRaConfig.getAddress();
+    byte[] key = loadKey(loRaConfig.getHexKey());
 
     clientStats = new LinkedHashMap<>();
     loraProtocolEndPoint = (LoRaProtocolEndPoint) getEndPoint();
@@ -107,15 +114,15 @@ public class LoRaProtocol extends Protocol {
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), true);
     protocolInterfaceManager = new MQTTSNInterfaceManager((byte) 1, selectorTask, getEndPoint());
     loraProtocolEndPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
-    LoRaProtocolConfig loRaConfig = (LoRaProtocolConfig) endPoint.getConfig().getProtocolConfig("lora");
-    transmissionRate = loRaConfig.getRetransmit();
+
+    transmissionRate = loRaConfig.getTransmissionRate() < 0 ? 1000 : loRaConfig.getTransmissionRate();
     transmitCount = new AtomicInteger(transmissionRate);
 
     configBuffer = new byte[18];
     configBuffer[0] = address;
     configBuffer[1] = power;
     System.arraycopy(key, 0, configBuffer, 2, configBuffer.length - 2);
-    sendCommand(VERSION); // Request version of gateway
+    sendCommand(VERSION); // Request the version of gateway
     closed = false;
     rateResetFuture = SimpleTaskScheduler.getInstance().schedule(new RateReset(), DefaultConstants.RATE_RESET_INTERVAL, TimeUnit.MILLISECONDS);
   }
@@ -151,7 +158,7 @@ public class LoRaProtocol extends Protocol {
     loraProtocolEndPoint.sendPackedPacket(initPacket);
   }
 
-  int handlePacket(Packet packet) throws IOException {
+  public int handlePacket(Packet packet) throws IOException {
     sentMessage();
     InetSocketAddress inetSocketAddress = (InetSocketAddress) packet.getFromAddress();
     byte[] ipAddress = inetSocketAddress.getAddress().getAddress();
@@ -211,24 +218,6 @@ public class LoRaProtocol extends Protocol {
       // Ignore, since we know this is OK
     }
     return null;
-  }
-
-  private byte loadPower(Map<String, String> parameters) {
-    int tmpPower = 20; // Max Power
-    if (parameters.containsKey("power")) {
-      String tmp = parameters.get("power");
-      tmpPower = Integer.parseInt(tmp);
-    }
-    return (byte) tmpPower;
-  }
-
-  private byte loadAddress(Map<String, String> parameters) {
-    int tmpAddress = 1;
-    if (parameters.containsKey("address")) {
-      String tmp = parameters.get("address");
-      tmpAddress = Integer.parseInt(tmp);
-    }
-    return (byte) (tmpAddress & 0xff);
   }
 
   private byte[] loadKey(String encodedKey) {

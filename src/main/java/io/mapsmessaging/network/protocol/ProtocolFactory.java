@@ -31,8 +31,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ProtocolFactory implements ServiceManager {
 
@@ -52,7 +50,7 @@ public class ProtocolFactory implements ServiceManager {
 
   public ProtocolImplFactory getBoundedProtocol() {
     for (ProtocolImplFactory protocol : protocolServiceList) {
-      if (protocols.equalsIgnoreCase(protocol.getName())) {
+      if (protocols.contains(protocol.getName())) {
         return protocol;
       }
     }

@@ -25,10 +25,10 @@ import java.util.concurrent.locks.LockSupport;
 public class PacketReader implements Runnable {
 
   private static final long LOG_DELAY = 120000;
-  private final LoRaDevice device;
+  private final LoRaChipDevice device;
   private boolean isClosed;
 
-  PacketReader(LoRaDevice device) {
+  PacketReader(LoRaChipDevice device) {
     this.device = device;
     isClosed = false;
     Thread reader = new Thread(this);

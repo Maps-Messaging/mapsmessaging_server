@@ -23,6 +23,7 @@ import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
 
 import com.fazecast.jSerialComm.SerialPort;
 import io.mapsmessaging.config.network.impl.SerialConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.admin.EndPointJMX;
@@ -44,9 +45,8 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   private final EndPointJMX mbean;
   private StreamHandler streamHandler;
 
-  public SerialEndPoint(long id, EndPointServer server, SerialPort serialPort, EndPointManagerJMX managerMBean) {
+  public SerialEndPoint(long id, EndPointServer server, SerialPort serialPort, SerialConfigDTO config, EndPointManagerJMX managerMBean) {
     super(id, server);
-    SerialConfig config = ((SerialConfig) server.getConfig().getEndPointConfig());
     this.serialPort = serialPort;
     configure(config);
     serialPort.openPort();
@@ -57,7 +57,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     streamHandler = new SimpleStreamHandler(config.getBufferSize());
   }
 
-  private void configure(SerialConfig config) {
+  private void configure(SerialConfigDTO config) {
     serialPort.setBaudRate(config.getBaudRate());
     serialPort.setComPortParameters(config.getBaudRate(), config.getDataBits(), getStopBits(config), getParity(config));
     serialPort.setFlowControl(config.getFlowControl());
@@ -136,7 +136,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     streamHandler = handler;
   }
 
-  private int getStopBits(SerialConfig config){
+  private int getStopBits(SerialConfigDTO config) {
     switch (config.getStopBits().toLowerCase()) {
       case "2":
         return SerialPort.TWO_STOP_BITS;
@@ -148,7 +148,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     }
   }
 
-  private int getParity(SerialConfig config) {
+  private int getParity(SerialConfigDTO config) {
     switch (config.getParity().toLowerCase()) {
       case "o":
         return SerialPort.ODD_PARITY;

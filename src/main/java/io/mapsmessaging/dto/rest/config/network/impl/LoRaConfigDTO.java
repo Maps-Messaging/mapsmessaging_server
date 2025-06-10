@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.network.impl;
 
 import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -28,5 +29,23 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 public class LoRaConfigDTO extends EndPointConfigDTO {
+
+  @Schema(description = "Name of the LoRa device", example = "LoRaNode1")
+  protected String name;
+
+  @Schema(description = "Power setting for the device", example = "14")
+  protected int power;
+
+  @Schema(description = "Operating frequency of the device in MHz", example = "868.0")
+  protected float frequency;
+
+  @Schema(description = "Base address to register for, 1-254", example = "2")
+  protected int address;
+
+  @Schema(description = "Transmission rate to limit the number of packets/second, 0 - unlimited, else per second", example = "5")
+  protected int transmissionRate;
+
+  @Schema(description = "Optional hex bases 16 byte key", example = "ABCDEF0123456789")
+  protected String hexKey;
 
 }

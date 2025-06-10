@@ -29,13 +29,15 @@ import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.io.impl.serial.management.SerialPortListener;
+import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class SerialEndPointServer extends EndPointServer {
+public class SerialEndPointServer extends EndPointServer implements SerialPortListener {
 
   private final EndPointManagerJMX managerMBean;
   private final ProtocolFactory protocolFactory;
@@ -94,7 +96,7 @@ public class SerialEndPointServer extends EndPointServer {
   public void handleCloseEndPoint(EndPoint endPoint) {
     super.handleCloseEndPoint(endPoint);
     serialEndPoint = null;
-    SerialEndPortScanner.getInstance().del(serialConfig.getPort());
+    SerialPortScanner.getInstance().del(serialConfig.getPort());
     SimpleTaskScheduler.getInstance().schedule(() -> {
       try {
         start();
@@ -106,7 +108,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public void start() throws IOException {
-    SerialPort port = SerialEndPortScanner.getInstance().add(serialConfig.getPort(), this);
+    SerialPort port = SerialPortScanner.getInstance().add(serialConfig.getPort(), this);
     if (port != null) {
       bind(port);
     }
@@ -119,7 +121,7 @@ public class SerialEndPointServer extends EndPointServer {
 
   @Override
   public void close() {
-    SerialEndPortScanner.getInstance().del(serialConfig.getPort());
+    SerialPortScanner.getInstance().del(serialConfig.getPort());
     if (serialEndPoint != null) {
       try {
         serialEndPoint.close();
@@ -136,7 +138,7 @@ public class SerialEndPointServer extends EndPointServer {
   }
 
   public void bind(SerialPort serialPort) throws IOException {
-    serialEndPoint = new SerialEndPoint(generateID(), this, serialPort, managerMBean);
+    serialEndPoint = new SerialEndPoint(generateID(), this, serialPort, serialConfig, managerMBean);
     handleNewEndPoint(serialEndPoint);
   }
 

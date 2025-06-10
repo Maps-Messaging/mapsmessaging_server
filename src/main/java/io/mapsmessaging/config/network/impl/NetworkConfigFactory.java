@@ -132,7 +132,7 @@ public class NetworkConfigFactory {
       original.setServerReadBufferSize(config.getServerReadBufferSize());
       hasChanged = true;
     }
-    if (original.getServerReadBufferSize() != config.getServerReadBufferSize()) {
+    if (original.getServerWriteBufferSize() != config.getServerWriteBufferSize()) {
       original.setServerReadBufferSize(config.getServerWriteBufferSize());
       hasChanged = true;
     }

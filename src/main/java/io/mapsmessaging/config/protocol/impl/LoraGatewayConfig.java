@@ -4,14 +4,20 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.LoraGatewayConfigDTO;
+import lombok.Getter;
 
 public class LoraGatewayConfig extends LoraGatewayConfigDTO implements Config {
 
+  @Getter
+  private MqttSnConfig mqttSnConfig;
 
   public LoraGatewayConfig(ConfigurationProperties config) {
-    setType("lora_mqtt-sn");
-    ProtocolConfigFactory.unpack(config, this);
 
+    setType("LoRa_Gateway");
+    ProtocolConfigFactory.unpack(config, this);
+    ConfigurationProperties mqttsnConfig = (ConfigurationProperties) config.get("mqtt-sn");
+    mqttsnConfig.setGlobal(config.getGlobal());
+    mqttSnConfig = new MqttSnConfig(mqttsnConfig);
     // Initialize LoRa-specific fields from config
     this.address = config.getIntProperty("address", address);
     this.power = config.getIntProperty("power", power);

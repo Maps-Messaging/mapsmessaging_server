@@ -17,14 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.io.impl.lora.device;
+package io.mapsmessaging.network.io.impl.lora;
 
 import io.mapsmessaging.config.LoRaDeviceManagerConfig;
-import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
+import io.mapsmessaging.network.io.impl.lora.serial.LoRaSerialDevice;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,8 +44,6 @@ public class LoRaDeviceManager {
     return Holder.INSTANCE;
   }
 
-  private final Logger logger = LoggerFactory.getLogger(LoRaDeviceManager.class);
-
   //
   // Some devices can run up to 3 different radio devices, all independent of each other
   // The thing that makes them unique is the config to use to communicate with them
@@ -54,16 +57,26 @@ public class LoRaDeviceManager {
   private LoRaDeviceManager() {
     synchronized (physicalDevices) {
       deviceConfig = LoRaDeviceManagerConfig.getInstance();
+      boolean libLoaded = false;
       try {
         System.loadLibrary("LoRaDevice");
-        for(LoRaDeviceConfig config:deviceConfig.getDeviceConfigList()){
-          LoRaDevice device = new LoRaDevice(config);
-          physicalDevices.add(device);
-          active.set(true);
-        }
+        libLoaded = true;
       } catch (UnsatisfiedLinkError e) {
+        Logger logger = LoggerFactory.getLogger(LoRaDeviceManager.class);
         logger.log(ServerLogMessages.LORA_DEVICE_LIBRARY_NOT_LOADED, e.getMessage());
       }
+      for (LoRaConfigDTO config : deviceConfig.getDeviceConfigList()) {
+        LoRaDevice device = null;
+        if (config instanceof LoRaChipDeviceConfig && libLoaded) {
+          device = new LoRaChipDevice((LoRaChipDeviceConfig) config);
+        } else if (config instanceof LoRaSerialDeviceConfig) {
+          device = new LoRaSerialDevice((LoRaSerialDeviceConfig) config);
+        }
+        if (device != null) {
+          physicalDevices.add(device);
+        }
+      }
+      active.set(true);
     }
   }
 

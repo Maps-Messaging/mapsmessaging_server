@@ -26,7 +26,6 @@ import io.mapsmessaging.network.io.AcceptHandler;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDeviceManager;
 
 public class LoRaEndPointServerFactory implements EndPointServerFactory {
 

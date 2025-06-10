@@ -31,7 +31,8 @@ import lombok.NoArgsConstructor;
     title = "LoRa Device Configuration Information",
     description =
         "Represents configuration information for a LoRa device, including radio details and hardware settings.")
-public class LoRaDeviceConfigInfoDTO {
+public class
+LoRaDeviceConfigInfoDTO {
 
   @Schema(
       title = "Device Name",

@@ -30,7 +30,7 @@ import java.io.IOException;
 public class LoRaProtocolFactory extends ProtocolImplFactory {
 
   public LoRaProtocolFactory() {
-    super("Lora_MQTT-SN", "LoRa MQTT-SN gateway via serial connection", new ByteArrayDetection("Lora <-> MQTT".getBytes(), 0));
+    super("LoRa_Gateway", "LoRa MQTT-SN gateway via serial connection", new ByteArrayDetection("Lora <-> MQTT".getBytes(), 0));
   }
 
   @Override

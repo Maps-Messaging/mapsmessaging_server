@@ -16,22 +16,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package io.mapsmessaging.network.io.impl.serial.management;
 
-package io.mapsmessaging.network;
+import com.fazecast.jSerialComm.SerialPort;
 
-public class LoRaEndPointURL extends EndPointURL {
+import java.io.IOException;
 
-  public LoRaEndPointURL(String url) {
-    protocol = parseProtocol(url);
-    host = parseHost(url);
-    String tmp = protocol + "://" + host + "/";
-    if (tmp.length() < url.length()) {
-      port = parsePort(url.substring(tmp.length()));
-    } else {
-      port = 0;
-    }
-    parseParameterMap(url);
-    file = "";
-  }
+public interface SerialPortListener {
 
+  void bind(SerialPort port) throws IOException;
+
+  void unbind(SerialPort port) throws IOException;
+
+  String getName();
 }
+

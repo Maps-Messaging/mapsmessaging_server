@@ -19,10 +19,12 @@
 
 package io.mapsmessaging.config;
 
-import io.mapsmessaging.config.lora.LoRaDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaChipDeviceConfig;
+import io.mapsmessaging.config.network.impl.LoRaSerialDeviceConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.LoRaDeviceManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
@@ -42,10 +44,22 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
     Object configEntry = properties.get("data");
     if (configEntry instanceof List) {
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
-        deviceConfigList.add(new LoRaDeviceConfig(entry));
+        parseConfig(entry);
       }
     } else if (configEntry instanceof ConfigurationProperties) {
-      deviceConfigList.add(new LoRaDeviceConfig((ConfigurationProperties) configEntry));
+      parseConfig((ConfigurationProperties) configEntry);
+    }
+  }
+
+  private void parseConfig(ConfigurationProperties properties) {
+    LoRaConfigDTO loraDeviceConfig = null;
+    if (properties.containsKey("device")) {
+      loraDeviceConfig = new LoRaChipDeviceConfig(properties);
+    } else if (properties.containsKey("serial")) {
+      loraDeviceConfig = new LoRaSerialDeviceConfig(properties);
+    }
+    if (loraDeviceConfig != null) {
+      deviceConfigList.add(loraDeviceConfig);
     }
   }
 
@@ -54,7 +68,6 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
     boolean hasChanged = false;
     if (config instanceof LoRaDeviceManagerConfigDTO) {
       LoRaDeviceManagerConfigDTO newConfig = (LoRaDeviceManagerConfigDTO) config;
-
       if (this.deviceConfigList.size() != newConfig.getDeviceConfigList().size()) {
         this.deviceConfigList = newConfig.getDeviceConfigList();
         hasChanged = true;
@@ -73,8 +86,10 @@ public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implemen
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     List<ConfigurationProperties> configList = new ArrayList<>();
-    for (LoRaDeviceConfig config : deviceConfigList) {
-      configList.add(config.toConfigurationProperties());
+    for (LoRaConfigDTO config : deviceConfigList) {
+      if (config instanceof Config) {
+        configList.add(((Config) config).toConfigurationProperties());
+      }
     }
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("data", configList);
