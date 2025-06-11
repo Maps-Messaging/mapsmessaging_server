@@ -23,9 +23,10 @@ import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.builders.*;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class SubscriptionFactory {

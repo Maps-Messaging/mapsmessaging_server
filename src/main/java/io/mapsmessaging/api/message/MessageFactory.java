@@ -20,10 +20,11 @@
 package io.mapsmessaging.api.message;
 
 import io.mapsmessaging.storage.StorableFactory;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
 
 public class MessageFactory implements StorableFactory<Message> {
 

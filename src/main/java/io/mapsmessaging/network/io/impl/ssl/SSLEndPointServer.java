@@ -33,10 +33,11 @@ import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPointServer;
 import io.mapsmessaging.security.ssl.SslHelper;
-import java.io.IOException;
-import java.net.InetSocketAddress;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
 public class SSLEndPointServer extends TCPEndPointServer {
 

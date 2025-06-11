@@ -24,10 +24,10 @@ import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.protocol.detection.Detection;
-import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
 import io.mapsmessaging.utilities.service.Service;
-import java.io.IOException;
 import lombok.Getter;
+
+import java.io.IOException;
 
 @Getter
 public abstract class ProtocolImplFactory implements Service {

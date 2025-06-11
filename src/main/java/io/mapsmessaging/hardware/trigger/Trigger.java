@@ -21,6 +21,7 @@ package io.mapsmessaging.hardware.trigger;
 
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.utilities.service.Service;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

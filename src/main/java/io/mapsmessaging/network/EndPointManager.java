@@ -32,9 +32,10 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolAcceptRunner;
+import lombok.Getter;
+
 import java.io.Closeable;
 import java.io.IOException;
-import lombok.Getter;
 
 public class EndPointManager implements Closeable, AcceptHandler {
 

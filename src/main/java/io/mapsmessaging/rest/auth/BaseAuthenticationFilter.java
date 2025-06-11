@@ -19,15 +19,7 @@
 
 package io.mapsmessaging.rest.auth;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.auth.AuthManager;
-import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -37,9 +29,7 @@ import jakarta.ws.rs.core.Context;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.security.auth.Subject;
 import java.io.IOException;
-import java.util.UUID;
 
 import static io.mapsmessaging.rest.auth.SessionTokenHandler.getAccessCookie;
 import static io.mapsmessaging.rest.auth.SessionTokenHandler.validateToken;

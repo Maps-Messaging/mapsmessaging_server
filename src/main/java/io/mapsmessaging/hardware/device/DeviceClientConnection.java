@@ -21,8 +21,9 @@ package io.mapsmessaging.hardware.device;
 
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
-import java.security.Principal;
 import lombok.Getter;
+
+import java.security.Principal;
 
 @Getter
 public class DeviceClientConnection implements ClientConnection {

@@ -20,7 +20,10 @@
 package io.mapsmessaging.network.protocol.impl.nats.streams;
 
 import io.mapsmessaging.api.SubscribedEventManager;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter

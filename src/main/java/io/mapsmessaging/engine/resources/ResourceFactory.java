@@ -23,16 +23,17 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.inspector.TagInspector;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.UUID;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.inspector.TagInspector;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ResourceFactory {

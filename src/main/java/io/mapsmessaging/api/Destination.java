@@ -25,9 +25,10 @@ import io.mapsmessaging.engine.destination.BaseDestination;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 /**
  * Generic destination class

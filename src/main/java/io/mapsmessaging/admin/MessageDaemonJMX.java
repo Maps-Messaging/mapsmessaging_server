@@ -34,11 +34,12 @@ import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.Stats;
+import lombok.Getter;
+
+import javax.management.ObjectInstance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.ObjectInstance;
-import lombok.Getter;
 
 @JMXBean(description = "Message Daemon JMX Bean")
 public class MessageDaemonJMX implements HealthMonitor {

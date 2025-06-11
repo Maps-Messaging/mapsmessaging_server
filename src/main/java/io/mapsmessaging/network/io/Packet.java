@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.network.io;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
 /**
  * This class wraps the Java ByteBuffer classes and manages the buffer.

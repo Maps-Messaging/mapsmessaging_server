@@ -23,11 +23,12 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 @ToString
 public class WillDetails {

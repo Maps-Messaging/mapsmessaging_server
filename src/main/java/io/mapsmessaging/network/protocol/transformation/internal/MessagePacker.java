@@ -23,6 +23,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+
 import java.util.Map;
 
 public class MessagePacker {

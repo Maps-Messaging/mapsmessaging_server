@@ -24,6 +24,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SpiDeviceConfigDTO;
+
 import java.util.ArrayList;
 import java.util.List;
 

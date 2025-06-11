@@ -21,6 +21,7 @@ package io.mapsmessaging.utilities.queue;
 
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;

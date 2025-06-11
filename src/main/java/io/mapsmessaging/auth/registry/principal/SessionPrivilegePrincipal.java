@@ -20,6 +20,7 @@
 package io.mapsmessaging.auth.registry.principal;
 
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
+
 import java.security.Principal;
 
 public class SessionPrivilegePrincipal implements Principal {

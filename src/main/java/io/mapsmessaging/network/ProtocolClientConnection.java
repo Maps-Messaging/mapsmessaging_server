@@ -21,6 +21,7 @@ package io.mapsmessaging.network;
 
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.network.protocol.Protocol;
+
 import java.security.Principal;
 
 public class ProtocolClientConnection implements ClientConnection {

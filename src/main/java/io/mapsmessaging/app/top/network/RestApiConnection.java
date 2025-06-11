@@ -20,11 +20,10 @@
 package io.mapsmessaging.app.top.network;
 
 import com.google.gson.*;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 
 public abstract class RestApiConnection {

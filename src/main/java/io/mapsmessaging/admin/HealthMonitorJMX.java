@@ -26,12 +26,13 @@ import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
+
+import javax.management.ObjectInstance;
+import javax.management.openmbean.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.management.ObjectInstance;
-import javax.management.openmbean.*;
 
 @JMXBean(description = "Health Monitor JMX Bean")
 public class HealthMonitorJMX {

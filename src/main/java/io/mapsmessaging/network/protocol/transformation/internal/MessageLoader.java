@@ -24,8 +24,11 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
 import java.util.Map;
-import lombok.*;
 
 @Data
 @NoArgsConstructor

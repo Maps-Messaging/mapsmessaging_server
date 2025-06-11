@@ -19,17 +19,18 @@
 
 package io.mapsmessaging.engine.session;
 
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE;
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE_ERROR;
-
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.destination.DestinationFactory;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.engine.session.security.SecurityContext;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE;
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE_ERROR;
 
 public class PersistentSession extends SessionImpl{
 

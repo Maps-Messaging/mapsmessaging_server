@@ -24,9 +24,10 @@ import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class SecurityManagerConfig extends SecurityManagerDTO implements Config, ConfigManager {

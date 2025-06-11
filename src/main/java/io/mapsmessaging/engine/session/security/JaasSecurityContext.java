@@ -28,10 +28,11 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.SubjectHelper;
-import java.io.IOException;
-import java.util.UUID;
+
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.UUID;
 
 public class JaasSecurityContext extends SecurityContext {
 

@@ -23,9 +23,10 @@ import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+
+import javax.management.ObjectInstance;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.ObjectInstance;
 
 @JMXBean(description = "Task Queue monitor")
 public class TaskQueueJMX implements HealthMonitor {

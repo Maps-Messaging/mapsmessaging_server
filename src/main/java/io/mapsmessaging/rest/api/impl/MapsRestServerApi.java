@@ -19,25 +19,11 @@
 
 package io.mapsmessaging.rest.api.impl;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.engine.schema.SchemaManager;
-import io.mapsmessaging.rest.api.impl.messaging.impl.RestMessageListener;
-import io.mapsmessaging.rest.auth.BaseAuthenticationFilter;
-import io.mapsmessaging.rest.responses.LoginResponse;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.mapsmessaging.rest.responses.UpdateCheckResponse;
-import io.mapsmessaging.security.SubjectHelper;
-import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,22 +37,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import javax.security.auth.Subject;
-import java.io.IOException;
-import java.util.Date;
-import java.util.UUID;
-
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
-import static io.mapsmessaging.rest.auth.SessionTokenHandler.*;
-import static io.mapsmessaging.rest.handler.SessionTracker.clearSession;
 
 @OpenAPIDefinition(
     info =

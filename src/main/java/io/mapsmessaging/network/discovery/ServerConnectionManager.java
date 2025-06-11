@@ -27,9 +27,13 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.discovery.services.RemoteServers;
 import io.mapsmessaging.utilities.Agent;
-import java.util.*;
+
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ServerConnectionManager implements ServiceListener, Agent {
 

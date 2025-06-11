@@ -19,9 +19,6 @@
 
 package io.mapsmessaging.routing;
 
-import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_SHUTDOWN;
-import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_STARTUP;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.RoutingManagerConfig;
 import io.mapsmessaging.dto.rest.system.Status;
@@ -30,11 +27,15 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.discovery.DiscoveryManager;
 import io.mapsmessaging.utilities.Agent;
-import java.util.LinkedHashMap;
-import java.util.Map;
+
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
 import javax.jmdns.impl.JmDNSImpl;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_SHUTDOWN;
+import static io.mapsmessaging.logging.ServerLogMessages.ROUTING_STARTUP;
 
 public class RoutingManager implements Agent, ServiceListener {
 

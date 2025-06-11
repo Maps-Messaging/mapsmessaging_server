@@ -20,11 +20,12 @@
 package io.mapsmessaging.api.message;
 
 import io.mapsmessaging.api.message.interceptors.FieldInterceptor;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class DataMap extends LinkedHashMap<String, TypedData> {
 

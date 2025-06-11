@@ -22,6 +22,7 @@ package io.mapsmessaging.api.message.interceptors;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.message.interceptors.impl.*;
+
 import java.util.LinkedHashMap;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton

@@ -29,6 +29,7 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+
 import java.io.IOException;
 
 public abstract class SubscriptionBuilder {

@@ -28,9 +28,10 @@ import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
-import java.util.List;
-import javax.management.ObjectInstance;
 import lombok.Getter;
+
+import javax.management.ObjectInstance;
+import java.util.List;
 
 @JMXBean(description = "Network Manager JMX Bean, controls all the End Point Managers")
 public class NetworkManagerJMX implements HealthMonitor {

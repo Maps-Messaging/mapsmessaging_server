@@ -24,13 +24,14 @@ import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.utilities.stats.StatsFactory;
+import lombok.Getter;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.Getter;
 
 public abstract class EndPointServer extends EndPointServerStatus implements Closeable, Selectable {
 

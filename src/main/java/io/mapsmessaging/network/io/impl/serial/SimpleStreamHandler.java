@@ -21,6 +21,7 @@ package io.mapsmessaging.network.io.impl.serial;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.StreamHandler;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

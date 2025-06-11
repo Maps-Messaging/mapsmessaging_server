@@ -20,6 +20,7 @@
 package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;

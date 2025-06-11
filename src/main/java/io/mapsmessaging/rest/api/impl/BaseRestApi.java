@@ -38,7 +38,6 @@ import jakarta.ws.rs.core.UriInfo;
 
 import javax.security.auth.Subject;
 
-
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_HIT;
 import static io.mapsmessaging.logging.ServerLogMessages.REST_CACHE_MISS;
 

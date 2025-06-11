@@ -20,13 +20,14 @@
 package io.mapsmessaging.auth.priviliges;
 
 import io.mapsmessaging.api.features.QualityOfService;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)

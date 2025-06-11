@@ -21,8 +21,9 @@ package io.mapsmessaging.network.io.impl.ssl;
 
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
-import java.nio.ByteBuffer;
 import lombok.Getter;
+
+import java.nio.ByteBuffer;
 
 public class SSLHandshakeManagerFinished implements SSLHandshakeManager {
 

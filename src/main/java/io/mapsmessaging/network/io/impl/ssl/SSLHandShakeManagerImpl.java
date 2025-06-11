@@ -24,10 +24,11 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
+import lombok.Getter;
+
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
-import lombok.Getter;
 
 public class SSLHandShakeManagerImpl implements SSLHandshakeManager {
 

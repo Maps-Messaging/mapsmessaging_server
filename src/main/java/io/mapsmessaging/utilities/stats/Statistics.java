@@ -20,6 +20,7 @@
 package io.mapsmessaging.utilities.stats;
 
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

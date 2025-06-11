@@ -20,12 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.loragateway;
 
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.config.protocol.impl.LoRaProtocolConfig;
-import io.mapsmessaging.config.protocol.impl.LoraGatewayConfig;
-import io.mapsmessaging.dto.rest.config.lora.LoRaDeviceConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
-import io.mapsmessaging.dto.rest.config.network.impl.LoRaSerialConfigDTO;
-import io.mapsmessaging.dto.rest.lora.LoRaDeviceInfoDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.LoraProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -112,7 +107,7 @@ public class LoRaProtocol extends Protocol {
     loraProtocolEndPoint = (LoRaProtocolEndPoint) getEndPoint();
     loraProtocolEndPoint.setProtocol(this);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), true);
-    protocolInterfaceManager = new MQTTSNInterfaceManager((byte) 1, selectorTask, getEndPoint());
+    protocolInterfaceManager = new MQTTSNInterfaceManager((byte) 1, selectorTask, endPoint);
     loraProtocolEndPoint.register(SelectionKey.OP_READ, selectorTask.getReadTask());
 
     transmissionRate = loRaConfig.getTransmissionRate() < 0 ? 1000 : loRaConfig.getTransmissionRate();

@@ -31,12 +31,13 @@ import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.Stats;
 import io.mapsmessaging.utilities.threads.tasks.TaskScheduler;
+import lombok.Getter;
+
+import javax.management.ObjectInstance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import javax.management.ObjectInstance;
-import lombok.Getter;
 
 @JMXBean(description = "Destination JMX Bean")
 public class DestinationJMX implements HealthMonitor {

@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.utilities.configuration;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-
 import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.configuration.PropertyManager;
@@ -32,16 +30,18 @@ import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class ConfigurationManager {

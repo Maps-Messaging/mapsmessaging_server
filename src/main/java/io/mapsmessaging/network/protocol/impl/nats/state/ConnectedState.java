@@ -20,17 +20,18 @@
 package io.mapsmessaging.network.protocol.impl.nats.state;
 
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocolException;
-import io.mapsmessaging.network.protocol.impl.nats.frames.*;
+import io.mapsmessaging.network.protocol.impl.nats.frames.CompletionHandler;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
+import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import io.mapsmessaging.network.protocol.impl.nats.listener.FrameListener;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 
 public class ConnectedState implements State {

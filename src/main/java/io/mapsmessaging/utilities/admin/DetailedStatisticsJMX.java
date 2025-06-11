@@ -22,10 +22,11 @@ package io.mapsmessaging.utilities.admin;
 import com.udojava.jmx.wrapper.JMXBean;
 import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+
+import javax.management.ObjectInstance;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.ObjectInstance;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 @JMXBean(description = "Details Statistics")
 public class DetailedStatisticsJMX {

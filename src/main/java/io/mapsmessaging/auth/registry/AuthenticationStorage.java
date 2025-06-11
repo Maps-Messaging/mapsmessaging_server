@@ -19,9 +19,6 @@
 
 package io.mapsmessaging.auth.registry;
 
-import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_ON_UPDATE;
-import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_TO_LOAD;
-
 import io.mapsmessaging.auth.priviliges.PrivilegeSerializer;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.mapping.GroupIdSerializer;
@@ -35,14 +32,18 @@ import io.mapsmessaging.security.SubjectHelper;
 import io.mapsmessaging.security.access.*;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.access.mapping.UserIdMap;
+import lombok.Getter;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+
+import javax.security.auth.Subject;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.*;
-import javax.security.auth.Subject;
-import lombok.Getter;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
+
+import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_ON_UPDATE;
+import static io.mapsmessaging.logging.ServerLogMessages.AUTH_STORAGE_FAILED_TO_LOAD;
 
 public class AuthenticationStorage {
   private static final String CERTIFICATE_STORE = "certificateStore";

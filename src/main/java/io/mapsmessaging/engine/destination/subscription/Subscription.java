@@ -23,14 +23,14 @@ import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.tasks.Response;
+import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
-
-import io.mapsmessaging.engine.tasks.Response;
-import lombok.Getter;
-import org.jetbrains.annotations.Nullable;
 
 public abstract class Subscription implements Runnable, SubscribedEventManager, Subscribable {
 

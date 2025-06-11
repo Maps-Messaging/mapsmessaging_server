@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.connection.state;
 
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+
 import java.io.IOException;
 
 public class Connecting extends State {

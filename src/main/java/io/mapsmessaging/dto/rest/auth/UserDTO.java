@@ -20,11 +20,12 @@
 package io.mapsmessaging.dto.rest.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 
 @Data
 @AllArgsConstructor

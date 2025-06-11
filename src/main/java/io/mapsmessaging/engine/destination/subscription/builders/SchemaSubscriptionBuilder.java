@@ -25,6 +25,7 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionBuilder;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.impl.SchemaSubscription;
 import io.mapsmessaging.engine.session.SessionImpl;
+
 import java.io.IOException;
 
 public class SchemaSubscriptionBuilder extends SubscriptionBuilder {

@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.io.connection;
 
-import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
-
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
@@ -37,14 +35,17 @@ import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.Getter;
-import lombok.Setter;
+
+import static io.mapsmessaging.network.io.connection.Constants.SCHEDULE_TIME;
 
 public class EndPointConnection extends EndPointServerStatus {
   private final AtomicBoolean running;

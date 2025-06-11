@@ -21,11 +21,12 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.storage.Statistics;
+import lombok.SneakyThrows;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Future;
-import lombok.SneakyThrows;
-import org.jetbrains.annotations.Nullable;
 
 public interface Resource extends AutoCloseable {
 

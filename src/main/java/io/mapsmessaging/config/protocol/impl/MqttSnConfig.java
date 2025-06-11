@@ -24,6 +24,7 @@ import io.mapsmessaging.config.protocol.PredefinedTopics;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MqttSnConfigDTO;
+
 import java.util.ArrayList;
 import java.util.List;
 

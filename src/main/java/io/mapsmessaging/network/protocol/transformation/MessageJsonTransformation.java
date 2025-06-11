@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.protocol.transformation;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.mapsmessaging.api.MessageBuilder;
@@ -30,6 +28,8 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.internal.MessageLoader;
 import io.mapsmessaging.network.protocol.transformation.internal.MessagePacker;
+
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
 
 public class MessageJsonTransformation implements ProtocolMessageTransformation {
 

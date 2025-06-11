@@ -38,13 +38,14 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
-import java.io.IOException;
-import java.util.concurrent.*;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.concurrent.*;
 
 /**
  * The SessionImpl class is responsible for managing the session state, handling destination control,

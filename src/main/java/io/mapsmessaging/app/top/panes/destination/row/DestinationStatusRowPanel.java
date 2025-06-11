@@ -22,6 +22,7 @@ package io.mapsmessaging.app.top.panes.destination.row;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.destination.DestinationStatusUpdate;
 import io.mapsmessaging.dto.rest.destination.DestinationDTO;
+
 import java.util.ArrayList;
 import java.util.List;
 

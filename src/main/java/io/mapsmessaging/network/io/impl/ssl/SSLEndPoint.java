@@ -29,6 +29,12 @@ import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPoint;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -36,11 +42,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.List;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLEngineResult.Status;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLPeerUnverifiedException;
 
 public class SSLEndPoint extends TCPEndPoint {
 

@@ -32,10 +32,11 @@ import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class DeviceManagerConfig extends DeviceManagerConfigDTO implements Config, ConfigManager {

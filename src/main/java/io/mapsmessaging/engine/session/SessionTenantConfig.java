@@ -20,9 +20,10 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
 
 /**
  * Represents a session tenant configuration.

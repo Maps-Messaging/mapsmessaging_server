@@ -21,6 +21,7 @@ package io.mapsmessaging.hardware.trigger;
 
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.PeriodicTriggerConfigDTO;
+
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

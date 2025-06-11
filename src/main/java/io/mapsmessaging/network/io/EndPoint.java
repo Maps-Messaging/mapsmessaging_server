@@ -24,6 +24,10 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
 import io.mapsmessaging.utilities.stats.StatsFactory;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.security.auth.Subject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -33,9 +37,6 @@ import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
-import javax.security.auth.Subject;
-import lombok.Getter;
-import lombok.Setter;
 
 public abstract class EndPoint implements Closeable {
 

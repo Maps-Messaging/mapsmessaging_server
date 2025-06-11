@@ -19,11 +19,11 @@
 
 package io.mapsmessaging;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-
 import io.mapsmessaging.admin.MessageDaemonJMX;
 import io.mapsmessaging.api.features.Constants;
-import io.mapsmessaging.config.*;
+import io.mapsmessaging.config.DeviceManagerConfig;
+import io.mapsmessaging.config.MessageDaemonConfig;
+import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.configuration.EnvironmentPathLookup;
 import io.mapsmessaging.configuration.consul.ConsulManagerFactory;
@@ -47,6 +47,7 @@ import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.SimpleTaskSchedulerJMX;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.Getter;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +55,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.Getter;
+
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_BOOTSTRAP;
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE;
 
 /**
  * This is the MessageDaemon class, which represents a message daemon in the system.

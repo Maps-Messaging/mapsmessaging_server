@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.system.impl.messages.publish;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
+
 import java.io.IOException;
 
 public class Dropped extends SystemTopicWithAverage {

@@ -19,9 +19,10 @@
 
 package io.mapsmessaging.api;
 
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 /**
  * Raised if any transactional exceptions are raised due to invalid contexts, like transaction already exists or its been completed so no further actions can occur

@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.app.top.network;
 
-import com.google.gson.*;
+import com.google.gson.JsonElement;
 import io.mapsmessaging.rest.responses.DestinationResponse;
 
 public class ServerDestinationStatusRequest extends RestApiConnection {

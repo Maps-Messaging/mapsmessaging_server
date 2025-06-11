@@ -19,14 +19,15 @@
 
 package io.mapsmessaging.network.io.impl.dtls.state;
 
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
-
 import io.mapsmessaging.network.io.Packet;
+
+import javax.net.ssl.SSLEngineResult;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import javax.net.ssl.SSLEngineResult;
+
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
 
 public class HandShakeState extends State {
 

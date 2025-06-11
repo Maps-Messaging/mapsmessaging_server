@@ -19,9 +19,6 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
-
 import io.mapsmessaging.config.network.impl.TcpConfig;
 import io.mapsmessaging.config.network.impl.UdpConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
@@ -32,13 +29,17 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import lombok.Getter;
+
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class SelectorTask implements Selectable {
 

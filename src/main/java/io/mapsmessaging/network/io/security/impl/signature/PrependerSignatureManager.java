@@ -21,6 +21,7 @@ package io.mapsmessaging.network.io.security.impl.signature;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.security.SignatureManager;
+
 import java.nio.ByteBuffer;
 
 public class PrependerSignatureManager implements SignatureManager {

@@ -24,14 +24,18 @@ import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
-import io.mapsmessaging.utilities.stats.*;
+import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
 import io.mapsmessaging.utilities.stats.MovingAverageFactory.ACCUMULATOR;
+import io.mapsmessaging.utilities.stats.Stats;
+import io.mapsmessaging.utilities.stats.StatsFactory;
+import io.mapsmessaging.utilities.stats.StatsType;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.management.ObjectInstance;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import javax.management.ObjectInstance;
-import lombok.Getter;
-import lombok.Setter;
 
 @JMXBean(description = "LoRa Radio Status Bean")
 public class LoRaClientStats {

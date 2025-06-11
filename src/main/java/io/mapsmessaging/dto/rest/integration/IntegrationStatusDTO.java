@@ -21,10 +21,11 @@ package io.mapsmessaging.dto.rest.integration;
 
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Map;
 
 @Data
 @NoArgsConstructor

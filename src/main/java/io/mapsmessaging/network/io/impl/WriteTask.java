@@ -19,16 +19,17 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_SEND_FAILED;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.ServerPacket;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+
+import static io.mapsmessaging.logging.ServerLogMessages.WRITE_TASK_SEND_FAILED;
 
 public class WriteTask implements Selectable {
 

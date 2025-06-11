@@ -26,10 +26,11 @@ import com.google.gson.JsonParser;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
-import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+
+import java.io.IOException;
 
 public class SchemaMonitor implements Runnable {
 

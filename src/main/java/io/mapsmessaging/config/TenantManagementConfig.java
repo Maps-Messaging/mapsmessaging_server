@@ -26,10 +26,11 @@ import io.mapsmessaging.dto.rest.config.TenantManagementConfigDTO;
 import io.mapsmessaging.dto.rest.config.tenant.TenantConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class TenantManagementConfig extends TenantManagementConfigDTO implements Config, ConfigManager {

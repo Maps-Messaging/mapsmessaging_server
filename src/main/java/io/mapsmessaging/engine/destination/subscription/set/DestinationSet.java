@@ -21,12 +21,13 @@ package io.mapsmessaging.engine.destination.subscription.set;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class DestinationSet implements Set<DestinationImpl> {
 

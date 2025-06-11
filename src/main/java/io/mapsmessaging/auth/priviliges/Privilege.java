@@ -19,7 +19,10 @@
 
 package io.mapsmessaging.auth.priviliges;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Data
 @AllArgsConstructor

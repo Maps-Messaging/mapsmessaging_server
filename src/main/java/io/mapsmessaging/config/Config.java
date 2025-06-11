@@ -21,6 +21,7 @@ package io.mapsmessaging.config;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+
 import java.io.Serializable;
 import java.util.Map;
 

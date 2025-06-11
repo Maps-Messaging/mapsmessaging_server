@@ -21,7 +21,6 @@ package io.mapsmessaging.stats;
 
 import com.google.gson.Gson;
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.config.MessageDaemonConfig;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
@@ -29,13 +28,16 @@ import io.mapsmessaging.dto.helpers.StatusMessageHelper;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class StatsReporter {

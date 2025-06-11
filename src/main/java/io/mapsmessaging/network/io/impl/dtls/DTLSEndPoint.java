@@ -26,13 +26,14 @@ import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.dtls.state.StateChangeListener;
 import io.mapsmessaging.network.io.impl.dtls.state.StateEngine;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.FutureTask;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeoutable {
 

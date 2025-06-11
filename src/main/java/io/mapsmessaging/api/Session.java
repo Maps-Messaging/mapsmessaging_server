@@ -31,6 +31,10 @@ import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.engine.session.will.WillDetails;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,9 +42,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class Session {
 

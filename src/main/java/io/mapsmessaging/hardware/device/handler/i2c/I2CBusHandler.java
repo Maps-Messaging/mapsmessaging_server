@@ -29,6 +29,7 @@ import io.mapsmessaging.hardware.device.DeviceSessionManagement;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;

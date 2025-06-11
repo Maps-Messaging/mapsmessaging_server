@@ -23,10 +23,10 @@ import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.schemas.config.SchemaConfig;
+import lombok.Data;
+
 import java.io.IOException;
 import java.util.UUID;
-
-import lombok.Data;
 
 @Data
 public abstract class DeviceHandler {

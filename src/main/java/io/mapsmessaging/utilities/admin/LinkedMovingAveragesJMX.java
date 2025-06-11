@@ -20,9 +20,10 @@
 package io.mapsmessaging.utilities.admin;
 
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
+
+import javax.management.*;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.*;
 
 public class LinkedMovingAveragesJMX implements DynamicMBean {
 

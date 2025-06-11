@@ -19,8 +19,9 @@
 
 package io.mapsmessaging.utilities;
 
-import java.io.*;
 import lombok.Getter;
+
+import java.io.*;
 
 public class PidFileManager {
 

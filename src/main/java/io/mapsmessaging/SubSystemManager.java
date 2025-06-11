@@ -19,9 +19,6 @@
 
 package io.mapsmessaging;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_AGENT_STOPPED;
-
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -51,9 +48,12 @@ import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class SubSystemManager {
   private final Logger logger = LoggerFactory.getLogger(SubSystemManager.class);
@@ -100,6 +100,9 @@ public class SubSystemManager {
         name = name.replaceAll(" ", "_");
         if(name.equals("loop") || featureManager.isEnabled("protocols."+name) ) {
           service.add(parser);
+        }
+        else{
+          System.err.println("Disabling protocol impl "+parser.getName());
         }
       } catch (ServiceConfigurationError e) {
         logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);

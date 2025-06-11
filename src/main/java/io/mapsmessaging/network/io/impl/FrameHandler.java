@@ -19,18 +19,19 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-import static java.nio.channels.SelectionKey.OP_WRITE;
-
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.ServerPublishPacket;
+
 import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 public class FrameHandler {
   private final WriteTask writeTask;

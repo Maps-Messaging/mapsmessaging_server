@@ -22,10 +22,11 @@ package io.mapsmessaging.dto.rest.config.protocol.impl;
 import io.mapsmessaging.config.protocol.PredefinedTopics;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

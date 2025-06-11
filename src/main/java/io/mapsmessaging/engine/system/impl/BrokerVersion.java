@@ -23,6 +23,7 @@ import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
+
 import java.io.IOException;
 
 public class BrokerVersion extends SystemTopic {

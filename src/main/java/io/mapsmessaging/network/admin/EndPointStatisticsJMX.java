@@ -26,9 +26,10 @@ import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
+
+import javax.management.ObjectInstance;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.ObjectInstance;
 
 @JMXBean(description = "End Point statistics")
 public class EndPointStatisticsJMX {

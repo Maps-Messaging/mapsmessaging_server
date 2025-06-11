@@ -27,12 +27,13 @@ import io.mapsmessaging.dto.rest.destination.DestinationDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 public class DestinationStatusTopic extends SystemTopic {
 

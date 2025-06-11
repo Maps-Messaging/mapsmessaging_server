@@ -19,9 +19,10 @@
 
 package io.mapsmessaging.utilities.stats;
 
+import lombok.Getter;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.Getter;
 
 public class SimpleStats implements Stats{
 

@@ -20,10 +20,11 @@ package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.engine.resources.ResourceFactory;
+import lombok.Getter;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
 
 /**
  * This class is responsible for walking the directory passed in looking for existing destination files.

@@ -22,9 +22,10 @@ package io.mapsmessaging.network.io.impl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.concurrent.*;
-import org.jetbrains.annotations.NotNull;
 
 public class SelectorLoadManager {
 

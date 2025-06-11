@@ -33,6 +33,13 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -40,12 +47,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.security.auth.Subject;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public abstract class Protocol implements SelectorCallback, MessageListener, Timeoutable {
   protected final EndPoint endPoint;

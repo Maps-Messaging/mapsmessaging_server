@@ -22,6 +22,7 @@ package io.mapsmessaging.app.top.panes;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.panes.server.*;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
+
 import java.util.ArrayList;
 import java.util.List;
 

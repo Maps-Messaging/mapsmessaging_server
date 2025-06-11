@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.monitor;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-
 import io.mapsmessaging.config.NetworkManagerConfig;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -28,12 +26,15 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
+
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import lombok.Getter;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class NetworkInterfaceMonitor implements Agent {
 

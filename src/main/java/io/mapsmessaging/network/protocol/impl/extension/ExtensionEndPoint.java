@@ -20,7 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.extension;
 
 
-import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -32,8 +31,8 @@ import io.mapsmessaging.network.io.Selectable;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.FutureTask;
 import java.util.List;
+import java.util.concurrent.FutureTask;
 
 public class ExtensionEndPoint extends EndPoint {
 

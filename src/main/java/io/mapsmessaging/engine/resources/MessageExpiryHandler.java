@@ -22,9 +22,10 @@ package io.mapsmessaging.engine.resources;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.tasks.BulkRemoveMessageTask;
 import io.mapsmessaging.storage.ExpiredStorableHandler;
+import lombok.Setter;
+
 import java.io.IOException;
 import java.util.Queue;
-import lombok.Setter;
 
 public class MessageExpiryHandler implements ExpiredStorableHandler {
 

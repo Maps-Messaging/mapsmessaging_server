@@ -19,10 +19,6 @@
 
 package io.mapsmessaging.network.io.impl.tcp;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-import static io.mapsmessaging.network.io.impl.tcp.NetworkHelper.isInCidr;
-
-import com.google.common.net.InetAddresses;
 import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -44,6 +40,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+import static io.mapsmessaging.network.io.impl.tcp.NetworkHelper.isInCidr;
 
 public class TCPEndPoint extends EndPoint {
 

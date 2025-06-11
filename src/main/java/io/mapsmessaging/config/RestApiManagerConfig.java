@@ -27,10 +27,11 @@ import io.mapsmessaging.dto.rest.config.RestApiManagerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.rest.handler.CorsHeaderManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Config, ConfigManager {

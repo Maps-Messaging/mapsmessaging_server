@@ -26,9 +26,10 @@ import io.mapsmessaging.network.protocol.transformation.lookup.TreeNode;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class TransformationManager implements ServiceManager {

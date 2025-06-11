@@ -20,12 +20,13 @@
 package io.mapsmessaging.auth.registry.mapping;
 
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
-import java.io.IOException;
-import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.Serializer;
+
+import java.io.IOException;
+import java.util.UUID;
 
 public class GroupIdSerializer implements Serializer<GroupIdMap> {
 

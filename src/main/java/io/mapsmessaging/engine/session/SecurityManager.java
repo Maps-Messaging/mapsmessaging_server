@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.engine.session;
 
-import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
-
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.config.SecurityManagerConfig;
 import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
@@ -36,13 +34,16 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.security.MapsSecurityProvider;
 import io.mapsmessaging.security.jaas.PrincipalCallback;
 import io.mapsmessaging.utilities.Agent;
-import java.security.Principal;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.security.Principal;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SECURITY_MANAGER_SECURITY_CONTEXT;
 
 public class SecurityManager implements Agent {
 

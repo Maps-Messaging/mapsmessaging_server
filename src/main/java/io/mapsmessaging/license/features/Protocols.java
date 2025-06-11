@@ -33,7 +33,7 @@ public class Protocols {
   private boolean extensions;
   private boolean stomp;
   private boolean restApi;
-  private boolean lora_mqtt_sn;
+  private boolean lora;
   private boolean ws;
   private boolean wss;
 }

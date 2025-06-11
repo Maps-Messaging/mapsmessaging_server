@@ -41,11 +41,6 @@ io.mapsmessaging.network.protocol.impl.nats.NatsProtocolFactory
 io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
 
 #
-# Serial based protocols
-#
-io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocolFactory
-
-#
 # UDP based protocols
 #
 io.mapsmessaging.network.protocol.impl.coap.CoapProtocolFactory

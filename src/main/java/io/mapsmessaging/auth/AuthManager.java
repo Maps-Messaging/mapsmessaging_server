@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.auth;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-
 import com.sun.security.auth.UserPrincipal;
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.registry.AuthenticationStorage;
@@ -41,14 +39,17 @@ import io.mapsmessaging.security.identity.principals.UniqueIdentifierPrincipal;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.SystemProperties;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.Getter;
+
+import javax.security.auth.Subject;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
-import javax.security.auth.Subject;
-import lombok.Getter;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class AuthManager implements Agent {

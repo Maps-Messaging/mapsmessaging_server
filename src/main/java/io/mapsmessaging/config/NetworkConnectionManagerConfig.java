@@ -25,10 +25,11 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.NetworkConnectionManagerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class NetworkConnectionManagerConfig extends NetworkConnectionManagerConfigDTO implements Config, ConfigManager {

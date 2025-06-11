@@ -20,8 +20,9 @@
 package io.mapsmessaging.network.io.impl.dtls.state;
 
 import io.mapsmessaging.network.io.Packet;
-import java.io.IOException;
+
 import javax.net.ssl.SSLEngineResult;
+import java.io.IOException;
 
 public abstract class State {
 

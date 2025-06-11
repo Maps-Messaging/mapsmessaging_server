@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.auth.registry.principal;
 
+import lombok.Getter;
+
 import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
-import lombok.Getter;
 
 public class AccessIdPrincipal implements Principal {
 

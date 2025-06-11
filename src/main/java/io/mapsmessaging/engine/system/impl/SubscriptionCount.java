@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.system.impl;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
+
 import java.io.IOException;
 
 public class SubscriptionCount extends SystemTopicWithAverage {

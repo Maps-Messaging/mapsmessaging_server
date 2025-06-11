@@ -25,11 +25,12 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.IOException;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+import java.io.IOException;
 
 @EqualsAndHashCode(callSuper = true)
 @Data

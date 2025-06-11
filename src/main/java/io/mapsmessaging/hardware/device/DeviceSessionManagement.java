@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.hardware.device;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -43,15 +41,18 @@ import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+import lombok.Data;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import lombok.Data;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 @Data
 public class DeviceSessionManagement implements Runnable, MessageListener {

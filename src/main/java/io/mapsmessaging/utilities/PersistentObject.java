@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.utilities;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.jetbrains.annotations.Nullable;
 
 public class PersistentObject {
 

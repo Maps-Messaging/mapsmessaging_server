@@ -22,6 +22,7 @@ package io.mapsmessaging.app.top.panes.server;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
+
 import java.time.LocalDateTime;
 
 public class TimePanel extends ServerDetailsUpdate {

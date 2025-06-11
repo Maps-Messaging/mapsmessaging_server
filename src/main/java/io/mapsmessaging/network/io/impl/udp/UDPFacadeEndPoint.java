@@ -23,6 +23,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.*;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.security.auth.Subject;
 
 public class UDPFacadeEndPoint extends EndPoint {
 

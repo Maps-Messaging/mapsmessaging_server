@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.ServerLogMessages.*;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
@@ -28,9 +26,12 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.TimeUnit;
+
+import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class ReadTask implements Selectable {
 

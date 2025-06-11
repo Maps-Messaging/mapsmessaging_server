@@ -24,11 +24,12 @@ import io.mapsmessaging.utilities.stats.processors.AverageDataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
 import io.mapsmessaging.utilities.stats.processors.DifferenceDataProcessor;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import lombok.Getter;
 
 /**
  * Creates a MovingAverage instance that manages the data summing based on the ACCUMULATOR allocated to the MovingAverage

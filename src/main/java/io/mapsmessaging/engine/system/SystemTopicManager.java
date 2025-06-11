@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.engine.system;
 
-import static io.mapsmessaging.logging.ServerLogMessages.SYSTEM_TOPIC_MESSAGE_ERROR;
-
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationManager;
@@ -30,6 +28,9 @@ import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -37,8 +38,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import lombok.Getter;
-import lombok.Setter;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SYSTEM_TOPIC_MESSAGE_ERROR;
 
 public class SystemTopicManager implements Runnable, ServiceManager, Agent {
 

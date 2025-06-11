@@ -21,9 +21,10 @@ package io.mapsmessaging.hardware.trigger;
 
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.CronTriggerConfigDTO;
-import java.io.IOException;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
+
+import java.io.IOException;
 
 public class CronTrigger extends Trigger {
 

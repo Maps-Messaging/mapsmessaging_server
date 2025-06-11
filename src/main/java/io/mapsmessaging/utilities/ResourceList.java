@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.utilities;
 
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,8 +30,6 @@ import java.util.Enumeration;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This is a helper class to load resources from the classpath

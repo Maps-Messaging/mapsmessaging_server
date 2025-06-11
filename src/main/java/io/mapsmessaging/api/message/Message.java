@@ -36,6 +36,10 @@ import io.mapsmessaging.storage.impl.streams.BufferObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectReader;
 import io.mapsmessaging.storage.impl.streams.ObjectWriter;
 import io.mapsmessaging.storage.impl.streams.StreamObjectWriter;
+import lombok.Getter;
+import lombok.Setter;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -43,9 +47,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import lombok.Getter;
-import lombok.Setter;
-import org.jetbrains.annotations.Nullable;
 
 public class Message implements IdentifierResolver, Storable {
 

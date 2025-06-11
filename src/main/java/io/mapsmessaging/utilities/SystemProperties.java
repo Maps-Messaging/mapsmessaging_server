@@ -19,10 +19,10 @@
 
 package io.mapsmessaging.utilities;
 
-import static io.mapsmessaging.logging.ServerLogMessages.CONFIG_PROPERTY_ACCESS;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+
+import static io.mapsmessaging.logging.ServerLogMessages.CONFIG_PROPERTY_ACCESS;
 
 /**
  * This class represents a utility class for accessing system properties.

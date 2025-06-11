@@ -21,9 +21,10 @@ package io.mapsmessaging.network.io.impl;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 public interface SelectorCallback {
 

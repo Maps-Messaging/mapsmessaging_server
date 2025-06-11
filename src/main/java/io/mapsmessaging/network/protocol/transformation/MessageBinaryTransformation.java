@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.protocol.transformation;
 
-import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
-
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
@@ -28,8 +26,11 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.internal.MetaRouteHandler;
+
 import java.nio.ByteBuffer;
 import java.util.Map;
+
+import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_TRANSFORMATION_EXCEPTION;
 
 public class MessageBinaryTransformation implements ProtocolMessageTransformation {
 

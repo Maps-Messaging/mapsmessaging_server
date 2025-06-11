@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io.impl.lora;
 
 import io.mapsmessaging.network.io.InterfaceInformation;
+
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.util.ArrayList;

@@ -23,12 +23,13 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.UserProperty;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @ToString
 @Getter

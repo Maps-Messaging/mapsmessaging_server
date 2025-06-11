@@ -24,8 +24,9 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.MessageDaemonConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import java.io.IOException;
 import lombok.NoArgsConstructor;
+
+import java.io.IOException;
 
 @NoArgsConstructor
 public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Config, ConfigManager {

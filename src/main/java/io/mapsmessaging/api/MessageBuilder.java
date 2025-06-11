@@ -26,14 +26,15 @@ import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.dto.rest.messaging.MessageDTO;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Data
 public class MessageBuilder {

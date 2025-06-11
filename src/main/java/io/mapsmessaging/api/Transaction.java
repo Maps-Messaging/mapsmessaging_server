@@ -21,14 +21,14 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.TransactionManager;
+import lombok.Getter;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-
-import lombok.Getter;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Transaction class that maintains a list of destinations that this transaction has published messages to as well as the unique transaction ID and the internal id used to identify

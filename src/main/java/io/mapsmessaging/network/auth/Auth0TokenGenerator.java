@@ -21,13 +21,14 @@ package io.mapsmessaging.network.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
-import lombok.Getter;
 
 public class Auth0TokenGenerator implements TokenGenerator {
 

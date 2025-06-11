@@ -30,12 +30,13 @@ import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.security.ssl.SslHelper;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 
 public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
 

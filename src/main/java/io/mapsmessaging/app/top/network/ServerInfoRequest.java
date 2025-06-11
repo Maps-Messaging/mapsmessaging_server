@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.app.top.network;
 
-import com.google.gson.*;
+import com.google.gson.JsonElement;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
 
 public class ServerInfoRequest extends RestApiConnection {

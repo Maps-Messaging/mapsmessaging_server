@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.utilities.stats;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import lombok.Getter;
 
 /**
  * Manages a single moving average, accumulates data over the period and then provides an average that moves with time. https://en.wikipedia.org/wiki/Moving_average

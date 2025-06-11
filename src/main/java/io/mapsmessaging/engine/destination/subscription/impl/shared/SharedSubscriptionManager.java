@@ -21,11 +21,12 @@ package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.subscription.state.BoundedMessageStateManager;
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
 
 public class SharedSubscriptionManager {
 

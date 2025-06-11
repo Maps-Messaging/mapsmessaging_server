@@ -37,11 +37,12 @@ import io.mapsmessaging.network.protocol.impl.extension.ExtensionEndPointConnect
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.Getter;
 
 public class NetworkConnectionManager implements ServiceManager, Agent {
 

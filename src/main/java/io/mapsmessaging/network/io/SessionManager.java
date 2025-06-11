@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io;
 
 import io.mapsmessaging.network.protocol.Protocol;
+
 import java.net.SocketAddress;
 
 public interface SessionManager {

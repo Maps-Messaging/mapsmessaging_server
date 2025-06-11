@@ -28,10 +28,11 @@ import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import lombok.Data;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
 
 public class InterfaceStatusTopic extends SystemTopic {
 

@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.network.discovery;
 
-import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
-
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationMode;
@@ -40,17 +38,20 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
+
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
-import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.logging.ServerLogMessages.DISCOVERY_FAILED_TO_REGISTER;
 
 public class DiscoveryManager implements Agent, Consumer<NetworkStateChange> {
   private static final String ALL_HOSTS = "::";

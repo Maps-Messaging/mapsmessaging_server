@@ -19,20 +19,21 @@
 
 package io.mapsmessaging.api;
 
-import static io.mapsmessaging.logging.ServerLogMessages.SESSION_ERROR_DURING_CREATION;
-
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import java.io.IOException;
-import java.util.concurrent.*;
-import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
+
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.concurrent.*;
+
+import static io.mapsmessaging.logging.ServerLogMessages.SESSION_ERROR_DURING_CREATION;
 
 /**
  * Session lifetime management class. This class handles the life cycle of a Session, as well as the ability to perform anonymous publishes, if configured and allowed.

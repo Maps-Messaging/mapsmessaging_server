@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.session.security;
 import io.mapsmessaging.engine.audit.AuditEvent;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+
 import java.io.IOException;
 import java.security.Principal;
 

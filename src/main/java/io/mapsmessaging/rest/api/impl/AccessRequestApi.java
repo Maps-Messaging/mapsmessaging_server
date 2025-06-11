@@ -34,7 +34,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
 import javax.security.auth.Subject;
@@ -43,8 +42,6 @@ import java.util.UUID;
 
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 import static io.mapsmessaging.rest.auth.SessionTokenHandler.*;
-import static io.mapsmessaging.rest.auth.SessionTokenHandler.clearToken;
-import static io.mapsmessaging.rest.auth.SessionTokenHandler.setupCookieAndSession;
 import static io.mapsmessaging.rest.handler.SessionTracker.clearSession;
 
 @Tag(name = "User Authentication")

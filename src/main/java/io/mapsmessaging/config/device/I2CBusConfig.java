@@ -24,9 +24,10 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.I2CBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.I2CDeviceConfigDTO;
+import lombok.NoArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.List;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class I2CBusConfig extends I2CBusConfigDTO implements DeviceBusConfig {

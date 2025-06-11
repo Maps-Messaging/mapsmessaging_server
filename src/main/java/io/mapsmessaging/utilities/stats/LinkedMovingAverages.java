@@ -21,6 +21,9 @@ package io.mapsmessaging.utilities.stats;
 
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.utilities.stats.processors.DataProcessor;
+import lombok.Getter;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,8 +31,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.Getter;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 /**
  * Creates a list of moving average with different time periods. Data is pushed through all the moving averages resulting in the ability to see longer period trends versus short

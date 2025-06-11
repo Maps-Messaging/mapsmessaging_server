@@ -21,9 +21,10 @@ package io.mapsmessaging.dto.rest.protocol.impl;
 
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)

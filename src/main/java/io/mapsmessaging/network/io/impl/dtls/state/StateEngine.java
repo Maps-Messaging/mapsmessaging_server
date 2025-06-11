@@ -22,15 +22,16 @@ package io.mapsmessaging.network.io.impl.dtls.state;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.dtls.DTLSSessionManager;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
-import lombok.Getter;
-import lombok.Setter;
 
 public class StateEngine {
 

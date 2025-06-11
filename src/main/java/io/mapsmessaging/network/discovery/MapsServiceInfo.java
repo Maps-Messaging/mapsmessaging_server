@@ -19,12 +19,13 @@
 
 package io.mapsmessaging.network.discovery;
 
+import lombok.Getter;
+import lombok.ToString;
+
+import javax.jmdns.ServiceInfo;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import javax.jmdns.ServiceInfo;
-import lombok.Getter;
-import lombok.ToString;
 
 @Getter
 @ToString

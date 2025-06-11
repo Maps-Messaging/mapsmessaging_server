@@ -23,11 +23,12 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

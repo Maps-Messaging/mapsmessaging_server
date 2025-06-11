@@ -26,11 +26,12 @@ import io.mapsmessaging.dto.rest.config.NetworkManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class NetworkManagerConfig extends NetworkManagerConfigDTO implements Config, ConfigManager {

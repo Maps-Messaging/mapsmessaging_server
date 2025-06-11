@@ -20,11 +20,12 @@
 package io.mapsmessaging.network.io.impl.dtls.state;
 
 import io.mapsmessaging.network.io.Packet;
-import java.io.IOException;
-import java.nio.ByteBuffer;
+
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class NormalState extends State {
 

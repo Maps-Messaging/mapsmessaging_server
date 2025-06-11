@@ -19,11 +19,12 @@
 
 package io.mapsmessaging.api.features;
 
+import lombok.Getter;
+
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
-import lombok.Getter;
 
 public enum CompressionMode {
 

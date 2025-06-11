@@ -25,9 +25,10 @@ import com.udojava.jmx.wrapper.JMXBeanAttribute;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.utilities.admin.JMXManager;
+
+import javax.management.ObjectInstance;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.ObjectInstance;
 
 @JMXBean(description = "Session Management JMX Bean")
 public class SessionManagerJMX {

@@ -20,11 +20,12 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.features.DestinationType;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 public interface DestinationFactory {
 

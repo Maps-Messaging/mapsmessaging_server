@@ -31,6 +31,8 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
+
+import javax.security.auth.login.LoginException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +40,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.LongAdder;
-import javax.security.auth.login.LoginException;
 
 public class SessionManager implements Agent {
 

@@ -27,10 +27,11 @@ import io.mapsmessaging.dto.rest.config.LoRaDeviceManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import lombok.NoArgsConstructor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class LoRaDeviceManagerConfig extends LoRaDeviceManagerConfigDTO implements Config, ConfigManager {

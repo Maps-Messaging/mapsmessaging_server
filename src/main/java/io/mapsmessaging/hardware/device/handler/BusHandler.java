@@ -32,10 +32,11 @@ import io.mapsmessaging.hardware.trigger.Trigger;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.SneakyThrows;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.*;
-import lombok.SneakyThrows;
 
 public abstract class BusHandler implements Runnable {
   private final Map<String, DeviceHandler> foundDevices;

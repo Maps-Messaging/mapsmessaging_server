@@ -24,7 +24,6 @@ import io.mapsmessaging.security.uuid.UuidGenerator;
 import jakarta.servlet.http.HttpSession;
 
 import java.util.Map;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("java:S6548") // yes it is a singleton

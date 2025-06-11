@@ -24,12 +24,13 @@ import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.network.AuthenticationMechanism;
 import io.mapsmessaging.security.identity.IdentityLookup;
 import io.mapsmessaging.security.identity.IdentityLookupFactory;
-import java.io.IOException;
-import java.util.Map;
+import lombok.Getter;
+
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import lombok.Getter;
+import java.io.IOException;
+import java.util.Map;
 
 public class SaslAuthenticationMechanism implements AuthenticationMechanism {
 

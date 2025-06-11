@@ -18,8 +18,10 @@
  */
 
 package io.mapsmessaging.engine.destination;
+
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.utilities.stats.*;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;

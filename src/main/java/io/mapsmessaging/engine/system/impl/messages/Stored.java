@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.system.impl.messages;
 
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
+
 import java.io.IOException;
 
 public class Stored extends SystemTopicWithAverage {

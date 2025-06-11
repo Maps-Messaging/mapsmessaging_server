@@ -28,11 +28,13 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
-import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
+import io.mapsmessaging.network.io.impl.lora.device.LoRaDatagram;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,8 +44,6 @@ import java.nio.channels.SelectionKey;
 import java.util.*;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import lombok.Getter;
 
 public class LoRaEndPoint extends EndPoint {
 

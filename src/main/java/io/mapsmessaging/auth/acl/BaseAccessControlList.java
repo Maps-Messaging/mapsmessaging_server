@@ -25,11 +25,12 @@ import io.mapsmessaging.security.access.AccessControlList;
 import io.mapsmessaging.security.access.AclEntry;
 import io.mapsmessaging.security.access.mapping.GroupIdMap;
 import io.mapsmessaging.security.identity.principals.GroupIdPrincipal;
+
+import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import javax.security.auth.Subject;
 
 public abstract class BaseAccessControlList implements AccessControlList {
 

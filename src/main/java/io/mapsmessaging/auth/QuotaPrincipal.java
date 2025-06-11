@@ -21,10 +21,11 @@ package io.mapsmessaging.auth;
 
 import io.mapsmessaging.auth.priviliges.SessionPrivileges;
 import io.mapsmessaging.auth.priviliges.subscription.SubscriptionPrivileges;
-import java.security.Principal;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+
+import java.security.Principal;
 
 @ToString
 @EqualsAndHashCode

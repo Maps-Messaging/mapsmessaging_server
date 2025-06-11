@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.transformation.internal;
 
 import io.mapsmessaging.MessageDaemon;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 

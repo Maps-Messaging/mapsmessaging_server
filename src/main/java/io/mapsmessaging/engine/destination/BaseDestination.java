@@ -20,9 +20,10 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.message.Message;
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 public interface BaseDestination {
 

@@ -28,7 +28,6 @@ import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.TransactionS
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.NextRequest;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
-import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
 
 import java.io.IOException;
 

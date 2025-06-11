@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.license;
 
-import java.util.*;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import global.namespace.fun.io.bios.BIOS;
@@ -28,18 +28,16 @@ import global.namespace.truelicense.api.License;
 import global.namespace.truelicense.api.LicenseManagementException;
 import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.keymgr.LicenseManager;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mapsmessaging.license.features.Features;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class LicenseController {
 

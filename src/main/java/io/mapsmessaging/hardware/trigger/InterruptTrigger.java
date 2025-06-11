@@ -26,6 +26,7 @@ import io.mapsmessaging.devices.gpio.InterruptListener;
 import io.mapsmessaging.devices.gpio.InterruptPin;
 import io.mapsmessaging.dto.rest.config.device.triggers.BaseTriggerConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.triggers.InterruptTriggerConfigDTO;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;

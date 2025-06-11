@@ -23,9 +23,10 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.security.PacketIntegrity;
 import io.mapsmessaging.network.io.security.SignatureManager;
 import io.mapsmessaging.network.io.security.impl.signature.AppenderSignatureManager;
-import java.util.zip.Checksum;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.zip.Checksum;
 
 public abstract class ChecksumPacketSecurity implements PacketIntegrity {
 

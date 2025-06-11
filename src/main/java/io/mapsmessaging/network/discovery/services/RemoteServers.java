@@ -21,8 +21,9 @@ package io.mapsmessaging.network.discovery.services;
 
 import io.mapsmessaging.dto.rest.discovery.DiscoveredServersDTO;
 import io.mapsmessaging.network.discovery.MapsServiceInfo;
+
 import java.io.Serializable;
-import java.util.*;
+import java.util.LinkedHashMap;
 
 public class RemoteServers extends DiscoveredServersDTO implements Serializable {
 

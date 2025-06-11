@@ -21,11 +21,12 @@ package io.mapsmessaging.dto.rest.config.auth;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

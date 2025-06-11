@@ -19,8 +19,6 @@
 
 package io.mapsmessaging.hardware;
 
-import static io.mapsmessaging.logging.ServerLogMessages.DEVICE_MANAGER_FAILED_TO_REGISTER;
-
 import io.mapsmessaging.config.DeviceManagerConfig;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.DeviceController;
@@ -42,8 +40,11 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+
 import java.io.IOException;
 import java.util.*;
+
+import static io.mapsmessaging.logging.ServerLogMessages.DEVICE_MANAGER_FAILED_TO_REGISTER;
 
 public class DeviceManager implements ServiceManager, Agent {
 

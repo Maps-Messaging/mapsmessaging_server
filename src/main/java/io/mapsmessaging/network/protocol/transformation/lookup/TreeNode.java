@@ -19,10 +19,11 @@
 
 package io.mapsmessaging.network.protocol.transformation.lookup;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Getter
 public class TreeNode {

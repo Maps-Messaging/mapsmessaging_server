@@ -24,6 +24,7 @@ import io.mapsmessaging.config.ConfigHelper;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
+
 import java.util.LinkedHashMap;
 
 public class AuthConfig extends AuthConfigDTO implements Config {

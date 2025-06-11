@@ -22,14 +22,15 @@ package io.mapsmessaging.network.protocol.sasl;
 
 import io.mapsmessaging.security.identity.IdentityLookup;
 import io.mapsmessaging.security.passwords.PasswordBuffer;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 public class ServerCallbackHandler implements CallbackHandler {
 

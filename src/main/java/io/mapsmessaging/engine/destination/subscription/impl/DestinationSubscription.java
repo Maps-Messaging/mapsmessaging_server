@@ -38,15 +38,15 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Future;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
 /**
  * Note: This is a complex class that maintains the state of events for a specific subscription to a specific destination.

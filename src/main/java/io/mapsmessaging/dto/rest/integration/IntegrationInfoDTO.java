@@ -19,13 +19,13 @@
 
 package io.mapsmessaging.dto.rest.integration;
 
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
 
 @Data
 @NoArgsConstructor

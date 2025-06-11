@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.rest.api.impl;
 
-import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
 @Data
 @Schema(description = "Login request payload containing credentials and session options")

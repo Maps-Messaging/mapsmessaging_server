@@ -23,6 +23,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.system.SystemTopic;
 import io.mapsmessaging.network.io.EndPoint;
+
 import java.io.IOException;
 
 public class Maximum extends SystemTopic {

@@ -19,9 +19,10 @@
 
 package io.mapsmessaging.utilities.stats;
 
-import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.concurrent.TimeUnit;
 
 public class StatsFactory {
 

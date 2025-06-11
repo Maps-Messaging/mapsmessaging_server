@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.system.impl.load;
 
 import io.mapsmessaging.engine.system.SystemTopicWithAverage;
 import io.mapsmessaging.network.io.EndPointServerStatus;
+
 import java.io.IOException;
 
 public class MessageReceived extends SystemTopicWithAverage {

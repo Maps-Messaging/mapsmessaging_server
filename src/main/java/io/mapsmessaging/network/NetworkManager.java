@@ -29,11 +29,11 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointManager.STATE;
 import io.mapsmessaging.network.admin.NetworkManagerJMX;
-import io.mapsmessaging.network.io.EndPointConnectionFactory;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.service.Service;
 import io.mapsmessaging.utilities.service.ServiceManager;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;

@@ -23,6 +23,7 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import io.mapsmessaging.app.top.formatters.StringFormatter;
 import io.mapsmessaging.app.top.panels.Panel;
 import io.mapsmessaging.dto.rest.ServerInfoDTO;
+
 import java.util.Map;
 
 public class ThreadStatusPanel extends ServerDetailsUpdate {

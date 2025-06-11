@@ -25,6 +25,7 @@ import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.hardware.trigger.Trigger;
+
 import java.util.Map;
 
 public class OneWireBusHandler extends BusHandler {

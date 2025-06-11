@@ -27,15 +27,16 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.network.io.EndPointServer;
+import lombok.Getter;
+
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
+import javax.jmdns.ServiceListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.jmdns.JmDNS;
-import javax.jmdns.ServiceInfo;
-import javax.jmdns.ServiceListener;
-import lombok.Getter;
 
 public class AdapterManager {
 

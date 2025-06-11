@@ -25,13 +25,13 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.LongAdder;
-import lombok.Getter;
 
 public class LoRaChipDevice extends LoRaDevice {
 

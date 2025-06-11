@@ -23,10 +23,11 @@ import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.stats.LinkedMovingAverageRecordDTO;
 import io.mapsmessaging.network.EndPointURL;
 import io.mapsmessaging.utilities.stats.*;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.Getter;
 
 public abstract class EndPointServerStatus {
 

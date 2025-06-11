@@ -20,7 +20,6 @@
 package io.mapsmessaging.license;
 
 import io.mapsmessaging.license.features.Features;
-import io.mapsmessaging.logging.LogMessages;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -47,7 +46,7 @@ public class FeatureManager {
         logger.log(ServerLogMessages.LICENSE_DISABLED_FEATURE_KEY, featurePath);
       }
     }
-    return false;
+    return true;
   }
 
   public int getMaxValue(String featurePath) {

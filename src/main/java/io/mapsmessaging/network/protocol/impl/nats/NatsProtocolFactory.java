@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.nats;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;

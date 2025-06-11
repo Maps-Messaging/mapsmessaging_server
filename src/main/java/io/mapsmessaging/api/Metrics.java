@@ -21,9 +21,10 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 public class Metrics extends Destination {
 

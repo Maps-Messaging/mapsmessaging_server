@@ -20,6 +20,7 @@
 package io.mapsmessaging.engine.system;
 
 import io.mapsmessaging.api.message.Message;
+
 import java.io.IOException;
 
 public class SystemTopicAlias extends SystemTopic {

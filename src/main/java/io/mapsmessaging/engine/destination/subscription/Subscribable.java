@@ -21,6 +21,7 @@
 package io.mapsmessaging.engine.destination.subscription;
 
 import io.mapsmessaging.api.message.Message;
+
 import java.io.Closeable;
 import java.util.Queue;
 

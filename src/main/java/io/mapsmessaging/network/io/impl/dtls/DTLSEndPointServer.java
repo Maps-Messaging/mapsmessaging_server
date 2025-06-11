@@ -36,13 +36,14 @@ import io.mapsmessaging.network.io.impl.udp.UDPInterfaceInformation;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.security.ssl.SslHelper;
+
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.List;
-import javax.net.ssl.SSLContext;
 
 public class DTLSEndPointServer extends UDPEndPointServer {
 

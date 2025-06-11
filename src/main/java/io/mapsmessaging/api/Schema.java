@@ -24,9 +24,10 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
-import java.io.IOException;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 public class Schema extends Destination {
 

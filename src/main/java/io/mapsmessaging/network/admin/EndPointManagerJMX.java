@@ -28,11 +28,12 @@ import io.mapsmessaging.utilities.admin.HealthMonitor;
 import io.mapsmessaging.utilities.admin.HealthStatus;
 import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
+import lombok.Getter;
+
+import javax.management.ObjectInstance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.ObjectInstance;
-import lombok.Getter;
 
 @JMXBean(description = "End Point Manager JMX Bean")
 public class EndPointManagerJMX implements HealthMonitor {

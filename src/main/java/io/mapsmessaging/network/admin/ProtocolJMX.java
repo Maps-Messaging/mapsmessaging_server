@@ -30,10 +30,11 @@ import io.mapsmessaging.utilities.admin.HealthStatus.LEVEL;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.admin.LinkedMovingAveragesJMX;
 import io.mapsmessaging.utilities.stats.LinkedMovingAverages;
+
+import javax.management.ObjectInstance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.management.ObjectInstance;
 
 @JMXBean(description = "Protocol JMX Bean, manages a single instance of a protocol")
 public class ProtocolJMX implements HealthMonitor {

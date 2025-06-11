@@ -19,10 +19,7 @@
 
 package io.mapsmessaging.network.io.impl.serial;
 
-import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
-
 import com.fazecast.jSerialComm.SerialPort;
-import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -30,12 +27,15 @@ import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.locks.LockSupport;
+
+import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
 
 public class SerialEndPoint extends EndPoint implements StreamEndPoint {
 

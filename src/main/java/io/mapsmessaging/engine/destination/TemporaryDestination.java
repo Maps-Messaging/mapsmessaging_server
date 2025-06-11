@@ -24,10 +24,11 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
 import io.mapsmessaging.engine.resources.Resource;
-import java.io.IOException;
-import java.util.UUID;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.UUID;
 
 public class TemporaryDestination extends DestinationImpl {
 

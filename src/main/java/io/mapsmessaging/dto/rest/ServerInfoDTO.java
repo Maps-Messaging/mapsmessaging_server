@@ -20,11 +20,12 @@
 package io.mapsmessaging.dto.rest;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor

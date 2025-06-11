@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.schema;
 
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.operators.ParserExecutor;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 

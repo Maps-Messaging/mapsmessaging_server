@@ -19,13 +19,14 @@
 
 package io.mapsmessaging.network.io.impl;
 
-import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SEND_PACKET_ERROR;
-import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SENT_PACKET;
-
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
+
 import java.io.IOException;
+
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SEND_PACKET_ERROR;
+import static io.mapsmessaging.logging.ServerLogMessages.UDP_WRITE_TASK_SENT_PACKET;
 
 public class UDPWriteTask extends WriteTask {
 

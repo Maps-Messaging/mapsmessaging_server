@@ -26,11 +26,12 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.utilities.service.Service;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
 public abstract class SystemTopic extends DestinationImpl implements Service {
 

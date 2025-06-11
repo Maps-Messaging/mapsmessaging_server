@@ -34,6 +34,7 @@ import io.mapsmessaging.network.io.impl.serial.management.SerialPortScanner;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
