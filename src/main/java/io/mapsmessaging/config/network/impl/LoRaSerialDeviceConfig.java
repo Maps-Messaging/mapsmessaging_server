@@ -11,9 +11,11 @@ public class LoRaSerialDeviceConfig extends LoRaSerialConfigDTO implements Confi
   public LoRaSerialDeviceConfig(ConfigurationProperties properties) {
     super();
     this.name = properties.getProperty("name");
+    this.address = properties.getIntProperty("address", 1);
     this.power = properties.getIntProperty("power", 14);
     this.frequency = properties.getFloatProperty("frequency", 0.0f);
     this.transmissionRate = properties.getIntProperty("transmissionRate", 2);
+    this.hexKey = properties.getProperty("hexKey", "0x00000000000000000000000000000000");
     this.serialConfig = new SerialConfig(properties);
   }
 
@@ -22,7 +24,10 @@ public class LoRaSerialDeviceConfig extends LoRaSerialConfigDTO implements Confi
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("name", this.name);
     properties.put("power", this.power);
+    properties.put("address", this.address);
+    properties.put("transmissionRate", this.transmissionRate);
     properties.put("frequency", this.frequency);
+    properties.put("hexKey", this.hexKey);
     properties.put("serial", ((SerialConfig) this.serialConfig).toConfigurationProperties());
     return properties;
   }
@@ -46,6 +51,18 @@ public class LoRaSerialDeviceConfig extends LoRaSerialConfigDTO implements Confi
     }
     if (this.frequency != newConfig.getFrequency()) {
       this.frequency = newConfig.getFrequency();
+      hasChanged = true;
+    }
+    if(this.address != newConfig.getAddress()) {
+      this.address = newConfig.getAddress();
+      hasChanged = true;
+    }
+    if(this.transmissionRate != newConfig.getTransmissionRate()) {
+      this.transmissionRate = newConfig.getTransmissionRate();
+      hasChanged = true;
+    }
+    if(!this.hexKey.equalsIgnoreCase(newConfig.getHexKey())) {
+      this.hexKey = newConfig.getHexKey();
       hasChanged = true;
     }
     hasChanged = hasChanged || ((SerialConfig) serialConfig).update(config);

@@ -26,18 +26,21 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
-import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.fazecast.jSerialComm.SerialPort.TIMEOUT_READ_BLOCKING;
 
 public class SerialEndPoint extends EndPoint implements StreamEndPoint {
+
+  private static ExecutorService executor = Executors.newFixedThreadPool(4);
 
   private final SerialPort serialPort;
   private final OutputStream outputStream;
@@ -99,9 +102,9 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   @Override
   public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) {
     if (selectionKey == SelectionKey.OP_READ) {
-      SimpleTaskScheduler.getInstance().submit(new SerialReader(runner));
+      executor.execute(new SerialReader(runner));
     } else {
-      SimpleTaskScheduler.getInstance().submit(new SerialWriter(runner));
+      executor.execute(new SerialWriter(runner));
     }
     return null;
   }

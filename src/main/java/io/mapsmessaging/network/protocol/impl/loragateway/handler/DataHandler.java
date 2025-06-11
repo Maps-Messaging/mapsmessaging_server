@@ -37,7 +37,6 @@ public class DataHandler implements PacketHandler {
     packet.getRawBuffer().limit(len - 2);
     packet.setFromAddress(loRaProtocol.getSocketAddress(loraClientId));
     loRaProtocol.handleIncomingPacket(packet, loraClientId, rssi);
-    packet.clear();
-    return true;
+    return false;
   }
 }
