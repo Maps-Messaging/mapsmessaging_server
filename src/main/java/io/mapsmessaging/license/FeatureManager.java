@@ -46,7 +46,7 @@ public class FeatureManager {
         logger.log(ServerLogMessages.LICENSE_DISABLED_FEATURE_KEY, featurePath);
       }
     }
-    return true;
+    return false;
   }
 
   public int getMaxValue(String featurePath) {
