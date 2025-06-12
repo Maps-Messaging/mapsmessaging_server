@@ -62,7 +62,18 @@ public class LoRaClientStats {
 
 
   private ObjectInstance mbean;
-  private List<LinkedMovingAveragesJMX> movingAveragesJMXList;
+  private final List<LinkedMovingAveragesJMX> movingAveragesJMXList;
+
+  @Override
+  public String toString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append("LoRaClientStats\n");
+    sb.append("rssiStats: ").append(rssiStats.getUnits()).append(" ").append(rssiStats.getCurrent()).append("\n");
+    sb.append("lastPacketId: ").append(lastPacketId).append("\n");
+    sb.append("lastReadTime: ").append(lastReadTime).append("\n");
+    sb.append("lastWriteTime: ").append(lastWriteTime).append("\n");
+    return sb.toString();
+  }
 
   public LoRaClientStats(List<String> parent, int clientId, StatsType type) {
     rssiStats = StatsFactory.create(type, RSSI, RSSI, ACCUMULATOR.ADD, MOVING_AVERAGE, TIME_UNIT);
@@ -70,10 +81,9 @@ public class LoRaClientStats {
     receivedStats =  StatsFactory.create(type, "Missed", PACKETS, ACCUMULATOR.AVE,  MOVING_AVERAGE, TIME_UNIT);
     lastPacketId = -1;
     nodeId = clientId;
+    movingAveragesJMXList = new ArrayList<>();
 
     if (JMXManager.isEnableJMX()){
-      movingAveragesJMXList = new ArrayList<>();
-
       List<String> jmxPath = new ArrayList<>(parent);
       jmxPath.add("name=RadioStatus");
       jmxPath.add("NodeId=" + clientId);
@@ -84,12 +94,9 @@ public class LoRaClientStats {
         List<String> missed = new ArrayList<>(jmxPath);
         List<String> received = new ArrayList<>(jmxPath);
         if (rssiStats.supportMovingAverage()) {
-          movingAveragesJMXList.add(
-              new LinkedMovingAveragesJMX(rssiPath, (LinkedMovingAverages) rssiStats));
-          movingAveragesJMXList.add(
-              new LinkedMovingAveragesJMX(missed, (LinkedMovingAverages) missedStats));
-          movingAveragesJMXList.add(
-              new LinkedMovingAveragesJMX(received, (LinkedMovingAverages) receivedStats));
+          movingAveragesJMXList.add(new LinkedMovingAveragesJMX(rssiPath, (LinkedMovingAverages) rssiStats));
+          movingAveragesJMXList.add(new LinkedMovingAveragesJMX(missed, (LinkedMovingAverages) missedStats));
+          movingAveragesJMXList.add(new LinkedMovingAveragesJMX(received, (LinkedMovingAverages) receivedStats));
         }
       }
     }
@@ -124,6 +131,7 @@ public class LoRaClientStats {
 
   public void update(LoRaDatagram datagram) {
     lastReadTime = System.currentTimeMillis();
+    lastWriteTime = System.currentTimeMillis();
     receivedStats.increment();
     rssiStats.add(datagram.getRssi());
     int id = datagram.getId();
@@ -138,6 +146,7 @@ public class LoRaClientStats {
 
   public void update(int id, int rssi) {
     lastReadTime = System.currentTimeMillis();
+    lastWriteTime = System.currentTimeMillis();
     receivedStats.increment();
     rssiStats.add(rssi);
     if (lastPacketId != -1 && id != 0) { // Rolled so ignore

@@ -5,14 +5,16 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
+import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
+import lombok.Getter;
 
 public class LoRaSerialDevice extends LoRaDevice {
-
-  private Logger logger = LoggerFactory.getLogger(this.getClass());
+  @Getter
+  private LoRaProtocol activeProtocol;
 
   public LoRaSerialDevice(LoRaSerialDeviceConfig config) {
     super(config);
-    logger = LoggerFactory.getLogger(LoRaChipDevice.class);
+    activeProtocol = null;
     isInitialised = false;
   }
 
@@ -22,4 +24,7 @@ public class LoRaSerialDevice extends LoRaDevice {
 
   }
 
+  public void setProtocol(LoRaProtocol loRaProtocol) {
+    activeProtocol = loRaProtocol;
+  }
 }

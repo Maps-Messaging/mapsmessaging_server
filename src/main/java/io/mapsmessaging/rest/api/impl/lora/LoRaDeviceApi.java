@@ -25,11 +25,14 @@ import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
 import io.mapsmessaging.dto.rest.lora.LoRaDeviceInfoDTO;
 import io.mapsmessaging.dto.rest.lora.LoRaEndPointConnectionInfoDTO;
 import io.mapsmessaging.dto.rest.lora.LoRaEndPointInfoDTO;
+import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.impl.lora.LoRaDevice;
 import io.mapsmessaging.network.io.impl.lora.LoRaDeviceManager;
 import io.mapsmessaging.network.io.impl.lora.LoRaEndPoint;
 import io.mapsmessaging.network.io.impl.lora.device.LoRaChipDevice;
+import io.mapsmessaging.network.io.impl.lora.serial.LoRaSerialDevice;
 import io.mapsmessaging.network.io.impl.lora.stats.LoRaClientStats;
+import io.mapsmessaging.network.protocol.impl.loragateway.LoRaProtocol;
 import io.mapsmessaging.rest.responses.LoRaConnectionStatusList;
 import io.mapsmessaging.rest.responses.LoRaListResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -162,24 +165,42 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
   private LoRaDeviceInfoDTO createInfo(LoRaDevice device) {
     LoRaDeviceInfoDTO deviceInfo = new LoRaDeviceInfoDTO();
     LoRaConfigDTO loRaDeviceConfig = device.getConfig();
+    List<LoRaEndPointInfoDTO> endPointInfoList = new ArrayList<>();
     deviceInfo.setName(device.getName());
     if (loRaDeviceConfig instanceof LoRaChipDeviceConfig) {
       deviceInfo.setRadio(((LoRaChipDeviceConfig) loRaDeviceConfig).getRadio());
-    } else if (loRaDeviceConfig instanceof LoRaSerialDeviceConfig) {
-      deviceInfo.setRadio("Serial");
-    }
-    deviceInfo.setBytesReceived(device.getBytesReceived().sum());
-    deviceInfo.setBytesSent(device.getBytesSent().sum());
-    deviceInfo.setPacketsReceived(device.getPacketsReceived().sum());
-    deviceInfo.setPacketsSent(device.getPacketsSent().sum());
-    List<LoRaEndPointInfoDTO> endPointInfoList = new ArrayList<>();
-    if (device instanceof LoRaChipDevice) {
+      deviceInfo.setBytesReceived(device.getBytesReceived().sum());
+      deviceInfo.setBytesSent(device.getBytesSent().sum());
+      deviceInfo.setPacketsReceived(device.getPacketsReceived().sum());
+      deviceInfo.setPacketsSent(device.getPacketsSent().sum());
       for (LoRaEndPoint endPoint : ((LoRaChipDevice) device).getEndPoints()) {
         endPointInfoList.add(createEndPointInfo(endPoint));
+      }
+    } else if (loRaDeviceConfig instanceof LoRaSerialDeviceConfig) {
+      deviceInfo.setRadio("Serial");
+      LoRaSerialDevice serialDevice = (LoRaSerialDevice) device;
+      LoRaProtocol loRaProtocol = serialDevice.getActiveProtocol();
+      EndPointServerStatus endPointStatus = loRaProtocol.getEndPoint().getServer();
+      deviceInfo.setBytesReceived(endPointStatus.getTotalBytesRead());
+      deviceInfo.setBytesSent(endPointStatus.getTotalBytesSent());
+      deviceInfo.setPacketsReceived(endPointStatus.getTotalPacketsRead());
+      deviceInfo.setPacketsSent(endPointStatus.getTotalPacketsSent());
+
+      for(LoRaClientStats status: loRaProtocol.getClientStats()){
+        endPointInfoList.add(createStatsInfo(status));
       }
     }
     deviceInfo.setEndPointInfoList(endPointInfoList);
     return deviceInfo;
+  }
+
+  private LoRaEndPointInfoDTO createStatsInfo(LoRaClientStats stats) {
+    LoRaEndPointInfoDTO endPointInfo = new LoRaEndPointInfoDTO();
+    endPointInfo.setLastRSSI((int)stats.getRssi());
+    endPointInfo.setNodeId((int)stats.getNodeId());
+    endPointInfo.setLastRead(stats.getLastReadTime());
+    endPointInfo.setLastWrite(stats.getLastWriteTime());
+    return endPointInfo;
   }
 
   private LoRaEndPointInfoDTO createEndPointInfo(LoRaEndPoint endPoint) {

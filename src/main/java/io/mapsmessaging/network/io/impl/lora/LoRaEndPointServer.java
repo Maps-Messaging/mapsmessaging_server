@@ -116,8 +116,11 @@ public class LoRaEndPointServer extends EndPointServer implements SerialPortList
   @Override
   public void bind(SerialPort port) throws IOException {
     if (loRaProtocol == null) {
+      LoRaDevice loRaDevice = LoRaDeviceManager.getInstance().getDevice(getUrl());
       SerialEndPoint serialEndPoint = new SerialEndPoint(counter.incrementAndGet(), this, port, serialConfig, managerMBean);
       loRaProtocol = new LoRaProtocol(serialEndPoint);
+      ((LoRaSerialDevice)loRaDevice).setProtocol(loRaProtocol);
+      activeEndPoints.put((long) loRaProtocol.getAddress(), serialEndPoint);
     }
   }
 

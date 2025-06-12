@@ -34,7 +34,8 @@ import lombok.NoArgsConstructor;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(value = DtlsConfigDTO.class, name = "dtls"),
-    @JsonSubTypes.Type(value = LoRaConfigDTO.class, name = "lora"),
+    @JsonSubTypes.Type(value = LoRaSerialConfigDTO.class, name = "loraSerial"),
+    @JsonSubTypes.Type(value = LoRaChipConfigDTO.class, name = "loraDevice"),
     @JsonSubTypes.Type(value = SerialConfigDTO.class, name = "serial"),
     @JsonSubTypes.Type(value = TcpConfigDTO.class, name = "tcp"),
     @JsonSubTypes.Type(value = TlsConfigDTO.class, name = "ssl"),
@@ -45,7 +46,8 @@ import lombok.NoArgsConstructor;
     discriminatorProperty = "type",
     discriminatorMapping = {
         @DiscriminatorMapping(value = "dtls", schema = DtlsConfigDTO.class),
-        @DiscriminatorMapping(value = "lora", schema = LoRaConfigDTO.class),
+        @DiscriminatorMapping(value = "loraSerial", schema = LoRaSerialConfigDTO.class),
+        @DiscriminatorMapping(value = "loraDevice", schema = LoRaChipConfigDTO.class),
         @DiscriminatorMapping(value = "serial", schema = SerialConfigDTO.class),
         @DiscriminatorMapping(value = "tcp", schema = TcpConfigDTO.class),
         @DiscriminatorMapping(value = "ssl", schema = TlsConfigDTO.class),
@@ -58,8 +60,8 @@ import lombok.NoArgsConstructor;
 public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the endpoint",
-      example = "tcp, ssl, udp, dtls, lora, serial",
-      allowableValues = {"tcp", "ssl", "udp", "dtls", "lora", "serial"}
+      example = "tcp, ssl, udp, dtls, loraSerial, loraDevice, serial",
+      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial"}
   )
   protected String type;
 

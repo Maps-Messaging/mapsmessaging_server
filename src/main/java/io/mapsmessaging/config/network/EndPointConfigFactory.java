@@ -188,8 +188,6 @@ public class EndPointConfigFactory {
       return new NmeaConfig(config);
     } else if (protocol.equalsIgnoreCase("lora")) {
       return new LoRaProtocolConfig(config);
-    } else if (protocol.equalsIgnoreCase("LoRa_Gateway")) {
-      return new LoraGatewayConfig(config);
     } else if (protocol.equalsIgnoreCase("echo")) {
       return new EchoProtocolConfig(config);
     }

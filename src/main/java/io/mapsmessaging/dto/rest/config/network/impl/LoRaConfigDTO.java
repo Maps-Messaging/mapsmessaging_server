@@ -45,7 +45,7 @@ public class LoRaConfigDTO extends EndPointConfigDTO {
   @Schema(description = "Transmission rate to limit the number of packets/second, 0 - unlimited, else per second", example = "5")
   protected int transmissionRate;
 
-  @Schema(description = "Optional hex bases 16 byte key", example = "ABCDEF0123456789")
+  @Schema(description = "Optional hex based 16 byte key", example = "0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0")
   protected String hexKey;
 
 }

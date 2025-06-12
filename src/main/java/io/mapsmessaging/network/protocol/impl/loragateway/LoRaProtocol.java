@@ -39,7 +39,6 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.DataHandlerFactory;
 import io.mapsmessaging.network.protocol.impl.loragateway.handler.PacketHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
-import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.stats.StatsFactory;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
@@ -54,7 +53,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -68,6 +69,7 @@ public class LoRaProtocol extends Protocol {
   public final SelectorCallback protocolInterfaceManager;
   private final Logger logger;
   private final SelectorTask selectorTask;
+  @Getter
   private final byte address;
 
   private final LoRaProtocolEndPoint loraProtocolEndPoint;
@@ -89,6 +91,7 @@ public class LoRaProtocol extends Protocol {
   private boolean sentVersion = false;
 
   private Future<?> rateResetFuture;
+
   private final LinkedHashMap<Integer, LoRaClientStats> clientStats;
 
 
@@ -137,6 +140,9 @@ public class LoRaProtocol extends Protocol {
     return null;
   }
 
+  public List<LoRaClientStats> getClientStats(){
+    return new ArrayList<>(clientStats.values());
+  }
 
   public void sendCommand(byte command) throws IOException {
     sendCommand(command, (byte) 0, null);
@@ -253,10 +259,8 @@ public class LoRaProtocol extends Protocol {
   }
 
   public void handleIncomingPacket(Packet packet, int clientId, int rssi) throws IOException {
-    if (JMXManager.isEnableJMX()) {
-      LoRaClientStats stats = clientStats.computeIfAbsent(clientId, f -> new LoRaClientStats(endPoint.getJMXTypePath(), f, StatsFactory.getDefaultType()));
-      stats.update(clientId, rssi);
-    }
+    LoRaClientStats stats = clientStats.computeIfAbsent(clientId, f -> new LoRaClientStats(endPoint.getJMXTypePath(), f, StatsFactory.getDefaultType()));
+    stats.update(clientId, rssi);
     protocolInterfaceManager.processPacket(packet);
   }
 

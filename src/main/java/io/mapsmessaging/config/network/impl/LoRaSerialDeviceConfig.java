@@ -10,12 +10,13 @@ public class LoRaSerialDeviceConfig extends LoRaSerialConfigDTO implements Confi
 
   public LoRaSerialDeviceConfig(ConfigurationProperties properties) {
     super();
+    setType("loraSerial");
     this.name = properties.getProperty("name");
     this.address = properties.getIntProperty("address", 1);
     this.power = properties.getIntProperty("power", 14);
     this.frequency = properties.getFloatProperty("frequency", 0.0f);
     this.transmissionRate = properties.getIntProperty("transmissionRate", 2);
-    this.hexKey = properties.getProperty("hexKey", "0x00000000000000000000000000000000");
+    this.hexKey = properties.getProperty("hexKey", "0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0");
     this.serialConfig = new SerialConfig(properties);
   }
 

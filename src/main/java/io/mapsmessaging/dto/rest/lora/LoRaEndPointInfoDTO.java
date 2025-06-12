@@ -62,4 +62,16 @@ public class LoRaEndPointInfoDTO {
       example = "5",
       minimum = "0")
   private int connectionSize;
+
+  @Schema(
+      title = "Last read operation",
+      description = "The last time a packet was received")
+  private long lastRead;
+
+
+  @Schema(
+      title = "Last write operation",
+      description = "The last time a packet was sent")
+  private long lastWrite;
+
 }
