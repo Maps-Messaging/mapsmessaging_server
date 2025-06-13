@@ -28,9 +28,9 @@ LIBS          = -lbcm2835
 RADIOHEADBASE = ./RadioHead/
 INCLUDE       = -I$(RADIOHEADBASE)
 
-all: libLoRaDevice.so
+all: libLoRaChipDevice.so
 
-io_mapsmessaging_network_io_impl_lora_device_LoRaDevice.o: io_mapsmessaging_network_io_impl_lora_device_LoRaDevice.cpp
+io_mapsmessaging_network_io_impl_lora_device_LoRaChipDevice.o: io_mapsmessaging_network_io_impl_lora_device_LoRaChipDevice.cpp
 				$(CC) $(CFLAGS) -c $(INCLUDE) $<
 
 RH_RF95.o: $(RADIOHEADBASE)/RH_RF95.cpp
@@ -57,8 +57,8 @@ RHReliableDatagram.o: $(RADIOHEADBASE)/RHReliableDatagram.cpp
 RasPi.o: $(RADIOHEADBASE)/RHutil/RasPi.cpp
 				$(CC) $(CFLAGS) -c $(RADIOHEADBASE)/RHutil/RasPi.cpp $(INCLUDE) $<
 
-libLoRaDevice.so: io_mapsmessaging_network_io_impl_lora_device_LoRaDevice.o RHDatagram.o RHReliableDatagram.o RH_RF95.o RasPi.o RHHardwareSPI.o RHGenericDriver.o RHGenericSPI.o RHSPIDriver.o
-				$(CC) $^ $(LIBS) -o libLoRaDevice.so $(LDFLAGS)
+libLoRaDevice.so: io_mapsmessaging_network_io_impl_lora_device_LoRaChipDevice.o RHDatagram.o RHReliableDatagram.o RH_RF95.o RasPi.o RHHardwareSPI.o RHGenericDriver.o RHGenericSPI.o RHSPIDriver.o
+				$(CC) $^ $(LIBS) -o libLoRaChipDevice.so $(LDFLAGS)
 
 clean:
 				rm -rf *.o *.so

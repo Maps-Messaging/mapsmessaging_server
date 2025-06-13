@@ -180,14 +180,16 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
       deviceInfo.setRadio("Serial");
       LoRaSerialDevice serialDevice = (LoRaSerialDevice) device;
       LoRaProtocol loRaProtocol = serialDevice.getActiveProtocol();
-      EndPointServerStatus endPointStatus = loRaProtocol.getEndPoint().getServer();
-      deviceInfo.setBytesReceived(endPointStatus.getTotalBytesRead());
-      deviceInfo.setBytesSent(endPointStatus.getTotalBytesSent());
-      deviceInfo.setPacketsReceived(endPointStatus.getTotalPacketsRead());
-      deviceInfo.setPacketsSent(endPointStatus.getTotalPacketsSent());
+      if(loRaProtocol != null) {
+        EndPointServerStatus endPointStatus = loRaProtocol.getEndPoint().getServer();
+        deviceInfo.setBytesReceived(endPointStatus.getTotalBytesRead());
+        deviceInfo.setBytesSent(endPointStatus.getTotalBytesSent());
+        deviceInfo.setPacketsReceived(endPointStatus.getTotalPacketsRead());
+        deviceInfo.setPacketsSent(endPointStatus.getTotalPacketsSent());
 
-      for(LoRaClientStats status: loRaProtocol.getClientStats()){
-        endPointInfoList.add(createStatsInfo(status));
+        for (LoRaClientStats status : loRaProtocol.getClientStats()) {
+          endPointInfoList.add(createStatsInfo(status));
+        }
       }
     }
     deviceInfo.setEndPointInfoList(endPointInfoList);
