@@ -50,7 +50,7 @@ public class ProtocolFactory implements ServiceManager {
 
   public ProtocolImplFactory getBoundedProtocol() {
     for (ProtocolImplFactory protocol : protocolServiceList) {
-      if (protocols.contains(protocol.getName().toLowerCase())) {
+      if (protocols.equalsIgnoreCase(protocol.getName())) {
         return protocol;
       }
     }
