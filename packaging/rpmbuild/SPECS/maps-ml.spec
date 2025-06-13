@@ -37,7 +37,7 @@ chmod +x $RPM_BUILD_ROOT/opt/maps/bin/maps
 # Copy the etc files
 cp $RPM_BUILD_ROOT/opt/maps/etc/maps.env $RPM_BUILD_ROOT/etc/maps/maps.env
 cp $RPM_BUILD_ROOT/opt/maps/etc/maps.service $RPM_BUILD_ROOT/usr/lib/systemd/system/maps.service
-rm $RPM_BUILD_ROOT/opt/maps/lib/libLoRaDevice.so
+rm $RPM_BUILD_ROOT/opt/maps/lib/libLoRaChipDevice.so
 
 # Create symlinks
 ln -s /opt/maps/bin/maps $RPM_BUILD_ROOT/usr/local/bin/maps

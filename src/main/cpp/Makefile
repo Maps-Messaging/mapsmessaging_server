@@ -57,7 +57,7 @@ RHReliableDatagram.o: $(RADIOHEADBASE)/RHReliableDatagram.cpp
 RasPi.o: $(RADIOHEADBASE)/RHutil/RasPi.cpp
 				$(CC) $(CFLAGS) -c $(RADIOHEADBASE)/RHutil/RasPi.cpp $(INCLUDE) $<
 
-libLoRaDevice.so: io_mapsmessaging_network_io_impl_lora_device_LoRaChipDevice.o RHDatagram.o RHReliableDatagram.o RH_RF95.o RasPi.o RHHardwareSPI.o RHGenericDriver.o RHGenericSPI.o RHSPIDriver.o
+libLoRaChipDevice.so: io_mapsmessaging_network_io_impl_lora_device_LoRaChipDevice.o RHDatagram.o RHReliableDatagram.o RH_RF95.o RasPi.o RHHardwareSPI.o RHGenericDriver.o RHGenericSPI.o RHSPIDriver.o
 				$(CC) $^ $(LIBS) -o libLoRaChipDevice.so $(LDFLAGS)
 
 clean:

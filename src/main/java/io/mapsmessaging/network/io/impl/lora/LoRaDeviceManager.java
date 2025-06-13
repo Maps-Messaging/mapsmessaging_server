@@ -59,7 +59,7 @@ public class LoRaDeviceManager {
       deviceConfig = LoRaDeviceManagerConfig.getInstance();
       boolean libLoaded = false;
       try {
-        System.loadLibrary("LoRaDevice");
+        System.loadLibrary("LoRaChipDevice");
         libLoaded = true;
       } catch (UnsatisfiedLinkError e) {
         Logger logger = LoggerFactory.getLogger(LoRaDeviceManager.class);

@@ -136,7 +136,7 @@
     <fileSet>
       <directory>${project.basedir}</directory>
       <includes>
-        <include>libLoRaDevice.so</include>
+        <include>libLoRaChipDevice.so</include>
       </includes>
       <outputDirectory>lib</outputDirectory>
     </fileSet>
