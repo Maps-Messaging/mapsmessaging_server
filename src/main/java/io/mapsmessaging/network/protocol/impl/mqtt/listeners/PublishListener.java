@@ -100,7 +100,6 @@ public class PublishListener extends PacketListener {
     return lookup;
   }
 
-  @SneakyThrows
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     checkState(session);
@@ -110,7 +109,17 @@ public class PublishListener extends PacketListener {
     String lookup =parseForLookup(protocol, publish);
 
     if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
-      processValidDestinations(publish, session, lookup, protocol, response, endPoint);
+      try {
+        processValidDestinations(publish, session, lookup, protocol, response, endPoint);
+      } catch (ExecutionException e) {
+        try {
+          protocol.close();
+        } catch (IOException ex) {
+          //
+        }
+      } catch (InterruptedException e) {
+        //ignore
+      }
     } else {
       return response;
     }
