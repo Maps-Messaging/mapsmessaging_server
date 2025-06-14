@@ -113,6 +113,7 @@ public class SerialPortScanner implements Runnable {
         if (serialNumber == null) {
           serialNumber = key;
         }
+        System.err.println("New Serial Port detected: Serial Number:" + serialNumber + " Name " + serialDevice.getSystemPortName());
         SerialPortInfo info = new SerialPortInfo(key, serialNumber);
         portRegistry.add(info, serialDevice);
         SerialPortListener server = listenerRegistry.find(key, serialNumber);
