@@ -20,11 +20,14 @@
 package io.mapsmessaging.stats;
 
 import com.google.gson.Gson;
+import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.config.LicenseConfig;
 import io.mapsmessaging.config.MessageDaemonConfig;
 import io.mapsmessaging.dto.helpers.ServerStatisticsHelper;
 import io.mapsmessaging.dto.helpers.StatusMessageHelper;
+import io.mapsmessaging.license.FeatureManager;
+import io.mapsmessaging.stats.data.ServerStats;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
@@ -48,7 +51,7 @@ public class StatsReporter {
   private ScheduledFuture<?> task;
 
   public StatsReporter() {
-    minuteInterval = 15;
+    minuteInterval = 60;
     queueTask();
   }
 
@@ -63,27 +66,20 @@ public class StatsReporter {
   }
 
   public void report() {
-    sendStats(buildBody());
+    String serverUUID = MessageDaemon.getInstance().getUuid().toString();
+    String serverName = MessageDaemon.getInstance().getId();
+    long uptime = System.currentTimeMillis() - MessageDaemon.getInstance().getStartTime();
+    String licenseId = "";
+    ServerStats status = ServerStatsPopulator.collect(serverUUID, serverName, licenseId, BuildInfo.getBuildVersion(), uptime);
+
+    sendStats(status);
   }
 
-  private Map<String, String> buildBody(){
-    LicenseConfig config = LicenseConfig.getInstance();
-    Map<String, String> map = new LinkedHashMap<>();
-    Gson gson = new Gson();
-    Map<String, String> stats = new LinkedHashMap<>();
-    stats.put("stats", gson.toJson(ServerStatisticsHelper.create()));
-    stats.put("info", gson.toJson(StatusMessageHelper.fromMessageDaemon(MessageDaemon.getInstance())));
-    map.put("serverUUID", MessageDaemon.getInstance().getUuid().toString());
-    map.put("serverName", MessageDaemon.getInstance().getId());
-    map.put("name", config.getClientName());
-    map.put("secret", config.getClientSecret());
-    map.put("serverstats", gson.toJson(stats));
-    return map;
-  }
-
-  private void sendStats(Map<String, String> map) {
+  private void sendStats(ServerStats status) {
     try {
-      if(!ConfigurationManager.getInstance().getConfiguration(MessageDaemonConfig.class).isSendAnonymousStatusUpdates()){
+      if (!ConfigurationManager.getInstance().
+          getConfiguration(MessageDaemonConfig.class).
+          isSendAnonymousStatusUpdates()) {
         return;
       }
       HttpURLConnection connection = (HttpURLConnection) new URL(REPORTING_URL).openConnection();
@@ -91,9 +87,9 @@ public class StatsReporter {
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");  // Fix: Use JSON instead of form-data
 
-      // Convert map to JSON
+      // Convert ServerStats to JSON
       Gson gson = new Gson();
-      String jsonPayload = gson.toJson(map);
+      String jsonPayload = gson.toJson(status);
 
       // Send JSON request
       try (OutputStream os = connection.getOutputStream()) {
@@ -104,17 +100,10 @@ public class StatsReporter {
       // Read the response
       int responseCode = connection.getResponseCode();
       if (responseCode == HttpURLConnection.HTTP_OK) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-          String response = reader.lines().collect(Collectors.joining());
-          Map<String, Object> result = gson.fromJson(response, Map.class);
-          if(result.containsKey("updateInterval")){
-            minuteInterval = ((Number) result.get("updateInterval")).intValue();
-          }
-        }
+        // Log success
       }
     } catch (Exception e) {
     }
     queueTask();
   }
-
 }

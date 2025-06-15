@@ -1,5 +1,9 @@
 package io.mapsmessaging.stats;
 
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.NetworkManager;
+import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.stats.data.*;
 
 import java.io.File;
@@ -12,11 +16,11 @@ import java.util.Enumeration;
 
 public class ServerStatsPopulator {
 
-  private static final OperatingSystemMXBean osBean =
-      ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+  private static final OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
 
-  public static ServerStats collect(String serverId, String licenseId, String serverVersion, long serverUptimeSecs) {
+  public static ServerStats collect(String serverId, String serverName, String licenseId, String serverVersion, long serverUptimeSecs) {
     ServerStats stats = new ServerStats();
+    stats.setServerName(serverName);
     stats.setServerId(serverId);
     stats.setLicenseId(licenseId);
     stats.setTimestamp(System.currentTimeMillis() / 1000L);
@@ -127,15 +131,27 @@ public class ServerStatsPopulator {
 
   private static ConnectionStats buildConnectionStats() {
     ConnectionStats conn = new ConnectionStats();
+    MessageDaemon daemon = MessageDaemon.getInstance();
+    NetworkManager networkManager = daemon.getSubSystemManager().getNetworkManager();
+    long totalErrors = 0;
+    long totalBytesIn = 0;
+    long totalBytesOut = 0;
+    int connections = 0;
+    for (EndPointManager manager : networkManager.getAll()) {
+      connections = manager.getEndPointServer().getActiveEndPoints().size();
+      totalErrors = manager.getEndPointServer().getTotalErrors();
+      totalBytesOut = manager.getEndPointServer().getTotalBytesSent();
+      totalBytesIn = manager.getEndPointServer().getTotalBytesRead();
+    }
+
+
     // Stubbed values — replace with real server stats
-    conn.setCurrentConnections(100);
-    conn.setTotalConnections(5000);
-    conn.setDisconnects(200);
-    conn.setErrors(5);
-    conn.setPacketsIn(100000);
-    conn.setPacketsOut(98000);
-    conn.setBytesIn(12345678);
-    conn.setBytesOut(12000000);
+    conn.setCurrentConnections(connections);
+    conn.setErrors(totalErrors);
+    conn.setPacketsIn(EndPointServer.SystemTotalPacketsReceived.sum());
+    conn.setPacketsOut(EndPointServer.SystemTotalPacketsSent.sum());
+    conn.setBytesIn(totalBytesIn);
+    conn.setBytesOut(totalBytesOut);
     return conn;
   }
 }

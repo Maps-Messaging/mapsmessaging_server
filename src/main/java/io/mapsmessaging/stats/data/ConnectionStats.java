@@ -5,8 +5,6 @@ import lombok.Data;
 @Data
 public class ConnectionStats {
   private int currentConnections;
-  private long totalConnections;
-  private long disconnects;
   private long errors;
   private long packetsIn;
   private long packetsOut;

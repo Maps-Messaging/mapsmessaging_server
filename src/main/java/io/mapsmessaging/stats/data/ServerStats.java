@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class ServerStats {
   private String serverId;
+  private String serverName;
   private String licenseId;
   private long timestamp;
 
