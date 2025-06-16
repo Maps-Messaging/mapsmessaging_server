@@ -252,6 +252,10 @@ public class Message implements IdentifierResolver, Storable {
       containsBuffers = (byte) (containsBuffers | 0x4);
     }
 
+    if(schemaId != null){
+      flags.set(SCHEMA_ID_PRESENT);
+    }
+
     boolean compress = Constants.getInstance().getMessageCompression().isCompresses() &&  opaqueData != null && opaqueData.length > Constants.getInstance().getMinimumMessageSize();
     flags.set(COMPRESSED_PACK, compress);
     ByteArrayOutputStream optional = new ByteArrayOutputStream(1024);
@@ -260,7 +264,7 @@ public class Message implements IdentifierResolver, Storable {
     optionalWriter.write(responseTopic);
     optionalWriter.write(contentType);
     optionalWriter.write(correlationData);
-    if (schemaId != null) {
+    if (flags.get(SCHEMA_ID_PRESENT)) {
       optionalWriter.write(schemaId);
     }
     optionalWriter.write(containsBuffers);
