@@ -8,6 +8,8 @@ import io.mapsmessaging.stats.data.*;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -52,24 +54,34 @@ public class ServerStatsPopulator {
     return info;
   }
 
+  private static long getNonHeapUsedMb() {
+    long nonHeapUsedBytes = 0;
+    for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
+      if (pool.getType() == MemoryType.NON_HEAP) {
+        nonHeapUsedBytes += pool.getUsage().getUsed();
+      }
+    }
+    return nonHeapUsedBytes / (1024 * 1024);
+  }
+
   private static MemoryStats buildMemoryStats() {
     Runtime runtime = Runtime.getRuntime();
     MemoryStats mem = new MemoryStats();
 
     mem.setHeapUsedMb((runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024));
-    mem.setNonHeapUsedMb(0); // Optional or fill in with MXBean if needed
+    mem.setNonHeapUsedMb(getNonHeapUsedMb());
     mem.setTotalJvmMemoryMb(runtime.totalMemory() / (1024 * 1024));
 
     com.sun.management.OperatingSystemMXBean os =
         (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 
-    mem.setFreePhysicalMemoryMb(os.getFreePhysicalMemorySize() / (1024 * 1024));
-    mem.setTotalPhysicalMemoryMb(os.getTotalPhysicalMemorySize() / (1024 * 1024));
+    mem.setFreePhysicalMemoryMb(os.getFreeMemorySize() / (1024 * 1024));
+    mem.setTotalPhysicalMemoryMb(os.getTotalMemorySize() / (1024 * 1024));
 
     mem.setSwapTotalMb(os.getTotalSwapSpaceSize() / (1024 * 1024));
     mem.setSwapFreeMb(os.getFreeSwapSpaceSize() / (1024 * 1024));
-    mem.setVirtualTotalMb((os.getTotalPhysicalMemorySize() + os.getTotalSwapSpaceSize()) / (1024 * 1024));
-    mem.setVirtualFreeMb((os.getFreePhysicalMemorySize() + os.getFreeSwapSpaceSize()) / (1024 * 1024));
+    mem.setVirtualTotalMb((os.getTotalMemorySize() + os.getTotalSwapSpaceSize()) / (1024 * 1024));
+    mem.setVirtualFreeMb((os.getFreeMemorySize() + os.getFreeSwapSpaceSize()) / (1024 * 1024));
 
     return mem;
   }

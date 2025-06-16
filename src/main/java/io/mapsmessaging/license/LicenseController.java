@@ -37,6 +37,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.*;
 import java.util.*;
 
 public class LicenseController {
@@ -45,7 +46,7 @@ public class LicenseController {
 
   private static final String LICENSE_KEY="license_";
 
-  private final List<Features> licenses;
+  private final List<FeatureDetails> licenses;
   private final Logger logger = LoggerFactory.getLogger(LicenseController.class);
 
   public LicenseController(String licensePath, String uniqueId, UUID serverUUID) {
@@ -63,8 +64,8 @@ public class LicenseController {
     Gson gson = new GsonBuilder()
         .setPrettyPrinting()
         .create();
-    for(Features feature : licenses) {
-      logger.log(ServerLogMessages.LICENSE_FEATURES_AVAILABLE, gson.toJson(feature));
+    for(FeatureDetails feature : licenses) {
+      logger.log(ServerLogMessages.LICENSE_FEATURES_AVAILABLE, gson.toJson(feature.getFeature()));
     }
   }
 
@@ -126,11 +127,11 @@ public class LicenseController {
    *
    * @param licenseDir Directory containing installed license files.
    */
-  private  List<Features> loadInstalledLicenses(File licenseDir) {
+  private  List<FeatureDetails> loadInstalledLicenses(File licenseDir) {
     File[] files = licenseDir.listFiles((dir, name) -> name.startsWith(LICENSE_KEY) && name.endsWith(".lic_installed"));
     if (files == null) return new ArrayList<>();
 
-    List<Features> licenseList = new ArrayList<>();
+    List<FeatureDetails> licenseList = new ArrayList<>();
 
     for (File installedFile : files) {
       String edition = extractEdition(installedFile.getName());
@@ -156,7 +157,7 @@ public class LicenseController {
     return licenseList;
   }
 
-  private boolean processLicense(License license,List<Features> licenseList) {
+  private boolean processLicense(License license,List<FeatureDetails> licenseList) {
     long now = System.currentTimeMillis();
     if(license != null) {
       if (license.getNotBefore().getTime() < now && license.getNotAfter().getTime() > now) {
@@ -164,12 +165,18 @@ public class LicenseController {
         Map<String, Object> extraData = (Map<String, Object>) license.getExtra();
         String json = gson.toJson(extraData);
         Features features = gson.fromJson(json, Features.class);
-        licenseList.add(features);
         Date after = license.getNotAfter();
         Date before = license.getNotBefore();
         Date issued = license.getIssued();
         String info = license.getInfo();
         String who = license.getIssuer().getName();
+        FeatureDetails featureDetails = new FeatureDetails();
+        featureDetails.setFeature(features);
+        featureDetails.setExpiry(Instant.ofEpochMilli(after.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime());
+        featureDetails.setInfo(info);
+        licenseList.add(featureDetails);
+
+
         logger.log(ServerLogMessages.LICENSE_LOADED, info, who, issued, after, before,  gson.toJson(extraData));
         return true;
       } else {

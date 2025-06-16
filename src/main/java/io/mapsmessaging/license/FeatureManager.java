@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.license;
 
-import io.mapsmessaging.license.features.Features;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -30,15 +29,15 @@ import java.util.List;
 public class FeatureManager {
 
   private final Logger logger = LoggerFactory.getLogger(FeatureManager.class);
-  private final List<Features> featuresList;
+  private final List<FeatureDetails> featuresList;
 
-  public FeatureManager(List<Features> featuresList) {
+  public FeatureManager(List<FeatureDetails> featuresList) {
     this.featuresList = featuresList;
   }
 
   public boolean isEnabled(String featurePath) {
-    for (Features features : featuresList) {
-      Object value = getFieldValue(features, featurePath);
+    for (FeatureDetails featureDetails : featuresList) {
+      Object value = getFieldValue(featureDetails.getFeature(), featurePath);
       if (value instanceof Boolean && ((boolean) value)) {
         return true;
       }
@@ -49,10 +48,26 @@ public class FeatureManager {
     return false;
   }
 
+  public String getLoadedLicenses(){
+    StringBuilder loadedLicenses = new StringBuilder();
+    for(FeatureDetails features : featuresList){
+      loadedLicenses.append(features.getFeature().getName()).append(", ");
+    }
+    return loadedLicenses.toString();
+  }
+
+  public String getLoadedInfo(){
+    StringBuilder loadedLicenses = new StringBuilder();
+    for(FeatureDetails features : featuresList){
+      loadedLicenses.append(features.getInfo()).append(", ");
+    }
+    return loadedLicenses.toString();
+  }
+
   public int getMaxValue(String featurePath) {
     int maxValue = 0;
-    for (Features features : featuresList) {
-      Object value = getFieldValue(features, featurePath);
+    for (FeatureDetails features : featuresList) {
+      Object value = getFieldValue(features.getFeature(), featurePath);
       if (value instanceof Integer) {
         maxValue = Math.max(maxValue, (Integer) value);
       }

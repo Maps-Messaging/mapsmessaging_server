@@ -17,21 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.test;
+package io.mapsmessaging.license;
 
-import io.mapsmessaging.license.FeatureDetails;
-import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.license.features.Features;
+import lombok.Data;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
-public class TestFeatureManager extends FeatureManager {
-  public TestFeatureManager(List<FeatureDetails> featuresList) {
-    super(featuresList);
-  }
-
-  public boolean isEnabled(String featurePath){
-    return true;
-  }
-
+@Data
+public class FeatureDetails {
+  private Features feature;
+  private LocalDateTime expiry;
+  private String info;
 }
