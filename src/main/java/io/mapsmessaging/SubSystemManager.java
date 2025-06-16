@@ -101,9 +101,6 @@ public class SubSystemManager {
         if(name.equals("loop") || featureManager.isEnabled("protocols."+name) ) {
           service.add(parser);
         }
-        else{
-          System.err.println("Disabling protocol impl "+parser.getName());
-        }
       } catch (ServiceConfigurationError e) {
         logger.log(ServerLogMessages.MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE, e);
       }

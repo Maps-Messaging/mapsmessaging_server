@@ -54,7 +54,6 @@ public class StatsReporter {
 
   public StatsReporter() {
     minuteInterval = 15;
-    queueTask();
     report();
   }
 
