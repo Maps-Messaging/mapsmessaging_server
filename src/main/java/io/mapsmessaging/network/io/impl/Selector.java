@@ -66,11 +66,7 @@ public class Selector implements SelectorInt {
             emptySelectCount = 0;
             rebuildSelector();
           } else {
-            try {
-              Thread.sleep(1);
-            } catch (InterruptedException e) {
-
-            }
+            Thread.yield();
           }
           continue;
         }
