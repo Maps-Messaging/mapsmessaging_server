@@ -107,6 +107,7 @@ public enum ServerLogMessages implements LogMessage {
   END_POINT_CONNECTION_CLOSED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Closing connection"),
   END_POINT_CONNECTION_STATE_CHANGED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Changing state on url {} protocol {} from {} to {}"),
   END_POINT_CONNECTION_STOPPING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Stopping connection manager"),
+
   //</editor-fold>
 
   // <editor-fold desc="Selector and Selector task log messages">
@@ -127,6 +128,9 @@ public enum ServerLogMessages implements LogMessage {
   SELECTOR_CALLED_BACK(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selected called back for {}"),
   SELECTOR_READ_TASK(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selected calling Read task"),
   SELECTOR_WRITE_TASK(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "Selected calling Write task"),
+  SELECTOR_SPIN_DETECTED(LEVEL.ERROR,  SERVER_CATEGORY.NETWORK, "Selector thread hit empty selector threshold"),
+  SELECTOR_REBUILT(LEVEL.ERROR,  SERVER_CATEGORY.NETWORK, "Selector has been rebuilt due to epoll issue"),
+  SELECTOR_REBUILD_FAILED(LEVEL.ERROR,  SERVER_CATEGORY.NETWORK, "Selector has failed to be rebuilt due to attached exception"),
   // </editor-fold>
 
   // <editor-fold desc="Read Task log messages">
@@ -745,7 +749,6 @@ public enum ServerLogMessages implements LogMessage {
   LICENSE_LOADED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Loaded license for {} by {}, created {}, valid after {} and till {} with features {}"),
   LICENSE_UNKNOWN_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Unknown feature name requested {}"),
   LICENSE_DISABLED_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Feature is not enabled {}"),
-
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

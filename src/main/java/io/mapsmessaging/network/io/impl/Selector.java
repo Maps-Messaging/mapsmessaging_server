@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Selector implements SelectorInt {
 
-  protected final java.nio.channels.Selector channelSelector;
+  protected java.nio.channels.Selector channelSelector;
   private final Logger logger;
   private final AtomicBoolean isOpen;
 
@@ -51,12 +51,31 @@ public class Selector implements SelectorInt {
   @Override
   public void run() {
     Thread.currentThread().setName("SelectorThread");
+    int emptySelectCount = 0;
+    final int SPIN_THRESHOLD = 1000;
     while (isOpen.get()) {
       try {
         int selected = channelSelector.select();
         //
         // Process any of the fired keys and process the attachments
         //
+        if (selected == 0) {
+          emptySelectCount++;
+          if (emptySelectCount >= SPIN_THRESHOLD) {
+            logger.log(ServerLogMessages.SELECTOR_SPIN_DETECTED, SPIN_THRESHOLD);
+            emptySelectCount = 0;
+            rebuildSelector();
+          } else {
+            try {
+              Thread.sleep(1);
+            } catch (InterruptedException e) {
+
+            }
+          }
+          continue;
+        }
+
+        emptySelectCount = 0;
         if (selected > 0) {
           Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
           processSelectionList(selectedKeys);
@@ -73,14 +92,38 @@ public class Selector implements SelectorInt {
     }
   }
 
+  private void rebuildSelector() {
+    try {
+      java.nio.channels.Selector newSelector = java.nio.channels.Selector.open();
+
+      for (SelectionKey key : channelSelector.keys()) {
+        try {
+          if (key.isValid()) {
+            key.channel().register(newSelector, key.interestOps(), key.attachment());
+          }
+        } catch (CancelledKeyException ignored) {
+          // Key may already be cancelled
+        }
+      }
+
+      channelSelector.close();
+      channelSelector = newSelector;
+      logger.log(ServerLogMessages.SELECTOR_REBUILT);
+    } catch (Exception e) {
+      logger.log(ServerLogMessages.SELECTOR_REBUILD_FAILED, e.getMessage());
+      isOpen.set(false);
+    }
+  }
+
   private void processSelectionList(Set<SelectionKey> selectedKeys) {
     Iterator<SelectionKey> iter = selectedKeys.iterator();
     while (iter.hasNext()) {
       SelectionKey key = iter.next();
       try {
-        if (key.attachment() instanceof Selectable) {
-          logger.log(ServerLogMessages.SELECTOR_FIRED, key.interestOps());
-          Selectable selectable = ((Selectable) key.attachment());
+        if (key.attachment() instanceof Selectable selectable) {
+          if (logger.isDebugEnabled()) {
+            logger.log(ServerLogMessages.SELECTOR_FIRED, key.interestOps());
+          }
           selectable.selected(selectable, this, key.interestOps());
         }
       } catch (CancelledKeyException cancelled) {
