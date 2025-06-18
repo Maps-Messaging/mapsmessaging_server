@@ -103,9 +103,7 @@ public class SchemaManager implements SchemaRepository, Agent {
 
   public synchronized SchemaConfig locateSchema(String destinationName) {
     SchemaConfig config = SchemaLocationHelper.locateSchema(repository.getAll(), destinationName);
-    config =  config != null ? config : getSchema(SchemaManager.DEFAULT_RAW_UUID);
-    System.err.println("Located schema: " + config.getTitle()+" for destination: " + destinationName);
-    return config;
+    return config != null ? config : getSchema(SchemaManager.DEFAULT_RAW_UUID);
   }
 
   @Override
