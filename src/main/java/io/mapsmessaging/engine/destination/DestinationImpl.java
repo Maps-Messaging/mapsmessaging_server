@@ -148,7 +148,8 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationConfigDTO pathManager, @NonNull @NotNull UUID uuid,
                          @NonNull @NotNull DestinationType destinationType) throws IOException {
-    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
+    SchemaConfig config = SchemaManager.getInstance().locateSchema(name);
+    schema = new Schema(config);
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = computePath(pathManager, uuid);
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
@@ -156,7 +157,6 @@ public class DestinationImpl implements BaseDestination {
     this.destinationType = destinationType;
     subscriptionManager = new DestinationSubscriptionManager(name);
     schemaSubscriptionManager = new DestinationSubscriptionManager(name);
-    SchemaConfig config = SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID);
     resource = ResourceFactory.getInstance().create(new MessageExpiryHandler(this), name, pathManager, fullyQualifiedDirectoryRoot, uuid, destinationType, config);
     resource.getResourceProperties().setSchema(config.toMap());
     retainManager = new RetainManager(isPersistent(), getPhysicalLocation());
@@ -199,7 +199,7 @@ public class DestinationImpl implements BaseDestination {
     resourceStatistics = new ResourceStatistics(resource,StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
-    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
+    schema = new Schema(SchemaManager.getInstance().locateSchema(name));
     completionQueue = new EventReaperQueue();
 
     if(resource.getResourceProperties().getSchema() == null || resource.getResourceProperties().getSchema().isEmpty()){
@@ -227,7 +227,7 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the type of the destination
    */
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
-    schema = new Schema(SchemaManager.getInstance().getSchema(SchemaManager.DEFAULT_RAW_UUID));
+    schema = new Schema(SchemaManager.getInstance().locateSchema(name));
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = "";
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);

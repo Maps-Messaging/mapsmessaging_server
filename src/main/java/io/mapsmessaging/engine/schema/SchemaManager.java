@@ -70,6 +70,15 @@ public class SchemaManager implements SchemaRepository, Agent {
     } catch (Exception e) {
       // Unable to load the formatter
     }
+
+    if(repository.getSchemaByContext(path) != null){
+      List<SchemaConfig> schemas = repository.getSchemaByContext(path);
+      for(SchemaConfig schema : schemas){
+        if(schema.getUniqueId().equals(schemaConfig.getUniqueId())){
+          return schema;
+        }
+      }
+    }
     updateCount++;
     return repository.addSchema(path, schemaConfig);
   }
@@ -89,6 +98,14 @@ public class SchemaManager implements SchemaRepository, Agent {
   @Override
   public synchronized SchemaConfig getSchema(String uniqueId) {
     return repository.getSchema(uniqueId);
+
+  }
+
+  public synchronized SchemaConfig locateSchema(String destinationName) {
+    SchemaConfig config = SchemaLocationHelper.locateSchema(repository.getAll(), destinationName);
+    config =  config != null ? config : getSchema(SchemaManager.DEFAULT_RAW_UUID);
+    System.err.println("Located schema: " + config.getTitle()+" for destination: " + destinationName);
+    return config;
   }
 
   @Override
@@ -163,12 +180,14 @@ public class SchemaManager implements SchemaRepository, Agent {
     NativeSchemaConfig nativeSchemaConfig = new NativeSchemaConfig();
     nativeSchemaConfig.setUniqueId(DEFAULT_NUMERIC_STRING_SCHEMA);
     nativeSchemaConfig.setType(TYPE.NUMERIC_STRING);
+    nativeSchemaConfig.setVersion(1);
     nativeSchemaConfig.setTitle("Numeric String");
     nativeSchemaConfig.setInterfaceDescription("numeric");
     nativeSchemaConfig.setResourceType(MONITOR);
     addSchema("$SYS", nativeSchemaConfig);
 
     nativeSchemaConfig = new NativeSchemaConfig();
+    nativeSchemaConfig.setVersion(1);
     nativeSchemaConfig.setUniqueId(DEFAULT_STRING_SCHEMA);
     nativeSchemaConfig.setTitle("String");
     nativeSchemaConfig.setType(TYPE.STRING);
@@ -177,6 +196,7 @@ public class SchemaManager implements SchemaRepository, Agent {
     addSchema("$SYS", nativeSchemaConfig);
 
     JsonSchemaConfig jsonSchemaConfig = new JsonSchemaConfig();
+    nativeSchemaConfig.setVersion(1);
     jsonSchemaConfig.setUniqueId(DEFAULT_JSON_SCHEMA);
     jsonSchemaConfig.setInterfaceDescription("json");
     jsonSchemaConfig.setResourceType(MONITOR);
