@@ -89,4 +89,6 @@ public class EndPointConfigDTO extends BaseConfigDTO {
   )
   protected String allowedProxyHosts;
 
+  @Schema(description = "Time to wait for a client to establish the connection, in milliseconds", example = "5000")
+  protected long connectionTimeout;
 }

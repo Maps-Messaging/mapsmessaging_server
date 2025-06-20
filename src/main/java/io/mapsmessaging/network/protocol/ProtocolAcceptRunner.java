@@ -45,8 +45,9 @@ public class ProtocolAcceptRunner implements Selectable {
   private final Logger logger;
   private final ProtocolFactory protocolFactory;
   private final EndPoint endPoint;
+  private final long timeout;
   private Packet packet;
-
+  private long lastActive;
 
   /**
    * Created when we accept a new EndPoint but do not know the corresponding protocol being used by the client Will register a read selector on the EndPoint and then attempt to
@@ -60,6 +61,7 @@ public class ProtocolAcceptRunner implements Selectable {
     this.endPoint = endPoint;
     logger = LoggerFactory.getLogger(ProtocolAcceptRunner.class.getName());
     protocolFactory = new ProtocolFactory(protocols);
+    timeout = endPoint.getServer().getConfig().getEndPointConfig().getConnectionTimeout();
     ProtocolImplFactory bounded = protocolFactory.getBoundedProtocol();
     if(bounded != null && bounded.getInitialPacket() != null) {
       ServerPacket serverPacket = bounded.getInitialPacket();
@@ -75,6 +77,7 @@ public class ProtocolAcceptRunner implements Selectable {
       endPoint.register(SelectionKey.OP_READ, this);
       logger.log(ServerLogMessages.PROTOCOL_ACCEPT_REGISTER);
     }
+    lastActive = System.currentTimeMillis();
   }
 
   /**
@@ -91,6 +94,7 @@ public class ProtocolAcceptRunner implements Selectable {
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FIRED, read, endofPacket, packet.limit());
       }
       if (read > 0) {
+        lastActive = System.currentTimeMillis();
         packet.flip();
         packet.position(0);
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_SCANNING, packet);
@@ -106,6 +110,13 @@ public class ProtocolAcceptRunner implements Selectable {
       } else if (read < 0) {
         logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
         endPoint.close();
+      }
+      else{
+        long cutOff = System.currentTimeMillis() - timeout;
+        if(cutOff > lastActive){
+          logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
+          endPoint.close();
+        }
       }
     } catch (IOException e) {
       logger.log(ServerLogMessages.PROTOCOL_ACCEPT_FAILED_DETECT, e, endPoint.toString());

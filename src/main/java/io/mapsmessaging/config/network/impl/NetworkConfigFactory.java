@@ -81,6 +81,7 @@ public class NetworkConfigFactory {
     endPointConfigDTO.setDiscoverable(config.getBooleanProperty("discoverable", false));
     endPointConfigDTO.setServerReadBufferSize(ConfigHelper.parseBufferSize(config.getProperty("serverReadBufferSize", "10K")));
     endPointConfigDTO.setServerWriteBufferSize(ConfigHelper.parseBufferSize(config.getProperty("serverWriteBufferSize", "10K")));
+    endPointConfigDTO.setConnectionTimeout(ConfigHelper.parseBufferSize(config.getProperty("connectionTimeout", "5000")));
     if(endPointConfigDTO instanceof TcpConfigDTO){
       TcpConfigDTO tcpConfigDTO = (TcpConfigDTO)endPointConfigDTO;
       tcpConfigDTO.setReceiveBufferSize(config.getIntProperty("receiveBufferSize", 128000));
@@ -136,6 +137,11 @@ public class NetworkConfigFactory {
       original.setServerReadBufferSize(config.getServerWriteBufferSize());
       hasChanged = true;
     }
+    if(original.getConnectionTimeout() != config.getConnectionTimeout()){
+      original.setConnectionTimeout(config.getConnectionTimeout());
+      hasChanged = true;
+    }
+
     if (original instanceof TcpConfigDTO && config instanceof TcpConfigDTO) {
       TcpConfigDTO newConfig = (TcpConfigDTO) config;
       TcpConfigDTO oldConfig = (TcpConfigDTO) original;
