@@ -68,12 +68,13 @@ public class Selector implements SelectorInt {
           } else {
             Thread.yield();
           }
-          continue;
         }
-
-        emptySelectCount = 0;
-        if (selected > 0) {
+        else if (selected > 0) {
           Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
+          // Only reset if we got a decent number of events
+          if (selectedKeys.size() > 5) {
+            emptySelectCount = 0;
+          }
           processSelectionList(selectedKeys);
         }
 
