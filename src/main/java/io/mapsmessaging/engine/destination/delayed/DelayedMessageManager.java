@@ -60,7 +60,7 @@ public class DelayedMessageManager extends MessageManager {
             treeList.remove(next);
             bucketList.remove(0);
           }
-          counter--;
+          counter.decrementAndGet();
           return true;
         }
       }
