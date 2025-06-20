@@ -22,10 +22,7 @@ package io.mapsmessaging.network.protocol;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
-import io.mapsmessaging.network.io.EndPoint;
-import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.Selectable;
-import io.mapsmessaging.network.io.ServerPacket;
+import io.mapsmessaging.network.io.*;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolInfo;
 import io.mapsmessaging.network.protocol.impl.proxy.ProxyProtocolMode;
@@ -114,6 +111,7 @@ public class ProtocolAcceptRunner implements Selectable {
       else{
         long cutOff = System.currentTimeMillis() - timeout;
         if(cutOff > lastActive){
+          EndPointServerStatus.SystemTotalFailedConnections.increment();
           logger.log(ServerLogMessages.PROTOCOL_ACCEPT_CLOSED);
           endPoint.close();
         }

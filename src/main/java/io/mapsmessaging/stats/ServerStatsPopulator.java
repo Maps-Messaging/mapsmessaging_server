@@ -4,6 +4,7 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.EndPointManager;
 import io.mapsmessaging.network.NetworkManager;
 import io.mapsmessaging.network.io.EndPointServer;
+import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.stats.data.*;
 
 import java.io.File;
@@ -98,8 +99,10 @@ public class ServerStatsPopulator {
     File rootMount = mapsDir;
 
     DiskStats disk = new DiskStats();
-    disk.setTotalDiskMb(rootMount.getTotalSpace() / (1024 * 1024));
-    disk.setFreeDiskMb(rootMount.getFreeSpace() / (1024 * 1024));
+    if(rootMount != null) {
+      disk.setTotalDiskMb(rootMount.getTotalSpace() / (1024 * 1024));
+      disk.setFreeDiskMb(rootMount.getFreeSpace() / (1024 * 1024));
+    }
     return disk;
   }
 
@@ -145,26 +148,24 @@ public class ServerStatsPopulator {
     ConnectionStats conn = new ConnectionStats();
     MessageDaemon daemon = MessageDaemon.getInstance();
     NetworkManager networkManager = daemon.getSubSystemManager().getNetworkManager();
-    long totalErrors = 0;
-    long totalBytesIn = 0;
-    long totalBytesOut = 0;
+    long totalErrors = EndPointServerStatus.SystemTotalFailedConnections.sum();
     int connections = 0;
     for (EndPointManager manager : networkManager.getAll()) {
-      connections = manager.getEndPointServer().getActiveEndPoints().size();
-      totalErrors = manager.getEndPointServer().getTotalErrors();
-      totalBytesOut = manager.getEndPointServer().getTotalBytesSent();
-      totalBytesIn = manager.getEndPointServer().getTotalBytesRead();
+      connections += manager.getEndPointServer().getActiveEndPoints().size();
+      totalErrors += manager.getEndPointServer().getTotalErrors();
     }
 
 
     // Stubbed values — replace with real server stats
     conn.setCurrentConnections(connections);
     conn.setErrors(totalErrors);
-    conn.setPacketsIn(EndPointServer.SystemTotalPacketsReceived.sum());
-    conn.setPacketsOut(EndPointServer.SystemTotalPacketsSent.sum());
-    conn.setBytesIn(totalBytesIn);
-    conn.setBytesOut(totalBytesOut);
+    conn.setPacketsIn(EndPointServerStatus.SystemTotalPacketsReceived.sum());
+    conn.setPacketsOut(EndPointServerStatus.SystemTotalPacketsSent.sum());
+    conn.setBytesIn(EndPointServerStatus.SystemTotalBytesReceived.sum());
+    conn.setBytesOut(EndPointServerStatus.SystemTotalBytesSent.sum());
     return conn;
   }
+
+  private ServerStatsPopulator(){}
 }
 

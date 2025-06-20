@@ -33,6 +33,9 @@ public abstract class EndPointServerStatus {
 
   public static final LongAdder SystemTotalPacketsSent = new LongAdder();
   public static final LongAdder SystemTotalPacketsReceived = new LongAdder();
+  public static final LongAdder SystemTotalBytesReceived = new LongAdder();
+  public static final LongAdder SystemTotalBytesSent = new LongAdder();
+  public static final LongAdder SystemTotalFailedConnections = new LongAdder();
 
   private final LongAdder totalErrors;
   private final LongAdder totalPacketsSent;
@@ -98,11 +101,13 @@ public abstract class EndPointServerStatus {
   public void updateBytesSent(int count) {
     totalBytesSent.add(count);
     averageBytesSent.add(count);
+    SystemTotalBytesReceived.add(count);
   }
 
   public void updateBytesRead(int count) {
     totalBytesRead.add(count);
     averageBytesRead.add(count);
+    SystemTotalBytesSent.add(count);
   }
 
 
