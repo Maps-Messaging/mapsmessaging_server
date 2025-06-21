@@ -73,7 +73,7 @@ public abstract class BaseConnectionListener extends PacketListener {
 
   protected SessionContextBuilder getBuilder(Protocol protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(protocol));
-    scb.setPersistentSession(true)
+    scb.setPersistentSession(!isClean)
         .setResetState(isClean)
         .setKeepAlive(keepAlive)
         .setSessionExpiry( ((MQTTProtocol)protocol).getMqttConfig().getMaximumSessionExpiry());

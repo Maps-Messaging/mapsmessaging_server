@@ -166,7 +166,7 @@ public class ConnectListener5 extends PacketListener5 {
     }
     protocol.setKeepAlive(keepAlive * 1000L);
 
-    scb.setPersistentSession(true)
+    scb.setPersistentSession(!connect.isCleanSession())
         .setResetState(connect.isCleanSession())
         .setKeepAlive(keepAlive);
 
@@ -218,6 +218,9 @@ public class ConnectListener5 extends PacketListener5 {
       switch (property.getId()) {
         case MessagePropertyFactory.SESSION_EXPIRY_INTERVAL:
           scb.setSessionExpiry(((SessionExpiryInterval) property).getExpiry());
+          if (scb.getSessionExpiry() == 0) {
+            scb.setPersistentSession(false);
+          }
           break;
 
         case MessagePropertyFactory.RECEIVE_MAXIMUM:
