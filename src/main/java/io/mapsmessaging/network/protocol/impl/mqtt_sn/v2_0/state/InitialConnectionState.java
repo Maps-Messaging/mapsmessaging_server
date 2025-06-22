@@ -76,8 +76,8 @@ public class InitialConnectionState implements State {
 
       stateEngine.setMaxBufferSize(connect.getMaxPacketSize());
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
-      scb.setPersistentSession(true);
       scb.setResetState(connect.isCleanStart());
+      scb.setPersistentSession(!connect.isCleanStart());
       scb.setKeepAlive(connect.getKeepAlive());
       int receiveMax = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getReceiveMaximum();
       scb.setReceiveMaximum(receiveMax);

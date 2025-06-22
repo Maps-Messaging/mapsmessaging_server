@@ -49,7 +49,6 @@ public class InitialConnectionState implements State {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.CONNECT) {
       Connect connect = (Connect) mqtt;
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
-      scb.setPersistentSession(true);
       scb.setResetState(connect.clean());
       scb.setKeepAlive(connect.getDuration());
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getDuration()));
@@ -57,6 +56,7 @@ public class InitialConnectionState implements State {
 
       scb.setReceiveMaximum(config.getReceiveMaximum());
       scb.setSessionExpiry(config.getMaximumSessionExpiry());
+      scb.setPersistentSession(!connect.clean());
       if (connect.will()) {
         stateEngine.setSessionContextBuilder(scb);
         WillTopicRequest topicRequest = new WillTopicRequest();
