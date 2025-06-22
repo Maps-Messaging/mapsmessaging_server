@@ -61,6 +61,7 @@ public class SubscriptionController implements DestinationManagerListener {
   @Getter
   private final String sessionId;
   private final String uniqueSessionId;
+  @Getter
   private final boolean isPersistent;
 
   private final SubscriptionControllerJMX subscriptionControllerJMX;
@@ -151,10 +152,6 @@ public class SubscriptionController implements DestinationManagerListener {
     if (subscriptionControllerJMX != null) {
       subscriptionControllerJMX.close();
     }
-  }
-
-  public boolean isPersistent() {
-    return isPersistent;
   }
 
   public boolean isHibernating() {

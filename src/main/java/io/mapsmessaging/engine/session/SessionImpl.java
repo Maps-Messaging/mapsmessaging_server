@@ -76,6 +76,13 @@ public class SessionImpl {
   private final DestinationFactory destinationManager;
   private final NamespaceMap namespaceMapping;
   private final ClosureTaskManager closureTaskManager;
+  /**
+   * -- GETTER --
+   *  Returns a boolean value indicating whether the session is closed or not.
+   *
+   * @return true if the session is closed, false otherwise
+   */
+  @Getter
   private boolean isClosed;
 
   private final SessionContext context;
@@ -320,15 +327,6 @@ public class SessionImpl {
    */
   public ClientConnection getClientConnection() {
     return context.getClientConnection();
-  }
-
-  /**
-   * Returns a boolean value indicating whether the session is closed or not.
-   *
-   * @return true if the session is closed, false otherwise
-   */
-  public boolean isClosed() {
-    return isClosed;
   }
 
   /**
