@@ -49,7 +49,7 @@ public class SessionContext {
     SessionContextBuilder scb = new SessionContextBuilder(sessionId, extensionProtocol);
     scb.setUsername(username != null ? username : "");
     scb.setPassword(password != null ? password.toCharArray() : new char[0]);
-    scb.setPersistentSession(true);
+    scb.setPersistentSession(false);
     session = SessionManager.getInstance().create(scb.build(), extensionProtocol);
     destinations = new ConcurrentHashMap<>();
   }
