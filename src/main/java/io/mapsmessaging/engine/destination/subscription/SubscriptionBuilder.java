@@ -71,7 +71,7 @@ public abstract class SubscriptionBuilder {
     return sb.toString();
   }
 
-  public abstract Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException;
+  public abstract Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long sessionUniqueId) throws IOException;
 
   protected AcknowledgementController createAcknowledgementController(ClientAcknowledgement acknowledgementController) {
     CreditManager creditManager = createCreditManager(context);

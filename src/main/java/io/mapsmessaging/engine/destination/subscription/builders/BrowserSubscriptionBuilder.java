@@ -54,7 +54,7 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
   }
 
   @Override
-  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
+  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long uniqueSession) throws IOException {
     AcknowledgementController acknowledgementController = createAcknowledgementController(context.getAcknowledgementController());
     MessageStateManager stateManager;
     if (parserExecutor == null) {

@@ -41,9 +41,8 @@ public class StandardSubscriptionBuilder extends SubscriptionBuilder {
     this.isPersistent = isPersistent;
   }
 
-  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
+  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long sessionUniqueId) throws IOException {
     AcknowledgementController acknowledgementController = createAcknowledgementController(context.getAcknowledgementController());
-    long sessionUniqueId = session.getContext().getInternalSessionId();
     MessageStateManagerImpl stateManager = DestinationStateManagerFactory.create(destination, isPersistent, uniqueSessionId, sessionUniqueId, context.getMaxAtRest());
 
     if (parserExecutor == null) {

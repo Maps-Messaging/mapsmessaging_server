@@ -26,10 +26,7 @@ import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
 import io.mapsmessaging.engine.destination.subscription.state.LimitedMessageStateManager;
 import io.mapsmessaging.engine.destination.subscription.state.MessageStateManagerImpl;
 import io.mapsmessaging.engine.utils.FilePathHelper;
-import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
-import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
-import io.mapsmessaging.utilities.collections.bitset.FileBitSetFactoryImpl;
-import io.mapsmessaging.utilities.collections.bitset.SharedFileBitSetFactoryImpl;
+import io.mapsmessaging.utilities.collections.bitset.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -87,7 +84,7 @@ public class DestinationStateManagerFactory {
         Files.createDirectories(directory.toPath());
       }
       fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
-      return new SharedFileBitSetFactoryImpl(fullyQualifiedPath,4, Constants.BITSET_BLOCK_SIZE);
+      return new ConcurrentSharedFileBitSetFactoryImpl(fullyQualifiedPath,4, Constants.BITSET_BLOCK_SIZE);
     } else {
       return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
     }

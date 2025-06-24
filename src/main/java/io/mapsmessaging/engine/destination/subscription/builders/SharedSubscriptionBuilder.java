@@ -33,7 +33,7 @@ public class SharedSubscriptionBuilder extends CommonSubscriptionBuilder {
   }
 
   @Override
-  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId) throws IOException {
+  public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long uniqueId) throws IOException {
     return construct(destination.getFullyQualifiedNamespace(), session, sessionId);
   }
 }
