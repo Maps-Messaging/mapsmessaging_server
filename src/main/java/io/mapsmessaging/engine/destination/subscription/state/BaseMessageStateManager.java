@@ -25,6 +25,7 @@ import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.utilities.UniqueIdHelper;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.PriorityCollection;
 import io.mapsmessaging.utilities.collections.PriorityQueue;
@@ -51,7 +52,8 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     logger = LoggerFactory.getLogger(MessageStateManagerImpl.class);
     NaturalOrderedLongQueue[] priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
     for (int x = 0; x < priorityLists.length; x++) {
-      priorityLists[x] = new NaturalOrderedLongQueue(x+baseUniqueId, bitsetFactory);
+      long priorityId = UniqueIdHelper.compute(baseUniqueId, x);
+      priorityLists[x] = new NaturalOrderedLongQueue(priorityId, bitsetFactory);
     }
     messagesAtRest = new PriorityQueue<>(priorityLists, null);
 
@@ -129,7 +131,8 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     for (Queue<Long> queue : priorityList) {
       NaturalOrderedLongQueue naturalOrderedLongQueue = (NaturalOrderedLongQueue) queue;
       if (naturalOrderedLongQueue.contains(messageId)) {
-        messagesAtRest.add(messageId, (int)(naturalOrderedLongQueue.getUniqueId()-baseUniqueId));// revert back to the priority
+        int priority = UniqueIdHelper.priority(naturalOrderedLongQueue.getUniqueId());
+        messagesAtRest.add(messageId, priority);
         naturalOrderedLongQueue.remove(messageId);
         messagesInFlight.remove(messageId);
         return true;

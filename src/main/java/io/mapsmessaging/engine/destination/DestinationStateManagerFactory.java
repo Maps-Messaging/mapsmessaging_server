@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.engine.destination;
 
-import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
@@ -39,7 +38,6 @@ public class DestinationStateManagerFactory {
     BitSetFactory factory;
     if(persistent) {
       factory = destinationImpl.getSubscriptionBitsetFactory();
-      uniqueSessionId = uniqueSessionId << bitsRequired(Priority.HIGHEST.getValue());
     }
     else {
       factory =  new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
