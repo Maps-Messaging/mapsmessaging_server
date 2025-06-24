@@ -211,8 +211,9 @@ public class SessionManagerPipeLine {
   //
   private SubscriptionController loadSubscriptionManager(SessionContext context) {
     context.setRestored(false);
-    SessionDetails sessionDetails = storeLookup.getSessionDetails(context.getId());
+    SessionDetails sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
+    context.setInternalSessionId(sessionDetails.getInternalUnqueId());
     SubscriptionController subscriptionManager = subscriptionManagerFactory.get(context.getId());
     if (subscriptionManager == null) {
       logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());

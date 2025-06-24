@@ -33,6 +33,7 @@ public class SessionContext {
   // <editor-fold desc="These fields are persisted and on reload describes the session">
   private final String id;
   private String uniqueId;
+  private long internalSessionId;
   private String willTopic;
   private Message willMessage;
   private long willDelay;

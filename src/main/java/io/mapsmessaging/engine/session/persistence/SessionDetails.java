@@ -21,8 +21,7 @@ package io.mapsmessaging.engine.session.persistence;
 
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.utilities.PersistentObject;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,36 +31,48 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Data
 public class SessionDetails extends PersistentObject {
 
-  @Getter
-  @Setter
+  private int version;
   private String sessionName;
-
-  @Getter
-  @Setter
   private String uniqueId;
-
-  @Getter
-  @Setter
+  private long internalUnqueId;
   private List<SubscriptionContext> subscriptionContextList = new ArrayList<>();
 
   public SessionDetails() {
+
+  }
+
+  public SessionDetails(String sessionName, String uniqueId, long internalUnqueId) {
+    this.sessionName = sessionName;
+    this.uniqueId = uniqueId;
+    this.internalUnqueId = internalUnqueId;
+    version = 2;
   }
 
 
   public SessionDetails(InputStream inputStream) throws IOException {
+    inputStream.mark(4);
+    version = readInt(inputStream);
+    boolean hasInternalUnqueId = true;
+    if(version != 2) {
+      inputStream.reset();
+      hasInternalUnqueId = false;
+      version = 2;
+    }
     sessionName = readString(inputStream);
     uniqueId = readString(inputStream);
+    if(hasInternalUnqueId){
+      internalUnqueId = readLong(inputStream);
+    }
+    else{
+      internalUnqueId = 0;
+    }
     int subListSize = readInt(inputStream);
     for(int x=0;x<subListSize;x++){
       subscriptionContextList.add(new SubscriptionContext(inputStream));
     }
-  }
-
-  public SessionDetails(String sessionName, String uniqueId) {
-    this.sessionName = sessionName;
-    this.uniqueId = uniqueId;
   }
 
   public Map<String, SubscriptionContext> getSubscriptionContextMap(){
@@ -77,8 +88,10 @@ public class SessionDetails extends PersistentObject {
   }
 
   public void save(OutputStream outputStream) throws IOException {
+    writeInt(outputStream, version);
     writeString(outputStream, sessionName);
     writeString(outputStream, uniqueId);
+    writeLong(outputStream, internalUnqueId);
     writeInt(outputStream, subscriptionContextList.size());
     for(SubscriptionContext subscriptionContext:subscriptionContextList){
       subscriptionContext.save(outputStream);

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination;
 
+import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
 import io.mapsmessaging.engine.destination.delayed.TransactionalMessageManager;
@@ -28,6 +29,7 @@ import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.FileBitSetFactoryImpl;
+import io.mapsmessaging.utilities.collections.bitset.SharedFileBitSetFactoryImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,31 +37,33 @@ import java.nio.file.Files;
 
 public class DestinationStateManagerFactory {
 
-  private static final DestinationStateManagerFactory instance = new DestinationStateManagerFactory();
 
-  public static DestinationStateManagerFactory getInstance() {
-    return instance;
-  }
-
-  public MessageStateManagerImpl create(DestinationImpl destinationImpl, boolean persistent, String name, int maxAtRest) throws IOException {
-    BitSetFactory factory = createFactory(destinationImpl, persistent, name);
-    if(maxAtRest > 0){
-      return new LimitedMessageStateManager(name, factory, maxAtRest, destinationImpl.getCompletionQueue());
+  public static MessageStateManagerImpl create(DestinationImpl destinationImpl, boolean persistent, String name, long uniqueSessionId, int maxAtRest) throws IOException {
+    BitSetFactory factory;
+    if(persistent) {
+      factory = destinationImpl.getSubscriptionBitsetFactory();
+      uniqueSessionId = uniqueSessionId << bitsRequired(Priority.HIGHEST.getValue());
     }
-    return new MessageStateManagerImpl(name, factory);
+    else {
+      factory =  new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
+    }
+    if(maxAtRest > 0){
+      return new LimitedMessageStateManager(name, uniqueSessionId, factory, maxAtRest, destinationImpl.getCompletionQueue());
+    }
+    return new MessageStateManagerImpl(name, uniqueSessionId, factory);
   }
 
-  public DelayedMessageManager createDelayed(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+  public static DelayedMessageManager createDelayed(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     BitSetFactory factory = createFactory(destinationImpl, persistent, name);
     return new DelayedMessageManager(factory);
   }
 
-  public TransactionalMessageManager createTransaction(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+  public static TransactionalMessageManager createTransaction(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     BitSetFactory factory = createFactory(destinationImpl, persistent, name);
     return new TransactionalMessageManager(factory);
   }
 
-  private BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+  private static BitSetFactory createFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
     if (persistent && destinationImpl.isPersistent()) {
       String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
       fullyQualifiedPath += "state";
@@ -73,4 +77,25 @@ public class DestinationStateManagerFactory {
       return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
     }
   }
+
+  public static BitSetFactory createSubscriptionFactory(DestinationImpl destinationImpl, boolean persistent, String name) throws IOException {
+    if (persistent && destinationImpl.isPersistent()) {
+      String fullyQualifiedPath = FilePathHelper.cleanPath(destinationImpl.getPhysicalLocation());
+      fullyQualifiedPath += "state";
+      File directory = new File(fullyQualifiedPath);
+      if(!directory.exists()) {
+        Files.createDirectories(directory.toPath());
+      }
+      fullyQualifiedPath = FilePathHelper.cleanPath(fullyQualifiedPath + File.separator + name + ".bin");
+      return new SharedFileBitSetFactoryImpl(fullyQualifiedPath,4, Constants.BITSET_BLOCK_SIZE);
+    } else {
+      return new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
+    }
+  }
+
+  private static int bitsRequired(int maxValue) {
+    if (maxValue < 0) throw new IllegalArgumentException("maxValue must be >= 0");
+    return 32 - Integer.numberOfLeadingZeros(maxValue);
+  }
+  private DestinationStateManagerFactory(){}
 }

@@ -58,16 +58,16 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
     AcknowledgementController acknowledgementController = createAcknowledgementController(context.getAcknowledgementController());
     MessageStateManager stateManager;
     if (parserExecutor == null) {
-      stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
+      stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       return new DestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager);
     } else {
       if (selectorHasChanged(parent.getContext().getSelector(), context.getSelector())) {
         // Need task to filter the messages from the parent to the current state manager
-        stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), false);
+        stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), false);
         StateManagerFilterTask task = new StateManagerFilterTask(destination, parent.getMessageStateManager(), stateManager, parserExecutor);
         destination.submit(task);
       } else {
-        stateManager = new IteratorStateManagerImpl(context.getAlias(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
+        stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       }
       return new SelectorDestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, parserExecutor);
     }

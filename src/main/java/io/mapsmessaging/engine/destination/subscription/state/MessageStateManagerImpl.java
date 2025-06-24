@@ -31,8 +31,8 @@ public class MessageStateManagerImpl extends BaseMessageStateManager {
 
   private final List<MessageStateManagerListener> listeners;
 
-  public MessageStateManagerImpl(String name, BitSetFactory bitsetFactory) {
-    super(name, bitsetFactory, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
+  public MessageStateManagerImpl(String name, long uniqueSessionId, BitSetFactory bitsetFactory) {
+    super(name, uniqueSessionId, bitsetFactory, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     listeners = new ArrayList<>();
   }
 

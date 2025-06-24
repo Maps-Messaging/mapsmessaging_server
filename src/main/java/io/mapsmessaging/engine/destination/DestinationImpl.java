@@ -46,6 +46,7 @@ import io.mapsmessaging.engine.utils.FilePathHelper;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.schemas.config.SchemaConfigFactory;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.queue.EventReaperQueue;
 import io.mapsmessaging.utilities.stats.StatsFactory;
@@ -91,6 +92,8 @@ public class DestinationImpl implements BaseDestination {
   //<editor-fold desc="Destination specific fields">
   protected final DestinationSubscriptionManager subscriptionManager;
   protected final DestinationSubscriptionManager schemaSubscriptionManager;
+  @Getter
+  protected final BitSetFactory subscriptionBitsetFactory;
   private final SharedSubscriptionRegister sharedSubscriptionRegistry;
   private final RetainManager retainManager;
 
@@ -165,10 +168,12 @@ public class DestinationImpl implements BaseDestination {
     resourceStatistics = new ResourceStatistics(resource, StatsFactory.getDefaultType());
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
-    delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
+
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
 
-    transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
+    transactionMessageManager = DestinationStateManagerFactory.createTransaction(this, true, "transactions");
     closed = false;
     completionQueue = new EventReaperQueue();
     loadSchema();
@@ -210,10 +215,10 @@ public class DestinationImpl implements BaseDestination {
       loadSchema();
     }
     // Delayed Messages are automatically dealt with once the structure has been reloaded
-    delayedMessageManager = DestinationStateManagerFactory.getInstance().createDelayed(this, true, "delayed");
+    delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
-
-    transactionMessageManager = DestinationStateManagerFactory.getInstance().createTransaction(this, true, "transactions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    transactionMessageManager = DestinationStateManagerFactory.createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
     reaperFuture = queueReaper();
@@ -245,7 +250,7 @@ public class DestinationImpl implements BaseDestination {
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
     delayScheduler = null;
-
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, false, "subscriptions");
     transactionMessageManager = null;
     closed = false;
     completionQueue = new EventReaperQueue();

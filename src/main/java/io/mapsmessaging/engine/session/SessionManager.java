@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 public class SessionManager implements Agent {
@@ -54,6 +55,8 @@ public class SessionManager implements Agent {
   private final LongAdder disconnectedSessions;
   private final LongAdder connectedSessions;
   private final LongAdder expiredSessions;
+
+  private final AtomicLong uniqueSessionId = new AtomicLong(0);
 
 
   public SessionManager(SecurityManager security, DestinationManager destinationManager, String dataPath, int pipeLineSize) {
@@ -88,6 +91,12 @@ public class SessionManager implements Agent {
     //
     for (String sessionId : storeLookup.getSessionNames()) {
       SessionDetails sessionDetails = storeLookup.getSessionDetails(sessionId);
+      if(sessionDetails.getInternalUnqueId() == 0){
+        sessionDetails.setInternalUnqueId(uniqueSessionId.incrementAndGet());
+      }
+      else if(sessionDetails.getInternalUnqueId() > uniqueSessionId.longValue()) {
+        uniqueSessionId.set(sessionDetails.getInternalUnqueId()+1);
+      }
       Map<String, SubscriptionContext> map = sessionDetails.getSubscriptionContextMap();
       if (logger.isInfoEnabled()) {
         logger.log(ServerLogMessages.SESSION_MANAGER_LOADING_SESSION, sessionId, map.size());
@@ -164,6 +173,14 @@ public class SessionManager implements Agent {
   // get corruption as to which will or session was what.
   //
   public SessionImpl create(SessionContext sessionContext) throws LoginException {
+    if(sessionContext.getInternalSessionId() == 0){
+      sessionContext.setInternalSessionId(uniqueSessionId.incrementAndGet());
+    }
+    else{
+      if(uniqueSessionId.get() < sessionContext.getInternalSessionId()){
+        uniqueSessionId.set(sessionContext.getInternalSessionId()+1);
+      }
+    }
     logger.log(ServerLogMessages.SESSION_MANAGER_CREATE, sessionContext.toString());
     return sessionPipeLines[getPipeLineIndex(sessionContext.getId())].create(sessionContext);
   }

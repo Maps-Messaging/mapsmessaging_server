@@ -75,7 +75,9 @@ public abstract class CommonSubscriptionBuilder extends SubscriptionBuilder {
 
     SharedSubscription sharedSubscription = sharedSubscriptionManager.find(lookupName);
     if (sharedSubscription == null) {
-      MessageStateManagerImpl messageStateManager = DestinationStateManagerFactory.getInstance().create(destination, true, "shared_" + lookupName, 0);
+      // Will need to create a new one here for each shared subscription!!
+      // ToDo!!!!
+      MessageStateManagerImpl messageStateManager = DestinationStateManagerFactory.create(destination, true, "shared_" + lookupName, 0L, 0);
       BoundedMessageStateManager boundedMessageStateManager = sharedSubscriptionManager.getMessageStateManager();
       boundedMessageStateManager.add(messageStateManager);
       MessageStateManager proxy = new ProxyMessageStateManager(messageStateManager, boundedMessageStateManager);

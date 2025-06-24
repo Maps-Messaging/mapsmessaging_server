@@ -42,14 +42,16 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   protected final PriorityCollection<Long> messagesInFlight;
   protected final String name;
   protected final BitSetFactory bitsetFactory;
+  private final long baseUniqueId;
 
-  protected BaseMessageStateManager(String name, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
+  protected BaseMessageStateManager(String name, long uniqueSessionId, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
     this.name = name;
+    baseUniqueId = uniqueSessionId;
     this.bitsetFactory = priorityBitSetFactory;
     logger = LoggerFactory.getLogger(MessageStateManagerImpl.class);
     NaturalOrderedLongQueue[] priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
     for (int x = 0; x < priorityLists.length; x++) {
-      priorityLists[x] = new NaturalOrderedLongQueue(x, bitsetFactory);
+      priorityLists[x] = new NaturalOrderedLongQueue(x+baseUniqueId, bitsetFactory);
     }
     messagesAtRest = new PriorityQueue<>(priorityLists, null);
 
@@ -127,7 +129,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     for (Queue<Long> queue : priorityList) {
       NaturalOrderedLongQueue naturalOrderedLongQueue = (NaturalOrderedLongQueue) queue;
       if (naturalOrderedLongQueue.contains(messageId)) {
-        messagesAtRest.add(messageId, naturalOrderedLongQueue.getUniqueId());
+        messagesAtRest.add(messageId, (int)(naturalOrderedLongQueue.getUniqueId()-baseUniqueId));// revert back to the priority
         naturalOrderedLongQueue.remove(messageId);
         messagesInFlight.remove(messageId);
         return true;

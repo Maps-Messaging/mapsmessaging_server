@@ -85,6 +85,7 @@ public class SessionImpl {
   @Getter
   private boolean isClosed;
 
+  @Getter
   private final SessionContext context;
   @Getter
   private final SecurityContext securityContext;

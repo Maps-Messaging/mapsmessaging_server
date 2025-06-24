@@ -35,8 +35,8 @@ public class IteratorStateManagerImpl extends BaseMessageStateManager implements
 
   private final MessageStateManagerImpl parent;
 
-  public IteratorStateManagerImpl(String name, MessageStateManagerImpl parentState, boolean deepCopy) {
-    super(name, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE), new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
+  public IteratorStateManagerImpl(String name, long uniqueSessionId, MessageStateManagerImpl parentState, boolean deepCopy) {
+    super(name, uniqueSessionId,  new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE), new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     parent = parentState;
     if (deepCopy) {
       parent.getAllAtRest(messagesAtRest);

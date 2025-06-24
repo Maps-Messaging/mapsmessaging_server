@@ -40,7 +40,7 @@ public class PersistentSession extends SessionImpl{
   PersistentSession(SessionContext context, SecurityContext securityContext, DestinationFactory destinationManager,
       SubscriptionController subscriptionManager, PersistentSessionManager storeLookup) {
     super(context, securityContext, destinationManager, subscriptionManager);
-    sessionDetails = storeLookup.getSessionDetails(context.getId());
+    sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
     storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".bin";
     if(context.isResetState()){

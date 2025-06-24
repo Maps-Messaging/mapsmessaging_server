@@ -67,9 +67,14 @@ public class PersistentSessionManager {
     return new ArrayList<>(persistentMap.keySet());
   }
 
-  public SessionDetails getSessionDetails(String sessionId){
-    return persistentMap.computeIfAbsent(sessionId, k -> new SessionDetails(sessionId, UuidGenerator.getInstance().generate().toString()));
+  public SessionDetails getSessionDetails(SessionContext context){
+    return persistentMap.computeIfAbsent(context.getId(), k -> new SessionDetails(context.getId(), context.getUniqueId(), context.getInternalSessionId()));
   }
+
+  public SessionDetails getSessionDetails(String id){
+    return persistentMap.get(id);
+  }
+
 
   public Map<String, SubscriptionContext> getSubscriptionContextMap(String sessionId, boolean isPersistent) {
     Map<String, SubscriptionContext> map = new LinkedHashMap<>();

@@ -101,21 +101,24 @@ public class DestinationSubscriptionManager implements Subscribable {
 
   @Override
   public boolean hasMessage(long messageIdentifier) {
-    boolean response = false;
     for (Subscribable subscribable : subscriptions.values()) {
-      response = subscribable.hasMessage(messageIdentifier) || response;
+      if (subscribable.hasMessage(messageIdentifier)) {
+        return true;
+      }
     }
-    return response;
+    return false;
   }
 
   @Override
   public boolean expired(long messageIdentifier) {
-    boolean response = false;
     for (Subscribable subscribable : subscriptions.values()) {
-      response = subscribable.expired(messageIdentifier) || response;
+      if (subscribable.expired(messageIdentifier)) {
+        return true;
+      }
     }
-    return response;
+    return false;
   }
+
 
   @Override
   public int size() {

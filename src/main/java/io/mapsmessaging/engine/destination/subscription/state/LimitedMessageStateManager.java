@@ -30,8 +30,8 @@ public class LimitedMessageStateManager extends MessageStateManagerImpl {
   private final int limit;
   private final EventReaperQueue eventReaperQueue;
 
-  public LimitedMessageStateManager(String name, BitSetFactory bitsetFactory, int limit, EventReaperQueue eventReaperQueue) {
-    super(name, bitsetFactory);
+  public LimitedMessageStateManager(String name, long uniqueSessionId, BitSetFactory bitsetFactory, int limit, EventReaperQueue eventReaperQueue) {
+    super(name, uniqueSessionId, bitsetFactory);
     this.limit = limit;
     this.eventReaperQueue = eventReaperQueue;
   }
