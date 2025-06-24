@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Selector implements SelectorInt {
@@ -40,6 +41,7 @@ public class Selector implements SelectorInt {
   protected java.nio.channels.Selector channelSelector;
   private final Logger logger;
   private final AtomicBoolean isOpen;
+  private long spinStartTime = 0L;
 
   public Selector() throws IOException {
     logger = LoggerFactory.getLogger(Selector.class);
@@ -56,32 +58,27 @@ public class Selector implements SelectorInt {
     while (isOpen.get()) {
       try {
         int selected = channelSelector.select();
-        //
-        // Process any of the fired keys and process the attachments
-        //
         if (selected == 0) {
+          if (emptySelectCount == 0) {
+            spinStartTime = System.nanoTime();
+          }
           emptySelectCount++;
           if (emptySelectCount >= SPIN_THRESHOLD) {
-            logger.log(ServerLogMessages.SELECTOR_SPIN_DETECTED, SPIN_THRESHOLD);
-            emptySelectCount = 0;
-            rebuildSelector();
-          } else {
-            Thread.yield();
+            long duration = System.nanoTime() - spinStartTime;
+            if (duration < TimeUnit.MILLISECONDS.toNanos(100)) {
+              logger.log(ServerLogMessages.SELECTOR_SPIN_DETECTED, SPIN_THRESHOLD);
+              emptySelectCount = 0;
+              rebuildSelector();
+            }
           }
-        }
-        else if (selected > 0) {
+          Thread.yield();
+        } else {
           Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
-          // Only reset if we got a decent number of events
           if (selectedKeys.size() > 5) {
             emptySelectCount = 0;
           }
           processSelectionList(selectedKeys);
         }
-
-        //
-        // Before we enter the select again, lets add any waiting requests
-        //
-        processRegistryQueue();
       } catch (IOException e) {
         logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL);
         isOpen.set(false);
@@ -135,10 +132,6 @@ public class Selector implements SelectorInt {
         iter.remove();
       }
     }
-  }
-
-  protected void processRegistryQueue() {
-    // This implementation is thread safe after JDK 11, before hand it was not
   }
 
   @Override
