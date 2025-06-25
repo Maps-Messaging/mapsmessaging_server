@@ -42,18 +42,16 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   protected final PriorityQueue<Long> messagesAtRest;
   protected final PriorityCollection<Long> messagesInFlight;
   protected final String name;
-  protected final BitSetFactory bitsetFactory;
   private final long baseUniqueId;
 
   protected BaseMessageStateManager(String name, long uniqueSessionId, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
     this.name = name;
     baseUniqueId = uniqueSessionId;
-    this.bitsetFactory = priorityBitSetFactory;
     logger = LoggerFactory.getLogger(MessageStateManagerImpl.class);
     NaturalOrderedLongQueue[] priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
     for (int x = 0; x < priorityLists.length; x++) {
       long priorityId = UniqueIdHelper.compute(baseUniqueId, x);
-      priorityLists[x] = new NaturalOrderedLongQueue(priorityId, bitsetFactory);
+      priorityLists[x] = new NaturalOrderedLongQueue(priorityId, priorityBitSetFactory);
     }
     messagesAtRest = new PriorityQueue<>(priorityLists, null);
 
@@ -65,7 +63,8 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   }
 
   public void close() throws IOException {
-    bitsetFactory.close();
+    messagesAtRest.clear();
+    messagesInFlight.clear();
   }
 
   @Override
@@ -94,7 +93,8 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
 
   @Override
   public void delete() throws IOException {
-    bitsetFactory.delete();
+    close();
+    messagesInFlight.clear();
   }
 
   @Override
