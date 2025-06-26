@@ -115,7 +115,8 @@ public class EndPointConfigFactory {
       String[] protocolArray = protocol.split(",");
       List<String> protocolList = new ArrayList<>();
       for (String protocolName : protocolArray) {
-        if (protocol.equalsIgnoreCase("all")) {
+        if (protocolName.equalsIgnoreCase("all")) {
+          protocolList.clear();
           if (server.getEndPointConfig() instanceof UdpConfig) {
             protocolList.add("coap");
             protocolList.add("mqtt-sn");
@@ -126,7 +127,11 @@ public class EndPointConfigFactory {
             protocolList.add("nats");
             protocolList.add("ws");
           }
+          break;
         } else {
+          if(protocolName.equalsIgnoreCase("nmea")) {
+            protocolName = "NMEA-0183";
+          }
           protocolList.add(protocolName);
         }
       }
