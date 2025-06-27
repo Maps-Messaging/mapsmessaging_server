@@ -1,10 +1,13 @@
 package io.mapsmessaging.utilities;
 
+import io.mapsmessaging.api.features.Priority;
+
 public final class UniqueIdHelper {
 
-  private static final long PRIORITY_MASK = 0x0FL;
-  private static final long BASE_ID_MASK = 0x07FFFFFFFFFFFFFFL;
-  private static final int PRIORITY_SHIFT = 59;
+  private static final int PRIORITY_BITS = 32 - Integer.numberOfLeadingZeros(Priority.HIGHEST.ordinal()); // e.g., 4 for value 10
+  private static final int PRIORITY_SHIFT = Long.SIZE - PRIORITY_BITS; // e.g., 64 - 4 = 60
+  private static final long PRIORITY_MASK = (1L << PRIORITY_BITS) - 1; // e.g., 0b1111
+  private static final long BASE_ID_MASK = (1L << PRIORITY_SHIFT) - 1; // lower bits only
 
   private UniqueIdHelper() {
     // utility class
@@ -24,5 +27,6 @@ public final class UniqueIdHelper {
   public static long baseId(long uniqueId) {
     return uniqueId & BASE_ID_MASK;
   }
+
 }
 
