@@ -23,7 +23,6 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
-import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Getter;
 
 import java.io.File;
@@ -95,11 +94,24 @@ public class PersistentSessionManager {
       List<File> childList = new ArrayList<>(List.of(children));
       childList = childList.stream().filter(file1 -> file1.getName().endsWith(".bin") && !file1.isDirectory()).collect(Collectors.toList());
       for (File child : childList) {
+        boolean delete = false;
         try (FileInputStream fileInputStream = new FileInputStream(child)) {
           SessionDetails details = new SessionDetails(fileInputStream);
-          persistentMap.put(details.getSessionName(), details);
+          if(!details.getSubscriptionContextList().isEmpty()){
+            persistentMap.put(details.getSessionName(), details);
+          }
+          else{
+            delete = true;
+          }
         } catch (IOException ex) {
           logger.log(SESSION_LOAD_STATE_ERROR, child.getAbsolutePath(), ex);
+        }
+        if(delete){
+          try{
+            Files.deleteIfExists(child.toPath());
+          } catch (IOException ex) {
+            logger.log(SESSION_LOAD_STATE_ERROR, child.getAbsolutePath(), ex);
+          }
         }
       }
     }
