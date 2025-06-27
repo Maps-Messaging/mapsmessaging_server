@@ -39,6 +39,7 @@ class MQTTSubscriptionImplTest extends MQTTBaseTest implements MqttCallback {
   void testSubscription(int version, String protocol, boolean auth, int QoS) throws MqttException, InterruptedException, IOException {
 
     MqttConnectOptions options = getOptions(auth, version);
+    options.setCleanSession(true);
     MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
     options.setWill("/topic/will", "this is my will msg".getBytes(), QoS, true);
     client.connect(options);

@@ -25,6 +25,7 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.DestinationManagerListener;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.SessionManager;
 import io.mapsmessaging.engine.session.SessionManagerTest;
@@ -163,7 +164,13 @@ public class BaseTestConfig extends BaseTest {
 
       List<DestinationManagerListener> listeners = md.getDestinationManager().getListeners();
       for (DestinationManagerListener listener : listeners) {
-        System.err.println("has listener " + listener.getClass().toString());
+        if(listener instanceof SubscriptionController){
+          SubscriptionController subscriptionController = (SubscriptionController) listener;
+          System.err.println("has listener " + subscriptionController.getSessionId());
+        }
+        else {
+          System.err.println("has listener " + listener.getClass().toString());
+        }
       }
     }
     catch (Exception ex){
