@@ -25,9 +25,12 @@ import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
 import io.mapsmessaging.engine.session.security.SecurityContext;
+import lombok.Getter;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE;
 import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE_ERROR;
@@ -35,6 +38,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.SESSION_SAVE_STATE_ERRO
 public class PersistentSession extends SessionImpl{
 
   private final SessionDetails sessionDetails;
+  @Getter
   private final String storeName;
 
   PersistentSession(SessionContext context, SecurityContext securityContext, DestinationFactory destinationManager,
@@ -43,7 +47,8 @@ public class PersistentSession extends SessionImpl{
     sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
     storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".bin";
-    if(context.isResetState()){
+    if(context.isResetState() || sessionDetails.getSubscriptionContextList().isEmpty()){ // this will delete it and recreate
+      sessionDetails.getSubscriptionContextList().clear(); // ensure it is clear
       saveState();
     }
   }
@@ -64,12 +69,20 @@ public class PersistentSession extends SessionImpl{
   }
 
   private void saveState(){
-    try(FileOutputStream fileOutputStream = new FileOutputStream(storeName)) {
-      sessionDetails.save(fileOutputStream);
-      logger.log(SESSION_SAVE_STATE, sessionDetails.getSessionName(), storeName);
+    if(sessionDetails.getSubscriptionContextList().isEmpty()){
+      try{
+        Files.deleteIfExists(Paths.get(storeName));
+      } catch (IOException ioException) {
+        logger.log(SESSION_SAVE_STATE_ERROR, sessionDetails.getSessionName(), storeName, ioException);
+      }
     }
-    catch(IOException ioException){
-      logger.log(SESSION_SAVE_STATE_ERROR, sessionDetails.getSessionName(), storeName, ioException);
+    else {
+      try (FileOutputStream fileOutputStream = new FileOutputStream(storeName)) {
+        sessionDetails.save(fileOutputStream);
+        logger.log(SESSION_SAVE_STATE, sessionDetails.getSessionName(), storeName);
+      } catch (IOException ioException) {
+        logger.log(SESSION_SAVE_STATE_ERROR, sessionDetails.getSessionName(), storeName, ioException);
+      }
     }
   }
 
