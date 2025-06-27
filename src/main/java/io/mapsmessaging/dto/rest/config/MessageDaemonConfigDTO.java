@@ -48,6 +48,9 @@ public class MessageDaemonConfigDTO extends BaseConfigDTO {
   @Schema(description = "Minimum size for message compression", example = "1024")
   protected int compressMessageMinSize;
 
+  @Schema(description = "On rollback of events if we maintain the priority or bump the priority of the event", example = "maintain", allowableValues = {"maintain", "increment"})
+  protected String incrementPriorityMethod;
+
   @Schema(description = "Enable resource statistics", example = "false")
   protected boolean enableResourceStatistics;
 

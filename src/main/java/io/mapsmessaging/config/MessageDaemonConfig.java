@@ -38,6 +38,7 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     this.transactionScan = config.getLongProperty("TransactionScan", 5000);
     this.compressionName = config.getProperty("CompressionName", "None");
     this.compressMessageMinSize = config.getIntProperty("CompressMessageMinSize", 1024);
+    this.incrementPriorityMethod = config.getProperty("IncrementPriorityMethod", "maintain");
     this.enableResourceStatistics = config.getBooleanProperty("EnableResourceStatistics", false);
     this.enableSystemTopics = config.getBooleanProperty("EnableSystemTopics", true);
     this.enableSystemStatusTopics = config.getBooleanProperty("EnableSystemStatusTopics", true);
@@ -85,6 +86,10 @@ public class MessageDaemonConfig extends MessageDaemonConfigDTO implements Confi
     }
     if (this.compressMessageMinSize != newConfig.getCompressMessageMinSize()) {
       this.compressMessageMinSize = newConfig.getCompressMessageMinSize();
+      hasChanged = true;
+    }
+    if (!this.incrementPriorityMethod.equals(newConfig.getIncrementPriorityMethod())) {
+      this.incrementPriorityMethod = newConfig.getIncrementPriorityMethod();
       hasChanged = true;
     }
     if (this.sendAnonymousStatusUpdates != newConfig.isSendAnonymousStatusUpdates()) {

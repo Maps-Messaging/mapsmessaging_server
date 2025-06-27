@@ -37,6 +37,9 @@ public class Constants {
   private CompressionMode messageCompression = CompressionMode.NONE;
 
   @Getter
+  private RollbackPriority rollbackPriority = RollbackPriority.MAINTAIN;
+
+  @Getter
   @Setter
   private int minimumMessageSize = 1024;
 
@@ -55,6 +58,24 @@ public class Constants {
         messageCompression = CompressionMode.NONE;
     }
   }
+
+  public void setRollbackPriority(String name){
+    if(name == null){
+      name = "maintain";
+    }
+
+    switch(name.toLowerCase()){
+      case "increment":
+        rollbackPriority = RollbackPriority.INCREMENT;
+        break;
+
+      case "maintain":
+      default:
+        rollbackPriority = RollbackPriority.MAINTAIN;
+        break;
+    }
+  }
+
 
   private Constants(){}
 

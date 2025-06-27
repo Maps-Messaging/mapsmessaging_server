@@ -124,22 +124,18 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_COMMIT, name, messageId);
   }
 
-  @Override
+
   public synchronized boolean rollback(long messageId) {
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_ROLLBACK, name, messageId);
-    List<Queue<Long>> priorityList = messagesInFlight.getPriorityStructure();
-    for (Queue<Long> queue : priorityList) {
-      NaturalOrderedLongQueue naturalOrderedLongQueue = (NaturalOrderedLongQueue) queue;
-      if (naturalOrderedLongQueue.contains(messageId)) {
-        int priority = UniqueIdHelper.priority(naturalOrderedLongQueue.getUniqueId());
-        messagesAtRest.add(messageId, priority);
-        naturalOrderedLongQueue.remove(messageId);
-        messagesInFlight.remove(messageId);
-        return true;
-      }
+    int priority = messagesInFlight.removeAndGetPriority(messageId);
+    if (priority != -1) {
+      priority = io.mapsmessaging.api.features.Constants.getInstance().getRollbackPriority().incrementPriority(priority);
+      messagesAtRest.add(messageId, priority);
+      return true;
     }
     return false;
   }
+
 
   @Override
   public synchronized long nextMessageId() {
