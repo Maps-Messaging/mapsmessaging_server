@@ -387,12 +387,12 @@ public class DestinationImpl implements BaseDestination {
       if (destinationJMXBean != null) {
         destinationJMXBean.close();
       }
-      File location = new File(getPhysicalLocation());
-      deleteFile(location);
+      SimpleTaskScheduler.getInstance().schedule(()->deleteFile(new File(getPhysicalLocation()), 0), 10, TimeUnit.SECONDS);
     }
   }
 
-  public static void deleteFile(File directoryToBeDeleted) throws IOException {
+  public static void deleteFile(File directoryToBeDeleted, int count) {
+    int recursionDepth = count +1;
     StringBuilder failedFiles = new StringBuilder();
     File[] allContents = directoryToBeDeleted.listFiles();
     if (allContents != null) {
@@ -417,7 +417,12 @@ public class DestinationImpl implements BaseDestination {
       Files.delete(directoryToBeDeleted.toPath());
     } catch (IOException e) {
       failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
-      throw new IOException("Failed to delete the following files: " + failedFiles, e);
+    }
+    if(!failedFiles.isEmpty()) {
+      System.err.println("Retrying delete " + directoryToBeDeleted.getAbsolutePath()+" because "+failedFiles);
+      if(recursionDepth < 3) {
+        SimpleTaskScheduler.getInstance().schedule(() -> deleteFile(directoryToBeDeleted, recursionDepth), 10, TimeUnit.SECONDS);
+      }
     }
   }
 
