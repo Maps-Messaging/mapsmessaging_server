@@ -419,7 +419,6 @@ public class DestinationImpl implements BaseDestination {
       failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
     }
     if(!failedFiles.isEmpty()) {
-      System.err.println("Retrying delete " + directoryToBeDeleted.getAbsolutePath()+" because "+failedFiles);
       if(recursionDepth < 3) {
         SimpleTaskScheduler.getInstance().schedule(() -> deleteFile(directoryToBeDeleted, recursionDepth), 10, TimeUnit.SECONDS);
       }
