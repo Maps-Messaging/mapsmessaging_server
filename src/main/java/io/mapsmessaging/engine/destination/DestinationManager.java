@@ -245,8 +245,8 @@ public class DestinationManager implements DestinationFactory, Agent {
     destinationManagerListeners.add(listener);
   }
 
-  public void removeListener(DestinationManagerListener listener) {
-    destinationManagerListeners.remove(listener);
+  public boolean removeListener(DestinationManagerListener listener) {
+    return destinationManagerListeners.remove(listener);
   }
 
   public List<DestinationManagerListener> getListeners() {

@@ -179,8 +179,8 @@ public class SessionDestinationManager implements DestinationFactory {
    *
    * @param listener the DestinationManagerListener to be removed
    */
-  public void removeListener(DestinationManagerListener listener) {
-    manager.removeListener(listener);
+  public boolean removeListener(DestinationManagerListener listener) {
+    return manager.removeListener(listener);
   }
 
 }

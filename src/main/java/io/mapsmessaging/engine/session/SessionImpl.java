@@ -164,6 +164,9 @@ public class SessionImpl {
     }
     closureTaskManager.close();
     namespaceMapping.clear();
+    if(!context.isPersistentSession()){
+      subscriptionManager.close();
+    }
   }
 
   /**

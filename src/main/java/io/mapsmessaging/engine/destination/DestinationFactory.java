@@ -51,5 +51,5 @@ public interface DestinationFactory {
 
   void addListener(DestinationManagerListener subscriptionController);
 
-  void removeListener(DestinationManagerListener subscriptionController);
+  boolean removeListener(DestinationManagerListener subscriptionController);
 }

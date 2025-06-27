@@ -51,8 +51,8 @@ public class DestinationUpdateManager {
     destinationManagerListeners.add(listener);
   }
 
-  public void remove(DestinationManagerListener listener) {
-    destinationManagerListeners.remove(listener);
+  public boolean remove(DestinationManagerListener listener) {
+    return destinationManagerListeners.remove(listener);
   }
 
 }

@@ -347,6 +347,7 @@ public class SubscriptionController implements DestinationManagerListener {
           subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
         } catch (IOException e) {
           e.printStackTrace();
+          //ToDo, log this and report error
         }
       }
     } else {
