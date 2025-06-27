@@ -34,6 +34,9 @@ import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import io.mapsmessaging.utilities.threads.tasks.SingleConcurrentTaskScheduler;
 
 import javax.security.auth.login.LoginException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -156,6 +159,7 @@ public class SessionManagerPipeLine {
     SubscriptionController subscriptionController;
     long expiry = sessionImpl.getExpiry();
     sessions.remove(sessionImpl.getName());
+    String storeName = (sessionImpl instanceof PersistentSession) ?  ((PersistentSession)sessionImpl).getStoreName(): "";
     sessionImpl.close();
 
     if (!clearWillTask) {
@@ -173,11 +177,11 @@ public class SessionManagerPipeLine {
     subscriptionController = sessionImpl.getSubscriptionController();
     if (expiry > 0) {
       subscriptionController.hibernateAll();
-      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeSubscriptionController(subscriptionController), expiry, TimeUnit.SECONDS);
+      Future<?> sched = SimpleTaskScheduler.getInstance().schedule(() -> closeAndDeleteSubscriptionController(storeName, subscriptionController), expiry, TimeUnit.SECONDS);
       subscriptionController.setTimeout(sched);
       disconnectedSessions.increment();
     } else {
-      closeSubscriptionController(subscriptionController);
+      closeAndDeleteSubscriptionController(storeName, subscriptionController);
     }
     connectedSessions.decrement();
   }
@@ -186,6 +190,15 @@ public class SessionManagerPipeLine {
     SubscriptionController subscriptionManager = new SubscriptionController(sessionId, uniqueSessionId, destinationManager, map);
     subscriptionManagerFactory.put(sessionId, subscriptionManager);
     disconnectedSessions.increment();
+  }
+
+  void closeAndDeleteSubscriptionController(String sessionStateFile, SubscriptionController subscriptionController) {
+    closeSubscriptionController(subscriptionController);
+    try {
+      Files.deleteIfExists(new File(sessionStateFile).toPath());
+    } catch (IOException e) {
+      // ignore
+    }
   }
 
   void closeSubscriptionController(SubscriptionController subscriptionController) {
