@@ -80,6 +80,9 @@ public class Filter {
     @Override
     public Object get(String s) {
       Object val = message.get(s);
+      if(val instanceof TypedData){
+        val = ((TypedData)val).getData();
+      }
       if (val == null && formatResolver != null) {
         val = formatResolver.get(s);
       }
