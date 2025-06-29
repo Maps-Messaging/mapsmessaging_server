@@ -98,13 +98,7 @@ public class SerialEndPointServer extends EndPointServer implements SerialPortLi
     super.handleCloseEndPoint(endPoint);
     serialEndPoint = null;
     SerialPortScanner.getInstance().del(serialConfig.getPort());
-    SimpleTaskScheduler.getInstance().schedule(() -> {
-      try {
-        start();
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-      }
-    }, 5, TimeUnit.SECONDS);
+    SimpleTaskScheduler.getInstance().schedule(this::close, 5, TimeUnit.SECONDS);
   }
 
   @Override
