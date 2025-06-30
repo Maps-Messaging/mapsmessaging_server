@@ -53,6 +53,11 @@ io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocolFactory
 io.mapsmessaging.network.protocol.impl.websockets.WebSocketProtocolFactory
 
 #
+# HTTP based protocols
+#
+io.mapsmessaging.network.protocol.impl.rest.RestProtocolFactory
+
+#
 # Known Plugins
 #
 io.mapsmessaging.network.protocol.impl.apache_pulsar.PulsarProtocolFactory
