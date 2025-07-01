@@ -83,12 +83,13 @@ public class DestinationStatusTopic extends SystemTopic {
       for(String destinationName:destinations){
         try {
           DestinationImpl destination = MessageDaemon.getInstance().getDestinationManager().find(destinationName).get();
-          if(!destination.getFullyQualifiedNamespace().startsWith("$SYS")) {
+          if (destination != null && !destination.getFullyQualifiedNamespace().startsWith("$SYS")) {
             destinationStatusList.add(DestinationStatusHelper.createDestination(destination));
           }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch(InterruptedException | ExecutionException e){
           throw new RuntimeException(e);
         }
+
       }
     }
 
