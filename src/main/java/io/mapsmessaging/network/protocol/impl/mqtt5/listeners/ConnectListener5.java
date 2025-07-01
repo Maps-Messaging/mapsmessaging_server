@@ -166,8 +166,7 @@ public class ConnectListener5 extends PacketListener5 {
     }
     protocol.setKeepAlive(keepAlive * 1000L);
 
-    scb.setPersistentSession(!connect.isCleanSession())
-        .setResetState(connect.isCleanSession())
+    scb.setResetState(connect.isCleanSession())
         .setKeepAlive(keepAlive);
 
     if (connect.hasPassword()) {
@@ -214,13 +213,12 @@ public class ConnectListener5 extends PacketListener5 {
     boolean sendResponseInfo = false;
     scb.setSessionExpiry(DefaultConstants.SESSION_TIME_OUT);
     scb.setReceiveMaximum(DefaultConstants.CLIENT_RECEIVE_MAXIMUM);
+    scb.setPersistentSession(DefaultConstants.SESSION_TIME_OUT != 0);
     for (MessageProperty property : connect.getProperties().values()) {
       switch (property.getId()) {
         case MessagePropertyFactory.SESSION_EXPIRY_INTERVAL:
           scb.setSessionExpiry(((SessionExpiryInterval) property).getExpiry());
-          if (scb.getSessionExpiry() == 0) {
-            scb.setPersistentSession(false);
-          }
+          scb.setPersistentSession(scb.getSessionExpiry() != 0);
           break;
 
         case MessagePropertyFactory.RECEIVE_MAXIMUM:
