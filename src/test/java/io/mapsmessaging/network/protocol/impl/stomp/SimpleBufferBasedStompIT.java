@@ -22,14 +22,18 @@ package io.mapsmessaging.network.protocol.impl.stomp;
 import io.mapsmessaging.test.SimpleBufferBasedTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
 
   private final int TOTAL_FRAMES = 101;
 
   @Test
+  @Timeout(value = 600, unit = TimeUnit.SECONDS)
   @DisplayName("Send Stomp frame single character at a time")
   void simpleCharByCharTest() throws IOException,  URISyntaxException {
     simpleByteWriteTest(1);

@@ -148,6 +148,13 @@ public class BaseTestConfig extends BaseTest {
           md.getDestinationManager().delete(destinationImpl);
         }
       }
+      if(md.getSubSystemManager().getSessionManager().hasSessions()){
+        for (SessionImpl sessionImpl : sessionImpls) {
+          System.err.println("Session still active::" + sessionImpl.getName());
+          sessionImpl.setExpiryTime(1);
+          manager.close(sessionImpl, false);
+        }
+      }
       Assertions.assertFalse(md.getSubSystemManager().getSessionManager().hasSessions());
       long timeout = System.currentTimeMillis()+ 10_000;
       while(SessionManagerTest.getInstance().hasIdleSessions() && timeout > System.currentTimeMillis()){

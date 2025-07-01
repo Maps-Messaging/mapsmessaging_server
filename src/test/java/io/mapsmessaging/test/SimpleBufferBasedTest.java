@@ -91,7 +91,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
         }
         outputStream.write(write, 0, x);
         outputStream.flush();
-        if(!fast) {
+        if(!fast && size > 1) {
           delay(Math.abs(rdm.nextInt(2)));
         }
       }
