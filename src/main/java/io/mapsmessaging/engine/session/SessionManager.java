@@ -128,8 +128,7 @@ public class SessionManager implements Agent {
   }
 
   int getPipeLineIndex(String name) {
-    int hashCode = name.hashCode() % sessionPipeLines.length; // Reduce its size before we get the ABS
-    return Math.abs(hashCode);
+    return Math.abs(name.hashCode() % sessionPipeLines.length); // Reduce its size before we get the ABS
   }
   //</editor-fold>
 
