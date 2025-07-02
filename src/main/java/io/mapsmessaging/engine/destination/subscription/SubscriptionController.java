@@ -254,14 +254,14 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public Subscription createSchemaSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, false); // Schema subscriptions have no persistence
-    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getSubscriptionId());
+    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getAllocatedId());
     updateSubscriptionManager(context, destinationImpl, subscription);
     return subscription;
   }
 
   public Subscription createSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBuilder(destinationImpl, context, isPersistent);
-    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getSubscriptionId());
+    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getAllocatedId());
     if (!context.isReplaced() || context.getRetainHandler().equals(RetainHandler.SEND_ALWAYS)) {
       queueRetainedMessage(destinationImpl, subscription);
     }
@@ -271,7 +271,7 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public Subscription createBrowserSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBrowserBuilder(destinationImpl, context, parent);
-    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getSubscriptionId());
+    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getAllocatedId());
     updateSubscriptionManager(context, destinationImpl, subscription);
     return subscription;
   }

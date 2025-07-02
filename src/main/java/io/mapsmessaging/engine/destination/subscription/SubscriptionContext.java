@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.BitSet;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Getter
 @ToString
@@ -43,7 +44,10 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   private static final int BROWSER_FLAG = 3;
   private static final int SYNC_FLAG = 4;
 
+  private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
+  @Getter
+  private final long allocatedId = ID_GENERATOR.getAndIncrement();
   private String destinationName;
 
   @Setter
@@ -96,6 +100,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   public SubscriptionContext(String destinationName) {
     this.destinationName = destinationName;
     maxAtRest =0;
+    subscriptionId = 0;
     alias = destinationName; // Make the Alias the same as the destination. In some protocols this can be overridden
     flags = new BitSet(8);
     receiveMaximum = 1;
@@ -110,6 +115,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   public SubscriptionContext(SubscriptionContext rhs, String destinationName, String alias) {
     this.destinationName = destinationName;
     this.alias = alias;
+    subscriptionId = 0;
     maxAtRest =0;
     acknowledgementController = rhs.acknowledgementController;
     sharedName = rhs.sharedName;
