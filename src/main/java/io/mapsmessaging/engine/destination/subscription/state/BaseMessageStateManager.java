@@ -26,6 +26,7 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.utilities.UniqueIdHelper;
+import io.mapsmessaging.utilities.collections.ConcurrentNaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongQueue;
 import io.mapsmessaging.utilities.collections.PriorityCollection;
 import io.mapsmessaging.utilities.collections.PriorityQueue;
@@ -33,7 +34,6 @@ import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Queue;
 
 public abstract class BaseMessageStateManager implements MessageStateManager {
@@ -42,22 +42,20 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   protected final PriorityQueue<Long> messagesAtRest;
   protected final PriorityCollection<Long> messagesInFlight;
   protected final String name;
-  private final long baseUniqueId;
 
   protected BaseMessageStateManager(String name, long uniqueSessionId, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
     this.name = name;
-    baseUniqueId = uniqueSessionId;
     logger = LoggerFactory.getLogger(MessageStateManagerImpl.class);
     NaturalOrderedLongQueue[] priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
     for (int x = 0; x < priorityLists.length; x++) {
-      long priorityId = UniqueIdHelper.compute(baseUniqueId, x);
-      priorityLists[x] = new NaturalOrderedLongQueue(priorityId, priorityBitSetFactory);
+      long priorityId = UniqueIdHelper.compute(uniqueSessionId, x);
+      priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(priorityId, priorityBitSetFactory);
     }
     messagesAtRest = new PriorityQueue<>(priorityLists, null);
 
     priorityLists = new NaturalOrderedLongQueue[Priority.HIGHEST.getValue()];
     for (int x = 0; x < priorityLists.length; x++) {
-      priorityLists[x] = new NaturalOrderedLongQueue(x, inflightBitSetFactory);
+      priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(x, inflightBitSetFactory);
     }
     messagesInFlight = new PriorityQueue<>(priorityLists, null);
   }
