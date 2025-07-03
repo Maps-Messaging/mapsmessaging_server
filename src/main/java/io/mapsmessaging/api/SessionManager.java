@@ -74,9 +74,10 @@ public class SessionManager {
       try {
         sessionImpl = MessageDaemon.getInstance().getSubSystemManager().getSessionManager().create(sessionContext);
         completableFuture.complete(new Session(sessionImpl, listener));
-      } catch (LoginException e) {
-        logger.log(SESSION_ERROR_DURING_CREATION, e);
-        completableFuture.completeExceptionally(e);
+      }
+      catch(Throwable t) {
+        logger.log(SESSION_ERROR_DURING_CREATION, t);
+        completableFuture.completeExceptionally(t);
       }
       return sessionImpl;
     };

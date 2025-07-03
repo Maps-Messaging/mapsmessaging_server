@@ -74,13 +74,12 @@ public class Selector implements SelectorInt {
           Thread.yield();
         } else {
           Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
-          if (selectedKeys.size() > 5) {
-            emptySelectCount = 0;
-          }
+          emptySelectCount = 0;
           processSelectionList(selectedKeys);
         }
-      } catch (IOException e) {
-        logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL);
+      }
+      catch(Throwable e) {
+        logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL, e);
         isOpen.set(false);
       }
     }
@@ -128,6 +127,7 @@ public class Selector implements SelectorInt {
         } else {
           logger.log(ServerLogMessages.SELECTOR_TASK_FAILED_1, key.toString());
         }
+        e.printStackTrace();
       } finally {
         iter.remove();
       }
