@@ -388,6 +388,7 @@ public class SessionImpl {
     String namespace = destinationManager.calculateNamespace(originalName);
     namespaceMapping.addMapped(originalName, namespace);
     context.setDestinationName(namespace);
+    context.setAllocatedId( getContext().getInternalSessionId());
     subscriptionManager.wake(this);
     return subscriptionManager.addSubscription(context);
   }

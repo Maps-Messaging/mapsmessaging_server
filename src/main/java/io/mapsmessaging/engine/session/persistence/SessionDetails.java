@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.session.persistence;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.utilities.PersistentObject;
 import lombok.Data;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
+@ToString
 public class SessionDetails extends PersistentObject {
 
   private int version;
@@ -71,7 +73,7 @@ public class SessionDetails extends PersistentObject {
     }
     int subListSize = readInt(inputStream);
     for(int x=0;x<subListSize;x++){
-      subscriptionContextList.add(new SubscriptionContext(inputStream));
+      subscriptionContextList.add(new SubscriptionContext(inputStream, internalUnqueId));
     }
   }
 

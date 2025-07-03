@@ -44,10 +44,10 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   private static final int BROWSER_FLAG = 3;
   private static final int SYNC_FLAG = 4;
 
-  private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
-
   @Getter
-  private final long allocatedId = ID_GENERATOR.getAndIncrement();
+  @Setter
+  private long allocatedId;
+
   private String destinationName;
 
   @Setter
@@ -98,6 +98,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   }
 
   public SubscriptionContext(String destinationName) {
+    this.allocatedId = -1;
     this.destinationName = destinationName;
     maxAtRest =0;
     subscriptionId = 0;
@@ -113,6 +114,7 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   }
 
   public SubscriptionContext(SubscriptionContext rhs, String destinationName, String alias) {
+    this.allocatedId = rhs.allocatedId;
     this.destinationName = destinationName;
     this.alias = alias;
     subscriptionId = 0;
@@ -128,7 +130,8 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
     parseName();
   }
 
-  public SubscriptionContext(InputStream inputStream) throws IOException {
+  public SubscriptionContext(InputStream inputStream, long sessionId) throws IOException {
+    this.allocatedId = sessionId;
     destinationName = readString(inputStream);
     alias = readString(inputStream);
     sharedName = readString(inputStream);
