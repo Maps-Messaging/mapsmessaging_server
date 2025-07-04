@@ -125,9 +125,8 @@ public class Selector implements SelectorInt {
         if (logger.isDebugEnabled()) {
           logger.log(ServerLogMessages.SELECTOR_TASK_FAILED, e, key.toString());
         } else {
-          logger.log(ServerLogMessages.SELECTOR_TASK_FAILED_1, key.toString());
+          logger.log(ServerLogMessages.SELECTOR_TASK_FAILED_1, key.toString(), e);
         }
-        e.printStackTrace();
       } finally {
         iter.remove();
       }
