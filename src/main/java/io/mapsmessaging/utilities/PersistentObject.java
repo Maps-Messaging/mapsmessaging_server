@@ -143,7 +143,7 @@ public class PersistentObject {
    * @return the byte array read from the input stream
    * @throws IOException if an I/O error occurs while reading from the input stream
    */
-  private byte[] readFullBuffer(InputStream inputStream, int len) throws IOException {
+  protected byte[] readFullBuffer(InputStream inputStream, int len) throws IOException {
     byte[] tmp = new byte[len];
     int read = 0;
     while(read < len) {
