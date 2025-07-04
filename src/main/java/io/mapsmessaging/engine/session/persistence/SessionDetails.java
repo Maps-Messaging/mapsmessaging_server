@@ -55,15 +55,16 @@ public class SessionDetails extends PersistentObject {
 
 
   public SessionDetails(InputStream inputStream) throws IOException {
-    inputStream.mark(4);
     version = readInt(inputStream);
     boolean hasInternalUnqueId = true;
     if(version != 2) {
-      inputStream.reset();
+      sessionName = new String(readFullBuffer(inputStream, version));
       hasInternalUnqueId = false;
       version = 2;
     }
-    sessionName = readString(inputStream);
+    else {
+      sessionName = readString(inputStream);
+    }
     uniqueId = readString(inputStream);
     if(hasInternalUnqueId){
       internalUnqueId = readLong(inputStream);
