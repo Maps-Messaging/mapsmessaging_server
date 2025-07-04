@@ -332,6 +332,9 @@ public class DestinationSubscription extends Subscription {
           messagesExpired++;
         }
       }
+      else{
+        break; // we have no events
+      }
     }
     return null;
   }

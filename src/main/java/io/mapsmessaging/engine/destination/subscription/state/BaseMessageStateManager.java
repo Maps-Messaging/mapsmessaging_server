@@ -140,6 +140,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
     Long response = messagesAtRest.peek();
     if (response == null) {
       response = -1L;
+      messagesAtRest.size(); // reset the actual size since we do not have any messages
     }
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_NEXT, name, response);
     return response;
