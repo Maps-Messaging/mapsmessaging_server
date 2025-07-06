@@ -52,6 +52,9 @@ public class DestinationConfigDTO extends BaseConfigDTO {
   @Schema(description = "Maximum partition size in bytes", example = "4096")
   protected long maxPartitionSize;
 
+  @Schema (description = "Maximum message count per destination", example = "10000")
+  protected long maxMessageCount;
+
   @Schema(description = "Trailing path", example = "path/to/trail")
   protected String trailingPath;
 
@@ -75,6 +78,9 @@ public class DestinationConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Archive configuration")
   protected ArchiveConfigDTO archive;
+
+  @Schema(description = "Message override parameters")
+  protected MessageOverrideDTO messageOverride;
 
   @Schema(description = "Namespace mapping", example = "mappedNamespace")
   protected String namespaceMapping;

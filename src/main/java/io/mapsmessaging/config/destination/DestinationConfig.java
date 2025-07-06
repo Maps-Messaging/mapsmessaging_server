@@ -71,6 +71,9 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
         this.archive = null; // Disabled
       }
     }
+    if(properties.containsKey("messageOverrides")) {
+      messageOverride = new MessageOverrideConfig((ConfigurationProperties) properties.get("messageOverrides"));
+    }
     String propertyNamespace = this.namespace;
     this.remap =
         (propertyNamespace.endsWith(OPTIONAL_PATH) && this.directory.contains(OPTIONAL_PATH));
@@ -110,6 +113,9 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     }
     if (this.archive != null) {
       properties.put("archive", ((Config) archive).toConfigurationProperties());
+    }
+    if (this.messageOverride != null) {
+      properties.put("messageOverride", ((Config) messageOverride).toConfigurationProperties());
     }
     return properties;
   }
@@ -171,6 +177,9 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
       hasChanged = true;
     }
     if (this.archive != null && ((Config) archive).update(newConfig.getArchive())) {
+      hasChanged = true;
+    }
+    if (this.messageOverride != null && ((Config) messageOverride).update(newConfig.getArchive())) {
       hasChanged = true;
     }
 

@@ -24,6 +24,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.Constants;
 import io.mapsmessaging.engine.destination.delayed.DelayedMessageManager;
@@ -121,6 +122,7 @@ public class DestinationImpl implements BaseDestination {
   private final Resource resource;
   private final DestinationType destinationType;
 
+  private final MessageOverrideDTO messageOverrides;
   /**
    * -- GETTER --
    *  This returns the user supplied name for the destination
@@ -153,6 +155,7 @@ public class DestinationImpl implements BaseDestination {
                          @NonNull @NotNull DestinationType destinationType) throws IOException {
     SchemaConfig config = SchemaManager.getInstance().locateSchema(name);
     schema = new Schema(config);
+    messageOverrides = pathManager.getMessageOverride();
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = computePath(pathManager, uuid);
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
@@ -190,6 +193,7 @@ public class DestinationImpl implements BaseDestination {
    */
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType)
       throws IOException {
+    messageOverrides = null; // Need fixing
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = directory;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
@@ -234,6 +238,7 @@ public class DestinationImpl implements BaseDestination {
   public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull DestinationType destinationType) throws IOException {
     schema = new Schema(SchemaManager.getInstance().locateSchema(name));
     this.fullyQualifiedNamespace = name;
+    messageOverrides = null;
     fullyQualifiedDirectoryRoot = "";
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);
     subscriptionTaskQueue = new SingleConcurrentTaskScheduler(SUBSCRIPTION_TASK_KEY);
@@ -620,6 +625,7 @@ public class DestinationImpl implements BaseDestination {
    */
   @Override
   public int storeMessage(@NonNull @NotNull Message message) throws IOException {
+    message = MessageOverrides.setOverrides(messageOverrides, message);
     Callable<Response> task;
     if (message.getDelayed() > 0 && delayedMessageManager != null) {
       task = new DelayedStoreMessageTask(this, message, delayedMessageManager, message.getDelayed());
