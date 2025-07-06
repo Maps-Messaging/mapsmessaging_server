@@ -29,6 +29,14 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     else{
       this.storeOffline = null;
     }
+
+    if(properties.containsKey("retain")) {
+      this.retain = properties.getBooleanProperty("retain",false);
+    }
+    else{
+      this.retain = null;
+    }
+
     Map<String, Object> preMeta = ((ConfigurationProperties)properties.get("meta")).getMap();
     if(preMeta != null) {
       meta = new LinkedHashMap<>();
@@ -49,6 +57,7 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     properties.put("contentType", this.contentType);
     properties.put("schemaId", this.schemaId);
     properties.put("storeOffline", this.storeOffline);
+    properties.put("retain", this.retain);
     properties.put("meta", this.meta);
     properties.put("dataMap", this.dataMap);
     return properties;
@@ -85,6 +94,10 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     }
     if (!Objects.equals(this.schemaId, newConfig.getSchemaId())) {
       this.schemaId = newConfig.getSchemaId();
+      hasChanged = true;
+    }
+    if (!Objects.equals(this.retain, newConfig.getRetain())) {
+      this.retain = newConfig.getRetain();
       hasChanged = true;
     }
     if (!Objects.equals(this.storeOffline, newConfig.getStoreOffline())) {

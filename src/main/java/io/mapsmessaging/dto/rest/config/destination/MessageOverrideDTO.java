@@ -56,6 +56,9 @@ public class MessageOverrideDTO extends BaseConfigDTO {
   @Schema(description = "Override storeOffline flag", example = "true")
   protected Boolean storeOffline;
 
+  @Schema(description = "Override retain message flag", example = "true")
+  protected Boolean retain;
+
   @Schema(description = "Metadata to inject if not present in the message")
   protected Map<String, String> meta;
 

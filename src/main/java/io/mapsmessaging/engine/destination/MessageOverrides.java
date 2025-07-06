@@ -52,6 +52,9 @@ public class MessageOverrides {
     if(messageOverride.getExpiry() >= 0){
       messageBuilder.setExpiry(messageOverride.getExpiry());
     }
+    if(messageOverride.getRetain() != null){
+      messageBuilder.setRetain(messageOverride.getRetain());
+    }
     if(messageOverride.getSchemaId() != null){
       messageBuilder.setSchemaId(messageOverride.getSchemaId());
     }
