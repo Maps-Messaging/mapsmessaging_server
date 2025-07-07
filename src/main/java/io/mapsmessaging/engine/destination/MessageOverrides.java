@@ -24,6 +24,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class MessageOverrides {
@@ -66,6 +67,10 @@ public class MessageOverrides {
     }
     if(messageOverride.getMeta() != null){
       Map<String, String> meta = message.getMeta();
+      if(meta == null){
+        meta = new HashMap<>();
+        messageBuilder.setMeta(meta);
+      }
       meta.putAll(messageOverride.getMeta());
     }
     return messageBuilder.build();
