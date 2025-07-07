@@ -71,7 +71,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
   }
 
   protected void simpleByteWrite(String filename, int frameChar, int size, String host, int port, int totalFrames, byte[] endFrame) throws IOException, URISyntaxException {
-    simpleByteWrite(filename, frameChar, size, host, port, totalFrames, endFrame, false);
+    simpleByteWrite(filename, frameChar, size, host, port, totalFrames, endFrame, size == 1);
   }
 
   protected void simpleByteWrite(String filename, int frameChar, int size, String host, int port, int totalFrames, byte[] endFrame, boolean fast) throws IOException, URISyntaxException {
@@ -91,7 +91,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
         }
         outputStream.write(write, 0, x);
         outputStream.flush();
-        if(!fast && size > 1) {
+        if(!fast) {
           delay(Math.abs(rdm.nextInt(2)));
         }
       }

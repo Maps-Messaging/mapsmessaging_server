@@ -50,6 +50,7 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     }
     this.sync = properties.getProperty("sync", "disable").equalsIgnoreCase("enable");
     this.itemCount = properties.getIntProperty("itemCount", 100);
+    this.capacity = properties.getIntProperty("capacity", -1);
     this.maxPartitionSize = properties.getLongProperty("maxPartitionSize", 4096L);
     this.expiredEventPoll = properties.getIntProperty("expiredEventPoll", 20);
     this.autoPauseTimeout = properties.getIntProperty("autoPauseTimeout", 300);
@@ -101,6 +102,7 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     properties.put("type", this.type);
     properties.put("sync", this.sync ? "enable" : "disable");
     properties.put("itemCount", this.itemCount);
+    properties.put("capacity", capacity);
     properties.put("maxPartitionSize", this.maxPartitionSize);
     properties.put("expiredEventPoll", this.expiredEventPoll);
     properties.put("autoPauseTimeout", this.autoPauseTimeout);
@@ -142,6 +144,10 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     }
     if (this.itemCount != newConfig.getItemCount()) {
       this.itemCount = newConfig.getItemCount();
+      hasChanged = true;
+    }
+    if (this.capacity != newConfig.getCapacity()) {
+      this.capacity = newConfig.getCapacity();
       hasChanged = true;
     }
     if (this.expiredEventPoll != newConfig.getExpiredEventPoll()) {

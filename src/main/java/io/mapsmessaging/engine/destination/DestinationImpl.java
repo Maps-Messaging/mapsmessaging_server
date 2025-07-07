@@ -191,9 +191,9 @@ public class DestinationImpl implements BaseDestination {
    * @param destinationType the resource type detected during the reload
    * @throws IOException if, at any point, the underlying file structures are corrupt or unable to be used
    */
-  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType)
+  public DestinationImpl(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource, @NonNull @NotNull DestinationType destinationType, MessageOverrideDTO messageOverrides)
       throws IOException {
-    messageOverrides = null; // Need fixing
+    this.messageOverrides = messageOverrides;
     this.fullyQualifiedNamespace = name;
     fullyQualifiedDirectoryRoot = directory;
     resourceTaskQueue = new PriorityConcurrentTaskScheduler(RESOURCE_TASK_KEY, TASK_QUEUE_PRIORITY_SIZE);

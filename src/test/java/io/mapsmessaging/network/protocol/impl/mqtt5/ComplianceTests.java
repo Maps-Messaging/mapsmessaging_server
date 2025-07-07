@@ -171,7 +171,45 @@ class ComplianceTests extends MQTTBaseTest{
     }
   }
 
+  @Test
+  void testRedeliveryOnReconnect() throws Exception {
+    // Step 1: subscriber setup
+    MqttClient bclient = new MqttClient(getUrl("tcp", false),
+        UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
+    Callback callback = new Callback();
+    bclient.setCallback(callback);
 
+    MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
+        .cleanStart(false)
+        .sessionExpiryInterval(99999L)
+        .build();
+
+    bclient.connect(options);
+    MqttSubscription[] subscriptions = { new MqttSubscription("test/redelivery/#", 2) };
+    bclient.subscribe(subscriptions);
+    bclient.disconnect();
+
+    // Step 3: publisher sends messages
+    MqttClient aclient = new MqttClient(getUrl("tcp", false),
+        UuidGenerator.getInstance().generate().toString(), new MemoryPersistence());
+    aclient.connect(new MqttConnectionOptionsBuilder().cleanStart(true).build());
+    aclient.publish("test/redelivery/one", "QoS1".getBytes(StandardCharsets.UTF_8), 1, false);
+    aclient.publish("test/redelivery/two", "QoS2".getBytes(StandardCharsets.UTF_8), 2, false);
+    aclient.disconnect();
+
+    Assertions.assertEquals(0, callback.counter.get(), "Expected no messages since we are disconnected");
+    // Step 4: reconnect subscriber
+    bclient.setCallback(callback);
+    bclient.connect(options);
+
+    int attempts = 0;
+    while (callback.counter.get() < 2 && attempts++ < 30) {
+      Thread.sleep(100);
+    }
+
+    bclient.disconnect();
+    Assertions.assertEquals(2, callback.counter.get(), "Expected 2 redelivered messages");
+  }
 
   @Test
   void testOfflineMessageQueueing() throws Exception {

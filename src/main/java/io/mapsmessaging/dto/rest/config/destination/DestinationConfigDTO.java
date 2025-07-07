@@ -46,6 +46,9 @@ public class DestinationConfigDTO extends BaseConfigDTO {
   @Schema(description = "Polling time for expired events", example = "20")
   protected int expiredEventPoll;
 
+  @Schema(description = "The total number of events to maintain", example = "10000")
+  protected int capacity;
+
   @Schema(description = "Auto-pause timeout in seconds", example = "300")
   protected int autoPauseTimeout;
 

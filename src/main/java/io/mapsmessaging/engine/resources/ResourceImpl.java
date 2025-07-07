@@ -86,6 +86,7 @@ public class ResourceImpl implements Resource {
       storeProperties.put("ItemCount", "" + destinationConfig.getItemCount());
       storeProperties.put("MaxPartitionSize", "" + destinationConfig.getMaxPartitionSize());
       storeProperties.put("ExpiredEventPoll", "" + destinationConfig.getExpiredEventPoll());
+      storeProperties.put("Capacity", ""+destinationConfig.getCapacity());
       idleTime = destinationConfig.getAutoPauseTimeout();
       type = destinationConfig.getType();
       if (type.equalsIgnoreCase("file")) {

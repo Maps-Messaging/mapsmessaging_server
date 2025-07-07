@@ -36,15 +36,20 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     else{
       this.retain = null;
     }
-
-    Map<String, Object> preMeta = ((ConfigurationProperties)properties.get("meta")).getMap();
-    if(preMeta != null) {
-      meta = new LinkedHashMap<>();
-      for(Map.Entry<String, Object> entry : preMeta.entrySet()) {
-        meta.put(entry.getKey(), entry.getValue().toString());
+    ConfigurationProperties metaConfig = ((ConfigurationProperties)properties.get("meta"));
+    if(metaConfig != null) {
+      Map<String, Object> preMeta = metaConfig.getMap();
+      if (preMeta != null) {
+        meta = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : preMeta.entrySet()) {
+          meta.put(entry.getKey(), entry.getValue().toString());
+        }
       }
     }
-    this.dataMap = ((ConfigurationProperties)properties.get("dataMap")).getMap();
+    ConfigurationProperties dataMapConfig = ((ConfigurationProperties)properties.get("dataMap"));
+    if(dataMapConfig != null) {
+      dataMap = dataMapConfig.getMap();
+    }
   }
 
   @Override

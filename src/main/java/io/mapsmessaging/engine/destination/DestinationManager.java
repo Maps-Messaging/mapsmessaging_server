@@ -298,15 +298,15 @@ public class DestinationManager implements DestinationFactory, Agent {
     DestinationImpl response;
     if (name.toLowerCase().startsWith(TEMPORARY_TOPIC)) {
       destinationType = DestinationType.TEMPORARY_TOPIC;
-      response = new TemporaryDestination(name, directoryPath, resource, destinationType);
+      response = new TemporaryDestination(name, directoryPath, resource, destinationType, pathManager.getMessageOverride());
     } else if (name.toLowerCase().startsWith(TEMPORARY_QUEUE)) {
       destinationType = DestinationType.TEMPORARY_QUEUE;
-      response = new TemporaryDestination(name, directoryPath, resource, destinationType);
+      response = new TemporaryDestination(name, directoryPath, resource, destinationType, pathManager.getMessageOverride());
     } else {
       if (name.toLowerCase().startsWith(QUEUE[0]) || name.toLowerCase().startsWith(QUEUE[1])) {
         destinationType = DestinationType.QUEUE;
       }
-      response = new DestinationImpl(name, directoryPath, resource, destinationType);
+      response = new DestinationImpl(name, directoryPath, resource, destinationType, pathManager.getMessageOverride());
     }
     messageExpiryHandler.setDestination(response);
     return response;

@@ -22,6 +22,7 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
 import io.mapsmessaging.engine.resources.Resource;
 import lombok.NonNull;
@@ -42,8 +43,8 @@ public class TemporaryDestination extends DestinationImpl {
   }
 
   public TemporaryDestination(@NonNull @NotNull String name, @NonNull @NotNull String directory, @NonNull @NotNull Resource resource,
-      @NonNull @NotNull DestinationType destinationType) throws IOException {
-    super(name, directory, resource, destinationType);
+      @NonNull @NotNull DestinationType destinationType, MessageOverrideDTO messageOverrides) throws IOException {
+    super(name, directory, resource, destinationType, messageOverrides);
     ownerDisconnected = false;
   }
 

@@ -149,7 +149,7 @@ public class BaseTestConfig extends BaseTest {
         }
       }
       if(md.getSubSystemManager().getSessionManager().hasSessions()){
-        for (SessionImpl sessionImpl : sessionImpls) {
+        for (SessionImpl sessionImpl : md.getSubSystemManager().getSessionManager().getSessions()) {
           System.err.println("Session still active::" + sessionImpl.getName());
           sessionImpl.setExpiryTime(1);
           manager.close(sessionImpl, false);
