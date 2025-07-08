@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 class BaseOverridesTest extends MessageAPITest implements MessageListener {
 
@@ -42,14 +43,14 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
   @ParameterizedTest
   @ValueSource(strings = {"memory", "file"})
   void testRetainOverrideMemory(String type) throws Exception {
-    testOverride("/messageOverrides/"+type+"/retain", msg ->
+    testOverride("/messageOverrides/"+type+"/retain", false, msg ->
         Assertions.assertFalse(msg.isRetain()));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"memory", "file"})
   void testQoSOverrideMemory(String type) throws Exception {
-    testOverride("/messageOverrides/"+type+"/qos", msg ->
+    testOverride("/messageOverrides/"+type+"/qos", false, msg ->
         Assertions.assertEquals(QualityOfService.AT_MOST_ONCE, msg.getQualityOfService()));
   }
 
@@ -57,7 +58,7 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
   @ValueSource(strings = {"memory", "file"})
   void testExpiryOverride(String type) throws Exception {
     long expectedExpiry = System.currentTimeMillis() + 5000;
-    testOverride("/messageOverrides/" + type + "/expiry", msg -> {
+    testOverride("/messageOverrides/" + type + "/expiry", false, msg -> {
       long actualExpiry = msg.getExpiry();
       Assertions.assertTrue(Math.abs(actualExpiry - expectedExpiry) < 100,
           "Expected expiry near " + expectedExpiry + " but got " + actualExpiry);
@@ -67,34 +68,27 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
   @ParameterizedTest
   @ValueSource(strings = {"memory", "file"})
   void testMetaOverrideMemory(String type) throws Exception {
-    testOverride("/messageOverrides/"+type+"/meta", msg ->
+    testOverride("/messageOverrides/"+type+"/meta", false, msg ->
         Assertions.assertEquals("mval", msg.getMeta().get("mkey")));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"memory", "file"})
   void testDataMapOverrideMemory(String type) throws Exception {
-    testOverride("/messageOverrides/"+type+"/datamap", msg ->
+    testOverride("/messageOverrides/"+type+"/datamap", false, msg ->
         Assertions.assertEquals("dval", msg.getDataMap().get("dkey").getData()));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"memory", "file"})
-  void testStoreOfflineOverride(String type) throws Exception {
-    testOverride("/messageOverrides/" + type + "/all", msg ->
-        Assertions.assertTrue(msg.isStoreOffline()));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"memory", "file"})
   void testResponseTopicOverride(String type) throws Exception {
-    testOverride("/messageOverrides/" + type + "/all", msg ->
+    testOverride("/messageOverrides/" + type + "/all", false, msg ->
         Assertions.assertEquals("/override/response", msg.getResponseTopic()));
   }
   @ParameterizedTest
   @ValueSource(strings = {"memory", "file"})
   void testPriorityOverride(String type) throws Exception {
-    testOverride("/messageOverrides/" + type + "/all", msg ->
+    testOverride("/messageOverrides/" + type + "/all", false, msg ->
         Assertions.assertEquals(Priority.NORMAL, msg.getPriority()));
   }
 
@@ -102,7 +96,7 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
   @ValueSource(strings = {"memory", "file"})
   void testAllOverridesMemory(String type) throws Exception {
     long expectedExpiry = System.currentTimeMillis() + 10000;
-    testOverride("/messageOverrides/"+type+"/all", msg -> {
+    testOverride("/messageOverrides/"+type+"/all", false, msg -> {
       long actualExpiry = msg.getExpiry();
       Assertions.assertTrue(Math.abs(actualExpiry - expectedExpiry) < 100,
           "Expected expiry near " + expectedExpiry + " but got " + actualExpiry);
@@ -111,14 +105,31 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
       Assertions.assertEquals("application/xml", msg.getContentType());
       Assertions.assertEquals("test-schema", msg.getSchemaId());
       Assertions.assertEquals(Priority.NORMAL, msg.getPriority());
-      Assertions.assertTrue(msg.isStoreOffline());
       Assertions.assertTrue(msg.isRetain());
       Assertions.assertEquals("mval", msg.getMeta().get("mkey"));
       Assertions.assertEquals("dval", msg.getDataMap().get("dkey").getData());
     });
   }
 
-  private void testOverride(String namespace, java.util.function.Consumer<Message> validator) throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"memory", "file"})
+  void testAllOverridesInverted(String type) throws Exception {
+    long expectedExpiry = System.currentTimeMillis() + 2000;
+    testOverride("/messageOverrides/" + type + "/all-inverted", true, msg -> {
+      long actualExpiry = msg.getExpiry();
+      Assertions.assertTrue(Math.abs(actualExpiry - expectedExpiry) < 100,
+          "Expected expiry near " + expectedExpiry + " but got " + actualExpiry);
+      Assertions.assertEquals(QualityOfService.AT_LEAST_ONCE, msg.getQualityOfService());
+      Assertions.assertEquals("/not/override/response", msg.getResponseTopic());
+      Assertions.assertEquals("text/plain", msg.getContentType());
+      Assertions.assertEquals("other-schema", msg.getSchemaId());
+      Assertions.assertEquals(Priority.ONE_BELOW_NORMAL, msg.getPriority());
+      Assertions.assertFalse(msg.isRetain());
+    });
+  }
+
+
+  private void testOverride(String namespace, boolean useInverseMessage, Consumer<Message> validator) throws Exception {
     Session session = SessionManager.getInstance().create(
         new SessionContextBuilder("test_" + namespace, new ProtocolClientConnection(new FakeProtocol(this)))
             .setPersistentSession(true).build(), this);
@@ -135,13 +146,22 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
     this.lastMessage = null;
 
     MessageBuilder messageBuilder = new MessageBuilder();
-    messageBuilder.setOpaqueData("test".getBytes());
-    messageBuilder.setStoreOffline(false);
-    messageBuilder.setRetain(false);
-    messageBuilder.setSchemaId("");
-    messageBuilder.setResponseTopic("/initial");
-    messageBuilder.setPriority(Priority.ONE_BELOW_NORMAL);
-    messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
+    if(useInverseMessage){
+      messageBuilder.setRetain(true);
+      messageBuilder.setSchemaId("test-schema");
+      messageBuilder.setResponseTopic("/override/response");
+      messageBuilder.setPriority(Priority.NORMAL);
+      messageBuilder.setContentType("application/xml");
+      messageBuilder.setQoS(QualityOfService.EXACTLY_ONCE);
+    }
+    else {
+      messageBuilder.setOpaqueData("test".getBytes());
+      messageBuilder.setRetain(false);
+      messageBuilder.setSchemaId("");
+      messageBuilder.setResponseTopic("/initial");
+      messageBuilder.setPriority(Priority.ONE_BELOW_NORMAL);
+      messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
+    }
     destination.storeMessage(messageBuilder.build());
 
     WaitForState.waitFor(1, TimeUnit.SECONDS, () -> counter.get() > 0);

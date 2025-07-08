@@ -15,7 +15,7 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
 
   public MessageOverrideConfig(ConfigurationProperties properties) {
     this.expiry = properties.getLongProperty("expiry", -1);
-    this.priority = Priority.getInstance(properties.getIntProperty("priority", Priority.NORMAL.getValue()));
+    this.priority = Priority.valueOf (properties.getProperty("priority", Priority.NORMAL.name()));
     String qos = properties.getProperty("qos", null);
     if(qos != null) {
       this.qualityOfService= QualityOfService.valueOf(qos);
@@ -23,13 +23,6 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     this.responseTopic = properties.getProperty("responseTopic", null);
     this.contentType = properties.getProperty("contentType", null);
     this.schemaId = properties.getProperty("schemaId", null);
-    if(properties.containsKey("storeOffline")) {
-      this.storeOffline = properties.getBooleanProperty("storeOffline",false);
-    }
-    else{
-      this.storeOffline = null;
-    }
-
     if(properties.containsKey("retain")) {
       this.retain = properties.getBooleanProperty("retain",false);
     }
@@ -61,7 +54,6 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     properties.put("responseTopic", this.responseTopic);
     properties.put("contentType", this.contentType);
     properties.put("schemaId", this.schemaId);
-    properties.put("storeOffline", this.storeOffline);
     properties.put("retain", this.retain);
     properties.put("meta", this.meta);
     properties.put("dataMap", this.dataMap);
@@ -103,10 +95,6 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     }
     if (!Objects.equals(this.retain, newConfig.getRetain())) {
       this.retain = newConfig.getRetain();
-      hasChanged = true;
-    }
-    if (!Objects.equals(this.storeOffline, newConfig.getStoreOffline())) {
-      this.storeOffline = newConfig.getStoreOffline();
       hasChanged = true;
     }
     if (!Objects.equals(this.meta, newConfig.getMeta())) {

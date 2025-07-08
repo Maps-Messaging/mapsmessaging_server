@@ -35,9 +35,6 @@ public class MessageOverrides {
   public static Message setOverrides(MessageOverrideDTO messageOverride, Message message) {
     if(messageOverride == null) return message;
     MessageBuilder messageBuilder = new MessageBuilder(message);
-    if(messageOverride.getStoreOffline() != null){
-      messageBuilder.setStoreOffline(messageOverride.getStoreOffline());
-    }
     if(messageOverride.getQualityOfService() != null){
       messageBuilder.setQualityOfService(messageOverride.getQualityOfService());
     }

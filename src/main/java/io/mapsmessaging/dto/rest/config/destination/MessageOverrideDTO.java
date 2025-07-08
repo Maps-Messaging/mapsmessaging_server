@@ -53,9 +53,6 @@ public class MessageOverrideDTO extends BaseConfigDTO {
   @Schema(description = "Override schema ID", example = "default-schema-id")
   protected String schemaId;
 
-  @Schema(description = "Override storeOffline flag", example = "true")
-  protected Boolean storeOffline;
-
   @Schema(description = "Override retain message flag", example = "true")
   protected Boolean retain;
 

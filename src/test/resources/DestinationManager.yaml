@@ -67,7 +67,6 @@ DestinationManager:
         responseTopic: /override/response
         contentType: application/xml
         schemaId: test-schema
-        storeOffline: true
         retain: true
         meta:
           mkey: mval
@@ -122,9 +121,34 @@ DestinationManager:
         responseTopic: /override/response
         contentType: application/xml
         schemaId: test-schema
-        storeOffline: true
         retain: true
         meta:
           mkey: mval
         dataMap:
           dkey: dval
+
+    - name: file-all-inverted
+      directory: ./target/testOverrides/file/all-inverted
+      namespace: /messageOverrides/file/all-inverted
+      type: File
+      messageOverrides:
+        expiry: 2000                                 # Lower than original (10000)
+        qos: AT_LEAST_ONCE             # Lower QoS than EXACTLY_ONCE
+        responseTopic: /not/override/response       # Different topic
+        contentType: text/plain                     # Different MIME type
+        schemaId: other-schema                      # Different schema
+        priority: ONE_BELOW_NORMAL                  # Lower than NORMAL
+        retain: false                               # Was true
+
+    - name: memory-all-inverted
+      directory: ./target/testOverrides/memory/all-inverted
+      namespace: /messageOverrides/memory/all-inverted
+      type: File
+      messageOverrides:
+        expiry: 2000                                 # Lower than original (10000)
+        qos: AT_LEAST_ONCE             # Lower QoS than EXACTLY_ONCE
+        responseTopic: /not/override/response       # Different topic
+        contentType: text/plain                     # Different MIME type
+        schemaId: other-schema                      # Different schema
+        priority: ONE_BELOW_NORMAL                  # Lower than NORMAL
+        retain: false                               # Was true
