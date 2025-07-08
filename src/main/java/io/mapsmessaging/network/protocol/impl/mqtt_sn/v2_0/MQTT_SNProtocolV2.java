@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -57,7 +58,7 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
       @NonNull @NotNull SocketAddress remoteClient,
       @NonNull @NotNull SelectorTask selectorTask,
       @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration,
-      @NonNull @NotNull Connect connect
+      @NonNull @NotNull Connect connect, @NonNull @NotNull MqttSnConfig mqttSnConfig
   ) {
     super(
         factory,
@@ -66,7 +67,8 @@ public class MQTT_SNProtocolV2 extends MQTT_SNProtocol {
         selectorTask,
         "MQTT-SN 2.0 Protocol on " + endPoint.getName(),
         new PacketFactoryV2(),
-        registeredTopicConfiguration);
+        registeredTopicConfiguration,
+        mqttSnConfig);
     logger.log(ServerLogMessages.MQTT_SN_START, endPoint.getName());
     stateEngine.setState(new InitialConnectionState());
     addressKey = connect.getFromAddress();

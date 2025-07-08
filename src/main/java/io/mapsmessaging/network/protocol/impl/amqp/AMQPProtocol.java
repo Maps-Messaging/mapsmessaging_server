@@ -65,7 +65,7 @@ public class AMQPProtocol extends Protocol {
   private String sessionId;
 
   public AMQPProtocol(EndPoint endPoint, Packet packet) throws IOException {
-    super(endPoint);
+    super(endPoint,  endPoint.getConfig().getProtocolConfig("amqp"));
     version = "1.0";
     logger = LoggerFactory.getLogger("AMQP Protocol on " + endPoint.getName());
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());

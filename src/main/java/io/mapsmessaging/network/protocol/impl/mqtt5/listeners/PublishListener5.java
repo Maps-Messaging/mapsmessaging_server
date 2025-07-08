@@ -26,6 +26,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -49,13 +50,13 @@ import java.util.concurrent.TimeUnit;
 public class PublishListener5 extends PacketListener5 {
 
   public static Message createMessage(String sessionId, Collection<MessageProperty> properties, Priority priority, boolean isRetain, byte[] payload, QualityOfService qos,
-      ProtocolMessageTransformation transformation) {
+      ProtocolMessageTransformation transformation, Protocol protocol)  {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "5");
     meta.put("sessionId", sessionId);
 
-    MessageBuilder mb = new MessageBuilder();
+    MessageBuilder mb =  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
     mb.setPriority(priority)
         .setRetain(isRetain)
         .setOpaqueData(payload)
@@ -194,7 +195,8 @@ public class PublishListener5 extends PacketListener5 {
                   publish.isRetain(),
                   publish.getPayload(),
                   publish.getQos(),
-                  protocol.getTransformation());
+                  protocol.getTransformation(),
+                  protocol);
           sent = processMessage(message, publish, session, response, destination);
         }
 

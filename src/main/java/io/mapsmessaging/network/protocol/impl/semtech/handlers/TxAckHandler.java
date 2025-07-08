@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.semtech.handlers;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayManager;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
@@ -50,7 +51,7 @@ public class TxAckHandler extends Handler {
       Map<String, String> meta = new LinkedHashMap<>();
       meta.put("protocol", "SemTech");
       meta.put("version", "" + VERSION);
-      MessageBuilder builder = new MessageBuilder();
+      MessageBuilder builder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
       builder.setOpaqueData(txAck.getJsonObject().getBytes(StandardCharsets.UTF_8));
       builder.setMeta(meta);
       Message message = builder.build();

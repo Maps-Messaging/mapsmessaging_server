@@ -26,6 +26,7 @@ import io.mapsmessaging.api.features.Priority;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Event;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
@@ -49,12 +50,11 @@ public abstract class EventListener implements FrameListener {
     metaData.put("version", engine.getProtocol().getVersion());
     metaData.put("sessionId", engine.getSession().getName());
 
-    MessageBuilder mb = new MessageBuilder();
+    MessageBuilder mb = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults());
     Message message = mb.setDataMap(dataMap)
         .setPriority(Priority.getInstance(event.getPriority()))
         .setOpaqueData(event.getData())
         .setMeta(metaData)
-        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setTransformation(engine.getProtocol().getTransformation())
         .setDelayed(event.getDelay())
         .setMessageExpiryInterval(event.getExpiry(), TimeUnit.SECONDS)

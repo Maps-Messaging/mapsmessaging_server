@@ -185,7 +185,8 @@ public class ConnectListener5 extends PacketListener5 {
               connect.isWillRetain(),
               connect.getWillMsg(),
               connect.getWillQOS(),
-              protocol.getTransformation());
+              protocol.getTransformation(),
+              protocol);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }
 

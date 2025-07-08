@@ -24,6 +24,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.semtech.GatewayInfo;
 import io.mapsmessaging.network.protocol.impl.semtech.SemTechProtocol;
 import io.mapsmessaging.network.protocol.impl.semtech.packet.PushAck;
@@ -55,7 +56,7 @@ public class PushDataHandler extends Handler {
           meta.put("protocol", "SemTech");
           meta.put("version", String.valueOf(VERSION));
 
-          MessageBuilder builder = new MessageBuilder();
+          MessageBuilder builder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
           builder.setOpaqueData(pushData.getJsonObject().getBytes(StandardCharsets.UTF_8));
           builder.setMeta(meta);
           Message message = builder.build();

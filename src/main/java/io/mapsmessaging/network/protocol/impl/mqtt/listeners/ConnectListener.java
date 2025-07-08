@@ -105,7 +105,7 @@ public class ConnectListener extends BaseConnectionListener {
   private CompletableFuture<Session> constructSession(EndPoint endPoint, Protocol protocol, String sessionId, Connect connect) {
     SessionContextBuilder scb = getBuilder(protocol, sessionId, connect.isCleanSession(), connect.getKeepAlive(), connect.getUsername(), connect.getPassword());
     if (connect.isWillFlag()) {
-      Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null, null);
+      Message message = PublishListener.createMessage(connect.getWillMsg(), Priority.NORMAL, connect.isWillRetain(), connect.getWillQOS(), protocol.getTransformation(), null, null, protocol);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }
     protocol.setKeepAlive(connect.getKeepAlive());

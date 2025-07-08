@@ -26,6 +26,7 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.ProtocolJMX;
@@ -70,8 +71,12 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   @Setter
   protected ProtocolMessageTransformation transformation;
 
-  protected Protocol(@NonNull @NotNull EndPoint endPoint) {
+  @Getter
+  protected final ProtocolConfigDTO protocolConfig;
+
+  protected Protocol(@NonNull @NotNull EndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) {
     this.endPoint = endPoint;
+    this.protocolConfig = protocolConfig;
     mbean = new ProtocolJMX(endPoint.getJMXTypePath(), this);
     connected = false;
     completed = false;
@@ -80,8 +85,9 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     endPoint.setBoundProtocol(this);
   }
 
-  protected Protocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress) {
+  protected Protocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull SocketAddress socketAddress, @NotNull @NonNull ProtocolConfigDTO protocolConfig) {
     this.endPoint = endPoint;
+    this.protocolConfig = protocolConfig;
     String endPointName = socketAddress.toString();
     endPointName = endPointName.replace(":", "_");
     List<String> jmsList = new ArrayList<>(endPoint.getJMXTypePath());

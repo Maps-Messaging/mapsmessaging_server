@@ -25,6 +25,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.nats.frames.*;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
@@ -78,12 +79,11 @@ public class PubListener implements FrameListener {
       metaData.put("version", engine.getProtocol().getVersion());
       metaData.put("sessionId", engine.getSession().getName());
 
-      MessageBuilder mb = new MessageBuilder();
+      MessageBuilder mb = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults());
       Message message = mb.setDataMap(dataMap)
           .setOpaqueData(msgFrame.getPayload())
           .setMeta(metaData)
           .setCorrelationData(msgFrame.getReplyTo())
-          .setQoS(QualityOfService.AT_LEAST_ONCE)
           .setTransformation(engine.getProtocol().getTransformation())
           .build();
       if (msgFrame instanceof HPayloadFrame) {

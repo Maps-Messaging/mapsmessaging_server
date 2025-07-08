@@ -23,6 +23,7 @@ import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.LocalProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -54,7 +55,7 @@ public class LocalLoopProtocol extends Protocol {
 
 
   public LocalLoopProtocol(@NonNull @NotNull EndPoint endPoint) {
-    super(endPoint);
+    super(endPoint, new ProtocolConfigDTO());
     logger = LoggerFactory.getLogger(LocalLoopProtocol.class);
     closed = false;
     nameMapping = new ConcurrentHashMap<>();

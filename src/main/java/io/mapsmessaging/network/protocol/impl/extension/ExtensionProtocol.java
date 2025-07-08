@@ -26,6 +26,7 @@ import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.network.EndPointURL;
@@ -62,7 +63,7 @@ public class ExtensionProtocol extends Protocol implements MessageListener, Clie
   private String sessionId;
 
   public ExtensionProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull Extension extension) {
-    super(endPoint);
+    super(endPoint, new ProtocolConfigDTO());
     endPointURL = new EndPointURL(endPoint.getConfig().getUrl());
     this.extension = extension;
     serverApi = new ServerApi();

@@ -26,6 +26,7 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveState;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
@@ -56,12 +57,12 @@ public abstract class PublishListener extends  Listener {
       protocol.sendResponse(response);
     }
     if (isDelete || process) {
-      destination.storeMessage(build(request));
+      destination.storeMessage(build(request, protocol));
     }
   }
 
-  protected Message build(BasePacket request){
-    MessageBuilder messageBuilder = new MessageBuilder();
+  protected Message build(BasePacket request, CoapProtocol protocol){
+    MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder( protocol.getProtocolConfig().getMessageDefaults());
 
     messageBuilder.setOpaqueData(request.getPayload());
     messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);

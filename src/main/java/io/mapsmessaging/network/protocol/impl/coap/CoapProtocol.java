@@ -95,7 +95,7 @@ public class CoapProtocol extends Protocol {
 
   protected CoapProtocol(@NonNull @NotNull EndPoint endPoint, @NonNull @NotNull CoapInterfaceManager coapInterfaceManager, @NonNull @NotNull SocketAddress socketAddress)
       throws LoginException, IOException {
-    super(endPoint, socketAddress);
+    super(endPoint, socketAddress, endPoint.getConfig().getProtocolConfig("coap"));
     lastAccess = new AtomicLong(System.currentTimeMillis());
     logger = LoggerFactory.getLogger(CoapProtocol.class);
     isClosed = false;
@@ -109,7 +109,7 @@ public class CoapProtocol extends Protocol {
     this.socketAddress = socketAddress;
     this.coapInterfaceManager = coapInterfaceManager;
     mtu = coapInterfaceManager.getMtu();
-    CoapConfig coapConfig = (CoapConfig) endPoint.getConfig().getProtocolConfig("coap");
+    CoapConfig coapConfig = (CoapConfig) protocolConfig;
     maxBlockSize = coapConfig.getMaxBlockSize();
     int idle = coapConfig.getIdleTime();
     keepAlive = idle * 1000L;

@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.coap.listeners;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.coap.CoapProtocol;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 
@@ -35,8 +36,8 @@ public class DeleteListener extends PublishListener {
   }
 
   @Override
-  protected Message build(BasePacket request){
-    MessageBuilder messageBuilder = new MessageBuilder();
+  protected Message build(BasePacket request, CoapProtocol protocol){
+    MessageBuilder messageBuilder = new MessageBuilder(); // this simply deletes the entry
     messageBuilder.setOpaqueData(null);
     messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
     messageBuilder.setRetain(true);

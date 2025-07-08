@@ -141,12 +141,22 @@ public class MessageBuilder {
   }
 
   public @NonNull @NotNull MessageBuilder setMeta(@Nullable Map<String, String> meta) {
-    this.meta = meta;
+    if(this.meta != null && meta != null) {
+      this.meta.putAll(meta);
+    }
+    else {
+      this.meta = meta;
+    }
     return this;
   }
 
   public @NonNull @NotNull MessageBuilder setDataMap(@Nullable Map<String, TypedData> dataMap) {
-    this.dataMap = dataMap;
+    if(this.dataMap != null && dataMap != null) {
+      this.dataMap.putAll(dataMap);
+    }
+    else {
+      this.dataMap = dataMap;
+    }
     return this;
   }
 

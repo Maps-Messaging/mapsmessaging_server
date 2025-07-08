@@ -27,6 +27,7 @@ import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -69,7 +70,7 @@ public class PublishListener extends PacketListener {
     meta.put("version", "1.2");
     meta.put("sessionId", session.getName());
 
-    MessageBuilder messageBuilder = new MessageBuilder();
+    MessageBuilder messageBuilder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
     messageBuilder.setQoS(qos)
         .setMeta(meta)
         .setRetain(publish.retain())

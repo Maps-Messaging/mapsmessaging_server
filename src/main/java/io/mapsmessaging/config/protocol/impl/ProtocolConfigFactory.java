@@ -21,6 +21,7 @@ package io.mapsmessaging.config.protocol.impl;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigHelper;
+import io.mapsmessaging.config.destination.MessageOverrideConfig;
 import io.mapsmessaging.config.protocol.ConnectionAuthConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
@@ -34,6 +35,9 @@ public class ProtocolConfigFactory {
     config.put("type", protocolConfig.getType());
     if (protocolConfig.getRemoteAuthConfig() != null) {
       config.put(REMOTE_AUTH_CONFIG, ((Config) protocolConfig.getRemoteAuthConfig()).toConfigurationProperties());
+    }
+    if(protocolConfig.getMessageDefaults() != null) {
+      config.put("messageDefaults", protocolConfig.getMessageDefaults());
     }
     if(protocolConfig instanceof MqttConfigDTO){
       MqttConfigDTO mqttConfig = (MqttConfigDTO) protocolConfig;
@@ -50,6 +54,9 @@ public class ProtocolConfigFactory {
   public static void unpack(ConfigurationProperties config, ProtocolConfigDTO protocolConfigDTO) {
     if (config.getProperty(REMOTE_AUTH_CONFIG) != null) {
       protocolConfigDTO.setRemoteAuthConfig(new ConnectionAuthConfig((ConfigurationProperties) config.get(REMOTE_AUTH_CONFIG)));
+    }
+    if(config.getProperty("messageDefaults") != null) {
+      protocolConfigDTO.setMessageDefaults(new MessageOverrideConfig((ConfigurationProperties) config.get("messageDefaults")));
     }
     if (protocolConfigDTO instanceof MqttConfigDTO) {
       MqttConfig mqttConfig = (MqttConfig) protocolConfigDTO;
@@ -68,6 +75,9 @@ public class ProtocolConfigFactory {
 
     if (original.getRemoteAuthConfig() != null && updated.getRemoteAuthConfig() != null) {
       hasChanged = ((Config) original.getRemoteAuthConfig()).update(updated.getRemoteAuthConfig());
+    }
+    if(original.getMessageDefaults() != null && updated.getMessageDefaults() != null) {
+      hasChanged = ((Config) original.getMessageDefaults()).update(updated.getMessageDefaults());
     }
     if(original instanceof MqttConfig && updated instanceof MqttConfigDTO){
       MqttConfigDTO mqttConfigOriginal = (MqttConfigDTO) original;

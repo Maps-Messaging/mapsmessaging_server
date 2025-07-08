@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -68,6 +69,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   private final boolean enableAddressChanges;
   private final boolean advertiseGateway;
 
+  private final MqttSnConfig mqttSnConfig;
+
 
   public MQTTSNInterfaceManager(byte gatewayId, SelectorTask selectorTask, EndPoint endPoint) {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
@@ -75,7 +78,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.selectorTask = selectorTask;
     advertiserTask = null;
     this.endPoint = endPoint;
-    MqttSnConfig mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -98,7 +101,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     logger = LoggerFactory.getLogger("MQTT-SN Protocol on " + endPoint.getName());
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
-    MqttSnConfig mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
@@ -208,7 +211,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       // Cool, so we have a new connect, so let's create a new protocol Impl and add it into our list
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
-      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn);
+      MQTT_SNProtocol impl = new MQTT_SNProtocol(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, (Connect) mqttSn, mqttSnConfig);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier( ((Connect) mqttSn).getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
@@ -219,7 +222,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       // of current sessions
       UDPFacadeEndPoint facade = new UDPFacadeEndPoint(endPoint, packet.getFromAddress(), endPoint.getServer());
       io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect connectV2 = (io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.Connect) mqttSn;
-      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2);
+      MQTT_SNProtocol impl = new MQTT_SNProtocolV2(this, facade, packet.getFromAddress(), selectorTask, registeredTopicConfiguration, connectV2, mqttSnConfig);
       UDPSessionState<MQTT_SNProtocol> state = new UDPSessionState<>(impl);
       state.setClientIdentifier(connectV2.getClientId());
       currentSessions.addState(packet.getFromAddress(), state);
@@ -270,7 +273,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   private void publishRegisteredTopic(String topic, Publish publish) throws IOException {
-    MessageBuilder messageBuilder = new MessageBuilder();
+    MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder(mqttSnConfig.getMessageDefaults());
     if (publish.retain()) {
       messageBuilder.storeOffline(true)
           .setRetain(true)

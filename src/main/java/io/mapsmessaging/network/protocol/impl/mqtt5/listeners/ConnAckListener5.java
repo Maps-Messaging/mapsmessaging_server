@@ -153,7 +153,8 @@ public class ConnAckListener5 extends PacketListener5 {
               connect.isWillRetain(),
               connect.getWillMsg(),
               connect.getWillQOS(),
-              protocol.getTransformation());
+              protocol.getTransformation(),
+              protocol);
       scb.setWillMessage(message).setWillTopic(connect.getWillTopic());
     }
 
@@ -169,46 +170,5 @@ public class ConnAckListener5 extends PacketListener5 {
     AuthenticationContext context = protocol.getAuthenticationContext();
     scb.isAuthorized(context != null && context.isComplete() && context.getUsername() != null);
     return SessionManager.getInstance().create(scb.build(), protocol);
-  }
-
-  private boolean parseProperties(MQTT5Protocol protocol, Connect5 connect, SessionContextBuilder scb) {
-    boolean sendResponseInfo = false;
-    scb.setSessionExpiry(DefaultConstants.SESSION_TIME_OUT);
-    scb.setReceiveMaximum(DefaultConstants.CLIENT_RECEIVE_MAXIMUM);
-    for (MessageProperty property : connect.getProperties().values()) {
-      switch (property.getId()) {
-        case MessagePropertyFactory.SESSION_EXPIRY_INTERVAL:
-          scb.setSessionExpiry(((SessionExpiryInterval) property).getExpiry());
-          break;
-
-        case MessagePropertyFactory.RECEIVE_MAXIMUM:
-          scb.setReceiveMaximum(((ReceiveMaximum) property).getReceiveMaximum());
-          break;
-
-        case MessagePropertyFactory.MAXIMUM_PACKET_SIZE:
-          protocol.setMaxBufferSize(((MaximumPacketSize) property).getMaximumPacketSize());
-          break;
-
-        case MessagePropertyFactory.TOPIC_ALIAS_MAXIMUM:
-          protocol.getServerTopicAliasMapping().setMaximum(((TopicAliasMaximum) property).getTopicAliasMaximum());
-          break;
-
-        case MessagePropertyFactory.REQUEST_RESPONSE_INFORMATION:
-          sendResponseInfo = true;
-          break;
-
-        case MessagePropertyFactory.REQUEST_PROBLEM_INFORMATION:
-          protocol.setSendProblemInformation(true);
-          break;
-
-        case MessagePropertyFactory.USER_PROPERTY:
-          scb.setUserProperty((UserProperty) property);
-          break;
-
-        default:
-          logger.log(ServerLogMessages.MQTT5_UNHANDLED_PROPERTY, property.toString());
-      }
-    }
-    return sendResponseInfo;
   }
 }

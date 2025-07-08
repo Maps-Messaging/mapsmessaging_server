@@ -22,6 +22,7 @@ package io.mapsmessaging.dto.rest.config.protocol;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.*;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -65,7 +66,7 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
-public abstract class ProtocolConfigDTO extends BaseConfigDTO {
+public class ProtocolConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the protocol configuration", allowableValues = {
       "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "websocket", "extension"
@@ -77,4 +78,7 @@ public abstract class ProtocolConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Remote authentication configuration for the protocol")
   protected ConnectionAuthConfigDTO remoteAuthConfig;
+
+  @Schema(description = "Specify the message defaults for this protocol")
+  protected MessageOverrideDTO messageDefaults;
 }

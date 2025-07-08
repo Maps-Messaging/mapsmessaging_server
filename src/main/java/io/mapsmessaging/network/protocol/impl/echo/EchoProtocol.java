@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.echo;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.dto.rest.config.protocol.impl.LoRaProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -46,7 +47,7 @@ public class EchoProtocol extends Protocol implements Selectable {
   private final Logger logger = LoggerFactory.getLogger(EchoProtocol.class);
 
   public EchoProtocol(EndPoint endPoint, Packet pck) throws IOException {
-    super(endPoint);
+    super(endPoint, new LoRaProtocolConfigDTO());
     packet = pck;
     endPoint.sendPacket(pck);
     endPoint.register(SelectionKey.OP_READ, this);

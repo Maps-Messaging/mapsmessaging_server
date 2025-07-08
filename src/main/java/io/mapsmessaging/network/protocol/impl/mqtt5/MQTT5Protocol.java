@@ -108,7 +108,7 @@ public class MQTT5Protocol extends Protocol {
   private final MqttV5Config mqttConfig;
 
   public MQTT5Protocol(EndPoint endPoint) throws IOException {
-    super(endPoint);
+    super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
     logger = LoggerFactory.getLogger("MQTT 5.0 Protocol on " + endPoint.getName());
 
     isClosing = false;
@@ -119,7 +119,7 @@ public class MQTT5Protocol extends Protocol {
     logger.log(ServerLogMessages.MQTT5_INITIALISATION);
     clientTopicAliasMapping = new TopicAliasMapping("Client");
     serverTopicAliasMapping = new TopicAliasMapping("Server");
-    mqttConfig = (MqttV5Config) endPoint.getConfig().getProtocolConfig("mqtt");
+    mqttConfig = (MqttV5Config)protocolConfig;
     maxBufferSize = mqttConfig.getMaximumBufferSize();
     serverReceiveMaximum = mqttConfig.getServerReceiveMaximum();
     clientReceiveMaximum = mqttConfig.getClientReceiveMaximum();

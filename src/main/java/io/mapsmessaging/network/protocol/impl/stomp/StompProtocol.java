@@ -71,10 +71,10 @@ public class StompProtocol extends Protocol {
 
 
   public StompProtocol(EndPoint endPoint) {
-    super(endPoint);
+    super(endPoint, endPoint.getConfig().getProtocolConfig("stomp"));
     logger = LoggerFactory.getLogger("STOMP Protocol on " + endPoint.getName());
     logger.log(ServerLogMessages.STOMP_STARTING, endPoint.toString());
-    StompConfigDTO stompConfigDTO = ((StompConfigDTO)endPoint.getConfig().getProtocolConfig("stomp"));
+    StompConfigDTO stompConfigDTO = (StompConfigDTO)protocolConfig;
     int maxBufferSize = stompConfigDTO.getMaxBufferSize();
     maxReceiveSize = stompConfigDTO.getMaxReceive();
     base64Encode = stompConfigDTO.isBase64EncodeBinary();

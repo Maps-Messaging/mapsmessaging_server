@@ -65,10 +65,10 @@ public class NatsProtocol extends Protocol {
   private NatsFrame activeFrame;
 
   public NatsProtocol(EndPoint endPoint) {
-    super(endPoint);
+    super(endPoint, endPoint.getConfig().getProtocolConfig("nats"));
     logger = LoggerFactory.getLogger("NATS Protocol on " + endPoint.getName());
     logger.log(ServerLogMessages.NATS_STARTING, endPoint.toString());
-    natsConfig = (NatsConfigDTO) endPoint.getConfig().getProtocolConfig("nats");
+    natsConfig = (NatsConfigDTO) protocolConfig;
     int maxBufferSize = natsConfig.getMaxBufferSize();
     maxReceiveSize = natsConfig.getMaxReceive();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());

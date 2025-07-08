@@ -26,6 +26,7 @@ import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.NmeaProtocolInformation;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.location.LocationManager;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -70,7 +71,7 @@ public class NMEAProtocol extends Protocol {
   private final String destinationName;
 
   public NMEAProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
-    super(endPoint);
+    super(endPoint,  endPoint.getConfig().getProtocolConfig("NMEA-0183"));
     if (endPoint instanceof StreamEndPoint) {
       ((StreamEndPoint) endPoint).setStreamHandler(new NMEAStreamHandler());
     }
@@ -182,14 +183,10 @@ public class NMEAProtocol extends Protocol {
         sentenceMap.put(sentenceId, destination);
       }
       if (destination != null) {
-        MessageBuilder messageBuilder = new MessageBuilder();
+        MessageBuilder messageBuilder = MessageOverrides.createMessageBuilder(protocolConfig.getMessageDefaults());
         messageBuilder.setOpaqueData(processed.getBytes())
-            .setRetain(false)
-            .storeOffline(false)
             .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
-            .setQoS(QualityOfService.AT_MOST_ONCE)
             .setTransformation(getTransformation());
-
         if (transformer != null) {
           transformer.transform(messageBuilder);
         }

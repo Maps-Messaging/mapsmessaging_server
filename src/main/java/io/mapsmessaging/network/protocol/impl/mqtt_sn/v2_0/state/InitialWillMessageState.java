@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
@@ -60,7 +61,7 @@ public class InitialWillMessageState implements State {
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLMSG && oldSession == null) {
       WillMessage willMessage = (WillMessage) mqtt;
-      MessageBuilder messageBuilder = new MessageBuilder();
+      MessageBuilder messageBuilder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
       messageBuilder.setOpaqueData(willMessage.getMessage())
           .setTransformation(protocol.getTransformation())
           .setQoS(qualityOfService)

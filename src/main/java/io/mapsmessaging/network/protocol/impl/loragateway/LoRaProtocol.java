@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.loragateway;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.dto.rest.config.network.impl.LoRaConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.LoRaProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.LoraProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -96,7 +97,7 @@ public class LoRaProtocol extends Protocol {
 
 
   public LoRaProtocol(EndPoint endPoint) throws IOException {
-    super(new LoRaProtocolEndPoint(endPoint));
+    super(new LoRaProtocolEndPoint(endPoint), new LoRaProtocolConfigDTO());
     logger = LoggerFactory.getLogger("LoRa Gateway on " + endPoint.getName());
     dataHandler = new DataHandlerFactory();
     EndPointURL endPointURL = new EndPointURL(endPoint.getConfig().getUrl());

@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -77,8 +78,9 @@ public class MQTT_SNProtocol extends Protocol {
       @NonNull @NotNull SelectorTask selectorTask,
       @NonNull @NotNull String loggerName,
       @NonNull @NotNull PacketFactory packetFactory,
-      @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration) {
-    super(endPoint, remoteClient);
+      @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration,
+      @NonNull @NotNull MqttSnConfig mqttSnConfig) {
+    super(endPoint, remoteClient, mqttSnConfig);
     this.logger = LoggerFactory.getLogger(loggerName);
     this.selectorTask = selectorTask;
     this.factory = factory;
@@ -98,8 +100,9 @@ public class MQTT_SNProtocol extends Protocol {
       @NonNull @NotNull SocketAddress remoteClient,
       @NonNull @NotNull SelectorTask selectorTask,
       @NonNull @NotNull RegisteredTopicConfiguration registeredTopicConfiguration,
-      @NonNull @NotNull Connect connect) {
-    this(factory, endPoint, remoteClient, selectorTask, "MQTT-SN 1.2 Protocol on " + endPoint.getName(), new PacketFactory(), registeredTopicConfiguration);
+      @NonNull @NotNull Connect connect,
+      @NonNull @NotNull MqttSnConfig mqttSnConfig) {
+    this(factory, endPoint, remoteClient, selectorTask, "MQTT-SN 1.2 Protocol on " + endPoint.getName(), new PacketFactory(), registeredTopicConfiguration, mqttSnConfig);
     logger.log(ServerLogMessages.MQTT_SN_START);
     stateEngine.setState(new InitialConnectionState());
     addressKey = connect.getFromAddress();

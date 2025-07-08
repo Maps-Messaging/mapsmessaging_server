@@ -65,7 +65,7 @@ public class SemTechProtocol extends Protocol {
   }
 
   protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint, String sessionId) throws IOException {
-    super(endPoint);
+    super(endPoint, endPoint.getConfig().getProtocolConfig("semtech"));
     logger = LoggerFactory.getLogger("SemTech Protocol on " + endPoint.getName());
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
@@ -77,7 +77,7 @@ public class SemTechProtocol extends Protocol {
         "anonymous"
     );
 
-    SemtechConfigDTO semtechConfig = (SemtechConfigDTO) endPoint.getConfig().getProtocolConfig("semtech");
+    SemtechConfigDTO semtechConfig = (SemtechConfigDTO) protocolConfig;
     int maxQueued = semtechConfig.getMaxQueued();
     SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), new ProtocolClientConnection(this));
     sessionContext.setPersistentSession(false);

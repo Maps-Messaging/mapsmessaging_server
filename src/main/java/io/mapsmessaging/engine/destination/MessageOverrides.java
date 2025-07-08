@@ -20,6 +20,8 @@
 package io.mapsmessaging.engine.destination;
 
 import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.features.Priority;
+import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.dto.rest.config.destination.MessageOverrideDTO;
@@ -32,9 +34,26 @@ public class MessageOverrides {
   private MessageOverrides() {
   }
 
+  public static MessageBuilder createMessageBuilder(MessageOverrideDTO messageOverride) {
+    MessageBuilder messageBuilder = new MessageBuilder();
+    if(messageOverride != null) {
+      // Set global defaults here
+      messageBuilder
+          .setQoS(QualityOfService.AT_MOST_ONCE)
+          .setPriority(Priority.NORMAL)
+          .setRetain(false);
+
+      applyOverrides(messageBuilder, messageOverride);
+    }
+    return messageBuilder;
+  }
+
   public static Message setOverrides(MessageOverrideDTO messageOverride, Message message) {
     if(messageOverride == null) return message;
-    MessageBuilder messageBuilder = new MessageBuilder(message);
+    return applyOverrides(new MessageBuilder(message), messageOverride).build();
+  }
+
+  private static MessageBuilder applyOverrides(MessageBuilder messageBuilder, MessageOverrideDTO messageOverride) {
     if(messageOverride.getQualityOfService() != null){
       messageBuilder.setQualityOfService(messageOverride.getQualityOfService());
     }
@@ -57,20 +76,24 @@ public class MessageOverrides {
       messageBuilder.setSchemaId(messageOverride.getSchemaId());
     }
     if(messageOverride.getDataMap() != null){
-      Map<String, TypedData> dataMap = message.getDataMap();
+      Map<String, TypedData> dataMap = messageBuilder.getDataMap();
+      if(dataMap == null){
+        dataMap = new HashMap<>();
+        messageBuilder.setDataMap(dataMap);
+      }
       for(Map.Entry<String, Object> entry : messageOverride.getDataMap().entrySet()){
         dataMap.put(entry.getKey(), new TypedData(entry.getValue()));
       }
     }
     if(messageOverride.getMeta() != null){
-      Map<String, String> meta = message.getMeta();
+      Map<String, String> meta = messageBuilder.getMeta();
       if(meta == null){
         meta = new HashMap<>();
         messageBuilder.setMeta(meta);
       }
       meta.putAll(messageOverride.getMeta());
     }
-    return messageBuilder.build();
+    return messageBuilder;
   }
 
 }

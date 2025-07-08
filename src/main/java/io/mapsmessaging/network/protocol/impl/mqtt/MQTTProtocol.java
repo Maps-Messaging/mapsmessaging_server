@@ -77,14 +77,14 @@ public class MQTTProtocol extends Protocol {
 
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
-    super(endPoint);
+    super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
     logger = LoggerFactory.getLogger("MQTT 3.1.1 Protocol on " + endPoint.getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
     topicNameMapping = new ConcurrentHashMap<>();
     logger.log(ServerLogMessages.MQTT_START);
-    mqttConfig = (MqttConfigDTO) endPoint.getConfig().getProtocolConfig("mqtt");
+    mqttConfig = (MqttConfigDTO) protocolConfig;
     maxBufferSize =  mqttConfig.getMaximumBufferSize();
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
     packetListenerFactory = new PacketListenerFactory();

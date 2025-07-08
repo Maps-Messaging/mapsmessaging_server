@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.websockets;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -37,7 +38,7 @@ public class WebSocketProtocol extends Protocol {
   private final Connecting connectingHandler;
 
   public WebSocketProtocol(EndPoint endPoint, Packet packet) throws IOException {
-    super(endPoint);
+    super(endPoint, new ProtocolConfigDTO());
     connectingHandler = new Connecting();
     processPacket(packet);
   }

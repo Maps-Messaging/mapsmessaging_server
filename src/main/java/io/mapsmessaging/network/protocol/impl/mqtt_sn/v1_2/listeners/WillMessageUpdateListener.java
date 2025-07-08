@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.listeners;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.WillTask;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.engine.session.will.WillDetails;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -44,7 +45,7 @@ public class WillMessageUpdateListener extends PacketListener {
       willDetails.setSessionId(session.getName());
       willDetails.setVersion(protocol.getVersion());
       willDetails.setDelay(0);
-      MessageBuilder messageBuilder = new MessageBuilder();
+      MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
       messageBuilder.setOpaqueData(payload);
       willDetails.setMsg(messageBuilder.build());
       session.updateWillTopic(willDetails);

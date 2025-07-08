@@ -24,6 +24,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.TransactionManager;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.transformers.MessageTranslator;
@@ -218,7 +219,8 @@ public class DeliveryEventListener extends BaseEventListener {
     org.apache.qpid.proton.message.Message protonMsg = parseIncomingMessage(receiver);
 
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(protonMsg.getMessageAnnotations());
-    MessageBuilder messageBuilder = translator.decode(new MessageBuilder(), protonMsg);
+    MessageBuilder mb = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+    MessageBuilder messageBuilder = translator.decode(mb, protonMsg);
     messageBuilder.storeOffline(true);
     messageBuilder.setTransformation(protocol.getTransformation());
 

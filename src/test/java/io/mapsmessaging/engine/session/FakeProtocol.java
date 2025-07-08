@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -35,7 +36,7 @@ public class FakeProtocol extends Protocol {
   private MessageListener listener;
 
   public FakeProtocol(MessageListener listener) {
-    super(new FakeEndPoint(counter.incrementAndGet(), null));
+    super(new FakeEndPoint(counter.incrementAndGet(), null), new ProtocolConfigDTO());
     this.listener = listener;
     keepAlive = 10;
   }

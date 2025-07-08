@@ -27,6 +27,7 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.TypedData;
 import io.mapsmessaging.api.transformers.Transformer;
+import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -45,13 +46,13 @@ import java.util.concurrent.ExecutionException;
 
 public class PublishListener extends PacketListener {
 
-  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation, Transformer transformer, String schemaId) {
+  public static Message createMessage(byte[] msg, Priority priority, boolean retain, QualityOfService qos, ProtocolMessageTransformation transformation, Transformer transformer, String schemaId, Protocol protocol) {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT");
     meta.put("version", "4");
 
     HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
-    MessageBuilder mb = new MessageBuilder();
+    MessageBuilder mb = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
     return mb.setDataMap(dataHashMap)
         .setPriority(priority)
         .setRetain(retain)
@@ -161,7 +162,8 @@ public class PublishListener extends PacketListener {
         publish.getQos(),
         protocol.getTransformation(),
         transformer,
-        destination.getSchema().getUniqueId()
+        destination.getSchema().getUniqueId(),
+        protocol
     );
     ParserExecutor parserExecutor = protocol.getParser(publish.getDestinationName());
     if(parserExecutor != null && !parserExecutor.evaluate(message)){
