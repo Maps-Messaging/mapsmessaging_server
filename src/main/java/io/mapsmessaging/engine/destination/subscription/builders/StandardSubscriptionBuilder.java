@@ -38,7 +38,7 @@ public class StandardSubscriptionBuilder extends SubscriptionBuilder {
 
   public StandardSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, boolean isPersistent) throws IOException {
     super(destination, context);
-    this.isPersistent = isPersistent;
+    this.isPersistent = destination.isPersistent() && isPersistent;
   }
 
   public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long sessionUniqueId) throws IOException {
