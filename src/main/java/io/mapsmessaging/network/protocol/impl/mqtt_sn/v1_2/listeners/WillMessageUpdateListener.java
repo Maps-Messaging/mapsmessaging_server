@@ -45,9 +45,9 @@ public class WillMessageUpdateListener extends PacketListener {
       willDetails.setSessionId(session.getName());
       willDetails.setVersion(protocol.getVersion());
       willDetails.setDelay(0);
-      MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+      MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(payload);
-      willDetails.setMsg(messageBuilder.build());
+      willDetails.setMsg(  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build());
       session.updateWillTopic(willDetails);
     } else {
       task.updateMessage(payload);

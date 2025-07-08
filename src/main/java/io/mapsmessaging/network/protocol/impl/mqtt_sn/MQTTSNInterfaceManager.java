@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.logging.Logger;
@@ -273,7 +274,7 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
   }
 
   private void publishRegisteredTopic(String topic, Publish publish) throws IOException {
-    MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder(mqttSnConfig.getMessageDefaults());
+    MessageBuilder messageBuilder =  new MessageBuilder();
     if (publish.retain()) {
       messageBuilder.storeOffline(true)
           .setRetain(true)
@@ -287,7 +288,8 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     }
     messageBuilder.setOpaqueData(publish.getMessage());
     try {
-      SessionManager.getInstance().publish(topic, messageBuilder.build()).get(1, TimeUnit.MINUTES);
+      Message message = MessageOverrides.createMessageBuilder(mqttSnConfig.getMessageDefaults(), messageBuilder).build();
+      SessionManager.getInstance().publish(topic, message).get(1, TimeUnit.MINUTES);
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Thread.currentThread().interrupt();
       throw new IOException(e);

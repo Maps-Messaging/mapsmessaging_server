@@ -219,12 +219,12 @@ public class DeliveryEventListener extends BaseEventListener {
     org.apache.qpid.proton.message.Message protonMsg = parseIncomingMessage(receiver);
 
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(protonMsg.getMessageAnnotations());
-    MessageBuilder mb = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+    MessageBuilder mb = new MessageBuilder();
     MessageBuilder messageBuilder = translator.decode(mb, protonMsg);
     messageBuilder.storeOffline(true);
     messageBuilder.setTransformation(protocol.getTransformation());
 
-    Message message = messageBuilder.build();
+    Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build();
     DeliveryState deliveryState = delivery.getRemoteState();
     Transaction transaction = null;
     if (deliveryState instanceof TransactionalState) {

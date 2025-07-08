@@ -49,9 +49,8 @@ public abstract class EventListener implements FrameListener {
     metaData.put("protocol", "STOMP");
     metaData.put("version", engine.getProtocol().getVersion());
     metaData.put("sessionId", engine.getSession().getName());
-
-    MessageBuilder mb = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults());
-    Message message = mb.setDataMap(dataMap)
+    MessageBuilder mb = new MessageBuilder();
+    mb.setDataMap(dataMap)
         .setPriority(Priority.getInstance(event.getPriority()))
         .setOpaqueData(event.getData())
         .setMeta(metaData)
@@ -59,6 +58,7 @@ public abstract class EventListener implements FrameListener {
         .setDelayed(event.getDelay())
         .setMessageExpiryInterval(event.getExpiry(), TimeUnit.SECONDS)
         .build();
+    Message message = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults(), mb).build();
     processEvent(engine, event, message);
   }
 

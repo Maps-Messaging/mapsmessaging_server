@@ -52,8 +52,8 @@ public class PublishListener extends PacketListener {
     meta.put("version", "4");
 
     HashMap<String, TypedData> dataHashMap = new LinkedHashMap<>();
-    MessageBuilder mb = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
-    return mb.setDataMap(dataHashMap)
+    MessageBuilder mb = new MessageBuilder();
+    mb.setDataMap(dataHashMap)
         .setPriority(priority)
         .setRetain(retain)
         .setOpaqueData(msg)
@@ -61,8 +61,8 @@ public class PublishListener extends PacketListener {
         .setQoS(qos)
         .storeOffline(qos.isStoreOffLine())
         .setTransformation(transformation)
-        .setDestinationTransformer(transformer)
-        .build();
+        .setDestinationTransformer(transformer);
+    return MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 
   private MQTTPacket getResponse(Publish publish){

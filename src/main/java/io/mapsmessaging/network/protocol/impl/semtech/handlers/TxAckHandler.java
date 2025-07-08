@@ -51,10 +51,10 @@ public class TxAckHandler extends Handler {
       Map<String, String> meta = new LinkedHashMap<>();
       meta.put("protocol", "SemTech");
       meta.put("version", "" + VERSION);
-      MessageBuilder builder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+      MessageBuilder builder = new MessageBuilder();
       builder.setOpaqueData(txAck.getJsonObject().getBytes(StandardCharsets.UTF_8));
       builder.setMeta(meta);
-      Message message = builder.build();
+      Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), builder).build();
       try {
         if (info != null) {
           info.getInbound().storeMessage(message);

@@ -34,15 +34,8 @@ public class MessageOverrides {
   private MessageOverrides() {
   }
 
-  public static MessageBuilder createMessageBuilder(MessageOverrideDTO messageOverride) {
-    MessageBuilder messageBuilder = new MessageBuilder();
+  public static MessageBuilder createMessageBuilder(MessageOverrideDTO messageOverride, MessageBuilder messageBuilder) {
     if(messageOverride != null) {
-      // Set global defaults here
-      messageBuilder
-          .setQoS(QualityOfService.AT_MOST_ONCE)
-          .setPriority(Priority.NORMAL)
-          .setRetain(false);
-
       applyOverrides(messageBuilder, messageOverride);
     }
     return messageBuilder;

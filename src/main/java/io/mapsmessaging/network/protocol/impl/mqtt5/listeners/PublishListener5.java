@@ -56,7 +56,7 @@ public class PublishListener5 extends PacketListener5 {
     meta.put("version", "5");
     meta.put("sessionId", sessionId);
 
-    MessageBuilder mb =  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+    MessageBuilder mb = new MessageBuilder();
     mb.setPriority(priority)
         .setRetain(isRetain)
         .setOpaqueData(payload)
@@ -100,7 +100,8 @@ public class PublishListener5 extends PacketListener5 {
           break; // Nothing to do, it might be that the properties are inside a different packet
       }
     }
-    return mb.setDataMap(dataHashMap).build();
+    mb.setDataMap(dataHashMap).build();
+    return  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), mb).build();
   }
 
   // unfortunately MQTT publishing has a large number of permutations and exceeds the base limit

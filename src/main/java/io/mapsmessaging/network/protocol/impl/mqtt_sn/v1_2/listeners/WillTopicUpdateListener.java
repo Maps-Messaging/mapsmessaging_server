@@ -45,10 +45,10 @@ public class WillTopicUpdateListener extends PacketListener {
       willDetails.setDestination(willTopicUpdate.getTopic());
       willDetails.setVersion(protocol.getVersion());
       willDetails.setDelay(0);
-      MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+      MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setQoS(willTopicUpdate.getQoS());
       messageBuilder.setRetain(willTopicUpdate.isRetain());
-      willDetails.setMsg(messageBuilder.build());
+      willDetails.setMsg( MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build());
       session.updateWillTopic(willDetails);
     } else {
       if (willTopicUpdate.getTopic() == null) {

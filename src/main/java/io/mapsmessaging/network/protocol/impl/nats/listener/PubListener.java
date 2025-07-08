@@ -79,13 +79,13 @@ public class PubListener implements FrameListener {
       metaData.put("version", engine.getProtocol().getVersion());
       metaData.put("sessionId", engine.getSession().getName());
 
-      MessageBuilder mb = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults());
-      Message message = mb.setDataMap(dataMap)
+      MessageBuilder mb = new MessageBuilder();
+      mb.setDataMap(dataMap)
           .setOpaqueData(msgFrame.getPayload())
           .setMeta(metaData)
           .setCorrelationData(msgFrame.getReplyTo())
-          .setTransformation(engine.getProtocol().getTransformation())
-          .build();
+          .setTransformation(engine.getProtocol().getTransformation());
+      Message message = MessageOverrides.createMessageBuilder(engine.getProtocol().getProtocolConfig().getMessageDefaults(), mb).build();
       if (msgFrame instanceof HPayloadFrame) {
         Map<String, String> headers = ((HPayloadFrame) msgFrame).getHeader();
         Map<String, TypedData> map = message.getDataMap();

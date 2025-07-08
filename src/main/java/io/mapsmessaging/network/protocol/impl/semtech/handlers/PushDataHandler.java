@@ -56,10 +56,10 @@ public class PushDataHandler extends Handler {
           meta.put("protocol", "SemTech");
           meta.put("version", String.valueOf(VERSION));
 
-          MessageBuilder builder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+          MessageBuilder builder = new MessageBuilder();
           builder.setOpaqueData(pushData.getJsonObject().getBytes(StandardCharsets.UTF_8));
           builder.setMeta(meta);
-          Message message = builder.build();
+          Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), builder).build();
 
           GatewayInfo info = protocol.getGatewayManager().getInfo(pushData.getGatewayIdentifier());
           if (info != null) {

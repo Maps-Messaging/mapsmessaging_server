@@ -78,7 +78,7 @@ public class PublishListener extends PacketListener {
     HashMap<String, String> meta = new LinkedHashMap<>();
     meta.put("protocol", "MQTT-SN");
     meta.put("version", "2.0");
-    MessageBuilder messageBuilder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+    MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setQoS(qos)
         .setMeta(meta)
         .setRetain(publish.isRetain())
@@ -87,7 +87,7 @@ public class PublishListener extends PacketListener {
     CompletableFuture<Destination> future = session.findDestination(topicName, DestinationType.TOPIC);
     future.thenApply(destination -> {
       if (destination != null) {
-        Message message = messageBuilder.build();
+        Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build();
         try {
           if (message.getQualityOfService().getLevel() == 2) {
             Transaction transaction = session.startTransaction(session.getName() + ":" + publish.getMessageId());

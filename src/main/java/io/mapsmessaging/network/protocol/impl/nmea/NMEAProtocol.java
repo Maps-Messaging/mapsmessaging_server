@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.nmea;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -183,14 +184,15 @@ public class NMEAProtocol extends Protocol {
         sentenceMap.put(sentenceId, destination);
       }
       if (destination != null) {
-        MessageBuilder messageBuilder = MessageOverrides.createMessageBuilder(protocolConfig.getMessageDefaults());
+        MessageBuilder messageBuilder = new MessageBuilder();
         messageBuilder.setOpaqueData(processed.getBytes())
             .setMessageExpiryInterval(8, TimeUnit.SECONDS) // Expire the event in 8 seconds
             .setTransformation(getTransformation());
         if (transformer != null) {
           transformer.transform(messageBuilder);
         }
-        destination.storeMessage(messageBuilder.build());
+        Message message = MessageOverrides.createMessageBuilder(protocolConfig.getMessageDefaults(), messageBuilder).build();
+        destination.storeMessage(message);
       }
     }
     receivedMessage();

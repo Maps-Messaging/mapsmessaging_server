@@ -59,13 +59,13 @@ public class InitialWillMessageState implements State {
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLMSG && oldSession == null) {
       WillMessage willMessage = (WillMessage) mqtt;
-      MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder(protocol.getEndPoint().getConfig().getProtocolConfig("mqtt-sn").getMessageDefaults());
+      MessageBuilder messageBuilder =  new MessageBuilder();
       messageBuilder.setOpaqueData(willMessage.getMessage())
           .setTransformation(protocol.getTransformation())
           .setQoS(qualityOfService)
           .setRetain(retain);
       SessionContextBuilder scb = stateEngine.getSessionContextBuilder();
-      scb.setWillMessage(messageBuilder.build());
+      scb.setWillMessage(MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build());
       CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
       sessionFuture.thenApply(session -> {
         protocol.setSession(session);

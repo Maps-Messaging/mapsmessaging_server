@@ -23,6 +23,7 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.ProtocolMessageTransformation;
@@ -61,13 +62,14 @@ public class InitialWillMessageState implements State {
   public MQTT_SNPacket handleMQTTEvent(MQTT_SNPacket mqtt, Session oldSession, EndPoint endPoint, MQTT_SNProtocol protocol, StateEngine stateEngine) {
     if (mqtt.getControlPacketId() == MQTT_SNPacket.WILLMSG && oldSession == null) {
       WillMessage willMessage = (WillMessage) mqtt;
-      MessageBuilder messageBuilder = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults());
+      MessageBuilder messageBuilder = new MessageBuilder();
       messageBuilder.setOpaqueData(willMessage.getMessage())
           .setTransformation(protocol.getTransformation())
           .setQoS(qualityOfService)
           .setRetain(retain);
       SessionContextBuilder scb = stateEngine.getSessionContextBuilder();
-      scb.setWillMessage(messageBuilder.build());
+      Message message = MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build();
+      scb.setWillMessage(message);
       CompletableFuture<Session> sessionFuture = stateEngine.createSession(scb, protocol);
       sessionFuture.thenApply(session -> {
         protocol.setSession(session);

@@ -62,7 +62,7 @@ public abstract class PublishListener extends  Listener {
   }
 
   protected Message build(BasePacket request, CoapProtocol protocol){
-    MessageBuilder messageBuilder =  MessageOverrides.createMessageBuilder( protocol.getProtocolConfig().getMessageDefaults());
+    MessageBuilder messageBuilder = new MessageBuilder();
 
     messageBuilder.setOpaqueData(request.getPayload());
     messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
@@ -93,7 +93,7 @@ public abstract class PublishListener extends  Listener {
       }
     }
     messageBuilder.setDataMap(map);
-    return messageBuilder.build();
+    return  MessageOverrides.createMessageBuilder( protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build();
   }
 
   private boolean handleBlock(BasePacket request, String path, OptionSet optionSet, CoapProtocol protocol) {
