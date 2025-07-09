@@ -58,6 +58,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
     streamHandler = new SimpleStreamHandler(config.getBufferSize());
+    name = serialPort.getSystemPortName();
   }
 
   private void configure(SerialConfigDTO config) {
@@ -117,11 +118,6 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   @Override
   public String getAuthenticationConfig() {
     return getConfig().getAuthenticationRealm();
-  }
-
-  @Override
-  public String getName() {
-    return serialPort.getSystemPortName();
   }
 
   @Override

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network;
 
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -32,10 +33,14 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerFactory;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.ProtocolAcceptRunner;
+import io.mapsmessaging.security.uuid.NamedVersions;
+import io.mapsmessaging.security.uuid.UuidGenerator;
 import lombok.Getter;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 public class EndPointManager implements Closeable, AcceptHandler {
 
@@ -45,6 +50,9 @@ public class EndPointManager implements Closeable, AcceptHandler {
   private final String protocols;
   @Getter
   private STATE state;
+  @Getter
+  private final UUID uniqueId;
+
   @Getter
   private EndPointServer endPointServer;
 
@@ -61,6 +69,13 @@ public class EndPointManager implements Closeable, AcceptHandler {
       bean = new EndPointManagerJMX(managerBean.getTypePath(), this, endPointServerConfig);
     }
     endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, endPointServerConfig, bean);
+    UUID uuid;
+    try {
+      uuid = UuidGenerator.getInstance().generate(NamedVersions.SHA1, MessageDaemon.getInstance().getUuid(), url.toString());
+    } catch (NoSuchAlgorithmException e) {
+      uuid = UuidGenerator.getInstance().generate();
+    }
+    uniqueId = uuid;
     ThreadContext.clearAll();
   }
 

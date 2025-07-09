@@ -119,9 +119,9 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           @ApiResponse(responseCode = "404", description = "Connection not found"),
       }
   )
-  public EndPointDetailsDTO getConnectionDetails(@QueryParam("connectionId") String connectionId) {
+  public EndPointDetailsDTO getConnectionDetails(@QueryParam("connectionId") long connectionId) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), connectionId);
+    CacheKey key = new CacheKey(uriInfo.getPath(), ""+connectionId);
 
     // Try to retrieve from cache
     EndPointDetailsDTO cachedResponse = getFromCache(key, EndPointDetailsDTO.class);
@@ -132,14 +132,14 @@ public class ConnectionManagementApi extends BaseDestinationApi {
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
-        if (endPoint.getName().equals(connectionId)) {
+        if (endPoint.getId() == connectionId) {
           EndPointDetailsDTO dto = buildConnectionDetails(endPointManager.getName(), endPoint);
           putToCache(key, dto);
           return dto;
         }
       }
     }
-    EndPointDetailsDTO dto = SessionTracker.getConnection(connectionId);
+    EndPointDetailsDTO dto = SessionTracker.getConnection(""+connectionId);
     if (dto != null) {
       putToCache(key, dto);
       return dto;
@@ -165,12 +165,12 @@ public class ConnectionManagementApi extends BaseDestinationApi {
           @ApiResponse(responseCode = "404", description = "Connection not found"),
       }
   )
-  public StatusResponse closeSpecificConnection(@QueryParam("connectionId") String connectionId) {
+  public StatusResponse closeSpecificConnection(@QueryParam("connectionId") long connectionId) {
     hasAccess(RESOURCE);
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
       for (EndPoint endPoint : endPointManager.getEndPointServer().getActiveEndPoints()) {
-        if (endPoint.getName().equals(connectionId)) {
+        if (endPoint.getId() == connectionId) {
           try {
             endPoint.close();
             return new StatusResponse("success");

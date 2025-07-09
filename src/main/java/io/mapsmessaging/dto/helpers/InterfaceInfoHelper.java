@@ -25,7 +25,7 @@ import io.mapsmessaging.network.EndPointManager;
 public class InterfaceInfoHelper {
   public static InterfaceInfoDTO fromEndPointManager(EndPointManager endPointManager) {
     InterfaceInfoDTO dto = new InterfaceInfoDTO();
-
+    dto.setUniqueId(endPointManager.getUniqueId().toString());
     dto.setName(endPointManager.getEndPointServer().getConfig().getName());
     dto.setPort(endPointManager.getEndPointServer().getUrl().getPort());
     dto.setHost(

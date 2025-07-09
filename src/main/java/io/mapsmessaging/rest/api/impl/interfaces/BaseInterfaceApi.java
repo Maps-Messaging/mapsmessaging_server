@@ -26,6 +26,6 @@ public class BaseInterfaceApi extends BaseRestApi {
   protected static final String RESOURCE = "Interfaces";
 
   protected boolean isMatch(String name, EndPointManager endPointManager) {
-    return (endPointManager.getEndPointServer().getConfig().getName().equals(name));
+    return endPointManager.getUniqueId().toString().equals(name);
   }
 }

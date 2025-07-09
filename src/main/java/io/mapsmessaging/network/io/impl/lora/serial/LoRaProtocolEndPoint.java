@@ -48,6 +48,7 @@ public class LoRaProtocolEndPoint extends EndPoint {
       ((StreamEndPoint) physicalEndPoint).setStreamHandler(new LoRaStreamHandler(logger));
     }
     jmxParentPath = physicalEndPoint.getJMXTypePath();
+    name = "gateway:"+physicalEndPoint.getName();
   }
 
   @Override
@@ -82,11 +83,6 @@ public class LoRaProtocolEndPoint extends EndPoint {
   @Override
   public String getAuthenticationConfig() {
     return null;
-  }
-
-  @Override
-  public String getName() {
-    return "LoRa Gateway";
   }
 
   @Override

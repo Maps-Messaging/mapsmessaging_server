@@ -39,6 +39,9 @@ import java.io.Serializable;
         "Contains details about an interface, including its name, host, port, and current state.")
 public class InterfaceInfoDTO extends BaseConfigDTO implements Serializable {
 
+  @Schema(title = "unique id", description = "UUID to reference the interface")
+  private String uniqueId;
+
   @Schema(
       title = "Interface Name",
       description = "Unique name of the interface",

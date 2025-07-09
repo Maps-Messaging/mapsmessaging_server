@@ -40,6 +40,7 @@ public class NoOpEndPoint extends EndPoint {
     super(id, server);
     jmxParentPath = new ArrayList<>(jmxPath);
     logger.log(ServerLogMessages.NOOP_END_POINT_CREATE, id);
+    name = "noop:"+id;
   }
 
   @Override

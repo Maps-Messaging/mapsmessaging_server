@@ -80,6 +80,9 @@ public abstract class EndPoint implements Closeable {
   @Setter
   private Protocol boundProtocol;
 
+  @Getter
+  protected String name;
+
   protected EndPoint(long id, EndPointServerStatus server) {
     this.server = server;
     isClient = !(server instanceof EndPointServer);
@@ -181,8 +184,6 @@ public abstract class EndPoint implements Closeable {
       throws ClosedChannelException;
 
   public abstract String getAuthenticationConfig();
-
-  public abstract String getName();
 
   protected abstract Logger createLogger();
 

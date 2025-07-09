@@ -71,9 +71,9 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "404", description = "Endpoint not found"),
       }
   )
-  public InterfaceInfoDTO getEndPoint(@PathParam("endpoint") String endpointName) {
+  public InterfaceInfoDTO getEndPoint(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+    CacheKey key = new CacheKey(uriInfo.getPath(), uniqueId);
     InterfaceInfoDTO cachedResponse = getFromCache(key, InterfaceInfoDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -82,7 +82,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     // Fetch and cache response
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
+      if(endPointManager.getUniqueId().toString().equals(uniqueId)) {
         InterfaceInfoDTO response = InterfaceInfoHelper.fromEndPointManager(endPointManager);
         putToCache(key, response);
         return response;
@@ -109,9 +109,9 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public EndPointDetailResponse getEndPointConnections(@PathParam("endpoint") String endpointName) {
+  public EndPointDetailResponse getEndPointConnections(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+    CacheKey key = new CacheKey(uriInfo.getPath(), uniqueId);
     EndPointDetailResponse cachedResponse = getFromCache(key, EndPointDetailResponse.class);
     if (cachedResponse != null) {
       return cachedResponse;
@@ -121,7 +121,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
         .getNetworkManager()
         .getAll()
         .stream()
-        .filter(endPointManager -> isMatch(endpointName, endPointManager))
+        .filter(endPointManager -> isMatch(uniqueId, endPointManager))
         .flatMap(endPointManager -> endPointManager.getEndPointServer()
             .getActiveEndPoints()
             .stream()
@@ -151,9 +151,9 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "404", description = "Endpoint not found"),
       }
   )
-  public StatusResponse updateInterfaceConfiguration(@PathParam("endpoint") String endpointName, EndPointServerConfigDTO config) throws IOException {
+  public StatusResponse updateInterfaceConfiguration(@PathParam("endpoint") String uniqueId, EndPointServerConfigDTO config) throws IOException {
     hasAccess(RESOURCE);
-    if (endpointName.equals(config.getName()) && NetworkManagerConfig.getInstance().update(config)) {
+    if (NetworkManagerConfig.getInstance().update(config)) {
       NetworkManagerConfig.getInstance().save();
       return new StatusResponse("Success");
     }
@@ -177,9 +177,9 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse stopInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse stopInterface(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.STOPPED);
+    Response response = lookup(uniqueId, STATE.STOPPED);
     return new StatusResponse(response == null?"Failed":"Stopped");
   }
 
@@ -199,9 +199,9 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse startInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse startInterface(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.START);
+    Response response = lookup(uniqueId, STATE.START);
     return new StatusResponse(response == null?"Failed":"Started");
   }
 
@@ -221,9 +221,9 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse resumeInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse resumeInterface(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.RESUME);
+    Response response = lookup(uniqueId, STATE.RESUME);
     return new StatusResponse(response == null?"Failed":"Resumed");
   }
 
@@ -243,9 +243,9 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public StatusResponse pauseInterface(@PathParam("endpoint") String endpointName) {
+  public StatusResponse pauseInterface(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
-    Response response = lookup(endpointName, STATE.PAUSED);
+    Response response = lookup(uniqueId, STATE.PAUSED);
     return new StatusResponse(response == null?"Failed":"Paused");
   }
 
@@ -266,16 +266,16 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           @ApiResponse(responseCode = "403", description = "User is not authorised to access the resource"),
       }
   )
-  public InterfaceStatusDTO getInterfaceStatus(@PathParam("endpoint") String endpointName) {
+  public InterfaceStatusDTO getInterfaceStatus(@PathParam("endpoint") String uniqueId) {
     hasAccess(RESOURCE);
-    CacheKey key = new CacheKey(uriInfo.getPath(), endpointName);
+    CacheKey key = new CacheKey(uriInfo.getPath(), uniqueId);
     InterfaceStatusDTO cachedResponse = getFromCache(key, InterfaceStatusDTO.class);
     if (cachedResponse != null) {
       return cachedResponse;
     }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
+      if (isMatch(uniqueId, endPointManager)) {
         InterfaceStatusDTO response = InterfaceStatusHelper.fromServer(endPointManager.getEndPointServer());
         putToCache(key, response);
         return response;
@@ -285,11 +285,11 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     return null;
   }
 
-  private Response lookup(String endpointName, STATE state) {
+  private Response lookup(String uniqueId, STATE state) {
     List<EndPointManager> endPointManagers =
         MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     for (EndPointManager endPointManager : endPointManagers) {
-      if (isMatch(endpointName, endPointManager)) {
+      if (isMatch(uniqueId, endPointManager)) {
         return handleRequest(state, endPointManager);
       }
     }

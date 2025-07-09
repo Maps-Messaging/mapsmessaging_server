@@ -45,7 +45,6 @@ public class UDPEndPoint extends EndPoint {
   private final DatagramChannel datagramChannel;
   private final Selector selector;
   private final EndPointJMX mbean;
-  private final String name;
   private final InetSocketAddress remoteAddress;
 
   public UDPEndPoint(InetSocketAddress remote, Selector selector, long id, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
@@ -132,11 +131,6 @@ public class UDPEndPoint extends EndPoint {
   @Override
   public String getAuthenticationConfig() {
     return authenticationConfig;
-  }
-
-  @Override
-  public String getName() {
-    return name;
   }
 
   @Override

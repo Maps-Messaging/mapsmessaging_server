@@ -71,6 +71,7 @@ public class LoRaEndPoint extends EndPoint {
     mbean = new EndPointJMX(managerMBean.getTypePath(), this);
     jmxParentPath = mbean.getTypePath();
     selectable = null;
+    name = "LoRa_" + nodeId;
   }
 
   @Override
@@ -172,11 +173,6 @@ public class LoRaEndPoint extends EndPoint {
   @Override
   public String getAuthenticationConfig() {
     return getConfig().getAuthenticationRealm();
-  }
-
-  @Override
-  public String getName() {
-    return "LoRa_" + nodeId;
   }
 
   @Override

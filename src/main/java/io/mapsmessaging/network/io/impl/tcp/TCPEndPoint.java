@@ -52,7 +52,6 @@ public class TCPEndPoint extends EndPoint {
   private final String authenticationConfig;
   private final EndPointJMX mbean;
   private final AtomicBoolean isClosed;
-  private String name;
 
   public TCPEndPoint(long id, SocketChannel accepted, Selector select, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
     super(id, endPointServerStatus);
