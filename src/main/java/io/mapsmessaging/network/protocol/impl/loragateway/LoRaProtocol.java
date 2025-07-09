@@ -132,7 +132,9 @@ public class LoRaProtocol extends Protocol {
     for (LoRaClientStats stats : clientStats.values()) {
       stats.close();
     }
-    rateResetFuture.cancel(false);
+    if(rateResetFuture != null) {
+      rateResetFuture.cancel(false);
+    }
     super.close();
   }
 
