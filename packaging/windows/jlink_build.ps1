@@ -1,26 +1,20 @@
-# Define JDK path
-$JDKPath = "E:\java\zulu17.34.19-ca-jdk17.0.3-win_x64"
-$JModsPath = Join-Path $JDKPath "jmods"
+param (
+  [string]$Version,
+  [string]$AppName,
+  [string]$RuntimeDir
+)
 
-# Output runtime directory
-$RuntimeDir = "runtime"
+$Modules = "java.base,java.logging,java.xml,java.management,java.naming,java.prefs,jdk.management,jdk.crypto.ec,jdk.crypto.cryptoki,java.security.sasl,jdk.security.auth,java.net.http,jdk.unsupported"
 
-# Required modules (adjust as needed)
-$Modules = "java.base,java.logging"
+$jmodsDir = "$Env:JAVA_HOME\jmods"
 
-# Clean previous runtime if it exists
-if (Test-Path $RuntimeDir) {
-    Remove-Item -Recurse -Force $RuntimeDir
-}
+$AllModules = "$Modules,java.naming"
 
-# Run jlink
-jlink `
-  --module-path $JModsPath `
-  --add-modules $Modules `
+& "$Env:JAVA_HOME\bin\jlink" `
   --output $RuntimeDir `
+  --add-modules $AllModules `
+  --compress=2 `
   --strip-debug `
   --no-header-files `
   --no-man-pages `
-  --compress=2
-
-Write-Host "Custom Java runtime created at '$RuntimeDir'"
+  --module-path $jmodsDir
