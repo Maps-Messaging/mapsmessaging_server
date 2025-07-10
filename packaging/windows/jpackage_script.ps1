@@ -29,6 +29,7 @@ if (Test-Path "$BaseDir\Maps.cfg") {
 # Run jpackage
 & "$Env:JAVA_HOME\bin\jpackage" `
   --type msi `
+  --icon "staging\maps-3.3.7\www\admin\favicon.ico" `
   --name "$AppName" `
   --app-version "$SanitizedVersion" `
   --input "$InputDir" `
