@@ -21,6 +21,12 @@ $InputDir  = $DestDir
 $MainJar   = "maps-$Version.jar"  # Leave as original JAR name
 
 
+#
+# Move the windows version of logback to override the linux version
+#
+$content = (Get-Content "$InputDir\conf\logback.xml" -Raw) -replace 'MAPS_DATA', 'APPDATA'
+$content | Set-Content "$InputDir\conf\logback.xml"
+
 # Copy config (if it exists)
 if (Test-Path "$BaseDir\Maps.cfg") {
   Copy-Item -Force "$BaseDir\Maps.cfg" "$InputDir"
@@ -29,7 +35,7 @@ if (Test-Path "$BaseDir\Maps.cfg") {
 # Run jpackage
 & "$Env:JAVA_HOME\bin\jpackage" `
   --type msi `
-  --icon "staging\maps-3.3.7\www\admin\favicon.ico" `
+  --icon "build\staging\maps-3.3.7\www\admin\favicon.ico" `
   --name "$AppName" `
   --app-version "$SanitizedVersion" `
   --input "$InputDir" `
@@ -44,8 +50,12 @@ if (Test-Path "$BaseDir\Maps.cfg") {
   --win-shortcut `
   --win-console `
   --vendor "Maps Messaging" `
+  --add-launcher mapsTop=mapsTop.properties `
   --license-file "$InputDir\LICENSE" `
-  --java-options "-cp App\lib\* -DMAPS_CONF=$INSTALLDIR\conf -DMAPS_DATA=$Env:APPDATA\MapsMessaging"
+  --java-options '-cp "$APPDIR\conf;$APPDIR\lib\*" -DMAPS_HOME="$APPDIR" -DMAPS_CONF="$APPDIR\conf"'
+
+
+
 
 
 

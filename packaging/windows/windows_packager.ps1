@@ -2,7 +2,7 @@ param (
     [string]$Version = "3.3.7-SNAPSHOT",
     [string]$AppName = "MapsMessaging",
     [string]$ZipRepo = "maps-snapshot",
-    [string]$PushRepo = "maps-windows",
+    [string]$PushRepo = "maps_windows_installer",
     [string]$Username = $env:NEXUS_USER,
     [string]$Password = $env:NEXUS_PASSWORD
 )
@@ -24,31 +24,63 @@ $BaseDir = Join-Path (Get-Location) $InputDir
 .\build-windows-package.ps1 -Version $Version -AppName $AppName -BaseDir $BaseDir
 
 # Find the built installer
-$InstallerPath = Get-ChildItem -Path "out\win" -Filter "$AppName*.exe" | Select-Object -First 1
+$InstallerPath = Get-ChildItem -Path "out\win" -Filter "$AppName*.msi" | Select-Object -First 1
 
-# Upload installer to Nexus
 if ($InstallerPath) {
+    $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$Username`:$Password"))
+    $filename = $InstallerPath.Name
+    $directory = "windows/$Version"
+
+    # DELETE existing component from Nexus
+    $searchUrl = "https://repository.mapsmessaging.io/service/rest/v1/search?repository=$PushRepo&name=$($InstallerPath.BaseName)&version=$Version"
+    try {
+        $response = Invoke-RestMethod -Uri $searchUrl -Headers @{ Authorization = "Basic $encodedCreds" } -Method Get
+        if ($response.items.Count -gt 0) {
+            $componentId = $response.items[0].id
+            $deleteUrl = "https://repository.mapsmessaging.io/service/rest/v1/components/$componentId"
+            Invoke-RestMethod -Uri $deleteUrl -Headers @{ Authorization = "Basic $encodedCreds" } -Method Delete
+            Write-Host "Deleted existing component ID: $componentId"
+        } else {
+            Write-Host "No existing package found to delete."
+        }
+    } catch {
+        Write-Warning "Failed to query/delete existing component: $_"
+    }
+
+    # UPLOAD the new installer to Nexus
     $boundary = [System.Guid]::NewGuid().ToString()
     $fileBytes = [System.IO.File]::ReadAllBytes($InstallerPath.FullName)
-    $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$Username`:$Password"))
+    $crlf = "`r`n"
 
-    $bodyLines = @(
-        "--$boundary",
-        "Content-Disposition: form-data; name=`"raw.asset1`"; filename=`"$($InstallerPath.Name)`"",
-        "Content-Type: application/octet-stream",
-        "",
-        [System.Text.Encoding]::ASCII.GetString($fileBytes),
-        "--$boundary--"
-    )
+    $stream = New-Object System.IO.MemoryStream
+    $writer = New-Object System.IO.StreamWriter($stream, [System.Text.Encoding]::ASCII)
 
-    $body = [System.Text.Encoding]::ASCII.GetBytes(($bodyLines -join "`r`n"))
+    $writer.Write("--$boundary$crlf")
+    $writer.Write("Content-Disposition: form-data; name=`"raw.directory`"$crlf$crlf")
+    $writer.Write("$directory$crlf")
+
+    $writer.Write("--$boundary$crlf")
+    $writer.Write("Content-Disposition: form-data; name=`"raw.asset1`"; filename=`"$filename`"$crlf")
+    $writer.Write("Content-Type: application/octet-stream$crlf$crlf")
+    $writer.Flush()
+
+    $stream.Write($fileBytes, 0, $fileBytes.Length)
+
+    $writer = New-Object System.IO.StreamWriter($stream, [System.Text.Encoding]::ASCII, 1024, $true)
+    $writer.Write("$crlf--$boundary$crlf")
+    $writer.Write("Content-Disposition: form-data; name=`"raw.asset1.filename`"$crlf$crlf")
+    $writer.Write("$filename$crlf")
+    $writer.Write("--$boundary--$crlf")
+    $writer.Flush()
+
+    $body = $stream.ToArray()
 
     Invoke-WebRequest -Uri $PushUrl `
-                    -Method Post `
-                    -Headers @{ Authorization = "Basic $encodedCreds"; "Content-Type" = "multipart/form-data; boundary=$boundary" } `
-                    -Body $body
+                      -Method Post `
+                      -Headers @{ Authorization = "Basic $encodedCreds"; "Content-Type" = "multipart/form-data; boundary=$boundary" } `
+                      -Body $body
 
-    Write-Host "✅ Uploaded $($InstallerPath.Name) to Nexus repo $PushRepo"
+    Write-Host "Uploaded $filename to Nexus repo $PushRepo"
 } else {
-    Write-Error "❌ Installer not found."
+    Write-Error "Installer not found."
 }

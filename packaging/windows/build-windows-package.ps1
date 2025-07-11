@@ -13,10 +13,7 @@ Remove-Item -Recurse -Force $StagingDir, $RuntimeDir, $OutputDir -ErrorAction Ig
 New-Item -ItemType Directory -Force -Path $StagingDir | Out-Null
 
 # Run jlink builder
-& "$BaseDir\jlink_build.ps1" `
-  -Version $Version `
-  -AppName $AppName `
-  -RuntimeDir $RuntimeDir
+& "$BaseDir\jdk_copy.ps1"
 
 # Run jpackage script
 & "$BaseDir\jpackage_script.ps1" `
