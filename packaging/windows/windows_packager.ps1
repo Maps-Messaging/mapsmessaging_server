@@ -1,8 +1,5 @@
-param (
-    [string]$Username = $env:NEXUS_USER,
-    [string]$Password = $env:NEXUS_PASSWORD
-)
-
+$Username = $args[0]
+$Password = $args[1]
 $Version = "3.3.7-SNAPSHOT"
 $AppName = "MapsMessaging"
 $ZipRepo = "maps-snapshot"
