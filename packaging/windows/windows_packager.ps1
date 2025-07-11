@@ -1,10 +1,10 @@
 param (
+    [string]$Username = $env:NEXUS_USER,
+    [string]$Password = $env:NEXUS_PASSWORD,
     [string]$Version = "3.3.7-SNAPSHOT",
     [string]$AppName = "MapsMessaging",
     [string]$ZipRepo = "maps-snapshot",
-    [string]$PushRepo = "maps_windows_installer",
-    [string]$Username = $env:NEXUS_USER,
-    [string]$Password = $env:NEXUS_PASSWORD
+    [string]$PushRepo = "maps_windows_installer"
 )
 
 $ZipName     = "maps-$Version-install.zip"
