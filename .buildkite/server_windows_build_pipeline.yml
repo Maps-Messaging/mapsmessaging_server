@@ -1,10 +1,10 @@
 steps:
   - label: ":maven: Build and release to github"
     command:
-      - '[ -z "$NEXUS_USER" ] && echo "NEXUS_USER is missing" || echo "NEXUS_USER is set"'
-      - '[ -z "$NEXUS_PASSWORD" ] && echo "NEXUS_PASSWORD is missing" || echo "NEXUS_PASSWORD is set"'
+      - powershell -Command "if (-not \$env:NEXUS_USER) { Write-Output 'NEXUS_USER is missing' } else { Write-Output 'NEXUS_USER is set' }"
+      - powershell -Command "if (-not \$env:NEXUS_PASSWORD) { Write-Output 'NEXUS_PASSWORD is missing' } else { Write-Output 'NEXUS_PASSWORD is set' }"
       - cd ./packaging/windows
-      - powershell -File .\windows_packager.ps1 "$NEXUS_USER" "$NEXUS_PASSWORD"
+      - powershell -File .\windows_packager.ps1 "$env:NEXUS_USER" "$env:NEXUS_PASSWORD"
 
     env:
       NEXUS_USER: "${NEXUS_USER}"
