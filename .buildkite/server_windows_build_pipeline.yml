@@ -1,8 +1,14 @@
 steps:
   - label: ":maven: Build and release to github"
     command:
+      - echo $NEXUS_USER
       - cd ./packaging/windows
       - powershell -File .\windows_packager.ps1 "$(buildkite-agent secret get NEXUS_USER)" "$(buildkite-agent secret get NEXUS_PASSWORD)"
 
+    env:
+      NEXUS_USER: "${NEXUS_USER}"
+      NEXUS_PASSWORD: "${NEXUS_PASSWORD}"
+
     agents:
       queue: "windowsBuild"
+
