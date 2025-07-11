@@ -92,7 +92,6 @@ build_package(){
 }
 
 # Function to delete the old package
-# Function to delete the old package
 delete_old_package() {
   DELETE_URL="${NEXUS_URL}/service/rest/v1/components?repository=${REPO_NAME}&name=${PACKAGE_NAME}&version=${PACKAGE_VERSION}"
 
