@@ -3,7 +3,7 @@ $javaPath = (Get-Command java).Source
 $jdkHome = Resolve-Path (Join-Path (Split-Path $javaPath -Parent) "..")
 
 # Step 2: Define target runtime directory
-$runtimeDir = "D:\home\mapsmessaging_server\packaging\windows\build\runtime"
+$runtimeDir = "build\runtime"
 
 # Step 3: Clear target if needed
 if (Test-Path $runtimeDir) {
