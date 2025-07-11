@@ -7,8 +7,8 @@ steps:
       - powershell -File .\windows_packager.ps1 "$env:NEXUS_USER" "$env:NEXUS_PASSWORD"
 
     env:
-      NEXUS_USER: "${NEXUS_USER}"
-      NEXUS_PASSWORD: "${NEXUS_PASSWORD}"
+      NEXUS_USER: "$(buildkite-agent secret get NEXUS_USER)"
+      NEXUS_PASSWORD: "$(buildkite-agent secret get NEXUS_PASSWORD)"
 
     agents:
       queue: "windowsBuild"
