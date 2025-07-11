@@ -1,0 +1,10 @@
+steps:
+  - label: ":maven: Build and release to github"
+    command:
+      - cd ./packaging/windows
+      - powershell -File .\windows_packager.ps1 `
+        -Username "$(buildkite-agent secret get NEXUS_USER)" `
+        -Password "$(buildkite-agent secret get NEXUS_PASSWORD)"
+
+    agents:
+      queue: "windowsBuild "
