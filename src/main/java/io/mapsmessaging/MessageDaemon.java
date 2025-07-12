@@ -113,7 +113,7 @@ public class MessageDaemon {
   @Getter
   private FeatureManager featureManager;
 
-  private static final String APPDATA = "APPDATA";
+  private static final String PROGRAM_DATA = "ProgramData";
   private static final String MAPS_HOME = "MAPS_HOME";
   private static final String MAPS_DATA = "MAPS_DATA";
 
@@ -135,9 +135,9 @@ public class MessageDaemon {
     instance = this;
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
-    String appData = System.getenv(APPDATA);
-    String defaultMapsData =   appData != null ? appData+"/mapsMessaging/"  :  "{{MAPS_HOME}}/data";
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(APPDATA, System.getenv(APPDATA), false));
+    String programData = System.getenv(PROGRAM_DATA);
+    String defaultMapsData = programData != null ? programData + "/MapsMessaging/" : "{{MAPS_HOME}}/data";
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup("ProgramData", System.getenv("ProgramData"), false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, defaultMapsData, true));
     InstanceConfig instanceConfig = new InstanceConfig(EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA));
@@ -338,9 +338,9 @@ public class MessageDaemon {
   }
 
   public static void main(String[] args) throws IOException, InterruptedException {
-    String appData = System.getenv(APPDATA);
-    String defaultMapsData =   appData != null ? appData+"/mapsMessaging/"  :  "{{MAPS_HOME}}/data";
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(APPDATA, System.getenv(APPDATA), false));
+    String programData = System.getenv(PROGRAM_DATA);
+    String defaultMapsData = programData != null ? programData + "/MapsMessaging/" : "{{MAPS_HOME}}/data";
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup("ProgramData", System.getenv("ProgramData"), false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, defaultMapsData, true));
 

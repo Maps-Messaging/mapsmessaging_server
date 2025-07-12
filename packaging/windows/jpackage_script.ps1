@@ -24,8 +24,9 @@ $MainJar   = "maps-$Version.jar"  # Leave as original JAR name
 #
 # Move the windows version of logback to override the linux version
 #
-$content = (Get-Content "$InputDir\conf\logback.xml" -Raw) -replace 'MAPS_DATA', 'APPDATA'
+$content = (Get-Content "$InputDir\conf\logback.xml" -Raw) -replace '\$\{MAPS_DATA\}', '%ProgramData%\MapsMessaging'
 $content | Set-Content "$InputDir\conf\logback.xml"
+
 
 # Copy config (if it exists)
 if (Test-Path "$BaseDir\Maps.cfg") {
