@@ -135,11 +135,8 @@ public class MessageDaemon {
     instance = this;
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
-    String programData = System.getenv(PROGRAM_DATA);
-    String defaultMapsData = programData != null ? programData + "/MapsMessaging/" : "{{MAPS_HOME}}/data";
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup("ProgramData", System.getenv("ProgramData"), false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, defaultMapsData, true));
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, "{{MAPS_HOME}}/data", true));
     InstanceConfig instanceConfig = new InstanceConfig(EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA));
     instanceConfig.loadState();
     String serverId = instanceConfig.getServerName();
@@ -160,7 +157,7 @@ public class MessageDaemon {
     ConsulManagerFactory.getInstance().start(uniqueId);
 
     //</editor-fold>
-    String mapsHome = EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA);
+    String mapsHome = SystemProperties.getInstance().getProperty(MAPS_HOME, ".");
     licenseHome =mapsHome+File.separator+"licenses";
   }
 
@@ -338,13 +335,7 @@ public class MessageDaemon {
   }
 
   public static void main(String[] args) throws IOException, InterruptedException {
-    String programData = System.getenv(PROGRAM_DATA);
-    String defaultMapsData = programData != null ? programData + "/MapsMessaging/" : "{{MAPS_HOME}}/data";
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup("ProgramData", System.getenv("ProgramData"), false));
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, defaultMapsData, true));
-
-    String directoryPath = EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA);
+    String directoryPath = SystemProperties.getInstance().locateProperty("MAPS_HOME", ".");
     if (!directoryPath.isEmpty()) {
       PID_FILE = directoryPath + File.separator + PID_FILE;
       PID_FILE = PID_FILE.replace("//", "/");
