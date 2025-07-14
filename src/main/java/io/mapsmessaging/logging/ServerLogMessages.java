@@ -41,22 +41,23 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
 
   // <editor-fold desc="Main Message Daemon messages">
-  MESSAGE_DAEMON_STARTUP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Starting Messaging Daemon Version:{} Build Date:{}"),
-  MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Messaging Daemon Unique Id has been assigned to {}"),
-  MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "{}"),
+  MESSAGE_DAEMON_STARTUP(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Starting Messaging Daemon Version:{} Build Date:{}"),
+  MESSAGE_DAEMON_STARTUP_BOOTSTRAP(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Messaging Daemon Unique Id has been assigned to {}"),
+  MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "{}"),
+  MAP_ENV_HOME_RESOLVED(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "MAPS_HOME resolved to {} via {}"),
+  MAP_ENV_DATA_RESOLVED(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "MAPS_DATA resolved to {} for OS {}"),
 
+  MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "The supplied home directory, {}, does not exist"),
+  MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "The home directory has been defined as {}"),
+  MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "\t\tLoaded service {}, {}"),
+  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Service Manager {} loaded"),
+  MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "Protocol not available, see stack trace for more details"),
 
-  MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The supplied home directory, {}, does not exist"),
-  MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "The home directory has been defined as {}"),
-  MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "\t\tLoaded service {}, {}"),
-  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Service Manager {} loaded"),
-  MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Protocol not available, see stack trace for more details"),
+  MESSAGE_DAEMON_AGENT_STARTING(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "Starting {} "),
+  MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Started {} took {}ms"),
 
-  MESSAGE_DAEMON_AGENT_STARTING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Starting {} "),
-  MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Started {} took {}ms"),
-
-  MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Stopping {} "),
-  MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Stopped {} took {}ms"),
+  MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "Stopping {} "),
+  MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Stopped {} took {}ms"),
   // </editor-fold>
 
   // <editor-fold desc="routing manager messages">
@@ -779,6 +780,7 @@ public enum ServerLogMessages implements LogMessage {
     TRANSFORMATION("Transformation"),
     DEVICE("Device"),
     LICENSE("License"),
+    DAEMON("Daemon"),
     ENGINE("Engine");
 
     private final @Getter String description;

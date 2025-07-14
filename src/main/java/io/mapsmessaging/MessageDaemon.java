@@ -135,8 +135,11 @@ public class MessageDaemon {
     instance = this;
     logMonitor = new LogMonitor();
     isStarted = new AtomicBoolean(false);
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, ".", false));
-    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, "{{MAPS_HOME}}/data", true));
+    String mapsHome = MapsEnvironment.getMapsHome();
+    String mapsData = MapsEnvironment.getMapsData();
+
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, mapsHome, false));
+    EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, mapsData, true));
     InstanceConfig instanceConfig = new InstanceConfig(EnvironmentConfig.getInstance().getPathLookups().get(MAPS_DATA));
     instanceConfig.loadState();
     String serverId = instanceConfig.getServerName();
@@ -157,8 +160,7 @@ public class MessageDaemon {
     ConsulManagerFactory.getInstance().start(uniqueId);
 
     //</editor-fold>
-    String mapsHome = SystemProperties.getInstance().getProperty(MAPS_HOME, ".");
-    licenseHome =mapsHome+File.separator+"licenses";
+    licenseHome =mapsData+File.separator+"licenses";
   }
 
   public  MessageDaemon(FeatureManager featureManager) throws IOException {
@@ -335,13 +337,12 @@ public class MessageDaemon {
   }
 
   public static void main(String[] args) throws IOException, InterruptedException {
-    String directoryPath = SystemProperties.getInstance().locateProperty("MAPS_HOME", ".");
+    String directoryPath = MapsEnvironment.getMapsData();
     if (!directoryPath.isEmpty()) {
       PID_FILE = directoryPath + File.separator + PID_FILE;
       PID_FILE = PID_FILE.replace("//", "/");
     }
     PidFileManager pidFileManager = new PidFileManager( new File(PID_FILE));
-
     if (pidFileManager.exists()) {
       long pid = pidFileManager.readPidFromFile();
       pidFileManager.deletePidFile();
