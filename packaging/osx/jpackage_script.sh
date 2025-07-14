@@ -43,22 +43,27 @@ MAIN_JAR="maps-$VERSION.jar"  # original JAR name remains
 
 # Replace MAPS_DATA with ProgramData in logback.xml
 sed -i '' 's/MAPS_DATA/ProgramData/g' "$INPUT_DIR/conf/logback.xml"
+mkdir -p out/mac
 
+echo $RUNTIME_IMAGE
+ls -lsa $RUNTIME_IMAGE
+
+echo $MAIN_CLASS
 # Run jpackage for macOS
 "$JAVA_HOME/bin/jpackage" \
   --type pkg \
-  --icon "$INPUT_DIR/www/admin/favicon.ico" \
   --name "$APP_NAME" \
   --app-version "$SANITIZED_VERSION" \
   --input "$INPUT_DIR" \
   --main-jar "lib/$MAIN_JAR" \
   --main-class "$MAIN_CLASS" \
   --runtime-image "$RUNTIME_IMAGE" \
+  --icon "favicon.icns" \
   --dest "$OUTPUT_DIR" \
   --resource-dir "$INPUT_DIR" \
   --install-dir "/Applications/MapsMessaging" \
   --vendor "Maps Messaging" \
   --add-launcher mapsTop=mapsTop.properties \
-  --license-file "$INPUT_DIR/LICENSE.txt" \
+  --license-file "$INPUT_DIR/LICENSE" \
   --java-options '-DMAPS_HOME="$APPDIR" -DMAPS_CONF="$APPDIR/conf" -DMAPS_DATA="/Library/Application\ Support/MapsMessaging/data" -DCONSUL_URL=http://localhost:8500/'
 

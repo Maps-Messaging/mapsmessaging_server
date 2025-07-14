@@ -31,4 +31,5 @@ rm -rf "$RUNTIME_DIR"
 # Copy full JDK
 echo "Copying JDK from $JDK_HOME to $RUNTIME_DIR"
 mkdir -p "$RUNTIME_DIR"
-cp -a "$JDK_HOME/." "$RUNTIME_DIR/"
+rsync -a --no-compress --exclude '.DS_Store' "$JDK_HOME/" "$RUNTIME_DIR/" 2>/dev/null || cp -Rp "$JDK_HOME/." "$RUNTIME_DIR/"
+

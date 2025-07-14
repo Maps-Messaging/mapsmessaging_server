@@ -41,6 +41,6 @@ bash "$BASE_DIR/jpackage_script.sh" \
   "$VERSION" \
   "$APP_NAME" \
   "$BASE_DIR" \
-  "$RUNTIME_DIR" \
   "$OUTPUT_DIR" \
+  "$RUNTIME_DIR" \
   "$STAGING_DIR"
