@@ -15,3 +15,7 @@ steps:
   - trigger: "090-server-snapshot-build"
 
   - trigger: "090-server-ml-snapshot-build"
+
+  - wait
+
+  - trigger: "200 - Build Windows installer"
