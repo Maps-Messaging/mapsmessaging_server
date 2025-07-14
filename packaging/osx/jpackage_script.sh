@@ -59,4 +59,6 @@ sed -i '' 's/MAPS_DATA/ProgramData/g' "$INPUT_DIR/conf/logback.xml"
   --install-dir "/Applications/MapsMessaging" \
   --vendor "Maps Messaging" \
   --add-launcher mapsTop=mapsTop.properties \
-  --license-file "$INPUT_DIR/LICENSE.txt"
+  --license-file "$INPUT_DIR/LICENSE.txt" \
+  --java-options '-DMAPS_HOME="$APPDIR" -DMAPS_CONF="$APPDIR/conf" -DMAPS_DATA="/Library/Application\ Support/MapsMessaging/data" -DCONSUL_URL=http://localhost:8500/'
+
