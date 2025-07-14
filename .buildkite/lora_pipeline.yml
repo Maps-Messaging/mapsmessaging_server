@@ -18,4 +18,4 @@ steps:
 
   - wait
 
-  - trigger: "200 - Build Windows installer"
+  - trigger: "200-build-windows-installer"
