@@ -1,31 +1,41 @@
 package io.mapsmessaging.ha;
 
+import com.google.gson.Gson;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
+import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FileLockManager implements AutoCloseable {
   private final Path lockFilePath;
   private final Path heartbeatFilePath;
+  private final Path stopSignalFilePath;
   private final long leaseTimeoutMillis;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   @Getter
   private volatile boolean locked = false;
+
+  private Runnable onShutdownCallback;
   private FileChannel channel;
   private FileLock lock;
   private Thread heartbeatThread;
+  private Thread watchThread;
+  private LockInfo lockInfo;
 
   public FileLockManager(Path lockFilePath, long leaseTimeoutMillis) {
-    this.lockFilePath = lockFilePath;
+    this.lockFilePath = lockFilePath.toAbsolutePath();
     this.heartbeatFilePath = Path.of(lockFilePath.toString() + ".heartbeat");
+    this.stopSignalFilePath = Path.of(lockFilePath.toString() + ".stop");
     this.leaseTimeoutMillis = leaseTimeoutMillis;
+    lockInfo = new LockInfo();
   }
 
   public boolean tryAcquireLockWithTakeover() {
@@ -35,38 +45,43 @@ public class FileLockManager implements AutoCloseable {
         lock = channel.tryLock();
         if (lock != null) {
           locked = true;
+          writeLockMetadata();
           startHeartbeat();
+          startWatchService();
           return true;
         }
 
-        // Check if existing heartbeat is stale
         if (isHeartbeatStale()) {
           System.err.println("Heartbeat is stale, attempting forced takeover...");
-          // Try deleting heartbeat before takeover
           try {
             Files.deleteIfExists(heartbeatFilePath);
-          } catch (IOException ignored) {
-          }
+          } catch (IOException ignored) {}
           Thread.sleep(1000);
         }
 
         Thread.sleep(1000);
       }
     } catch (IOException | InterruptedException e) {
-      // Log or handle as needed
+      // Log if needed
     }
     return false;
+  }
+  private void writeLockMetadata() {
+    try {
+      Files.writeString(lockFilePath,  ""+ProcessHandle.current().pid(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    } catch (IOException ignored) {}
   }
 
   private void startHeartbeat() {
     heartbeatThread = new Thread(() -> {
       while (!shutdown.get() && locked) {
         try {
-          Files.writeString(heartbeatFilePath, Long.toString(System.currentTimeMillis()));
-        } catch (IOException ignored) {
-        }
+          lockInfo.setLastHeartbeat(OffsetDateTime.now().toString());
+          String json = new Gson().toJson(lockInfo);
+          Files.writeString(heartbeatFilePath, json);
+        } catch (IOException ignored) {}
         try {
-          Thread.sleep(leaseTimeoutMillis / 3); // update heartbeat frequently
+          Thread.sleep(leaseTimeoutMillis / 3);
         } catch (InterruptedException ignored) {
           break;
         }
@@ -76,20 +91,78 @@ public class FileLockManager implements AutoCloseable {
     heartbeatThread.start();
   }
 
+  private void startWatchService() {
+    watchThread = new Thread(() -> {
+      try (WatchService watchService = FileSystems.getDefault().newWatchService()) {
+        Path dir = lockFilePath.getParent();
+        dir.register(watchService, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_CREATE);
+
+        while (!shutdown.get()) {
+          WatchKey key = watchService.take();
+          for (WatchEvent<?> event : key.pollEvents()) {
+            Path name = ((WatchEvent<Path>) event).context();
+            if (name == null) continue;
+
+            if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE &&
+                name.equals(lockFilePath.getFileName())) {
+              System.err.println("Lock file deleted. Shutting down.");
+              shutdown();
+              if (onShutdownCallback != null) {
+                onShutdownCallback.run();
+              }
+              System.exit(1);
+              return;
+            }
+
+            if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE &&
+                name.equals(stopSignalFilePath.getFileName())) {
+              System.err.println("Stop signal detected. Shutting down.");
+              shutdown();
+              if (onShutdownCallback != null) {
+                onShutdownCallback.run();
+              }
+              System.exit(1);
+              return;
+            }
+          }
+          if (!key.reset()) break;
+        }
+      } catch (IOException | InterruptedException ignored) {}
+    }, "FileLock-WatchService");
+
+    watchThread.setDaemon(true);
+    watchThread.start();
+
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      try {
+        close();
+      } catch (Exception ignored) {}
+    }));
+  }
+
   private boolean isHeartbeatStale() {
     try {
       if (!Files.exists(heartbeatFilePath)) return true;
       String content = Files.readString(heartbeatFilePath).trim();
-      long lastBeat = Long.parseLong(content);
-      return (System.currentTimeMillis() - lastBeat) > leaseTimeoutMillis;
-    } catch (IOException | NumberFormatException e) {
+      LockInfo info = new Gson().fromJson(content, LockInfo.class);
+      OffsetDateTime lastBeat = OffsetDateTime.parse(info.getLastHeartbeat());
+      return OffsetDateTime.now().minus(leaseTimeoutMillis, java.time.temporal.ChronoUnit.MILLIS).isAfter(lastBeat);
+    } catch (IOException | RuntimeException e) {
       return true;
     }
   }
 
+  public void setOnShutdown(Runnable onShutdownCallback) {
+    this.onShutdownCallback = onShutdownCallback;
+  }
+
+  public boolean isShutdown() {
+    return shutdown.get();
+  }
+
   public void shutdown() {
     shutdown.set(true);
-    close();
+    // Defer cleanup to close()
   }
 
   @Override
@@ -99,6 +172,10 @@ public class FileLockManager implements AutoCloseable {
         heartbeatThread.interrupt();
         heartbeatThread = null;
       }
+      if (watchThread != null) {
+        watchThread.interrupt();
+        watchThread = null;
+      }
       if (lock != null && lock.isValid()) {
         lock.release();
       }
@@ -106,6 +183,7 @@ public class FileLockManager implements AutoCloseable {
         channel.close();
       }
       Files.deleteIfExists(heartbeatFilePath);
+      Files.deleteIfExists(stopSignalFilePath);
     } catch (IOException ignored) {
     } finally {
       locked = false;

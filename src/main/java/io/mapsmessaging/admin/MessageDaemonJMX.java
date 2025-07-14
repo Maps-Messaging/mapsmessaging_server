@@ -74,7 +74,7 @@ public class MessageDaemonJMX implements HealthMonitor {
 
   @JMXBeanOperation(name = "shutdown", description = "Initiates a server shutdown")
   public void shutdown() {
-    daemon.stop(1);
+    daemon.stop();
   }
 
   //<editor-fold desc="Destination based statistics">

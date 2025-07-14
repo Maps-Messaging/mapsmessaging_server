@@ -19,6 +19,7 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.ha.FileLockManager;
 import io.mapsmessaging.utilities.PidFileManager;
 
 import java.io.IOException;
@@ -35,6 +36,8 @@ public class ExitRunner extends Thread {
   private final PidFileManager pidFileManager;
   private final WatchService watchService;
   private final Path pidFilePath;
+
+  private FileLockManager fileLockManager;
 
   private int exitCode = 0;
 
@@ -74,6 +77,11 @@ public class ExitRunner extends Thread {
     while (!Thread.interrupted()) {
       WatchKey key;
       if(!pidFileManager.exists()){
+        synchronized (this) {
+          if(fileLockManager != null){
+            fileLockManager.shutdown(); // let's close it to release the thread thats waiting or to notify other instances we are done
+          }
+        }
         System.exit(exitCode);
         return;
       }
@@ -102,5 +110,9 @@ public class ExitRunner extends Thread {
         break;
       }
     }
+  }
+
+  public synchronized void registerFileLockManager(FileLockManager fileLockManager) {
+    this.fileLockManager = fileLockManager;
   }
 }

@@ -32,6 +32,7 @@ import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.TransactionManager;
 import io.mapsmessaging.engine.destination.DestinationManager;
 import io.mapsmessaging.engine.system.SystemTopicManager;
+import io.mapsmessaging.ha.FileLockManager;
 import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.license.LicenseController;
@@ -53,6 +54,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -72,6 +75,8 @@ import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_WAIT_PRE
  */
 public class MessageDaemon {
   private static String PID_FILE = "pid";
+  private static String LOCK_FILE = "haLockFile";
+
   @Getter
   private static ExitRunner exitRunner;
 
@@ -113,7 +118,8 @@ public class MessageDaemon {
   @Getter
   private FeatureManager featureManager;
 
-  private static final String PROGRAM_DATA = "ProgramData";
+  private FileLockManager fileLockManager;
+
   private static final String MAPS_HOME = "MAPS_HOME";
   private static final String MAPS_DATA = "MAPS_DATA";
 
@@ -154,13 +160,16 @@ public class MessageDaemon {
     uuid = instanceConfig.getUuid();
     hostname = InetAddress.getLocalHost().getHostName();
     tokenSecret = instanceConfig.getSecureTokenSecret();
+    licenseHome =mapsData+File.separator+"licenses";
+
     // </editor-fold>
     //<editor-fold desc="Now see if we can start the Consul Manager">
     // May block till a consul connection is made, depending on config
     ConsulManagerFactory.getInstance().start(uniqueId);
 
     //</editor-fold>
-    licenseHome =mapsData+File.separator+"licenses";
+
+
   }
 
   public  MessageDaemon(FeatureManager featureManager) throws IOException {
@@ -282,17 +291,14 @@ public class MessageDaemon {
 
   /**
    * Stops the MessageDaemon by setting the 'isStarted' flag to false and stopping all agents in the 'agentMap'.
-   *
-   * @param i The integer value to be returned.
-   * @return The integer value passed as parameter.
    */
-  public int stop(int i) {
+  public void stop() {
     statsReporter.close();
     isStarted.set(false);
     ConsulManagerFactory.getInstance().stop();
     subSystemManager.stop();
     if (mBean != null) mBean.close();
-    return i;
+    fileLockManager.close();
   }
 
   public boolean isStarted() {
@@ -338,30 +344,38 @@ public class MessageDaemon {
 
   public static void main(String[] args) throws IOException, InterruptedException {
     String directoryPath = MapsEnvironment.getMapsData();
-    if (!directoryPath.isEmpty()) {
-      PID_FILE = directoryPath + File.separator + PID_FILE;
-      PID_FILE = PID_FILE.replace("//", "/");
+    if (directoryPath == null || directoryPath.isEmpty()) {
+      System.err.println("MAPS_DATA not set");
+      return;
     }
-    PidFileManager pidFileManager = new PidFileManager( new File(PID_FILE));
-    if (pidFileManager.exists()) {
-      long pid = pidFileManager.readPidFromFile();
-      pidFileManager.deletePidFile();
-      int count = 0;
-      Logger logger = LoggerFactory.getLogger(MessageDaemon.class);
 
-      while(pidFileManager.isProcessRunning(pid) && count < 30){
-        logger.log(MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE, "Waiting for previous instance to exit");
-        count++;
-        Thread.sleep(1000);
-      }
-      if(count == 30){
-        logger.log(MESSAGE_DAEMON_WAIT_PREVIOUS_INSTANCE, "Previous process not stopping, unable to start");
+    Path lockFilePath = Paths.get(directoryPath, "mapsMessaging.lock");
+    FileLockManager lockManager = new FileLockManager(lockFilePath, 30000); // 30s lease
+
+    while (!lockManager.tryAcquireLockWithTakeover()) {
+      if (lockManager.isShutdown()) {
+        System.err.println("Shutdown requested before acquiring lock. Exiting.");
         return;
       }
+      Thread.sleep(1000); // passive retry
     }
-    pidFileManager.writeNewFile();
-    exitRunner = new ExitRunner(pidFileManager);
-    instance = new MessageDaemon();
-    instance.start();
+    try {
+      // optional: register shutdown hook for clean exit
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        try {
+          lockManager.shutdown();
+        } catch (Exception ignored) {}
+      }));
+
+      instance = new MessageDaemon();
+      instance.fileLockManager = lockManager;
+      lockManager.setOnShutdown(instance::stop);
+      instance.start();
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.err.println("Unexpected error: " + e.getMessage());
+      lockManager.shutdown();
+      lockManager.close();
+    }
   }
 }

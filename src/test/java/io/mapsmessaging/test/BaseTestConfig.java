@@ -206,7 +206,7 @@ public class BaseTestConfig extends BaseTest {
 
     @Override
     public void run() {
-      md.stop(0);
+      md.stop();
       try {
         th.join(2000);
       } catch (InterruptedException e) {
