@@ -24,6 +24,7 @@ import io.mapsmessaging.logging.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
 
 import static io.mapsmessaging.logging.ServerLogMessages.MAP_ENV_DATA_RESOLVED;
 import static io.mapsmessaging.logging.ServerLogMessages.MAP_ENV_HOME_RESOLVED;
@@ -61,6 +62,11 @@ public final class MapsEnvironment {
   public static String getMapsData() {
     String data = System.getProperty(ENV_MAPS_DATA, System.getenv(ENV_MAPS_DATA));
     if (data != null && !data.isBlank()) {
+      if(data.toLowerCase().contains("${programdata}")){
+        // Let's do the lookup / replace
+        String programData = System.getenv("ProgramData");
+        data = data.replaceAll("(?i)\\$\\{programdata}", Matcher.quoteReplacement(programData));
+      }
       logger.log(MAP_ENV_DATA_RESOLVED, data, "system/env");
       return data;
     }

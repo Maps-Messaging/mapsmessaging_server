@@ -143,6 +143,8 @@ public class MessageDaemon {
     isStarted = new AtomicBoolean(false);
     String mapsHome = MapsEnvironment.getMapsHome();
     String mapsData = MapsEnvironment.getMapsData();
+    System.setProperty(MAPS_HOME, mapsHome);
+    System.setProperty(MAPS_DATA, mapsData);
 
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_HOME, mapsHome, false));
     EnvironmentConfig.getInstance().registerPath(new EnvironmentPathLookup(MAPS_DATA, mapsData, true));
