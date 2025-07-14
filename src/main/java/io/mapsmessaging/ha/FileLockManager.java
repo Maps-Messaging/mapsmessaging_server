@@ -45,6 +45,7 @@ public class FileLockManager implements AutoCloseable {
         lock = channel.tryLock();
         if (lock != null) {
           locked = true;
+          Files.deleteIfExists(stopSignalFilePath); // clean up stale stop file
           writeLockMetadata();
           startHeartbeat();
           startWatchService();
