@@ -24,14 +24,9 @@ $MainJar   = "maps-$Version.jar"  # Leave as original JAR name
 #
 # Move the windows version of logback to override the linux version
 #
-$content = (Get-Content "$InputDir\conf\logback.xml" -Raw) -replace '\$\{MAPS_DATA\}', '%ProgramData%\MapsMessaging'
+$content = (Get-Content "$InputDir\conf\logback.xml" -Raw) -replace 'MAPS_DATA', 'ProgramData'
 $content | Set-Content "$InputDir\conf\logback.xml"
 
-
-# Copy config (if it exists)
-if (Test-Path "$BaseDir\Maps.cfg") {
-  Copy-Item -Force "$BaseDir\Maps.cfg" "$InputDir"
-}
 
 # Run jpackage
 & "$Env:JAVA_HOME\bin\jpackage" `
@@ -53,7 +48,7 @@ if (Test-Path "$BaseDir\Maps.cfg") {
   --vendor "Maps Messaging" `
   --add-launcher mapsTop=mapsTop.properties `
   --license-file "$InputDir\LICENSE" `
-  --java-options '-cp "$APPDIR\conf;$APPDIR\lib\*" -DMAPS_HOME="$APPDIR" -DMAPS_CONF="$APPDIR\conf"'
+  --java-options '-DMAPS_HOME="$APPDIR" -DMAPS_CONF="$APPDIR\conf" -DMAPS_DATA="${ProgramData}\MapsMessaging\data" -DCONSUL_URL=http://localhost:8500/'
 
 
 
