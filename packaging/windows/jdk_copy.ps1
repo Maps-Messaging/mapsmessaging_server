@@ -11,4 +11,19 @@ if (Test-Path $runtimeDir) {
 }
 
 # Step 4: Copy the full JDK
-Copy-Item -Recurse -Force $jdkHome $runtimeDir
+$items = Get-ChildItem -Path $jdkHome -Recurse -Force
+$total = $items.Count
+$count = 0
+
+foreach ($item in $items) {
+    $dest = $item.FullName.Replace($jdkHome, $runtimeDir)
+    Write-Progress -Activity "Copying JDK" -Status $item.FullName -PercentComplete (($count / $total) * 100)
+
+    if ($item.PSIsContainer) {
+        New-Item -ItemType Directory -Path $dest -Force | Out-Null
+    } else {
+        Copy-Item -Path $item.FullName -Destination $dest -Force
+    }
+
+    $count++
+}
