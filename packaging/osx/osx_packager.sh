@@ -26,7 +26,7 @@ PASSWORD="$2"
 VERSION="3.3.7-SNAPSHOT"
 APP_NAME="MapsMessaging"
 ZIP_REPO="maps-snapshot"
-PUSH_REPO="maps_mac_installer"  # renamed to match mac
+PUSH_REPO="maps_osx_installer"
 
 ZIP_NAME="maps-$VERSION-install.zip"
 ZIP_URL="https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/$VERSION/$ZIP_NAME"

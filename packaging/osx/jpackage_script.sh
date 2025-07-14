@@ -42,13 +42,9 @@ INPUT_DIR="$DEST_DIR"
 MAIN_JAR="maps-$VERSION.jar"  # original JAR name remains
 
 # Replace MAPS_DATA with ProgramData in logback.xml
-sed -i '' 's/MAPS_DATA/ProgramData/g' "$INPUT_DIR/conf/logback.xml"
+sed -i '' 's|MAPS_DATA|/Library/Logs/MapsMessaging|g' "$INPUT_DIR/conf/logback.xml"
 mkdir -p out/mac
 
-echo $RUNTIME_IMAGE
-ls -lsa $RUNTIME_IMAGE
-
-echo $MAIN_CLASS
 # Run jpackage for macOS
 "$JAVA_HOME/bin/jpackage" \
   --type pkg \
