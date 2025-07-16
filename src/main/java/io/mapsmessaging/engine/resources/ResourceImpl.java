@@ -21,15 +21,16 @@ package io.mapsmessaging.engine.resources;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
+import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.dto.rest.config.destination.ArchiveConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.CacheConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.S3ArchiveConfigDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.storage.AsyncStorage;
-import io.mapsmessaging.storage.Statistics;
-import io.mapsmessaging.storage.Storage;
-import io.mapsmessaging.storage.StorageBuilder;
+import io.mapsmessaging.storage.*;
+import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
+import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -74,57 +75,46 @@ public class ResourceImpl implements Resource {
     isClosed = false;
     name = fileName + "message.data";
     this.resourceProperties = resourceProperties;
-    Map<String, String> properties = new LinkedHashMap<>();
-    properties.put("basePath", fileName);
-    StorageBuilder<Message> builder = new StorageBuilder<>();
-    long idleTime = 0;
-    String type = "Memory";
-    Map<String, String> storeProperties = new LinkedHashMap<>();
-    if (destinationConfig != null) {
-      storeProperties.put("debug", ""+destinationConfig.isDebug());
-      storeProperties.put("Sync", "" + destinationConfig.isSync());
-      storeProperties.put("ItemCount", "" + destinationConfig.getItemCount());
-      storeProperties.put("MaxPartitionSize", "" + destinationConfig.getMaxPartitionSize());
-      storeProperties.put("ExpiredEventPoll", "" + destinationConfig.getExpiredEventPoll());
-      storeProperties.put("Capacity", ""+destinationConfig.getCapacity());
-      idleTime = destinationConfig.getAutoPauseTimeout();
-      type = destinationConfig.getType();
-      if (type.equalsIgnoreCase("file")) {
-        type = "Partition";
-      }
-      if (destinationConfig.getCache() != null) {
-        CacheConfigDTO cacheConfig = destinationConfig.getCache();
-        builder.setCache(cacheConfig.getType());
-        builder.enableCacheWriteThrough(cacheConfig.isWriteThrough());
-      }
-      if(destinationConfig.getArchive() != null){
-        ArchiveConfigDTO archiveConfig = destinationConfig.getArchive();
-        properties.put("archiveName", archiveConfig.getName() );
-        properties.put("archiveIdleTime", ""+archiveConfig.getIdleTime());
-        properties.put("digestName", archiveConfig.getDigestAlgorithm());
-        S3ArchiveConfigDTO s3ArchiveConfig = archiveConfig.getS3();
-        if(s3ArchiveConfig != null){
-          properties.put("S3AccessKeyId", s3ArchiveConfig.getAccessKeyId());
-          properties.put("S3SecretAccessKey", s3ArchiveConfig.getSecretAccessKey());
-          properties.put("S3RegionName", s3ArchiveConfig.getRegionName());
-          properties.put("S3BucketName", s3ArchiveConfig.getBucketName());
-          properties.put("S3CompressEnabled", ""+s3ArchiveConfig.isCompression());
-        }
-      }
+
+    if (destinationConfig == null) {
+      destinationConfig = new DestinationConfig();
+      destinationConfig.setType("Memory");
+      destinationConfig.setName(fileName);
+      destinationConfig.setCapacity(1);
     }
-    builder.setProperties(properties)
+
+    // Convert to storage configs
+    StorageConfig config = ConfigHelper.buildConfig(fileName, destinationConfig);
+    if (config == null) {
+      throw new IOException("Cannot build config");
+    }
+
+    StorageBuilder<Message> builder = new StorageBuilder<>();
+    builder.setConfig(config)
         .setName(name)
-        .setFactory(new MessageFactory())
-        .setProperties(storeProperties)
-        .setStorageType(type);
+        .setFactory(new MessageFactory());
+    if (config instanceof PartitionStorageConfig) {
+      builder.setStorageType("partition");
+    } else if (config instanceof MemoryStorageConfig) {
+      builder.setStorageType("memory");
+    } else if (config instanceof MemoryTierConfig) {
+      builder.setStorageType("memorytier");
+    }
+
+    if (destinationConfig.getCache() != null) {
+      CacheConfigDTO cacheConfig = destinationConfig.getCache();
+      builder.setCache(cacheConfig.getType())
+          .enableCacheWriteThrough(cacheConfig.isWriteThrough());
+    }
+
     if (messageExpiryHandler != null) {
       builder.setExpiredHandler(messageExpiryHandler);
     }
 
     Storage<Message> s = builder.build();
-    persistent = !(type.equalsIgnoreCase("Memory"));
+    persistent = config instanceof MemoryStorageConfig;
     store = new AsyncStorage<>(s);
-    if (idleTime > 0) {
+    if (destinationConfig.getAutoPauseTimeout() > 0) {
       store.enableAutoPause(TimeUnit.SECONDS.toMillis(destinationConfig.getAutoPauseTimeout()));  // Convert to milliseconds
     }
   }
@@ -188,7 +178,6 @@ public class ResourceImpl implements Resource {
     return getFromFuture(store.isEmpty());
   }
 
-
   @Override
   public Message get(long key) throws IOException {
     return getFromFuture(store.get(key));
@@ -213,6 +202,4 @@ public class ResourceImpl implements Resource {
   public @Nullable Statistics getStatistics() {
     return getFromFuture(store.getStatistics());
   }
-
-
 }

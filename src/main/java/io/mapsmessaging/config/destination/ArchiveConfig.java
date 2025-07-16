@@ -30,7 +30,7 @@ public class ArchiveConfig extends ArchiveConfigDTO implements Config {
     this.name = properties.getProperty("name", "None");
     this.idleTime = properties.getLongProperty("idleTime", -1);
     this.digestAlgorithm = properties.getProperty("digestAlgorithm", "MD5");
-
+    this.migrationPath = properties.getProperty("migrationPath");
     // Initialize S3 configuration if present
     if (properties.containsKey("s3")) {
       this.s3 = new S3ArchiveConfig((ConfigurationProperties) properties.get("s3"));

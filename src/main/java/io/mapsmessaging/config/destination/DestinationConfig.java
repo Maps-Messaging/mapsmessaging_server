@@ -24,20 +24,14 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
-/*
 
-public class Storage {
-  private boolean s3Archive;
-  private boolean compressionArchive;
-  private boolean migrationArchive;
-
-  private boolean fileSupport;
-  private boolean cacheSupport;
-}
- */
 public class DestinationConfig extends DestinationConfigDTO implements Config {
 
   private static final String OPTIONAL_PATH = "{folder}";
+
+  public DestinationConfig() {
+
+  }
 
   public DestinationConfig(ConfigurationProperties properties, FeatureManager featureManager) {
     this.debug = properties.getBooleanProperty("debug", false);

@@ -40,6 +40,9 @@ public class ArchiveConfigDTO extends BaseConfigDTO {
   @Schema(description = "Digest algorithm used for archive integrity", example = "MD5")
   protected String digestAlgorithm;
 
+  @Schema(description = "Location to move the partition if idle", example = "/opt/store")
+  protected String migrationPath;
+
   @Schema(description = "Configuration for S3 archiving")
   protected S3ArchiveConfigDTO s3;
 }
