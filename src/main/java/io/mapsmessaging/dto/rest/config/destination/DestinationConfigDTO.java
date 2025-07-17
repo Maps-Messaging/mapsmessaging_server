@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.destination;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.storage.StorageConfig;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,38 +32,11 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Destination Configuration DTO")
 public class DestinationConfigDTO extends BaseConfigDTO {
 
-  @Schema(description = "Enable or disable synchronization", example = "true")
-  protected boolean sync;
-
-  @Schema(description = "Enable or disable debug mode", example = "true")
-  protected boolean debug;
-
   @Schema(description = "Enable or disable remapping", example = "false")
   protected boolean remap;
 
-  @Schema(description = "Item count for destination", example = "100")
-  protected int itemCount;
-
-  @Schema(description = "Polling time for expired events", example = "20")
-  protected int expiredEventPoll;
-
-  @Schema(description = "The total number of events to maintain", example = "10000")
-  protected int capacity;
-
-  @Schema(description = "Auto-pause timeout in seconds", example = "300")
-  protected int autoPauseTimeout;
-
-  @Schema(description = "Maximum partition size in bytes", example = "4096")
-  protected long maxPartitionSize;
-
-  @Schema (description = "Maximum message count per destination", example = "10000")
-  protected long maxMessageCount;
-
   @Schema(description = "Trailing path", example = "path/to/trail")
   protected String trailingPath;
-
-  @Schema(description = "Name of the destination", example = "destinationName")
-  protected String name;
 
   @Schema(description = "Directory path for destination", example = "/var/data")
   protected String directory;
@@ -76,15 +50,18 @@ public class DestinationConfigDTO extends BaseConfigDTO {
   @Schema(description = "Format configuration")
   protected FormatConfigDTO format;
 
-  @Schema(description = "Cache configuration")
-  protected CacheConfigDTO cache;
-
-  @Schema(description = "Archive configuration")
-  protected ArchiveConfigDTO archive;
-
   @Schema(description = "Message override parameters")
   protected MessageOverrideDTO messageOverride;
 
   @Schema(description = "Namespace mapping", example = "mappedNamespace")
   protected String namespaceMapping;
+
+  @Schema(description = "Auto-pause timeout in seconds", example = "300")
+  protected int autoPauseTimeout;
+
+  @Schema(description= "" )
+  protected StorageConfig storageConfig;
+
+  @Schema(description = "Cache configuration")
+  protected CacheConfigDTO cache;
 }

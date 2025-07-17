@@ -22,13 +22,11 @@ package io.mapsmessaging.engine.resources;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.config.destination.DestinationConfig;
-import io.mapsmessaging.dto.rest.config.destination.ArchiveConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.CacheConfigDTO;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
-import io.mapsmessaging.dto.rest.config.destination.S3ArchiveConfigDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.storage.*;
-import io.mapsmessaging.storage.impl.file.PartitionStorageConfig;
+import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
 import io.mapsmessaging.storage.impl.memory.MemoryStorageConfig;
 import io.mapsmessaging.storage.impl.tier.memory.MemoryTierConfig;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
@@ -38,9 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -79,26 +75,27 @@ public class ResourceImpl implements Resource {
     if (destinationConfig == null) {
       destinationConfig = new DestinationConfig();
       destinationConfig.setType("Memory");
-      destinationConfig.setName(fileName);
-      destinationConfig.setCapacity(1);
+      MemoryStorageConfig memoryStorageConfig = new MemoryStorageConfig();
+      memoryStorageConfig.setCapacity(2);
+      memoryStorageConfig.setExpiredEventPoll(-1);
+      destinationConfig.setStorageConfig(memoryStorageConfig);
     }
 
     // Convert to storage configs
-    StorageConfig config = ConfigHelper.buildConfig(fileName, destinationConfig);
+    StorageConfig config = destinationConfig.getStorageConfig();
     if (config == null) {
       throw new IOException("Cannot build config");
     }
+    config = config.getCopy();
 
     StorageBuilder<Message> builder = new StorageBuilder<>();
     builder.setConfig(config)
         .setName(name)
         .setFactory(new MessageFactory());
     if (config instanceof PartitionStorageConfig) {
-      builder.setStorageType("partition");
-    } else if (config instanceof MemoryStorageConfig) {
-      builder.setStorageType("memory");
+      ((PartitionStorageConfig)config).setFileName(fileName);
     } else if (config instanceof MemoryTierConfig) {
-      builder.setStorageType("memorytier");
+      ((MemoryTierConfig)config).getPartitionStorageConfig().setFileName(fileName);
     }
 
     if (destinationConfig.getCache() != null) {

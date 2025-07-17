@@ -34,20 +34,15 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
   }
 
   public DestinationConfig(ConfigurationProperties properties, FeatureManager featureManager) {
-    this.debug = properties.getBooleanProperty("debug", false);
-    this.name = properties.getProperty("name", "");
     this.directory = properties.getProperty("directory", "");
     this.namespace = properties.getProperty("namespace", "");
     this.type = properties.getProperty("type", "");
     if(!featureManager.isEnabled("storage.fileSupport") && type.equalsIgnoreCase("file")) {
       type = "memory"; // File is not supported
     }
-    this.sync = properties.getProperty("sync", "disable").equalsIgnoreCase("enable");
-    this.itemCount = properties.getIntProperty("itemCount", 100);
-    this.capacity = properties.getIntProperty("capacity", -1);
-    this.maxPartitionSize = properties.getLongProperty("maxPartitionSize", 4096L);
-    this.expiredEventPoll = properties.getIntProperty("expiredEventPoll", 20);
     this.autoPauseTimeout = properties.getIntProperty("autoPauseTimeout", 300);
+
+    storageConfig = ConfigHelper.buildConfig(type, properties);
 
     if (properties.containsKey("format")) {
       this.format = new FormatConfig((ConfigurationProperties) properties.get("format"));
@@ -57,14 +52,6 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     }
     else{
       this.cache = null;
-    }
-    if (properties.containsKey("archive")) {
-      this.archive = new ArchiveConfig((ConfigurationProperties) properties.get("archive"));
-      if(archive.getName().equalsIgnoreCase("s3") && !featureManager.isEnabled("storage.s3Archive") ||
-          archive.getName().equalsIgnoreCase("compress") && !featureManager.isEnabled("storage.compressionArchive")
-      ) {
-        this.archive = null; // Disabled
-      }
     }
     if(properties.containsKey("messageOverrides")) {
       messageOverride = new MessageOverrideConfig((ConfigurationProperties) properties.get("messageOverrides"));
@@ -89,26 +76,16 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
   @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("name", this.name);
-    properties.put("debug", this.debug);
     properties.put("directory", this.directory);
     properties.put("namespace", this.namespace);
     properties.put("type", this.type);
-    properties.put("sync", this.sync ? "enable" : "disable");
-    properties.put("itemCount", this.itemCount);
-    properties.put("capacity", capacity);
-    properties.put("maxPartitionSize", this.maxPartitionSize);
-    properties.put("expiredEventPoll", this.expiredEventPoll);
     properties.put("autoPauseTimeout", this.autoPauseTimeout);
-
+    ConfigHelper.packMap(properties, storageConfig);
     if (this.format != null) {
       properties.put("format", ((Config) format).toConfigurationProperties());
     }
     if (this.cache != null) {
       properties.put("cache", ((Config) cache).toConfigurationProperties());
-    }
-    if (this.archive != null) {
-      properties.put("archive", ((Config) archive).toConfigurationProperties());
     }
     if (this.messageOverride != null) {
       properties.put("messageOverride", ((Config) messageOverride).toConfigurationProperties());
@@ -123,41 +100,16 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
 
     DestinationConfigDTO newConfig = (DestinationConfigDTO) config;
     boolean hasChanged = false;
-
-    if (this.sync != newConfig.isSync()) {
-      this.sync = newConfig.isSync();
-      hasChanged = true;
-    }
-    if (this.debug != newConfig.isDebug()) {
-      this.debug = newConfig.isDebug();
-      hasChanged = true;
-    }
     if (this.remap != newConfig.isRemap()) {
       this.remap = newConfig.isRemap();
       hasChanged = true;
     }
-    if (this.itemCount != newConfig.getItemCount()) {
-      this.itemCount = newConfig.getItemCount();
-      hasChanged = true;
-    }
-    if (this.capacity != newConfig.getCapacity()) {
-      this.capacity = newConfig.getCapacity();
-      hasChanged = true;
-    }
-    if (this.expiredEventPoll != newConfig.getExpiredEventPoll()) {
-      this.expiredEventPoll = newConfig.getExpiredEventPoll();
+    if (!this.directory.equals(newConfig.getDirectory())) {
+      this.directory = newConfig.getDirectory();
       hasChanged = true;
     }
     if (this.autoPauseTimeout != newConfig.getAutoPauseTimeout()) {
       this.autoPauseTimeout = newConfig.getAutoPauseTimeout();
-      hasChanged = true;
-    }
-    if (this.maxPartitionSize != newConfig.getMaxPartitionSize()) {
-      this.maxPartitionSize = newConfig.getMaxPartitionSize();
-      hasChanged = true;
-    }
-    if (!this.directory.equals(newConfig.getDirectory())) {
-      this.directory = newConfig.getDirectory();
       hasChanged = true;
     }
     if (!this.namespace.equals(newConfig.getNamespace())) {
@@ -176,10 +128,7 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     if (this.cache != null && ((Config) cache).update(newConfig.getCache())) {
       hasChanged = true;
     }
-    if (this.archive != null && ((Config) archive).update(newConfig.getArchive())) {
-      hasChanged = true;
-    }
-    if (this.messageOverride != null && ((Config) messageOverride).update(newConfig.getArchive())) {
+    if (this.messageOverride != null && ((Config) messageOverride).update(newConfig.getMessageOverride())) {
       hasChanged = true;
     }
 
