@@ -54,6 +54,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -350,8 +351,9 @@ public class MessageDaemon {
       System.err.println("MAPS_DATA not set");
       return;
     }
-
+    Path maps_data = new File(directoryPath).toPath();
     Path lockFilePath = Paths.get(directoryPath, "mapsMessaging.lock");
+    Files.createDirectories(maps_data);
     FileLockManager lockManager = new FileLockManager(lockFilePath, 30000); // 30s lease
 
     while (!lockManager.tryAcquireLockWithTakeover()) {
