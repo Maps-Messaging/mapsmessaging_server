@@ -139,7 +139,7 @@ public class ConnectionManagementApi extends BaseDestinationApi {
         }
       }
     }
-    EndPointDetailsDTO dto = SessionTracker.getConnection(""+connectionId);
+    EndPointDetailsDTO dto = SessionTracker.getConnection(connectionId);
     if (dto != null) {
       putToCache(key, dto);
       return dto;

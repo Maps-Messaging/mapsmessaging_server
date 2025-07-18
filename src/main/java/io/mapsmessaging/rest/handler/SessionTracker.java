@@ -87,8 +87,8 @@ public class SessionTracker implements HttpSessionListener {
     return connections;
   }
 
-  public static EndPointDetailsDTO getConnection(String id){
-    return createDetails(sessions.values().stream().filter(session -> session.getAttribute("name").toString().equals(id)).findFirst().orElse(null));
+  public static EndPointDetailsDTO getConnection(long id){
+    return createDetails(sessions.values().stream().filter(session -> ((long)session.getAttribute("id")) == id).findFirst().orElse(null));
   }
 
   private static EndPointDetailsDTO createDetails(HttpSession session){
@@ -117,6 +117,7 @@ public class SessionTracker implements HttpSessionListener {
   private static EndPointSummaryDTO createSummary(HttpSession session){
     if(session == null)return null;
     EndPointSummaryDTO connection = new EndPointSummaryDTO();
+    connection.setId((long) session.getAttribute("connectionId"));
     connection.setName((String)session.getAttribute("name"));
     connection.setUser((String)session.getAttribute("username"));
     connection.setLastWrite(session.getLastAccessedTime());

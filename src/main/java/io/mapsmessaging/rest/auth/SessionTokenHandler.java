@@ -24,6 +24,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.network.io.Constants;
 import io.mapsmessaging.security.SubjectHelper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +35,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SessionTokenHandler {
 
@@ -104,6 +106,7 @@ public class SessionTokenHandler {
     session.setAttribute(USERNAME, username);
     session.setAttribute("subject", subject);
     session.setAttribute("uuid", uuid);
+    session.setAttribute("connectionId",  Constants.getNextId());
     return session;
   }
 
