@@ -59,6 +59,41 @@ public final class MapsEnvironment {
     }
   }
 
+  /**
+   * Resolves the MAPS_DATA directory location for storing server data.
+   * <p>
+   * Resolution logic follows this order:
+   * <ol>
+   *   <li>If the system property or environment variable {@code maps_data} is set, use it.
+   *       <ul>
+   *         <li>If the value contains {@code ${ProgramData}} (case-insensitive), it will be replaced with the actual
+   *         system environment variable {@code ProgramData} (Windows only).</li>
+   *       </ul>
+   *   </li>
+   *   <li>Otherwise, check if the server is running from an "installed" directory:
+   *       <ul>
+   *         <li>Linux: paths under {@code /opt/}, {@code /usr/}</li>
+   *         <li>macOS: paths under {@code /Applications/}</li>
+   *         <li>Windows: paths containing {@code Program Files} or {@code ProgramData}</li>
+   *       </ul>
+   *   </li>
+   *   <li>If running from an installed location, use OS-specific defaults:
+   *       <ul>
+   *         <li>Windows: {@code %ProgramData%\MapsMessaging}</li>
+   *         <li>macOS: {@code ~/Library/Application Support/MapsMessaging}</li>
+   *         <li>Linux: {@code /opt/maps_data}</li>
+   *       </ul>
+   *   </li>
+   *   <li>If not installed (e.g. running from a dev tree, ZIP, or tar.gz), fallback to:
+   *       <ul>
+   *         <li>{@code $MAPS_HOME/data}</li>
+   *       </ul>
+   *   </li>
+   * </ol>
+   * This approach ensures write-access for dev/test environments while using platform-standard locations in production installs.
+   *
+   * @return Resolved absolute path to the MAPS_DATA directory
+   */
   public static String getMapsData() {
     String data = System.getProperty(ENV_MAPS_DATA, System.getenv(ENV_MAPS_DATA));
     if (data != null && !data.isBlank()) {
@@ -73,6 +108,14 @@ public final class MapsEnvironment {
 
     String os = System.getProperty("os.name").toLowerCase();
     String resolved;
+    String mapsHome = getMapsHome();
+    boolean installed = isInstalledPath(mapsHome);
+
+    if (!installed) {
+      resolved = mapsHome + File.separator + "data";
+      logger.log(MAP_ENV_DATA_RESOLVED, resolved, "non-installed");
+      return resolved;
+    }
 
     if (os.contains("win")) {
       String programData = System.getenv("ProgramData");
@@ -87,6 +130,16 @@ public final class MapsEnvironment {
 
     logger.log(MAP_ENV_DATA_RESOLVED, resolved, os);
     return resolved;
+  }
+
+  private static boolean isInstalledPath(String home) {
+    if (home == null) return false;
+    String path = home.toLowerCase();
+    return path.startsWith("/opt/")
+        || path.startsWith("/usr/")
+        || path.startsWith("/applications/")
+        || path.contains("program files")
+        || path.contains("programdata");
   }
 
   private MapsEnvironment() {
