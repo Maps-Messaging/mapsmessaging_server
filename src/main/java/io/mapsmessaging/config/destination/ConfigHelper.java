@@ -40,6 +40,9 @@ public class ConfigHelper {
       dConfig.setDigestName(archive.getProperty("digestAlgorithm", "MD5"));
       dConfig.setMigrationDestination(archive.getProperty("migrationPath"));
       if (properties.containsKey("s3")) {
+        if(archive.getProperty("s3") != null) {
+          archive = (ConfigurationProperties)archive.get("s3");
+        }
         S3Config s3Config = new S3Config();
         s3Config.setRegionName(archive.getProperty("regionName", ""));
         s3Config.setAccessKeyId(archive.getProperty("accessKeyId", ""));
