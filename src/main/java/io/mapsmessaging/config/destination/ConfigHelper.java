@@ -39,8 +39,8 @@ public class ConfigHelper {
       dConfig.setIdleTime(archive.getLongProperty("idleTime", -1));
       dConfig.setDigestName(archive.getProperty("digestAlgorithm", "MD5"));
       dConfig.setMigrationDestination(archive.getProperty("migrationPath"));
-      if (properties.containsKey("s3")) {
-        if(archive.getProperty("s3") != null) {
+      if (properties.containsKey("s3") || archive.containsKey("s3")) {
+        if(archive.containsKey("s3")) {
           archive = (ConfigurationProperties)archive.get("s3");
         }
         S3Config s3Config = new S3Config();
@@ -99,7 +99,6 @@ public class ConfigHelper {
     return memoryTierConfig;
   }
 
-
   public static void packMap(ConfigurationProperties properties, StorageConfig storageConfig) {
     if(storageConfig != null) {
       if(storageConfig instanceof MemoryStorageConfig) {
@@ -122,8 +121,6 @@ public class ConfigHelper {
     properties.put("scanInterval", memoryTierConfig.getScanInterval());
     properties.put("migrationTime", memoryTierConfig.getMigrationTime());
   }
-
-
 
   private static void packMemoryConfig(ConfigurationProperties properties, MemoryStorageConfig storageConfig) {
     properties.put("capacity", storageConfig.getCapacity());
