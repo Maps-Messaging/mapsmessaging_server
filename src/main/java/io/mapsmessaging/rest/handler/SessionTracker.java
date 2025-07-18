@@ -88,7 +88,13 @@ public class SessionTracker implements HttpSessionListener {
   }
 
   public static EndPointDetailsDTO getConnection(long id){
-    return createDetails(sessions.values().stream().filter(session -> ((long)session.getAttribute("id")) == id).findFirst().orElse(null));
+    for(HttpSession session : sessions.values()){
+      Object objId = session.getAttribute("connectionId");
+      if(objId != null && objId.equals(id)){
+        return createDetails(session);
+      }
+    }
+    return null;
   }
 
   private static EndPointDetailsDTO createDetails(HttpSession session){
