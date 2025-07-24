@@ -35,6 +35,16 @@ public class SentenceFactory {
       SentenceParser sentenceParser = new SentenceParser(configEntry.getKey(), (ConfigurationProperties) configEntry.getValue());
       parserMap.put(configEntry.getKey(), sentenceParser);
     }
+    // Now lets process the aliases
+    for(Map.Entry<String, SentenceParser> entry : parserMap.entrySet()) {
+      SentenceParser sentenceParser = entry.getValue();
+      if(sentenceParser.getAlias() != null) {
+        SentenceParser alias = parserMap.get(sentenceParser.getAlias());
+        if(alias != null && sentenceParser.getConfigs().isEmpty()) {
+          sentenceParser.getConfigs().addAll(alias.getConfigs()); // Load the alias config to be parsed
+        }
+      }
+    }
   }
 
   public Sentence parse(String id, Iterator<String> entries) {

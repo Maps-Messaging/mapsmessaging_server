@@ -23,39 +23,41 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.network.protocol.impl.nmea.types.EnumTypeFactory;
 import io.mapsmessaging.network.protocol.impl.nmea.types.Type;
 import io.mapsmessaging.network.protocol.impl.nmea.types.TypeFactory;
+import lombok.Getter;
 
 import java.util.*;
 
+@Getter
 public class SentenceParser {
 
   private final String name;
   private final String description;
   private final List<Config> configs;
+  private final String alias;
 
   public SentenceParser(String name, ConfigurationProperties config) {
     this.name = name;
     this.configs = new ArrayList<>();
     this.description = config.getProperty("description");
+    alias = config.getProperty("aliasOf", null);
     ConfigurationProperties syntax = (ConfigurationProperties) config.get("syntax");
     int idx = 1;
-    ConfigurationProperties entry = (ConfigurationProperties) syntax.get("" + idx);
-    while (entry != null) {
-      String valueName = entry.getProperty("name");
-      String typeName = entry.getProperty("type");
-      String param = entry.getProperty("param", "");
-      int repeats = entry.getIntProperty("repeat", 1);
+    if(syntax != null) {
+      ConfigurationProperties entry = (ConfigurationProperties) syntax.get("" + idx);
+      while (entry != null) {
+        String valueName = entry.getProperty("name");
+        String typeName = entry.getProperty("type");
+        String param = entry.getProperty("param", "");
+        int repeats = entry.getIntProperty("repeat", 1);
 
-      if (!param.isEmpty() && typeName.equalsIgnoreCase("enum")) {
-        EnumTypeFactory.getInstance().register(valueName, param);
+        if (!param.isEmpty() && typeName.equalsIgnoreCase("enum")) {
+          EnumTypeFactory.getInstance().register(valueName, param);
+        }
+        this.configs.add(new Config(valueName, typeName, param, repeats));
+        idx++;
+        entry = (ConfigurationProperties) syntax.get("" + idx);
       }
-      this.configs.add(new Config(valueName, typeName, param, repeats));
-      idx++;
-      entry = (ConfigurationProperties) syntax.get("" + idx);
     }
-  }
-
-  public String getDescription() {
-    return description;
   }
 
   public Sentence parse(Iterator<String> entries) {

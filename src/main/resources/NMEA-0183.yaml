@@ -19,7 +19,7 @@ NMEA-0183:
   format: json          # Can be JSON or RAW
   publish: true         # Publish to $NMEA topics or not
   serverLocation: true  # Use as location source for the server
-  sentenceForPosition: GPGGA
+  sentenceForPosition: GGA
 
   sentences:
     -
@@ -221,3 +221,59 @@ NMEA-0183:
           6:
             name: localZoneMinutes
             type: long
+
+      GLGGA:
+        description: GLONASS Fix Data
+        aliasOf: GPGGA
+
+      GLGLL:
+        description: GLONASS Geographic position, latitude / longitude
+        aliasOf: GPGLL
+
+      GLGSA:
+        description: GLONASS DOP and active satellites
+        aliasOf: GPGSA
+
+      GLGSV:
+        description: GLONASS Satellites in view
+        aliasOf: GPGSV
+
+      GLRMC:
+        description: GLONASS Recommended minimum specific data
+        aliasOf: GPRMC
+
+      GLVTG:
+        description: GLONASS Track and speed
+        aliasOf: GPVTG
+
+      GLZDA:
+        description: GLONASS Time and date
+        aliasOf: GPZDA
+
+      BDGGA:
+        description: BeiDou Fix Data
+        aliasOf: GPGGA
+
+      BDGLL:
+        description: BeiDou Geographic position, latitude / longitude
+        aliasOf: GPGLL
+
+      BDGSA:
+        description: BeiDou DOP and active satellites
+        aliasOf: GPGSA
+
+      BDGSV:
+        description: BeiDou Satellites in view
+        aliasOf: GPGSV
+
+      BDRMC:
+        description: BeiDou Recommended minimum specific data
+        aliasOf: GPRMC
+
+      BDVTG:
+        description: BeiDou Track and speed
+        aliasOf: GPVTG
+
+      BDZDA:
+        description: BeiDou Time and date
+        aliasOf: GPZDA
