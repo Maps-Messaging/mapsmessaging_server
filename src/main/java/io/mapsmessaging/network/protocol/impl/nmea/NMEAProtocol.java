@@ -201,7 +201,7 @@ public class NMEAProtocol extends Protocol {
   private String parseSentence(String raw, String sentenceId, Iterator<String> gpsWords) {
     if (format.equalsIgnoreCase("json") || serverLocationSentence != null) {
       Sentence sentence = sentenceFactory.parse(sentenceId, gpsWords);
-      if (sentenceId.length() > 2 && serverLocationSentence.equalsIgnoreCase(sentenceId.substring(2))) {
+      if (sentenceId.equalsIgnoreCase(serverLocationSentence)  || sentenceId.toLowerCase().endsWith(serverLocationSentence.toLowerCase())) {
         PositionType latitude = (PositionType) sentence.get("latitude");
         PositionType longitude = (PositionType) sentence.get("longitude");
         LocationManager.getInstance().setPosition(latitude.getPosition(), longitude.getPosition());
