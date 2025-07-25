@@ -39,6 +39,7 @@ io.mapsmessaging.network.protocol.impl.nats.NatsProtocolFactory
 # TCP/Serial based protocols
 #
 io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
+io.mapsmessaging.network.protocol.impl.orbcomm.OrbcommProtocolFactory
 
 #
 # UDP based protocols

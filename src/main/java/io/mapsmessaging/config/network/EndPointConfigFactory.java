@@ -195,7 +195,8 @@ public class EndPointConfigFactory {
       return new LoRaProtocolConfig(config);
     } else if (protocol.equalsIgnoreCase("echo")) {
       return new EchoProtocolConfig(config);
-    }
+    } else if (protocol.equalsIgnoreCase("orbcomm")) {
+      return new OrbCommConfig(config);    }
     else if(protocol.equalsIgnoreCase("ws") ||
         protocol.equalsIgnoreCase("wss")){
       return new WebSocketConfig(config);

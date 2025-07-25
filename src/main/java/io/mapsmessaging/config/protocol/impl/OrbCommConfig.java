@@ -23,22 +23,27 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.impl.NmeaConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommDTO;
 
-public class NmeaConfig extends NmeaConfigDTO implements Config {
+public class OrbCommConfig extends OrbCommDTO implements Config {
 
-  public NmeaConfig(ConfigurationProperties config) {
-    setType("NMEA-0183");
+  public OrbCommConfig(ConfigurationProperties config) {
+    setType("orbcomm");
     ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
+    initialSetup = config.getProperty("initialSetup", "");
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean result = false;
-    if (config instanceof NmeaConfigDTO){
-      result = ProtocolConfigFactory.update(this, (NmeaConfigDTO) config);
+    if (config instanceof OrbCommDTO){
+      result = ProtocolConfigFactory.update(this, (OrbCommDTO) config);
       result = ((SerialConfig)serial).update(config) || result;
+      if(!initialSetup.equalsIgnoreCase(((OrbCommDTO) config).getInitialSetup())){
+        initialSetup = ((OrbCommDTO) config).getInitialSetup();
+        result = true;
+      }
     }
     return result;
   }
@@ -47,9 +52,11 @@ public class NmeaConfig extends NmeaConfigDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     ProtocolConfigFactory.pack(properties, this);
+    properties.put("initialSetup", initialSetup);
     if(serial instanceof SerialConfig){
       properties.put("serial", ((SerialConfig) serial).toConfigurationProperties());
     }
     return properties;
   }
 }
+
