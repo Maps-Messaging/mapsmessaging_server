@@ -17,12 +17,22 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
+package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
 
-public interface OutboundMessage {
-  String getName();
-  byte[] getPayload();
-  int getSIN();
-  int getMIN();
-  int getPriority();
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+public class OutboundMessage {
+  private String name;
+  private String payload;
+  private int SIN;
+  private int MIN;
+  private int priority;
+
+
+  public String pack() {
+    return String.format("%d,%d,%d,%s", priority, SIN, MIN, payload);
+  }
 }

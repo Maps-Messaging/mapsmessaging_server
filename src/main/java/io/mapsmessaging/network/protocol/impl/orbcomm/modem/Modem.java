@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages.OutboundMessage;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -86,9 +87,6 @@ public class Modem {
           return flags;
         });
   }
-
-
-
   //endregion
 
   //region Positioning controls
@@ -118,11 +116,19 @@ public class Modem {
     sendATCommand("AT%MGRL"); // From-Mobile Message List
   }
 
-  public void sendMessage(String name, int priority, int sin, int min, byte[] payload) {
-    // Implement this once you define how you store message payloads and names
-    // Most likely needs XMODEM + %MGRT initiation
+  public void sendMessage(String name, int priority, int sin, int min, String payload) {
+    OutboundMessage outboundMessage = new OutboundMessage();
+    outboundMessage.setName(name);
+    outboundMessage.setPriority(priority);
+    outboundMessage.setPayload(payload);
+    outboundMessage.setMIN(min);
+    outboundMessage.setSIN(sin);
+
+    outboundMessage.getPayload();
+
   }
 
+  //region Incoming message functions
   public CompletableFuture<List<String>> listIncomingMessages() {
     return sendATCommand("AT%MGFN")
         .thenApply(resp -> Arrays.stream(resp.split("\r\n"))
@@ -157,6 +163,7 @@ public class Modem {
               .thenApply(v -> futures.stream().map(CompletableFuture::join).toList());
         });
   }
+  //endregion
 
   public void factoryReset() {
     sendATCommand("AT&F;Z");
