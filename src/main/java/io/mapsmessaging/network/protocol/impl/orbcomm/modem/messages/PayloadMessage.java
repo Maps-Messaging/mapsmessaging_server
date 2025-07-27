@@ -17,33 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
+package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
 
-public enum ModemMessageStatusFlag {
-  GNSS_AVAILABLE(0),
-  MESSAGE_RECEIVED(1),
-  TRANSMIT_COMPLETE(2),
-  REGISTERED_SATELLITE_NETWORK(3),
-  DEVICE_RESET(4),
-  JAMMING_ANTENNA_CUT(5),
-  DEVICE_RESET_IMMINENT(6),
-  LOW_POWER_WAKE_CHANGED(7),
-  UTC_TIME_UPDATED(8),
-  POSITION_FIX_TIMED_OUT(9),
-  REQUESTED_EVENT_CACHE(10),
-  MOBILE_PING_REPLY_RECEIVED(11);
+import lombok.*;
 
-  private final int bit;
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PayloadMessage implements ModemMessage{
+  private byte[] payload;
 
-  ModemMessageStatusFlag(int bit) {
-    this.bit = bit;
+  public byte[] pack(){
+    return payload;
   }
 
-  public int getBit() {
-    return bit;
-  }
-
-  public boolean isSet(int s88Value) {
-    return (s88Value & (1 << bit)) != 0;
-  }
 }

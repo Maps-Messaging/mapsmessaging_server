@@ -39,4 +39,5 @@ public class ProtocolErrorMessage implements ModemMessage {
     this.errorCode = ErrorCode.from(data[2] & 0xFF);
     this.errorInfo = data[3] & 0xFF;
   }
+
 }

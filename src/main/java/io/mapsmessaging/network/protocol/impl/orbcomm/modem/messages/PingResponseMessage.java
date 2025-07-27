@@ -20,14 +20,18 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.nio.ByteBuffer;
 
 @Getter
+@Setter
+@NoArgsConstructor
 public class PingResponseMessage implements ModemMessage {
 
-  private final int requestTime;   // 16 bits
-  private final int responseTime;  // 16 bits
+  private int requestTime;   // 16 bits
+  private int responseTime;  // 16 bits
 
   public PingResponseMessage(byte[] data) {
     if (data.length < 4) {
@@ -36,5 +40,12 @@ public class PingResponseMessage implements ModemMessage {
     ByteBuffer buffer = ByteBuffer.wrap(data);
     requestTime = buffer.getShort() & 0xFFFF;
     responseTime = buffer.getShort() & 0xFFFF;
+  }
+
+  public byte[] pack() {
+    ByteBuffer buffer = ByteBuffer.allocate(4);
+    buffer.putShort((short) (requestTime & 0xFFFF));
+    buffer.putShort((short) (responseTime & 0xFFFF));
+    return buffer.array();
   }
 }

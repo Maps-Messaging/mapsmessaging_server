@@ -21,6 +21,10 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages.OutboundMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.GnssTrackingMode;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.MessageFormat;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.ModemMessageStatusFlag;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.PositioningMode;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -30,10 +34,13 @@ import java.util.function.Consumer;
 
 
 public class Modem {
-  private ModemLineHandler currentHandler;
 
-  private final Map<String, CompletableFuture<String>> pending = new ConcurrentHashMap<>();
   private final Consumer<Packet> packetSender;
+  private final Queue<Command> commandQueue = new ArrayDeque<>();
+  private final StringBuilder responseBuffer = new StringBuilder();
+
+  private ModemLineHandler currentHandler;
+  private Command currentCommand = null;
 
   public Modem(Consumer<Packet> packetSender) {
     this.packetSender = packetSender;
@@ -56,6 +63,7 @@ public class Modem {
   public void queryModemInfo() {
     sendATCommand("ATI0;+GMM;+GMR;+GMR;+GMI");
   }
+
   public CompletableFuture<String> getTemperature() {
     return sendATCommand("ATS85?");
   }
@@ -94,8 +102,22 @@ public class Modem {
     return sendATCommand("ATS80=" + mode.getCode());
   }
 
-  public CompletableFuture<String> getJammingIndicator() {
-    return sendATCommand("ATS57=<>");
+  public CompletableFuture<Integer> getJammingIndicator() {
+    return sendATCommand("ATS57?")
+        .thenApply(resp -> {
+          String[] lines = resp.split("\r\n");
+          for (String line : lines) {
+            line = line.trim();
+            if (!line.equalsIgnoreCase("OK") && !line.startsWith("ERROR") && !line.isEmpty()) {
+              try {
+                return Integer.parseInt(line);
+              } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid ATS57 response: " + line, e);
+              }
+            }
+          }
+          throw new IllegalStateException("No valid response line found in ATS57 result: " + resp);
+        });
   }
 
   public CompletableFuture<String> requestPosition() {
@@ -137,28 +159,39 @@ public class Modem {
             .toList());
   }
 
-  public CompletableFuture<byte[]> getMessage(String name) {
-    return sendATCommand("AT%MGFG=" + name)
+  public CompletableFuture<byte[]> getMessage(String name, MessageFormat format) {
+    String quotedName = "\"" + name + "\"";
+    return sendATCommand("AT%MGFG=" + quotedName + "," + format.getCode())
         .thenApply(resp -> {
-          // Response may contain both meta and payload, depends on verbose mode
-          int idx = resp.indexOf("\r\n");
-          if (idx >= 0 && idx + 2 < resp.length()) {
-            return resp.substring(idx + 2).getBytes(StandardCharsets.US_ASCII);
-          } else {
-            return resp.getBytes(StandardCharsets.US_ASCII);
+          for (String line : resp.split("\r\n")) {
+            line = line.trim();
+            if (line.startsWith("+MGFG:")) {
+              int start = line.indexOf('"');
+              int end = line.lastIndexOf('"');
+              if (start >= 0 && end > start) {
+                String encoded = line.substring(start + 1, end);
+                return (format == MessageFormat.HEX)
+                    ? hexDecode(encoded)
+                    : Base64.getDecoder().decode(encoded);
+              }
+            }
           }
+          throw new IllegalStateException("Unable to parse payload from: " + resp);
         });
   }
+
   public CompletableFuture<Void> markMessageRetrieved(String name) {
     return sendATCommand("AT%MGFM=" + name).thenApply(x -> null);
   }
 
-  public CompletableFuture<List<byte[]>> fetchAllMessages() {
+  public CompletableFuture<List<byte[]>> fetchAllMessages(MessageFormat format) {
     return listIncomingMessages()
         .thenCompose(names -> {
           List<CompletableFuture<byte[]>> futures = names.stream()
-              .map(this::getMessage)
+              .map(name -> getMessage(name, format)
+                  .thenCompose(data -> markMessageRetrieved(name).thenApply(v -> data)))
               .toList();
+
           return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
               .thenApply(v -> futures.stream().map(CompletableFuture::join).toList());
         });
@@ -188,13 +221,20 @@ public class Modem {
             .toList());
   }
 
-  protected CompletableFuture<String> sendATCommand(String cmd) {
-    String key = UUID.randomUUID().toString();
+  protected synchronized CompletableFuture<String> sendATCommand(String cmd) {
     CompletableFuture<String> future = new CompletableFuture<>();
-    pending.put(key, future);
-    // Store key if needed for matching later
-    packetSender.accept(packetWith(cmd));
+    commandQueue.add(new Command(cmd, future));
+    if (currentCommand == null) {
+      sendNextCommand();
+    }
     return future;
+  }
+
+  private synchronized void sendNextCommand() {
+    currentCommand = commandQueue.poll();
+    if (currentCommand != null) {
+      packetSender.accept(packetWith(currentCommand.command));
+    }
   }
 
   private Packet packetWith(String cmd) {
@@ -204,14 +244,66 @@ public class Modem {
     return packet;
   }
 
-  private void handleLine(String line) {
+  private synchronized void handleLine(String line) {
+    if (currentCommand == null) {
+      // Unsolicited line, forward to listener
+      handleUnsolicitedLine(line);
+      return;
+    }
+
     if (line.equalsIgnoreCase("OK") || line.startsWith("ERROR")) {
-      // Complete the first pending future with the result
-      pending.values().stream().findFirst().ifPresent(f -> f.complete(line));
-      pending.clear(); // Assuming single outstanding command at a time
+      String response = responseBuffer.toString().trim();
+      if (!response.isEmpty()) {
+        response += "\r\n";
+      }
+      response += line;
+
+      currentCommand.future.complete(response);
+      currentCommand = null;
+      responseBuffer.setLength(0);
+      sendNextCommand();
     } else {
-      System.out.println("MODEM <<< " + line); // Debug or logging line
+      responseBuffer.append(line).append("\r\n");
     }
   }
+
+  private byte[] hexDecode(String hex) {
+    int len = hex.length();
+    byte[] data = new byte[len / 2];
+    for (int i = 0; i < len; i += 2) {
+      data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+          + Character.digit(hex.charAt(i + 1), 16));
+    }
+    return data;
+  }
+
+
+  private void handleUnsolicitedLine(String line) {
+    if (line.startsWith("%MGU:")) {
+      String msgName = line.substring("%MGU:".length()).trim();
+      System.out.println("New to-mobile message available: " + msgName);
+      // Optionally auto-fetch: listIncomingMessages() → getMessage(name)
+
+    } else if (line.startsWith("%SYSE:")) {
+      String error = line.substring("%SYSE:".length()).trim();
+      System.err.println("System error: " + error);
+
+    } else if (line.startsWith("%PWRDWN")) {
+      System.out.println("Modem is shutting down.");
+
+    } else if (line.startsWith("%TRK:")) {
+      System.out.println("Trace event: " + line);
+
+    } else if (line.startsWith("%POSR:") || line.startsWith("%GPSPOS:")) {
+      System.out.println("Position report: " + line);
+
+    } else if (line.startsWith("%RING")) {
+      System.out.println("Incoming event: %RING");
+
+    } else {
+      System.out.println("Unhandled unsolicited: " + line);
+    }
+  }
+
 
 }

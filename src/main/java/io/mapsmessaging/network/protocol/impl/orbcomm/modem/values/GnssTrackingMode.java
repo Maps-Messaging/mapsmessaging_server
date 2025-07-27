@@ -17,9 +17,19 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
+package io.mapsmessaging.network.protocol.impl.orbcomm.modem.values;
 
-public interface ModemMessage {
+public enum GnssTrackingMode {
+  DISABLED(113),
+  ENABLED(114);
 
-  default byte[] pack(){return new byte[0];}
+  private final int code;
+
+  GnssTrackingMode(int code) {
+    this.code = code;
+  }
+
+  public int getCode() {
+    return code;
+  }
 }

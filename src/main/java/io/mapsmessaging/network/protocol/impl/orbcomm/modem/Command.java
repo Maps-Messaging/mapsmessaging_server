@@ -17,9 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
+package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
 
-public interface ModemMessage {
+import java.util.concurrent.CompletableFuture;
 
-  default byte[] pack(){return new byte[0];}
+public class Command {
+  final String command;
+  final CompletableFuture<String> future;
+
+  Command(String command, CompletableFuture<String> future) {
+    this.command = command;
+    this.future = future;
+  }
 }

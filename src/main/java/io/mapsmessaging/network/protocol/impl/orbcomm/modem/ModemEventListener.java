@@ -19,17 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
 
-public enum GnssTrackingMode {
-  DISABLED(113),
-  ENABLED(114);
-
-  private final int code;
-
-  GnssTrackingMode(int code) {
-    this.code = code;
-  }
-
-  public int getCode() {
-    return code;
-  }
+@FunctionalInterface
+public interface ModemEventListener {
+  void onEvent(String line);
 }

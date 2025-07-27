@@ -19,7 +19,29 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
 
-public interface ModemMessage {
+public class ModemMessageFactory {
 
-  default byte[] pack(){return new byte[0];}
+  public static ModemMessage create(int min, byte[] data){
+    switch(min){
+      case 0:
+        return new ModemIdentificationMessage(data);
+      case 1:
+        return new ProtocolErrorMessage(data);
+      case 70:
+        return new SleepScheduleMessage(data);
+      case 72:
+        return new PositionMessage(data);
+      case 97:
+        return new PingResponseMessage(data);
+      case 113:
+        return new PingRequestMessage(data);
+      case 115:
+        return new BroadcastIdMessage(data);
+
+      default:
+        return null;
+    }
+  }
+
+  private ModemMessageFactory() {}
 }

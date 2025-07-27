@@ -17,20 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
+package io.mapsmessaging.network.protocol.impl.orbcomm.modem.values;
 
-public enum PositioningMode {
-  GPS(0),
-  GLONASS(1),
-  BEIDOU(2),
-  GPS_GLONASS(3),
-  GPS_BEIDOU(4),
-  GLONASS_BEIDOU(5),
-  ALL(6);
+public enum MessageFormat {
+  HEX(2),
+  BASE64(3);
 
   private final int code;
 
-  PositioningMode(int code) {
+  MessageFormat(int code) {
     this.code = code;
   }
 

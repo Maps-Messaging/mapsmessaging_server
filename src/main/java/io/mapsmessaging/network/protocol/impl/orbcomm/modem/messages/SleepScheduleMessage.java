@@ -21,14 +21,18 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
 
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages.values.ModemWakeupPeriod;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.nio.ByteBuffer;
 
 @Getter
+@Setter
+@NoArgsConstructor
 public class SleepScheduleMessage implements ModemMessage {
 
-  private final ModemWakeupPeriod wakeupType;
-  private final boolean mobileInitiated;
+  private ModemWakeupPeriod wakeupType;
+  private boolean mobileInitiated;
   private int messageReference;
 
 
@@ -41,5 +45,14 @@ public class SleepScheduleMessage implements ModemMessage {
     int tmp = buffer.getShort() & 0xFFFF;
     mobileInitiated = (tmp & 0x80) != 0;
     messageReference = (tmp>>4) & 0x7FF;
+  }
+
+  public byte[] pack() {
+    ByteBuffer buffer = ByteBuffer.allocate(4);
+    buffer.put((byte) (wakeupType != null ? wakeupType.getCode() & 0xFF : 0));
+    int tmp = ((messageReference & 0x7FF) << 4) | (mobileInitiated ? 0x80 : 0x00);
+    buffer.putShort((short) (tmp & 0xFFFF));
+    buffer.put((byte) 0); // Reserved or unused final byte to maintain 4-byte length
+    return buffer.array();
   }
 }

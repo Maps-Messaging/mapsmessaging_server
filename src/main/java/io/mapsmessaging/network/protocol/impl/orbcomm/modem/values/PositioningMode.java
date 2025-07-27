@@ -17,30 +17,24 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages;
+package io.mapsmessaging.network.protocol.impl.orbcomm.modem.values;
 
-public class MessageFactory {
+public enum PositioningMode {
+  GPS(0),
+  GLONASS(1),
+  BEIDOU(2),
+  GPS_GLONASS(3),
+  GPS_BEIDOU(4),
+  GLONASS_BEIDOU(5),
+  ALL(6);
 
-  public static ModemMessage create(int min, byte[] data){
-    switch(min){
-      case 0:
-        return new ModemIdentificationMessage(data);
-      case 1:
-        return new ProtocolErrorMessage(data);
-      case 70:
-        return new SleepScheduleMessage(data);
-      case 72:
-        return new PositionMessage(data);
-      case 97:
-        return new PingResponseMessage(data);
-      case 113:
-        return new PingRequestMessage(data);
-      case 115:
-        return new BroadcastIdMessage(data);
-      default:
-        return null;
-    }
+  private final int code;
+
+  PositioningMode(int code) {
+    this.code = code;
   }
 
-  private MessageFactory() {}
+  public int getCode() {
+    return code;
+  }
 }
