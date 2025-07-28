@@ -17,31 +17,17 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
+package io.mapsmessaging.network.protocol.impl.orbcomm.protocol;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class CancelResult {
-
-  @SerializedName("ID")
-  private Long id;
-
-  @SerializedName("CancellationStatus")
-  private Integer status;
-
-  @SerializedName("CancelRequestID")
-  private Long cancelRequestId;
-
-  @SerializedName("ErrorID")
-  private Integer errorId;
-
-  public boolean isCancelled() {
-    return status != null && status == 1;
-  }
+@AllArgsConstructor
+public class SubscribeEvent {
+  private List<SubscribeInfo> subscriptions;
 }

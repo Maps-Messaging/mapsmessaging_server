@@ -20,9 +20,13 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class BroadcastInfo {
 
   @SerializedName("ID")

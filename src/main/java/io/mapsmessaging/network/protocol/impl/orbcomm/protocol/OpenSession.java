@@ -17,31 +17,26 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
+package io.mapsmessaging.network.protocol.impl.orbcomm.protocol;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class CancelResult {
+@AllArgsConstructor
+public class OpenSession {
 
-  @SerializedName("ID")
-  private Long id;
+  private String sessionId;
 
-  @SerializedName("CancellationStatus")
-  private Integer status;
+  // Ping interval, if no events sent, when to send the ping
+  private long pingInterval;
+  // Session timeout, no events within the timeout, the session is ended
+  private long timeout;
 
-  @SerializedName("CancelRequestID")
-  private Long cancelRequestId;
-
-  @SerializedName("ErrorID")
-  private Integer errorId;
-
-  public boolean isCancelled() {
-    return status != null && status == 1;
-  }
+  // restrict the number of events sent per minute
+  private int maxEventsPerMinute;
+  // Restrict the delay of the event, in milliseconds
+  private long maxEventDelay;
 }
