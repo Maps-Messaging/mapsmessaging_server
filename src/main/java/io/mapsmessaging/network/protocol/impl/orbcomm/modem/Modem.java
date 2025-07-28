@@ -20,7 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.modem;
 
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages.OutboundMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.modem.messages.Message;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.GnssTrackingMode;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.MessageFormat;
 import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.ModemMessageStatusFlag;
@@ -29,7 +29,6 @@ import io.mapsmessaging.network.protocol.impl.orbcomm.modem.values.PositioningMo
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 
@@ -133,22 +132,23 @@ public class Modem {
   }
   //endregion
 
+  //region Outgoing message functions
 
   public void listOutgoingMessages() {
     sendATCommand("AT%MGRL"); // From-Mobile Message List
   }
 
-  public void sendMessage(String name, int priority, int sin, int min, String payload) {
-    OutboundMessage outboundMessage = new OutboundMessage();
-    outboundMessage.setName(name);
-    outboundMessage.setPriority(priority);
-    outboundMessage.setPayload(payload);
-    outboundMessage.setMIN(min);
-    outboundMessage.setSIN(sin);
-
-    outboundMessage.getPayload();
-
+  public void sendMessage(String name, int priority, int sin, int min, byte[] payload) {
+    Message message = new Message();
+    message.setName(name);
+    message.setPriority(priority);
+    message.setPayload(payload);
+    message.setMIN(min);
+    message.setSIN(sin);
+    message.setFormat(MessageFormat.BASE64);
+    packetSender.accept(packetWith("AT%MGRT="+message.toATCommand()));
   }
+  //endregion
 
   //region Incoming message functions
   public CompletableFuture<List<String>> listIncomingMessages() {
@@ -170,9 +170,7 @@ public class Modem {
               int end = line.lastIndexOf('"');
               if (start >= 0 && end > start) {
                 String encoded = line.substring(start + 1, end);
-                return (format == MessageFormat.HEX)
-                    ? hexDecode(encoded)
-                    : Base64.getDecoder().decode(encoded);
+                return format.decode(encoded);
               }
             }
           }
