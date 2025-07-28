@@ -281,7 +281,7 @@ public class Modem {
       responseBuffer.append(line).append("\r\n");
     }
   }
-  
+
 
   private void handleUnsolicitedLine(String line) {
     if (line.startsWith("%MGU:")) {
