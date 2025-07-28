@@ -24,21 +24,43 @@ import lombok.Data;
 
 @Data
 public class ReturnMessage {
+
   @SerializedName("ID")
   private Long id;
 
-  @SerializedName("TerminalID")
-  private String terminalId;
+  @SerializedName("MessageUTC")
+  private String messageUTC;
+
+  @SerializedName("ReceiveUTC")
+  private String receiveUTC;
 
   @SerializedName("SIN")
   private Integer sin;
 
-  @SerializedName("MIN")
-  private Integer min;
+  @SerializedName("MobileID")
+  private String mobileId;
 
-  @SerializedName("Payload")
-  private String base64Payload;
+  @SerializedName("NetworkID")
+  private String networkId;
 
-  @SerializedName("ReceivedUTC")
-  private String receivedUtc;
+  @SerializedName("RawPayload")
+  private String rawPayload;
+
+  @SerializedName("RegionName")
+  private String regionName;
+
+  @SerializedName("OTAMessageSize")
+  private Integer otaMessageSize;
+
+  @SerializedName("AccountID")
+  private Integer accountId;
+
+  @SerializedName("Transport")
+  private Integer transport;
+
+  @SerializedName("MobileOwnerID")
+  private Integer mobileOwnerId;
+
+  @SerializedName("Network")
+  private Integer network;
 }

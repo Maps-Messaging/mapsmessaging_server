@@ -21,17 +21,23 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
-
 @Data
 public class ForwardStatus {
+
   @SerializedName("ID")
   private Long id;
 
-  @SerializedName("DestinationID")
-  private String destinationId;
+  @SerializedName("AccountID")
+  private Integer accountId;
 
-  @SerializedName("Status")
-  private Integer status;
+  @SerializedName("IsClosed")
+  private Boolean isClosed;
+
+  @SerializedName("State")
+  private MessageState state;
+
+  @SerializedName("CreateUTC")
+  private String createUtc;
 
   @SerializedName("StatusUTC")
   private String statusUtc;
@@ -39,7 +45,40 @@ public class ForwardStatus {
   @SerializedName("ErrorID")
   private Integer errorId;
 
+  @SerializedName("Transport")
+  private Integer transport;
+
+  @SerializedName("RegionName")
+  private String regionName;
+
+  @SerializedName("ReferenceNumber")
+  private Integer referenceNumber;
+
+  @SerializedName("Network")
+  private Integer network;
+
   public boolean isDelivered() {
-    return status != null && status == 1;
+    return state == MessageState.ACKNOWLEDGED;
+  }
+
+  public enum MessageState {
+    @SerializedName("0")
+    ACCEPTED,
+    @SerializedName("1")
+    ACKNOWLEDGED,
+    @SerializedName("2")
+    SUBMISSION_ERROR,
+    @SerializedName("3")
+    DELIVERY_FAILED,
+    @SerializedName("4")
+    TIMED_OUT,
+    @SerializedName("5")
+    CANCELLED,
+    @SerializedName("6")
+    DELAYED_QUEUE,
+    @SerializedName("7")
+    BROADCASTED,
+    @SerializedName("8")
+    SENDING
   }
 }

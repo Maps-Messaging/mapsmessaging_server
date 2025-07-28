@@ -31,6 +31,9 @@ public class FwStatusResponse {
   @SerializedName("ErrorID")
   private Integer errorId;
 
+  @SerializedName("NextFromUTC")
+  private String nextFromUTC;
+
   @SerializedName("Statuses")
   private List<ForwardStatus> statuses;
 

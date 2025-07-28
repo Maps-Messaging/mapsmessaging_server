@@ -24,8 +24,12 @@ import lombok.Data;
 
 @Data
 public class TerminalInfo {
+
   @SerializedName("PrimeID")
   private String primeId;
+
+  @SerializedName("UnitID")
+  private String unitId;
 
   @SerializedName("Description")
   private String description;
@@ -48,14 +52,18 @@ public class TerminalInfo {
   @SerializedName("LastRegistrationUTC")
   private String lastRegistrationUtc;
 
-  @SerializedName("LastSatelliteNetwork")
-  private Integer lastSatelliteNetwork;
-
   @SerializedName("LastRegistrationMessageID")
   private Long lastRegistrationMessageId;
 
+  @SerializedName("LastSatelliteNetwork")
+  private Integer lastSatelliteNetwork;
+
   @SerializedName("LastOperationMode")
-  private Integer lastOperationMode;
+  private Integer lastOperationModeRaw;
+
+  public OperationMode getLastOperationMode() {
+    return OperationMode.fromCode(lastOperationModeRaw);
+  }
 
   @SerializedName("TerminalWakeupPeriod")
   private Integer terminalWakeupPeriod;
@@ -71,4 +79,31 @@ public class TerminalInfo {
 
   @SerializedName("UpdateUTC")
   private String updateUtc;
+
+
+  public enum OperationMode {
+    ALWAYS_ON(0),
+    WAKE_UP(1),
+    RECEIVE_ON_SEND(2),
+    HYBRID(3);
+
+    private final int code;
+
+    OperationMode(int code) {
+      this.code = code;
+    }
+
+    public int getCode() {
+      return code;
+    }
+
+    public static OperationMode fromCode(Integer code) {
+      if (code == null) return null;
+      for (OperationMode mode : values()) {
+        if (mode.code == code) return mode;
+      }
+      return null;
+    }
+  }
+
 }

@@ -30,7 +30,7 @@ public class GetTokenResponse {
   private String tokenType;
 
   @SerializedName("expires_in")
-  private Integer expiresIn;
+  private Long expiresIn;
 
   @SerializedName("access_token")
   private String accessToken;

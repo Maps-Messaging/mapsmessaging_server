@@ -74,7 +74,7 @@ public class OrbcommOgwsClient {
   }
 
   public FromMobileMessagesResponse getFromMobileMessages(String fromUtc) throws Exception {
-    String url = BASE_URL + "/get/re_messages?FromUTC=" + encode(fromUtc);
+    String url = BASE_URL + "/get/re_messages?FromUTC=" + encode(fromUtc) + "&IncludeRawPayload=true";
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(url))
         .header("Authorization", "Bearer " + bearerToken)

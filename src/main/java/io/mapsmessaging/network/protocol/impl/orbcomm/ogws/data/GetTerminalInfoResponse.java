@@ -28,6 +28,6 @@ public class GetTerminalInfoResponse {
   @SerializedName("ErrorID")
   private Integer errorId;
 
-  @SerializedName("Terminal")
+  @SerializedName("Terminals")
   private TerminalInfo terminal;
 }
