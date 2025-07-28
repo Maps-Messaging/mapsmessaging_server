@@ -134,6 +134,23 @@ public class Modem {
 
   //region Outgoing message functions
 
+  //region Sent message functions
+
+  public CompletableFuture<List<String>> listSentMessages() {
+    return sendATCommand("AT%MGFS")
+        .thenApply(resp -> Arrays.stream(resp.split("\r\n"))
+            .filter(line -> line.startsWith("FM"))
+            .map(String::trim)
+            .toList());
+  }
+
+  public CompletableFuture<Void> markSentMessageRead(String name) {
+    return sendATCommand("AT%MGFR=" + name).thenApply(x -> null);
+  }
+
+//endregion
+
+
   public void listOutgoingMessages() {
     sendATCommand("AT%MGRL"); // From-Mobile Message List
   }
@@ -264,17 +281,7 @@ public class Modem {
       responseBuffer.append(line).append("\r\n");
     }
   }
-
-  private byte[] hexDecode(String hex) {
-    int len = hex.length();
-    byte[] data = new byte[len / 2];
-    for (int i = 0; i < len; i += 2) {
-      data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-          + Character.digit(hex.charAt(i + 1), 16));
-    }
-    return data;
-  }
-
+  
 
   private void handleUnsolicitedLine(String line) {
     if (line.startsWith("%MGU:")) {
