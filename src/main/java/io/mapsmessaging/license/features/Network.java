@@ -31,5 +31,6 @@ public class Network {
   private boolean lora;
   private boolean serial;
   private boolean ogws;
+  private boolean stogi;
   private int maxConnections;
 }
