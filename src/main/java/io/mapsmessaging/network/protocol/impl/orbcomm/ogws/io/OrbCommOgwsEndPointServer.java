@@ -31,6 +31,7 @@ import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.OrbcommOgwsClient;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ReturnMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.TerminalInfo;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.protocol.OrbCommOgwsProtocol;
@@ -60,9 +61,6 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
     gatewayManager = new GatewayManager(orbcommOgwsClient, orbCommOgwsDTO.getPollInterval(), this);
   }
 
-  public void close()throws IOException{
-    super.close();
-  }
 
   @Override
   public void register() throws IOException {
@@ -120,5 +118,9 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
         Thread.currentThread().interrupt();
       }
     }
+  }
+
+  public void sendClientMessage(String primeId, CommonMessage commonMessage) {
+    gatewayManager.sendClientMessage(primeId, commonMessage);
   }
 }

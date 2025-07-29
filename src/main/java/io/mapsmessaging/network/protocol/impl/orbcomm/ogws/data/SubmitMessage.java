@@ -19,20 +19,37 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-public class CommonMessage {
-  private String name;
-  private int SIN;
-  private int MIN;
-  private Boolean isForward; // optional
+public class SubmitMessage {
+
+  @SerializedName("DestinationID")
+  private String destinationId;
+
+  @SerializedName("UserMessageID")
+  private Long userMessageId;
+
+  @SerializedName("RawPayload")
   private String rawPayload;
-  private List<Field> fields;
+
+  @SerializedName("Payload")
+  private CommonMessage payload;
+
+  @SerializedName("TransportType")
+  private Integer transportType; // 0: Any, 1: Satellite, 2: Cellular
+
+  @SerializedName("MessageLifetime")
+  private Integer messageLifetime; // in hours
+
+  @SerializedName("DelayedSendOptions")
+  private SatelliteDelayedSendOptions delayedSendOptions;
+
+  @SerializedName("MessageClass")
+  private Integer messageClass; // 1: Premium, 2: Normal (default), 3: Background
 }

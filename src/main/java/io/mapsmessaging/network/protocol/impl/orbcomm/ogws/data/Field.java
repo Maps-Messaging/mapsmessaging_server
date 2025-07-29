@@ -19,20 +19,30 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-public class CommonMessage {
+public class Field {
+
+  @SerializedName("Name")
   private String name;
-  private int SIN;
-  private int MIN;
-  private Boolean isForward; // optional
-  private String rawPayload;
-  private List<Field> fields;
+
+  @SerializedName("Type")
+  private ElementType type;
+
+  @SerializedName("Value")
+  private String value; // optional
+
+  @SerializedName("Message")
+  private CommonMessage message; // optional
+
+  @SerializedName("Elements")
+  private List<Element> elements; // optional
 }

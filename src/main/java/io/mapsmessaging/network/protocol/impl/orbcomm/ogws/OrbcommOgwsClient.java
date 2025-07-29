@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.ogws;
 
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.logging.Logger;
@@ -41,7 +42,9 @@ import java.time.Duration;
 import java.util.List;
 
 public class OrbcommOgwsClient {
-  private final Gson gson = new Gson();
+  private final Gson gson = new GsonBuilder()
+      .registerTypeAdapter(ElementType.class, new ElementTypeAdapter())
+      .create();
   private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsEndPointServer.class);
 
   private static final String BASE_URL = "https://ogws.orbcomm.com/api/v1.0";
@@ -146,21 +149,14 @@ public class OrbcommOgwsClient {
   }
 
 
-  public SubmitMessagesResponse submitRawMessage(String destinationId, String base64Payload, int userMessageId) throws Exception {
+  public SubmitMessagesResponse submitMessage(List<SubmitMessage> submitMessages) throws Exception {
     reauthenticate();
-    JsonObject msg = new JsonObject();
-    msg.addProperty("DestinationID", destinationId);
-    msg.addProperty("RawPayload", base64Payload);
-    msg.addProperty("UserMessageID", userMessageId);
-
-    JsonArray array = new JsonArray();
-    array.add(msg);
-
+    String jsonMessages = gson.toJson(submitMessages);
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(BASE_URL + "/submit/messages"))
         .header("Authorization", "Bearer " + bearerToken)
         .header("Content-Type", "application/json")
-        .POST(BodyPublishers.ofString(array.toString()))
+        .POST(HttpRequest.BodyPublishers.ofString(jsonMessages))
         .build();
 
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());

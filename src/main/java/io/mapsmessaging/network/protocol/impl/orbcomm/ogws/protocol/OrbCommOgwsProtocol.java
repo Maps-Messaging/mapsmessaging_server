@@ -31,6 +31,8 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ElementType;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.Field;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ReturnMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbcommOgwsEndPoint;
 import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessage;
@@ -41,8 +43,12 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
 
 public class OrbCommOgwsProtocol extends Protocol {
 
@@ -107,7 +113,19 @@ public class OrbCommOgwsProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-
+    OrbCommMessage orbCommMessage = new OrbCommMessage(messageEvent);
+    CommonMessage commonMessage = new CommonMessage();
+    commonMessage.setSIN(128);
+    commonMessage.setMIN(1);
+    commonMessage.setName("maps_message");
+    List<Field> fields = new ArrayList<>();
+    Field field = new Field();
+    field.setName("data");
+    field.setValue(Base64.encodeAsString(orbCommMessage.packToSend()));
+    field.setType(ElementType.DATA);
+    fields.add(field);
+    commonMessage.setFields(fields);
+    ((OrbcommOgwsEndPoint)endPoint).sendMessage(commonMessage);
   }
 
   @Override
@@ -127,34 +145,42 @@ public class OrbCommOgwsProtocol extends Protocol {
 
   public void handleIncomingMessage(ReturnMessage message) throws ExecutionException, InterruptedException {
     CommonMessage commonMessage = message.getPayload();
-    if(commonMessage.getMIN().equals("1") ) {
+    if(commonMessage.getMIN() == 1  && commonMessage.getSIN() == 128) {
       // Process incoming publish event
-      byte[] raw = Base64.decode(commonMessage.getPayload());
-      OrbCommMessage orbCommMessage = new OrbCommMessage(raw);
-      Message mapsMessage = orbCommMessage.getMessage();
-      String namespace = orbCommMessage.getNamespace();
-
-      CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
-      future.thenApply(destination -> {
-        if (destination != null) {
-          try {
-            destination.storeMessage(mapsMessage);
-          } catch (IOException e) {
-            // Log issues here
-            try {
-              endPoint.close();
-            } catch (IOException ioException) {
-              // Ignore we are in an error state
-            }
-            future.completeExceptionally(e);
-          }
-        }
-        return destination;
-      });
-      future.get();
+      List<Field> fields = commonMessage.getFields();
+      Field data =fields.stream().filter(field -> field.getName().equals("data")).findFirst().orElseGet(null);
+      if(data != null) {
+        processMessage(data);
+      }
     }
     else{
-      System.err.println("Unprocessed packet: " + commonMessage.getPayload());
+      System.err.println("Unprocessed packet: " + commonMessage.getName());
     }
+  }
+
+  private void processMessage(Field data) throws ExecutionException, InterruptedException {
+    byte[] raw = Base64.decode(data.getValue());
+    OrbCommMessage orbCommMessage = new OrbCommMessage(raw);
+    Message mapsMessage = orbCommMessage.getMessage();
+    String namespace = orbCommMessage.getNamespace();
+
+    CompletableFuture<Destination> future = session.findDestination(namespace, DestinationType.TOPIC);
+    future.thenApply(destination -> {
+      if (destination != null) {
+        try {
+          destination.storeMessage(mapsMessage);
+        } catch (IOException e) {
+          // Log issues here
+          try {
+            endPoint.close();
+          } catch (IOException ioException) {
+            // Ignore we are in an error state
+          }
+          future.completeExceptionally(e);
+        }
+      }
+      return destination;
+    });
+    future.get();
   }
 }

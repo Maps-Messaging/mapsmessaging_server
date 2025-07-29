@@ -20,10 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io;
 
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.OrbcommOgwsClient;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.FromMobileMessagesResponse;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.GetTerminalsInfoResponse;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.ReturnMessage;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.TerminalInfo;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import lombok.Getter;
 
@@ -31,6 +28,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +42,7 @@ public class GatewayManager {
   private final int pollInterval;
 
 
-  private Map<String, TerminalInfo> knownTerminals;
+  private final Map<String, TerminalInfo> knownTerminals;
   private String lastMessageUtc;
 
   @Getter
@@ -102,5 +100,14 @@ public class GatewayManager {
     }
   }
 
-
+  public void sendClientMessage(String primeId, CommonMessage commonMessage) {
+    SubmitMessage submitMessage = new SubmitMessage();
+    submitMessage.setPayload(commonMessage);
+    submitMessage.setDestinationId(primeId);
+    try {
+      ogwsClient.submitMessage(List.of(submitMessage) );
+    } catch (Exception e) {
+      // log this
+    }
+  }
 }

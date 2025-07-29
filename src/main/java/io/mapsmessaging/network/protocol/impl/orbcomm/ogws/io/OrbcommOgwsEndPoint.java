@@ -24,6 +24,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointServerStatus;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.CommonMessage;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.TerminalInfo;
 import lombok.Getter;
 
@@ -41,6 +42,10 @@ public class OrbcommOgwsEndPoint extends EndPoint {
     super(id, server);
     this.terminalInfo = terminal;
 
+  }
+
+  public void sendMessage(CommonMessage commonMessage) {
+    ((OrbCommOgwsEndPointServer)server).sendClientMessage(terminalInfo.getPrimeId(), commonMessage);
   }
 
   @Override
@@ -77,4 +82,5 @@ public class OrbcommOgwsEndPoint extends EndPoint {
   protected Logger createLogger() {
     return null;
   }
+
 }

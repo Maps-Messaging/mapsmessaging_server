@@ -19,20 +19,23 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
-import java.util.List;
+@Getter
+public enum ElementType {
+  ENUM("enum"),
+  BOOLEAN("boolean"),
+  UNSIGNED_INT("unsignedint"),
+  SIGNED_INT("signedint"),
+  STRING("string"),
+  DATA("data"),
+  ARRAY("array"),
+  MESSAGE("message");
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
-public class CommonMessage {
-  private String name;
-  private int SIN;
-  private int MIN;
-  private Boolean isForward; // optional
-  private String rawPayload;
-  private List<Field> fields;
+  private final String attribute;
+
+  ElementType(String name){
+    attribute = name;
+  }
+
 }

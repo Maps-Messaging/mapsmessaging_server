@@ -19,20 +19,19 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-public class CommonMessage {
-  private String name;
-  private int SIN;
-  private int MIN;
-  private Boolean isForward; // optional
-  private String rawPayload;
-  private List<Field> fields;
+public class SatelliteDelayedSendOptions {
+
+  @SerializedName("DelayedSend")
+  private Boolean delayedSend;
+
+  @SerializedName("MessageExpireUTC")
+  private String messageExpireUtc; // Format: YYYY-MM-DD hh:mm:ss
 }

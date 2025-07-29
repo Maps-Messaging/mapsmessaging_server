@@ -19,20 +19,29 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import java.io.IOException;
 
-import java.util.List;
+public class ElementTypeAdapter extends TypeAdapter<ElementType> {
+  @Override
+  public void write(JsonWriter out, ElementType value) throws IOException {
+    if (value == null) {
+      out.nullValue();
+    } else {
+      out.value(value.getAttribute());
+    }
+  }
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
-public class CommonMessage {
-  private String name;
-  private int SIN;
-  private int MIN;
-  private Boolean isForward; // optional
-  private String rawPayload;
-  private List<Field> fields;
+  @Override
+  public ElementType read(JsonReader in) throws IOException {
+    String value = in.nextString();
+    for (ElementType type : ElementType.values()) {
+      if (type.getAttribute().equalsIgnoreCase(value)) {
+        return type;
+      }
+    }
+    throw new IllegalArgumentException("Unknown ElementType: " + value);
+  }
 }
