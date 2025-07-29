@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.OrbcommOgwsClient;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
@@ -35,8 +37,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class GatewayManager {
 
+  private final Logger logger = LoggerFactory.getLogger(GatewayManager.class);
   private final OrbcommOgwsClient ogwsClient;
   private final IncomingMessageHandler handler;
   private final int pollInterval;
@@ -71,10 +76,12 @@ public class GatewayManager {
           }
         }
         SimpleTaskScheduler.getInstance().schedule(this::pollGateway, pollInterval, TimeUnit.SECONDS);
-        // Log an issue here
+      }
+      else{
+        logger.log(OGWS_FAILED_AUTHENTICATION);
       }
     } catch (IOException e) {
-      // log the issue
+      logger.log(OGWS_FAILED_AUTHENTICATION, e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
@@ -93,10 +100,10 @@ public class GatewayManager {
         handler.handleIncomingMessage();
       }
       else{
-        // log the error
+        logger.log(OGWS_FAILED_POLL, response != null ? response.getErrorId() : "<null error>");
       }
     } catch (Exception e) {
-      // log it and continue
+      logger.log(OGWS_REQUEST_FAILED, e);
     }
   }
 
@@ -107,7 +114,7 @@ public class GatewayManager {
     try {
       ogwsClient.submitMessage(List.of(submitMessage) );
     } catch (Exception e) {
-      // log this
+      logger.log(OGWS_REQUEST_FAILED, e);
     }
   }
 }

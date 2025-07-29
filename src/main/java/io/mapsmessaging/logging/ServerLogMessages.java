@@ -748,6 +748,16 @@ public enum ServerLogMessages implements LogMessage {
   LICENSE_LOADED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Loaded license for {} by {}, created {}, valid after {} and till {} with features {}"),
   LICENSE_UNKNOWN_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Unknown feature name requested {}"),
   LICENSE_DISABLED_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Feature is not enabled {}"),
+
+  //-------------------------------------------------------------------------------------------------------------
+  OGWS_SENDING_REQUEST(LEVEL.DEBUG, SERVER_CATEGORY.NETWORK, "OGWS request {} returned status {}"),
+  OGWS_FAILED_AUTHENTICATION(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Authentication failed, aborting connection"),
+  OGWS_FAILED_POLL(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Poll of outstanding messaged failed with error code {}"),
+  OGWS_REQUEST_FAILED(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Network based exception raised while communicating with the OGWS server"),
+  OGWS_FAILED_TO_SAVE_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Network based exception raised while communicating with the OGWS server"),
+  OGWS_UNPROCESSED_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "Received a message SIN:{} MIN:{} from ClientId:{} but not configured to process it"),
+  OGWS_NO_CONFIGURATION_FOUND(LEVEL.FATAL, SERVER_CATEGORY.NETWORK, "No configuration found for ogws server"),
+  OGWS_EXCEPTION_PROCESSING_MESSAGE(LEVEL.FATAL, SERVER_CATEGORY.ENGINE, "Exception raised processing inbound message"),
   //-------------------------------------------------------------------------------------------------------------
   LAST_LOG_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Last message to make it simpler to add more");
 

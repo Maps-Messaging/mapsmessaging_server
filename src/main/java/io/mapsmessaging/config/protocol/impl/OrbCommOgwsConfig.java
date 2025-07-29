@@ -29,6 +29,7 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
   public OrbCommOgwsConfig(ConfigurationProperties config) {
     setType("ogws");
     ProtocolConfigFactory.unpack(config, this);
+    baseUrl = config.getProperty("baseUrl", "https://ogws.orbcomm.com/api/v1.0");
     clientId = config.getProperty("clientId");
     clientSecret = config.getProperty("clientSecret");
     pollInterval = config.getIntProperty("pollInterval", 10);
@@ -50,6 +51,10 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
         clientSecret = orbCommOgwsDTO.getClientSecret();
         result = true;
       }
+      if(!baseUrl.equalsIgnoreCase(orbCommOgwsDTO.getBaseUrl()) ){
+        baseUrl = orbCommOgwsDTO.getBaseUrl();
+        result = true;
+      }
       if(pollInterval != orbCommOgwsDTO.getPollInterval() ){
         pollInterval = orbCommOgwsDTO.getPollInterval();
         result = true;
@@ -66,6 +71,7 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     ProtocolConfigFactory.pack(properties, this);
+    properties.put("baseUrl", baseUrl);
     properties.put("clientId", clientId);
     properties.put("clientSecret", clientSecret);
     properties.put("pollInterval", pollInterval);

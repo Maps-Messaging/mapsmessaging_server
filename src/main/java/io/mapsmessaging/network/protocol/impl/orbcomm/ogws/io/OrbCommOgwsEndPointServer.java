@@ -41,6 +41,9 @@ import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 
+import static io.mapsmessaging.logging.ServerLogMessages.OGWS_EXCEPTION_PROCESSING_MESSAGE;
+import static io.mapsmessaging.logging.ServerLogMessages.OGWS_NO_CONFIGURATION_FOUND;
+
 public class OrbCommOgwsEndPointServer extends EndPointServer implements IncomingMessageHandler {
 
   private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsEndPointServer.class);
@@ -54,6 +57,7 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
     super(accept, url, config);
     protocolConfigDTO = config.getProtocolConfig("ogws");
     if(!(protocolConfigDTO instanceof OrbCommOgwsDTO)) {
+      logger.log(OGWS_NO_CONFIGURATION_FOUND);
       throw new IOException("no configuration found");
     }
     OrbCommOgwsDTO orbCommOgwsDTO = (OrbCommOgwsDTO) protocolConfigDTO;
@@ -112,7 +116,7 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
         OrbcommOgwsEndPoint endPoint = locateOrCreateEndPoint(info);
         ((OrbCommOgwsProtocol)endPoint.getBoundProtocol()).handleIncomingMessage(event);
       } catch (IOException | LoginException | ExecutionException e) {
-        // log the exception
+        logger.log(OGWS_EXCEPTION_PROCESSING_MESSAGE);
       }
       catch (InterruptedException e) {
         Thread.currentThread().interrupt();

@@ -26,6 +26,8 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -49,10 +51,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static io.mapsmessaging.logging.ServerLogMessages.OGWS_FAILED_TO_SAVE_MESSAGE;
+import static io.mapsmessaging.logging.ServerLogMessages.OGWS_UNPROCESSED_MESSAGE;
+
 
 public class OrbCommOgwsProtocol extends Protocol {
 
-  private Session session;
+  private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsProtocol.class);
+  private final Session session;
   private final String primeId;
   private boolean closed;
 
@@ -154,7 +160,7 @@ public class OrbCommOgwsProtocol extends Protocol {
       }
     }
     else{
-      System.err.println("Unprocessed packet: " + commonMessage.getName());
+      logger.log(OGWS_UNPROCESSED_MESSAGE, commonMessage.getSIN(), commonMessage.getMIN(), message.getMobileId());
     }
   }
 
@@ -170,11 +176,11 @@ public class OrbCommOgwsProtocol extends Protocol {
         try {
           destination.storeMessage(mapsMessage);
         } catch (IOException e) {
-          // Log issues here
+          logger.log(OGWS_FAILED_TO_SAVE_MESSAGE, e);
           try {
             endPoint.close();
           } catch (IOException ioException) {
-            // Ignore we are in an error state
+           // ignore
           }
           future.completeExceptionally(e);
         }

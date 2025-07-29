@@ -26,7 +26,6 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbCommOgwsEndPointServer;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.IOException;
@@ -40,13 +39,15 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
+import static io.mapsmessaging.logging.ServerLogMessages.OGWS_SENDING_REQUEST;
+
 public class OrbcommOgwsClient {
   private final Gson gson = new GsonBuilder()
       .registerTypeAdapter(ElementType.class, new ElementTypeAdapter())
       .create();
-  private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsEndPointServer.class);
+  private final Logger logger = LoggerFactory.getLogger(OrbcommOgwsClient.class);
 
-  private static final String BASE_URL = "https://ogws.orbcomm.com/api/v1.0";
+  private final String baseUrl;
   private final HttpClient httpClient;
   private final String clientId;
   private final String clientSecret;
@@ -57,6 +58,7 @@ public class OrbcommOgwsClient {
 
   public OrbcommOgwsClient(OrbCommOgwsDTO config) {
     this.config = config;
+    this.baseUrl = config.getBaseUrl();
     this.clientId = config.getClientId();
     this.clientSecret = config.getClientSecret();
     if((clientId == null || clientId.isEmpty() ) || clientSecret == null || clientSecret.isEmpty()) {
@@ -73,13 +75,14 @@ public class OrbcommOgwsClient {
         "&grant_type=client_credentials";
 
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(BASE_URL + "/auth/token"))
+        .uri(URI.create(baseUrl + "/auth/token"))
         .timeout(Duration.ofSeconds(config.getHttpRequestTimeout()))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .POST(BodyPublishers.ofString(body))
         .build();
 
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
     if (response.statusCode() != 200) return false;
 
     GetTokenResponse tokenResponse = gson.fromJson(response.body(), GetTokenResponse.class);
@@ -97,7 +100,7 @@ public class OrbcommOgwsClient {
 
   public FromMobileMessagesResponse getFromMobileMessages(@NotNull String fromUtc) throws Exception {
     reauthenticate();
-    String url = BASE_URL + "/get/re_messages?FromUTC=" + encode(fromUtc);
+    String url = baseUrl + "/get/re_messages?FromUTC=" + encode(fromUtc);
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(url))
         .header("Authorization", "Bearer " + bearerToken)
@@ -105,6 +108,8 @@ public class OrbcommOgwsClient {
         .build();
 
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
+
     return gson.fromJson(response.body(), FromMobileMessagesResponse.class);
   }
 
@@ -112,12 +117,14 @@ public class OrbcommOgwsClient {
     reauthenticate();
     String idParams = String.join("&IDList=", ids.stream().map(String::valueOf).toList());
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(BASE_URL + "/get/fw_statuses?IDList=" + idParams))
+        .uri(URI.create(baseUrl + "/get/fw_statuses?IDList=" + idParams))
         .header("Authorization", "Bearer " + bearerToken)
         .GET()
         .build();
 
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
+
     return gson.fromJson(response.body(), FwStatusResponse.class);
   }
 
@@ -126,19 +133,21 @@ public class OrbcommOgwsClient {
     String body = gson.toJson(messageIds);
 
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(BASE_URL + "/submit/cancellations"))
+        .uri(URI.create(baseUrl + "/submit/cancellations"))
         .header("Authorization", "Bearer " + bearerToken)
         .header("Content-Type", "application/json")
         .POST(BodyPublishers.ofString(body))
         .build();
 
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
+
     return gson.fromJson(response.body(), CancelMessagesResponse.class);
   }
 
   public ServiceInfoResponse getServiceInfo(boolean includeErrorCodes) throws Exception {
     reauthenticate();
-    String url = BASE_URL + "/info/service" + (includeErrorCodes ? "?GetErrorCodes=true" : "");
+    String url = baseUrl + "/info/service" + (includeErrorCodes ? "?GetErrorCodes=true" : "");
     HttpRequest request = authorizedGet(url);
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
     return gson.fromJson(response.body(), ServiceInfoResponse.class);
@@ -146,9 +155,11 @@ public class OrbcommOgwsClient {
 
   public GetTerminalInfoResponse getTerminal(String primeId) throws Exception {
     reauthenticate();
-    String url = BASE_URL + "/info/terminal?PrimeID=" + encode(primeId);
+    String url = baseUrl + "/info/terminal?PrimeID=" + encode(primeId);
     HttpRequest request = authorizedGet(url);
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
+
     return gson.fromJson(response.body(), GetTerminalInfoResponse.class);
   }
 
@@ -157,19 +168,21 @@ public class OrbcommOgwsClient {
     reauthenticate();
     String jsonMessages = gson.toJson(submitMessages);
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(BASE_URL + "/submit/messages"))
+        .uri(URI.create(baseUrl + "/submit/messages"))
         .header("Authorization", "Bearer " + bearerToken)
         .header("Content-Type", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(jsonMessages))
         .build();
 
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+    logger.log(OGWS_SENDING_REQUEST, request.uri(), response.statusCode());
+
     return gson.fromJson(response.body(), SubmitMessagesResponse.class);
   }
 
   private HttpRequest authorizedGet(String path) {
     return HttpRequest.newBuilder()
-        .uri(URI.create(BASE_URL + path))
+        .uri(URI.create(baseUrl + path))
         .header("Authorization", "Bearer " + bearerToken)
         .GET()
         .build();
