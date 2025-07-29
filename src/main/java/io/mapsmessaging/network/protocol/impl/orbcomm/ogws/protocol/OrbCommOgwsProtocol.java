@@ -120,8 +120,8 @@ public class OrbCommOgwsProtocol extends Protocol {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     OrbCommMessage orbCommMessage = new OrbCommMessage(messageEvent);
     CommonMessage commonMessage = new CommonMessage();
-    commonMessage.setSIN(128);
-    commonMessage.setMIN(1);
+    commonMessage.setSin(128);
+    commonMessage.setMin(1);
     commonMessage.setName("maps_message");
     List<Field> fields = new ArrayList<>();
     Field field = new Field();
@@ -150,7 +150,7 @@ public class OrbCommOgwsProtocol extends Protocol {
 
   public void handleIncomingMessage(ReturnMessage message) throws ExecutionException, InterruptedException {
     CommonMessage commonMessage = message.getPayload();
-    if(commonMessage.getMIN() == 1  && commonMessage.getSIN() == 128) {
+    if(commonMessage.getMin() == 1  && commonMessage.getSin() == 128) {
       // Process incoming publish event
       List<Field> fields = commonMessage.getFields();
       Field data =fields.stream().filter(field -> field.getName().equals("data")).findFirst().orElseGet(null);
@@ -159,7 +159,7 @@ public class OrbCommOgwsProtocol extends Protocol {
       }
     }
     else{
-      logger.log(OGWS_UNPROCESSED_MESSAGE, commonMessage.getSIN(), commonMessage.getMIN(), message.getMobileId());
+      logger.log(OGWS_UNPROCESSED_MESSAGE, commonMessage.getSin(), commonMessage.getMin(), message.getMobileId());
     }
   }
 
