@@ -22,8 +22,7 @@ package io.mapsmessaging.network.protocol.impl.orbcomm.ogws;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
@@ -53,16 +52,18 @@ public class OrbcommOgwsClient {
   private final String clientSecret;
   private String bearerToken;
 
+  private final OrbCommOgwsDTO config;
   private long reAuthenticateTime;
 
-  public OrbcommOgwsClient(String clientId, String clientSecret) {
-    this.clientId = clientId;
-    this.clientSecret = clientSecret;
+  public OrbcommOgwsClient(OrbCommOgwsDTO config) {
+    this.config = config;
+    this.clientId = config.getClientId();
+    this.clientSecret = config.getClientSecret();
     if((clientId == null || clientId.isEmpty() ) || clientSecret == null || clientSecret.isEmpty()) {
       throw new IllegalArgumentException("Client id or secret cannot be null or empty");
     }
     this.httpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
+        .connectTimeout(Duration.ofSeconds(config.getHttpRequestTimeout()))
         .build();
   }
 
@@ -73,7 +74,7 @@ public class OrbcommOgwsClient {
 
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(BASE_URL + "/auth/token"))
-        .timeout(Duration.ofSeconds(10))
+        .timeout(Duration.ofSeconds(config.getHttpRequestTimeout()))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .POST(BodyPublishers.ofString(body))
         .build();

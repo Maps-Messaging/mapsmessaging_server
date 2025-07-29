@@ -43,7 +43,8 @@ import java.util.Map;
     @JsonSubTypes.Type(value = StompProtocolInformation.class, name = "stomp"),
     @JsonSubTypes.Type(value = RestProtocolInformation.class, name = "rest"),
     @JsonSubTypes.Type(value = ExtensionProtocolInformation.class, name = "extension"),
-    @JsonSubTypes.Type(value = OrbcommProtocolInformation.class, name = "orbcomm")
+    @JsonSubTypes.Type(value = OrbcommProtocolInformation.class, name = "orbcomm"),
+    @JsonSubTypes.Type(value = OrbcommOgwsProtocolInformation.class, name = "ogws"),
 })
 @Schema(
     title = "Protocol Information",
@@ -62,6 +63,7 @@ import java.util.Map;
         @DiscriminatorMapping(value = "rest", schema = RestProtocolInformation.class),
         @DiscriminatorMapping(value = "extension", schema = ExtensionProtocolInformation.class),
         @DiscriminatorMapping(value = "orbcomm", schema = OrbcommProtocolInformation.class),
+        @DiscriminatorMapping(value = "ogws", schema = OrbcommOgwsProtocolInformation.class),
 
     },
     requiredProperties = {"type"}
@@ -72,7 +74,7 @@ import java.util.Map;
 public class ProtocolInformationDTO {
 
   @Schema(description = "Type of the protocol", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest","extension", "orbcomm"
+      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "rest","extension", "orbcomm", "ogws"
   })
   protected String type;
 

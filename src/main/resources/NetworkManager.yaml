@@ -145,4 +145,6 @@ NetworkManager:
         protocol: ogws
         auth: anon
         url: ogws://ogws.orbcomm.com/api/v1.0
-        selectorThreadCount: 1
+        clientId: "ogws client id"
+        clientSecret: "ogws client secret"
+        httpRequestTimeoutSec: 10

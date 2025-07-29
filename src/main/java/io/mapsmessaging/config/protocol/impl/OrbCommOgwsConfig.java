@@ -32,6 +32,7 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
     clientId = config.getProperty("clientId");
     clientSecret = config.getProperty("clientSecret");
     pollInterval = config.getIntProperty("pollInterval", 10);
+    httpRequestTimeout = config.getIntProperty("httpRequestTimeoutSec", 10);
   }
 
   @Override
@@ -53,6 +54,10 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
         pollInterval = orbCommOgwsDTO.getPollInterval();
         result = true;
       }
+      if(httpRequestTimeout != orbCommOgwsDTO.getHttpRequestTimeout() ){
+        httpRequestTimeout = orbCommOgwsDTO.getHttpRequestTimeout();
+        result = true;
+      }
     }
     return result;
   }
@@ -64,6 +69,7 @@ public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
     properties.put("clientId", clientId);
     properties.put("clientSecret", clientSecret);
     properties.put("pollInterval", pollInterval);
+    properties.put("httpRequestTimeoutSec", httpRequestTimeout);
     return properties;
   }
 }

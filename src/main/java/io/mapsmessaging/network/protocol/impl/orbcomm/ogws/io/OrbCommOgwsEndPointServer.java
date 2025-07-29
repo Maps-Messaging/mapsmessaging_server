@@ -57,7 +57,7 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
       throw new IOException("no configuration found");
     }
     OrbCommOgwsDTO orbCommOgwsDTO = (OrbCommOgwsDTO) protocolConfigDTO;
-    orbcommOgwsClient = new OrbcommOgwsClient(orbCommOgwsDTO.getClientId(), orbCommOgwsDTO.getClientSecret());
+    orbcommOgwsClient = new OrbcommOgwsClient(orbCommOgwsDTO);
     gatewayManager = new GatewayManager(orbcommOgwsClient, orbCommOgwsDTO.getPollInterval(), this);
   }
 

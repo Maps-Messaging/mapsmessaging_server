@@ -39,6 +39,8 @@ public class OrbCommOgwsDTO  extends ProtocolConfigDTO {
   @Schema(description = "Interval between polling the OGWS for incoming messages")
   protected int pollInterval;
 
+  @Schema(description = "HTTP Request time out in seconds")
+  protected int httpRequestTimeout;
 
 
 }

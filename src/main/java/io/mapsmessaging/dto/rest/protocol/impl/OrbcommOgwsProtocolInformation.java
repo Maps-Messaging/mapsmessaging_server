@@ -27,6 +27,6 @@ public class OrbcommOgwsProtocolInformation extends ProtocolInformationDTO {
   private SessionInformationDTO sessionInfo;
 
   public OrbcommOgwsProtocolInformation() {
-    type = "orbcommogws";
+    type = "ogws";
   }
 }
