@@ -50,6 +50,9 @@ public class ReturnMessage {
   @SerializedName("RawPayload")
   private String rawPayload;
 
+  @SerializedName("Payload")
+  private CommonMessage payload;
+
   @SerializedName("RegionName")
   private String regionName;
 

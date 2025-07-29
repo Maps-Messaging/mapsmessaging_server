@@ -39,10 +39,13 @@ import lombok.NoArgsConstructor;
     @JsonSubTypes.Type(value = MqttSnConfigDTO.class, name = "mqtt-sn"),
     @JsonSubTypes.Type(value = MqttV5ConfigDTO.class, name = "mqttV5"),
     @JsonSubTypes.Type(value = NmeaConfigDTO.class, name = "NMEA-0183"),
+    @JsonSubTypes.Type(value = OrbCommOgwsDTO.class, name = "orbcommogws"),
+    @JsonSubTypes.Type(value = OrbCommDTO.class, name = "orbcomm"),
     @JsonSubTypes.Type(value = SemtechConfigDTO.class, name = "semtech"),
     @JsonSubTypes.Type(value = StompConfigDTO.class, name = "stomp"),
     @JsonSubTypes.Type(value = WebSocketConfigDTO.class, name = "websocket"),
-    @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "extension")
+    @JsonSubTypes.Type(value = ExtensionConfigDTO.class, name = "extension"),
+
 })
 @Schema(
     description = "Abstract base class for all protocol configurations",
@@ -55,11 +58,12 @@ import lombok.NoArgsConstructor;
         @DiscriminatorMapping(value = "mqtt-sn", schema = MqttSnConfigDTO.class),
         @DiscriminatorMapping(value = "mqttV5", schema = MqttV5ConfigDTO.class),
         @DiscriminatorMapping(value = "NMEA-0183", schema = NmeaConfigDTO.class),
+        @DiscriminatorMapping(value = "orbcommogws", schema = OrbCommOgwsDTO.class),
+        @DiscriminatorMapping(value = "orbcomm", schema = OrbCommDTO.class),
         @DiscriminatorMapping(value = "semtech", schema = SemtechConfigDTO.class),
         @DiscriminatorMapping(value = "stomp", schema = StompConfigDTO.class),
         @DiscriminatorMapping(value = "websocket", schema = WebSocketConfigDTO.class),
-        @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class)
-
+        @DiscriminatorMapping(value = "extension", schema = ExtensionConfigDTO.class),
     },
     requiredProperties = {"type"}
 )
@@ -69,7 +73,18 @@ import lombok.NoArgsConstructor;
 public class ProtocolConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the protocol configuration", allowableValues = {
-      "amqp", "coap", "lora", "mqtt", "mqtt-sn", "mqttV5", "NMEA-0183", "semtech", "stomp", "websocket", "extension"
+      "amqp",
+      "coap",
+      "lora",
+      "mqtt",
+      "mqtt-sn",
+      "mqttV5", "NMEA-0183",
+      "orbcomm",
+      "orbcommogws",
+      "semtech",
+      "stomp",
+      "websocket",
+      "extension"
   })
   protected String type;
 

@@ -21,21 +21,18 @@ package io.mapsmessaging.network.protocol.impl.orbcomm;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.impl.tcp.TCPEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-import io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocol;
-import io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolDetection;
+import io.mapsmessaging.network.protocol.detection.NoOpDetection;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 public class OrbcommProtocolFactory extends ProtocolImplFactory {
 
   public OrbcommProtocolFactory() {
-    super("orbcomm", "ST and OGi modem protocol", new NMEAProtocolDetection());
+    super("orbcomm", "OrbComm OGWS protocol", new NoOpDetection());
   }
 
   @Override

@@ -17,23 +17,16 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
+package io.mapsmessaging.dto.rest.protocol.impl;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.dto.rest.session.SessionInformationDTO;
 
-import java.util.List;
+public class OrbcommOgwsProtocolInformation extends ProtocolInformationDTO {
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class SubaccountBroadcastResponse {
+  private SessionInformationDTO sessionInfo;
 
-  @SerializedName("ErrorID")
-  private Integer errorId;
-
-  @SerializedName("BroadcastIDs")
-  private List<BroadcastInfo> broadcastIds;
+  public OrbcommOgwsProtocolInformation() {
+    type = "orbcommogws";
+  }
 }

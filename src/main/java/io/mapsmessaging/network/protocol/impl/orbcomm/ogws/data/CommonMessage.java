@@ -19,21 +19,20 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class SubaccountBroadcastResponse {
-
-  @SerializedName("ErrorID")
-  private Integer errorId;
-
-  @SerializedName("BroadcastIDs")
-  private List<BroadcastInfo> broadcastIds;
+@AllArgsConstructor
+public class CommonMessage {
+  private String SIN;                // Service Identification Number
+  private String MIN;                // Message Identification Number
+  private String MessageUTC;        // UTC timestamp of message
+  private String RawPayload;        // Base64-encoded payload
+  private String Payload;           // Decoded message content (text)
+  private String RegionName;        // Region where the message was received
+  private String Transport;         // Transport type (e.g., Satellite, GSM)
+  private Integer OTAMessageSize;   // OTA size in bytes
 }

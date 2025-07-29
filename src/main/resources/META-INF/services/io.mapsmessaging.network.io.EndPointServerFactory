@@ -44,3 +44,8 @@ io.mapsmessaging.network.io.impl.ssl.SSLEndPointServerFactory
 io.mapsmessaging.network.io.impl.udp.UDPEndPointServerFactory
 io.mapsmessaging.network.io.impl.hmac.HmacUDPEndPointServerFactory
 io.mapsmessaging.network.io.impl.dtls.DTLSEndPointServerFactory
+
+#
+# Rest based interconnected end points
+#
+io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbcommOgwsEndPointServerFactory

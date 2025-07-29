@@ -19,11 +19,13 @@
 
 package io.mapsmessaging.network.protocol.impl.orbcomm;
 
-import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.transformers.Transformer;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
-import io.mapsmessaging.dto.rest.protocol.impl.NmeaProtocolInformation;
 import io.mapsmessaging.dto.rest.protocol.impl.OrbcommProtocolInformation;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
@@ -37,7 +39,6 @@ import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

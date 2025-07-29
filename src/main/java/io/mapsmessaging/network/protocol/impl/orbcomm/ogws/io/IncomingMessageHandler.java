@@ -17,23 +17,8 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data;
+package io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class SubaccountBroadcastResponse {
-
-  @SerializedName("ErrorID")
-  private Integer errorId;
-
-  @SerializedName("BroadcastIDs")
-  private List<BroadcastInfo> broadcastIds;
+public interface IncomingMessageHandler {
+  void handleIncomingMessage();
 }

@@ -20,24 +20,37 @@
 package io.mapsmessaging.network.protocol.impl.orbcomm.ogws;
 
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
+import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.io.OrbCommOgwsEndPointServer;
+import jakarta.validation.constraints.NotNull;
+
+import java.io.IOException;
 import java.net.URI;
-import java.net.http.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
-import com.google.gson.*;
-import io.mapsmessaging.network.protocol.impl.orbcomm.ogws.data.*;
+import java.util.List;
 
 public class OrbcommOgwsClient {
   private final Gson gson = new Gson();
+  private final Logger logger = LoggerFactory.getLogger(OrbCommOgwsEndPointServer.class);
 
   private static final String BASE_URL = "https://ogws.orbcomm.com/api/v1.0";
   private final HttpClient httpClient;
   private final String clientId;
   private final String clientSecret;
   private String bearerToken;
+
+  private long reAuthenticateTime;
 
   public OrbcommOgwsClient(String clientId, String clientSecret) {
     this.clientId = clientId;
@@ -47,7 +60,7 @@ public class OrbcommOgwsClient {
         .build();
   }
 
-  public boolean authenticate() throws Exception {
+  public boolean authenticate() throws InterruptedException, IOException {
     var body = "client_id=" + encode(clientId) +
         "&client_secret=" + encode(clientSecret) +
         "&grant_type=client_credentials";
@@ -64,17 +77,20 @@ public class OrbcommOgwsClient {
 
     GetTokenResponse tokenResponse = gson.fromJson(response.body(), GetTokenResponse.class);
     this.bearerToken = tokenResponse.getAccessToken();
+    reAuthenticateTime = System.currentTimeMillis()+ (tokenResponse.getExpiresIn()*1000L);
     return tokenResponse.isSuccess();
   }
 
-  public GetTerminalsInfoResponse getTerminals() throws Exception {
+  public GetTerminalsInfoResponse getTerminals() throws IOException, InterruptedException {
+    reauthenticate();
     HttpRequest request = authorizedGet("/info/terminals");
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
     return gson.fromJson(response.body(), GetTerminalsInfoResponse.class);
   }
 
-  public FromMobileMessagesResponse getFromMobileMessages(String fromUtc) throws Exception {
-    String url = BASE_URL + "/get/re_messages?FromUTC=" + encode(fromUtc) + "&IncludeRawPayload=true";
+  public FromMobileMessagesResponse getFromMobileMessages(@NotNull String fromUtc) throws Exception {
+    reauthenticate();
+    String url = BASE_URL + "/get/re_messages?FromUTC=" + encode(fromUtc);
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(url))
         .header("Authorization", "Bearer " + bearerToken)
@@ -86,6 +102,7 @@ public class OrbcommOgwsClient {
   }
 
   public FwStatusResponse getFwStatuses(List<Long> ids) throws Exception {
+    reauthenticate();
     String idParams = String.join("&IDList=", ids.stream().map(String::valueOf).toList());
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(BASE_URL + "/get/fw_statuses?IDList=" + idParams))
@@ -98,6 +115,7 @@ public class OrbcommOgwsClient {
   }
 
   public CancelMessagesResponse submitCancellations(List<Long> messageIds) throws Exception {
+    reauthenticate();
     String body = gson.toJson(messageIds);
 
     HttpRequest request = HttpRequest.newBuilder()
@@ -112,6 +130,7 @@ public class OrbcommOgwsClient {
   }
 
   public ServiceInfoResponse getServiceInfo(boolean includeErrorCodes) throws Exception {
+    reauthenticate();
     String url = BASE_URL + "/info/service" + (includeErrorCodes ? "?GetErrorCodes=true" : "");
     HttpRequest request = authorizedGet(url);
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
@@ -119,6 +138,7 @@ public class OrbcommOgwsClient {
   }
 
   public GetTerminalInfoResponse getTerminal(String primeId) throws Exception {
+    reauthenticate();
     String url = BASE_URL + "/info/terminal?PrimeID=" + encode(primeId);
     HttpRequest request = authorizedGet(url);
     HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
@@ -127,6 +147,7 @@ public class OrbcommOgwsClient {
 
 
   public SubmitMessagesResponse submitRawMessage(String destinationId, String base64Payload, int userMessageId) throws Exception {
+    reauthenticate();
     JsonObject msg = new JsonObject();
     msg.addProperty("DestinationID", destinationId);
     msg.addProperty("RawPayload", base64Payload);
@@ -156,5 +177,11 @@ public class OrbcommOgwsClient {
 
   private String encode(String value) {
     return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
+  }
+
+  private void reauthenticate() throws IOException, InterruptedException {
+    if(System.currentTimeMillis() > reAuthenticateTime){
+      authenticate();
+    }
   }
 }
