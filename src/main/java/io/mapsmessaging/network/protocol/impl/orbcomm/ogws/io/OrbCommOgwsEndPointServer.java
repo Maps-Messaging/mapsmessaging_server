@@ -52,7 +52,7 @@ public class OrbCommOgwsEndPointServer extends EndPointServer implements Incomin
 
   protected OrbCommOgwsEndPointServer(AcceptHandler accept, EndPointURL url, EndPointServerConfigDTO config) throws IOException {
     super(accept, url, config);
-    protocolConfigDTO = config.getProtocolConfig("orbcomm");
+    protocolConfigDTO = config.getProtocolConfig("ogws");
     if(!(protocolConfigDTO instanceof OrbCommOgwsDTO)) {
       throw new IOException("no configuration found");
     }

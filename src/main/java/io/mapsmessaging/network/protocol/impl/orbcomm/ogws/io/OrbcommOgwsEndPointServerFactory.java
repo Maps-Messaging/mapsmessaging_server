@@ -49,7 +49,7 @@ public class OrbcommOgwsEndPointServerFactory extends TCPEndPointServerFactory {
 
   @Override
   public String getName() {
-    return "orbcommogws";
+    return "ogws";
   }
 
   @Override

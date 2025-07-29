@@ -140,3 +140,9 @@ NetworkManager:
         url: lora://loraDevice1/
         selectorThreadCount: 1
         registered: "*,12,/sensors/weather/indoor:*,11,/sensors/weather/outdoor:*,8,/sensors/water/garden:*,9,/sensors/water/house"
+
+      - name: "OrbComm OGWS interface"
+        protocol: ogws
+        auth: anon
+        url: ogws://ogws.orbcomm.com/api/v1.0
+        selectorThreadCount: 1

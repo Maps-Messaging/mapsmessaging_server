@@ -58,6 +58,9 @@ public class OrbcommOgwsClient {
   public OrbcommOgwsClient(String clientId, String clientSecret) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    if((clientId == null || clientId.isEmpty() ) || clientSecret == null || clientSecret.isEmpty()) {
+      throw new IllegalArgumentException("Client id or secret cannot be null or empty");
+    }
     this.httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .build();

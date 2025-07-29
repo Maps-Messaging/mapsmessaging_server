@@ -27,7 +27,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommOgwsDTO;
 public class OrbCommOgwsConfig extends OrbCommOgwsDTO implements Config {
 
   public OrbCommOgwsConfig(ConfigurationProperties config) {
-    setType("orbcommogws");
+    setType("ogws");
     ProtocolConfigFactory.unpack(config, this);
     clientId = config.getProperty("clientId");
     clientSecret = config.getProperty("clientSecret");

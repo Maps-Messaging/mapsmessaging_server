@@ -50,7 +50,7 @@ public class OrbcommOgwsEndPoint extends EndPoint {
 
   @Override
   public String getProtocol() {
-    return "orbcommogws";
+    return "ogws";
   }
 
   @Override

@@ -68,7 +68,9 @@ public class EndPointManager implements Closeable, AcceptHandler {
     if (managerBean != null) {
       bean = new EndPointManagerJMX(managerBean.getTypePath(), this, endPointServerConfig);
     }
-    endPointServer = factory.instance(endPointURL, new SelectorLoadManager(selectorCount, url.toString()), this, endPointServerConfig, bean);
+    SelectorLoadManager selectorLoadManager = selectorCount > 0? new SelectorLoadManager(selectorCount, url.toString()) : null;
+
+    endPointServer = factory.instance(endPointURL,selectorLoadManager, this, endPointServerConfig, bean);
     UUID uuid;
     try {
       uuid = UuidGenerator.getInstance().generate(NamedVersions.SHA1, MessageDaemon.getInstance().getUuid(), url.toString());

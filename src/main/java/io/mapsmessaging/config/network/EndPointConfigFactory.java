@@ -70,7 +70,7 @@ public class EndPointConfigFactory {
     config.put("selectorTaskWait", server.getSelectorTaskWait());
     config.put("auth", server.getAuthenticationRealm());
     config.put("protocols", packProtocolConfig(server)); // ToDo - Convert to Configuration props
-    if (server.getEndPointConfig() != null) {
+    if (server.getEndPointConfig() instanceof Config) {
       config.put("endPoint", ((Config) server.getEndPointConfig()).toConfigurationProperties());
     }
     if(server.getSaslConfig() != null) {
@@ -171,6 +171,9 @@ public class EndPointConfigFactory {
     } else if (url.toLowerCase().startsWith("serial")) {
       return new SerialConfig(properties);
     }
+    else if(url.toLowerCase().startsWith("ogws")) {
+      return new EndPointConfigDTO(); // needs to exist, doesn't actually matter
+    }
     return null;
   }
 
@@ -197,7 +200,7 @@ public class EndPointConfigFactory {
       return new EchoProtocolConfig(config);
     } else if (protocol.equalsIgnoreCase("orbcomm")) {
       return new OrbCommConfig(config);
-    } else if (protocol.equalsIgnoreCase("orbcommogws")) {
+    } else if (protocol.equalsIgnoreCase("ogws")) {
       return new OrbCommOgwsConfig(config);
     }
     else if(protocol.equalsIgnoreCase("ws") ||
