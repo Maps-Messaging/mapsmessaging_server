@@ -38,8 +38,6 @@ import io.mapsmessaging.network.protocol.impl.orbcomm.protocol.OrbCommMessage;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,8 +46,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -60,7 +56,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
   private final String format;
   private final String serverLocationSentence;
   private final boolean publishRecords;
-  private final Map<String, SentenceMapping> registeredSentences;
   private final String destinationName;
   private final Modem modem;
 
@@ -93,7 +88,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
       serverLocationSentence = null;
     }
     publishRecords = configurationProperties.getBooleanProperty("publish", false);
-    registeredSentences = new LinkedHashMap<>();
     destinationName = endPoint.getName();
     modem = new Modem(this);
     try {
@@ -113,7 +107,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
-    registeredSentences.put(resource, new SentenceMapping(mappedResource, transformer));
+
   }
 
   @Override
@@ -130,7 +124,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void sendKeepAlive() {
-
+    // no op
   }
 
   @Override
@@ -165,14 +159,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     } catch (IOException e) {
       // log this
     }
-  }
-
-
-  @Data
-  @AllArgsConstructor
-  private static final class SentenceMapping {
-    private final String destination;
-    private final Transformer transformer;
   }
 
   @Override
