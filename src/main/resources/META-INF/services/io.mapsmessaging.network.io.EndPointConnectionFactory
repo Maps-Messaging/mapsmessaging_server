@@ -21,3 +21,4 @@ io.mapsmessaging.network.io.impl.tcp.TCPEndPointConnectionFactory
 io.mapsmessaging.network.io.impl.ssl.SSLEndPointConnectionFactory
 io.mapsmessaging.network.io.impl.noop.NoOpEndPointConnectionFactory
 io.mapsmessaging.network.io.impl.udp.UDPEndPointConnectionFactory
+io.mapsmessaging.network.io.impl.serial.SerialEndPointConnectionFactory

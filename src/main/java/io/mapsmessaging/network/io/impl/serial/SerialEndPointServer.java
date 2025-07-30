@@ -139,7 +139,7 @@ public class SerialEndPointServer extends EndPointServer implements SerialPortLi
   }
 
   public void bind(SerialPort serialPort) throws IOException {
-    serialEndPoint = new SerialEndPoint(generateID(), this, serialPort, serialConfig, managerMBean);
+    serialEndPoint = new SerialEndPoint(generateID(), this, serialPort, serialConfig, managerMBean.getTypePath());
     handleNewEndPoint(serialEndPoint);
   }
 

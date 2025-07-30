@@ -50,6 +50,22 @@ public class SerialPortScanner implements Runnable {
     run();
   }
 
+  public boolean isConnected(String serialName) {
+    return portRegistry.getByName(serialName) != null;
+  }
+
+  public boolean isConnectedBySerial(String serialNumber) {
+    return portRegistry.getBySerial(serialNumber) != null;
+  }
+
+  public SerialPort allocatePort(String name) {
+    return portRegistry.getByName(name);
+  }
+
+  public SerialPort allocatePortBySerial(String serial) {
+    return portRegistry.getBySerial(serial);
+  }
+
   public SerialPort add(String port, SerialPortListener server) {
     listenerRegistry.add(new SerialPortInfo(port, ""), server);
     return portRegistry.getByName(port);

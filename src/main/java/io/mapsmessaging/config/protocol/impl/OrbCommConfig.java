@@ -28,7 +28,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.OrbCommDTO;
 public class OrbCommConfig extends OrbCommDTO implements Config {
 
   public OrbCommConfig(ConfigurationProperties config) {
-    setType("orbcomm");
+    setType("stogi");
     ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
     initialSetup = config.getProperty("initialSetup", "");

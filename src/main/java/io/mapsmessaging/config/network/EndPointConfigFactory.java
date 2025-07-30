@@ -198,7 +198,7 @@ public class EndPointConfigFactory {
       return new LoRaProtocolConfig(config);
     } else if (protocol.equalsIgnoreCase("echo")) {
       return new EchoProtocolConfig(config);
-    } else if (protocol.equalsIgnoreCase("orbcomm")) {
+    } else if (protocol.equalsIgnoreCase("stogi")) {
       return new OrbCommConfig(config);
     } else if (protocol.equalsIgnoreCase("ogws")) {
       return new OrbCommOgwsConfig(config);
