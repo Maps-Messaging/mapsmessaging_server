@@ -53,10 +53,6 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   private final Session session;
   private final SelectorTask selectorTask;
-  private final String format;
-  private final String serverLocationSentence;
-  private final boolean publishRecords;
-  private final String destinationName;
   private final Modem modem;
 
   public OrbcommProtocol(EndPoint endPoint, Packet packet) throws LoginException, IOException {
@@ -80,15 +76,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
     );
     setTransformation(transformation);
     ConfigurationProperties configurationProperties = ConfigurationManager.getInstance().getProperties("stogi");
-    format = configurationProperties.getProperty("format", "raw");
     boolean setServerLocation = configurationProperties.getBooleanProperty("serverLocation", false);
-    if (setServerLocation) {
-      serverLocationSentence = configurationProperties.getProperty("sentenceForPosition");
-    } else {
-      serverLocationSentence = null;
-    }
-    publishRecords = configurationProperties.getBooleanProperty("publish", false);
-    destinationName = endPoint.getName();
     modem = new Modem(this);
     try {
       String init = modem.initializeModem().get();
@@ -107,7 +95,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @Nullable ParserExecutor executor, @Nullable Transformer transformer) {
-
+    // Will send a subscribe event, once we have one
   }
 
   @Override
@@ -149,7 +137,7 @@ public class OrbcommProtocol extends Protocol implements Consumer<Packet> {
 
   @Override
   public String getVersion() {
-    return "1";
+    return "0.1";
   }
 
   @Override
