@@ -25,6 +25,7 @@ import lombok.Data;
 public class Features {
   private String name;
   private boolean ml;
+  private boolean overrideFeatures;
 
   private Network network;
   private Protocols protocols;

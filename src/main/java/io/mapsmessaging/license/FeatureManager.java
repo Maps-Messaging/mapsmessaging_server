@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.license;
 
+import io.mapsmessaging.license.features.Features;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -37,7 +38,11 @@ public class FeatureManager {
 
   public boolean isEnabled(String featurePath) {
     for (FeatureDetails featureDetails : featuresList) {
-      Object value = getFieldValue(featureDetails.getFeature(), featurePath);
+      Features feature = featureDetails.getFeature();
+      if(feature.isOverrideFeatures() && !featurePath.equalsIgnoreCase("ml")){
+        return true;
+      }
+      Object value = getFieldValue(feature, featurePath);
       if (value instanceof Boolean && ((boolean) value)) {
         return true;
       }
