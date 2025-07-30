@@ -42,7 +42,9 @@ public class SerialEndPointConnectionFactory implements EndPointConnectionFactor
     if(serialPort == null) {
       throw new IOException("Serial device not yet connected");
     }
-    return new SerialEndPoint(generateID(), (EndPointServer) endPointServerStatus, serialPort, serialConfig,  jmxPath );
+    SerialEndPoint endPoint = new SerialEndPoint(generateID(), endPointServerStatus, serialPort, serialConfig,  jmxPath );
+    connectedCallback.connected(endPoint);
+    return endPoint;
   }
 
   public SerialPort getSerialPort(SerialConfigDTO serialConfig) {

@@ -39,6 +39,10 @@ io.mapsmessaging.network.protocol.impl.nats.NatsProtocolFactory
 # TCP/Serial based protocols
 #
 io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
+
+#
+# OrbComm based protocols to support Satellite communications
+#
 io.mapsmessaging.network.protocol.impl.orbcomm.modem.protocol.OrbcommProtocolFactory
 
 #

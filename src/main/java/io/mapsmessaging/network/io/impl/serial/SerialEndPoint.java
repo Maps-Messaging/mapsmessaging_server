@@ -49,7 +49,7 @@ public class SerialEndPoint extends EndPoint implements StreamEndPoint {
   private final EndPointJMX mbean;
   private StreamHandler streamHandler;
 
-  public SerialEndPoint(long id, EndPointServer server, SerialPort serialPort, SerialConfigDTO config, List<String> jmxPath) {
+  public SerialEndPoint(long id, EndPointServerStatus server, SerialPort serialPort, SerialConfigDTO config, List<String> jmxPath) {
     super(id, server);
     this.serialPort = serialPort;
     name = serialPort.getSystemPortName();

@@ -57,8 +57,8 @@ NetworkConnectionManager:
         name: orbcomm ST2100 Satellite Modem
         url: serial://local:0/
         serial:
-          serialNo: C934764551504C3750202020FF042337
-          port: cu.usbmodem101
+          serialNo: A403JUVR
+          port: com12
           baudRate: 9600
           dataBits: 8
           stopBits: 1
