@@ -30,8 +30,6 @@ import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Map;
-import java.util.StringJoiner;
 
 public class MapsModelStore implements ModelStore {
 
