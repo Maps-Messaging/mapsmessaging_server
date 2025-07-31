@@ -42,7 +42,6 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
     this.cacheSize = config.getIntProperty("cacheSize", 100);
     this.cacheExpiryMinutes = config.getIntProperty("cacheExpiryMinutes", 60);
     this.preloadModels = convertToList(config.getProperty("preloadModels", ""));
-    this.allowedFormats = convertToList(config.getProperty("allowedFormats", ""));
 
     if (config.get("autoRefresh") != null) {
       ConfigurationProperties autoRefresh = (ConfigurationProperties) config.get("autoRefresh");
@@ -117,10 +116,6 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
       this.preloadModels = dto.getPreloadModels();
       changed = true;
     }
-    if (!equalsSafe(this.allowedFormats, dto.getAllowedFormats())) {
-      this.allowedFormats = dto.getAllowedFormats();
-      changed = true;
-    }
     if (!equalsSafe(this.autoRefresh, dto.getAutoRefresh())) {
       this.autoRefresh = dto.getAutoRefresh();
       changed = true;
@@ -140,7 +135,6 @@ public class MLModelManagerConfig extends MLModelManagerDTO implements Config, C
     props.put("cacheSize", this.cacheSize);
     props.put("cacheExpiryMinutes", this.cacheExpiryMinutes);
     props.put("preloadModels", String.join(",", this.preloadModels));
-    props.put("allowedFormats", String.join(",", this.allowedFormats));
 
     if (this.autoRefresh != null) {
       ConfigurationProperties autoRefreshProps = new ConfigurationProperties();

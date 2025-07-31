@@ -23,7 +23,6 @@ MLModelManager:
   cacheSize: 100          # max number of models to keep in memory
   cacheExpiryMinutes: 60  # auto-evict models if not accessed
   preloadModels: model1.zip,model2.zip          # optionally preload these models at startup
-  allowedFormats: zip,arff,json         # restrict to accepted model formats
 
   autoRefresh:
     enabled: true

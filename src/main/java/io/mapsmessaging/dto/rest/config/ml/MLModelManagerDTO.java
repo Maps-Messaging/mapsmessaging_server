@@ -43,9 +43,6 @@ public class MLModelManagerDTO extends BaseConfigDTO {
   @Schema(description = "Models to preload at startup")
   protected List<String> preloadModels;
 
-  @Schema(description = "Allowed model file formats")
-  protected List<String> allowedFormats;
-
   @Schema(description = "Auto-refresh configuration")
   protected AutoRefreshConfig autoRefresh;
 

@@ -58,7 +58,7 @@ public class MLModelManager implements Agent {
     if(modelStoreConfig != null) {
       ModelStore store = buildModelStore(modelStoreConfig);
       if (store != null) {
-        modelStore = new CachingModelStore(store);
+        modelStore = new CachingModelStore(store, mlModelManagerConfig);
         MLFunction.setModelStore(modelStore);
       }
     }
